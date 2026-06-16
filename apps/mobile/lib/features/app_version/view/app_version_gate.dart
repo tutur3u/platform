@@ -34,13 +34,22 @@ class _AppVersionGateState extends State<AppVersionGate> {
       },
       child: BlocBuilder<AppVersionCubit, AppVersionState>(
         buildWhen: (previous, current) {
+          if (previous.hasCompletedInitialCheck !=
+              current.hasCompletedInitialCheck) {
+            return true;
+          }
           if (previous.status != current.status) {
             return true;
           }
-          return current.status == AppVersionGateStatus.updateRequired &&
+          return current.hasCompletedInitialCheck &&
+              current.status == AppVersionGateStatus.updateRequired &&
               previous.versionCheck != current.versionCheck;
         },
         builder: (context, state) {
+          if (!state.hasCompletedInitialCheck) {
+            return const _InitialVersionCheckScreen();
+          }
+
           if (state.status == AppVersionGateStatus.updateRequired) {
             return _RequiredUpdateScreen(versionState: state);
           }
@@ -94,6 +103,17 @@ class _AppVersionGateState extends State<AppVersionGate> {
     if (uri == null) return;
 
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+class _InitialVersionCheckScreen extends StatelessWidget {
+  const _InitialVersionCheckScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const shad.Scaffold(
+      child: Center(child: shad.CircularProgressIndicator()),
+    );
   }
 }
 

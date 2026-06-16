@@ -27,16 +27,30 @@ void main() {
       settingsRepository = _MockSettingsRepository();
     });
 
-    testWidgets('renders child immediately before version checks complete', (
+    testWidgets('blocks child until the initial version check completes', (
       tester,
     ) async {
+      final versionCheck = Completer<MobileVersionCheck?>();
+      when(() => versionCheckRepository.checkCurrentVersion()).thenAnswer(
+        (_) => versionCheck.future,
+      );
+
       final cubit = AppVersionCubit(
         versionCheckRepository: versionCheckRepository,
         settingsRepository: settingsRepository,
       );
 
       await tester.pumpWidget(_buildTestApp(cubit));
+      unawaited(cubit.checkVersion());
+      await tester.pump();
 
+      expect(find.byType(shad.CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Home'), findsNothing);
+
+      versionCheck.complete(null);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(shad.CircularProgressIndicator), findsNothing);
       expect(find.text('Home'), findsOneWidget);
     });
 
