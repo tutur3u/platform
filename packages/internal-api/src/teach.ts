@@ -315,6 +315,8 @@ export interface TeachCourseTest {
   name: string;
   created_at: string;
   module_ids?: string[];
+  start_at?: string | null;
+  duration_in_minutes?: number | null;
 }
 
 export function listWorkspaceCourseTests(
@@ -332,7 +334,12 @@ export function listWorkspaceCourseTests(
 export function createWorkspaceCourseTest(
   workspaceId: string,
   courseId: string,
-  payload: { name: string; moduleIds: string[] },
+  payload: {
+    name: string;
+    moduleIds: string[];
+    startAt?: string | null;
+    durationInMinutes?: number | null;
+  },
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);

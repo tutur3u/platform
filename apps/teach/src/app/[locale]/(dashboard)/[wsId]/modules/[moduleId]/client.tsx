@@ -29,6 +29,8 @@ import { CourseMembersPanel } from '@/components/teach-operations/course-members
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
 import { ModuleGroupSection } from './module-group-section';
+import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceCourseTests } from '@tuturuuu/internal-api';
 import { CourseTestDialog } from './course-test-dialog';
 import { ModuleStorageDialog } from './module-storage-dialog';
 import {
@@ -62,6 +64,12 @@ export function ModuleDetailClient({
     togglePublished,
   } = useModuleDetail(wsId, courseId);
   const t = useTranslations();
+
+  const { data: testsData, isLoading: isLoadingTests } = useQuery({
+    queryKey: ['course-tests', wsId, courseId],
+    queryFn: () => listWorkspaceCourseTests(wsId, courseId),
+  });
+  const tests = testsData?.data ?? [];
 
   // Local optimistic group order for drag
   const [localGroups, setLocalGroups] = useState<
@@ -179,7 +187,7 @@ export function ModuleDetailClient({
   return (
     <>
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-        <div className="mx-auto max-w-4xl space-y-6">
+        <div className="mx-auto max-w-6xl space-y-6">
           {/* Page header */}
           <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
             <Link
@@ -212,8 +220,55 @@ export function ModuleDetailClient({
 
           <CourseMembersPanel courseId={courseId} wsId={wsId} />
 
-          {/* Toolbar */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+            {/* Left Sidebar: Tests list */}
+            <div className="md:col-span-1 space-y-4">
+              <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
+                <h2 className="font-black text-lg uppercase tracking-wider mb-4 flex items-center gap-2 border-b-2 border-border pb-2">
+                  <BookOpenCheck className="h-5 w-5 text-primary" />
+                  Tests
+                </h2>
+                {isLoadingTests ? (
+                  <div className="space-y-3">
+                    <div className="h-16 bg-muted animate-pulse border-2 border-border" />
+                    <div className="h-16 bg-muted animate-pulse border-2 border-border" />
+                  </div>
+                ) : tests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic py-2">No tests created yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {tests.map((test) => (
+                      <div
+                        key={test.id}
+                        className="border-2 border-border p-3 bg-muted/10 shadow-[2px_2px_0_var(--border)] hover:bg-muted/20 transition flex flex-col gap-1.5"
+                      >
+                        <h3 className="font-bold text-sm leading-tight text-primary break-words">{test.name}</h3>
+                        {test.start_at && (
+                          <div className="text-[11px] text-muted-foreground flex flex-wrap gap-1 items-center">
+                            <span className="font-black uppercase tracking-wider text-[10px]">Start:</span>
+                            <span>{new Date(test.start_at).toLocaleString([], {
+                              dateStyle: 'short',
+                              timeStyle: 'short'
+                            })}</span>
+                          </div>
+                        )}
+                        {test.duration_in_minutes && (
+                          <div className="text-[11px] text-muted-foreground flex gap-1 items-center">
+                            <span className="font-black uppercase tracking-wider text-[10px]">Duration:</span>
+                            <span>{test.duration_in_minutes} mins</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Main content: Modules list */}
+            <div className="md:col-span-3 space-y-6">
+              {/* Toolbar */}
+              <div className="flex items-center justify-between gap-4">
             <div>
               <span className="font-black text-xl">
                 {displayGroups.length} section
@@ -356,6 +411,8 @@ export function ModuleDetailClient({
               </DragOverlay>
             </DndContext>
           )}
+            </div>
+          </div>
         </div>
       </main>
 

@@ -14168,20 +14168,26 @@ export type Database = {
         Row: {
           course_id: string;
           created_at: string;
+          duration_in_minutes: number | null;
           id: string;
           name: string;
+          start_at: string | null;
         };
         Insert: {
           course_id: string;
           created_at?: string;
+          duration_in_minutes?: number | null;
           id?: string;
           name?: string;
+          start_at?: string | null;
         };
         Update: {
           course_id?: string;
           created_at?: string;
+          duration_in_minutes?: number | null;
           id?: string;
           name?: string;
+          start_at?: string | null;
         };
         Relationships: [
           {

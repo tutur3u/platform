@@ -33,15 +33,23 @@ export function CourseTestDialog({
   const [open, setOpen] = useState(false);
   const [testName, setTestName] = useState('');
   const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
+  const [startAt, setStartAt] = useState('');
+  const [durationInMinutes, setDurationInMinutes] = useState('60');
 
   const createTestMutation = useMutation({
-    mutationFn: async (payload: { name: string; moduleIds: string[] }) =>
-      createWorkspaceCourseTest(wsId, courseId, payload),
+    mutationFn: async (payload: {
+      name: string;
+      moduleIds: string[];
+      startAt?: string | null;
+      durationInMinutes?: number | null;
+    }) => createWorkspaceCourseTest(wsId, courseId, payload),
     onSuccess: () => {
       toast.success(t('teachModules.testCreated'));
       qc.invalidateQueries({ queryKey: ['course-tests', wsId, courseId] });
       setTestName('');
       setSelectedModuleIds([]);
+      setStartAt('');
+      setDurationInMinutes('60');
       setOpen(false);
     },
     onError: (error) => {
@@ -66,6 +74,8 @@ export function CourseTestDialog({
     createTestMutation.mutate({
       name: testName.trim(),
       moduleIds: selectedModuleIds,
+      startAt: startAt ? new Date(startAt).toISOString() : null,
+      durationInMinutes: durationInMinutes ? parseInt(durationInMinutes) : null,
     });
   };
 
@@ -129,6 +139,45 @@ export function CourseTestDialog({
               onChange={(e) => setTestName(e.target.value)}
               disabled={createTestMutation.isPending}
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label
+                htmlFor="test-start-at"
+                className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+              >
+                {t('teachModules.testStartAt')}
+              </label>
+              <input
+                id="test-start-at"
+                type="datetime-local"
+                className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
+                disabled={createTestMutation.isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="test-duration"
+                className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+              >
+                {t('teachModules.testDuration')}
+              </label>
+              <input
+                id="test-duration"
+                type="number"
+                min="1"
+                max="1440"
+                className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                placeholder={t('teachModules.testDurationPlaceholder')}
+                value={durationInMinutes}
+                onChange={(e) => setDurationInMinutes(e.target.value)}
+                disabled={createTestMutation.isPending}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

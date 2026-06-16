@@ -162,6 +162,9 @@
     "testSaveError": "Failed to create test",
     "testNameRequired": "Test name is required",
     "noModulesInGroup": "No modules in this group",
+    "testStartAt": "Start time",
+    "testDuration": "Duration (minutes)",
+    "testDurationPlaceholder": "e.g. 60",
     "aiGenerate": {
       "actions": {
         "cancel": "Cancel",
