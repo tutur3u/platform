@@ -13,7 +13,7 @@ released, or recovered.
 
 | Surface                                                                                                                                                                               | Source of truth                                                                                         | Delivery target                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Platform web app (`apps/web`)                                                                                                                                                         | `.github/workflows/vercel-preview-platform.yaml`, `.github/workflows/vercel-production-platform.yaml`   | Vercel build validation for on-premise deployment       |
+| Platform web app (`apps/web`)                                                                                                                                                         | `.github/workflows/vercel-preview-platform.yaml`, `.github/workflows/vercel-production-platform.yaml`   | Vercel preview build validation and production deploy   |
 | Satellite web apps (`apps/apps`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/inventory`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`, `apps/qr`) | `.github/workflows/vercel-*.yaml`                                                                       | Vercel preview and production deployments               |
 | Database schema (`apps/database`)                                                                                                                                                     | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
 | Self-hosted web runtime (`apps/web`)                                                                                                                                                  | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
@@ -36,7 +36,7 @@ released, or recovered.
   diff touches `apps/discord/**` or `.github/workflows/discord-python-ci.yml`.
   That path runs the same blocking checks as Discord Python CI through
   `scripts/check-discord-python.js`.
-- Vercel handles hosted satellite web deployments and platform build validation. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
+- Vercel handles hosted satellite web deployments, platform preview build validation, and the hosted platform production deploy. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
 - Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
 
@@ -47,7 +47,7 @@ flowchart LR
     Branch["Git branch or manual dispatch"]
     Preview["Platform preview build"]
     Staging["Supabase staging migration"]
-    Production["Platform production build"]
+    Production["Platform production deploy"]
     ProdDb["Supabase production migration"]
     Docker["Self-hosted Docker deploy"]
 

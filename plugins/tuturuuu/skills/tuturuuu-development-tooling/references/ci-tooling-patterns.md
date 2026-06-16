@@ -150,7 +150,7 @@ formatting behavior, or repo-wide verification.
   vendored SheetJS tarball must stay local in source manifests and packed npm
   manifests when the tarball is included in the package artifact; do not rewrite
   them to mutable external HTTPS tarballs before `npm pack`.
-- Platform Vercel production build validation should run
+- Platform Vercel production deployment should run
   `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
   before dependency installation when release-please package manifests changed.
   The gate inspects only the checked-out latest commit instead of the whole push
@@ -158,19 +158,20 @@ formatting behavior, or repo-wide verification.
   `git diff`, dispatches missing package release workflows for the same SHA,
   fails fast if a related package release workflow failed, and exits
   successfully with `packages_ready=false` while package releases are still
-  queued or running. Downstream install/build steps must be skipped when
+  queued or running. Downstream install/build/deploy steps must be skipped when
   packages are pending so the Vercel workflow does not occupy a runner while
   waiting for npm. The deploy job therefore needs `actions: write` for workflow
   dispatch recovery; keep npm publish authority isolated to package
   `publish-npm` jobs. Because a package-gate skip is still a successful workflow
   conclusion, production database migration gates must require the successful
-  `vercel-production-platform` build marker for the same SHA before running
-  `supabase db push`.
+  `vercel-production-platform` deployment marker for the same SHA before
+  running `supabase db push`.
   Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
-  `vercel build` because `apps/web` imports that workspace package. The
-  platform preview and production workflows are build-only signals for
-  on-premise deployment and may cross-credit successful same-SHA build markers;
-  satellite Vercel workflows still deploy prebuilt artifacts.
+  `vercel build` because `apps/web` imports that workspace package. Platform
+  preview remains build validation only and may cross-credit successful same-SHA
+  production build markers. Platform production must build and deploy prebuilt
+  artifacts, then record both build and deployment markers. Satellite Vercel
+  workflows still deploy prebuilt artifacts independently.
 - Package release workflows must use npm trusted publishing. Keep
   `id-token: write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce

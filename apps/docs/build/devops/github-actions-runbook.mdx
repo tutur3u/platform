@@ -120,22 +120,21 @@ These workflows:
   `@tuturuuu/types`, `@tuturuuu/supabase`, and `@tuturuuu/internal-api`
 - run `vercel pull`
 - run `vercel build`
-- deploy prebuilt artifacts for satellite apps
-- treat `vercel-preview-platform.yaml` and `vercel-production-platform.yaml`
-  as platform build validation only; on-premise machines own the actual
-  `apps/web` runtime deployment
+- deploy prebuilt artifacts for satellite apps and the hosted platform
+  production workflow
+- treat `vercel-preview-platform.yaml` as platform build validation only;
+  self-hosted machines own their own Docker `apps/web` runtime deployment
 - skip production push work when a newer commit already exists on the target
   branch
 - record a non-blocking GitHub Deployment marker after a successful Vercel
   build or satellite deploy so the next production push can evaluate every
   change since the last successful run
 
-The platform preview and production workflows cross-credit successful same-SHA
-build markers. If `vercel-preview-platform.yaml` already recorded a successful
-build marker for a commit, `vercel-production-platform.yaml` can record its own
-successful build marker without reinstalling dependencies or rebuilding, and
-vice versa. This only applies to the platform workflows; satellite Vercel
-workflows still build and deploy independently.
+The platform preview workflow can cross-credit a successful same-SHA production
+platform build marker. Production does not cross-credit preview markers because
+it must build and deploy the prebuilt production artifacts. This only applies to
+the platform workflows; satellite Vercel workflows still build and deploy
+independently.
 
 ### Database automation
 
@@ -300,7 +299,7 @@ needs its own
 The platform production Vercel workflow also runs
 `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
 before installing dependencies. Release-please package bumps therefore publish
-and become visible on npm before the normal production platform build validation
+and become visible on npm before the normal production platform deployment
 continues. The helper intentionally checks only the checked-out latest commit,
 not the whole push event payload, so package changes from earlier commits in a
 multi-commit push are not bound to an unrelated newer SHA. If the latest commit
@@ -310,9 +309,9 @@ production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
 package `publish-npm` jobs. A skipped package gate must not count as production
-build validation for database migrations: `supabase-production.yaml` requires
-the successful `vercel-production-platform` build marker for the same SHA before
-it can run production migrations.
+deployment for database migrations: `supabase-production.yaml` requires the
+successful `vercel-production-platform` deployment marker for the same SHA
+before it can run production migrations.
 
 Filtered production Docker installs only include the selected app and the
 dependencies that app needs. Workspace packages with direct `tsgo` build scripts
@@ -336,10 +335,11 @@ from skipped intermediate runs still queue the correct Vercel workflow.
   trigger unless manually dispatched.
 - Its deploy step links the staging project and runs
   `supabase db push --include-all`.
-- `supabase-production.yaml` runs after production platform build validation
-  and also re-evaluates after a matching `main` staging migration succeeds. It
-  still checks both the latest production platform build result and a completed
-  successful staging migration for the same commit before running
+- `supabase-production.yaml` runs after production platform deployment and also
+  re-evaluates after a matching `main` staging migration succeeds. It still
+  checks both the latest production platform workflow result, a successful
+  production deployment marker, and a completed successful staging migration for
+  the same commit before running
   `supabase db push --include-all`.
 
 ### Mobile iOS native assets

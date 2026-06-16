@@ -28,9 +28,18 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
     assert.match(deployJob, /deployments:\s*write/);
     assert.match(workflow, new RegExp(`VERCEL_WORKFLOW_NAME: ${workflowName}`));
 
-    if (/^vercel-(preview|production)-platform\.yaml$/.test(workflowName)) {
+    if (workflowName === 'vercel-preview-platform.yaml') {
       assert.match(workflow, /Record successful Vercel build marker/);
       assert.match(workflow, /VERCEL_MARKER_KIND: build/);
+      assert.match(
+        workflow,
+        /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
+      );
+    } else if (workflowName === 'vercel-production-platform.yaml') {
+      assert.match(workflow, /Record successful Vercel build marker/);
+      assert.match(workflow, /Record successful Vercel deployment marker/);
+      assert.match(workflow, /VERCEL_MARKER_KIND: build/);
+      assert.match(workflow, /VERCEL_MARKER_KIND: deployment/);
       assert.match(
         workflow,
         /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
@@ -92,35 +101,41 @@ test('Platform Vercel workflows build local devbox dependency before Vercel buil
       'Build workspace dependencies'
     );
     const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
-    const equivalentBuildIndex = deployJob.indexOf(
-      workflowName === 'vercel-preview-platform.yaml'
-        ? 'Check equivalent production platform build'
-        : 'Check equivalent preview platform build'
-    );
     const installIndex = deployJob.indexOf('Install dependencies');
 
-    assert.notEqual(equivalentBuildIndex, -1);
     assert.notEqual(installIndex, -1);
     assert.notEqual(dependencyBuildIndex, -1);
     assert.notEqual(vercelBuildIndex, -1);
-    assert.ok(
-      equivalentBuildIndex < installIndex,
-      `${workflowName} must check same-SHA platform build markers before installing dependencies`
-    );
     assert.ok(
       dependencyBuildIndex < vercelBuildIndex,
       `${workflowName} must build workspace dependencies before Vercel build`
     );
     assert.match(deployJob, /--filter=@tuturuuu\/devbox/);
-    assert.match(
-      deployJob,
-      /steps\.equivalent_build\.outputs\.found != 'true'/
-    );
-    assert.match(deployJob, /--marker-kind build/);
+
+    if (workflowName === 'vercel-preview-platform.yaml') {
+      const equivalentBuildIndex = deployJob.indexOf(
+        'Check equivalent production platform build'
+      );
+
+      assert.notEqual(equivalentBuildIndex, -1);
+      assert.ok(
+        equivalentBuildIndex < installIndex,
+        `${workflowName} must check same-SHA production build markers before installing dependencies`
+      );
+      assert.match(
+        deployJob,
+        /steps\.equivalent_build\.outputs\.found != 'true'/
+      );
+      assert.match(deployJob, /--marker-kind build/);
+    } else {
+      assert.doesNotMatch(deployJob, /Check equivalent preview platform build/);
+      assert.doesNotMatch(deployJob, /steps\.equivalent_build/);
+      assert.match(deployJob, /VERCEL_MARKER_KIND: build/);
+    }
   }
 });
 
-test('Platform production build waits for release package visibility when it is not cross-credited', () => {
+test('Platform production deploy waits for release packages and records deployment', () => {
   const deployJob = readWorkflowJobBlock(
     'vercel-production-platform.yaml',
     'Deploy-Production'
@@ -128,10 +143,18 @@ test('Platform production build waits for release package visibility when it is 
   const releaseGateIndex = deployJob.indexOf('Gate package release visibility');
   const installIndex = deployJob.indexOf('Install dependencies');
   const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
+  const vercelDeployIndex = deployJob.indexOf(
+    'Deploy Project Artifacts to Vercel'
+  );
+  const deploymentMarkerIndex = deployJob.indexOf(
+    'Record successful Vercel deployment marker'
+  );
 
   assert.notEqual(releaseGateIndex, -1);
   assert.notEqual(installIndex, -1);
   assert.notEqual(vercelBuildIndex, -1);
+  assert.notEqual(vercelDeployIndex, -1);
+  assert.notEqual(deploymentMarkerIndex, -1);
   assert.ok(
     releaseGateIndex < installIndex,
     'platform production deploy must wait for package releases before installing dependencies'
@@ -139,6 +162,18 @@ test('Platform production build waits for release package visibility when it is 
   assert.ok(
     releaseGateIndex < vercelBuildIndex,
     'platform production deploy must wait for package releases before Vercel build'
+  );
+  assert.ok(
+    releaseGateIndex < vercelDeployIndex,
+    'platform production deploy must wait for package releases before Vercel deploy'
+  );
+  assert.ok(
+    vercelBuildIndex < vercelDeployIndex,
+    'platform production deploy must publish the prebuilt artifacts after Vercel build'
+  );
+  assert.ok(
+    vercelDeployIndex < deploymentMarkerIndex,
+    'platform production deployment marker must be recorded after Vercel deploy'
   );
   assert.match(
     deployJob,
@@ -150,6 +185,13 @@ test('Platform production build waits for release package visibility when it is 
   assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
   assert.match(deployJob, /actions:\s*write/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(
+    deployJob,
+    /vercel deploy --archive=tgz --prebuilt --prod --token=\$\{\{ secrets\.VERCEL_TOKEN \}\}/
+  );
+  assert.match(deployJob, /VERCEL_MARKER_KIND: deployment/);
+  assert.doesNotMatch(deployJob, /Check equivalent preview platform build/);
+  assert.doesNotMatch(deployJob, /steps\.equivalent_build/);
 });
 
 test('mail deployment workflows do not persist checkout credentials', () => {
@@ -223,7 +265,7 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   );
   assert.match(
     supabaseProductionWorkflow,
-    /BUILD_MARKER_HAS_SUCCESS=.*select\(\.state == "success"\).*length > 0/
+    /DEPLOYMENT_MARKER_HAS_SUCCESS=.*select\(\.state == "success"\).*length > 0/
   );
   assert.match(
     supabaseProductionWorkflow,
@@ -595,7 +637,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /if-no-files-found: warn/u);
 });
 
-test('Supabase production migration requires production platform build and successful staged SHA', () => {
+test('Supabase production migration requires production platform deploy and successful staged SHA', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
     'utf8'
@@ -624,7 +666,7 @@ test('Supabase production migration requires production platform build and succe
   assert.match(evaluateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
   assert.match(
     evaluateJob,
-    /production platform build trigger ran on '\$TRIGGER_BRANCH' instead of production/
+    /production platform deployment trigger ran on '\$TRIGGER_BRANCH' instead of production/
   );
   assert.match(
     evaluateJob,
@@ -641,13 +683,21 @@ test('Supabase production migration requires production platform build and succe
   assert.match(evaluateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
   assert.match(
     evaluateJob,
+    /no production platform deployment workflow run was found for \$TARGET_SHA/
+  );
+  assert.match(
+    evaluateJob,
     /deployments\?environment=vercel-production-platform&per_page=100/
   );
   assert.match(
     evaluateJob,
-    /no production platform build marker deployment was found for \$TARGET_SHA/
+    /no production platform deployment marker was found for \$TARGET_SHA/
   );
-  assert.match(evaluateJob, /BUILD_MARKER_HAS_SUCCESS" != "true"/);
+  assert.match(
+    evaluateJob,
+    /\(\(\$payload\.markerKind \/\/ "deployment"\) == "deployment"\)/
+  );
+  assert.match(evaluateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
   assert.match(evaluateJob, /does not include a success status/);
   assert.match(
     evaluateJob,
@@ -663,7 +713,7 @@ test('Supabase production migration requires production platform build and succe
   );
   assert.match(
     evaluateJob,
-    /Production platform build marker and staging migration are bound to \$TARGET_SHA/
+    /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
   );
 
   assert.match(

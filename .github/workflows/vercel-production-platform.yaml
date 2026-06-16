@@ -57,73 +57,79 @@ jobs:
         with:
           node-version: 24
 
-      - name: Check equivalent preview platform build
-        if: steps.check_commits.outputs.skip_build != 'true'
-        id: equivalent_build
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          node --experimental-strip-types scripts/ci/github-deployment-markers.ts has-successful-marker \
-            --workflow vercel-preview-platform.yaml \
-            --sha "${{ steps.resolve_target.outputs.sha }}" \
-            --marker-kind build
-
       - name: Setup bun
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.3.14
 
       - name: Gate package release visibility
         id: package_release_gate
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/package-release-readiness.js gate-changed-package-versions
 
       - name: Skip build while package releases publish
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'false'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'false'
         run: |
           echo "Changed package versions are still publishing; skipping this platform build run without failing."
           echo 'Pending packages: ${{ steps.package_release_gate.outputs.pending_packages }}'
 
       - name: Install dependencies
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Install Vercel CLI
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry --filter=@tuturuuu/devbox
 
       - name: Generate shared build metadata
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           TUTURUUU_NEXT_CACHE_COMPONENTS: "0"
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Deploy Project Artifacts to Vercel
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+        run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Record successful Vercel build marker
-        if: steps.check_commits.outputs.skip_build != 'true' && (steps.equivalent_build.outputs.found == 'true' || steps.package_release_gate.outputs.packages_ready == 'true')
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VERCEL_MARKER_KIND: build
+          VERCEL_MARKER_SHA: ${{ steps.resolve_target.outputs.sha }}
+          VERCEL_WORKFLOW_NAME: vercel-production-platform.yaml
+        run: node --experimental-strip-types scripts/ci/record-vercel-deployment.ts
+
+      - name: Record successful Vercel deployment marker
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERCEL_MARKER_KIND: deployment
           VERCEL_MARKER_SHA: ${{ steps.resolve_target.outputs.sha }}
           VERCEL_WORKFLOW_NAME: vercel-production-platform.yaml
         run: node --experimental-strip-types scripts/ci/record-vercel-deployment.ts
