@@ -3787,6 +3787,164 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeManageLabel => 'Quản lý';
 
   @override
+  String get financeCheckpointsShortLabel => 'Kiểm tra';
+
+  @override
+  String get financeCheckpointsTitle => 'Điểm kiểm tra ví';
+
+  @override
+  String get financeCheckpointsDescription => 'Ghi số dư thực tế, so sánh biến động sổ cái và xử lý chênh lệch giữa các lần kiểm tra.';
+
+  @override
+  String get financeCheckpointsOverviewHint => 'Ghi số dư thực tế và xem các khoảng kiểm tra còn lệch.';
+
+  @override
+  String get financeCheckpointsWalletsTitle => 'Kiểm tra ví';
+
+  @override
+  String get financeCheckpointsWalletsSubtitle => 'Chọn ví để xem điểm kiểm tra mới nhất và các khoảng đối chiếu.';
+
+  @override
+  String get financeCheckpointsLatest => 'Điểm kiểm tra mới nhất';
+
+  @override
+  String get financeCheckpointsRecord => 'Ghi điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsEdit => 'Chỉnh sửa điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsBatchRecord => 'Kiểm tra tất cả ví';
+
+  @override
+  String get financeCheckpointsBatchDescription => 'Nhập số dư thực tế cho từng ví bạn muốn kiểm tra tại cùng một thời điểm.';
+
+  @override
+  String get financeCheckpointsBatchSaved => 'Đã lưu điểm kiểm tra ví';
+
+  @override
+  String get financeCheckpointsSaved => 'Đã lưu điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsDeleted => 'Đã xóa điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsDelete => 'Xóa điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsDeleteDescription => 'Xóa điểm kiểm tra này và tính lại dòng kiểm tra của ví.';
+
+  @override
+  String financeCheckpointsRecordDescription(String wallet) {
+    return 'Lưu số dư thực tế đang hiển thị trong $wallet.';
+  }
+
+  @override
+  String get financeCheckpointsActualBalance => 'Số dư thực tế';
+
+  @override
+  String financeCheckpointsActualBalanceWithCurrency(String currency) {
+    return 'Số dư thực tế ($currency)';
+  }
+
+  @override
+  String get financeCheckpointsLedgerBalance => 'Số dư sổ cái';
+
+  @override
+  String get financeCheckpointsCurrentVariance => 'Chênh lệch hiện tại';
+
+  @override
+  String get financeCheckpointsActualDelta => 'Chênh lệch thực tế';
+
+  @override
+  String get financeCheckpointsLedgerDelta => 'Chênh lệch sổ cái';
+
+  @override
+  String get financeCheckpointsVariance => 'Chênh lệch';
+
+  @override
+  String financeCheckpointsVarianceValue(String value) {
+    return 'Chênh lệch: $value';
+  }
+
+  @override
+  String get financeCheckpointsCheckedAt => 'Thời điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsCheckedAtRequired => 'Nhập thời điểm kiểm tra hợp lệ';
+
+  @override
+  String get financeCheckpointsNote => 'Ghi chú';
+
+  @override
+  String get financeCheckpointsSharedNote => 'Ghi chú chung';
+
+  @override
+  String get financeCheckpointsNotePlaceholder => 'Ngữ cảnh tùy chọn cho điểm kiểm tra này';
+
+  @override
+  String get financeCheckpointsAmountRequired => 'Nhập số dư thực tế hợp lệ';
+
+  @override
+  String get financeCheckpointsEntriesRequired => 'Nhập ít nhất một số dư ví';
+
+  @override
+  String get financeCheckpointsWindows => 'Khoảng đối chiếu';
+
+  @override
+  String get financeCheckpointsWindowsSubtitle => 'Mỗi khoảng so sánh biến động thực tế với biến động sổ cái giữa hai điểm kiểm tra.';
+
+  @override
+  String get financeCheckpointsTransactionCountHint => 'Số lượng giao dịch dựa trên hoạt động sổ cái trong từng khoảng.';
+
+  @override
+  String get financeCheckpointsTimeline => 'Dòng thời gian điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsReconcile => 'Đối chiếu';
+
+  @override
+  String get financeCheckpointsReconcileDescription => 'Tạo giao dịch điều chỉnh không đưa vào báo cáo cho chênh lệch có dấu trong khoảng này.';
+
+  @override
+  String get financeCheckpointsCreateReconciliation => 'Tạo đối chiếu';
+
+  @override
+  String get financeCheckpointsReconciliationCreated => 'Đã tạo giao dịch đối chiếu';
+
+  @override
+  String get financeCheckpointsReconciliationClean => 'Điểm kiểm tra đã khớp';
+
+  @override
+  String financeCheckpointsReconcileDefaultDescription(String wallet) {
+    return 'Đối chiếu ví $wallet';
+  }
+
+  @override
+  String get financeCheckpointsCategory => 'Danh mục';
+
+  @override
+  String get financeCheckpointsNoCategory => 'Không có danh mục';
+
+  @override
+  String get financeCheckpointsDescriptionLabel => 'Mô tả';
+
+  @override
+  String get financeCheckpointsNoCheckpoint => 'Chưa có điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsNoCheckpointShort => 'Chưa có điểm kiểm tra';
+
+  @override
+  String get financeCheckpointsNoCheckpointDetail => 'Ghi một điểm kiểm tra để bắt đầu theo dõi số dư đã kiểm tra.';
+
+  @override
+  String get financeCheckpointsNoWallets => 'Không có ví khả dụng';
+
+  @override
+  String get financeCheckpointsNoWalletsDetail => 'Tạo ví trước khi ghi điểm kiểm tra tài chính.';
+
+  @override
   String get financeOverviewEyebrow => 'Tóm tắt không gian làm việc';
 
   @override

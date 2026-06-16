@@ -3811,6 +3811,164 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeManageLabel => 'Manage';
 
   @override
+  String get financeCheckpointsShortLabel => 'Checkpoints';
+
+  @override
+  String get financeCheckpointsTitle => 'Wallet checkpoints';
+
+  @override
+  String get financeCheckpointsDescription => 'Record real balances, compare ledger movement, and resolve differences between checks.';
+
+  @override
+  String get financeCheckpointsOverviewHint => 'Record actual balances and review unresolved audit windows.';
+
+  @override
+  String get financeCheckpointsWalletsTitle => 'Wallet audit';
+
+  @override
+  String get financeCheckpointsWalletsSubtitle => 'Pick a wallet to review its latest checkpoint and reconciliation windows.';
+
+  @override
+  String get financeCheckpointsLatest => 'Latest checkpoint';
+
+  @override
+  String get financeCheckpointsRecord => 'Record checkpoint';
+
+  @override
+  String get financeCheckpointsEdit => 'Edit checkpoint';
+
+  @override
+  String get financeCheckpointsBatchRecord => 'All-wallet check';
+
+  @override
+  String get financeCheckpointsBatchDescription => 'Enter actual balances for every wallet you want to checkpoint at the same time.';
+
+  @override
+  String get financeCheckpointsBatchSaved => 'Wallet checkpoints saved';
+
+  @override
+  String get financeCheckpointsSaved => 'Checkpoint saved';
+
+  @override
+  String get financeCheckpointsDeleted => 'Checkpoint deleted';
+
+  @override
+  String get financeCheckpointsDelete => 'Delete checkpoint';
+
+  @override
+  String get financeCheckpointsDeleteDescription => 'Delete this checkpoint and recalculate the wallet audit timeline.';
+
+  @override
+  String financeCheckpointsRecordDescription(String wallet) {
+    return 'Save the actual balance visible in $wallet.';
+  }
+
+  @override
+  String get financeCheckpointsActualBalance => 'Actual balance';
+
+  @override
+  String financeCheckpointsActualBalanceWithCurrency(String currency) {
+    return 'Actual balance ($currency)';
+  }
+
+  @override
+  String get financeCheckpointsLedgerBalance => 'Ledger balance';
+
+  @override
+  String get financeCheckpointsCurrentVariance => 'Current variance';
+
+  @override
+  String get financeCheckpointsActualDelta => 'Actual delta';
+
+  @override
+  String get financeCheckpointsLedgerDelta => 'Ledger delta';
+
+  @override
+  String get financeCheckpointsVariance => 'Variance';
+
+  @override
+  String financeCheckpointsVarianceValue(String value) {
+    return 'Variance: $value';
+  }
+
+  @override
+  String get financeCheckpointsCheckedAt => 'Checked at';
+
+  @override
+  String get financeCheckpointsCheckedAtRequired => 'Enter a valid checked-at time';
+
+  @override
+  String get financeCheckpointsNote => 'Note';
+
+  @override
+  String get financeCheckpointsSharedNote => 'Shared note';
+
+  @override
+  String get financeCheckpointsNotePlaceholder => 'Optional context for this checkpoint';
+
+  @override
+  String get financeCheckpointsAmountRequired => 'Enter a valid actual balance';
+
+  @override
+  String get financeCheckpointsEntriesRequired => 'Enter at least one wallet balance';
+
+  @override
+  String get financeCheckpointsWindows => 'Reconciliation windows';
+
+  @override
+  String get financeCheckpointsWindowsSubtitle => 'Each window compares real movement against ledger movement between two checkpoints.';
+
+  @override
+  String get financeCheckpointsTransactionCountHint => 'Transaction counts are based on ledger activity inside each window.';
+
+  @override
+  String get financeCheckpointsTimeline => 'Checkpoint timeline';
+
+  @override
+  String get financeCheckpointsReconcile => 'Reconcile';
+
+  @override
+  String get financeCheckpointsReconcileDescription => 'Create a non-reporting adjustment transaction for the signed variance in this window.';
+
+  @override
+  String get financeCheckpointsCreateReconciliation => 'Create reconciliation';
+
+  @override
+  String get financeCheckpointsReconciliationCreated => 'Reconciliation transaction created';
+
+  @override
+  String get financeCheckpointsReconciliationClean => 'Checkpoint is already clean';
+
+  @override
+  String financeCheckpointsReconcileDefaultDescription(String wallet) {
+    return 'Wallet reconciliation for $wallet';
+  }
+
+  @override
+  String get financeCheckpointsCategory => 'Category';
+
+  @override
+  String get financeCheckpointsNoCategory => 'No category';
+
+  @override
+  String get financeCheckpointsDescriptionLabel => 'Description';
+
+  @override
+  String get financeCheckpointsNoCheckpoint => 'No checkpoint';
+
+  @override
+  String get financeCheckpointsNoCheckpointShort => 'No checkpoint';
+
+  @override
+  String get financeCheckpointsNoCheckpointDetail => 'Record a checkpoint to start audited balance tracking.';
+
+  @override
+  String get financeCheckpointsNoWallets => 'No wallets available';
+
+  @override
+  String get financeCheckpointsNoWalletsDetail => 'Create wallets before recording finance checkpoints.';
+
+  @override
   String get financeOverviewEyebrow => 'Workspace snapshot';
 
   @override

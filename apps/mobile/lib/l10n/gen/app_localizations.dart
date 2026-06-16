@@ -7387,6 +7387,306 @@ abstract class AppLocalizations {
   /// **'Manage'**
   String get financeManageLabel;
 
+  /// No description provided for @financeCheckpointsShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoints'**
+  String get financeCheckpointsShortLabel;
+
+  /// No description provided for @financeCheckpointsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet checkpoints'**
+  String get financeCheckpointsTitle;
+
+  /// No description provided for @financeCheckpointsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Record real balances, compare ledger movement, and resolve differences between checks.'**
+  String get financeCheckpointsDescription;
+
+  /// No description provided for @financeCheckpointsOverviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record actual balances and review unresolved audit windows.'**
+  String get financeCheckpointsOverviewHint;
+
+  /// No description provided for @financeCheckpointsWalletsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet audit'**
+  String get financeCheckpointsWalletsTitle;
+
+  /// No description provided for @financeCheckpointsWalletsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wallet to review its latest checkpoint and reconciliation windows.'**
+  String get financeCheckpointsWalletsSubtitle;
+
+  /// No description provided for @financeCheckpointsLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest checkpoint'**
+  String get financeCheckpointsLatest;
+
+  /// No description provided for @financeCheckpointsRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record checkpoint'**
+  String get financeCheckpointsRecord;
+
+  /// No description provided for @financeCheckpointsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit checkpoint'**
+  String get financeCheckpointsEdit;
+
+  /// No description provided for @financeCheckpointsBatchRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'All-wallet check'**
+  String get financeCheckpointsBatchRecord;
+
+  /// No description provided for @financeCheckpointsBatchDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter actual balances for every wallet you want to checkpoint at the same time.'**
+  String get financeCheckpointsBatchDescription;
+
+  /// No description provided for @financeCheckpointsBatchSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet checkpoints saved'**
+  String get financeCheckpointsBatchSaved;
+
+  /// No description provided for @financeCheckpointsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoint saved'**
+  String get financeCheckpointsSaved;
+
+  /// No description provided for @financeCheckpointsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoint deleted'**
+  String get financeCheckpointsDeleted;
+
+  /// No description provided for @financeCheckpointsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete checkpoint'**
+  String get financeCheckpointsDelete;
+
+  /// No description provided for @financeCheckpointsDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this checkpoint and recalculate the wallet audit timeline.'**
+  String get financeCheckpointsDeleteDescription;
+
+  /// No description provided for @financeCheckpointsRecordDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the actual balance visible in {wallet}.'**
+  String financeCheckpointsRecordDescription(String wallet);
+
+  /// No description provided for @financeCheckpointsActualBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual balance'**
+  String get financeCheckpointsActualBalance;
+
+  /// No description provided for @financeCheckpointsActualBalanceWithCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual balance ({currency})'**
+  String financeCheckpointsActualBalanceWithCurrency(String currency);
+
+  /// No description provided for @financeCheckpointsLedgerBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger balance'**
+  String get financeCheckpointsLedgerBalance;
+
+  /// No description provided for @financeCheckpointsCurrentVariance.
+  ///
+  /// In en, this message translates to:
+  /// **'Current variance'**
+  String get financeCheckpointsCurrentVariance;
+
+  /// No description provided for @financeCheckpointsActualDelta.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual delta'**
+  String get financeCheckpointsActualDelta;
+
+  /// No description provided for @financeCheckpointsLedgerDelta.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger delta'**
+  String get financeCheckpointsLedgerDelta;
+
+  /// No description provided for @financeCheckpointsVariance.
+  ///
+  /// In en, this message translates to:
+  /// **'Variance'**
+  String get financeCheckpointsVariance;
+
+  /// No description provided for @financeCheckpointsVarianceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Variance: {value}'**
+  String financeCheckpointsVarianceValue(String value);
+
+  /// No description provided for @financeCheckpointsCheckedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked at'**
+  String get financeCheckpointsCheckedAt;
+
+  /// No description provided for @financeCheckpointsCheckedAtRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid checked-at time'**
+  String get financeCheckpointsCheckedAtRequired;
+
+  /// No description provided for @financeCheckpointsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get financeCheckpointsNote;
+
+  /// No description provided for @financeCheckpointsSharedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared note'**
+  String get financeCheckpointsSharedNote;
+
+  /// No description provided for @financeCheckpointsNotePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional context for this checkpoint'**
+  String get financeCheckpointsNotePlaceholder;
+
+  /// No description provided for @financeCheckpointsAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid actual balance'**
+  String get financeCheckpointsAmountRequired;
+
+  /// No description provided for @financeCheckpointsEntriesRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least one wallet balance'**
+  String get financeCheckpointsEntriesRequired;
+
+  /// No description provided for @financeCheckpointsWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconciliation windows'**
+  String get financeCheckpointsWindows;
+
+  /// No description provided for @financeCheckpointsWindowsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Each window compares real movement against ledger movement between two checkpoints.'**
+  String get financeCheckpointsWindowsSubtitle;
+
+  /// No description provided for @financeCheckpointsTransactionCountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction counts are based on ledger activity inside each window.'**
+  String get financeCheckpointsTransactionCountHint;
+
+  /// No description provided for @financeCheckpointsTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoint timeline'**
+  String get financeCheckpointsTimeline;
+
+  /// No description provided for @financeCheckpointsReconcile.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile'**
+  String get financeCheckpointsReconcile;
+
+  /// No description provided for @financeCheckpointsReconcileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a non-reporting adjustment transaction for the signed variance in this window.'**
+  String get financeCheckpointsReconcileDescription;
+
+  /// No description provided for @financeCheckpointsCreateReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Create reconciliation'**
+  String get financeCheckpointsCreateReconciliation;
+
+  /// No description provided for @financeCheckpointsReconciliationCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconciliation transaction created'**
+  String get financeCheckpointsReconciliationCreated;
+
+  /// No description provided for @financeCheckpointsReconciliationClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoint is already clean'**
+  String get financeCheckpointsReconciliationClean;
+
+  /// No description provided for @financeCheckpointsReconcileDefaultDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet reconciliation for {wallet}'**
+  String financeCheckpointsReconcileDefaultDescription(String wallet);
+
+  /// No description provided for @financeCheckpointsCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get financeCheckpointsCategory;
+
+  /// No description provided for @financeCheckpointsNoCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No category'**
+  String get financeCheckpointsNoCategory;
+
+  /// No description provided for @financeCheckpointsDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get financeCheckpointsDescriptionLabel;
+
+  /// No description provided for @financeCheckpointsNoCheckpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'No checkpoint'**
+  String get financeCheckpointsNoCheckpoint;
+
+  /// No description provided for @financeCheckpointsNoCheckpointShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No checkpoint'**
+  String get financeCheckpointsNoCheckpointShort;
+
+  /// No description provided for @financeCheckpointsNoCheckpointDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Record a checkpoint to start audited balance tracking.'**
+  String get financeCheckpointsNoCheckpointDetail;
+
+  /// No description provided for @financeCheckpointsNoWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallets available'**
+  String get financeCheckpointsNoWallets;
+
+  /// No description provided for @financeCheckpointsNoWalletsDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Create wallets before recording finance checkpoints.'**
+  String get financeCheckpointsNoWalletsDetail;
+
   /// No description provided for @financeOverviewEyebrow.
   ///
   /// In en, this message translates to:

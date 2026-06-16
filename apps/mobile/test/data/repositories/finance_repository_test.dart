@@ -96,6 +96,194 @@ void main() {
     });
 
     test(
+      'getWalletCheckpointSummary maps latest checkpoints and totals',
+      () async {
+        when(
+          () => apiClient.getJson('/api/workspaces/ws_1/wallets/checkpoints'),
+        ).thenAnswer(
+          (_) async => {
+            'wallets': [
+              {'id': 'wallet_1', 'name': 'Cash', 'currency': 'USD'},
+            ],
+            'latest_checkpoints': [
+              {
+                'id': 'checkpoint_1',
+                'wallet_id': 'wallet_1',
+                'actual_balance': 120,
+                'ledger_balance': 100,
+                'current_ledger_balance': 100,
+                'original_variance': 20,
+                'current_variance': 20,
+                'currency': 'USD',
+                'checked_at': '2026-06-16T10:00:00Z',
+                'created_at': '2026-06-16T10:01:00Z',
+                'updated_at': '2026-06-16T10:01:00Z',
+              },
+            ],
+            'totals_by_currency': [
+              {
+                'currency': 'USD',
+                'actual_total': 120,
+                'ledger_total': 100,
+                'variance_total': 20,
+                'checkpoint_count': 1,
+              },
+            ],
+          },
+        );
+
+        final summary = await repository.getWalletCheckpointSummary(
+          wsId: 'ws_1',
+        );
+
+        expect(summary.wallets.single.id, 'wallet_1');
+        expect(summary.latestCheckpoints.single.currentVariance, 20);
+        expect(summary.totalsByCurrency.single.actualTotal, 120);
+        verify(
+          () => apiClient.getJson('/api/workspaces/ws_1/wallets/checkpoints'),
+        ).called(1);
+      },
+    );
+
+    test(
+      'getWalletCheckpoints includes limit query and maps intervals',
+      () async {
+        when(
+          () => apiClient.getJson(
+            '/api/workspaces/ws_1/wallets/wallet_1/checkpoints?limit=25',
+          ),
+        ).thenAnswer(
+          (_) async => {
+            'data': [
+              {
+                'id': 'checkpoint_2',
+                'wallet_id': 'wallet_1',
+                'actual_balance': 140,
+                'ledger_balance': 135,
+                'current_ledger_balance': 135,
+                'original_variance': 5,
+                'current_variance': 5,
+                'currency': 'USD',
+                'checked_at': '2026-06-16T11:00:00Z',
+                'created_at': '2026-06-16T11:01:00Z',
+                'updated_at': '2026-06-16T11:01:00Z',
+              },
+            ],
+            'latest': null,
+            'intervals': [
+              {
+                'start_checkpoint_id': 'checkpoint_1',
+                'end_checkpoint_id': 'checkpoint_2',
+                'start_checked_at': '2026-06-16T10:00:00Z',
+                'end_checked_at': '2026-06-16T11:00:00Z',
+                'start_actual_balance': 120,
+                'end_actual_balance': 140,
+                'actual_delta': 20,
+                'ledger_delta': 35,
+                'interval_variance': -15,
+                'transaction_count': 3,
+                'is_clean': false,
+              },
+            ],
+          },
+        );
+
+        final checkpoints = await repository.getWalletCheckpoints(
+          wsId: 'ws_1',
+          walletId: 'wallet_1',
+          limit: 25,
+        );
+
+        expect(checkpoints.data.single.id, 'checkpoint_2');
+        expect(checkpoints.intervals.single.intervalVariance, -15);
+        verify(
+          () => apiClient.getJson(
+            '/api/workspaces/ws_1/wallets/wallet_1/checkpoints?limit=25',
+          ),
+        ).called(1);
+      },
+    );
+
+    test('createWalletCheckpoint posts checkpoint payload', () async {
+      when(() => apiClient.postJson(any(), any())).thenAnswer(
+        (_) async => {
+          'id': 'checkpoint_1',
+          'wallet_id': 'wallet_1',
+          'actual_balance': 100,
+          'ledger_balance': 90,
+          'current_ledger_balance': 90,
+          'original_variance': 10,
+          'current_variance': 10,
+          'currency': 'USD',
+          'checked_at': '2026-06-16T10:00:00.000Z',
+          'created_at': '2026-06-16T10:01:00Z',
+          'updated_at': '2026-06-16T10:01:00Z',
+        },
+      );
+
+      final checkpoint = await repository.createWalletCheckpoint(
+        wsId: 'ws_1',
+        walletId: 'wallet_1',
+        actualBalance: 100,
+        checkedAt: DateTime.utc(2026, 6, 16, 10),
+        note: 'Bank app check',
+      );
+
+      expect(checkpoint.id, 'checkpoint_1');
+      final captured =
+          verify(
+                () => apiClient.postJson(
+                  '/api/workspaces/ws_1/wallets/wallet_1/checkpoints',
+                  captureAny(),
+                ),
+              ).captured.single
+              as Map<String, dynamic>;
+      expect(captured, {
+        'actual_balance': 100.0,
+        'checked_at': '2026-06-16T10:00:00.000Z',
+        'note': 'Bank app check',
+      });
+    });
+
+    test('reconcileWalletCheckpoint posts interval basis', () async {
+      when(() => apiClient.postJson(any(), any())).thenAnswer(
+        (_) async => {
+          'checked_at': '2026-06-16T10:00:00Z',
+          'checkpoint_id': 'checkpoint_1',
+          'created': true,
+          'offset_amount': -15,
+          'transaction_id': 'transaction_1',
+          'wallet_id': 'wallet_1',
+        },
+      );
+
+      final response = await repository.reconcileWalletCheckpoint(
+        wsId: 'ws_1',
+        walletId: 'wallet_1',
+        checkpointId: 'checkpoint_1',
+        basis: 'interval',
+        categoryId: 'category_1',
+        description: 'Audit adjustment',
+      );
+
+      expect(response.created, isTrue);
+      expect(response.offsetAmount, -15);
+      final captured =
+          verify(
+                () => apiClient.postJson(
+                  '/api/workspaces/ws_1/wallets/wallet_1/checkpoints/checkpoint_1/reconcile',
+                  captureAny(),
+                ),
+              ).captured.single
+              as Map<String, dynamic>;
+      expect(captured, {
+        'basis': 'interval',
+        'category_id': 'category_1',
+        'description': 'Audit adjustment',
+      });
+    });
+
+    test(
       'getTransactionsInfinite includes cursor and walletId query params',
       () async {
         when(

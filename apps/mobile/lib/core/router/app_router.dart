@@ -20,6 +20,7 @@ import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
+import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
@@ -482,6 +483,12 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.wallets,
             builder: (context, state) => const WalletsPage(),
+          ),
+          GoRoute(
+            path: Routes.financeCheckpoints,
+            builder: (context, state) => FinanceCheckpointsPage(
+              initialWalletId: state.uri.queryParameters['walletId'],
+            ),
           ),
           GoRoute(
             path: Routes.walletDetail,

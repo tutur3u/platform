@@ -161,6 +161,25 @@ abstract final class FinanceEndpoints {
   static String wallet(String wsId, String walletId) =>
       '/api/workspaces/$wsId/wallets/$walletId';
 
+  static String walletCheckpoints(String wsId, String walletId) =>
+      '/api/workspaces/$wsId/wallets/$walletId/checkpoints';
+
+  static String walletCheckpoint(
+    String wsId,
+    String walletId,
+    String checkpointId,
+  ) => '/api/workspaces/$wsId/wallets/$walletId/checkpoints/$checkpointId';
+
+  static String walletCheckpointReconciliation(
+    String wsId,
+    String walletId,
+    String checkpointId,
+  ) =>
+      '/api/workspaces/$wsId/wallets/$walletId/checkpoints/$checkpointId/reconcile';
+
+  static String walletCheckpointSummary(String wsId) =>
+      '/api/workspaces/$wsId/wallets/checkpoints';
+
   static String categories(String wsId) =>
       '/api/workspaces/$wsId/transactions/categories';
 

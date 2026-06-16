@@ -1548,6 +1548,76 @@
     "financeOverviewLabel": "Tổng quan",
     "financeActivityLabel": "Hoạt động",
     "financeManageLabel": "Quản lý",
+    "financeCheckpointsShortLabel": "Kiểm tra",
+    "financeCheckpointsTitle": "Điểm kiểm tra ví",
+    "financeCheckpointsDescription": "Ghi số dư thực tế, so sánh biến động sổ cái và xử lý chênh lệch giữa các lần kiểm tra.",
+    "financeCheckpointsOverviewHint": "Ghi số dư thực tế và xem các khoảng kiểm tra còn lệch.",
+    "financeCheckpointsWalletsTitle": "Kiểm tra ví",
+    "financeCheckpointsWalletsSubtitle": "Chọn ví để xem điểm kiểm tra mới nhất và các khoảng đối chiếu.",
+    "financeCheckpointsLatest": "Điểm kiểm tra mới nhất",
+    "financeCheckpointsRecord": "Ghi điểm kiểm tra",
+    "financeCheckpointsEdit": "Chỉnh sửa điểm kiểm tra",
+    "financeCheckpointsBatchRecord": "Kiểm tra tất cả ví",
+    "financeCheckpointsBatchDescription": "Nhập số dư thực tế cho từng ví bạn muốn kiểm tra tại cùng một thời điểm.",
+    "financeCheckpointsBatchSaved": "Đã lưu điểm kiểm tra ví",
+    "financeCheckpointsSaved": "Đã lưu điểm kiểm tra",
+    "financeCheckpointsDeleted": "Đã xóa điểm kiểm tra",
+    "financeCheckpointsDelete": "Xóa điểm kiểm tra",
+    "financeCheckpointsDeleteDescription": "Xóa điểm kiểm tra này và tính lại dòng kiểm tra của ví.",
+    "financeCheckpointsRecordDescription": "Lưu số dư thực tế đang hiển thị trong {wallet}.",
+    "@financeCheckpointsRecordDescription": {
+        "placeholders": {
+            "wallet": { "type": "String" }
+        }
+    },
+    "financeCheckpointsActualBalance": "Số dư thực tế",
+    "financeCheckpointsActualBalanceWithCurrency": "Số dư thực tế ({currency})",
+    "@financeCheckpointsActualBalanceWithCurrency": {
+        "placeholders": {
+            "currency": { "type": "String" }
+        }
+    },
+    "financeCheckpointsLedgerBalance": "Số dư sổ cái",
+    "financeCheckpointsCurrentVariance": "Chênh lệch hiện tại",
+    "financeCheckpointsActualDelta": "Chênh lệch thực tế",
+    "financeCheckpointsLedgerDelta": "Chênh lệch sổ cái",
+    "financeCheckpointsVariance": "Chênh lệch",
+    "financeCheckpointsVarianceValue": "Chênh lệch: {value}",
+    "@financeCheckpointsVarianceValue": {
+        "placeholders": {
+            "value": { "type": "String" }
+        }
+    },
+    "financeCheckpointsCheckedAt": "Thời điểm kiểm tra",
+    "financeCheckpointsCheckedAtRequired": "Nhập thời điểm kiểm tra hợp lệ",
+    "financeCheckpointsNote": "Ghi chú",
+    "financeCheckpointsSharedNote": "Ghi chú chung",
+    "financeCheckpointsNotePlaceholder": "Ngữ cảnh tùy chọn cho điểm kiểm tra này",
+    "financeCheckpointsAmountRequired": "Nhập số dư thực tế hợp lệ",
+    "financeCheckpointsEntriesRequired": "Nhập ít nhất một số dư ví",
+    "financeCheckpointsWindows": "Khoảng đối chiếu",
+    "financeCheckpointsWindowsSubtitle": "Mỗi khoảng so sánh biến động thực tế với biến động sổ cái giữa hai điểm kiểm tra.",
+    "financeCheckpointsTransactionCountHint": "Số lượng giao dịch dựa trên hoạt động sổ cái trong từng khoảng.",
+    "financeCheckpointsTimeline": "Dòng thời gian điểm kiểm tra",
+    "financeCheckpointsReconcile": "Đối chiếu",
+    "financeCheckpointsReconcileDescription": "Tạo giao dịch điều chỉnh không đưa vào báo cáo cho chênh lệch có dấu trong khoảng này.",
+    "financeCheckpointsCreateReconciliation": "Tạo đối chiếu",
+    "financeCheckpointsReconciliationCreated": "Đã tạo giao dịch đối chiếu",
+    "financeCheckpointsReconciliationClean": "Điểm kiểm tra đã khớp",
+    "financeCheckpointsReconcileDefaultDescription": "Đối chiếu ví {wallet}",
+    "@financeCheckpointsReconcileDefaultDescription": {
+        "placeholders": {
+            "wallet": { "type": "String" }
+        }
+    },
+    "financeCheckpointsCategory": "Danh mục",
+    "financeCheckpointsNoCategory": "Không có danh mục",
+    "financeCheckpointsDescriptionLabel": "Mô tả",
+    "financeCheckpointsNoCheckpoint": "Chưa có điểm kiểm tra",
+    "financeCheckpointsNoCheckpointShort": "Chưa có điểm kiểm tra",
+    "financeCheckpointsNoCheckpointDetail": "Ghi một điểm kiểm tra để bắt đầu theo dõi số dư đã kiểm tra.",
+    "financeCheckpointsNoWallets": "Không có ví khả dụng",
+    "financeCheckpointsNoWalletsDetail": "Tạo ví trước khi ghi điểm kiểm tra tài chính.",
     "financeOverviewEyebrow": "Tóm tắt không gian làm việc",
     "financeOverviewCrossCurrencyHint": "Bao gồm số dư đã quy đổi giữa các ví. Tiền tệ gốc: {currency}.",
     "@financeOverviewCrossCurrencyHint": {

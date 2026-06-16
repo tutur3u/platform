@@ -122,6 +122,8 @@ class _FinanceView extends StatelessWidget {
                       children: [
                         _OverviewHero(state: state, showAmounts: showAmounts),
                         const shad.Gap(24),
+                        const _CheckpointAuditShortcut(),
+                        const shad.Gap(24),
                         _WalletHighlights(
                           state: state,
                           showAmounts: showAmounts,
@@ -247,6 +249,63 @@ class _OverviewHero extends StatelessWidget {
               fontWeight: FontWeight.w900,
               height: 1.05,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckpointAuditShortcut extends StatelessWidget {
+  const _CheckpointAuditShortcut();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final palette = FinancePalette.of(context);
+
+    return FinancePanel(
+      onTap: () => context.push(Routes.financeCheckpoints),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: palette.accent.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(
+              Icons.fact_check_outlined,
+              color: palette.accent,
+              size: 22,
+            ),
+          ),
+          const shad.Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.financeCheckpointsTitle,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const shad.Gap(4),
+                Text(
+                  context.l10n.financeCheckpointsOverviewHint,
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const shad.Gap(10),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: theme.colorScheme.mutedForeground,
           ),
         ],
       ),

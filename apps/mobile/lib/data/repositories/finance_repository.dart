@@ -14,6 +14,7 @@ import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
@@ -279,6 +280,114 @@ class FinanceRepository {
     required String walletId,
   }) async {
     await _api.deleteJson(FinanceEndpoints.wallet(wsId, walletId));
+  }
+
+  // ── Wallet checkpoints ─────────────────────────
+
+  Future<WalletCheckpointSummaryResponse> getWalletCheckpointSummary({
+    required String wsId,
+  }) async {
+    final response = await _api.getJson(
+      FinanceEndpoints.walletCheckpointSummary(wsId),
+    );
+    return WalletCheckpointSummaryResponse.fromJson(response);
+  }
+
+  Future<WalletCheckpointListResponse> getWalletCheckpoints({
+    required String wsId,
+    required String walletId,
+    int limit = 50,
+  }) async {
+    final query = Uri(queryParameters: {'limit': limit.toString()}).query;
+    final response = await _api.getJson(
+      '${FinanceEndpoints.walletCheckpoints(wsId, walletId)}?$query',
+    );
+    return WalletCheckpointListResponse.fromJson(response);
+  }
+
+  Future<WalletCheckpoint> createWalletCheckpoint({
+    required String wsId,
+    required String walletId,
+    required double actualBalance,
+    required DateTime checkedAt,
+    String? note,
+  }) async {
+    final response = await _api.postJson(
+      FinanceEndpoints.walletCheckpoints(wsId, walletId),
+      {
+        'actual_balance': actualBalance,
+        'checked_at': checkedAt.toIso8601String(),
+        'note': note,
+      },
+    );
+    return WalletCheckpoint.fromJson(response);
+  }
+
+  Future<WalletCheckpointBatchResponse> createWalletCheckpointBatch({
+    required String wsId,
+    required DateTime checkedAt,
+    required List<WalletCheckpointBatchEntry> entries,
+  }) async {
+    final response = await _api.postJson(
+      FinanceEndpoints.walletCheckpointSummary(wsId),
+      {
+        'checked_at': checkedAt.toIso8601String(),
+        'entries': entries.map((entry) => entry.toJson()).toList(),
+      },
+    );
+    return WalletCheckpointBatchResponse.fromJson(response);
+  }
+
+  Future<WalletCheckpoint> updateWalletCheckpoint({
+    required String wsId,
+    required String walletId,
+    required String checkpointId,
+    required double actualBalance,
+    required DateTime checkedAt,
+    String? note,
+  }) async {
+    final response = await _api.patchJson(
+      FinanceEndpoints.walletCheckpoint(wsId, walletId, checkpointId),
+      {
+        'actual_balance': actualBalance,
+        'checked_at': checkedAt.toIso8601String(),
+        'note': note,
+      },
+    );
+    return WalletCheckpoint.fromJson(response);
+  }
+
+  Future<void> deleteWalletCheckpoint({
+    required String wsId,
+    required String walletId,
+    required String checkpointId,
+  }) async {
+    await _api.deleteJson(
+      FinanceEndpoints.walletCheckpoint(wsId, walletId, checkpointId),
+    );
+  }
+
+  Future<WalletCheckpointReconciliationResponse> reconcileWalletCheckpoint({
+    required String wsId,
+    required String walletId,
+    required String checkpointId,
+    required String basis,
+    String? categoryId,
+    String? description,
+  }) async {
+    final response = await _api.postJson(
+      FinanceEndpoints.walletCheckpointReconciliation(
+        wsId,
+        walletId,
+        checkpointId,
+      ),
+      {
+        'basis': basis,
+        'category_id': categoryId,
+        'description': description,
+      },
+    );
+    return WalletCheckpointReconciliationResponse.fromJson(response);
   }
 
   // ── Transactions ────────────────────────────────
