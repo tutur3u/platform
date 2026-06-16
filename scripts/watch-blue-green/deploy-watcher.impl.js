@@ -6256,54 +6256,6 @@ async function main(argv = process.argv.slice(2), options = {}) {
       rootDir,
       runCommand: run,
     });
-    if (!isWatcherWorktreeResetDisabled(env)) {
-      await forceSyncWatcherWorktree(initialTarget, {
-        env,
-        fsImpl,
-        log: ui,
-        now: options.now ?? (() => Date.now()),
-        rootDir,
-        runCommand: run,
-      });
-    }
-    const projectTarget = await resolvePlatformProjectTarget(initialTarget, {
-      env,
-      listDirtyWorktreePaths,
-      log: ui,
-      runCommand: run,
-    });
-    target = projectTarget.target;
-
-    if (projectTarget.blocked) {
-      ui.warn(projectTarget.message ?? 'Project deployment is blocked.');
-      ui.update({
-        lastResult: {
-          project: projectTarget.project,
-          status: 'blocked',
-        },
-        target,
-      });
-      writeWatchStatus(ui.state, {
-        fsImpl,
-        now: Date.now(),
-        paths,
-        processImpl,
-      });
-
-      return {
-        project: projectTarget.project,
-        status: 'blocked',
-      };
-    }
-    const latestCommit = await getCommitMetadata('HEAD', {
-      env,
-      runCommand: run,
-    });
-
-    ui.update({
-      latestCommit,
-      target,
-    });
     const existingLock = readWatchLock(paths, fsImpl);
 
     if (existingLock && isProcessAlive(existingLock.pid, processImpl)) {
@@ -6338,7 +6290,41 @@ async function main(argv = process.argv.slice(2), options = {}) {
             `Unable to stop existing watcher PID ${existingLock.pid}.`
           );
         }
+      } else {
+        throw new Error(
+          `Watcher already locked by PID ${existingLock.pid}. Re-run with --resume-if-running to mirror the existing session or --replace-existing to stop it and take over.`
+        );
       }
+    }
+
+    const projectTarget = await resolvePlatformProjectTarget(initialTarget, {
+      env,
+      listDirtyWorktreePaths,
+      log: ui,
+      runCommand: run,
+    });
+    target = projectTarget.target;
+
+    if (projectTarget.blocked) {
+      ui.warn(projectTarget.message ?? 'Project deployment is blocked.');
+      ui.update({
+        lastResult: {
+          project: projectTarget.project,
+          status: 'blocked',
+        },
+        target,
+      });
+      writeWatchStatus(ui.state, {
+        fsImpl,
+        now: Date.now(),
+        paths,
+        processImpl,
+      });
+
+      return {
+        project: projectTarget.project,
+        status: 'blocked',
+      };
     }
 
     try {
@@ -6354,6 +6340,27 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
       throw error;
     }
+
+    if (!isWatcherWorktreeResetDisabled(env)) {
+      await forceSyncWatcherWorktree(target, {
+        env,
+        fsImpl,
+        log: ui,
+        now: options.now ?? (() => Date.now()),
+        rootDir,
+        runCommand: run,
+      });
+    }
+
+    const latestCommit = await getCommitMetadata('HEAD', {
+      env,
+      runCommand: run,
+    });
+
+    ui.update({
+      latestCommit,
+      target,
+    });
 
     ui.start();
     ui.info(

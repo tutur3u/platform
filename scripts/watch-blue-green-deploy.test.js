@@ -7831,6 +7831,127 @@ test('runDeployWatchIteration stops retrying a commit after three failed deploym
   }
 });
 
+test('main resumes an existing watcher without force-syncing the worktree', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-resume-no-sync-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const target = {
+    branch: 'main',
+    remote: 'origin',
+    upstreamBranch: 'main',
+    upstreamRef: 'origin/main',
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify(
+        {
+          ...target,
+          createdAt: 1000,
+          pid: 9876,
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+    writeWatchStatus(
+      {
+        lockFile: paths.lockFile,
+        target,
+      },
+      {
+        fsImpl: fs,
+        now: () => 2000,
+        paths,
+        processImpl: { pid: 9876 },
+      }
+    );
+
+    await main(['--resume-if-running', '--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        kill(pid, signal) {
+          if (pid === 9876 && signal === 0) {
+            return;
+          }
+
+          const error = new Error(`PID ${pid} is not alive`);
+          error.code = 'ESRCH';
+          throw error;
+        },
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (command === 'docker') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (
+          key === 'git reset --hard HEAD' ||
+          key === 'git clean -fd' ||
+          key === 'git fetch origin main' ||
+          key === 'git rev-parse HEAD' ||
+          key === 'git rev-parse origin/main'
+        ) {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nResume watcher\n2026-04-18T10:59:00.000Z\n'
+          );
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error(message) {
+          throw new Error(message);
+        },
+        info() {},
+        render() {},
+        start() {},
+        state: {},
+        update() {},
+        warn() {},
+      },
+    });
+
+    assert.equal(calls.includes('git reset --hard HEAD'), false);
+    assert.equal(calls.includes('git clean -fd'), false);
+    assert.equal(calls.includes('git fetch origin main'), false);
+    assert.equal(readWatchLock(paths, fs).pid, 9876);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('main keeps watching after recovered pending deployment failure and caps retries', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-main-pending-failure-')
