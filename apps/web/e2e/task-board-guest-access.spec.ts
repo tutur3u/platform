@@ -19,7 +19,10 @@ type TaskList = {
   name?: string | null;
 };
 
-async function getPersonalBoard(request: APIRequestContext) {
+async function getPersonalBoard(
+  request: APIRequestContext,
+  headers: Record<string, string>
+) {
   const response = await request.get(
     '/api/v1/workspaces/personal/task-boards',
     {
@@ -33,10 +36,31 @@ async function getPersonalBoard(request: APIRequestContext) {
 
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as { boards?: TaskBoard[] };
-  const board = body.boards?.find((candidate) => candidate.ws_id);
+  const existingBoard = body.boards?.find((candidate) => candidate.ws_id);
 
-  expect(board, 'expected a personal task board for the owner').toBeTruthy();
-  return board as TaskBoard;
+  if (existingBoard) {
+    return existingBoard;
+  }
+
+  const createResponse = await request.post(
+    '/api/v1/workspaces/personal/task-boards',
+    {
+      data: {
+        name: `E2E Guest Access ${Date.now()}`,
+      },
+      headers,
+    }
+  );
+
+  expect(createResponse.ok()).toBeTruthy();
+  const createBody = (await createResponse.json()) as { board?: TaskBoard };
+  const createdBoard = createBody.board;
+
+  expect(
+    createdBoard?.ws_id,
+    'expected a personal task board for the owner'
+  ).toBeTruthy();
+  return createdBoard as TaskBoard;
 }
 
 async function getOrCreateBoardList(
@@ -88,7 +112,7 @@ test.describe('Task board guest access', () => {
       locale: DEFAULT_LOCALE,
     });
 
-    const board = await getPersonalBoard(request);
+    const board = await getPersonalBoard(request, headers);
     const { created: createdList, list } = await getOrCreateBoardList(
       request,
       board.id,
