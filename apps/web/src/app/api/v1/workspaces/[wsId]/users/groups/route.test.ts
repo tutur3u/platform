@@ -243,6 +243,111 @@ describe('workspace user groups route app-session auth', () => {
     });
   });
 
+  it('keeps non-manager requested ids constrained to accessible group memberships', async () => {
+    mocks.getPermissions.mockResolvedValue(permissions(['view_user_groups']));
+    const { admin } = createAdminMock({
+      workspace_user_groups_users: [
+        {
+          data: [{ group_id: 'group-1' }],
+          error: null,
+        },
+      ],
+      workspace_user_linked_users: [
+        {
+          data: { virtual_user_id: 'virtual-user-1' },
+          error: null,
+        },
+      ],
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const request = new Request(
+      'http://localhost/api/v1/workspaces/ws-1/users/groups?ids=group-2,group-3'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: ['group-1'],
+      client: admin,
+      groupIds: ['group-2', 'group-3'],
+      page: 1,
+      pageSize: 10,
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
+    expect(mocks.countUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: ['group-1'],
+      client: admin,
+      groupIds: ['group-2', 'group-3'],
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
+  });
+
+  it('keeps non-manager userId lookups constrained to accessible group memberships', async () => {
+    mocks.getPermissions.mockResolvedValue(permissions(['view_user_groups']));
+    const { admin, queries } = createAdminMock({
+      workspace_user_groups_users: [
+        {
+          data: [{ group_id: 'group-1' }],
+          error: null,
+        },
+        {
+          data: [{ group_id: 'group-1' }, { group_id: 'group-2' }],
+          error: null,
+        },
+      ],
+      workspace_user_linked_users: [
+        {
+          data: { virtual_user_id: 'virtual-user-1' },
+          error: null,
+        },
+      ],
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const request = new Request(
+      'http://localhost/api/v1/workspaces/ws-1/users/groups?userId=00000000-0000-0000-0000-000000000123'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    await response.json();
+
+    expect(response.status).toBe(200);
+    expect(
+      queries
+        .filter((entry) => entry.table === 'workspace_user_groups_users')
+        .at(1)?.query.eq
+    ).toHaveBeenCalledWith('user_id', '00000000-0000-0000-0000-000000000123');
+    expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: ['group-1'],
+      client: admin,
+      groupIds: ['group-1', 'group-2'],
+      page: 1,
+      pageSize: 10,
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
+    expect(mocks.countUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: ['group-1'],
+      client: admin,
+      groupIds: ['group-1', 'group-2'],
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
+  });
+
   it('passes requested ids, search, archived status, and pagination to the private helper', async () => {
     mocks.getPermissions.mockResolvedValue(
       permissions(['view_user_groups', 'manage_users'])

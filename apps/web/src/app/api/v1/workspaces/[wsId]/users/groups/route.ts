@@ -135,6 +135,17 @@ export async function GET(request: Request, { params }: Params) {
       : null;
     let accessibleGroupIds: string[] | null = null;
 
+    if (!hasManageUsers) {
+      accessibleGroupIds = await getUserGroupMembershipsForUser({
+        platformUserId: auth.user.id,
+        sbAdmin,
+        wsId,
+      });
+      if (accessibleGroupIds.length === 0) {
+        return NextResponse.json({ data: [], count: 0 });
+      }
+    }
+
     if (requestedGroupIds.length === 0 && sp.userId) {
       const { data: userGroups } = await sbAdmin
         .from('workspace_user_groups_users')
@@ -143,15 +154,6 @@ export async function GET(request: Request, { params }: Params) {
 
       groupIds = userGroups?.map((ug) => ug.group_id).filter(Boolean) || [];
       if (groupIds.length === 0) {
-        return NextResponse.json({ data: [], count: 0 });
-      }
-    } else if (requestedGroupIds.length === 0 && !hasManageUsers) {
-      accessibleGroupIds = await getUserGroupMembershipsForUser({
-        platformUserId: auth.user.id,
-        sbAdmin,
-        wsId,
-      });
-      if (accessibleGroupIds.length === 0) {
         return NextResponse.json({ data: [], count: 0 });
       }
     }
