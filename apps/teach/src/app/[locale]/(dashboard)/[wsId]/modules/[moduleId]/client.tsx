@@ -238,9 +238,10 @@ export function ModuleDetailClient({
                 ) : (
                   <div className="space-y-3">
                     {tests.map((test) => (
-                      <div
+                      <Link
                         key={test.id}
-                        className="border-2 border-border p-3 bg-muted/10 shadow-[2px_2px_0_var(--border)] hover:bg-muted/20 transition flex flex-col gap-1.5"
+                        href={`/${wsId}/modules/${courseId}/tests/${test.id}`}
+                        className="block border-2 border-border p-3 bg-muted/10 shadow-[2px_2px_0_var(--border)] hover:bg-muted/20 transition flex flex-col gap-1.5 cursor-pointer"
                       >
                         <h3 className="font-bold text-sm leading-tight text-primary break-words">{test.name}</h3>
                         {test.start_at && (
@@ -258,7 +259,7 @@ export function ModuleDetailClient({
                             <span>{test.duration_in_minutes} mins</span>
                           </div>
                         )}
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}

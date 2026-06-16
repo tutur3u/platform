@@ -317,6 +317,7 @@ export interface TeachCourseTest {
   module_ids?: string[];
   start_at?: string | null;
   duration_in_minutes?: number | null;
+  description?: string | null;
 }
 
 export function listWorkspaceCourseTests(
@@ -339,6 +340,7 @@ export function createWorkspaceCourseTest(
     moduleIds: string[];
     startAt?: string | null;
     durationInMinutes?: number | null;
+    description?: string | null;
   },
   options?: InternalApiClientOptions
 ) {

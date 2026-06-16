@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ClipboardCheck, Loader2, X } from '@tuturuuu/icons';
 import { createWorkspaceCourseTest } from '@tuturuuu/internal-api';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +34,7 @@ export function CourseTestDialog({
   const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
   const [startAt, setStartAt] = useState('');
   const [durationInMinutes, setDurationInMinutes] = useState('60');
+  const [description, setDescription] = useState('');
 
   const createTestMutation = useMutation({
     mutationFn: async (payload: {
@@ -42,6 +42,7 @@ export function CourseTestDialog({
       moduleIds: string[];
       startAt?: string | null;
       durationInMinutes?: number | null;
+      description?: string | null;
     }) => createWorkspaceCourseTest(wsId, courseId, payload),
     onSuccess: () => {
       toast.success(t('teachModules.testCreated'));
@@ -50,6 +51,7 @@ export function CourseTestDialog({
       setSelectedModuleIds([]);
       setStartAt('');
       setDurationInMinutes('60');
+      setDescription('');
       setOpen(false);
     },
     onError: (error) => {
@@ -76,6 +78,7 @@ export function CourseTestDialog({
       moduleIds: selectedModuleIds,
       startAt: startAt ? new Date(startAt).toISOString() : null,
       durationInMinutes: durationInMinutes ? parseInt(durationInMinutes) : null,
+      description: description.trim() || null,
     });
   };
 
@@ -178,6 +181,24 @@ export function CourseTestDialog({
                 disabled={createTestMutation.isPending}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="test-description-input"
+              className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+            >
+              {t('teachModules.testDescription')}
+            </label>
+            <textarea
+              id="test-description-input"
+              rows={3}
+              className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary resize-none"
+              placeholder={t('teachModules.testDescriptionPlaceholder')}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={createTestMutation.isPending}
+            />
           </div>
 
           <div className="space-y-2">

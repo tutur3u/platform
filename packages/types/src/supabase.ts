@@ -14168,6 +14168,7 @@ export type Database = {
         Row: {
           course_id: string;
           created_at: string;
+          description: string | null;
           duration_in_minutes: number | null;
           id: string;
           name: string;
@@ -14176,6 +14177,7 @@ export type Database = {
         Insert: {
           course_id: string;
           created_at?: string;
+          description?: string | null;
           duration_in_minutes?: number | null;
           id?: string;
           name?: string;
@@ -14184,6 +14186,7 @@ export type Database = {
         Update: {
           course_id?: string;
           created_at?: string;
+          description?: string | null;
           duration_in_minutes?: number | null;
           id?: string;
           name?: string;

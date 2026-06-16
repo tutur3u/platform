@@ -17,6 +17,7 @@ const CreateTestSchema = z.object({
   moduleIds: z.array(z.guid()).min(1),
   startAt: z.string().datetime().nullable().optional(),
   durationInMinutes: z.number().int().min(1).max(1440).nullable().optional(),
+  description: z.string().trim().max(1000).nullable().optional(),
 });
 
 export const GET = withSessionAuth(
@@ -56,7 +57,7 @@ export const GET = withSessionAuth(
 
     const { data, error } = await access.sbAdmin
       .from('course_tests')
-      .select('id, course_id, name, created_at, start_at, duration_in_minutes, course_test_modules(module_id)')
+      .select('id, course_id, name, created_at, start_at, duration_in_minutes, description, course_test_modules(module_id)')
       .eq('course_id', parsedParams.data.courseId)
       .order('created_at', { ascending: false });
 
@@ -75,6 +76,7 @@ export const GET = withSessionAuth(
       created_at: t.created_at,
       start_at: t.start_at,
       duration_in_minutes: t.duration_in_minutes,
+      description: t.description,
       module_ids:
         (t.course_test_modules as { module_id: string }[] | undefined)?.map(
           (m) => m.module_id
@@ -142,7 +144,7 @@ export const POST = withSessionAuth(
       );
     }
 
-    const { name, moduleIds, startAt, durationInMinutes } = parsedBody.data;
+    const { name, moduleIds, startAt, durationInMinutes, description } = parsedBody.data;
 
     // Create course test
     const { data: testData, error: testError } = await access.sbAdmin
@@ -152,6 +154,7 @@ export const POST = withSessionAuth(
         name,
         start_at: startAt,
         duration_in_minutes: durationInMinutes,
+        description,
       })
       .select('id')
       .single();
