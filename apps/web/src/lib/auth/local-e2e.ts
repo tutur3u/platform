@@ -165,6 +165,61 @@ function isLocalSupabaseOrigin(origin: string | null): origin is string {
   return origin !== null && LOCAL_SUPABASE_ORIGINS.has(origin);
 }
 
+function parseIpv4Address(value: string) {
+  const parts = value.split('.');
+
+  if (parts.length !== 4) {
+    return null;
+  }
+
+  const octets = parts.map((part) => {
+    if (!/^\d{1,3}$/u.test(part)) {
+      return Number.NaN;
+    }
+
+    return Number.parseInt(part, 10);
+  });
+
+  if (octets.some((octet) => !Number.isInteger(octet) || octet > 255)) {
+    return null;
+  }
+
+  return octets as [number, number, number, number];
+}
+
+function isLocalE2EProxyPeerAddress(value: string | null) {
+  const normalized = getFirstHeaderValue(value)?.toLowerCase();
+
+  if (!normalized) {
+    return true;
+  }
+
+  if (normalized === '::1' || normalized === '0:0:0:0:0:0:0:1') {
+    return true;
+  }
+
+  const ipv4MappedLoopback = normalized.match(
+    /^::ffff:(127(?:\.\d{1,3}){3})$/u
+  );
+  const ipv4 = parseIpv4Address(ipv4MappedLoopback?.[1] ?? normalized);
+
+  if (!ipv4) {
+    return false;
+  }
+
+  const [first, second, third, fourth] = ipv4;
+
+  return (
+    first === 127 ||
+    (first === 172 &&
+      second >= 16 &&
+      second <= 31 &&
+      third === 0 &&
+      fourth === 1) ||
+    (first === 192 && second === 168 && third === 65 && fourth === 1)
+  );
+}
+
 function getLocalE2EBypassFlag(env: NodeJS.ProcessEnv) {
   return (
     env[LOCAL_E2E_AUTH_BYPASS_ENV] ??
@@ -299,6 +354,9 @@ export function isLocalE2EAuthRequestAllowed(
   }
 
   const requestOrigin = getOrigin(request.url);
+  if (!isLocalE2EProxyPeerAddress(request.headers.get('x-real-ip'))) {
+    return false;
+  }
 
   const forwardedProto = request.headers.get('x-forwarded-proto');
   const hostOrigin = getHostOrigin(

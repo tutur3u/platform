@@ -130,6 +130,7 @@ describe('isLocalE2EAuthRequestAllowed', () => {
       isLocalE2EAuthRequestAllowed(
         createRequest('http://web-blue:7803/api/auth/dev-session', {
           host: 'web-blue:7803',
+          'x-real-ip': '172.17.0.1',
           'x-forwarded-host': 'localhost:7803',
           'x-forwarded-proto': 'http',
         }),
@@ -282,6 +283,47 @@ describe('isLocalE2EAuthRequestAllowed', () => {
       isLocalE2EAuthRequestAllowed(
         createRequest('http://web-blue:7803/api/auth/dev-session', {
           host: 'web-blue:7803',
+        }),
+        localE2EEnv
+      )
+    ).toBe(false);
+  });
+
+  it('rejects proxied local-looking host requests from non-local peers', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'localhost:7803',
+          'x-forwarded-for': '192.168.1.42',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+          'x-real-ip': '192.168.1.42',
+        }),
+        localE2EEnv
+      )
+    ).toBe(false);
+
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'localhost:7803',
+          'x-forwarded-for': '172.17.0.42',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+          'x-real-ip': '172.17.0.42',
+        }),
+        localE2EEnv
+      )
+    ).toBe(false);
+
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'localhost:7803',
+          'x-forwarded-for': '203.0.113.10',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+          'x-real-ip': '203.0.113.10',
         }),
         localE2EEnv
       )
