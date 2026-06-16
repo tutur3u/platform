@@ -15,7 +15,13 @@ const mocks = vi.hoisted(() => {
   const taskProjectsMaybeSingle = vi.fn();
   const taskUserOverrideLabelsInsert = vi.fn();
   const taskUserOverridesUpsert = vi.fn();
+  const taskCalendarEventsDeleteEq = vi.fn();
+  const taskCalendarEventsDeleteIn = vi.fn();
+  const taskCalendarEventsSelectEq = vi.fn();
+  const taskSchedulingSettingsDeleteEq = vi.fn();
   const workspaceLabelsMaybeSingle = vi.fn();
+  const workspaceCalendarEventsDeleteIn = vi.fn();
+  const workspaceCalendarEventsSelectEq = vi.fn();
   const workspacesMaybeSingle = vi.fn();
   const rpc = vi.fn();
 
@@ -108,6 +114,37 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'task_calendar_events') {
+        return {
+          select: vi.fn(() => ({
+            eq: taskCalendarEventsSelectEq,
+          })),
+          delete: vi.fn(() => ({
+            eq: taskCalendarEventsDeleteEq,
+            in: taskCalendarEventsDeleteIn,
+          })),
+        };
+      }
+
+      if (table === 'task_user_scheduling_settings') {
+        return {
+          delete: vi.fn(() => ({
+            eq: taskSchedulingSettingsDeleteEq,
+          })),
+        };
+      }
+
+      if (table === 'workspace_calendar_events') {
+        return {
+          select: vi.fn(() => ({
+            eq: workspaceCalendarEventsSelectEq,
+          })),
+          delete: vi.fn(() => ({
+            in: workspaceCalendarEventsDeleteIn,
+          })),
+        };
+      }
+
       if (table === 'workspaces') {
         return {
           select: vi.fn(() => ({
@@ -133,11 +170,17 @@ const mocks = vi.hoisted(() => {
     sessionSupabase,
     sourceWorkspaceMembersIn,
     taskAssigneesIn,
+    taskCalendarEventsDeleteEq,
+    taskCalendarEventsDeleteIn,
+    taskCalendarEventsSelectEq,
     taskListMaybeSingle,
     taskProjectsMaybeSingle,
+    taskSchedulingSettingsDeleteEq,
     taskUserOverrideLabelsInsert,
     taskUserOverridesUpsert,
     tasksEq,
+    workspaceCalendarEventsDeleteIn,
+    workspaceCalendarEventsSelectEq,
     workspaceLabelsMaybeSingle,
     workspaceMembersMaybeSingle,
     workspacesMaybeSingle,
@@ -250,6 +293,18 @@ describe('task bulk route', () => {
     mocks.sourceWorkspaceMembersIn.mockResolvedValue({ data: [], error: null });
     mocks.taskUserOverridesUpsert.mockResolvedValue({ error: null });
     mocks.taskUserOverrideLabelsInsert.mockResolvedValue({ error: null });
+    mocks.workspaceCalendarEventsSelectEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.taskCalendarEventsSelectEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.taskCalendarEventsDeleteIn.mockResolvedValue({ error: null });
+    mocks.workspaceCalendarEventsDeleteIn.mockResolvedValue({ error: null });
+    mocks.taskCalendarEventsDeleteEq.mockResolvedValue({ error: null });
+    mocks.taskSchedulingSettingsDeleteEq.mockResolvedValue({ error: null });
     mocks.taskProjectsMaybeSingle.mockResolvedValue({
       data: { id: '44444444-4444-4444-8444-444444444444' },
       error: null,
@@ -331,6 +386,115 @@ describe('task bulk route', () => {
         p_task_id: '33333333-3333-4333-8333-333333333333',
         p_actor_user_id: '11111111-1111-4111-8111-111111111111',
       })
+    );
+  });
+
+  it('removes linked calendar artifacts after bulk soft delete', async () => {
+    const { POST } = await import('./route.js');
+
+    const taskId = '22222222-2222-4222-8222-222222222222';
+    mocks.rpc.mockReset();
+    mocks.rpc.mockResolvedValueOnce({ data: [{ id: taskId }], error: null });
+    mocks.tasksEq.mockResolvedValueOnce({
+      data: [
+        {
+          id: taskId,
+          list_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          completed: false,
+          completed_at: null,
+          closed_at: null,
+          task_lists: {
+            status: 'active',
+            board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            workspace_boards: {
+              ws_id: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    mocks.workspaceCalendarEventsSelectEq.mockResolvedValueOnce({
+      data: [{ id: 'event-direct' }],
+      error: null,
+    });
+    mocks.taskCalendarEventsSelectEq.mockResolvedValueOnce({
+      data: [
+        {
+          event_id: 'event-legacy',
+          workspace_calendar_events: {
+            id: 'event-legacy',
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const response = await POST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: [taskId],
+            operation: {
+              type: 'update_fields',
+              updates: {
+                deleted: true,
+              },
+            },
+          }),
+        })
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        successCount: 1,
+        failCount: 0,
+        succeededTaskIds: [taskId],
+      })
+    );
+
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'update_task_fields_with_actor',
+      expect.objectContaining({
+        p_task_id: taskId,
+        p_actor_user_id: '11111111-1111-4111-8111-111111111111',
+        p_task_updates: {
+          deleted_at: '2026-04-09T10:00:00.000Z',
+        },
+      })
+    );
+    expect(mocks.workspaceCalendarEventsSelectEq).toHaveBeenCalledWith(
+      'task_id',
+      taskId
+    );
+    expect(mocks.taskCalendarEventsSelectEq).toHaveBeenCalledWith(
+      'task_id',
+      taskId
+    );
+    expect(mocks.taskCalendarEventsDeleteIn).toHaveBeenCalledWith(
+      'event_id',
+      expect.arrayContaining(['event-direct', 'event-legacy'])
+    );
+    expect(mocks.workspaceCalendarEventsDeleteIn).toHaveBeenCalledWith(
+      'id',
+      expect.arrayContaining(['event-direct', 'event-legacy'])
+    );
+    expect(mocks.taskCalendarEventsDeleteEq).toHaveBeenCalledWith(
+      'task_id',
+      taskId
+    );
+    expect(mocks.taskSchedulingSettingsDeleteEq).toHaveBeenCalledWith(
+      'task_id',
+      taskId
     );
   });
 

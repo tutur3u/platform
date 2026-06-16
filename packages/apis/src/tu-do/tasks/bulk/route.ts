@@ -134,6 +134,10 @@ type ExternalTaskAccessRow = {
   } | null;
 };
 
+type LinkedTaskCalendarEvent = {
+  id: string;
+};
+
 async function parseJsonBody(request: NextRequest) {
   try {
     return { data: await request.json(), error: null };
@@ -244,6 +248,59 @@ function buildTaskUpdatePayload(
   }
 
   return updates;
+}
+
+async function removeDeletedTaskCalendarArtifacts(
+  sbAdmin: TypedSupabaseClient,
+  taskId: string
+) {
+  const [{ data: directEvents }, { data: legacyLinks }] = await Promise.all([
+    sbAdmin
+      .from('workspace_calendar_events')
+      .select('id')
+      .eq('task_id', taskId),
+    sbAdmin
+      .from('task_calendar_events')
+      .select(
+        `
+        event_id,
+        workspace_calendar_events (
+          id
+        )
+      `
+      )
+      .eq('task_id', taskId),
+  ]);
+
+  const eventIds = new Set<string>();
+
+  for (const event of (directEvents as LinkedTaskCalendarEvent[] | null) ??
+    []) {
+    if (event?.id) {
+      eventIds.add(event.id);
+    }
+  }
+
+  for (const link of (legacyLinks as Array<{
+    workspace_calendar_events?: LinkedTaskCalendarEvent | null;
+  }> | null) ?? []) {
+    const eventId = link.workspace_calendar_events?.id;
+    if (eventId) {
+      eventIds.add(eventId);
+    }
+  }
+
+  if (eventIds.size > 0) {
+    const ids = [...eventIds];
+    await sbAdmin.from('task_calendar_events').delete().in('event_id', ids);
+    await sbAdmin.from('workspace_calendar_events').delete().in('id', ids);
+  }
+
+  await sbAdmin.from('task_calendar_events').delete().eq('task_id', taskId);
+  await sbAdmin
+    .from('task_user_scheduling_settings')
+    .delete()
+    .eq('task_id', taskId);
 }
 
 function isPersonalOverlayOperation(operation: BulkOperation) {
@@ -778,6 +835,9 @@ export async function POST(
             );
             if (error) {
               throw error;
+            }
+            if (operation.updates.deleted === true) {
+              await removeDeletedTaskCalendarArtifacts(sbAdmin, taskId);
             }
             break;
           }
