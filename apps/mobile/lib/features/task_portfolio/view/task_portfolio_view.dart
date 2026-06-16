@@ -215,14 +215,13 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
           child: RefreshIndicator(
             onRefresh: _reload,
-            child: ListView(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
-              children: [
-                ...(_activeTab == _tabProjects
-                    ? _buildProjectsItems(context, state)
-                    : _buildInitiativesItems(context, state)),
-              ],
+              itemCount: _activeItemCount(state),
+              itemBuilder: (context, index) => _activeTab == _tabProjects
+                  ? _buildProjectItem(context, state, index)
+                  : _buildInitiativeItem(context, state, index),
             ),
           ),
         );
@@ -230,72 +229,69 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     );
   }
 
-  List<Widget> _buildProjectsItems(
-    BuildContext context,
-    TaskPortfolioState state,
-  ) {
-    if (state.projects.isEmpty) {
-      return [
-        TaskPortfolioEmptyState(
-          icon: Icons.folder_open_outlined,
-          title: context.l10n.taskPortfolioProjectsEmptyTitle,
-          description: context.l10n.taskPortfolioProjectsEmptyDescription,
-        ),
-      ];
+  int _activeItemCount(TaskPortfolioState state) {
+    if (_activeTab == _tabProjects) {
+      return state.projects.isEmpty ? 1 : state.projects.length;
     }
 
-    return state.projects.indexed
-        .map((entry) {
-          final project = entry.$2;
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: entry.$1 == state.projects.length - 1 ? 0 : 12,
-            ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () =>
-                  context.push(Routes.taskPortfolioProjectPath(project.id)),
-              child: TaskProjectCard(
-                project: project,
-                onEdit: () => _openEditProject(project),
-                onDelete: () => _deleteProject(project),
-              ),
-            ),
-          );
-        })
-        .toList(growable: false);
+    return state.initiatives.isEmpty ? 1 : state.initiatives.length;
   }
 
-  List<Widget> _buildInitiativesItems(
+  Widget _buildProjectItem(
     BuildContext context,
     TaskPortfolioState state,
+    int index,
   ) {
-    if (state.initiatives.isEmpty) {
-      return [
-        TaskPortfolioEmptyState(
-          icon: Icons.account_tree_outlined,
-          title: context.l10n.taskPortfolioInitiativesEmptyTitle,
-          description: context.l10n.taskPortfolioInitiativesEmptyDescription,
-        ),
-      ];
+    if (state.projects.isEmpty) {
+      return TaskPortfolioEmptyState(
+        icon: Icons.folder_open_outlined,
+        title: context.l10n.taskPortfolioProjectsEmptyTitle,
+        description: context.l10n.taskPortfolioProjectsEmptyDescription,
+      );
     }
 
-    return state.initiatives.indexed
-        .map((entry) {
-          final initiative = entry.$2;
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: entry.$1 == state.initiatives.length - 1 ? 0 : 12,
-            ),
-            child: TaskInitiativeCard(
-              initiative: initiative,
-              onEdit: () => _openEditInitiative(initiative),
-              onDelete: () => _deleteInitiative(initiative),
-              onManageProjects: () => _manageInitiativeProjects(initiative),
-            ),
-          );
-        })
-        .toList(growable: false);
+    final project = state.projects[index];
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: index == state.projects.length - 1 ? 0 : 12,
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.push(Routes.taskPortfolioProjectPath(project.id)),
+        child: TaskProjectCard(
+          project: project,
+          onEdit: () => _openEditProject(project),
+          onDelete: () => _deleteProject(project),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInitiativeItem(
+    BuildContext context,
+    TaskPortfolioState state,
+    int index,
+  ) {
+    if (state.initiatives.isEmpty) {
+      return TaskPortfolioEmptyState(
+        icon: Icons.account_tree_outlined,
+        title: context.l10n.taskPortfolioInitiativesEmptyTitle,
+        description: context.l10n.taskPortfolioInitiativesEmptyDescription,
+      );
+    }
+
+    final initiative = state.initiatives[index];
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: index == state.initiatives.length - 1 ? 0 : 12,
+      ),
+      child: TaskInitiativeCard(
+        initiative: initiative,
+        onEdit: () => _openEditInitiative(initiative),
+        onDelete: () => _deleteInitiative(initiative),
+        onManageProjects: () => _manageInitiativeProjects(initiative),
+      ),
+    );
   }
 
   Future<void> _loadPermissions() async {
