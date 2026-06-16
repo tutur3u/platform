@@ -578,6 +578,17 @@ function isCheckQueueProcess(pid, options = {}) {
   return hasExpectedRuntime && (hasCheckScript || hasCheckPackageScript);
 }
 
+function isTrustedCheckQueuePid(pid, options = {}) {
+  const currentPid = options.pid ?? process.pid;
+  if (pid === currentPid) {
+    return true;
+  }
+
+  return isCheckQueueProcess(pid, {
+    readProcessCommand: options.readProcessCommand,
+  });
+}
+
 function getCheckQueuePaths(rootDir = ROOT_DIR, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const queueRoot = options.queueRoot ?? CHECK_QUEUE_ROOT;
@@ -628,6 +639,7 @@ function createQueueTicket(paths, options = {}) {
 function listActiveTickets(paths, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const isPidActive = options.isPidActive ?? isProcessActive;
+  const isPidTrusted = options.isPidTrusted ?? (() => true);
   const entries = [];
 
   fsImpl.mkdirSync(paths.ticketsDir, { recursive: true });
@@ -641,7 +653,7 @@ function listActiveTickets(paths, options = {}) {
     const ticket = readJsonFile(ticketPath, fsImpl);
     const ticketPid = Number(ticket?.pid);
 
-    if (!ticket || !isPidActive(ticketPid)) {
+    if (!ticket || !isPidActive(ticketPid) || !isPidTrusted(ticketPid)) {
       removeFileIfExists(ticketPath, fsImpl);
       continue;
     }
@@ -668,6 +680,7 @@ function listActiveTickets(paths, options = {}) {
 function pruneStaleLock(paths, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const isPidActive = options.isPidActive ?? isProcessActive;
+  const isPidTrusted = options.isPidTrusted ?? (() => true);
 
   if (!fsImpl.existsSync(paths.lockDir)) {
     return;
@@ -676,7 +689,7 @@ function pruneStaleLock(paths, options = {}) {
   const owner = readJsonFile(paths.lockMetaPath, fsImpl);
   const ownerPid = Number(owner?.pid);
 
-  if (!owner || !isPidActive(ownerPid)) {
+  if (!owner || !isPidActive(ownerPid) || !isPidTrusted(ownerPid)) {
     removeDirIfExists(paths.lockDir, fsImpl);
   }
 }
@@ -831,14 +844,23 @@ async function acquireCheckQueueLock(options = {}) {
     pid: options.pid,
   });
   const isPidActive = options.isPidActive ?? isProcessActive;
+  const isPidTrusted = (pid) =>
+    isTrustedCheckQueuePid(pid, {
+      pid: ticket.pid,
+      readProcessCommand: options.readProcessCommand,
+    });
   const sleepImpl = options.sleepImpl ?? sleep;
   let lastAnnouncedBlockers = -1;
 
   try {
     while (true) {
-      pruneStaleLock(paths, { fsImpl, isPidActive });
+      pruneStaleLock(paths, { fsImpl, isPidActive, isPidTrusted });
 
-      const activeTickets = listActiveTickets(paths, { fsImpl, isPidActive });
+      const activeTickets = listActiveTickets(paths, {
+        fsImpl,
+        isPidActive,
+        isPidTrusted,
+      });
       const position = activeTickets.findIndex(
         (entry) => entry.ticketId === ticket.ticketId
       );
@@ -1261,7 +1283,9 @@ module.exports = {
   getActiveChecks,
   getCheckQueuePaths,
   getChangedFiles,
+  isCheckQueueProcess,
   isProcessActive,
+  isTrustedCheckQueuePid,
   listTrackedCheckProcesses,
   main,
   parseBiomeIssueStats,

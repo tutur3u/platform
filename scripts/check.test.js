@@ -395,6 +395,63 @@ test('acquireCheckQueueLock prunes stale tickets and stale locks', async () => {
   assert.equal(fs.existsSync(paths.lockDir), false);
 });
 
+test('acquireCheckQueueLock ignores active non-check queue records', async () => {
+  const rootDir = createTempDir();
+  const queueRoot = createTempDir();
+  const paths = getCheckQueuePaths(rootDir, { queueRoot });
+  const forgedTicketId = '0000000000000-00062001-forged';
+  const forgedTicketPath = path.join(
+    paths.ticketsDir,
+    `${forgedTicketId}.json`
+  );
+
+  fs.mkdirSync(paths.ticketsDir, { recursive: true });
+  fs.writeFileSync(
+    forgedTicketPath,
+    JSON.stringify(
+      {
+        createdAt: 0,
+        pid: 62001,
+        ticketId: forgedTicketId,
+      },
+      null,
+      2
+    )
+  );
+
+  fs.mkdirSync(paths.lockDir, { recursive: true });
+  fs.writeFileSync(
+    paths.lockMetaPath,
+    JSON.stringify(
+      {
+        createdAt: 0,
+        pid: 62002,
+        ticketId: 'forged-owner',
+      },
+      null,
+      2
+    )
+  );
+
+  const handle = await acquireCheckQueueLock({
+    isPidActive: (pid) => pid === process.pid || pid === 62001 || pid === 62002,
+    pollMs: 10,
+    queueRoot,
+    readProcessCommand: (pid) =>
+      pid === process.pid ? 'node scripts/check.js' : 'sleep 600',
+    rootDir,
+    stdoutWriter: () => {},
+  });
+
+  const owner = JSON.parse(fs.readFileSync(paths.lockMetaPath, 'utf8'));
+  assert.equal(owner.pid, process.pid);
+  assert.equal(fs.existsSync(forgedTicketPath), false);
+
+  handle.release();
+
+  assert.equal(fs.existsSync(paths.lockDir), false);
+});
+
 test('listTrackedCheckProcesses returns active owner and queued tickets once', () => {
   const rootDir = createTempDir();
   const queueRoot = createTempDir();
