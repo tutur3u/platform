@@ -55,18 +55,21 @@ describe('workspace migration module route', () => {
     vi.clearAllMocks();
   });
 
-  it('does not expose the global email blacklist through workspace API keys', async () => {
+  it.each([
+    ['email-blacklist', 'the global email blacklist'],
+    ['post-email-queue', 'post email queue delivery metadata'],
+  ])('does not expose %s through workspace API keys', async (module) => {
     const { GET } = await import(
       '@/app/api/v2/workspaces/[wsId]/migrate/[module]/route'
     );
 
     const response = await GET(
       new NextRequest(
-        'http://localhost/api/v2/workspaces/ws-1/migrate/email-blacklist'
+        `http://localhost/api/v2/workspaces/ws-1/migrate/${module}`
       ),
       {
         params: Promise.resolve({
-          module: 'email-blacklist',
+          module,
           wsId: 'ws-1',
         }),
       }
@@ -76,7 +79,7 @@ describe('workspace migration module route', () => {
     await expect(response.json()).resolves.toEqual({
       code: 'UNKNOWN_MODULE',
       error: 'Bad Request',
-      message: 'Unknown migration module: email-blacklist',
+      message: `Unknown migration module: ${module}`,
     });
     expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
   });
