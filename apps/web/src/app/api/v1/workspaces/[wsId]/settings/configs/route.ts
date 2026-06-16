@@ -40,7 +40,6 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { wsId: rawWsId } = await params;
     const supabase = await createClient(req);
-    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
@@ -72,6 +71,18 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
+    const permissions = await getPermissions({ wsId, request: req });
+    if (!permissions) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    if (permissions.withoutPermission('manage_workspace_settings')) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to read workspace settings' },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const idsRaw =
       searchParams
@@ -92,6 +103,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       (id) => id !== DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
     );
 
+    const sbAdmin = await createAdminClient();
     let configs: { id: string; value: string }[] = [];
 
     if (workspaceConfigIds.length > 0) {

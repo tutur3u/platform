@@ -101,11 +101,40 @@ describe('workspace settings configs route', () => {
     });
 
     mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(() => true),
+      withoutPermission: vi.fn(() => false),
     });
   });
 
-  it('allows workspace members to read configs without manage permissions', async () => {
+  it('rejects workspace config reads without manage_workspace_settings', async () => {
+    mocks.getPermissions.mockResolvedValueOnce({
+      withoutPermission: vi.fn(() => true),
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=REPORT_CONFIG_A,REPORT_CONFIG_B'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Insufficient permissions to read workspace settings',
+    });
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      wsId: 'normalized-ws',
+      request: expect.any(NextRequest),
+    });
+    expect(mocks.workspaceConfigsIn).not.toHaveBeenCalled();
+  });
+
+  it('allows settings managers to read configs', async () => {
     const { GET } = await import(
       '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
     );
@@ -128,7 +157,10 @@ describe('workspace settings configs route', () => {
       'ws-1',
       mocks.sessionSupabase
     );
-    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      wsId: 'normalized-ws',
+      request: expect.any(NextRequest),
+    });
   });
 
   it('includes dedicated default included groups in batch config reads', async () => {
@@ -212,6 +244,10 @@ describe('workspace settings configs route', () => {
   });
 
   it('keeps config mutations guarded by manage_workspace_settings', async () => {
+    mocks.getPermissions.mockResolvedValueOnce({
+      withoutPermission: vi.fn(() => true),
+    });
+
     const { PUT } = await import(
       '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
     );
