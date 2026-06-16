@@ -100,7 +100,11 @@ for all
 to authenticated
 using ((EXISTS ( SELECT 1
    FROM course_tests ct
-  WHERE (ct.id = course_test_modules.test_id))))
+     JOIN workspace_user_groups wug ON (wug.id = ct.course_id)
+     JOIN workspace_course_modules wcm ON ((wcm.id = course_test_modules.module_id) AND (wcm.group_id = ct.course_id))
+  WHERE ((ct.id = course_test_modules.test_id) AND (is_org_member(auth.uid(), wug.ws_id))))))
 with check ((EXISTS ( SELECT 1
    FROM course_tests ct
-  WHERE (ct.id = course_test_modules.test_id))));
+     JOIN workspace_user_groups wug ON (wug.id = ct.course_id)
+     JOIN workspace_course_modules wcm ON ((wcm.id = course_test_modules.module_id) AND (wcm.group_id = ct.course_id))
+  WHERE ((ct.id = course_test_modules.test_id) AND (is_org_member(auth.uid(), wug.ws_id))))));

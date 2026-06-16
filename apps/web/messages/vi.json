@@ -16993,7 +16993,7 @@
     "create_group_description": "Tạo nhóm mô-đun mới để tổ chức nội dung khóa học.",
     "create_multiple": "Tạo nhiều nhóm",
     "create_test": "Tạo bài kiểm tra",
-    "create_test_description": "Tạo bài kiểm tra mới cho khóa học bằng cách chọn các bài học từ mô-đun.",
+    "create_test_description": "Tạo bài kiểm tra mới cho khóa học bằng cách chọn các mô-đun cần đưa vào.",
     "delete_description": "Đã xóa mô-đun",
     "description": "Quản lý các mô-đun trong khóa học nằm trong không gian làm việc của bạn.",
     "edit": "Chỉnh sửa mô-đun",

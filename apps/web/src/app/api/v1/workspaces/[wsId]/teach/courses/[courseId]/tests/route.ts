@@ -158,6 +158,31 @@ export const POST = withSessionAuth(
 
     const { name, moduleIds, startAt, durationInMinutes, description } =
       parsedBody.data;
+    const uniqueModuleIds = [...new Set(moduleIds)];
+
+    const { data: selectedModules, error: selectedModulesError } =
+      await access.sbAdmin
+        .from('workspace_course_modules')
+        .select('id')
+        .eq('group_id', parsedParams.data.courseId)
+        .in('id', uniqueModuleIds);
+
+    if (selectedModulesError) {
+      serverLogger.error('Failed to validate course test modules', {
+        error: selectedModulesError,
+      });
+      return NextResponse.json(
+        { message: 'Error validating course test modules' },
+        { status: 500 }
+      );
+    }
+
+    if ((selectedModules ?? []).length !== uniqueModuleIds.length) {
+      return NextResponse.json(
+        { message: 'Invalid course test module selection' },
+        { status: 400 }
+      );
+    }
 
     // Create course test
     const { data: testData, error: testError } = await access.sbAdmin
@@ -183,7 +208,7 @@ export const POST = withSessionAuth(
     const testId = testData.id;
 
     // Associate modules
-    const associations = moduleIds.map((moduleId) => ({
+    const associations = uniqueModuleIds.map((moduleId) => ({
       test_id: testId,
       module_id: moduleId,
     }));

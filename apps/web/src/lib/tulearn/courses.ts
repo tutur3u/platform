@@ -372,10 +372,11 @@ export async function getLearnerCourseDetail({
     start_at: t.start_at,
     duration_in_minutes: t.duration_in_minutes,
     description: t.description,
-    module_ids:
-      (t.course_test_modules as { module_id: string }[] | undefined)?.map(
-        (m) => m.module_id
-      ) ?? [],
+    module_ids: (
+      (t.course_test_modules as { module_id: string }[] | undefined) ?? []
+    )
+      .map((m) => m.module_id)
+      .filter((moduleId) => moduleIds.has(moduleId)),
   }));
 
   return {

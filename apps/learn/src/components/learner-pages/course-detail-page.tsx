@@ -289,7 +289,7 @@ export function CourseDetailPage({
                   {t('courses.tests')}
                 </p>
                 <h2 className="mt-1 font-black text-2xl leading-tight tracking-normal">
-                  Course Assessments
+                  {t('courses.courseAssessments')}
                 </h2>
               </div>
 
@@ -313,7 +313,7 @@ export function CourseDetailPage({
                           <div className="mt-0.5 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
                             {test.start_at && (
                               <span>
-                                Start:{' '}
+                                {t('courses.testDetailsStartAt')}:{' '}
                                 {new Date(test.start_at).toLocaleString([], {
                                   dateStyle: 'short',
                                   timeStyle: 'short',
@@ -322,10 +322,13 @@ export function CourseDetailPage({
                             )}
                             {test.duration_in_minutes && (
                               <span>
-                                Duration: {test.duration_in_minutes} mins
+                                {t('courses.testDetailsDuration')}:{' '}
+                                {t('courses.durationMinutes', {
+                                  minutes: test.duration_in_minutes,
+                                })}
                               </span>
                             )}
-                            <span>Online Test</span>
+                            <span>{t('courses.onlineTest')}</span>
                           </div>
                         </div>
 

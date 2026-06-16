@@ -65,7 +65,12 @@ export function ModuleDetailClient({
   } = useModuleDetail(wsId, courseId);
   const t = useTranslations();
 
-  const { data: testsData, isLoading: isLoadingTests } = useQuery({
+  const {
+    data: testsData,
+    isError: isTestsError,
+    isLoading: isLoadingTests,
+    refetch: refetchTests,
+  } = useQuery({
     queryKey: ['course-tests', wsId, courseId],
     queryFn: () => listWorkspaceCourseTests(wsId, courseId),
   });
@@ -226,16 +231,31 @@ export function ModuleDetailClient({
               <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
                 <h2 className="mb-4 flex items-center gap-2 border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
                   <BookOpenCheck className="h-5 w-5 text-primary" />
-                  Tests
+                  {t('teachModules.tests')}
                 </h2>
                 {isLoadingTests ? (
                   <div className="space-y-3">
                     <div className="h-16 animate-pulse border-2 border-border bg-muted" />
                     <div className="h-16 animate-pulse border-2 border-border bg-muted" />
                   </div>
+                ) : isTestsError ? (
+                  <div className="space-y-3">
+                    <p className="py-2 text-destructive text-sm">
+                      {t('teachModules.testsLoadError')}
+                    </p>
+                    <button
+                      className="border-2 border-border bg-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+                      onClick={() => {
+                        void refetchTests();
+                      }}
+                      type="button"
+                    >
+                      {t('common.retry')}
+                    </button>
+                  </div>
                 ) : tests.length === 0 ? (
                   <p className="py-2 text-muted-foreground text-sm italic">
-                    No tests created yet.
+                    {t('teachModules.noTestsCreated')}
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -251,14 +271,14 @@ export function ModuleDetailClient({
                           </h3>
                           {!test.is_published && (
                             <span className="shrink-0 border border-border bg-muted px-1.5 py-0.5 font-bold text-[9px] text-muted-foreground uppercase tracking-wider shadow-[1px_1px_0_var(--border)]">
-                              Draft
+                              {t('teachModules.testDraft')}
                             </span>
                           )}
                         </div>
                         {test.start_at && (
                           <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
                             <span className="font-black text-[10px] uppercase tracking-wider">
-                              Start:
+                              {t('teachModules.testDetailsStartAt')}:
                             </span>
                             <span>
                               {new Date(test.start_at).toLocaleString([], {
@@ -271,9 +291,13 @@ export function ModuleDetailClient({
                         {test.duration_in_minutes && (
                           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                             <span className="font-black text-[10px] uppercase tracking-wider">
-                              Duration:
+                              {t('teachModules.testDetailsDuration')}:
                             </span>
-                            <span>{test.duration_in_minutes} mins</span>
+                            <span>
+                              {t('teachModules.durationMinutes', {
+                                minutes: test.duration_in_minutes,
+                              })}
+                            </span>
                           </div>
                         )}
                       </Link>

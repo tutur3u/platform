@@ -36,6 +36,19 @@ export function CourseTestDialog({
   const [durationInMinutes, setDurationInMinutes] = useState('60');
   const [description, setDescription] = useState('');
 
+  const resetForm = () => {
+    setTestName('');
+    setSelectedModuleIds([]);
+    setStartAt('');
+    setDurationInMinutes('60');
+    setDescription('');
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) resetForm();
+    setOpen(nextOpen);
+  };
+
   const createTestMutation = useMutation({
     mutationFn: async (payload: {
       name: string;
@@ -47,11 +60,7 @@ export function CourseTestDialog({
     onSuccess: () => {
       toast.success(t('teachModules.testCreated'));
       qc.invalidateQueries({ queryKey: ['course-tests', wsId, courseId] });
-      setTestName('');
-      setSelectedModuleIds([]);
-      setStartAt('');
-      setDurationInMinutes('60');
-      setDescription('');
+      resetForm();
       setOpen(false);
     },
     onError: (error) => {
@@ -91,7 +100,7 @@ export function CourseTestDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button
           className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
@@ -114,7 +123,7 @@ export function CourseTestDialog({
 
             <button
               className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
               type="button"
               aria-label={t('common.close') || 'Close'}
             >
