@@ -10,6 +10,7 @@ const {
   queueStressTestRunFileMock,
   readStressTestRunMock,
   readStressTestSnapshotMock,
+  serverLoggerErrorMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   createQueuedStressTestRunMock: vi.fn(),
@@ -19,6 +20,7 @@ const {
   queueStressTestRunFileMock: vi.fn(),
   readStressTestRunMock: vi.fn(),
   readStressTestSnapshotMock: vi.fn(),
+  serverLoggerErrorMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -31,7 +33,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
-    error: vi.fn(),
+    error: serverLoggerErrorMock,
   },
   setLogDrainUserContext: vi.fn(),
   withRequestLogDrain: (_opts: unknown, handler: () => Promise<Response>) =>
@@ -177,14 +179,15 @@ describe('infrastructure stress-test route', () => {
     expect(queueStressTestRunFileMock).not.toHaveBeenCalled();
   });
 
-  it('does not persist the run when queue control-file writes fail', async () => {
+  it('does not expose server paths when queue control-file writes fail', async () => {
     const run = { id: 'run-1', status: 'queued' };
+    const writeError = new Error(
+      "ENOENT: no such file or directory, mkdir '/app/runtime/docker-web/stress-tests/runs/run-1'"
+    );
     authorizeStressTestManager();
     createQueuedStressTestRunMock.mockReturnValue(run);
     queueStressTestRunFileMock.mockImplementation(() => {
-      throw new Error(
-        "ENOENT: no such file or directory, mkdir '/app/runtime/docker-web/stress-tests/runs/run-1'"
-      );
+      throw writeError;
     });
 
     const response = await POST(
@@ -197,13 +200,19 @@ describe('infrastructure stress-test route', () => {
 
     expect(response.status).toBe(500);
     expect(body.code).toBe('STRESS_TEST_CONTROL_WRITE_FAILED');
-    expect(body.message).toContain(
-      'Unable to write stress-test control files: ENOENT'
-    );
+    expect(body.message).toBe('Unable to queue stress-test control request.');
+    expect(body.message).not.toContain('/app/runtime');
     expect(persistStressTestRunMock).not.toHaveBeenCalled();
+    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+      'Failed to queue infrastructure stress test control file',
+      writeError
+    );
   });
 
-  it('returns detailed abort errors when abort control-file writes fail', async () => {
+  it('does not expose server paths when abort control-file writes fail', async () => {
+    const writeError = new Error(
+      "EACCES: permission denied, open '/app/runtime/docker-web-control/stress-tests/abort-requests/run-1.json'"
+    );
     authorizeStressTestManager();
     readStressTestRunMock.mockResolvedValue({
       id: 'run-1',
@@ -211,9 +220,7 @@ describe('infrastructure stress-test route', () => {
       updatedAt: 1000,
     });
     queueStressTestAbortFileMock.mockImplementation(() => {
-      throw new Error(
-        "EACCES: permission denied, open '/app/runtime/docker-web-control/stress-tests/abort-requests/run-1.json'"
-      );
+      throw writeError;
     });
 
     const response = await abortPost(
@@ -226,9 +233,12 @@ describe('infrastructure stress-test route', () => {
 
     expect(response.status).toBe(500);
     expect(body.code).toBe('STRESS_TEST_CONTROL_WRITE_FAILED');
-    expect(body.message).toContain(
-      'Unable to write stress-test control files: EACCES'
-    );
+    expect(body.message).toBe('Unable to queue stress-test control request.');
+    expect(body.message).not.toContain('/app/runtime');
     expect(persistStressTestRunMock).not.toHaveBeenCalled();
+    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+      'Failed to queue infrastructure stress test abort control file',
+      writeError
+    );
   });
 });

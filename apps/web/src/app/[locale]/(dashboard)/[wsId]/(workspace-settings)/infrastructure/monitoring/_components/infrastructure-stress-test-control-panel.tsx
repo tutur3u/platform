@@ -26,6 +26,15 @@ import {
 import { RunStatusBadge } from './infrastructure-stress-test-run-summary';
 
 function getMutationErrorMessage(error: unknown, fallback: string) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'STRESS_TEST_CONTROL_WRITE_FAILED'
+  ) {
+    return fallback;
+  }
+
   return error instanceof Error && error.message.trim()
     ? error.message
     : fallback;

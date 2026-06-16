@@ -25,11 +25,8 @@ const payloadSchema = z.object({
   targetId: z.string().min(1).max(120),
 });
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error && error.message.trim()
-    ? error.message
-    : 'Unknown error';
-}
+const CONTROL_WRITE_FAILURE_MESSAGE =
+  'Unable to queue stress-test control request.';
 
 function getValidationMessage(error: unknown) {
   if (error instanceof z.ZodError) {
@@ -106,12 +103,15 @@ export async function POST(request: Request) {
         try {
           queueStressTestRunFile(run);
         } catch (error) {
-          const message = `Unable to write stress-test control files: ${getErrorMessage(error)}`;
           serverLogger.error(
             'Failed to queue infrastructure stress test control file',
             error
           );
-          return jsonError(message, 500, 'STRESS_TEST_CONTROL_WRITE_FAILED');
+          return jsonError(
+            CONTROL_WRITE_FAILURE_MESSAGE,
+            500,
+            'STRESS_TEST_CONTROL_WRITE_FAILED'
+          );
         }
 
         await persistStressTestRun(run);
