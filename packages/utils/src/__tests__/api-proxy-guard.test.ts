@@ -1054,7 +1054,10 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
-  it('uses a classroom-friendly OTP send bucket', async () => {
+  it.each([
+    '/api/v1/auth/otp/send',
+    '/api/v1/auth/mobile/send-otp',
+  ])('uses a classroom-friendly OTP send bucket for %s', async (path) => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -1072,12 +1075,9 @@ describe('guardApiProxyRequest', () => {
       await import('../api-proxy-guard.js');
     clearApiProxyGuardLimiterCache();
 
-    const response = await guardApiProxyRequest(
-      makeRequest('/api/v1/auth/otp/send', 'POST'),
-      {
-        prefixBase: 'proxy:test:api',
-      }
-    );
+    const response = await guardApiProxyRequest(makeRequest(path, 'POST'), {
+      prefixBase: 'proxy:test:api',
+    });
 
     expect(response?.status).toBe(429);
     expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');

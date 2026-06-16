@@ -294,21 +294,6 @@ export async function sendOtp(
   const ipAddress = suspiciousAgentCheck.ipAddress;
   const userAgent = suspiciousAgentCheck.userAgent;
 
-  const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail, {
-    route: context.endpoint,
-    source: 'otp-send',
-  });
-  if (!abuseCheck.allowed) {
-    return {
-      body: {
-        error:
-          abuseCheck.reason || 'Too many requests. Please try again later.',
-        retryAfter: abuseCheck.retryAfter,
-      },
-      status: 429,
-    };
-  }
-
   const infrastructureCheck =
     await checkEmailInfrastructureBlocked(validatedEmail);
   if (infrastructureCheck.isBlocked) {
@@ -340,6 +325,21 @@ export async function sendOtp(
       createTurnstileRequest(context),
       turnstile.captchaToken
     );
+  }
+
+  const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail, {
+    route: context.endpoint,
+    source: 'otp-send',
+  });
+  if (!abuseCheck.allowed) {
+    return {
+      body: {
+        error:
+          abuseCheck.reason || 'Too many requests. Please try again later.',
+        retryAfter: abuseCheck.retryAfter,
+      },
+      status: 429,
+    };
   }
 
   const supabase = turnstile.shouldBypassForDev

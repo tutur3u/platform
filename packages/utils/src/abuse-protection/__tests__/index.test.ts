@@ -401,14 +401,19 @@ describe('abuse-protection', () => {
   });
 
   describe('checkOTPSendAllowed', () => {
-    it('does not consume quota during preflight checks', async () => {
-      const email = `preflight-${Date.now()}@example.com`;
+    it('reserves same-email cooldown before provider success', async () => {
+      const email = `reserved-cooldown-${Date.now()}@example.com`;
 
-      const firstAttempt = await checkOTPSendAllowed('198.51.100.1', email);
-      const secondAttempt = await checkOTPSendAllowed('198.51.100.2', email);
+      const attempts = await Promise.all([
+        checkOTPSendAllowed('198.51.100.1', email),
+        checkOTPSendAllowed('198.51.100.2', email),
+      ]);
+      const allowedAttempts = attempts.filter((attempt) => attempt.allowed);
+      const blockedAttempts = attempts.filter((attempt) => !attempt.allowed);
 
-      expect(firstAttempt.allowed).toBe(true);
-      expect(secondAttempt.allowed).toBe(true);
+      expect(allowedAttempts).toHaveLength(1);
+      expect(blockedAttempts).toHaveLength(1);
+      expect(blockedAttempts[0]?.retryAfter).toBeGreaterThan(0);
     });
 
     it('blocks repeated sends to the same email across different IPs during cooldown', async () => {

@@ -239,44 +239,6 @@ async function getCounter(key: string): Promise<number> {
   return existing.count;
 }
 
-async function getCounterWithTTL(
-  key: string
-): Promise<{ count: number; ttl: number }> {
-  const redis = await getRedisClient();
-
-  if (redis) {
-    try {
-      const [count, ttl] = await Promise.all([
-        redis.get<number>(key),
-        redis.ttl(key),
-      ]);
-
-      return {
-        count: count || 0,
-        ttl: ttl > 0 ? ttl : 0,
-      };
-    } catch {
-      // Fall through to memory
-    }
-  }
-
-  const existing = memoryStore.get(key);
-  if (!existing) {
-    return { count: 0, ttl: 0 };
-  }
-
-  const now = Date.now();
-  if (now > existing.expiresAt) {
-    memoryStore.delete(key);
-    return { count: 0, ttl: 0 };
-  }
-
-  return {
-    count: existing.count,
-    ttl: Math.ceil((existing.expiresAt - now) / 1000),
-  };
-}
-
 /**
  * Delete keys from Redis or memory
  */
@@ -902,7 +864,10 @@ export async function resetOtpLimitsForEmail({
 }
 
 /**
- * Check and track OTP send attempts
+ * Check and reserve OTP send attempts.
+ *
+ * Accepted sends consume quota before provider delivery to prevent parallel
+ * requests from all observing the same pre-send counter state.
  */
 export async function checkOTPSendAllowed(
   ipAddress: string,
@@ -928,13 +893,13 @@ export async function checkOTPSendAllowed(
   const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
 
   const [minuteState, hourlyState, dailyState] = await Promise.all([
-    getCounterWithTTL(minuteKey),
-    getCounterWithTTL(hourlyKey),
-    getCounterWithTTL(dailyKey),
+    incrementCounter(minuteKey, WINDOW_MS.ONE_MINUTE),
+    incrementCounter(hourlyKey, WINDOW_MS.ONE_HOUR),
+    incrementCounter(dailyKey, WINDOW_MS.TWENTY_FOUR_HOURS),
   ]);
   const ipLimits = getOTPSendIpLimits();
 
-  if (minuteState.count >= ipLimits.perMinute) {
+  if (minuteState.count > ipLimits.perMinute) {
     // Log and potentially block
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
@@ -955,7 +920,7 @@ export async function checkOTPSendAllowed(
     };
   }
 
-  if (hourlyState.count >= ipLimits.perHour) {
+  if (hourlyState.count > ipLimits.perHour) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
@@ -972,7 +937,7 @@ export async function checkOTPSendAllowed(
     };
   }
 
-  if (dailyState.count >= ipLimits.perDay) {
+  if (dailyState.count > ipLimits.perDay) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
@@ -995,14 +960,11 @@ export async function checkOTPSendAllowed(
     const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
     const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
 
-    const [cooldownState, hourlyEmailState, dailyEmailState] =
-      await Promise.all([
-        getCounterWithTTL(cooldownKey),
-        getCounterWithTTL(hourlyEmailKey),
-        getCounterWithTTL(dailyEmailKey),
-      ]);
-
-    if (cooldownState.count >= 1) {
+    const cooldownState = await incrementCounter(
+      cooldownKey,
+      ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
+    );
+    if (cooldownState.count > 1) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -1017,7 +979,12 @@ export async function checkOTPSendAllowed(
       };
     }
 
-    if (hourlyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
+    const [hourlyEmailState, dailyEmailState] = await Promise.all([
+      incrementCounter(hourlyEmailKey, WINDOW_MS.ONE_HOUR),
+      incrementCounter(dailyEmailKey, WINDOW_MS.TWENTY_FOUR_HOURS),
+    ]);
+
+    if (hourlyEmailState.count > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -1032,7 +999,7 @@ export async function checkOTPSendAllowed(
       };
     }
 
-    if (dailyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
+    if (dailyEmailState.count > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -1050,10 +1017,7 @@ export async function checkOTPSendAllowed(
 
   return {
     allowed: true,
-    remainingAttempts: Math.max(
-      0,
-      ipLimits.perMinute - (minuteState.count + 1)
-    ),
+    remainingAttempts: Math.max(0, ipLimits.perMinute - minuteState.count),
   };
 }
 
@@ -1061,31 +1025,6 @@ export async function recordOTPSendSuccess(
   ipAddress: string,
   email?: string
 ): Promise<void> {
-  await Promise.all([
-    incrementCounter(REDIS_KEYS.OTP_SEND(ipAddress), WINDOW_MS.ONE_MINUTE),
-    incrementCounter(REDIS_KEYS.OTP_SEND_HOURLY(ipAddress), WINDOW_MS.ONE_HOUR),
-    incrementCounter(
-      REDIS_KEYS.OTP_SEND_DAILY(ipAddress),
-      WINDOW_MS.TWENTY_FOUR_HOURS
-    ),
-    ...(email
-      ? [
-          incrementCounter(
-            REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(hashEmail(email)),
-            ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
-          ),
-          incrementCounter(
-            REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(hashEmail(email)),
-            WINDOW_MS.ONE_HOUR
-          ),
-          incrementCounter(
-            REDIS_KEYS.OTP_SEND_EMAIL_DAILY(hashEmail(email)),
-            WINDOW_MS.TWENTY_FOUR_HOURS
-          ),
-        ]
-      : []),
-  ]);
-
   void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
 }
 

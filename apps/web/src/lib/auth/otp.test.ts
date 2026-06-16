@@ -244,6 +244,9 @@ describe('otp auth service', () => {
       'captcha-token'
     );
     expect(mocks.verifyTurnstileToken.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.checkOTPSendAllowed.mock.invocationCallOrder[0]!
+    );
+    expect(mocks.checkOTPSendAllowed.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.requestSignInWithOtp.mock.invocationCallOrder[0]!
     );
     expect(mocks.requestSignInWithOtp).toHaveBeenCalledWith({
@@ -284,6 +287,7 @@ describe('otp auth service', () => {
 
     expect(mocks.requestSignInWithOtp).not.toHaveBeenCalled();
     expect(mocks.requestSignUp).not.toHaveBeenCalled();
+    expect(mocks.checkOTPSendAllowed).not.toHaveBeenCalled();
     expect(mocks.recordOTPSendSuccess).not.toHaveBeenCalled();
   });
 
