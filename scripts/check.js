@@ -539,6 +539,45 @@ function formatSignalError(pid, signal, error) {
   );
 }
 
+function readProcessCommand(pid, execFile = execFileSync) {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return '';
+  }
+
+  try {
+    return execFile('ps', ['-p', String(pid), '-o', 'command='], {
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+function isCheckQueueProcess(pid, options = {}) {
+  const readCommand = options.readProcessCommand ?? readProcessCommand;
+  const command = readCommand(pid);
+  if (!command) {
+    return false;
+  }
+
+  const normalizedCommand = command.replace(/\0/g, ' ').replace(/\\/g, '/');
+  const hasCheckScript =
+    /(^|\s)(?:\.\/)?(?:[^ ]+\/)?scripts\/check\.js(?:\s|$)/.test(
+      normalizedCommand
+    );
+  const hasCheckPackageScript =
+    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+check(?::now)?(?:\s|$)/.test(
+      normalizedCommand
+    );
+  const hasExpectedRuntime =
+    /(^|\s)(?:[^ ]+\/)?(?:bun|node)(?:\s|$)/.test(normalizedCommand) ||
+    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+check(?::now)?(?:\s|$)/.test(
+      normalizedCommand
+    );
+
+  return hasExpectedRuntime && (hasCheckScript || hasCheckPackageScript);
+}
+
 function getCheckQueuePaths(rootDir = ROOT_DIR, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const queueRoot = options.queueRoot ?? CHECK_QUEUE_ROOT;
@@ -705,16 +744,36 @@ async function forceClearCheckQueue(options = {}) {
     fsImpl,
     isPidActive,
   }).filter((entry) => entry.pid !== currentPid);
+  const trustedProcesses = trackedProcesses.filter((entry) =>
+    isCheckQueueProcess(entry.pid, {
+      readProcessCommand: options.readProcessCommand,
+    })
+  );
+  const untrustedProcesses = trackedProcesses.filter(
+    (entry) => !trustedProcesses.some((trusted) => trusted.pid === entry.pid)
+  );
 
   if (trackedProcesses.length === 0) {
     return;
   }
 
+  if (untrustedProcesses.length > 0) {
+    stdoutWriter(
+      `${colors.yellow}Discarding ${untrustedProcesses.length} unverified bun check queue record${untrustedProcesses.length === 1 ? '' : 's'} without signaling their PID${untrustedProcesses.length === 1 ? '' : 's'}.${colors.reset}\n`
+    );
+  }
+
+  if (trustedProcesses.length === 0) {
+    removeDirIfExists(paths.lockDir, fsImpl);
+    removeDirIfExists(paths.ticketsDir, fsImpl);
+    return;
+  }
+
   stdoutWriter(
-    `${colors.yellow}${colors.bold}Force stopping ${trackedProcesses.length} earlier bun check invocation${trackedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
+    `${colors.yellow}${colors.bold}Force stopping ${trustedProcesses.length} earlier bun check invocation${trustedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
   );
 
-  for (const processInfo of trackedProcesses) {
+  for (const processInfo of trustedProcesses) {
     try {
       signalProcess(processInfo.pid, 'SIGTERM', killImpl);
     } catch (error) {
@@ -724,13 +783,13 @@ async function forceClearCheckQueue(options = {}) {
 
   const waitUntil = Date.now() + forceGraceMs;
   while (
-    trackedProcesses.some((processInfo) => isPidActive(processInfo.pid)) &&
+    trustedProcesses.some((processInfo) => isPidActive(processInfo.pid)) &&
     Date.now() < waitUntil
   ) {
     await sleepImpl(Math.min(CHECK_QUEUE_POLL_MS, forceGraceMs));
   }
 
-  const stubbornProcesses = trackedProcesses.filter((processInfo) =>
+  const stubbornProcesses = trustedProcesses.filter((processInfo) =>
     isPidActive(processInfo.pid)
   );
 
@@ -748,8 +807,8 @@ async function forceClearCheckQueue(options = {}) {
     }
   }
 
-  pruneStaleLock(paths, { fsImpl, isPidActive });
-  listActiveTickets(paths, { fsImpl, isPidActive });
+  removeDirIfExists(paths.lockDir, fsImpl);
+  removeDirIfExists(paths.ticketsDir, fsImpl);
 }
 
 async function acquireCheckQueueLock(options = {}) {

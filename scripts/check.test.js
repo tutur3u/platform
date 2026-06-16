@@ -484,6 +484,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
     },
     pid: process.pid,
     queueRoot,
+    readProcessCommand: (pid) => `node scripts/check.js --pid=${pid}`,
     rootDir,
     sleepImpl: async () => {},
     stdoutWriter: (line) => queueMessages.push(line),
@@ -499,6 +500,64 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
     )
   );
   assert.equal(fs.existsSync(paths.lockDir), false);
+});
+
+test('forceClearCheckQueue discards unverified queue PIDs without signaling them', async () => {
+  const rootDir = createTempDir();
+  const queueRoot = createTempDir();
+  const paths = getCheckQueuePaths(rootDir, { queueRoot });
+  const activePids = new Set([61001, 61002]);
+  const killCalls = [];
+  const queueMessages = [];
+
+  fs.mkdirSync(paths.ticketsDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(paths.ticketsDir, '0000000000002-00061002-bravo.json'),
+    JSON.stringify(
+      {
+        createdAt: 2,
+        pid: 61002,
+        ticketId: 'bravo',
+      },
+      null,
+      2
+    )
+  );
+  fs.mkdirSync(paths.lockDir, { recursive: true });
+  fs.writeFileSync(
+    paths.lockMetaPath,
+    JSON.stringify(
+      {
+        createdAt: 1,
+        pid: 61001,
+        ticketId: 'owner',
+      },
+      null,
+      2
+    )
+  );
+
+  await forceClearCheckQueue({
+    isPidActive: (pid) => activePids.has(pid),
+    killImpl: (pid, signal) => {
+      killCalls.push([pid, signal]);
+    },
+    pid: process.pid,
+    queueRoot,
+    readProcessCommand: () => 'sleep 600',
+    rootDir,
+    sleepImpl: async () => {},
+    stdoutWriter: (line) => queueMessages.push(line),
+  });
+
+  assert.deepEqual(killCalls, []);
+  assert.ok(
+    queueMessages.some((line) =>
+      line.includes('Discarding 2 unverified bun check queue records')
+    )
+  );
+  assert.equal(fs.existsSync(paths.lockDir), false);
+  assert.equal(fs.existsSync(paths.ticketsDir), false);
 });
 
 test('acquireCheckQueueLock forceNow clears earlier checks before taking the lock', async () => {
@@ -532,6 +591,7 @@ test('acquireCheckQueueLock forceNow clears earlier checks before taking the loc
     pid: process.pid,
     pollMs: 10,
     queueRoot,
+    readProcessCommand: (pid) => `node scripts/check.js --pid=${pid}`,
     rootDir,
     sleepImpl: async () => {},
     stdoutWriter: () => {},
