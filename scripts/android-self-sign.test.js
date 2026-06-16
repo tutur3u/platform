@@ -5,6 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
+  createKeytoolPasswordFiles,
   DEFAULT_DEBUG_ALIAS,
   DEFAULT_DEBUG_PASSWORD,
   DEFAULT_REPO_KEY_PROPERTIES_FILE,
@@ -102,11 +103,13 @@ test('resolveKeystoreInput mirrors repo mobile signing defaults', () => {
 
 test('inspectAndroidSigningCertificate parses keytool output for a keystore', () => {
   const executed = [];
+  const passwordFilePaths = [];
   const workspaceCwd = '/workspace';
   const result = inspectAndroidSigningCertificate(
     {
       alias: 'upload',
       keystore: './release.jks',
+      keyPassword: 'key-secret',
       storePassword: 'store-secret',
     },
     {
@@ -114,6 +117,11 @@ test('inspectAndroidSigningCertificate parses keytool output for a keystore', ()
       env: {},
       execFileSync: (command, args) => {
         executed.push({ args, command });
+        passwordFilePaths.push(args.at(7), args.at(9));
+        assert.equal(fs.readFileSync(args.at(7), 'utf8'), 'store-secret\n');
+        assert.equal(fs.readFileSync(args.at(9), 'utf8'), 'key-secret\n');
+        assert.equal(args.includes('store-secret'), false);
+        assert.equal(args.includes('key-secret'), false);
         return [
           'Alias name: upload',
           'MD5: AA:BB:CC',
@@ -133,12 +141,16 @@ test('inspectAndroidSigningCertificate parses keytool output for a keystore', ()
         'upload',
         '-keystore',
         path.resolve(workspaceCwd, './release.jks'),
-        '-storepass',
-        'store-secret',
+        '-storepass:file',
+        passwordFilePaths[0],
+        '-keypass:file',
+        passwordFilePaths[1],
       ],
       command: 'keytool',
     },
   ]);
+  assert.equal(fs.existsSync(passwordFilePaths[0]), false);
+  assert.equal(fs.existsSync(passwordFilePaths[1]), false);
   assert.equal(result.sha1, '11:22:33');
   assert.equal(result.sha256, '44:55:66');
   assert.equal(result.md5, 'AA:BB:CC');
@@ -155,16 +167,20 @@ test('main prints JSON for the default debug keystore mode', () => {
       env: {},
       execFileSync: (command, args) => {
         assert.equal(command, 'keytool');
-        assert.deepEqual(args, [
+        assert.equal(args.includes(DEFAULT_DEBUG_PASSWORD), false);
+        assert.deepEqual(args.slice(0, 6), [
           '-list',
           '-v',
           '-alias',
           DEFAULT_DEBUG_ALIAS,
           '-keystore',
           path.join(os.homedir(), '.android/debug.keystore'),
-          '-storepass',
-          DEFAULT_DEBUG_PASSWORD,
         ]);
+        assert.equal(args[6], '-storepass:file');
+        assert.equal(
+          fs.readFileSync(args[7], 'utf8'),
+          `${DEFAULT_DEBUG_PASSWORD}\n`
+        );
 
         return 'SHA1: A1:B2:C3\nSHA-256: D4:E5:F6\n';
       },
@@ -179,4 +195,34 @@ test('main prints JSON for the default debug keystore mode', () => {
   assert.equal(output.sha1, 'A1:B2:C3');
   assert.equal(output.sha256, 'D4:E5:F6');
   assert.equal(output.source, 'debug-keystore');
+});
+
+test('createKeytoolPasswordFiles writes private temporary keytool inputs', () => {
+  const passwordFiles = createKeytoolPasswordFiles({
+    keyPassword: 'key-secret',
+    mode: 'keystore',
+    storePassword: 'store-secret',
+  });
+
+  try {
+    assert.equal(
+      fs.readFileSync(passwordFiles.files.storePasswordFile, 'utf8'),
+      'store-secret\n'
+    );
+    assert.equal(
+      fs.readFileSync(passwordFiles.files.keyPasswordFile, 'utf8'),
+      'key-secret\n'
+    );
+
+    if (process.platform !== 'win32') {
+      const storeMode = fs.statSync(passwordFiles.files.storePasswordFile).mode;
+      const tempDirMode = fs.statSync(
+        path.dirname(passwordFiles.files.storePasswordFile)
+      ).mode;
+      assert.equal(storeMode & 0o077, 0);
+      assert.equal(tempDirMode & 0o077, 0);
+    }
+  } finally {
+    passwordFiles.remove();
+  }
 });
