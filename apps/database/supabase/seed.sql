@@ -3812,7 +3812,7 @@ begin
         ws_id, storefront_id, event_type, occurred_at
     )
     select v_ws, v_store, e.event_type,
-        now() - (random() * 7 || ' days')::interval
+        now() - (random() * interval '7 days')
     from (
         select 'view' as event_type, generate_series(1, 100)
         union all select 'product_view', generate_series(1, 60)
