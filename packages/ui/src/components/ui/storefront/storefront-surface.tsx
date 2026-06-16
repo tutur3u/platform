@@ -105,7 +105,9 @@ export function StorefrontSurface({
   const cartEntries = cartLines.flatMap((line) => {
     const listing = listings.find((item) => item.id === line.listingId);
     if (!listing) return [];
-    return [{ line, listing, variant: resolveVariant(listing, line.variantId) }];
+    return [
+      { line, listing, variant: resolveVariant(listing, line.variantId) },
+    ];
   });
   const lineLimit = (entry: (typeof cartEntries)[number]) =>
     entry.variant
@@ -116,7 +118,9 @@ export function StorefrontSurface({
   );
   const total = checkoutEntries.reduce((sum, entry) => {
     const quantity = Math.min(entry.line.quantity, lineLimit(entry));
-    return sum + getStorefrontLinePrice(entry.listing, entry.variant) * quantity;
+    return (
+      sum + getStorefrontLinePrice(entry.listing, entry.variant) * quantity
+    );
   }, 0);
   const cartQuantity = cartLines.reduce((sum, line) => sum + line.quantity, 0);
   const detailListing = detailListingId

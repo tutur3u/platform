@@ -100,8 +100,7 @@ export function StorefrontProductDetail({
     const key = storefrontCartLineKey(listing.id, selectedVariant?.id);
     return (
       cartLines.find(
-        (line) =>
-          storefrontCartLineKey(line.listingId, line.variantId) === key
+        (line) => storefrontCartLineKey(line.listingId, line.variantId) === key
       )?.quantity ?? 0
     );
   }, [cartLines, listing.id, quantity, selectedVariant?.id]);

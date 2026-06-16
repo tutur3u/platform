@@ -49,9 +49,7 @@ export function StorefrontListingCard({
   const disabled = limit === 0 || quantity >= limit;
   const canChange = Boolean(onIncrement || onDecrement);
   const fromPrice = getStorefrontListingFromPrice(listing);
-  const openDetail = onOpenDetail
-    ? () => onOpenDetail(listing.id)
-    : undefined;
+  const openDetail = onOpenDetail ? () => onOpenDetail(listing.id) : undefined;
 
   return (
     <article

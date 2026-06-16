@@ -31,7 +31,10 @@ export async function getUpstashRestRedisClient(): Promise<UpstashRestRedisClien
     get: <T = unknown>(key: string) => client.get<T>(key),
     incr: (key) => client.incr(key),
     mget: (...args) => client.mget(...args),
-    scan: client.scan.bind(client),
+    // Wrap lazily like the other methods so constructing the client never eager-
+    // reads `client.scan` (an eager `.bind` crashes when the underlying client
+    // lacks the method, e.g. in tests with a partial mock).
+    scan: (...args) => client.scan(...args),
     set: (key, value, options) => client.set(key, value, options),
     ttl: (key) => client.ttl(key),
   };

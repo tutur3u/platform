@@ -562,7 +562,9 @@ type ListingOptionMap = Map<
 
 /** Resolves the listing's option groups (name -> {groupId, label -> valueId}). */
 async function loadListingOptionMap(
-  inventory: Awaited<ReturnType<typeof createPrivateInventoryClient>>['inventory'],
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory'],
   listingId: string
 ): Promise<ListingOptionMap> {
   const map: ListingOptionMap = new Map();
@@ -600,7 +602,9 @@ async function loadListingOptionMap(
 
 /** Wipes and re-inserts the listing's option groups/values from a fresh shape. */
 async function rebuildListingOptions(
-  inventory: Awaited<ReturnType<typeof createPrivateInventoryClient>>['inventory'],
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory'],
   wsId: string,
   listingId: string,
   options: NonNullable<InventoryStorefrontListingPayload['options']>
@@ -695,7 +699,9 @@ type RebuiltVariant = {
  * variant's option-value junction from the option map.
  */
 async function rebuildListingVariants(
-  inventory: Awaited<ReturnType<typeof createPrivateInventoryClient>>['inventory'],
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory'],
   wsId: string,
   listingId: string,
   listingPrice: number,
@@ -735,7 +741,8 @@ async function rebuildListingVariants(
       ws_id: wsId,
     };
 
-    let variantId = variant.id && existingById.has(variant.id) ? variant.id : '';
+    let variantId =
+      variant.id && existingById.has(variant.id) ? variant.id : '';
     if (variantId) {
       const { error: updateError } = await inventory
         .from('inventory_storefront_listing_variants')

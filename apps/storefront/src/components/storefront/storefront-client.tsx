@@ -365,7 +365,11 @@ export function StorefrontClient({
           customerEmail: buyerDefaults?.email ?? undefined,
           customerName: buyerDefaults?.name ?? undefined,
           lines: [
-            { listingId: buyNowListingId, quantity: 1, variantId: variantId ?? undefined },
+            {
+              listingId: buyNowListingId,
+              quantity: 1,
+              variantId: variantId ?? undefined,
+            },
           ],
         });
       }}

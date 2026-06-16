@@ -78,7 +78,10 @@ export function useCart(storeSlug: string) {
           (line) => lineKey(line.listingId, line.variantId) === key
         );
         if (!existing) {
-          return [...current, { listingId, quantity: 1, variantId: variantId ?? null }];
+          return [
+            ...current,
+            { listingId, quantity: 1, variantId: variantId ?? null },
+          ];
         }
         return current.map((line) =>
           lineKey(line.listingId, line.variantId) === key
