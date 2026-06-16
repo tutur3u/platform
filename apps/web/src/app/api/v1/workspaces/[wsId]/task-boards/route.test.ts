@@ -382,7 +382,7 @@ describe('task boards route GET', () => {
     expect(boardsQueryCalls).toEqual([]);
   });
 
-  it('lists member boards without creating a default board on GET', async () => {
+  it('ensures the default personal board before listing member boards', async () => {
     const response = await GET(
       new NextRequest(
         'http://localhost/api/v1/workspaces/personal/task-boards?status=all'
@@ -400,7 +400,11 @@ describe('task boards route GET', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
-    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(ensureDefaultPersonalTaskBoardMock).toHaveBeenCalledWith({
+      sbAdmin: expect.objectContaining({ from: fromMock }),
+      userId: '00000000-0000-4000-8000-000000000999',
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
     expect(boardsInsertMock).not.toHaveBeenCalled();
     expect(boardsQueryCalls).toContainEqual([
       'select',
@@ -510,7 +514,11 @@ describe('task boards route GET', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
-    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(ensureDefaultPersonalTaskBoardMock).toHaveBeenCalledWith({
+      sbAdmin: expect.objectContaining({ from: fromMock }),
+      userId: '00000000-0000-4000-8000-000000000999',
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
     expect(boardsInsertMock).not.toHaveBeenCalled();
     expect(createClientMock).not.toHaveBeenCalled();
     expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
@@ -555,7 +563,11 @@ describe('task boards route GET', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
-    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(ensureDefaultPersonalTaskBoardMock).toHaveBeenCalledWith({
+      sbAdmin: expect.objectContaining({ from: fromMock }),
+      userId: '00000000-0000-4000-8000-000000000999',
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
     expect(boardsInsertMock).not.toHaveBeenCalled();
     expect(createClientMock).not.toHaveBeenCalled();
     expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(

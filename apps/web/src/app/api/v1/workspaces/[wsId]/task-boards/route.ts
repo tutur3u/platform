@@ -14,6 +14,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
+import { ensureDefaultPersonalTaskBoard } from '@/lib/tasks/default-personal-task-board';
 
 const createBoardSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
@@ -98,6 +99,14 @@ export const GET = withSessionAuth<TaskBoardRouteParams>(
       }
 
       const sbAdmin = await createTaskBoardAdminClient();
+
+      if (memberCheck.ok) {
+        await ensureDefaultPersonalTaskBoard({
+          sbAdmin,
+          userId: auth.user.id,
+          wsId,
+        });
+      }
 
       const guestShares = memberCheck.ok
         ? []
