@@ -55,6 +55,55 @@ void main() {
       expect(plainText, contains('Ipsum'));
     });
 
+    test('ignores malformed TipTap attrs while preserving readable text', () {
+      final tiptap = jsonEncode({
+        'type': 'doc',
+        'content': [
+          {
+            'type': 'paragraph',
+            'attrs': 'boom',
+            'content': [
+              {'type': 'text', 'text': 'Visible text'},
+            ],
+          },
+          {
+            'type': 'paragraph',
+            'attrs': {'textAlign': 123},
+            'content': [
+              {'type': 'text', 'text': 'No align crash'},
+            ],
+          },
+          {
+            'type': 'imageResize',
+            'attrs': 'not-an-object',
+          },
+        ],
+      });
+
+      final document = tipTapJsonToQuillDocument(tiptap);
+      expect(document.toPlainText(), contains('Visible text'));
+      expect(document.toPlainText(), contains('No align crash'));
+    });
+
+    test('ignores non-string TipTap text nodes without throwing', () {
+      final tiptap = jsonEncode({
+        'type': 'doc',
+        'content': [
+          {
+            'type': 'paragraph',
+            'content': [
+              {'type': 'text', 'text': 123},
+              {'type': 'text', 'text': 'Safe text'},
+            ],
+          },
+        ],
+      });
+
+      final document = tipTapJsonToQuillDocument(tiptap);
+      expect(document.toPlainText(), contains('Safe text'));
+      expect(document.toPlainText(), isNot(contains('123')));
+    });
+
     test('falls back to plain text when payload is not JSON', () {
       final document = tipTapJsonToQuillDocument('plain text payload');
       expect(document.toPlainText(), contains('plain text payload'));
@@ -328,6 +377,31 @@ void main() {
       expect(attrs['height'], equals(405));
       expect(attrs['containerStyle'], equals('margin:auto'));
       expect(attrs['wrapperStyle'], equals('border:1px solid'));
+    });
+
+    test('ignores malformed image embed dimensions when serializing', () {
+      final delta = Delta()
+        ..insert({
+          'image': jsonEncode({
+            'src': 'https://cdn.example.com/photo.jpg',
+            'width': 'wide',
+            'height': 'tall',
+          }),
+        })
+        ..insert('\n');
+      final document = Document.fromDelta(delta);
+
+      final serialized = quillDocumentToTipTapJson(document);
+      expect(serialized, isNotNull);
+
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+      final imageNode = content.first;
+      final attrs = imageNode['attrs'] as Map<String, dynamic>;
+
+      expect(attrs['src'], equals('https://cdn.example.com/photo.jpg'));
+      expect(attrs['width'], isNull);
+      expect(attrs['height'], isNull);
     });
 
     test('converts indented Quill list to nested TipTap list', () {
