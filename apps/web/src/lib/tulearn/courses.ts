@@ -1,7 +1,8 @@
-import type { Tables } from '@tuturuuu/types/supabase';
+import type { Json, Tables } from '@tuturuuu/types/supabase';
 
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
+import { getMatchingPairs } from './quiz-content';
 import type { Db } from './types';
 
 type ModuleIdOnly = { module_id: string | null };
@@ -49,6 +50,7 @@ type QuizJoinRow = {
         quiz_options?: Array<{
           id: string;
           value: string;
+          explanation: string | null;
         }>;
       })
     | (Pick<
@@ -58,6 +60,7 @@ type QuizJoinRow = {
         quiz_options?: Array<{
           id: string;
           value: string;
+          explanation: string | null;
         }>;
       })[]
     | null;
@@ -69,6 +72,57 @@ type QuizSetJoinRow = {
     | Pick<Tables<'workspace_quiz_sets'>, 'id' | 'name'>[]
     | null;
 };
+
+type LearnerQuiz = Pick<
+  Tables<'workspace_quizzes'>,
+  'id' | 'question' | 'type' | 'content' | 'score'
+> & {
+  quiz_options?: Array<{
+    explanation: string | null;
+    id: string;
+    value: string;
+  }>;
+};
+
+function stableChoiceRank(quizId: string, value: string, index: number) {
+  const input = `${quizId}:${value}:${index}`;
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function matchingPromptContent(quizId: string, content: Json | null): Json {
+  const pairs = getMatchingPairs(content);
+  const choices = pairs
+    .map((pair, index) => ({
+      rank: stableChoiceRank(quizId, pair.right, index),
+      value: pair.right,
+    }))
+    .sort((a, b) => a.rank - b.rank)
+    .map((choice) => choice.value);
+
+  return {
+    choices,
+    pairs: pairs.map((pair) => ({ left: pair.left })),
+  };
+}
+
+function sanitizeLearnerQuiz(quiz: LearnerQuiz): LearnerQuiz {
+  return {
+    ...quiz,
+    content:
+      quiz.type === 'matching'
+        ? matchingPromptContent(quiz.id, quiz.content)
+        : quiz.content,
+    quiz_options: quiz.quiz_options?.map((option) => ({
+      explanation: option.explanation,
+      id: option.id,
+      value: option.value,
+    })),
+  };
+}
 
 export async function getAssignedCourseIds({
   db,
@@ -346,7 +400,7 @@ export async function getLearnerModuleDetail({
       sbAdmin
         .from('course_module_quizzes')
         .select(
-          'workspace_quizzes(id, question, type, content, score, quiz_options(id, value))'
+          'workspace_quizzes(id, question, type, content, score, quiz_options(id, value, explanation))'
         )
         .eq('module_id', moduleId),
       sbAdmin
@@ -377,7 +431,7 @@ export async function getLearnerModuleDetail({
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-    quizzes: rawQuizzes,
+    quizzes: rawQuizzes.map(sanitizeLearnerQuiz),
     quizSets: quizSetRows
       .map((row) => firstOf(row.workspace_quiz_sets))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),

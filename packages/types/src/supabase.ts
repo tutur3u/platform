@@ -14025,6 +14025,75 @@ export type Database = {
           },
         ];
       };
+      course_module_quiz_submissions: {
+        Row: {
+          answer: Json | null;
+          created_at: string;
+          id: string;
+          is_correct: boolean;
+          module_id: string;
+          quiz_id: string;
+          selected_option_id: string | null;
+          user_id: string;
+        };
+        Insert: {
+          answer?: Json | null;
+          created_at?: string;
+          id?: string;
+          is_correct: boolean;
+          module_id: string;
+          quiz_id: string;
+          selected_option_id?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          answer?: Json | null;
+          created_at?: string;
+          id?: string;
+          is_correct?: boolean;
+          module_id?: string;
+          quiz_id?: string;
+          selected_option_id?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_quiz_submissions_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_quiz_submissions_option_id_fkey';
+            columns: ['selected_option_id'];
+            isOneToOne: false;
+            referencedRelation: 'quiz_options';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_quiz_submissions_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_quiz_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_quiz_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_module_quizzes: {
         Row: {
           created_at: string;

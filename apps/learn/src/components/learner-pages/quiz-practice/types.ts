@@ -5,14 +5,22 @@ export type Quiz = {
   quiz_options?: Array<{
     id: string;
     value: string;
+    explanation?: string | null;
   }>;
   score: number;
   type?: string | null;
 };
-export type SelectedAnswer = boolean | number | null;
+export type SelectedAnswer =
+  | boolean
+  | number
+  | string[]
+  | MatchingPair[]
+  | null;
 
 export type DisplayOption = {
+  id: string;
   value: string;
+  explanation?: string | null;
 };
 
 export type MatchingPair = {
@@ -55,14 +63,61 @@ export function getStringItems(content: unknown, key: string): string[] {
   return getArrayProperty(content, key).map(displayText).filter(Boolean);
 }
 
+export function getMatchingChoices(content: unknown): string[] {
+  const explicitChoices = getStringItems(content, 'choices');
+  if (explicitChoices.length > 0) return explicitChoices;
+
+  return getMatchingPairs(content)
+    .map((pair) => pair.right)
+    .filter(Boolean);
+}
+
+export function isMatchingAnswer(
+  value: SelectedAnswer
+): value is MatchingPair[] {
+  return (
+    Array.isArray(value) &&
+    value.every((item) => {
+      const record = asRecord(item);
+      return (
+        typeof record?.left === 'string' && typeof record?.right === 'string'
+      );
+    })
+  );
+}
+
+export function isOrderingAnswer(value: SelectedAnswer): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === 'string')
+  );
+}
+
+export function isCompleteMatchingAnswer(
+  value: SelectedAnswer,
+  pairCount: number
+): value is MatchingPair[] {
+  return (
+    isMatchingAnswer(value) &&
+    value.length === pairCount &&
+    value.every((pair) => pair.left.trim() && pair.right.trim())
+  );
+}
+
 export function getMultipleChoiceOptions(quiz: Quiz): DisplayOption[] {
   const contentOptions = getStringItems(quiz.content, 'options');
   if (contentOptions.length > 0) {
-    return contentOptions.map((value) => ({ value }));
+    return contentOptions.map((value, index) => ({
+      id: `content-option-${index}`,
+      value,
+    }));
   }
 
   return (quiz.quiz_options ?? [])
-    .map((option) => ({ value: option.value }))
+    .map((option) => ({
+      id: option.id,
+      value: option.value,
+      explanation: option.explanation,
+    }))
     .filter((option) => option.value.trim().length > 0);
 }
 
