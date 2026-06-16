@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(7);
+select plan(8);
 
 insert into public.users (id, display_name)
 values
@@ -272,14 +272,40 @@ select lives_ok(
   'reservation helper accepts stock from the checkout workspace'
 );
 
+select lives_ok(
+  $$
+    update private.inventory_products
+    set amount = null
+    where product_id = '00000000-0000-4000-8000-000000000401'
+      and unit_id = '00000000-0000-4000-8000-000000000501'
+      and warehouse_id = '00000000-0000-4000-8000-000000000601';
+
+    select public._inventory_create_reserved_line(
+      '00000000-0000-4000-8000-000000000201',
+      '00000000-0000-4000-8000-000000000901',
+      null,
+      '00000000-0000-4000-8000-000000000801',
+      '00000000-0000-4000-8000-000000000401',
+      '00000000-0000-4000-8000-000000000501',
+      '00000000-0000-4000-8000-000000000601',
+      'Unlimited attacker line',
+      12,
+      100,
+      now() + interval '15 minutes',
+      now()
+    )
+  $$,
+  'reservation helper accepts unlimited stock rows'
+);
+
 select is(
   (
     select count(*)::int
     from private.inventory_reservations
     where checkout_session_id = '00000000-0000-4000-8000-000000000901'
   ),
-  1,
-  'only the same-workspace reservation was persisted'
+  2,
+  'only same-workspace reservations were persisted'
 );
 
 select is(
@@ -288,7 +314,7 @@ select is(
     from private.inventory_reservations
     where checkout_session_id = '00000000-0000-4000-8000-000000000901'
   ),
-  2::bigint,
+  14::bigint,
   'reservation amount belongs to the same-workspace stock line'
 );
 
