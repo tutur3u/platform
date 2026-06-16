@@ -20,6 +20,15 @@ const CreateTestSchema = z.object({
   description: z.string().trim().max(1000).nullable().optional(),
 });
 
+const UpdateTestSchema = z.object({
+  id: z.guid(),
+  is_published: z.boolean().optional(),
+  name: z.string().trim().min(1).max(255).optional(),
+  startAt: z.string().datetime().nullable().optional(),
+  durationInMinutes: z.number().int().min(1).max(1440).nullable().optional(),
+  description: z.string().trim().max(1000).nullable().optional(),
+});
+
 export const GET = withSessionAuth(
   async (
     _request,
@@ -58,7 +67,7 @@ export const GET = withSessionAuth(
     const { data, error } = await access.sbAdmin
       .from('course_tests')
       .select(
-        'id, course_id, name, created_at, start_at, duration_in_minutes, description, course_test_modules(module_id)'
+        'id, course_id, name, created_at, start_at, duration_in_minutes, description, is_published, course_test_modules(module_id)'
       )
       .eq('course_id', parsedParams.data.courseId)
       .order('created_at', { ascending: false });
@@ -79,6 +88,7 @@ export const GET = withSessionAuth(
       start_at: t.start_at,
       duration_in_minutes: t.duration_in_minutes,
       description: t.description,
+      is_published: t.is_published,
       module_ids:
         (t.course_test_modules as { module_id: string }[] | undefined)?.map(
           (m) => m.module_id
@@ -196,6 +206,98 @@ export const POST = withSessionAuth(
     }
 
     return NextResponse.json({ id: testId });
+  },
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { maxRequests: 60, windowMs: 60000 },
+  }
+);
+
+export const PATCH = withSessionAuth(
+  async (
+    request,
+    context,
+    params:
+      | { wsId: string; courseId: string }
+      | Promise<{ wsId: string; courseId: string }>
+  ) => {
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
+        { status: 400 }
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsedBody = UpdateTestSchema.safeParse(body);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const access = await requireTeachWorkspaceAccess({
+      context,
+      permission: 'update_user_groups',
+      wsId: parsedParams.data.wsId,
+    });
+    if (access instanceof NextResponse) return access;
+
+    const course = await validateTeachCourse({
+      courseId: parsedParams.data.courseId,
+      db: access.sbAdmin,
+      wsId: access.normalizedWsId,
+    });
+    if (!course) {
+      return NextResponse.json(
+        { message: 'Course not found' },
+        { status: 404 }
+      );
+    }
+
+    const { id, is_published, name, startAt, durationInMinutes, description } =
+      parsedBody.data;
+
+    const updatePayload: {
+      is_published?: boolean;
+      name?: string;
+      start_at?: string | null;
+      duration_in_minutes?: number | null;
+      description?: string | null;
+    } = {};
+    if (is_published !== undefined) updatePayload.is_published = is_published;
+    if (name !== undefined) updatePayload.name = name;
+    if (startAt !== undefined) updatePayload.start_at = startAt;
+    if (durationInMinutes !== undefined)
+      updatePayload.duration_in_minutes = durationInMinutes;
+    if (description !== undefined) updatePayload.description = description;
+
+    const { error } = await access.sbAdmin
+      .from('course_tests')
+      .update(updatePayload)
+      .eq('id', id)
+      .eq('course_id', parsedParams.data.courseId);
+
+    if (error) {
+      serverLogger.error('Failed to update course test', { error });
+      return NextResponse.json(
+        { message: 'Error updating course test' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
   },
   {
     allowAppSessionAuth: { targetApp: 'teach' },

@@ -30,8 +30,18 @@ interface CourseModuleSummary {
   };
 }
 
+interface CourseTestSummary {
+  id: string;
+  name: string;
+  start_at: string | null;
+  duration_in_minutes: number | null;
+  description: string | null;
+  module_ids: string[];
+}
+
 interface CourseDetail extends CourseSummary {
   modules: CourseModuleSummary[];
+  tests: CourseTestSummary[];
 }
 
 type FlashcardJoinRow = {
@@ -344,6 +354,30 @@ export async function getLearnerCourseDetail({
   );
 
   const completedModules = modules.filter((module) => module.completed).length;
+
+  const { data: testsData, error: testsError } = await sbAdmin
+    .from('course_tests')
+    .select(
+      'id, name, start_at, duration_in_minutes, description, course_test_modules(module_id)'
+    )
+    .eq('course_id', courseId)
+    .eq('is_published', true)
+    .order('created_at', { ascending: false });
+
+  if (testsError) throw testsError;
+
+  const tests = (testsData ?? []).map((t) => ({
+    id: t.id,
+    name: t.name,
+    start_at: t.start_at,
+    duration_in_minutes: t.duration_in_minutes,
+    description: t.description,
+    module_ids:
+      (t.course_test_modules as { module_id: string }[] | undefined)?.map(
+        (m) => m.module_id
+      ) ?? [],
+  }));
+
   return {
     id: courseResult.data.id,
     name: courseResult.data.name,
@@ -354,6 +388,7 @@ export async function getLearnerCourseDetail({
       ? Math.round((completedModules / modules.length) * 100)
       : 0,
     modules,
+    tests,
   };
 }
 

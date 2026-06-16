@@ -183,6 +183,11 @@
     "learningObjectivesDescription": "Bài đánh giá này hỗ trợ đánh giá chuẩn đầu ra trong các chương sau:",
     "noAssociatedModules": "Không có chương nào được liên kết rõ ràng với bài kiểm tra này.",
     "startTest": "Bắt đầu bài thi",
+    "publish": "Công khai",
+    "published": "Đã công khai",
+    "unpublish": "Hủy công khai",
+    "testPublished": "Đã công khai bài kiểm tra thành công",
+    "testUnpublished": "Đã hủy công khai bài kiểm tra thành công",
     "aiGenerate": {
       "actions": {
         "cancel": "Hủy",

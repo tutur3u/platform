@@ -1,11 +1,13 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   BookOpenCheck,
   Calendar,
   Clock,
+  Eye,
+  EyeOff,
   GraduationCap,
   Layers,
   Play,
@@ -13,8 +15,10 @@ import {
 import {
   listWorkspaceCourseModules,
   listWorkspaceCourseTests,
+  updateWorkspaceCourseTest,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -49,6 +53,34 @@ export function TestDetailClient({
   const testModules = (modulesData ?? []).filter((m) =>
     test?.module_ids?.includes(m.id)
   );
+
+  const qc = useQueryClient();
+
+  const updateTestMutation = useMutation({
+    mutationFn: async (payload: { id: string; is_published?: boolean }) =>
+      updateWorkspaceCourseTest(wsId, courseId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['course-tests', wsId, courseId] });
+      toast.success(
+        test?.is_published
+          ? t('teachModules.testUnpublished')
+          : t('teachModules.testPublished')
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update test'
+      );
+    },
+  });
+
+  const handleTogglePublished = () => {
+    if (!test) return;
+    updateTestMutation.mutate({
+      id: testId,
+      is_published: !test.is_published,
+    });
+  };
 
   const isLoading = isLoadingTests || isLoadingModules;
 
@@ -114,16 +146,42 @@ export function TestDetailClient({
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                toast.success('Starting test session...');
-              }}
-              className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 self-start border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] md:self-center"
-              type="button"
-            >
-              <Play className="h-5 w-5" />
-              {t('teachModules.startTest')}
-            </button>
+            <div className="flex shrink-0 flex-wrap items-center gap-3 self-start md:self-center">
+              <button
+                onClick={handleTogglePublished}
+                disabled={updateTestMutation.isPending}
+                className={cn(
+                  'inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border px-5 py-3 font-bold text-base shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:opacity-50',
+                  test.is_published
+                    ? 'bg-dynamic-green/15 text-foreground'
+                    : 'bg-muted text-muted-foreground'
+                )}
+                type="button"
+              >
+                {test.is_published ? (
+                  <>
+                    <Eye className="h-5 w-5" />
+                    {t('teachModules.published')}
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-5 w-5" />
+                    {t('teachModules.publish')}
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  toast.success('Starting test session...');
+                }}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
+                type="button"
+              >
+                <Play className="h-5 w-5" />
+                {t('teachModules.startTest')}
+              </button>
+            </div>
           </div>
         </div>
 

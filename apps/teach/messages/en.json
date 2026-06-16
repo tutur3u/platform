@@ -183,6 +183,11 @@
     "learningObjectivesDescription": "This assessment supports the learning outcomes covered in the following modules:",
     "noAssociatedModules": "No modules are explicitly associated with this test.",
     "startTest": "Start Test",
+    "publish": "Publish",
+    "published": "Published",
+    "unpublish": "Unpublish",
+    "testPublished": "Test published successfully",
+    "testUnpublished": "Test unpublished successfully",
     "aiGenerate": {
       "actions": {
         "cancel": "Cancel",

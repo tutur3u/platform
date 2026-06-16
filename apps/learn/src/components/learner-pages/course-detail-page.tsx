@@ -1,13 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import { BookOpen, ChevronLeft, ChevronRight, Play } from '@tuturuuu/icons';
 import {
   getTulearnCourse,
   getTulearnCourseModule,
   type TulearnCourseDetail,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -41,6 +42,7 @@ export function CourseDetailPage({
   });
 
   const modules = course.data?.modules ?? [];
+  const tests = course.data?.tests ?? [];
   const selectedModule =
     modules.find((module) => module.id === selectedModuleId) ?? null;
   const selectedModuleDetail = useQuery({
@@ -279,6 +281,72 @@ export function CourseDetailPage({
           </div>
 
           {!modules.length ? <EmptyState label={t('courses.empty')} /> : null}
+
+          {/* Tests Section */}
+          {tests.length > 0 && (
+            <div className="space-y-4 border-border border-t pt-6">
+              <div>
+                <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
+                  {t('courses.tests')}
+                </p>
+                <h2 className="mt-1 font-black text-2xl leading-tight tracking-normal">
+                  Course Assessments
+                </h2>
+              </div>
+
+              <div className="space-y-3">
+                {tests.map((test, index) => {
+                  return (
+                    <BrutalCard key={test.id} className="p-0">
+                      <div className="flex w-full items-center gap-4 px-5 py-4 text-left">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 font-bold text-foreground text-sm shadow-[2px_2px_0_var(--border)]">
+                          T{index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate font-bold text-base">
+                            {test.name}
+                          </h3>
+                          {test.description && (
+                            <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs leading-relaxed">
+                              {test.description}
+                            </p>
+                          )}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+                            {test.start_at && (
+                              <span>
+                                Start:{' '}
+                                {new Date(test.start_at).toLocaleString([], {
+                                  dateStyle: 'short',
+                                  timeStyle: 'short',
+                                })}
+                              </span>
+                            )}
+                            {test.duration_in_minutes && (
+                              <span>
+                                Duration: {test.duration_in_minutes} mins
+                              </span>
+                            )}
+                            <span>Online Test</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            toast.success('Starting test session...');
+                          }}
+                          className="inline-flex cursor-pointer items-center justify-center gap-1.5 border-2 border-border bg-primary px-3.5 py-1.5 font-bold text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)]"
+                          type="button"
+                        >
+                          <Play className="h-3.5 w-3.5" />
+                          {t('courses.startTest')}
+                        </button>
+                      </div>
+                    </BrutalCard>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

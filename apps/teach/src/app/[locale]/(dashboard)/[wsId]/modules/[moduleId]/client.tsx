@@ -15,6 +15,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   BookOpenCheck,
@@ -22,16 +23,15 @@ import {
   Plus,
   Sparkles,
 } from '@tuturuuu/icons';
+import { listWorkspaceCourseTests } from '@tuturuuu/internal-api';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { CourseMembersPanel } from '@/components/teach-operations/course-members-panel';
 import { AiGenerateDialog } from './ai-generate-dialog';
+import { CourseTestDialog } from './course-test-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
 import { ModuleGroupSection } from './module-group-section';
-import { useQuery } from '@tanstack/react-query';
-import { listWorkspaceCourseTests } from '@tuturuuu/internal-api';
-import { CourseTestDialog } from './course-test-dialog';
 import { ModuleStorageDialog } from './module-storage-dialog';
 import {
   type ModuleGroupWithModules,
@@ -222,19 +222,19 @@ export function ModuleDetailClient({
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             {/* Left Sidebar: Tests list */}
-            <div className="md:col-span-1 space-y-4">
+            <div className="space-y-4 md:col-span-1">
               <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
-                <h2 className="font-black text-lg uppercase tracking-wider mb-4 flex items-center gap-2 border-b-2 border-border pb-2">
+                <h2 className="mb-4 flex items-center gap-2 border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
                   <BookOpenCheck className="h-5 w-5 text-primary" />
                   Tests
                 </h2>
                 {isLoadingTests ? (
                   <div className="space-y-3">
-                    <div className="h-16 bg-muted animate-pulse border-2 border-border" />
-                    <div className="h-16 bg-muted animate-pulse border-2 border-border" />
+                    <div className="h-16 animate-pulse border-2 border-border bg-muted" />
+                    <div className="h-16 animate-pulse border-2 border-border bg-muted" />
                   </div>
                 ) : tests.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic py-2">
+                  <p className="py-2 text-muted-foreground text-sm italic">
                     No tests created yet.
                   </p>
                 ) : (
@@ -243,14 +243,21 @@ export function ModuleDetailClient({
                       <Link
                         key={test.id}
                         href={`/${wsId}/modules/${courseId}/tests/${test.id}`}
-                        className="block border-2 border-border p-3 bg-muted/10 shadow-[2px_2px_0_var(--border)] hover:bg-muted/20 transition flex flex-col gap-1.5 cursor-pointer"
+                        className="block flex cursor-pointer flex-col gap-1.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)] transition hover:bg-muted/20"
                       >
-                        <h3 className="font-bold text-sm leading-tight text-primary break-words">
-                          {test.name}
-                        </h3>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="break-words font-bold text-primary text-sm leading-tight">
+                            {test.name}
+                          </h3>
+                          {!test.is_published && (
+                            <span className="shrink-0 border border-border bg-muted px-1.5 py-0.5 font-bold text-[9px] text-muted-foreground uppercase tracking-wider shadow-[1px_1px_0_var(--border)]">
+                              Draft
+                            </span>
+                          )}
+                        </div>
                         {test.start_at && (
-                          <div className="text-[11px] text-muted-foreground flex flex-wrap gap-1 items-center">
-                            <span className="font-black uppercase tracking-wider text-[10px]">
+                          <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                            <span className="font-black text-[10px] uppercase tracking-wider">
                               Start:
                             </span>
                             <span>
@@ -262,8 +269,8 @@ export function ModuleDetailClient({
                           </div>
                         )}
                         {test.duration_in_minutes && (
-                          <div className="text-[11px] text-muted-foreground flex gap-1 items-center">
-                            <span className="font-black uppercase tracking-wider text-[10px]">
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <span className="font-black text-[10px] uppercase tracking-wider">
                               Duration:
                             </span>
                             <span>{test.duration_in_minutes} mins</span>
@@ -277,7 +284,7 @@ export function ModuleDetailClient({
             </div>
 
             {/* Main content: Modules list */}
-            <div className="md:col-span-3 space-y-6">
+            <div className="space-y-6 md:col-span-3">
               {/* Toolbar */}
               <div className="flex items-center justify-between gap-4">
                 <div>

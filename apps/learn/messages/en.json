@@ -127,6 +127,8 @@
     "sharedCourse": "Shared course",
     "title": "Courses",
     "untitled": "Course",
+    "tests": "Tests",
+    "startTest": "Start Test",
     "videoCount": "{count, plural, one {# video} other {# videos}}",
     "videos": "Videos",
     "xp": "XP",

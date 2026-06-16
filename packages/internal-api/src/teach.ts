@@ -318,6 +318,7 @@ export interface TeachCourseTest {
   start_at?: string | null;
   duration_in_minutes?: number | null;
   description?: string | null;
+  is_published?: boolean;
 }
 
 export function listWorkspaceCourseTests(
@@ -352,6 +353,31 @@ export function createWorkspaceCourseTest(
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
+    }
+  );
+}
+
+export function updateWorkspaceCourseTest(
+  workspaceId: string,
+  courseId: string,
+  payload: {
+    id: string;
+    is_published?: boolean;
+    name?: string;
+    startAt?: string | null;
+    durationInMinutes?: number | null;
+    description?: string | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
     }
   );
 }

@@ -1101,6 +1101,7 @@ export {
   type TeachWorkspaceUser,
   updateWorkspaceCourseAttendance,
   updateWorkspaceCourseIndicators,
+  updateWorkspaceCourseTest,
 } from './teach';
 export {
   getWorkspaceTemplate,

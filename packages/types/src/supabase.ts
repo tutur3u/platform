@@ -14171,6 +14171,7 @@ export type Database = {
           description: string | null;
           duration_in_minutes: number | null;
           id: string;
+          is_published: boolean;
           name: string;
           start_at: string | null;
         };
@@ -14180,6 +14181,7 @@ export type Database = {
           description?: string | null;
           duration_in_minutes?: number | null;
           id?: string;
+          is_published?: boolean;
           name?: string;
           start_at?: string | null;
         };
@@ -14189,6 +14191,7 @@ export type Database = {
           description?: string | null;
           duration_in_minutes?: number | null;
           id?: string;
+          is_published?: boolean;
           name?: string;
           start_at?: string | null;
         };
