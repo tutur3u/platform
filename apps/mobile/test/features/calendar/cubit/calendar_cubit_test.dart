@@ -121,5 +121,55 @@ void main() {
       expect(cachedCubit.state.status, CalendarStatus.loaded);
       expect(cachedCubit.state.events.single.id, 'event-2');
     });
+
+    test('uses target workspace cache after switching workspaces', () async {
+      when(
+        () => repository.getEvents(
+          'ws-2',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer(
+        (_) async => [
+          _event(id: 'event-ws-2', startAt: DateTime(2026, 3, 26, 10)),
+        ],
+      );
+
+      await CalendarCubit.prewarm(
+        calendarRepository: repository,
+        wsId: 'ws-2',
+      );
+      CalendarCubit.clearCache();
+
+      when(
+        () => repository.getEvents(
+          'ws-1',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer(
+        (_) async => [
+          _event(id: 'event-ws-1', startAt: DateTime(2026, 3, 25, 9)),
+        ],
+      );
+
+      await cubit.loadEvents('ws-1');
+      expect(cubit.state.events.single.id, 'event-ws-1');
+
+      clearInteractions(repository);
+
+      await cubit.loadEvents('ws-2');
+
+      expect(cubit.state.status, CalendarStatus.loaded);
+      expect(cubit.state.isFromCache, isTrue);
+      expect(cubit.state.events.single.id, 'event-ws-2');
+      verifyNever(
+        () => repository.getEvents(
+          'ws-2',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      );
+    });
   });
 }
