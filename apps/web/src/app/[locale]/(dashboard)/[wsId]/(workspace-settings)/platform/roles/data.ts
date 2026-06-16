@@ -1,9 +1,14 @@
 import 'server-only';
 
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { UserPrivateDetails } from '@tuturuuu/types';
 import { notFound } from 'next/navigation';
 import { listHiveAccessRequests, listHiveMembers } from '@/lib/hive/hive-db';
+import { resolveWebHiveAccess } from '@/lib/hive-page-context';
 import type {
   HiveAccessState,
   PlatformRoleStats,
@@ -11,8 +16,33 @@ import type {
   SearchUserResult,
 } from './types';
 
+function getUnavailableHiveAccessState(): HiveAccessState {
+  return {
+    available: false,
+    members: [],
+    requests: [],
+  };
+}
+
 export async function getHiveAccessState(): Promise<HiveAccessState> {
   try {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user?.id) {
+      return getUnavailableHiveAccessState();
+    }
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const access = await resolveWebHiveAccess({
+      sbAdmin,
+      userId: user.id,
+    });
+
+    if ('error' in access || !access.isAdmin) {
+      return getUnavailableHiveAccessState();
+    }
+
     const [members, requests] = await Promise.all([
       listHiveMembers(),
       listHiveAccessRequests({ status: 'pending' }),
@@ -41,11 +71,7 @@ export async function getHiveAccessState(): Promise<HiveAccessState> {
       })),
     };
   } catch {
-    return {
-      available: false,
-      members: [],
-      requests: [],
-    };
+    return getUnavailableHiveAccessState();
   }
 }
 
