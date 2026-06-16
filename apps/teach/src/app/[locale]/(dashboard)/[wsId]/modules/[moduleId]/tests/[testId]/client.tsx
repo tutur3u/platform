@@ -8,7 +8,9 @@ import {
   Clock,
   GraduationCap,
   Layers,
+  Play,
 } from '@tuturuuu/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -94,19 +96,32 @@ export function TestDetailClient({
             {t('teachModules.backToModules')}
           </Link>
 
-          <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
-              <BookOpenCheck className="h-7 w-7" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
-                <GraduationCap className="h-3.5 w-3.5" />
-                {workspaceName ?? 'Workspace'}
-              </p>
-              <h1 className="font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal break-words">
-                {test.name}
-              </h1>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+                <BookOpenCheck className="h-7 w-7" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  {workspaceName ?? 'Workspace'}
+                </p>
+                <h1 className="font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal break-words">
+                  {test.name}
+                </h1>
+              </div>
             </div>
+
+            <button
+              onClick={() => {
+                toast.success('Starting test session...');
+              }}
+              className="inline-flex items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-primary-foreground text-base shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] shrink-0 self-start md:self-center cursor-pointer"
+              type="button"
+            >
+              <Play className="h-5 w-5" />
+              {t('teachModules.startTest')}
+            </button>
           </div>
         </div>
 

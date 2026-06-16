@@ -182,6 +182,7 @@
     "learningObjectivesAssessed": "Chuẩn đầu ra được đánh giá",
     "learningObjectivesDescription": "Bài đánh giá này hỗ trợ đánh giá chuẩn đầu ra trong các chương sau:",
     "noAssociatedModules": "Không có chương nào được liên kết rõ ràng với bài kiểm tra này.",
+    "startTest": "Bắt đầu bài thi",
     "aiGenerate": {
       "actions": {
         "cancel": "Hủy",
