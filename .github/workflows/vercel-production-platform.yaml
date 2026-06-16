@@ -107,12 +107,9 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy Project Artifacts to Vercel
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
-        run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      # Build-only: validate the production build but do not deploy from CI.
+      # Actual production deploys are handled outside this workflow (e.g. Vercel's
+      # Git integration). The `vercel deploy` step was intentionally removed.
 
       - name: Record successful Vercel build marker
         if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
@@ -120,16 +117,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VERCEL_MARKER_KIND: build
-          VERCEL_MARKER_SHA: ${{ steps.resolve_target.outputs.sha }}
-          VERCEL_WORKFLOW_NAME: vercel-production-platform.yaml
-        run: node --experimental-strip-types scripts/ci/record-vercel-deployment.ts
-
-      - name: Record successful Vercel deployment marker
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          VERCEL_MARKER_KIND: deployment
           VERCEL_MARKER_SHA: ${{ steps.resolve_target.outputs.sha }}
           VERCEL_WORKFLOW_NAME: vercel-production-platform.yaml
         run: node --experimental-strip-types scripts/ci/record-vercel-deployment.ts
