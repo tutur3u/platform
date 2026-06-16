@@ -105,9 +105,7 @@ describe('guardApiProxyRequest', () => {
     mocks.validateEmoji.mockReset();
     mocks.getTrustEntries.mockReset();
     // Default: no cached trust (untrusted). Tests opt in by overriding.
-    mocks.getTrustEntries.mockResolvedValue(
-      new Map<string, { m: number }>()
-    );
+    mocks.getTrustEntries.mockResolvedValue(new Map<string, { m: number }>());
   });
 
   afterEach(() => {
@@ -1844,7 +1842,10 @@ describe('guardApiProxyRequest', () => {
     expect(response?.status).toBe(429);
     expect(receivedKeys).toContain(`workspace:${wsId}`);
     // Base task-board minute (600) scaled by the workspace tier (5).
-    expect(mocks.ratelimitConfigs).toContainEqual({ limit: 3000, window: '1 m' });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 3000,
+      window: '1 m',
+    });
     expect(mocks.ratelimitPrefixes).toContain(
       'proxy:test:api:task-board-read:anonymous:t5:get:minute'
     );

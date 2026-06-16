@@ -3,7 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
-import { cookies, headers } from 'next/headers';
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import {
   checkEnvVariables,
@@ -109,6 +108,12 @@ function resolveRequestUrlFromHeaders(
 
 async function getRequestUrlFromHeaders() {
   try {
+    // Import `next/headers` lazily so this module's static graph stays free of
+    // it. Otherwise any importer (e.g. the Next proxy/middleware bundle) drags
+    // in `next/headers` and Turbopack fails the build ("only available in
+    // Server Components"). The dynamic import resolves fine in App Router
+    // contexts where this code actually runs.
+    const { headers } = await import('next/headers');
     return resolveRequestUrlFromHeaders(await headers());
   } catch {
     return null;
@@ -126,6 +131,9 @@ async function createGenericClient<T = Database>(
   requestUrl?: string | URL | null
 ): Promise<SupabaseClient<T>> {
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
+  // Lazy `next/headers` import — see getRequestUrlFromHeaders above. Keeps the
+  // static module graph clean so middleware/proxy consumers build under Turbopack.
+  const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
   const resolvedRequestUrl = requestUrl ?? (await getRequestUrlFromHeaders());
   const cookieOptions = getSupabaseCookieOptions(url, resolvedRequestUrl);

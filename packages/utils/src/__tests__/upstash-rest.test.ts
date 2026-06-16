@@ -30,12 +30,15 @@ describe('upstash-rest', () => {
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     const client = {
+      decr: vi.fn(),
       del: vi.fn(),
       eval: vi.fn(),
       evalsha: vi.fn(),
       expire: vi.fn(),
       get: vi.fn(),
       incr: vi.fn(),
+      mget: vi.fn(),
+      scan: vi.fn(),
       set: vi.fn(),
       ttl: vi.fn(),
     };
