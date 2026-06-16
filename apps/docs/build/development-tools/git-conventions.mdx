@@ -223,9 +223,10 @@ When bringing the generated release PR branch back to `main`, run
 `bun git-release-please` from a clean `main` checkout. The helper fetches the
 latest `release-please--branches--production` branch, merges it without
 committing, syncs `platform-version.txt` into the platform badge constant and
-test expectation, runs `bun ff`, stages the resolved merge, then lets the normal
-commit hook run `bun check` and conditional `bun check:mobile` before the merge
-commit lands. If you are already inside a manual merge, run
+test expectation, runs `bun ff`, stages the resolved merge, then runs `bun check`
+directly before the merge commit lands. When the staged release merge includes
+`apps/mobile` paths, the helper also runs `bun check:mobile`. If you are already
+inside a manual merge, run
 `bun release:sync-platform-version` to resolve the recurring
 `TUTURUUU_PLATFORM_VERSION` conflict before staging the merge.
 

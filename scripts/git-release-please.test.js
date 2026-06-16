@@ -2,7 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  finalizeMerge,
   parseArgs,
+  runReleaseChecks,
   selectReleasePleaseBranch,
 } = require('./git-release-please.js');
 
@@ -58,4 +60,56 @@ test('parseArgs supports release-please merge overrides', () => {
       targetBranch: 'production',
     }
   );
+});
+
+test('runReleaseChecks runs bun check for staged release changes', () => {
+  const calls = [];
+
+  runReleaseChecks({
+    files: ['packages/sdk/package.json'],
+    runCommand: (command, args) => calls.push([command, args]),
+  });
+
+  assert.deepEqual(calls, [['bun', ['check']]]);
+});
+
+test('runReleaseChecks mirrors mobile pre-commit coverage when mobile is staged', () => {
+  const calls = [];
+
+  runReleaseChecks({
+    files: ['apps/mobile/pubspec.yaml'],
+    runCommand: (command, args) => calls.push([command, args]),
+  });
+
+  assert.deepEqual(calls, [
+    ['bun', ['check']],
+    ['bun', ['check:mobile']],
+  ]);
+});
+
+test('finalizeMerge runs release checks before creating the merge commit', () => {
+  const calls = [];
+
+  finalizeMerge({
+    ensureCleanMerge: () => {},
+    format: true,
+    runCommand: (command, args) => calls.push([command, args]),
+    stagedFilesProvider: () => ['packages/sdk/package.json'],
+  });
+
+  assert.deepEqual(calls, [
+    ['bun', ['release:sync-platform-version']],
+    [
+      'git',
+      [
+        'add',
+        'packages/utils/src/platform-release.ts',
+        'packages/utils/src/platform-release.test.ts',
+      ],
+    ],
+    ['bun', ['ff']],
+    ['git', ['add', '--all']],
+    ['bun', ['check']],
+    ['git', ['commit', '--no-edit']],
+  ]);
 });

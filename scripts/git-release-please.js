@@ -14,6 +14,7 @@ const PLATFORM_RELEASE_FILES = [
   'packages/utils/src/platform-release.ts',
   'packages/utils/src/platform-release.test.ts',
 ];
+const MOBILE_PATH_PREFIX = 'apps/mobile/';
 
 function parseArgs(argv = process.argv.slice(2)) {
   const options = {
@@ -179,9 +180,37 @@ function getUnresolvedConflictFiles() {
   return files ? files.split(/\r?\n/).filter(Boolean) : [];
 }
 
-function syncPlatformReleaseVersion() {
-  run('bun', ['release:sync-platform-version']);
-  run('git', ['add', ...PLATFORM_RELEASE_FILES]);
+function getStagedFiles() {
+  const files = output('git', [
+    'diff',
+    '--cached',
+    '--name-only',
+    '--diff-filter=ACMRD',
+  ]);
+
+  return files
+    .split(/\r?\n/)
+    .map((file) => file.trim())
+    .filter(Boolean);
+}
+
+function touchesMobile(files) {
+  return files.some(
+    (file) => file === 'apps/mobile' || file.startsWith(MOBILE_PATH_PREFIX)
+  );
+}
+
+function runReleaseChecks({ files = getStagedFiles(), runCommand = run } = {}) {
+  runCommand('bun', ['check']);
+
+  if (touchesMobile(files)) {
+    runCommand('bun', ['check:mobile']);
+  }
+}
+
+function syncPlatformReleaseVersion(runCommand = run) {
+  runCommand('bun', ['release:sync-platform-version']);
+  runCommand('git', ['add', ...PLATFORM_RELEASE_FILES]);
 }
 
 function ensureNoUnresolvedConflicts() {
@@ -207,16 +236,22 @@ function mergeReleaseBranch(branch) {
   }
 }
 
-function finalizeMerge({ format }) {
-  syncPlatformReleaseVersion();
-  ensureNoUnresolvedConflicts();
+function finalizeMerge({
+  ensureCleanMerge = ensureNoUnresolvedConflicts,
+  format,
+  runCommand = run,
+  stagedFilesProvider = getStagedFiles,
+} = {}) {
+  syncPlatformReleaseVersion(runCommand);
+  ensureCleanMerge();
 
   if (format) {
-    run('bun', ['ff']);
+    runCommand('bun', ['ff']);
   }
 
-  run('git', ['add', '--all']);
-  run('git', ['commit', '--no-edit']);
+  runCommand('git', ['add', '--all']);
+  runReleaseChecks({ files: stagedFilesProvider(), runCommand });
+  runCommand('git', ['commit', '--no-edit']);
 }
 
 function main(argv = process.argv.slice(2)) {
@@ -267,6 +302,9 @@ if (require.main === module) {
 }
 
 module.exports = {
+  finalizeMerge,
   parseArgs,
+  runReleaseChecks,
   selectReleasePleaseBranch,
+  touchesMobile,
 };
