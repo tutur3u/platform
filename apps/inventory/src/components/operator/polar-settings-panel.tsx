@@ -47,14 +47,6 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
   const [tokenEnvironment, setTokenEnvironment] =
     useState<InventoryPolarEnvironment>('sandbox');
 
-  // The inventory app proxies /api to the platform, so the current origin is the
-  // correct public webhook host. Resolved on the client to avoid a hydration
-  // mismatch.
-  useEffect(() => {
-    setWebhookUrl(
-      `${window.location.origin}/api/v1/inventory/polar/webhook/${wsId}`
-    );
-  }, [wsId]);
   const [testingEnvironment, setTestingEnvironment] = useState<
     InventoryPolarEnvironment | ''
   >('');
@@ -65,6 +57,18 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
     queryFn: () => getInventoryPolarSettings(wsId),
     queryKey: ['inventory', wsId, 'polar-settings'],
   });
+
+  // The inventory app proxies /api to the platform, so the current origin is the
+  // correct public webhook host. Build the URL from the RESOLVED workspace UUID
+  // (settings.wsId) — never the `personal` alias: Polar calls the webhook
+  // server-to-server with no session, so an alias can't be resolved and every
+  // delivery would fail signature lookup (Polar then disables the endpoint).
+  const resolvedWsId = settings.data?.wsId ?? wsId;
+  useEffect(() => {
+    setWebhookUrl(
+      `${window.location.origin}/api/v1/inventory/polar/webhook/${resolvedWsId}`
+    );
+  }, [resolvedWsId]);
   const tokenMutation = useMutation({
     mutationFn: () =>
       updateInventoryPolarSettings(wsId, {
@@ -274,7 +278,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs">
-            {webhookUrl || `…/api/v1/inventory/polar/webhook/${wsId}`}
+            {webhookUrl || `…/api/v1/inventory/polar/webhook/${resolvedWsId}`}
           </code>
           <Button
             disabled={!webhookUrl}

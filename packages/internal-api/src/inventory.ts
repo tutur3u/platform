@@ -511,6 +511,12 @@ export type InventoryPolarIntegration = {
 };
 
 export type InventoryPolarSettings = {
+  /**
+   * Resolved workspace UUID (never the `personal` alias). Use this to build the
+   * public Polar webhook URL — Polar calls it server-to-server with no session,
+   * so an alias like `personal` would be unresolvable and fail verification.
+   */
+  wsId: string;
   testingEnvironment: InventoryPolarEnvironment;
   productionEnvironment: InventoryPolarEnvironment;
   integrations: InventoryPolarIntegration[];

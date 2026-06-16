@@ -98,6 +98,7 @@ describe('OverviewPanel', () => {
             integrations: [],
             productionEnvironment: 'production',
             testingEnvironment: 'sandbox',
+            wsId: 'ws-1',
           }}
           products={[]}
           storefronts={[]}

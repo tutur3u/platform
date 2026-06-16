@@ -159,6 +159,7 @@ export async function getInventoryPolarSettings(
     productionEnvironment:
       settingsResult.data?.production_environment ?? 'production',
     testingEnvironment: settingsResult.data?.testing_environment ?? 'sandbox',
+    wsId,
   };
 }
 
