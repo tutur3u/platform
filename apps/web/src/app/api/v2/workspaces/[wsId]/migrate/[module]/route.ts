@@ -44,7 +44,6 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'user-group-post-checks': 'user_group_post_checks',
   'sent-emails': 'sent_emails',
   'post-email-queue': 'post_email_queue',
-  'email-blacklist': 'email_blacklist',
   // Legacy mappings
   'payment-methods': 'wallet_types',
   roles: 'workspace_roles',
@@ -148,7 +147,6 @@ function isPrivateMigrationTable(tableName: string) {
 // Tables without workspace scoping (global lookup tables)
 const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
-  'email_blacklist',
 ]);
 
 // Modules that have dedicated RPC functions for efficient pagination
