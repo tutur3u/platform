@@ -80,7 +80,7 @@
     "@tiptap/extension-text-align": "3.26.1",
     "@tiptap/extension-youtube": "3.26.1",
     "@tiptap/pm": "3.26.1",
-    "@tiptap/react": "3.26.1",
+    "@tiptap/react": "3.27.0",
     "@tiptap/starter-kit": "3.26.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
