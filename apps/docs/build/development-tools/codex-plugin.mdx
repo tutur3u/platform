@@ -65,6 +65,7 @@ npx skills add tutur3u/platform --agent codex --copy -y \
   --skill tuturuuu-external-apps \
   --skill tuturuuu-mobile-task-board \
   --skill tuturuuu-platform \
+  --skill tuturuuu-pr-merge-sync \
   --skill tuturuuu-review-comments \
   --skill tuturuuu-satellite-app-ux \
   --skill tuturuuu-validation-offload \
@@ -124,6 +125,10 @@ Then verify the cached page after refresh at
   and assistants, including Turborepo/Next cache boundaries, local dev-speed
   diagnostics, release-please merge automation, and package release automation
   rules.
+- `$tuturuuu-pr-merge-sync`: PR closeout guidance for quiet-window review
+  watching, efficient GitHub polling, merge/admin-merge follow-through, the hard
+  main-green gate before `bun git-sync`, production sync, and production
+  workflow verification.
 - `$tuturuuu-devbox-ops`: operational guidance for `ttr box` setup, runner
   registration, one-shot smoke tests, 24/7 system services, runner-token
   cleanup, CLI upgrades, and infrastructure devbox observability.
@@ -194,6 +199,8 @@ The CI check currently verifies:
 - dedicated prompt coverage for satellite app UX and app-session workflows
 - dedicated prompt coverage for native local E2E auth and dev-session debugging
 - dedicated prompt coverage for shared-worktree coordination and agent handoff
+- dedicated prompt coverage for PR quiet-window merge sync with main-green
+  gating before production sync
 - dedicated prompt coverage for devbox runner operations and validation offload
 - dedicated prompt coverage for web release badge metadata
 - durable CI tooling guidance for npm package release auto-recovery

@@ -21,6 +21,8 @@ points:
   5-10-minute commit-window coordination.
 - `tuturuuu-commit` for scoped commit follow-through with exact staging and
   commit-window claim/wait/release.
+- `tuturuuu-pr-merge-sync` for quiet-window PR merge follow-through, main-green
+  verification before `bun git-sync`, and production checks.
 - `tuturuuu-cli` for `ttr` and SDK workflows.
 - `tuturuuu-database` for Supabase migrations, RLS, and protected data access.
 
@@ -41,8 +43,10 @@ npx skills add tutur3u/platform --agent codex --copy -y \
   --skill tuturuuu-devbox-ops \
   --skill tuturuuu-development-tooling \
   --skill tuturuuu-e2e-auth-debugging \
+  --skill tuturuuu-external-apps \
   --skill tuturuuu-mobile-task-board \
   --skill tuturuuu-platform \
+  --skill tuturuuu-pr-merge-sync \
   --skill tuturuuu-review-comments \
   --skill tuturuuu-satellite-app-ux \
   --skill tuturuuu-validation-offload \

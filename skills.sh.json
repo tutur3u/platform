@@ -20,6 +20,7 @@
         "tuturuuu-agent-coordination",
         "tuturuuu-commit",
         "tuturuuu-review-comments",
+        "tuturuuu-pr-merge-sync",
         "tuturuuu-validation-offload",
         "tuturuuu-development-tooling"
       ]

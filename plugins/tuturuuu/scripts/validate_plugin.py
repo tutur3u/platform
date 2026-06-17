@@ -60,6 +60,9 @@ PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-review-comments": re.compile(
         r"\b(review comments?|review threads?|pr comments?)\b", re.IGNORECASE
     ),
+    "tuturuuu-pr-merge-sync": re.compile(
+        r"\b(merge PR|main green|sync PR|production sync)\b", re.IGNORECASE
+    ),
     "tuturuuu-cms-studio": re.compile(
         r"\b(CMS|landing-page|content management|external project)\b",
         re.IGNORECASE,

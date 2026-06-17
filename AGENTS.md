@@ -28,6 +28,9 @@ surface you are changing:
   `ttr` workflows.
 - `$tuturuuu-commit` for explicit commit/commit-and-push requests.
 - `$tuturuuu-review-comments` for GitHub PR review-thread follow-through.
+- `$tuturuuu-pr-merge-sync` for PR quiet-window merge follow-through,
+  mandatory main-green verification, `bun git-sync`, and production-green
+  verification.
 
 ## 2. Hard Prohibitions
 

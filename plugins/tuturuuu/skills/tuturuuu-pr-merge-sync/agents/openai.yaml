@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu PR Merge Sync"
+  short_description: "Merge PRs after green main sync"
+  default_prompt: "Merge this PR after quiet review time, verify main is green, then sync production."

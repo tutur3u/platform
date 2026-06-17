@@ -15,7 +15,7 @@
   "interface": {
     "displayName": "Tuturuuu",
     "shortDescription": "Keep Tuturuuu platform work aligned with repo conventions.",
-    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, external app auth/upload/delivery integrations, CMS and branded content studio guidance, standalone satellite app UX, native-machine local E2E auth debugging, apps/web release badge metadata guidance, dedicated shared-worktree agent coordination with archived context support, completed-note archiving, short 5-10-minute commit-window claim/wait/release coordination, scoped Conventional Commit follow-through, proof-gated no-verify commit evidence, native ttr CLI install and SDK-backed workflows, devbox runner operations, heavy validation offload guidance, focused ttr task workflows, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, release-please merge automation, package release auto-recovery, Supabase CLI setup retry, Codecov coverage retry, review-comment follow-through, plugin validation, and incremental tooling improvements.",
+    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, external app auth/upload/delivery integrations, CMS and branded content studio guidance, standalone satellite app UX, native-machine local E2E auth debugging, apps/web release badge metadata guidance, dedicated shared-worktree agent coordination with archived context support, completed-note archiving, short 5-10-minute commit-window claim/wait/release coordination, scoped Conventional Commit follow-through, proof-gated no-verify commit evidence, native ttr CLI install and SDK-backed workflows, devbox runner operations, heavy validation offload guidance, focused ttr task workflows, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, release-please merge automation, PR quiet-window merge sync with a hard main-green gate before production sync, package release auto-recovery, Supabase CLI setup retry, Codecov coverage retry, review-comment follow-through, plugin validation, and incremental tooling improvements.",
     "developerName": "Tuturuuu",
     "category": "Productivity",
     "capabilities": [
@@ -48,6 +48,7 @@
       "Database change guidance",
       "CI and docs validation",
       "Release Please merge automation",
+      "PR quiet-window merge sync",
       "Package release auto-recovery",
       "Supabase CLI setup retry",
       "Codecov coverage retry",
@@ -65,7 +66,7 @@
       "Check finance reads with the ttr CLI and fix the SDK helper if needed.",
       "Add this as a Tuturuuu task with the ttr CLI.",
       "Update the Supabase schema or API write path safely.",
-      "Coordinate this worktree, offload devbox validation, update docs or review comments, and commit for future agents."
+      "Coordinate worktree, devbox validation, tooling docs, review comments, commit, merge PR after main green."
     ],
     "brandColor": "#000000",
     "composerIcon": "./assets/light.png",
