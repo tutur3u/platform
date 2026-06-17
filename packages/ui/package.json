@@ -69,7 +69,7 @@
     "@tiptap/extension-image": "3.26.1",
     "@tiptap/extension-link": "3.26.1",
     "@tiptap/extension-list": "3.26.1",
-    "@tiptap/extension-placeholder": "3.26.1",
+    "@tiptap/extension-placeholder": "3.27.0",
     "@tiptap/extension-strike": "3.26.1",
     "@tiptap/extension-subscript": "3.26.1",
     "@tiptap/extension-superscript": "3.26.1",
