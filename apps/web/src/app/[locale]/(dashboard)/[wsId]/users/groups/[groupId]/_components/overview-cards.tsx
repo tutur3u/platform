@@ -1,10 +1,9 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
-  getGroupLinkedProducts,
-  getGroupMembersPage,
-  getGroupPostsPage,
-  getGroupScheduleData,
-} from '@/lib/user-groups/server-data';
+  getCachedGroupLinkedProducts,
+  getCachedGroupMembersPage,
+  getCachedGroupPostsPage,
+  getCachedGroupSchedule,
+} from '@/lib/user-groups/server-cache';
 import { getGroupStorageFiles } from '@/lib/user-groups/server-storage';
 import type { GroupMember } from '../group-member-card';
 import GroupMembers from '../group-members';
@@ -31,16 +30,13 @@ export async function MembersCardServer({
   canViewPublicInfo: boolean;
   canUpdateUserGroups: boolean;
 }) {
-  const sbAdmin = await createAdminClient();
-  const page = await getGroupMembersPage({
-    sbAdmin,
+  const page = await getCachedGroupMembersPage(
     wsId,
     groupId,
-    offset: 0,
-    limit: pageSize,
+    pageSize,
     canViewPersonalInfo,
-    canViewPublicInfo,
-  });
+    canViewPublicInfo
+  );
 
   return (
     <GroupMembers
@@ -64,7 +60,7 @@ export async function ScheduleCardServer({
   groupId: string;
   canUpdateUserGroups: boolean;
 }) {
-  const schedule = await getGroupScheduleData(wsId, groupId);
+  const schedule = await getCachedGroupSchedule(wsId, groupId);
 
   return (
     <GroupSchedule
@@ -91,12 +87,7 @@ export async function PostsCardServer({
   canDeletePosts: boolean;
   canViewPosts: boolean;
 }) {
-  const sbAdmin = await createAdminClient();
-  const page = await getGroupPostsPage({
-    sbAdmin,
-    groupId,
-    limit: POSTS_PAGE_SIZE,
-  });
+  const page = await getCachedGroupPostsPage(groupId, POSTS_PAGE_SIZE);
 
   return (
     <PostsClient
@@ -125,8 +116,7 @@ export async function LinkedProductsCardServer({
   groupId: string;
   canUpdateLinkedProducts: boolean;
 }) {
-  const sbAdmin = await createAdminClient();
-  const linked = await getGroupLinkedProducts({ sbAdmin, groupId });
+  const linked = await getCachedGroupLinkedProducts(groupId);
 
   return (
     <LinkedProductsClient

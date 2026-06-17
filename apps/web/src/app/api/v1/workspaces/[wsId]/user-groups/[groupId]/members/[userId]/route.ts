@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
@@ -59,5 +60,6 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }

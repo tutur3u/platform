@@ -11,6 +11,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import { hasUserGroupPostInWorkspace } from '@/lib/user-groups/route-helpers';
 
 interface Params {
@@ -116,6 +117,7 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Post not found' }, { status: 404 });
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
 
@@ -188,5 +190,6 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Post not found' }, { status: 404 });
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }

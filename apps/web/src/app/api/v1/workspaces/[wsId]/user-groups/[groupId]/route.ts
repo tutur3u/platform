@@ -7,6 +7,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
@@ -139,6 +140,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
 
@@ -185,5 +187,6 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }

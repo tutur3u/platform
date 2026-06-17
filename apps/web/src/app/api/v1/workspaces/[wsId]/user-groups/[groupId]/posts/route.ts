@@ -16,6 +16,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import { hasUserGroupInWorkspace } from '@/lib/user-groups/route-helpers';
 
 const CreateGroupPostSchema = z.object({
@@ -274,5 +275,6 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }

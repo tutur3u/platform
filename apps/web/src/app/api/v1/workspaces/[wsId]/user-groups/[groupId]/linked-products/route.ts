@@ -2,6 +2,7 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 
 interface Params {
   params: Promise<{
@@ -140,5 +141,6 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }

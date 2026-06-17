@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 
 interface Params {
   params: Promise<{
@@ -55,6 +56,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
 
@@ -88,5 +90,6 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
