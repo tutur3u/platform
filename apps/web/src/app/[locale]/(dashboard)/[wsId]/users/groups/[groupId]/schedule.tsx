@@ -1,22 +1,39 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import {
+  CalendarDays,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
-import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
-import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { GroupSectionCard } from './_components/group-section-card';
+
+interface GroupScheduleData {
+  sessions: string[] | null;
+  starting_date: string | null;
+  ending_date: string | null;
+}
 
 export default function GroupSchedule({
   wsId,
   groupId,
+  canUpdateUserGroups = false,
+  initialSchedule,
 }: {
   wsId: string;
   groupId: string;
+  canUpdateUserGroups?: boolean;
+  initialSchedule?: GroupScheduleData | null;
 }) {
   const locale = useLocale();
+  const t = useTranslations();
   const searchParams = useSearchParams();
 
   const queryMonth = searchParams.get('month');
@@ -36,20 +53,14 @@ export default function GroupSchedule({
     setCurrentDate(currentMonth);
   }, [currentMonth]);
 
-  const {
-    isPending,
-    isError,
-    data: queryData,
-  } = useQuery<{
-    data: {
-      sessions: string[] | null;
-      starting_date: string | null;
-      ending_date: string | null;
-    };
+  const { isError, data: queryData } = useQuery<{
+    data: GroupScheduleData;
   }>({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'schedule'],
     queryFn: () => getData(wsId, groupId),
     placeholderData: keepPreviousData,
+    initialData: initialSchedule ? { data: initialSchedule } : undefined,
+    staleTime: 5 * 60 * 1000,
   });
 
   const data = {
@@ -77,7 +88,6 @@ export default function GroupSchedule({
       1
     );
 
-    // Disable if prev month would be before the starting date's month
     return (
       prevMonth.getFullYear() < startingDate.getFullYear() ||
       (prevMonth.getFullYear() === startingDate.getFullYear() &&
@@ -96,7 +106,6 @@ export default function GroupSchedule({
       1
     );
 
-    // Disable if next month would be after the ending date's month
     return (
       nextMonth.getFullYear() > endingDate.getFullYear() ||
       (nextMonth.getFullYear() === endingDate.getFullYear() &&
@@ -107,14 +116,14 @@ export default function GroupSchedule({
   const thisYear = currentDate.getFullYear();
   const thisMonth = currentDate.toLocaleString(locale, { month: '2-digit' });
 
-  // includes all days of the week, starting from monday to sunday
+  // all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
     const newDay = new Date(currentDate);
     newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
     return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
-  // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
+  // all days of the month (with leading/trailing days), monday-first
   const daysInMonth = Array.from({ length: 42 }, (_, i) => {
     const newDay = new Date(
       currentDate.getFullYear(),
@@ -122,7 +131,7 @@ export default function GroupSchedule({
       1
     );
     const dayOfWeek = newDay.getDay();
-    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // monday start
     newDay.setDate(newDay.getDate() - adjustment + i);
     return newDay;
   });
@@ -131,95 +140,88 @@ export default function GroupSchedule({
     date.getMonth() === currentDate.getMonth() &&
     date.getFullYear() === currentDate.getFullYear();
 
-  const isDateAvailable = (sessions: string[], currentDate: Date) =>
+  const isDateAvailable = (sessions: string[], date: Date) =>
     sessions?.some((session) => {
       const sessionDate = new Date(session);
       return (
-        sessionDate.getDate() === currentDate.getDate() &&
-        sessionDate.getMonth() === currentDate.getMonth() &&
-        sessionDate.getFullYear() === currentDate.getFullYear()
+        sessionDate.getDate() === date.getDate() &&
+        sessionDate.getMonth() === date.getMonth() &&
+        sessionDate.getFullYear() === date.getFullYear()
       );
     });
 
   return (
-    <div className={cn('rounded-lg')}>
-      <div>
-        <div className="grid h-full gap-8">
-          <div key={2024} className="flex h-full flex-col">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 font-bold text-xl md:text-2xl">
-              <div className="flex items-center gap-1">
-                {thisYear}
-                <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
-                <span className="font-semibold text-lg md:text-xl">
-                  {thisMonth}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={handlePrev}
-                  disabled={isPrevDisabled}
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
+    <GroupSectionCard
+      accent="blue"
+      icon={<CalendarDays className="h-5 w-5" />}
+      title={t('ws-user-group-details.schedule')}
+      description={`${thisYear} / ${thisMonth}`}
+      action={
+        canUpdateUserGroups ? (
+          <Button asChild variant="default" size="sm">
+            <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
+              <CalendarPlus className="h-4 w-4" />
+              {t('ws-user-group-details.modify_schedule')}
+            </Link>
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className="mb-3 flex items-center justify-end gap-1">
+        <Button
+          size="xs"
+          variant="secondary"
+          onClick={handlePrev}
+          disabled={isPrevDisabled}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <Button
+          size="xs"
+          variant="secondary"
+          onClick={handleNext}
+          disabled={isNextDisabled}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
 
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={handleNext}
-                  disabled={isNextDisabled}
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-              </div>
+      <div className="relative grid gap-1.5 text-xs md:text-sm">
+        <div className="grid grid-cols-7 gap-1.5">
+          {days.map((day, idx) => (
+            <div
+              key={`day-${idx}`}
+              className="flex flex-none cursor-default justify-center rounded-md bg-foreground/5 p-2 font-semibold text-muted-foreground"
+            >
+              {day}
             </div>
+          ))}
+        </div>
 
-            <div className="relative grid gap-1 text-xs md:gap-2 md:text-base">
-              <div className="grid grid-cols-7 gap-1 md:gap-2">
-                {days.map((day, idx) => (
-                  <div
-                    key={`day-${idx}`}
-                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
-                  >
-                    {day}
-                  </div>
-                ))}
+        <div className="grid grid-cols-7 gap-1.5">
+          {daysInMonth.map((day, idx) => {
+            const available =
+              !isError &&
+              isCurrentMonth(day) &&
+              !!data?.sessions &&
+              isDateAvailable(data.sessions, day);
+
+            return (
+              <div
+                key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
+                className={
+                  available
+                    ? 'flex aspect-square flex-none items-center justify-center rounded-md border border-dynamic-blue/30 bg-dynamic-blue/10 p-2 font-semibold text-dynamic-blue'
+                    : 'flex aspect-square flex-none items-center justify-center rounded-md border border-transparent p-2 font-medium text-foreground/25'
+                }
+              >
+                {day.getDate()}
               </div>
-
-              <div className="grid grid-cols-7 gap-1 md:gap-2">
-                {daysInMonth.map((day, idx) => {
-                  if (
-                    isError ||
-                    !isCurrentMonth(day) ||
-                    isPending ||
-                    !data?.sessions ||
-                    !isDateAvailable(data.sessions, day)
-                  )
-                    return (
-                      <div
-                        key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                        className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg"
-                      >
-                        {day.getDate()}
-                      </div>
-                    );
-
-                  return (
-                    <div
-                      key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                      className={`flex flex-none cursor-default justify-center rounded border border-foreground/10 bg-foreground/10 p-2 font-semibold text-foreground transition duration-300 md:rounded-lg`}
-                    >
-                      {day.getDate()}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
-    </div>
+    </GroupSectionCard>
   );
 }
 
@@ -234,10 +236,6 @@ async function getData(wsId: string, groupId: string) {
   }
 
   return (await response.json()) as {
-    data: {
-      sessions: string[] | null;
-      starting_date: string | null;
-      ending_date: string | null;
-    };
+    data: GroupScheduleData;
   };
 }

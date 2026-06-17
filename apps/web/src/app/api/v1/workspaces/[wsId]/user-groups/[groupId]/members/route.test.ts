@@ -56,6 +56,7 @@ type QueryResult = {
 function createQuery(result: QueryResult) {
   const query = {
     eq: vi.fn(() => query),
+    in: vi.fn(() => query),
     range: vi.fn(() => Promise.resolve(result)),
     select: vi.fn(() => query),
   };

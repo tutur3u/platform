@@ -4,14 +4,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
-  fetchRequireAttentionUserIds,
-  withRequireAttentionFlag,
-} from '@/lib/require-attention-users';
-import {
   hasUserGroupInWorkspace,
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '@/lib/user-groups/route-helpers';
+import { getGroupMembersPage } from '@/lib/user-groups/server-data';
 
 const UpsertGroupMembersSchema = z.object({
   memberIds: z.array(z.string().uuid()).min(1),
@@ -65,58 +62,25 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const baseFields =
-    'id, display_name, full_name, avatar_url, archived, archived_until, note';
-  const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
-  const personalFields = canViewPersonalInfo ? ', email, phone' : '';
-  const selectQuery = `workspace_users!workspace_user_roles_users_user_id_fkey!inner(${baseFields}${publicFields}${personalFields}), role`;
+  try {
+    const page = await getGroupMembersPage({
+      sbAdmin,
+      wsId: normalizedWsId,
+      groupId,
+      offset,
+      limit,
+      canViewPersonalInfo,
+      canViewPublicInfo,
+    });
 
-  const { data, error } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .select(selectQuery, {
-      count: 'exact',
-    })
-    .eq('group_id', groupId)
-    .eq('workspace_users.ws_id', normalizedWsId)
-    .range(offset, offset + limit - 1);
-
-  if (error) {
+    return NextResponse.json(page);
+  } catch (error) {
     serverLogger.error('Error fetching group members:', error);
     return NextResponse.json(
       { message: 'Error fetching group members' },
       { status: 500 }
     );
   }
-
-  const members = await Promise.all(
-    (data ?? []).map(async (user) => {
-      const typedUser = user as unknown as {
-        workspace_users: Record<string, unknown> & { id: string };
-        role: string | null;
-      };
-      const { data: isGuest } = await sbAdmin.rpc('is_user_guest', {
-        user_uuid: typedUser.workspace_users.id,
-      });
-
-      return {
-        ...typedUser.workspace_users,
-        role: typedUser.role,
-        isGuest: isGuest ?? false,
-      };
-    })
-  );
-
-  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
-    wsId: normalizedWsId,
-    userIds: members.map((member) => member.id),
-    groupId,
-  });
-
-  return NextResponse.json({
-    data: withRequireAttentionFlag(members, requireAttentionUserIds),
-    count: data?.length ?? 0,
-    next: (data?.length ?? 0) < limit ? undefined : offset + limit,
-  });
 }
 
 export async function POST(req: Request, { params }: Params) {

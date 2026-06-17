@@ -1,9 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  getGroupGuestUserIds,
+  getGroupRow,
+} from '@/lib/user-groups/server-data';
 import type { InitialAttendanceProps } from './client';
 import GroupAttendanceClient from './client';
 
@@ -55,12 +58,18 @@ export default async function UserGroupAttendancePage({
             ? requestedDate
             : fallbackToday;
 
-        const group = await getData(wsId, groupId);
+        const group = await getGroupRow(wsId, groupId);
+        if (!group) notFound();
+
         const {
           sessions,
           members,
           attendance: attendanceMap,
-        } = await getInitialAttendanceData(wsId, groupId, effectiveDate);
+        } = await getInitialAttendanceData(
+          groupId,
+          effectiveDate,
+          (group.sessions as string[] | null) ?? []
+        );
 
         return (
           <GroupAttendanceClient
@@ -80,79 +89,55 @@ export default async function UserGroupAttendancePage({
   );
 }
 
-async function getData(wsId: string, groupId: string) {
-  const sbAdmin = await createAdminClient();
-
-  const { data, error } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('*')
-    .eq('ws_id', wsId)
-    .eq('id', groupId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) notFound();
-
-  return data as UserGroup;
-}
-
 async function getInitialAttendanceData(
-  wsId: string,
   groupId: string,
-  dateYYYYMMDD: string
+  dateYYYYMMDD: string,
+  sessions: string[]
 ) {
   const sbAdmin = await createAdminClient();
 
-  // Sessions
-  const { data: groupRow } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('sessions')
-    .eq('ws_id', wsId)
-    .eq('id', groupId)
-    .maybeSingle();
+  // Members and the day's attendance are independent — fetch in parallel.
+  const [membersRes, attRes] = await Promise.all([
+    sbAdmin
+      .from('workspace_user_groups_users')
+      .select(
+        'workspace_users!workspace_user_roles_users_user_id_fkey!inner(*), role'
+      )
+      .eq('group_id', groupId),
+    sbAdmin
+      .from('user_group_attendance')
+      .select('user_id, status, notes')
+      .eq('group_id', groupId)
+      .eq('date', dateYYYYMMDD),
+  ]);
 
-  // Members (basic profile info)
-  const { data: membersRows } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .select(
-      'workspace_users!workspace_user_roles_users_user_id_fkey!inner(*), role'
-    )
-    .eq('group_id', groupId);
+  const membersRows = membersRes.data ?? [];
 
-  const members = await Promise.all(
-    (membersRows || []).map(async (row) => {
-      const { data: isGuest } = await sbAdmin.rpc('is_user_guest', {
-        user_uuid: row.workspace_users.id,
-      });
-
-      return {
-        id: row.workspace_users.id,
-        display_name: row.workspace_users.display_name,
-        full_name: row.workspace_users.full_name,
-        email: row.workspace_users.email,
-        phone: row.workspace_users.phone,
-        avatar_url: row.workspace_users.avatar_url,
-        archived: row.workspace_users.archived,
-        archived_until: row.workspace_users.archived_until,
-        role: row.role,
-        isGuest: !!isGuest,
-      };
-    })
+  // Batch guest lookup instead of one is_user_guest RPC per member.
+  const guestIds = await getGroupGuestUserIds(
+    sbAdmin,
+    membersRows.map((row) => row.workspace_users.id)
   );
 
-  // Initial attendance for the requested date (seed hydration)
-  const { data: attRows } = await sbAdmin
-    .from('user_group_attendance')
-    .select('user_id, status, notes')
-    .eq('group_id', groupId)
-    .eq('date', dateYYYYMMDD);
+  const members = membersRows.map((row) => ({
+    id: row.workspace_users.id,
+    display_name: row.workspace_users.display_name,
+    full_name: row.workspace_users.full_name,
+    email: row.workspace_users.email,
+    phone: row.workspace_users.phone,
+    avatar_url: row.workspace_users.avatar_url,
+    archived: row.workspace_users.archived,
+    archived_until: row.workspace_users.archived_until,
+    role: row.role,
+    isGuest: guestIds.has(row.workspace_users.id),
+  }));
 
   type AttendanceEntry = NonNullable<
     InitialAttendanceProps['initialAttendance']
   >[string];
 
   const attendance: Record<string, AttendanceEntry> = {};
-  for (const r of attRows || []) {
+  for (const r of attRes.data || []) {
     attendance[r.user_id] = {
       status: r.status as AttendanceEntry['status'],
       note: r.notes ?? '',
@@ -160,7 +145,7 @@ async function getInitialAttendanceData(
   }
 
   return {
-    sessions: (groupRow?.sessions as string[]) || [],
+    sessions,
     members,
     attendance,
   };

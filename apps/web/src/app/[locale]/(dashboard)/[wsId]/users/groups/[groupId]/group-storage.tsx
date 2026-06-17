@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { File, Loader2, Sparkles, Trash2, Upload } from '@tuturuuu/icons';
+import {
+  File,
+  HardDrive,
+  Loader2,
+  Sparkles,
+  Trash2,
+  Upload,
+} from '@tuturuuu/icons';
 import {
   deleteWorkspaceUserGroupStorageFile,
   generateWorkspaceCourseModulesFromStorage,
@@ -20,22 +27,33 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { formatBytes } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  GroupSectionCard,
+  GroupSectionEmpty,
+} from './_components/group-section-card';
+
+export type GroupStorageFiles = Awaited<
+  ReturnType<typeof listWorkspaceUserGroupStorageFiles>
+>;
 
 interface GroupStorageProps {
   wsId: string;
   groupId: string;
   canUpdateGroup: boolean;
+  initialFiles?: GroupStorageFiles;
 }
 
 export default function GroupStorage({
   wsId,
   groupId,
   canUpdateGroup,
+  initialFiles,
 }: GroupStorageProps) {
   const t = useTranslations('ws-user-group-details');
   const commonT = useTranslations('common');
@@ -52,6 +70,8 @@ export default function GroupStorage({
   } = useQuery({
     queryKey,
     queryFn: () => listWorkspaceUserGroupStorageFiles(wsId, groupId),
+    initialData: initialFiles,
+    staleTime: 60 * 1000,
   });
 
   const uploadMutation = useMutation({
@@ -114,14 +134,16 @@ export default function GroupStorage({
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="font-semibold text-lg">{t('storage') || 'Storage'}</div>
-
-        {canUpdateGroup && (
+    <GroupSectionCard
+      accent="orange"
+      icon={<HardDrive className="h-5 w-5" />}
+      title={t('storage') || 'Storage'}
+      description={files?.length ? `${files.length}` : undefined}
+      action={
+        canUpdateGroup ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
+              <Button size="sm" variant="outline" className="gap-2">
                 <Upload className="h-4 w-4" />
                 {commonT('upload') || 'Upload Files'}
               </Button>
@@ -137,23 +159,28 @@ export default function GroupStorage({
               />
             </DialogContent>
           </Dialog>
-        )}
-      </div>
-
-      <div className="grid gap-2">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-4">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : isError ? (
-          <div className="py-4 text-center text-destructive text-sm">
-            {t('error_loading_files')}
-          </div>
-        ) : files?.length ? (
-          files.map((file) => (
+        ) : undefined
+      }
+    >
+      {isLoading ? (
+        <div className="grid gap-2">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton
+              key={`storage-skel-${i}`}
+              className="h-14 w-full rounded-lg"
+            />
+          ))}
+        </div>
+      ) : isError ? (
+        <GroupSectionEmpty>
+          <span className="text-dynamic-red">{t('error_loading_files')}</span>
+        </GroupSectionEmpty>
+      ) : files?.length ? (
+        <div className="grid gap-2">
+          {files.map((file) => (
             <div
               key={file.id || file.name}
-              className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-card/50 p-3 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-sm"
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-card/40 p-3 transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-sm"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <File className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
@@ -214,13 +241,13 @@ export default function GroupStorage({
                 )}
               </div>
             </div>
-          ))
-        ) : (
-          <div className="py-4 text-center text-muted-foreground text-sm">
-            {t('no_files') || 'No files uploaded yet.'}
-          </div>
-        )}
-      </div>
-    </div>
+          ))}
+        </div>
+      ) : (
+        <GroupSectionEmpty icon={<HardDrive className="h-8 w-8" />}>
+          {t('no_files') || 'No files uploaded yet.'}
+        </GroupSectionEmpty>
+      )}
+    </GroupSectionCard>
   );
 }

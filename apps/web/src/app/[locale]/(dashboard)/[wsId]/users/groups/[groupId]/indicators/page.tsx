@@ -1,5 +1,4 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -9,6 +8,7 @@ import {
   fetchRequireAttentionUserIds,
   withRequireAttentionFlag,
 } from '@/lib/require-attention-users';
+import { getGroupRow } from '@/lib/user-groups/server-data';
 import GroupIndicatorsManager from './group-indicators-manager';
 import type { GroupIndicator, MetricCategory } from './types';
 
@@ -51,11 +51,17 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
           'delete_user_groups_scores'
         );
 
-        const group = await getData(wsId, groupId);
-        const indicators = await getIndicators(groupId);
-        const groupIndicators = await getGroupIndicators(groupId);
-        const metricCategories = await getMetricCategories(wsId);
-        const { data: users } = await getUserData(wsId, groupId);
+        // Independent reads — run in parallel to collapse the waterfall.
+        const [group, indicators, groupIndicators, metricCategories, userData] =
+          await Promise.all([
+            getGroupRow(wsId, groupId),
+            getIndicators(groupId),
+            getGroupIndicators(groupId),
+            getMetricCategories(wsId),
+            getUserData(wsId, groupId),
+          ]);
+        if (!group) notFound();
+        const { data: users } = userData;
 
         return (
           <GroupIndicatorsManager
@@ -74,22 +80,6 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getData(wsId: string, groupId: string) {
-  const sbAdmin = await createAdminClient();
-
-  const { data, error } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('*')
-    .eq('ws_id', wsId)
-    .eq('id', groupId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) notFound();
-
-  return data as UserGroup;
 }
 
 function mapMetricCategories(

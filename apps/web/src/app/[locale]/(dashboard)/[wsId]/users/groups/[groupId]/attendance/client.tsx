@@ -206,6 +206,7 @@ export default function GroupAttendanceClient({
       initialDate && format(currentDate, 'yyyy-MM-dd') === initialDate
         ? initialAttendance
         : undefined,
+    staleTime: 60 * 1000,
   });
 
   const isDateAvailable = useCallback((sessionList: string[], d: Date) => {

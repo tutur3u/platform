@@ -1,6 +1,12 @@
 'use client';
 
-import { BookPlus, ChevronDown, Loader2, Settings } from '@tuturuuu/icons';
+import {
+  BookPlus,
+  ChevronDown,
+  Loader2,
+  Newspaper,
+  Settings,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -87,20 +93,27 @@ export default function UserGroupPosts({
   return (
     <>
       <div className="flex flex-row items-center justify-between gap-2">
-        <div className="font-semibold text-xl">
-          {t('ws-user-groups.posts')}
-          {!!count && ` (${count})`}
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-dynamic-green/10 text-dynamic-green">
+            <Newspaper className="h-5 w-5" />
+          </span>
+          <div className="font-semibold text-base">
+            {t('ws-user-groups.posts')}
+            {!!count && (
+              <span className="text-muted-foreground"> ({count})</span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {groupId && canCreatePosts && (
-            <Button onClick={() => openDialog()}>
-              <BookPlus className="mr-1 h-5 w-5" />
+            <Button size="sm" onClick={() => openDialog()}>
+              <BookPlus className="mr-1 h-4 w-4" />
               {t('ws-user-groups.add_post')}
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

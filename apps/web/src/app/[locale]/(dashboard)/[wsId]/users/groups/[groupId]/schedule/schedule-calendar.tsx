@@ -51,6 +51,7 @@ export default function ScheduleCalendar({
       return (data?.sessions as string[]) || [];
     },
     initialData: initialSessions,
+    staleTime: 5 * 60 * 1000,
   });
 
   const [pendingChanges, setPendingChanges] = useState<Set<string>>(new Set());

@@ -39,97 +39,29 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
-interface LinkedProduct {
-  id: string;
-  name: string | null;
-  description: string | null;
-  warehouse_id?: string | null;
-  unit_id?: string | null;
-}
-
-interface WorkspaceProduct {
-  id: string;
-  name: string | null;
-  description: string | null;
-  manufacturer: string | null;
-  category_id: string;
-  inventory_products: Array<{
-    unit_id: string;
-    warehouse_id: string;
-    inventory_units: {
-      id: string;
-      name: string | null;
-    } | null;
-    inventory_warehouses: {
-      id: string;
-      name: string | null;
-    } | null;
-  }>;
-}
-
-interface WarehouseOption {
-  id: string;
-  name: string | null;
-}
+import {
+  GroupSectionCard,
+  GroupSectionEmpty,
+} from './_components/group-section-card';
+import {
+  type LinkedProduct,
+  useProducts,
+  useWarehouses,
+  type WorkspaceProduct,
+} from './use-linked-products';
 
 interface LinkedProductsClientProps {
   wsId: string;
   groupId: string;
   canUpdateLinkedProducts: boolean;
+  initialLinkedProducts?: { items: LinkedProduct[]; count: number };
 }
-
-export const useProducts = (wsId: string) => {
-  const t = useTranslations();
-  return useQuery({
-    queryKey: ['products', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/products/options`,
-        {
-          cache: 'no-store',
-        }
-      );
-
-      if (!response.ok) {
-        toast(t('ws-groups.failed_to_fetch_available_products'));
-        return [];
-      }
-
-      const payload = (await response.json()) as {
-        data?: WorkspaceProduct[];
-      };
-      return payload.data ?? [];
-    },
-  });
-};
-
-export const useWarehouses = (wsId: string) => {
-  const t = useTranslations();
-  return useQuery({
-    queryKey: ['warehouses', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/product-warehouses`,
-        {
-          cache: 'no-store',
-        }
-      );
-
-      if (!response.ok) {
-        toast(t('ws-groups.failed_to_fetch_warehouses'));
-        return [];
-      }
-
-      return (await response.json()) as WarehouseOption[];
-    },
-  });
-};
 
 export default function LinkedProductsClient({
   wsId,
   groupId,
   canUpdateLinkedProducts,
+  initialLinkedProducts,
 }: LinkedProductsClientProps) {
   const t = useTranslations();
 
@@ -137,6 +69,7 @@ export default function LinkedProductsClient({
   const { data: linkedProductsData } = useQuery({
     queryKey: linkedProductsQueryKey,
     enabled: Boolean(wsId && groupId),
+    initialData: initialLinkedProducts,
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products`,
@@ -158,12 +91,16 @@ export default function LinkedProductsClient({
   const linkedProducts = linkedProductsData?.items ?? [];
   const count = linkedProductsData?.count ?? 0;
 
-  const { data: workspaceProducts } = useProducts(wsId);
-  const { data: warehouses } = useWarehouses(wsId);
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const { data: workspaceProducts } = useProducts(wsId);
+  const { data: warehouses } = useWarehouses(
+    wsId,
+    isAddDialogOpen || isEditDialogOpen
+  );
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('');
   const [selectedUnit, setSelectedUnit] = useState<string>('');
@@ -502,13 +439,13 @@ export default function LinkedProductsClient({
   };
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="font-semibold text-xl">
-          {t('user-data-table.linked_products')}
-          {!!count && ` (${count})`}
-        </div>
-        {canUpdateLinkedProducts && (
+    <GroupSectionCard
+      accent="purple"
+      icon={<Link className="h-5 w-5" />}
+      title={t('user-data-table.linked_products')}
+      description={count ? `${count}` : undefined}
+      action={
+        canUpdateLinkedProducts ? (
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -627,9 +564,9 @@ export default function LinkedProductsClient({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       {count > 0 ? (
         <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
           {linkedProducts.map((product) => {
@@ -734,15 +671,14 @@ export default function LinkedProductsClient({
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Box className="mb-4 h-12 w-12 text-muted-foreground" />
+        <GroupSectionEmpty icon={<Box className="h-8 w-8" />}>
           <div className="font-medium text-muted-foreground">
             {t('ws-groups.no_linked_products')}
           </div>
           <div className="text-muted-foreground text-sm">
             {t('ws-groups.add_products_to_link')}
           </div>
-        </div>
+        </GroupSectionEmpty>
       )}
 
       {/* Delete Confirmation Dialog */}
@@ -863,6 +799,6 @@ export default function LinkedProductsClient({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </GroupSectionCard>
   );
 }
