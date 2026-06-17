@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -12,12 +13,119 @@ import {
   getUserGroupMemberships,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { sortWorkspaceUsersByArchive } from '@/app/[locale]/(dashboard)/[wsId]/users/reports/user-archive';
-import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { getPostgrestRateLimitMetadata } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({
-  reportId: z.string().optional(),
-  userId: z.string().optional(),
+  reportId: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
+  userId: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
 });
+
+const ReportsDashboardErrorCode = {
+  FETCH_FAILED: 'REPORTS_FETCH_FAILED',
+  GROUP_FORBIDDEN: 'REPORTS_GROUP_FORBIDDEN',
+  GROUP_NOT_FOUND: 'REPORTS_GROUP_NOT_FOUND',
+  INTERNAL_ERROR: 'REPORTS_INTERNAL_ERROR',
+  INVALID_QUERY: 'REPORTS_INVALID_QUERY',
+  PERMISSION_DENIED: 'REPORTS_PERMISSION_DENIED',
+  RATE_LIMITED: 'REPORTS_RATE_LIMITED',
+  WORKSPACE_NOT_FOUND: 'REPORTS_WORKSPACE_NOT_FOUND',
+} as const;
+
+type ReportsDashboardErrorCodeValue =
+  (typeof ReportsDashboardErrorCode)[keyof typeof ReportsDashboardErrorCode];
+
+type ReportsDashboardContext = {
+  groupId?: string;
+  operation?: string;
+  reportId?: string;
+  userId?: string;
+  wsId?: string;
+};
+
+function summarizeError(error: unknown) {
+  if (!error || typeof error !== 'object') return error;
+
+  const maybeError = error as {
+    code?: unknown;
+    message?: unknown;
+    name?: unknown;
+  };
+
+  return {
+    code: typeof maybeError.code === 'string' ? maybeError.code : undefined,
+    message:
+      typeof maybeError.message === 'string' ? maybeError.message : undefined,
+    name: typeof maybeError.name === 'string' ? maybeError.name : undefined,
+  };
+}
+
+function reportsDashboardErrorResponse({
+  code,
+  context,
+  error,
+  headers,
+  message,
+  status,
+}: {
+  code: ReportsDashboardErrorCodeValue;
+  context: ReportsDashboardContext;
+  error?: unknown;
+  headers?: Record<string, string>;
+  message: string;
+  status: number;
+}) {
+  const metadata = {
+    ...context,
+    code,
+    error: error ? summarizeError(error) : undefined,
+    status,
+  };
+
+  if (status >= 500) {
+    serverLogger.error('Reports dashboard API failed', metadata);
+  } else {
+    serverLogger.warn('Reports dashboard API rejected request', metadata);
+  }
+
+  return NextResponse.json({ code, message }, { status, headers });
+}
+
+function reportsDashboardRateLimitResponse(
+  error: unknown,
+  context: ReportsDashboardContext
+) {
+  const metadata =
+    error && typeof error === 'object'
+      ? getPostgrestRateLimitMetadata(
+          error as {
+            code?: string | null;
+            details?: string | null;
+            hint?: string | null;
+            message?: string | null;
+          }
+        )
+      : null;
+
+  if (!metadata) return null;
+
+  const headers: Record<string, string> = { ...metadata.headers };
+  if (metadata.retryAfter !== null && metadata.retryAfter > 0) {
+    headers['Retry-After'] = `${metadata.retryAfter}`;
+  }
+
+  return reportsDashboardErrorResponse({
+    code: ReportsDashboardErrorCode.RATE_LIMITED,
+    context: {
+      ...context,
+      operation: context.operation,
+    },
+    error,
+    headers,
+    message: 'Reports request was rate limited',
+    status: 429,
+  });
+}
 
 type ReportStatusSummaryRow = {
   approved_count: number;
@@ -114,49 +222,47 @@ export async function GET(request: Request, { params }: Params) {
     );
 
     if (!parsedSearchParams.success) {
-      return NextResponse.json(
-        {
-          message: 'Invalid query parameters',
-          issues: parsedSearchParams.error.issues,
-        },
-        { status: 400 }
-      );
+      return reportsDashboardErrorResponse({
+        code: ReportsDashboardErrorCode.INVALID_QUERY,
+        context: { groupId, wsId },
+        error: parsedSearchParams.error,
+        message: 'Invalid query parameters',
+        status: 400,
+      });
     }
 
     const { reportId, userId } = parsedSearchParams.data;
 
-    console.log(
-      `[Reports Dashboard] Request for group ${groupId}, user ${userId}, report ${reportId}`
-    );
-
     const permissions = await getPermissions({ wsId, request });
 
     if (!permissions) {
-      console.log(
-        `[Reports Dashboard] No permissions found for workspace ${wsId}`
-      );
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return reportsDashboardErrorResponse({
+        code: ReportsDashboardErrorCode.WORKSPACE_NOT_FOUND,
+        context: { groupId, reportId, userId, wsId },
+        message: 'Workspace not found',
+        status: 404,
+      });
     }
 
     const { containsPermission } = permissions;
     if (!containsPermission('view_user_groups_reports')) {
-      console.log(
-        `[Reports Dashboard] User lacks view_user_groups_reports permission`
-      );
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      return reportsDashboardErrorResponse({
+        code: ReportsDashboardErrorCode.PERMISSION_DENIED,
+        context: { groupId, reportId, userId, wsId },
+        message: 'Missing permission to view reports',
+        status: 403,
+      });
     }
 
     if (!containsPermission('manage_users')) {
       const accessibleGroupIds = await getUserGroupMemberships(wsId);
-      console.log(
-        `[Reports Dashboard] Non-manager user, accessible groups:`,
-        accessibleGroupIds
-      );
       if (!accessibleGroupIds.includes(groupId)) {
-        console.log(
-          `[Reports Dashboard] User doesn't have access to group ${groupId}`
-        );
-        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+        return reportsDashboardErrorResponse({
+          code: ReportsDashboardErrorCode.GROUP_FORBIDDEN,
+          context: { groupId, reportId, userId, wsId },
+          message: 'Missing access to this report group',
+          status: 403,
+        });
       }
     }
 
@@ -234,33 +340,47 @@ export async function GET(request: Request, { params }: Params) {
         : Promise.resolve({ data: [], error: null }),
     ]);
 
-    for (const result of [
-      groupResult,
-      usersResult,
-      userStatusSummaryResult,
-      reportsResult,
-      reportDetailResult,
-      userGroupMetricsResult,
+    for (const { operation, result } of [
+      { operation: 'group', result: groupResult },
+      { operation: 'users', result: usersResult },
+      {
+        operation: 'user-status-summary',
+        result: userStatusSummaryResult,
+      },
+      { operation: 'reports', result: reportsResult },
+      { operation: 'report-detail', result: reportDetailResult },
+      {
+        operation: 'user-group-metrics',
+        result: userGroupMetricsResult,
+      },
     ]) {
       if (!result.error) continue;
 
-      const rateLimitResponse = buildPostgrestRateLimitResponse(result.error);
+      const context = { groupId, operation, reportId, userId, wsId };
+      const rateLimitResponse = reportsDashboardRateLimitResponse(
+        result.error,
+        context
+      );
       if (rateLimitResponse) {
         return rateLimitResponse;
       }
 
-      console.error(
-        'Error fetching group report dashboard data:',
-        result.error
-      );
-      return NextResponse.json(
-        { message: 'Error fetching reports' },
-        { status: 500 }
-      );
+      return reportsDashboardErrorResponse({
+        code: ReportsDashboardErrorCode.FETCH_FAILED,
+        context,
+        error: result.error,
+        message: 'Error fetching reports',
+        status: 500,
+      });
     }
 
     if (!groupResult.data) {
-      return NextResponse.json({ message: 'Group not found' }, { status: 404 });
+      return reportsDashboardErrorResponse({
+        code: ReportsDashboardErrorCode.GROUP_NOT_FOUND,
+        context: { groupId, reportId, userId, wsId },
+        message: 'Group not found',
+        status: 404,
+      });
     }
 
     const users = sortWorkspaceUsersByArchive(
@@ -280,13 +400,13 @@ export async function GET(request: Request, { params }: Params) {
       : null;
 
     if (reportId && reportId !== 'new' && !reportDetail) {
-      console.log(
-        `[Reports Dashboard] Report detail not found for reportId=${reportId}, userId=${userId}, groupId=${groupId}`
-      );
-      console.log(
-        `[Reports Dashboard] Available reports for user:`,
-        reports.map((r) => ({ id: r.id, title: r.title, user_id: r.user_id }))
-      );
+      serverLogger.warn('Reports dashboard selected report was not found', {
+        availableReportIds: reports.map((report) => report.id),
+        groupId,
+        reportId,
+        userId,
+        wsId,
+      });
     }
     const userGroupMetrics = (userGroupMetricsResult.data || [])
       .sort(
@@ -315,10 +435,12 @@ export async function GET(request: Request, { params }: Params) {
       users,
     });
   } catch (error) {
-    console.error('Error in group report dashboard API:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return reportsDashboardErrorResponse({
+      code: ReportsDashboardErrorCode.INTERNAL_ERROR,
+      context: {},
+      error,
+      message: 'Internal server error',
+      status: 500,
+    });
   }
 }

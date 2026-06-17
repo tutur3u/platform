@@ -1,5 +1,14 @@
-import type { Product, SupportType } from '@tuturuuu/types';
-import { getInternalApiClient, type InternalApiClientOptions } from './client';
+import type {
+  Product,
+  SupportType,
+  WorkspaceUserReport,
+} from '@tuturuuu/types';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 
 export interface CreateReportUploadUrlPayload {
   filename: string;
@@ -42,6 +51,44 @@ export interface SubmitReportResponse {
   message: string;
   reportId: string;
   uploadedMedia: string[];
+}
+
+export type WorkspaceGroupReportDashboardReport = WorkspaceUserReport & {
+  creator_name?: string | null;
+  group_name?: string | null;
+  user_archived?: boolean;
+  user_archived_until?: string | null;
+  user_name?: string | null;
+  user_note?: string | null;
+};
+
+export interface WorkspaceGroupReportDashboardResponse {
+  group: { id: string; name: string | null };
+  managers: Array<{ id: string; full_name: string | null }>;
+  reportDetail: WorkspaceGroupReportDashboardReport | null;
+  reports: WorkspaceGroupReportDashboardReport[];
+  userGroupMetrics: Array<{
+    factor: number;
+    id: string;
+    is_weighted: boolean;
+    name: string;
+    unit: string;
+    value: number | null;
+  }>;
+  userStatusSummary: Array<{
+    approved_count: number;
+    pending_count: number;
+    rejected_count: number;
+    user_id: string;
+  }>;
+  users: WorkspaceUser[];
+}
+
+export interface ListWorkspaceGroupReportDashboardParams {
+  groupId: string;
+  reportId?: string | null;
+  userId?: string | null;
+  workspaceId: string;
 }
 
 export async function createReportUploadUrl(
@@ -107,4 +154,27 @@ export async function submitReport(
     body: JSON.stringify(payload),
     cache: 'no-store',
   });
+}
+
+export async function listWorkspaceGroupReportDashboard(
+  {
+    groupId,
+    reportId,
+    userId,
+    workspaceId,
+  }: ListWorkspaceGroupReportDashboardParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<WorkspaceGroupReportDashboardResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/groups/${encodePathSegment(groupId)}/dashboard`,
+    {
+      cache: 'no-store',
+      query: {
+        reportId: reportId || undefined,
+        userId: userId || undefined,
+      },
+    }
+  );
 }

@@ -943,9 +943,13 @@ export {
   type DeleteReportUploadPathsPayload,
   type DeleteReportUploadPathsResponse,
   deleteReportUploadPaths,
+  type ListWorkspaceGroupReportDashboardParams,
+  listWorkspaceGroupReportDashboard,
   type SubmitReportPayload,
   type SubmitReportResponse,
   submitReport,
+  type WorkspaceGroupReportDashboardReport,
+  type WorkspaceGroupReportDashboardResponse,
 } from './reports';
 export {
   addRoleMembers,
