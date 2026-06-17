@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   FeedbackContentSchema,
   normalizeWorkspaceFeedback,
@@ -160,6 +161,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
 
@@ -234,6 +236,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
 
@@ -293,5 +296,6 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
+  revalidateUserGroupCache(groupId);
   return NextResponse.json({ message: 'success' });
 }
