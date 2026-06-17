@@ -11,6 +11,8 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { availableConfigs } from '@/constants/configs/reports';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
 
 type AutoApprovalSummary = {
@@ -29,6 +31,12 @@ const BOOLEAN_CONFIG_KEYS = new Set([
   'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
   'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
 ]);
+
+const REPORT_RENDER_CONFIG_IDS = new Set(
+  availableConfigs
+    .map((config) => config.id)
+    .filter((id): id is string => Boolean(id))
+);
 
 interface Params {
   params: Promise<{
@@ -76,13 +84,6 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    if (permissions.withoutPermission('manage_workspace_settings')) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions to read workspace settings' },
-        { status: 403 }
-      );
-    }
-
     const { searchParams } = new URL(req.url);
     const idsRaw =
       searchParams
@@ -96,6 +97,30 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const uniqueIds = [...new Set(idsRaw)];
     const ids = uniqueIds.filter(Boolean);
+
+    if (ids.length === 0) {
+      return NextResponse.json({});
+    }
+
+    const onlyReportRenderConfigs = ids.every((id) =>
+      REPORT_RENDER_CONFIG_IDS.has(id)
+    );
+    const canReadReportRenderConfigs =
+      onlyReportRenderConfigs &&
+      (permissions.containsPermission('view_user_groups_reports') ||
+        permissions.containsPermission('approve_reports') ||
+        permissions.containsPermission('manage_user_report_templates'));
+
+    if (
+      permissions.withoutPermission('manage_workspace_settings') &&
+      !canReadReportRenderConfigs
+    ) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to read workspace settings' },
+        { status: 403 }
+      );
+    }
+
     const shouldResolveDefaultIncludedGroups = ids.includes(
       DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
     );
@@ -114,7 +139,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         .in('id', workspaceConfigIds);
 
       if (error) {
-        console.error('Error fetching workspace configs:', error);
+        serverLogger.error('Error fetching workspace configs:', error);
         return NextResponse.json(
           { error: 'Failed to fetch workspace configs' },
           { status: 500 }
@@ -129,10 +154,10 @@ export async function GET(req: NextRequest, { params }: Params) {
       : { data: [] as string[] };
 
     if (defaultIncludedGroups.errorMessage) {
-      console.error(
-        'Error fetching default included user groups:',
-        defaultIncludedGroups.errorMessage
-      );
+      serverLogger.error('Error fetching default included user groups:', {
+        error: defaultIncludedGroups.errorMessage,
+        wsId,
+      });
       return NextResponse.json(
         { error: 'Failed to fetch workspace configs' },
         { status: 500 }
@@ -157,7 +182,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error in workspace configs API:', error);
+    serverLogger.error('Error in workspace configs API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -313,7 +338,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
 
     if (transitionError) {
-      console.error(
+      serverLogger.error(
         'Error updating workspace configs with transitions:',
         transitionError
       );
@@ -355,7 +380,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       auto_approved: autoApproved,
     });
   } catch (error) {
-    console.error('Error in workspace configs API (PUT):', error);
+    serverLogger.error('Error in workspace configs API (PUT):', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
