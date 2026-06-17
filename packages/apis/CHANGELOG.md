@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/apis-v0.4.2...apis-v0.5.0) (2026-06-17)
+
+
+### Features
+
+* **tasks:** add per-board default list for new tasks ([2d1d308](https://github.com/tutur3u/platform/commit/2d1d3082422bdd4813accb258fee79b322ce647b))
+
+
+### Bug Fixes
+
+* **finance:** enforce checkpoint viewing windows ([9c444a3](https://github.com/tutur3u/platform/commit/9c444a30b058281d2e15387a0f8761f5c0d59e96))
+* **finance:** enforce transfer wallet create permissions ([ee28269](https://github.com/tutur3u/platform/commit/ee2826901055c9bf94cf504e28f9dfb0d27ab60a))
+* **finance:** require confidential transfer permission ([cddf64f](https://github.com/tutur3u/platform/commit/cddf64fedcbf0bbbea45a147ec77fb855eacc18a))
+* **finance:** validate transaction tag workspace ([32e3ec0](https://github.com/tutur3u/platform/commit/32e3ec020f8cfe71b9e9e9a5051594d50f8e5573))
+* **tasks:** bound description chunk writes ([1060db8](https://github.com/tutur3u/platform/commit/1060db81f2451de5877281252f85946c25ce125e))
+* **tasks:** clean calendar data on bulk delete ([c44967e](https://github.com/tutur3u/platform/commit/c44967e36fd1651f9384a5743866e4cb129fb117))
+* **tasks:** exclude deleted boards from search ([e502e08](https://github.com/tutur3u/platform/commit/e502e088f0a977ef54c29a95f7572bca627f5fa1))
+* **tasks:** hydrate task workspace metadata from server ([ebbcecb](https://github.com/tutur3u/platform/commit/ebbcecbd88e3215c6f91d7fc0719ce5bb6f23eee))
+* **tasks:** make default_list_id board reads rollout-safe ([dbd7ca1](https://github.com/tutur3u/platform/commit/dbd7ca10eab77488b05cf2e8efecc3697eb758ff))
+* **tasks:** persist description yjs state separately ([07a5e80](https://github.com/tutur3u/platform/commit/07a5e80b96ea509c24ba0570ef22f5300fc36040))
+* **tasks:** recover exhausted create sort keys ([14fb9be](https://github.com/tutur3u/platform/commit/14fb9be9e3c64dd8498b4f4ef28aa1baa7a48c92))
+* **tasks:** report default list save failures ([9c2e5ef](https://github.com/tutur3u/platform/commit/9c2e5ef8e84d6fe10f87ba1faea0ec49cc379cf9))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/apis-v0.4.1...apis-v0.4.2) (2026-06-15)
 
 

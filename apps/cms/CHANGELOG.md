@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/cms-v0.8.0...cms-v0.9.0) (2026-06-17)
+
+
+### Features
+
+* **web:** consolidate workspace roles into members and redesign access UI ([4a16407](https://github.com/tutur3u/platform/commit/4a164070e1fe020a834ce4fe77ff4ae371e4e366))
+
+
+### Bug Fixes
+
+* **cms:** enforce commerce domain permissions ([b8bd090](https://github.com/tutur3u/platform/commit/b8bd09003fb0ee4ab89611112aac61744af57345))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/cms-v0.7.0...cms-v0.8.0) (2026-06-15)
 
 

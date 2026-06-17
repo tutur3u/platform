@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/ui-v0.7.0...ui-v0.8.0) (2026-06-17)
+
+
+### Features
+
+* **inventory:** fix Polar checkout currency, add 2-way product sync, cache + redesign storefront ([de2f6fd](https://github.com/tutur3u/platform/commit/de2f6fd6e06ce5242a150a35d3989798f52b9ee9))
+* **inventory:** per-variant SKUs + storefront cart, dialog & instant checkout ([9662b85](https://github.com/tutur3u/platform/commit/9662b8501bcab51033edde79b44991c8ba648a37))
+* **inventory:** store commerce money in minor units and harden Polar sync ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+* **storefront-ui:** dedicated product page, richer cart, loading skeleton ([d4a67f8](https://github.com/tutur3u/platform/commit/d4a67f8e6097d51aab6ca983245529725fcaba5c))
+* **storefront-ui:** polish checkout layout and order-status page ([ead94ed](https://github.com/tutur3u/platform/commit/ead94edaa2ac6e79f9e56fd9f48d7a098487f2de))
+* **storefront:** dedicated checkout page with buyer details + order-placed success ([258014d](https://github.com/tutur3u/platform/commit/258014d642e7cf99164e92fec44cd32114ecf68d))
+* **storefront:** make the storefront accent color visibly prominent ([f2b5289](https://github.com/tutur3u/platform/commit/f2b5289506fd8e289f4bfb2bb6755cbc10ea2430))
+* **storefront:** polish checkout cart experience ([cfdccfa](https://github.com/tutur3u/platform/commit/cfdccfa089703d9dde4357eeef8e52c00ccf6d4b))
+* **tasks:** add per-board default list for new tasks ([2d1d308](https://github.com/tutur3u/platform/commit/2d1d3082422bdd4813accb258fee79b322ce647b))
+* **web:** consolidate workspace roles into members and redesign access UI ([4a16407](https://github.com/tutur3u/platform/commit/4a164070e1fe020a834ce4fe77ff4ae371e4e366))
+
+
+### Bug Fixes
+
+* **ci:** format storefront files and harden upstash scan wrapper ([4c82444](https://github.com/tutur3u/platform/commit/4c824446725dc280edde3e54f946bf386a52952d))
+* **ci:** sort tailwind classes in storefront product-detail (biome lint) ([809c3b9](https://github.com/tutur3u/platform/commit/809c3b9b1e514fb218b58941c9542c75bd723f2d))
+* **deps:** keep lodash on latest reviewed artifact ([19909b3](https://github.com/tutur3u/platform/commit/19909b334581d3b58cdcd19e9b2fde553f7ad60a))
+* **deps:** pin reviewed lodash artifact ([dfcf585](https://github.com/tutur3u/platform/commit/dfcf585fab9cc0b425cac5d60c5bccc997340be5))
+* **editor:** clear stale upload handlers ([ed34408](https://github.com/tutur3u/platform/commit/ed34408e9e48ee13bf7e69c2a8ba222d75c67253))
+* **epm:** validate summary editor content ([bd87c77](https://github.com/tutur3u/platform/commit/bd87c770690c75a125fe2a727f3ad39aa925b5fd))
+* **finance:** harden transaction enrichment ([eddd93b](https://github.com/tutur3u/platform/commit/eddd93bd11fb451a7fa5da2e4ab2892fad931ab5))
+* **inventory:** block unsafe storefront section links ([870ce76](https://github.com/tutur3u/platform/commit/870ce760237f43ca2a3d1221359c4a06d1bc7653))
+* **storefront-ui:** prevent horizontal overflow and cap cart height ([5825c49](https://github.com/tutur3u/platform/commit/5825c49fb9b77c859cda4ec6bbb6ba382925e519))
+* **storefront-ui:** show an empty-cart state instead of "no listings" in the cart ([00bdb40](https://github.com/tutur3u/platform/commit/00bdb40eb344b17c3727fda1ea0c042508c63901))
+* **tasks:** authorize board page before workspace ([9b1f740](https://github.com/tutur3u/platform/commit/9b1f74096a4a889b7733b6ffe37d4d16f442d974))
+* **tasks:** cap timeline rendering work ([f2722ee](https://github.com/tutur3u/platform/commit/f2722ee0c3778153e1b014280bc1513305c5be7a))
+* **tasks:** gate boards data access ([6daf363](https://github.com/tutur3u/platform/commit/6daf363b1c73593a233371a6cf079a3a4a015daa))
+* **tasks:** ignore stale drag rollbacks ([c60131f](https://github.com/tutur3u/platform/commit/c60131f9f0930c81d3d2ccc6f2f9e918968d4b77))
+* **tasks:** refine document task dialog presentation ([ca10735](https://github.com/tutur3u/platform/commit/ca10735f086a24be065eded03b8bc6e9382e2c5f))
+* **tasks:** secure cursor realtime channels ([a0ec120](https://github.com/tutur3u/platform/commit/a0ec120d912b7998fe43c90b675a09d0d3798dfe))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+* **tasks:** stop external lane retry loops ([713c327](https://github.com/tutur3u/platform/commit/713c327a613b018e72e376c03324517c6ee673c3))
+* **tu-do:** center compact task edit dialog instead of anchoring to bottom ([67f38aa](https://github.com/tutur3u/platform/commit/67f38aaab1eab4b5340dfe049eed9c1e224c83b1))
+* **tu-do:** preserve newlines and dim compact description preview ([ee01f40](https://github.com/tutur3u/platform/commit/ee01f40ab5ae800bf8aa1c59f19eb4f2bd69c256))
+* **ui:** keep locale decimals in currency input ([3cd2420](https://github.com/tutur3u/platform/commit/3cd242026c3afe51eedabc3ec070093d0a94523f))
+* **web:** stop new-workspace setup from trapping users on "Preparing Workspace" ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+
+
+### Performance Improvements
+
+* **storefront-ui:** lazy-load product images, eager-load above-the-fold ([6da600e](https://github.com/tutur3u/platform/commit/6da600eec0ce964ac61ae7890cf4574ada6aef3e))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/ui-v0.6.2...ui-v0.7.0) (2026-06-15)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.3](https://github.com/tutur3u/platform/compare/nova-v0.18.2...nova-v0.18.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **deps:** keep lodash on latest reviewed artifact ([19909b3](https://github.com/tutur3u/platform/commit/19909b334581d3b58cdcd19e9b2fde553f7ad60a))
+* **deps:** pin reviewed lodash artifact ([dfcf585](https://github.com/tutur3u/platform/commit/dfcf585fab9cc0b425cac5d60c5bccc997340be5))
+
 ## [0.18.2](https://github.com/tutur3u/platform/compare/nova-v0.18.1...nova-v0.18.2) (2026-06-13)
 
 
