@@ -44,11 +44,17 @@ export async function getGroupGuestUserIds(
   const ids = [...new Set(userIds.filter(Boolean))];
   if (ids.length === 0) return new Set<string>();
 
+  // workspace_user_groups_users has multiple relationships to
+  // workspace_user_groups, so the group-membership FK must be named explicitly
+  // (group_id -> workspace_user_groups.id) to avoid an ambiguous-embed error.
+  // Alias the embed so the is_guest filter has an unambiguous path.
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('user_id, workspace_user_groups!inner(is_guest)')
+    .select(
+      'user_id, guest_group:workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(is_guest)'
+    )
     .in('user_id', ids)
-    .eq('workspace_user_groups.is_guest', true);
+    .eq('guest_group.is_guest', true);
 
   if (error) throw error;
 
