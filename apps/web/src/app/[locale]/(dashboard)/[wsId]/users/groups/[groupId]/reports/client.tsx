@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
@@ -563,10 +564,19 @@ export default function GroupReportsClient({
     </div>
   ) : groupId && userId ? (
     isLoading ? (
-      <div className="flex min-h-100 w-full items-center justify-center rounded-lg border border-dashed py-20">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
-          <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
+      <div className="w-full space-y-4 rounded-lg border p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-1/3" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+        <Skeleton className="h-4 w-1/4" />
+        <div className="space-y-3 pt-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={`report-skel-${i}`} className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
         </div>
       </div>
     ) : selectedReport && configsData.length > 0 ? (
