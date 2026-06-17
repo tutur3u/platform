@@ -312,6 +312,25 @@ const USERS_DATABASE_READ_OVER_POST_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const USERS_ADMIN_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig(
+      'minute',
+      '1 m',
+      1200,
+      'API_PROXY_USERS_ADMIN_READ_LIMIT_MINUTE'
+    ),
+    createConfig(
+      'hour',
+      '1 h',
+      12_000,
+      'API_PROXY_USERS_ADMIN_READ_LIMIT_HOUR'
+    ),
+    createConfig('day', '1 d', 80_000, 'API_PROXY_USERS_ADMIN_READ_LIMIT_DAY'),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
+};
+
 const FINANCE_READ_RATE_LIMITS: RateLimitProfile = {
   get: [
     createConfig('minute', '1 m', 1200, 'API_PROXY_FINANCE_READ_LIMIT_MINUTE', [
@@ -359,6 +378,23 @@ function isUsersDatabaseReadOverPost(req: NextRequest) {
 
   return /^\/api\/v1\/workspaces\/[^/]+\/users\/(?:database|groups\/(?:featured-counts|possible-excluded))\/?$/u.test(
     req.nextUrl.pathname
+  );
+}
+
+function isUsersAdminRead(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return false;
+  }
+
+  const pathname = req.nextUrl.pathname;
+
+  return (
+    /^\/api\/v1\/workspaces\/[^/]+\/users(?:\/(?:database|groups|feedbacks|attendance\/export|[^/]+\/(?:attendance|emails|referrals|linked-promotions|referral-discounts|user-groups)))?\/?$/u.test(
+      pathname
+    ) ||
+    /^\/api\/v1\/workspaces\/[^/]+\/user-groups\/[^/]+(?:\/(?:attendance|members(?:\/[^/]+(?:\/feedbacks)?)?|posts(?:\/[^/]+(?:\/status)?)?|linked-products|storage|indicators(?:\/.*)?))?\/?$/u.test(
+      pathname
+    )
   );
 }
 
@@ -440,6 +476,11 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'finance-invoice-create-read',
     matches: isFinanceInvoiceCreateSupportRead,
     rateLimits: FINANCE_READ_RATE_LIMITS,
+  },
+  {
+    key: 'users-admin-read',
+    matches: isUsersAdminRead,
+    rateLimits: USERS_ADMIN_READ_RATE_LIMITS,
   },
   {
     key: 'high-fanout',

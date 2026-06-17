@@ -5,6 +5,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   buildWorkspaceFeedbacksQuery,
   CreateWorkspaceFeedbackSchema,
@@ -17,6 +19,28 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+function buildFeedbackDbErrorResponse({
+  error,
+  logMessage,
+  metadata,
+  publicMessage,
+}: {
+  error: unknown;
+  logMessage: string;
+  metadata: Record<string, unknown>;
+  publicMessage: string;
+}) {
+  const rateLimitResponse = buildPostgrestRateLimitResponse(
+    error && typeof error === 'object' ? error : {}
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  serverLogger.error(logMessage, metadata, error);
+  return NextResponse.json({ message: publicMessage }, { status: 500 });
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -52,11 +76,12 @@ export async function GET(request: Request, { params }: Params) {
   });
 
   if (error) {
-    console.error('Error fetching workspace feedbacks:', error);
-    return NextResponse.json(
-      { message: 'Error fetching feedbacks' },
-      { status: 500 }
-    );
+    return buildFeedbackDbErrorResponse({
+      error,
+      logMessage: 'Error fetching workspace feedbacks',
+      metadata: { wsId },
+      publicMessage: 'Error fetching feedbacks',
+    });
   }
 
   const items = (data ?? []).map(normalizeWorkspaceFeedback);
@@ -150,11 +175,16 @@ export async function POST(request: Request, { params }: Params) {
   });
 
   if (error) {
-    console.error('Error creating workspace feedback:', error);
-    return NextResponse.json(
-      { message: 'Error creating feedback' },
-      { status: 500 }
-    );
+    return buildFeedbackDbErrorResponse({
+      error,
+      logMessage: 'Error creating workspace feedback',
+      metadata: {
+        groupId: parsed.data.groupId,
+        userId: parsed.data.userId,
+        wsId,
+      },
+      publicMessage: 'Error creating feedback',
+    });
   }
 
   return NextResponse.json({ message: 'success' });
@@ -217,11 +247,12 @@ export async function PUT(request: Request, { params }: Params) {
     .eq('id', feedbackId);
 
   if (error) {
-    console.error('Error updating workspace feedback:', error);
-    return NextResponse.json(
-      { message: 'Error updating feedback' },
-      { status: 500 }
-    );
+    return buildFeedbackDbErrorResponse({
+      error,
+      logMessage: 'Error updating workspace feedback',
+      metadata: { feedbackId, wsId },
+      publicMessage: 'Error updating feedback',
+    });
   }
 
   return NextResponse.json({ message: 'success' });
@@ -272,11 +303,12 @@ export async function DELETE(request: Request, { params }: Params) {
     .eq('id', feedbackId);
 
   if (error) {
-    console.error('Error deleting workspace feedback:', error);
-    return NextResponse.json(
-      { message: 'Error deleting feedback' },
-      { status: 500 }
-    );
+    return buildFeedbackDbErrorResponse({
+      error,
+      logMessage: 'Error deleting workspace feedback',
+      metadata: { feedbackId, wsId },
+      publicMessage: 'Error deleting feedback',
+    });
   }
 
   return NextResponse.json({ message: 'success' });

@@ -601,6 +601,101 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
+  it('uses a dedicated users-admin read bucket for lightweight user reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 1200,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    for (const path of [
+      '/api/v1/workspaces/ws-1/users/database',
+      '/api/v1/workspaces/ws-1/users/groups',
+      '/api/v1/workspaces/ws-1/users/11111111-1111-4111-8111-111111111111/attendance',
+      '/api/v1/workspaces/ws-1/users/11111111-1111-4111-8111-111111111111/emails',
+      '/api/v1/workspaces/ws-1/users/11111111-1111-4111-8111-111111111111/referrals',
+      '/api/v1/workspaces/ws-1/users/feedbacks',
+      '/api/v1/workspaces/ws-1/user-groups/group-1',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/members',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/members/user-1/feedbacks',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/attendance',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/posts/post-1/status',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/linked-products',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/indicators/categories/category-1',
+    ]) {
+      const response = await guardApiProxyRequest(makeRequest(path, 'GET'), {
+        prefixBase: 'proxy:test:api',
+      });
+
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Limit')).toBe('1200');
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+        'users-admin-read'
+      );
+    }
+
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 1200,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 12_000,
+      window: '1 h',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 80_000,
+      window: '1 d',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:users-admin-read:anonymous:get:minute'
+    );
+  });
+
+  it('keeps user admin mutations on mutation buckets', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    for (const path of [
+      '/api/v1/workspaces/ws-1/users/feedbacks',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/members',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/attendance',
+      '/api/v1/workspaces/ws-1/user-groups/group-1/linked-products',
+    ]) {
+      const response = await guardApiProxyRequest(makeRequest(path, 'POST'), {
+        prefixBase: 'proxy:test:api',
+      });
+
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    }
+  });
+
   it('keeps users mutations on the default mutation bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');

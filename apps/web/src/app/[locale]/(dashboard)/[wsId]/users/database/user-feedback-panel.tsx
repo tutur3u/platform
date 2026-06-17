@@ -124,7 +124,9 @@ export function UserFeedbackPanel({
         pageSize: FEEDBACKS_PAGE_SIZE,
       }),
     enabled: !!wsId && !!user.id,
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const attentionQuery = useQuery({
@@ -137,7 +139,9 @@ export function UserFeedbackPanel({
         pageSize: 1,
       }),
     enabled: !!wsId && !!user.id,
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const groupsQuery = useInfiniteWorkspaceUserGroups(wsId, {
