@@ -220,6 +220,66 @@ describe('invoice create route', () => {
     });
   });
 
+  it('preserves dynamic referral promotion values returned by the private RPC', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          allow_promotions: true,
+          discount_amount: 7500,
+          promotion_code: 'REF',
+          promotion_description: 'Referral Code for Referral System',
+          promotion_id: '00000000-0000-4000-8000-000000000001',
+          promotion_name: 'Referral',
+          promotion_use_ratio: true,
+          promotion_value: 15,
+          rounding_applied: 0,
+          subtotal: 50000,
+          total: 42500,
+          values_recalculated: false,
+        },
+      ],
+      error: null,
+    });
+    const schema = vi.fn(() => ({ rpc }));
+
+    const { getCalculatedInvoiceValuesFromRpc } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/route'
+    );
+
+    const result = await getCalculatedInvoiceValuesFromRpc({
+      frontendValues: {
+        discount_amount: 7500,
+        subtotal: 50000,
+        total: 42500,
+      },
+      isSubscriptionInvoice: false,
+      products: [
+        {
+          category_id: 'category-1',
+          price: 50000,
+          product_id: 'product-1',
+          quantity: 1,
+          unit_id: 'unit-1',
+          warehouse_id: 'warehouse-1',
+        },
+      ],
+      promotionId: '00000000-0000-4000-8000-000000000001',
+      supabase: { schema },
+      wsId: '00000000-0000-0000-0000-000000000000',
+    });
+
+    expect(result.promotion).toEqual({
+      code: 'REF',
+      description: 'Referral Code for Referral System',
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Referral',
+      use_ratio: true,
+      value: 15,
+    });
+    expect(result.discount_amount).toBe(7500);
+    expect(result.values_recalculated).toBe(false);
+  });
+
   it('rejects non-default wallets on create without wallet override permissions', async () => {
     const { POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/finance/invoices/route'

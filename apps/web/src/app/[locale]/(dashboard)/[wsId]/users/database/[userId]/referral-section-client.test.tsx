@@ -158,4 +158,60 @@ describe('ReferralSectionClient', () => {
     });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  it('hydrates the referral count from initial referred users before refetching', () => {
+    listWorkspaceUserReferralsMock.mockResolvedValue({
+      count: 1,
+      data: [
+        {
+          id: 'referred-1',
+          full_name: 'Mai Nguyen',
+          display_name: null,
+          email: 'mai@example.com',
+          phone: null,
+        },
+      ],
+    });
+
+    renderWithQueryClient(
+      <ReferralSectionClient
+        wsId="ws-123"
+        userId="user-123"
+        canUpdateUsers
+        workspaceSettings={{
+          referral_count_cap: 1,
+          referral_increment_percent: 10,
+          referral_promotion_id: null,
+          referral_reward_type: 'BOTH',
+        }}
+        initialAvailableUsers={[
+          {
+            id: 'candidate-1',
+            full_name: 'Linh Tran',
+            display_name: null,
+            email: 'linh@example.com',
+            phone: null,
+          },
+        ]}
+        initialAvailableUsersCount={1}
+        initialReferredUsers={[
+          {
+            id: 'referred-1',
+            full_name: 'Mai Nguyen',
+            display_name: null,
+            email: 'mai@example.com',
+            phone: null,
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Mai Nguyen')).toBeInTheDocument();
+    expect(screen.getByText('reached_max_referrals')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('textbox', {
+        name: 'search_person_to_refer_placeholder',
+      })
+    ).not.toBeInTheDocument();
+  });
 });

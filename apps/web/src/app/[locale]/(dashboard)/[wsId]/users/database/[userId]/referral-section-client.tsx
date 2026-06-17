@@ -97,6 +97,7 @@ export default function ReferralSectionClient({
       const data = await listWorkspaceUserReferrals(wsId, userId);
       return data.count || 0;
     },
+    initialData: initialReferredUsers.length,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -191,6 +192,18 @@ export default function ReferralSectionClient({
         queryClient.invalidateQueries({
           queryKey: ['user-referral-discounts', wsId, userId],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', wsId, referredUserId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', referredUserId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-referral-discounts', wsId, referredUserId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['available-promotions', wsId, referredUserId],
+        }),
       ]);
     },
     onError: (error: unknown) => {
@@ -205,7 +218,7 @@ export default function ReferralSectionClient({
       await deleteWorkspaceUserReferral(wsId, userId, referredUserId);
       return referredUserId;
     },
-    onSuccess: async () => {
+    onSuccess: async (referredUserId) => {
       toast.success(t('unrefer_success'));
       setSelectedUserId('');
 
@@ -238,6 +251,18 @@ export default function ReferralSectionClient({
         }),
         queryClient.invalidateQueries({
           queryKey: ['user-referral-discounts', wsId, userId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', wsId, referredUserId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', referredUserId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-referral-discounts', wsId, referredUserId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['available-promotions', wsId, referredUserId],
         }),
       ]);
     },

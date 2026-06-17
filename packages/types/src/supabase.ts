@@ -10354,6 +10354,19 @@ export type Database = {
         Args: { _end_date: string; _max_days: number; _start_date: string };
         Returns: undefined;
       };
+      assign_workspace_user_referral: {
+        Args: {
+          p_actor_user_id: string;
+          p_referred_user_id: string;
+          p_referrer_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          linked_promotion_id: string;
+          referral_promotion_id: string;
+          status: string;
+        }[];
+      };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       calculate_invoice_values: {
         Args: {
@@ -11884,6 +11897,18 @@ export type Database = {
       release_inventory_checkout_session: {
         Args: { p_checkout_id: string; p_now?: string };
         Returns: undefined;
+      };
+      remove_workspace_user_referral: {
+        Args: {
+          p_actor_user_id: string;
+          p_referred_user_id: string;
+          p_referrer_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          removed_promotion_id: string;
+          status: string;
+        }[];
       };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };

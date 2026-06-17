@@ -87,7 +87,6 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
-  const privateDb = sbAdmin.schema('private');
 
   let createdInvoiceId: string | null = null;
 
@@ -279,6 +278,7 @@ export async function POST(req: Request, { params }: Params) {
       total,
       values_recalculated,
       rounding_applied,
+      promotion,
     } = calculatedValues;
 
     // Map platform user to workspace virtual user
@@ -479,40 +479,34 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Promotion linkage
-    if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      const { data: promotion, error: promotionFetchError } = await privateDb
-        .from('workspace_promotions')
-        .select('use_ratio, value, name, code, description')
-        .eq('id', promotion_id)
-        .single();
+    if (
+      promotion_id &&
+      promotion_id !== 'none' &&
+      discount_amount > 0 &&
+      promotion
+    ) {
+      const { error: promotionError } = await sbAdmin
+        .from('finance_invoice_promotions')
+        .insert({
+          invoice_id: invoiceId,
+          promo_id: promotion_id,
+          value: promotion.value,
+          use_ratio: promotion.use_ratio ?? true,
+          name: promotion.name || '',
+          code: promotion.code || '',
+          description: promotion.description || '',
+        });
 
-      if (!promotionFetchError || promotion) {
-        const { error: promotionError } = await sbAdmin
-          .from('finance_invoice_promotions')
-          .insert({
-            invoice_id: invoiceId,
-            promo_id: promotion_id,
-            value: promotion?.value || discount_amount,
-            use_ratio: promotion?.use_ratio || true,
-            name: promotion?.name || '',
-            code: promotion?.code || '',
-            description: promotion?.description || '',
-          });
-
-        if (promotionError) {
-          serverLogger.error(
-            'Error creating invoice promotion:',
-            promotionError
-          );
-          await cleanupInvoice();
-          return NextResponse.json(
-            {
-              message: 'Error applying promotion to invoice',
-              details: promotionError.message,
-            },
-            { status: 500 }
-          );
-        }
+      if (promotionError) {
+        serverLogger.error('Error creating invoice promotion:', promotionError);
+        await cleanupInvoice();
+        return NextResponse.json(
+          {
+            message: 'Error applying promotion to invoice',
+            details: promotionError.message,
+          },
+          { status: 500 }
+        );
       }
     }
 
