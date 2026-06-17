@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/utils-v0.7.0...utils-v0.8.0) (2026-06-17)
+
+
+### Features
+
+* **inventory:** store commerce money in minor units and harden Polar sync ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+* **web:** rate limits admin center ([fe61dc9](https://github.com/tutur3u/platform/commit/fe61dc933615466f6169a3db3a4a1840f705e80b))
+* **web:** trust-gated per-session read limits and trusted-location uplift ([3e64c89](https://github.com/tutur3u/platform/commit/3e64c8929dbe7987ad83900620a25a9559fe1edf))
+
+
+### Bug Fixes
+
+* **api:** share broad anonymous rate buckets ([04c1dc6](https://github.com/tutur3u/platform/commit/04c1dc616bf6a909b37f798c994aba41ff27d13a))
+* **api:** throttle users database post reads ([698639d](https://github.com/tutur3u/platform/commit/698639d572375a67b850d533e584aa05733dc961))
+* **auth:** preserve password failure pressure ([cf1e970](https://github.com/tutur3u/platform/commit/cf1e970a0f8acbf314cbdccd7abc126535dbd846))
+* **auth:** reserve otp send rate limits ([42012b9](https://github.com/tutur3u/platform/commit/42012b90c75f1041637b1d3ea21ff464c942c6d9))
+* **auth:** restrict Portless return ports ([7977bfc](https://github.com/tutur3u/platform/commit/7977bfc074a211a20b3bf133fe78cf94ff8c1d33))
+* **ci:** format storefront files and harden upstash scan wrapper ([4c82444](https://github.com/tutur3u/platform/commit/4c824446725dc280edde3e54f946bf386a52952d))
+* **ci:** unblock turbopack proxy build, type-safe upstash, format ([42393f8](https://github.com/tutur3u/platform/commit/42393f8519f6695df44f71b8654ba86237296ffe))
+* **email:** keep override traffic in proxy guard ([dd6ed5a](https://github.com/tutur3u/platform/commit/dd6ed5a9a21f536e22f7abbbeb3e83f44a81cdff))
+* **next:** remove loopback image defaults ([9ab8fb9](https://github.com/tutur3u/platform/commit/9ab8fb9489a613e72302d5baf35e44f8cea5c82a))
+* **web:** stop new-workspace setup from trapping users on "Preparing Workspace" ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+
+
+### Performance Improvements
+
+* **web:** hydrate user-group detail pages and remove fetch waterfalls ([4845cf7](https://github.com/tutur3u/platform/commit/4845cf71cc7e3e321bd6558ba4e20a406e9cd731))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/utils-v0.6.1...utils-v0.7.0) (2026-06-15)
 
 

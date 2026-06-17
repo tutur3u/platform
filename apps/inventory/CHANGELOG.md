@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/inventory-v0.6.0...inventory-v0.7.0) (2026-06-17)
+
+
+### Features
+
+* **inventory:** add a central Polar hub operator view ([95d7c18](https://github.com/tutur3u/platform/commit/95d7c18c5dbf7e0e04d241ab31203430e4a72c66))
+* **inventory:** explain the Commerce desk Release action with a tooltip ([4380959](https://github.com/tutur3u/platform/commit/4380959438b3552105df7cb497df27370483d182))
+* **inventory:** icon-bearing checkout status badges + guarded Release action ([05cb376](https://github.com/tutur3u/platform/commit/05cb376ff474ad1497fe37d4794d8b3beb3b11c3))
+* **inventory:** per-bundle Polar sync badges (parallel to listings) ([670845b](https://github.com/tutur3u/platform/commit/670845babbd2ffa7df3ddc7b608df8e6eb36070c))
+* **inventory:** per-listing Polar sync badges on the Storefront panel ([b7aff6e](https://github.com/tutur3u/platform/commit/b7aff6e702278e0b9f3bce3b8137563c0c7d1aa9))
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+* **inventory:** per-workspace Polar webhook ingestion + signature verification ([862b25a](https://github.com/tutur3u/platform/commit/862b25af444a56ef85c6a4e3dab7b91ae71438fe))
+* **inventory:** Polar product sync-health card in the hub ([5552285](https://github.com/tutur3u/platform/commit/5552285621ce5353ef3bf83344a3d0b0648b403b))
+* **inventory:** store commerce money in minor units and harden Polar sync ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+* **inventory:** storefront analytics funnel ([312fc6d](https://github.com/tutur3u/platform/commit/312fc6d9dafe4300ddcbddbc953b35dba6f418f6))
+* **inventory:** storefront listing variant & option-template admin ([6e076bc](https://github.com/tutur3u/platform/commit/6e076bc26ba3a2d948f0a5524d50d85620d236ef))
+
+
+### Bug Fixes
+
+* **inventory:** load products for costing profiles ([1a2fbff](https://github.com/tutur3u/platform/commit/1a2fbffe76908e516c2fdf1e2ca80eaf4ddefd84))
+* **inventory:** use resolved workspace id in Polar webhook URL ([6395708](https://github.com/tutur3u/platform/commit/639570850fb21d90647c73fc2aff1fe127e2f5a1))
+* **web:** stop new-workspace setup from trapping users on "Preparing Workspace" ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/inventory-v0.5.0...inventory-v0.6.0) (2026-06-15)
 
 

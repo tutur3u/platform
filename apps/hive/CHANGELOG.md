@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/tutur3u/platform/compare/hive-v0.2.3...hive-v0.2.4) (2026-06-17)
+
+
+### Bug Fixes
+
+* **hive:** require post for logout ([cd9b8bd](https://github.com/tutur3u/platform/commit/cd9b8bd06f8fc0d50e508fd9cfb91a9ed3c05e20))
+
 ## [0.2.3](https://github.com/tutur3u/platform/compare/hive-v0.2.2...hive-v0.2.3) (2026-06-11)
 
 

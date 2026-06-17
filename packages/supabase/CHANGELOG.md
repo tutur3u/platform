@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4](https://github.com/tutur3u/platform/compare/supabase-v0.3.3...supabase-v0.3.4) (2026-06-17)
+
+
+### Bug Fixes
+
+* **auth:** clear mirrored Supabase cookies by domain ([292669b](https://github.com/tutur3u/platform/commit/292669bbdd1773ef739d3993d2f93489c5a8e601))
+* **ci:** unblock turbopack proxy build, type-safe upstash, format ([42393f8](https://github.com/tutur3u/platform/commit/42393f8519f6695df44f71b8654ba86237296ffe))
+
 ## [0.3.3](https://github.com/tutur3u/platform/compare/supabase-v0.3.2...supabase-v0.3.3) (2026-06-10)
 
 

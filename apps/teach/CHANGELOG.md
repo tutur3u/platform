@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/teach-v0.1.3...teach-v0.2.0) (2026-06-17)
+
+
+### Features
+
+* add start test session ([0015379](https://github.com/tutur3u/platform/commit/00153795c1b336d57813343f172b9715dbe95156))
+* add tests ([1bd19e0](https://github.com/tutur3u/platform/commit/1bd19e0402a78084095dd523603aca6ee52418fc))
+* create test ([c225f9d](https://github.com/tutur3u/platform/commit/c225f9d636a701397c43249131f35fbb36e284e4))
+* create test page ([618fffa](https://github.com/tutur3u/platform/commit/618fffabeeedfa09d72cd877e2bfd9e806a05090))
+* create test view for student ([40bdd08](https://github.com/tutur3u/platform/commit/40bdd08ca449c7e151b0beae6d27d60fb913fe51))
+
+
+### Bug Fixes
+
+* build checks ([3b9c3e9](https://github.com/tutur3u/platform/commit/3b9c3e9904bf2122b247a38c313e8622637910b7))
+* translation ([7686f93](https://github.com/tutur3u/platform/commit/7686f93921129558ee64fcab54420f21e86815cc))
+* **tulearn:** address course test review feedback ([52800c3](https://github.com/tutur3u/platform/commit/52800c389ddb190dad6d96789f293fd47a2ce118))
+* **tulearn:** harden course test persistence ([42b9fab](https://github.com/tutur3u/platform/commit/42b9fabc3a7bbc3ae63022e9d524901544c64d0e))
+
 ## [0.1.3](https://github.com/tutur3u/platform/compare/teach-v0.1.2...teach-v0.1.3) (2026-06-11)
 
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/learn-v0.1.4...learn-v0.2.0) (2026-06-17)
+
+
+### Features
+
+* add test page in student view ([e9d3e3c](https://github.com/tutur3u/platform/commit/e9d3e3cfa90d631709fe246a66daaeb5e0b2a29a))
+* create test view for student ([40bdd08](https://github.com/tutur3u/platform/commit/40bdd08ca449c7e151b0beae6d27d60fb913fe51))
+
+
+### Bug Fixes
+
+* incorrect multiple choice display ([07cc9e4](https://github.com/tutur3u/platform/commit/07cc9e4e3d1cdb4d86d959dc36a389aea214687c))
+* ording question ([f0c32a4](https://github.com/tutur3u/platform/commit/f0c32a4e3b7634c73b0b7cc9b9b05af83468549a))
+* **tulearn:** address course test review feedback ([52800c3](https://github.com/tutur3u/platform/commit/52800c389ddb190dad6d96789f293fd47a2ce118))
+* **tulearn:** restore quiz answer feedback ([f462b57](https://github.com/tutur3u/platform/commit/f462b576d2b41889135c89a183c6bad09d410e92))
+* **tulearn:** secure learner quiz submissions ([94afe79](https://github.com/tutur3u/platform/commit/94afe79e8b5c36bba8bd6d5c423faaf487d412d9))
+* UI inconsistence and quiz sumission ([e9e360e](https://github.com/tutur3u/platform/commit/e9e360ef76c3f0513cf54a34a718e895c222de36))
+
 ## [0.1.4](https://github.com/tutur3u/platform/compare/learn-v0.1.3...learn-v0.1.4) (2026-06-11)
 
 

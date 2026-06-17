@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/sdk-v0.10.0...sdk-v0.10.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* **cli:** escape table control characters ([73b7c58](https://github.com/tutur3u/platform/commit/73b7c58b7d9c1168ba1ae7651131045726ce082e))
+* **cli:** escape whoami metadata ([6227dd0](https://github.com/tutur3u/platform/commit/6227dd07b7399347d75a7760acfedfbae53cb214))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/sdk-v0.9.0...sdk-v0.10.0) (2026-06-11)
 
 

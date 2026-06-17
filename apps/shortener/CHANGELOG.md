@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/tutur3u/platform/compare/shortener-v0.1.2...shortener-v0.1.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **i18n:** backfill storefront/shortener common namespace and harden namespace checker ([26f3888](https://github.com/tutur3u/platform/commit/26f388876824c5aac0baa2c79fd94e91c56efcd7))
+
 ## [0.1.2](https://github.com/tutur3u/platform/compare/shortener-v0.1.1...shortener-v0.1.2) (2026-06-11)
 
 

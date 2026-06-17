@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/satellite-v0.2.0...satellite-v0.2.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* **auth:** enforce MFA for satellite Supabase sessions ([fff184e](https://github.com/tutur3u/platform/commit/fff184e754326fd3b91dac3e68263795aa386325))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/satellite-v0.1.3...satellite-v0.2.0) (2026-06-15)
 
 

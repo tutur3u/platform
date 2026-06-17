@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/internal-api-v0.8.0...internal-api-v0.9.0) (2026-06-17)
+
+
+### Features
+
+* add tests ([1bd19e0](https://github.com/tutur3u/platform/commit/1bd19e0402a78084095dd523603aca6ee52418fc))
+* create test ([c225f9d](https://github.com/tutur3u/platform/commit/c225f9d636a701397c43249131f35fbb36e284e4))
+* create test page ([618fffa](https://github.com/tutur3u/platform/commit/618fffabeeedfa09d72cd877e2bfd9e806a05090))
+* create test view for student ([40bdd08](https://github.com/tutur3u/platform/commit/40bdd08ca449c7e151b0beae6d27d60fb913fe51))
+* **inventory:** fix Polar checkout currency, add 2-way product sync, cache + redesign storefront ([de2f6fd](https://github.com/tutur3u/platform/commit/de2f6fd6e06ce5242a150a35d3989798f52b9ee9))
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+* **inventory:** per-variant SKUs + storefront cart, dialog & instant checkout ([9662b85](https://github.com/tutur3u/platform/commit/9662b8501bcab51033edde79b44991c8ba648a37))
+* **inventory:** per-workspace Polar webhook ingestion + signature verification ([862b25a](https://github.com/tutur3u/platform/commit/862b25af444a56ef85c6a4e3dab7b91ae71438fe))
+* **inventory:** Polar product sync-health card in the hub ([5552285](https://github.com/tutur3u/platform/commit/5552285621ce5353ef3bf83344a3d0b0648b403b))
+* **inventory:** storefront analytics funnel ([312fc6d](https://github.com/tutur3u/platform/commit/312fc6d9dafe4300ddcbddbc953b35dba6f418f6))
+* **mobile-deployment:** add field dropdowns and non-secret value readback ([a3a27d1](https://github.com/tutur3u/platform/commit/a3a27d1d9e4e2b25fcfd8a930cdc63c6e47d3224))
+* **tasks:** add per-board default list for new tasks ([2d1d308](https://github.com/tutur3u/platform/commit/2d1d3082422bdd4813accb258fee79b322ce647b))
+* **users:** add no-auth mode for profile-completion links ([c97daee](https://github.com/tutur3u/platform/commit/c97daee7ee04a6d2585213c510dc3943943257d8))
+* **web:** extend profile completion links ([e8585a3](https://github.com/tutur3u/platform/commit/e8585a390b4cc8ae44cd0a15e667ae0f94a52494))
+* **web:** rate limits admin center ([fe61dc9](https://github.com/tutur3u/platform/commit/fe61dc933615466f6169a3db3a4a1840f705e80b))
+
+
+### Bug Fixes
+
+* **auth:** consume external app refresh tokens ([7f5a4ab](https://github.com/tutur3u/platform/commit/7f5a4ab250214018ca34e61b7084fd55865c17bc))
+* build checks ([3b9c3e9](https://github.com/tutur3u/platform/commit/3b9c3e9904bf2122b247a38c313e8622637910b7))
+* **ci:** stabilize platform check gates ([81c7cc9](https://github.com/tutur3u/platform/commit/81c7cc9b97ec12c7406ba63a330ecd7f062714fc))
+* **external:** verify media asset upload sizes ([388d65c](https://github.com/tutur3u/platform/commit/388d65c039042deac06371093a1e21c300ac05f6))
+* **inventory:** match promotion update response ([a1a3450](https://github.com/tutur3u/platform/commit/a1a34503d5868e06d85d2d4bd9dd0cca94d0d47b))
+* **inventory:** use resolved workspace id in Polar webhook URL ([6395708](https://github.com/tutur3u/platform/commit/639570850fb21d90647c73fc2aff1fe127e2f5a1))
+* **members:** omit profile emails from updates ([4cdce52](https://github.com/tutur3u/platform/commit/4cdce52848ecc772b4f2cc1c54f6db673475ea81))
+* ording question ([f0c32a4](https://github.com/tutur3u/platform/commit/f0c32a4e3b7634c73b0b7cc9b9b05af83468549a))
+* **reports:** surface dashboard error codes ([db894c2](https://github.com/tutur3u/platform/commit/db894c2e978725c15ac38f2169bfd6511b37057d))
+* **tasks:** hydrate task workspace metadata from server ([ebbcecb](https://github.com/tutur3u/platform/commit/ebbcecbd88e3215c6f91d7fc0719ce5bb6f23eee))
+* **tulearn:** restore quiz answer feedback ([f462b57](https://github.com/tutur3u/platform/commit/f462b576d2b41889135c89a183c6bad09d410e92))
+* **tulearn:** secure learner quiz submissions ([94afe79](https://github.com/tutur3u/platform/commit/94afe79e8b5c36bba8bd6d5c423faaf487d412d9))
+* UI inconsistence and quiz sumission ([e9e360e](https://github.com/tutur3u/platform/commit/e9e360ef76c3f0513cf54a34a718e895c222de36))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/internal-api-v0.7.1...internal-api-v0.8.0) (2026-06-15)
 
 
