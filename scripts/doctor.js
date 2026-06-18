@@ -622,8 +622,8 @@ function checkPortlessRoutes({
       status: 'fail',
       detail: `${staleDynamic.length} of ${annotated.length} live route(s) point to a dead port (stale registration)`,
       routes: routeLines,
-      hint: 'Reset the proxy so apps re-register: `bun portless:reset` (or `bun doctor --fix`).',
-      fix: 'reset-proxy',
+      hint: 'Prune stale Portless registrations so apps can re-register: `bun doctor --fix`.',
+      fix: 'prune-routes',
     };
   }
 
@@ -834,8 +834,8 @@ function formatDoctorReport(checks, options = {}) {
   return `${lines.join('\n')}\n`;
 }
 
-// Collapse the per-check fix hints into the strongest single recovery action:
-// a full reset (stop -> prune -> start) supersedes a bare proxy start.
+// Collapse the per-check fix hints into a short recovery plan. Pruning stale
+// route registrations does not require restarting the root-owned proxy.
 function getFixActions(checks) {
   const fixes = new Set(
     checks
@@ -846,6 +846,12 @@ function getFixActions(checks) {
   if (fixes.has('reset-proxy')) {
     return ['reset-proxy'];
   }
+  if (fixes.has('prune-routes') && fixes.has('start-proxy')) {
+    return ['prune-routes', 'start-proxy'];
+  }
+  if (fixes.has('prune-routes')) {
+    return ['prune-routes'];
+  }
   if (fixes.has('start-proxy')) {
     return ['start-proxy'];
   }
@@ -855,6 +861,9 @@ function getFixActions(checks) {
 function getFixSteps(action) {
   if (action === 'reset-proxy') {
     return getResetSteps();
+  }
+  if (action === 'prune-routes') {
+    return [['prune']];
   }
   if (action === 'start-proxy') {
     return [['proxy', 'start']];
@@ -909,7 +918,10 @@ Options:
       runner(portlessBin, step, { capture: false });
     }
   }
-  if (fixActions.includes('reset-proxy')) {
+  if (
+    fixActions.includes('reset-proxy') ||
+    fixActions.includes('prune-routes')
+  ) {
     log(
       'Restart your dev servers (e.g. `bun dev:inventory`) so each app re-registers its route.'
     );

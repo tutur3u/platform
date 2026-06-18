@@ -89,7 +89,7 @@ test('analyzePortlessRoutes separates dead dynamic routes from dead aliases', ()
   );
 });
 
-test('checkPortlessRoutes fails (and offers a reset) when a live route is dead', () => {
+test('checkPortlessRoutes fails (and offers pruning) when a live route is dead', () => {
   const { annotated, staleAlias, staleDynamic } = analyzePortlessRoutes(
     [
       { hostname: 'inventory.tuturuuu.localhost', port: 4881, pid: 1 },
@@ -108,7 +108,7 @@ test('checkPortlessRoutes fails (and offers a reset) when a live route is dead',
     staleDynamic,
   });
   assert.equal(check.status, 'fail');
-  assert.equal(check.fix, 'reset-proxy');
+  assert.equal(check.fix, 'prune-routes');
   assert.ok(check.routes.some((line) => line.includes('DEAD')));
 });
 
@@ -397,6 +397,16 @@ test('getFixActions collapses to the strongest recovery', () => {
     ]),
     ['reset-proxy']
   );
+  assert.deepEqual(
+    getFixActions([
+      { status: 'fail', fix: 'start-proxy' },
+      { status: 'fail', fix: 'prune-routes' },
+    ]),
+    ['prune-routes', 'start-proxy']
+  );
+  assert.deepEqual(getFixActions([{ status: 'fail', fix: 'prune-routes' }]), [
+    'prune-routes',
+  ]);
   assert.deepEqual(getFixActions([{ status: 'fail', fix: 'start-proxy' }]), [
     'start-proxy',
   ]);
@@ -405,6 +415,7 @@ test('getFixActions collapses to the strongest recovery', () => {
 
 test('getFixSteps maps actions to portless command sequences', () => {
   assert.deepEqual(getFixSteps('start-proxy'), [['proxy', 'start']]);
+  assert.deepEqual(getFixSteps('prune-routes'), [['prune']]);
   assert.deepEqual(getFixSteps('reset-proxy'), [
     ['proxy', 'stop'],
     ['prune'],
@@ -633,9 +644,9 @@ test('shouldUseColor respects NO_COLOR, FORCE_COLOR, and TTY output', () => {
   );
 });
 
-test('runDoctor --fix runs the reset sequence and re-checks', async () => {
+test('runDoctor --fix prunes stale routes without restarting the proxy', async () => {
   const ranSteps = [];
-  let proxyReady = false;
+  const proxyReady = true;
   const probeReady = { 4881: false };
 
   const deps = {
@@ -643,9 +654,8 @@ test('runDoctor --fix runs the reset sequence and re-checks', async () => {
     portlessBin: 'portless',
     runner: (_bin, stepArgs) => {
       ranSteps.push(stepArgs.join(' '));
-      // Simulate the reset bringing the proxy back and the route recovering.
-      if (stepArgs.join(' ') === 'proxy start') {
-        proxyReady = true;
+      // Simulate pruning the stale route and the app re-registering.
+      if (stepArgs.join(' ') === 'prune') {
         probeReady[4881] = true;
       }
       return { status: 0, stdout: '', stderr: '' };
@@ -668,8 +678,8 @@ test('runDoctor --fix runs the reset sequence and re-checks', async () => {
     deps,
   });
 
-  // The stale-route failure must drive a full reset sequence...
-  assert.deepEqual(ranSteps, ['proxy stop', 'prune', 'proxy start']);
+  // A stale route only needs pruning; no root-owned proxy restart is required.
+  assert.deepEqual(ranSteps, ['prune']);
   // ...and the post-fix re-check should pass.
   assert.equal(code, 0);
   assert.ok(logs.some((line) => line.includes('Re-running checks')));
