@@ -9556,6 +9556,241 @@ export type Database = {
           },
         ];
       };
+      workspace_user_group_session_files: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string | null;
+          session_id: string;
+          storage_path: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+          session_id: string;
+          storage_path: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+          session_id?: string;
+          storage_path?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_session_files_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_group_session_series: {
+        Row: {
+          created_at: string;
+          days_of_week: number[];
+          description: string | null;
+          end_time: string;
+          end_timezone: string;
+          group_id: string;
+          id: string;
+          interval_weeks: number;
+          source: string | null;
+          start_date: string;
+          start_time: string;
+          start_timezone: string;
+          title: string | null;
+          until_date: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          days_of_week: number[];
+          description?: string | null;
+          end_time: string;
+          end_timezone?: string;
+          group_id: string;
+          id?: string;
+          interval_weeks?: number;
+          source?: string | null;
+          start_date: string;
+          start_time: string;
+          start_timezone?: string;
+          title?: string | null;
+          until_date?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          days_of_week?: number[];
+          description?: string | null;
+          end_time?: string;
+          end_timezone?: string;
+          group_id?: string;
+          id?: string;
+          interval_weeks?: number;
+          source?: string | null;
+          start_date?: string;
+          start_time?: string;
+          start_timezone?: string;
+          title?: string | null;
+          until_date?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_session_series_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
+      };
+      workspace_user_group_session_tag_links: {
+        Row: {
+          created_at: string;
+          session_id: string;
+          tag_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          session_id: string;
+          tag_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          session_id?: string;
+          tag_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_session_tag_links_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_group_session_tag_links_tag_id_fkey';
+            columns: ['tag_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_session_tags';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_group_session_tags: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_user_group_sessions: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          end_timezone: string;
+          ends_at: string;
+          group_id: string;
+          id: string;
+          recurrence_instance_date: string | null;
+          series_id: string | null;
+          source: string | null;
+          source_legacy_date: string | null;
+          start_timezone: string;
+          starts_at: string;
+          status: string;
+          title: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          end_timezone?: string;
+          ends_at: string;
+          group_id: string;
+          id?: string;
+          recurrence_instance_date?: string | null;
+          series_id?: string | null;
+          source?: string | null;
+          source_legacy_date?: string | null;
+          start_timezone?: string;
+          starts_at: string;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          end_timezone?: string;
+          ends_at?: string;
+          group_id?: string;
+          id?: string;
+          recurrence_instance_date?: string | null;
+          series_id?: string | null;
+          source?: string | null;
+          source_legacy_date?: string | null;
+          start_timezone?: string;
+          starts_at?: string;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_group_sessions_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_session_series';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_wallet_checkpoints: {
         Row: {
           actual_balance: number;
@@ -11733,6 +11968,10 @@ export type Database = {
           starting_date: string;
           ws_id: string;
         }[];
+      };
+      materialize_workspace_user_group_session_series: {
+        Args: { p_series_id: string; p_until?: string };
+        Returns: number;
       };
       mind_apply_ai_patch: {
         Args: { p_patch_id: string; p_user_id: string; p_ws_id: string };
@@ -29827,7 +30066,6 @@ export type Database = {
           is_guest: boolean | null;
           name: string;
           notes: string | null;
-          sessions: string[] | null;
           starting_date: string | null;
           ws_id: string;
         };
@@ -29843,7 +30081,6 @@ export type Database = {
           is_guest?: boolean | null;
           name: string;
           notes?: string | null;
-          sessions?: string[] | null;
           starting_date?: string | null;
           ws_id: string;
         };
@@ -29859,7 +30096,6 @@ export type Database = {
           is_guest?: boolean | null;
           name?: string;
           notes?: string | null;
-          sessions?: string[] | null;
           starting_date?: string | null;
           ws_id?: string;
         };
@@ -31725,32 +31961,6 @@ export type Database = {
           tag_count: number | null;
           tags: Json | null;
           ws_id: string | null;
-        };
-        Insert: {
-          archived?: boolean | null;
-          created_at?: string | null;
-          ending_date?: string | null;
-          id?: string | null;
-          name?: string | null;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
-          tag_count?: never;
-          tags?: never;
-          ws_id?: string | null;
-        };
-        Update: {
-          archived?: boolean | null;
-          created_at?: string | null;
-          ending_date?: string | null;
-          id?: string | null;
-          name?: string | null;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
-          tag_count?: never;
-          tags?: never;
-          ws_id?: string | null;
         };
         Relationships: [
           {

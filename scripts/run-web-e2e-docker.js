@@ -30,6 +30,9 @@ const DEFAULT_PORTLESS_HEALTH_URL = `${DEFAULT_PORTLESS_BASE_URL}/login`;
 const DEFAULT_PORTLESS_READY_STATUS_CODES = Object.freeze([404]);
 const DEFAULT_PORTLESS_READY_TIMEOUT_MS = 300_000;
 const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
+const DEFAULT_DOCKER_BUILD_CPUS = '4';
+const DEFAULT_DOCKER_BUILD_MAX_PARALLELISM = '1';
+const DEFAULT_E2E_DOCKER_NATIVE_BUILD = '1';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
 const PORTLESS_ROUTE_NAME = 'tuturuuu';
 const DEFAULT_WEB_PROXY_HOST_PORT = '7803';
@@ -89,12 +92,21 @@ function getDockerWebUpArgs(envFilePath, env = process.env) {
     '--build-memory',
     env.E2E_DOCKER_BUILD_MEMORY ?? 'auto',
     '--build-cpus',
-    env.E2E_DOCKER_BUILD_CPUS ?? 'auto',
+    env.E2E_DOCKER_BUILD_CPUS ?? DEFAULT_DOCKER_BUILD_CPUS,
     '--build-max-parallelism',
-    env.E2E_DOCKER_BUILD_MAX_PARALLELISM ?? 'auto',
+    env.E2E_DOCKER_BUILD_MAX_PARALLELISM ??
+      DEFAULT_DOCKER_BUILD_MAX_PARALLELISM,
     '--env-file',
     envFilePath,
   ];
+}
+
+function getE2EDockerNativeBuildValue(env = process.env) {
+  return (
+    env.E2E_DOCKER_NATIVE_BUILD ??
+    env.DOCKER_WEB_NATIVE_BUILD ??
+    DEFAULT_E2E_DOCKER_NATIVE_BUILD
+  );
 }
 
 function getDockerWebDownArgs(envFilePath, env = process.env) {
@@ -1313,6 +1325,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     [WATCHER_CONTAINER_ENV]: '1',
     DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
       process.env.E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD ?? '1',
+    DOCKER_WEB_NATIVE_BUILD: getE2EDockerNativeBuildValue(process.env),
     DOCKER_WEB_SUPABASE_START_EXCLUDE:
       process.env.DOCKER_WEB_SUPABASE_START_EXCLUDE ??
       process.env.E2E_SUPABASE_START_EXCLUDE ??
@@ -1435,6 +1448,7 @@ module.exports = {
   getPortlessAliasVerifyDelayMs,
   getPortlessCommandEnv,
   getDockerComposeDiagnosticArgs,
+  getE2EDockerNativeBuildValue,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
   getE2EDiagnosticLogTail,

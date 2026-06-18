@@ -6,6 +6,40 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const BATCH_SIZE = 100;
 const FETCH_LIMIT = 500;
+const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on']);
+const SAFE_LOCAL_WEB_ORIGINS = new Set([
+  'http://127.0.0.1:7803',
+  'http://localhost:7803',
+  'https://tuturuuu.localhost',
+  'https://tuturuuu.localhost:1355',
+]);
+const SAFE_LOCAL_SUPABASE_ORIGINS = new Set([
+  'http://127.0.0.1:8001',
+  'http://host.docker.internal:8001',
+  'http://localhost:8001',
+]);
+const LOCAL_E2E_WEB_URL_KEYS = [
+  'BASE_URL',
+  'NEXT_PUBLIC_APP_URL',
+  'NEXT_PUBLIC_WEB_APP_URL',
+  'PORTLESS_URL',
+  'WEB_APP_URL',
+] as const;
+const LOCAL_E2E_SUPABASE_URL_KEYS = [
+  'DOCKER_INTERNAL_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'SUPABASE_SERVER_URL',
+  'SUPABASE_URL',
+] as const;
+const SUPABASE_REFERENCE_KEYS = [
+  'DATABASE_URL',
+  'DIRECT_URL',
+  'DOCKER_INTERNAL_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'POSTGRES_URL',
+  'SUPABASE_SERVER_URL',
+  'SUPABASE_URL',
+] as const;
 
 function resolveSchemaClient(
   admin: TypedSupabaseClient,
@@ -14,6 +48,59 @@ function resolveSchemaClient(
   return (schema === 'private'
     ? admin.schema('private')
     : admin) as unknown as TypedSupabaseClient;
+}
+
+function isTruthyEnv(value: string | undefined) {
+  return TRUTHY_ENV_VALUES.has(value?.toLowerCase() ?? '');
+}
+
+function isCloudSupabaseReference(value: string | undefined) {
+  return /supabase\.(co|in)/iu.test(value ?? '');
+}
+
+function hasOnlyAllowedOrigins(
+  keys: readonly string[],
+  allowedOrigins: ReadonlySet<string>
+) {
+  let hasConfiguredUrl = false;
+
+  for (const key of keys) {
+    const value = process.env[key];
+    if (!value) continue;
+
+    hasConfiguredUrl = true;
+
+    try {
+      const origin = new URL(value).origin;
+      if (!allowedOrigins.has(origin)) return false;
+    } catch {
+      return false;
+    }
+  }
+
+  return hasConfiguredUrl;
+}
+
+function allowsLocalE2EMigrationAccess() {
+  if (!isTruthyEnv(process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS)) {
+    return false;
+  }
+
+  if (
+    SUPABASE_REFERENCE_KEYS.some((key) =>
+      isCloudSupabaseReference(process.env[key])
+    )
+  ) {
+    return false;
+  }
+
+  return (
+    hasOnlyAllowedOrigins(LOCAL_E2E_WEB_URL_KEYS, SAFE_LOCAL_WEB_ORIGINS) &&
+    hasOnlyAllowedOrigins(
+      LOCAL_E2E_SUPABASE_URL_KEYS,
+      SAFE_LOCAL_SUPABASE_ORIGINS
+    )
+  );
 }
 
 /**
@@ -25,8 +112,8 @@ function resolveSchemaClient(
  * @returns NextResponse with 403 error if not in DEV_MODE, null otherwise
  */
 export function requireDevMode(): NextResponse | null {
-  if (DEV_MODE) {
-    return null; // Allow access in development
+  if (DEV_MODE || allowsLocalE2EMigrationAccess()) {
+    return null; // Allow access in development and tightly scoped local E2E
   }
 
   serverLogger.error(

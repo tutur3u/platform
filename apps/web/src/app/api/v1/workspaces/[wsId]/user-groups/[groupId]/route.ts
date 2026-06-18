@@ -12,6 +12,7 @@ import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '@/lib/user-groups/route-helpers';
+import { listUserGroupSessionDates } from '@/lib/user-groups/session-schedule';
 
 const UpdateUserGroupSchema = z
   .object({
@@ -23,7 +24,6 @@ const UpdateUserGroupSchema = z
     description: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
     archived: z.boolean().optional(),
     is_course_published: z.boolean().optional(),
-    sessions: z.array(z.string()).nullable().optional(),
   })
   .refine(
     (data) => {
@@ -64,7 +64,7 @@ export async function GET(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
     .from('workspace_user_groups')
-    .select('id, name, sessions, starting_date, ending_date')
+    .select('id, name, starting_date, ending_date')
     .eq('ws_id', normalizedWsId)
     .eq('id', groupId)
     .maybeSingle();
@@ -84,7 +84,13 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ data });
+  const sessions = await listUserGroupSessionDates({
+    groupId,
+    supabase: sbAdmin,
+    wsId: normalizedWsId,
+  });
+
+  return NextResponse.json({ data: { ...data, sessions } });
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -104,7 +110,32 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const data = UpdateUserGroupSchema.safeParse(await req.json());
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { message: 'Invalid request body' },
+      { status: 400 }
+    );
+  }
+
+  if (
+    body &&
+    typeof body === 'object' &&
+    !Array.isArray(body) &&
+    'sessions' in body
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'Legacy sessions payloads are no longer accepted. Use the user group sessions API.',
+      },
+      { status: 400 }
+    );
+  }
+
+  const data = UpdateUserGroupSchema.safeParse(body);
 
   if (!data.success) {
     return NextResponse.json(

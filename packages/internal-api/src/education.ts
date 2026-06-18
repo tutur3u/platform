@@ -17,7 +17,6 @@ export interface UpsertWorkspaceCoursePayload {
   cert_template?: string;
   ending_date?: string | null;
   is_course_published?: boolean;
-  sessions?: string[] | null;
   starting_date?: string | null;
 }
 
@@ -32,7 +31,6 @@ export interface WorkspaceCourseListItem {
   members_count: number;
   modules_count: number;
   name: string;
-  sessions: string[];
   starting_date: string | null;
 }
 

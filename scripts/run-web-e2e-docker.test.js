@@ -36,6 +36,7 @@ const {
   getReusableWebImageRef,
   getReusableWebImageSource,
   getReusableWebImageTargets,
+  getE2EDockerNativeBuildValue,
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
@@ -69,9 +70,9 @@ test('getDockerWebUpArgs starts production blue-green Docker with reset local Su
     '--build-memory',
     'auto',
     '--build-cpus',
-    'auto',
+    '4',
     '--build-max-parallelism',
-    'auto',
+    '1',
     '--env-file',
     'tmp/e2e/web.env',
   ]);
@@ -89,6 +90,21 @@ test('getDockerWebUpArgs starts production blue-green Docker with reset local Su
       '--build-max-parallelism',
       '1',
     ]
+  );
+});
+
+test('getE2EDockerNativeBuildValue defaults E2E to host-built web artifacts', () => {
+  assert.equal(getE2EDockerNativeBuildValue({}), '1');
+  assert.equal(
+    getE2EDockerNativeBuildValue({ DOCKER_WEB_NATIVE_BUILD: '0' }),
+    '0'
+  );
+  assert.equal(
+    getE2EDockerNativeBuildValue({
+      DOCKER_WEB_NATIVE_BUILD: '0',
+      E2E_DOCKER_NATIVE_BUILD: '1',
+    }),
+    '1'
   );
 });
 

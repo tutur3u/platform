@@ -27,6 +27,30 @@ const compositeKeyStrategies: Record<string, (item: unknown) => string | null> =
         ? `${String(i.group_id)}|${String(i.user_id)}|${String(i.date)}`
         : null;
     },
+    'class-sessions': (item) => {
+      const i = item as Record<string, unknown>;
+      return i?.group_id != null && i?.source_legacy_date != null
+        ? `${String(i.group_id)}|${String(i.source_legacy_date)}`
+        : null;
+    },
+    'workspace-user-group-sessions': (item) => {
+      const i = item as Record<string, unknown>;
+      return i?.group_id != null && i?.source_legacy_date != null
+        ? `${String(i.group_id)}|${String(i.source_legacy_date)}`
+        : null;
+    },
+    'workspace-user-group-session-tag-links': (item) => {
+      const i = item as Record<string, unknown>;
+      return i?.session_id != null && i?.tag_id != null
+        ? `${String(i.session_id)}|${String(i.tag_id)}`
+        : null;
+    },
+    'workspace-user-group-session-files': (item) => {
+      const i = item as Record<string, unknown>;
+      return i?.session_id != null && i?.storage_path != null
+        ? `${String(i.session_id)}|${String(i.storage_path)}`
+        : null;
+    },
     'bill-packages': (item) => {
       const i = item as Record<string, unknown>;
       return i?.invoice_id != null &&

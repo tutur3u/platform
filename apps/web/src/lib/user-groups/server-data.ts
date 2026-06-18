@@ -7,6 +7,7 @@ import {
   fetchRequireAttentionUserIds,
   withRequireAttentionFlag,
 } from '@/lib/require-attention-users';
+import { listUserGroupSessionDates } from './session-schedule';
 
 /**
  * Server-side data fetchers for the user-group detail pages.
@@ -251,14 +252,21 @@ export const getGroupScheduleData = cache(
   async (wsId: string, groupId: string): Promise<GroupScheduleData | null> => {
     const row = (await getGroupRow(wsId, groupId)) as
       | (UserGroup & {
-          sessions?: string[] | null;
           starting_date?: string | null;
           ending_date?: string | null;
         })
       | null;
     if (!row) return null;
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const sessions = await listUserGroupSessionDates({
+      groupId,
+      supabase: sbAdmin,
+      wsId,
+    });
+
     return {
-      sessions: row.sessions ?? null,
+      sessions,
       starting_date: row.starting_date ?? null,
       ending_date: row.ending_date ?? null,
     };

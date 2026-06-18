@@ -388,7 +388,7 @@
     "saveSchedule": "Lưu lịch học",
     "saveMetrics": "Lưu metrics",
     "savedValues": "Giá trị đã lưu",
-    "scheduleLead": "Đặt thời gian khóa học và các ngày học lặp lại. Lịch điểm danh sẽ dùng các buổi học này.",
+    "scheduleLead": "Đặt thời gian khóa học và các ngày học lặp lại. Teach sẽ tạo buổi học 7:00-8:00 sáng GMT+7 để điểm danh.",
     "scheduleSaveError": "Không lưu được lịch học.",
     "scheduleSaved": "Đã lưu lịch học.",
     "scheduleTitle": "Lịch học",

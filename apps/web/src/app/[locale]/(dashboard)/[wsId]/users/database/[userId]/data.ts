@@ -4,6 +4,7 @@ import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { notFound } from 'next/navigation';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
+import { listUserGroupSessionDatesByGroupIds } from '@/lib/user-groups/session-schedule';
 import { listAvailableReferralUsers } from '@/lib/user-referrals';
 import type {
   LinkedPromotionItem,
@@ -240,7 +241,7 @@ export async function getGroupData({
   const { data, count, error } = await sbAdmin
     .from('workspace_user_groups')
     .select(
-      'id, name, sessions, starting_date, ending_date, workspace_user_groups_users!workspace_user_roles_users_role_id_fkey!inner(user_id, role)',
+      'id, name, starting_date, ending_date, workspace_user_groups_users!workspace_user_roles_users_role_id_fkey!inner(user_id, role)',
       {
         count: 'exact',
       }
@@ -251,8 +252,18 @@ export async function getGroupData({
 
   if (error) throw error;
 
+  const rows = (data ?? []) as unknown as UserGroupMembership[];
+  const sessionsByGroupId = await listUserGroupSessionDatesByGroupIds({
+    groupIds: rows.map((group) => group.id),
+    supabase: sbAdmin,
+    wsId,
+  });
+
   return {
-    data: (data ?? []) as unknown as UserGroupMembership[],
+    data: rows.map((group) => ({
+      ...group,
+      sessions: sessionsByGroupId.get(group.id) ?? [],
+    })),
     count: count ?? 0,
   };
 }

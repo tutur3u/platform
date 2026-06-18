@@ -37,6 +37,12 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'workspace-user-fields': 'workspace_user_fields',
   'workspace-user-groups': 'workspace_user_groups',
   'workspace-user-groups-users': 'workspace_user_groups_users',
+  'workspace-user-group-session-series': 'workspace_user_group_session_series',
+  'workspace-user-group-sessions': 'workspace_user_group_sessions',
+  'workspace-user-group-session-tags': 'workspace_user_group_session_tags',
+  'workspace-user-group-session-tag-links':
+    'workspace_user_group_session_tag_links',
+  'workspace-user-group-session-files': 'workspace_user_group_session_files',
   'workspace-user-group-tags': 'workspace_user_group_tags',
   'workspace-user-group-tag-groups': 'workspace_user_group_tag_groups',
   'workspace-user-linked-users': 'workspace_user_linked_users',
@@ -94,6 +100,11 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
   'workspace_user_group_tags',
   'workspace_user_linked_users',
   'workspace_user_status_changes',
+  'workspace_user_group_session_series',
+  'workspace_user_group_sessions',
+  'workspace_user_group_session_tags',
+  'workspace_user_group_session_tag_links',
+  'workspace_user_group_session_files',
   'sent_emails',
   // Other tables
   'workspace_roles',
@@ -125,6 +136,14 @@ const PRIVATE_USER_GROUP_POST_TABLES: Set<string> = new Set([
   'user_group_posts',
 ]);
 
+const PRIVATE_USER_GROUP_SCHEDULE_TABLES: Set<string> = new Set([
+  'workspace_user_group_session_series',
+  'workspace_user_group_sessions',
+  'workspace_user_group_session_tags',
+  'workspace_user_group_session_tag_links',
+  'workspace_user_group_session_files',
+]);
+
 const PRIVATE_PROMOTION_TABLES: Set<string> = new Set([
   'workspace_promotions',
   'user_linked_promotions',
@@ -137,6 +156,7 @@ function isPrivateMigrationTable(tableName: string) {
     PRIVATE_INVENTORY_TABLES.has(tableName) ||
     PRIVATE_REPORT_TABLES.has(tableName) ||
     PRIVATE_USER_GROUP_POST_TABLES.has(tableName) ||
+    PRIVATE_USER_GROUP_SCHEDULE_TABLES.has(tableName) ||
     PRIVATE_PROMOTION_TABLES.has(tableName) ||
     PRIVATE_WALLET_TABLES.has(tableName)
   );

@@ -27,6 +27,46 @@ export function todayIsoDate() {
   return toIsoDate(new Date());
 }
 
+export function addMonthsToIsoDate(value: string, months: number) {
+  const date = parseIsoDate(value);
+  date.setMonth(date.getMonth() + months);
+  return toIsoDate(date);
+}
+
+export function dateEndUtcIso(value: string) {
+  return `${value}T23:59:59.999Z`;
+}
+
+export function dateStartUtcIso(value: string) {
+  return `${value}T00:00:00.000Z`;
+}
+
+export function vietnamMorningSessionIso(value: string, hour: 7 | 8) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(
+    Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1, hour - 7, 0)
+  ).toISOString();
+}
+
+export function formatDateInTimezone(value: string, timezone: string) {
+  let parts: Intl.DateTimeFormatPart[];
+
+  try {
+    parts = new Intl.DateTimeFormat('en-US', {
+      day: '2-digit',
+      month: '2-digit',
+      timeZone: timezone,
+      year: 'numeric',
+    }).formatToParts(new Date(value));
+  } catch {
+    return value.slice(0, 10);
+  }
+
+  const part = (type: string) =>
+    parts.find((entry) => entry.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
 export function pickInitialAttendanceDate(sessions: string[]) {
   const today = todayIsoDate();
   const sortedSessions = sessions
@@ -110,6 +150,10 @@ export function inferWeekdaysFromSessions(sessions: string[]) {
       getWeekdayIndex(parseIsoDate(session.slice(0, 10)))
     )
   );
+}
+
+export function toRecurrenceWeekday(weekday: number) {
+  return (weekday + 1) % 7;
 }
 
 export function generateWeeklySessions({

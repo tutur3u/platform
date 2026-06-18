@@ -6,6 +6,7 @@ import {
   listWorkspaceCourseAttendance,
   listWorkspaceCourseAttendanceMonth,
   listWorkspaceCourseMembers,
+  listWorkspaceUserGroupSessions,
   type TeachAttendanceEntry,
   type TeachAttendanceStatus,
   updateWorkspaceCourseAttendance,
@@ -18,15 +19,20 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AttendanceCalendar } from './attendance-calendar';
 import { AttendanceSchedulePanel } from './attendance-schedule-panel';
 import {
   ATTENDANCE_STATUSES,
+  addMonthsToIsoDate,
+  dateEndUtcIso,
+  dateStartUtcIso,
+  formatDateInTimezone,
   getAttendanceSummary,
   parseIsoDate,
   pickInitialAttendanceDate,
   sessionsForDate,
+  todayIsoDate,
   toMonthKey,
 } from './attendance-utils';
 
@@ -45,15 +51,40 @@ export function AttendancePanel({
 }) {
   const t = useTranslations('teachOperations');
   const queryClient = useQueryClient();
-  const initialDate = pickInitialAttendanceDate(course.sessions);
-  const [date, setDate] = useState(initialDate);
-  const [monthDate, setMonthDate] = useState(() => parseIsoDate(initialDate));
+  const fallbackDate = course.starting_date ?? todayIsoDate();
+  const [date, setDate] = useState(fallbackDate);
+  const [monthDate, setMonthDate] = useState(() => parseIsoDate(fallbackDate));
   const [draft, setDraft] = useState<Record<string, TeachAttendanceEntry>>({});
+  const sessionRange = useMemo(() => {
+    const fromDate = course.starting_date ?? todayIsoDate();
+    const toDate = course.ending_date ?? addMonthsToIsoDate(fromDate, 12);
+
+    return {
+      from: dateStartUtcIso(fromDate),
+      to: dateEndUtcIso(toDate),
+    };
+  }, [course.ending_date, course.starting_date]);
 
   const membersQuery = useQuery({
     enabled: Boolean(course.id),
     queryFn: () => listWorkspaceCourseMembers(wsId, course.id),
     queryKey: ['teach-course-members', wsId, course.id],
+  });
+  const sessionsQuery = useQuery({
+    enabled: Boolean(course.id),
+    queryFn: () =>
+      listWorkspaceUserGroupSessions(wsId, {
+        from: sessionRange.from,
+        groupId: course.id,
+        to: sessionRange.to,
+      }),
+    queryKey: [
+      'teach-course-sessions',
+      wsId,
+      course.id,
+      sessionRange.from,
+      sessionRange.to,
+    ],
   });
   const attendanceQuery = useQuery({
     enabled: Boolean(course.id && date),
@@ -69,16 +100,34 @@ export function AttendancePanel({
   });
 
   const members = membersQuery.data?.data ?? [];
+  const sessionDates = useMemo(
+    () =>
+      (sessionsQuery.data?.data ?? []).map((session) =>
+        formatDateInTimezone(session.startsAt, session.startTimezone)
+      ),
+    [sessionsQuery.data?.data]
+  );
   const attendanceByUser = new Map(
     (attendanceQuery.data?.data ?? []).map((entry) => [entry.user_id, entry])
   );
-  const selectedHasSession = sessionsForDate(course.sessions, date).length > 0;
+  const selectedHasSession = sessionsForDate(sessionDates, date).length > 0;
   const userIds = members.map((member) => member.id);
   const summary = getAttendanceSummary(
     attendanceQuery.data?.data ?? [],
     userIds,
     draft
   );
+
+  useEffect(() => {
+    if (!sessionDates.length || sessionsForDate(sessionDates, date).length) {
+      return;
+    }
+
+    const nextDate = pickInitialAttendanceDate(sessionDates);
+    setDate(nextDate);
+    setMonthDate(parseIsoDate(nextDate));
+    setDraft({});
+  }, [date, sessionDates]);
 
   const saveAttendance = useMutation({
     mutationFn: () =>
@@ -137,6 +186,9 @@ export function AttendancePanel({
   const resetDraft = () => setDraft({});
   const refreshCourses = () => {
     queryClient.invalidateQueries({ queryKey: ['teach-courses', wsId] });
+    queryClient.invalidateQueries({
+      queryKey: ['teach-course-sessions', wsId, course.id],
+    });
   };
 
   return (
@@ -149,13 +201,14 @@ export function AttendancePanel({
           monthDate={monthDate}
           onDateChange={setActiveDate}
           onMonthChange={setMonthDate}
-          sessions={course.sessions}
+          sessions={sessionDates}
           startingDate={course.starting_date}
           summaries={monthQuery.data?.days ?? []}
         />
         <AttendanceSchedulePanel
           course={course}
           onSaved={refreshCourses}
+          sessions={sessionDates}
           wsId={wsId}
         />
       </div>

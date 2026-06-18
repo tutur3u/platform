@@ -119,10 +119,68 @@ export const classesMapping = (wsId: string, data: any[]) =>
     notes: `${i?.mode ? `Mode: ${i.mode}\n` : ''}${i?.location ? `Location: ${i.location}\n` : ''}${i?.syllabus ? `Syllabus: ${i.syllabus}\n` : ''}${i?.notes ? `Notes: ${i.notes}\n` : ''}`,
     starting_date: i?.starting_date,
     ending_date: i?.ending_date,
-    sessions: i?.sessions,
     archived: i?.status === 'COMPLETED',
     created_at: i?.created_at,
   }));
+
+function stableUuidFromString(input: string) {
+  const seeds = [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35];
+  const hex = seeds
+    .map((seed) => {
+      let hash = seed;
+      for (let index = 0; index < input.length; index += 1) {
+        hash = Math.imul(hash ^ input.charCodeAt(index), 0x01000193);
+      }
+      return (hash >>> 0).toString(16).padStart(8, '0');
+    })
+    .join('');
+  const variant = ((Number.parseInt(hex[16] ?? '8', 16) & 0x3) | 0x8)
+    .toString(16)
+    .slice(0, 1);
+  const versioned = `${hex.slice(0, 12)}5${hex.slice(13, 16)}${variant}${hex.slice(17)}`;
+  return `${versioned.slice(0, 8)}-${versioned.slice(8, 12)}-${versioned.slice(12, 16)}-${versioned.slice(16, 20)}-${versioned.slice(20, 32)}`;
+}
+
+function normalizeLegacySessionDate(value: unknown) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return value.slice(0, 10);
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  return null;
+}
+
+// STATUS: ✅
+export const classSessionsMapping = (wsId: string, data: any[]) =>
+  data.flatMap((i) => {
+    const groupId = i?.id;
+    if (!groupId || !Array.isArray(i?.sessions)) return [];
+
+    return i.sessions.flatMap((sessionDate: unknown) => {
+      const date = normalizeLegacySessionDate(sessionDate);
+      if (!date) return [];
+
+      return [
+        {
+          id: stableUuidFromString(`legacy-class-session:${groupId}:${date}`),
+          ws_id: wsId,
+          group_id: groupId,
+          title: i?.code ?? null,
+          description: null,
+          starts_at: `${date}T00:00:00.000Z`,
+          ends_at: `${date}T01:00:00.000Z`,
+          start_timezone: 'Asia/Ho_Chi_Minh',
+          end_timezone: 'Asia/Ho_Chi_Minh',
+          recurrence_instance_date: date,
+          status: 'scheduled',
+          source: 'legacy_classes.sessions',
+          source_legacy_date: date,
+          created_at: i?.created_at,
+        },
+      ];
+    });
+  });
 
 // STATUS: ✅
 export const couponsMapping = (wsId: string, data: any[]) =>

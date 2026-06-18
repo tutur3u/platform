@@ -10,6 +10,7 @@ import {
   getGroupPostsPage,
   type LinkedProductRow,
 } from './server-data';
+import { listUserGroupSessionDates } from './session-schedule';
 
 /**
  * Request-scoped cache wrappers for the user-group overview.
@@ -39,14 +40,21 @@ export const getCachedGroupSchedule = cache(
   async (wsId: string, groupId: string): Promise<GroupScheduleData | null> => {
     const row = (await getCachedGroupRow(wsId, groupId)) as
       | (UserGroup & {
-          sessions?: string[] | null;
           starting_date?: string | null;
           ending_date?: string | null;
         })
       | null;
     if (!row) return null;
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const sessions = await listUserGroupSessionDates({
+      groupId,
+      supabase: sbAdmin,
+      wsId,
+    });
+
     return {
-      sessions: row.sessions ?? null,
+      sessions,
       starting_date: row.starting_date ?? null,
       ending_date: row.ending_date ?? null,
     };

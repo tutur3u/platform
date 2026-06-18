@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
+import { useTranslations } from 'next-intl';
 import { ConfirmationDialog } from './components/confirmation-dialog';
 import { MigrationConfig } from './components/migration-config';
 import { MigrationStats } from './components/migration-stats';
@@ -40,6 +41,7 @@ export default function MigrationDashboard({ wsId }: MigrationDashboardProps) {
   const state = useMigrationState(wsId);
   const actions = useMigrationActions({ state });
   const { modKey } = usePlatform();
+  const t = useTranslations('workspace-migrations');
 
   const {
     config,
@@ -111,6 +113,15 @@ export default function MigrationDashboard({ wsId }: MigrationDashboardProps) {
           onTargetWorkspaceIdChange={setTargetWorkspaceId}
           onHealthCheckModeChange={setHealthCheckMode}
         />
+
+        <div className="rounded-md border bg-muted/20 p-3 text-sm">
+          <p className="font-medium">{t('schedule_migration_title')}</p>
+          <p className="mt-1 text-muted-foreground">
+            {config.mode === 'tuturuuu'
+              ? t('schedule_migration_tuturuuu')
+              : t('schedule_migration_legacy')}
+          </p>
+        </div>
 
         {/* Confirmation Dialog */}
         <ConfirmationDialog

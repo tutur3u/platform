@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { CalendarDays, WandSparkles } from '@tuturuuu/icons';
 import {
+  createWorkspaceUserGroupSession,
   updateWorkspaceCourse,
   type WorkspaceCourseListItem,
 } from '@tuturuuu/internal-api';
@@ -15,22 +16,26 @@ import {
   generateWeeklySessions,
   inferWeekdaysFromSessions,
   todayIsoDate,
+  toRecurrenceWeekday,
+  vietnamMorningSessionIso,
 } from './attendance-utils';
 
 export function AttendanceSchedulePanel({
   course,
   onSaved,
+  sessions,
   wsId,
 }: {
   course: WorkspaceCourseListItem;
   onSaved: () => void;
+  sessions: string[];
   wsId: string;
 }) {
   const locale = useLocale();
   const t = useTranslations('teachOperations');
   const inferredWeekdays = useMemo(
-    () => inferWeekdaysFromSessions(course.sessions),
-    [course.sessions]
+    () => inferWeekdaysFromSessions(sessions),
+    [sessions]
   );
   const [startingDate, setStartingDate] = useState(
     course.starting_date ?? todayIsoDate()
@@ -67,12 +72,26 @@ export function AttendanceSchedulePanel({
   }, [endingDate, selectedWeekdays, startingDate]);
 
   const saveSchedule = useMutation({
-    mutationFn: () =>
-      updateWorkspaceCourse(wsId, course.id, {
+    mutationFn: async () => {
+      await updateWorkspaceCourse(wsId, course.id, {
         ending_date: endingDate,
-        sessions: generatedSessions,
         starting_date: startingDate,
-      }),
+      });
+
+      return createWorkspaceUserGroupSession(wsId, {
+        endTimezone: 'Asia/Ho_Chi_Minh',
+        endsAt: vietnamMorningSessionIso(startingDate, 8),
+        groupId: course.id,
+        recurrence: {
+          daysOfWeek: selectedWeekdays.map(toRecurrenceWeekday),
+          intervalWeeks: 1,
+          untilDate: endingDate,
+        },
+        startTimezone: 'Asia/Ho_Chi_Minh',
+        startsAt: vietnamMorningSessionIso(startingDate, 7),
+        title: course.name,
+      });
+    },
     onError: () => {
       toast.error(t('scheduleSaveError'));
     },

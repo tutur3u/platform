@@ -1227,6 +1227,23 @@ export {
   type UserGroupActivityLogsResponse,
 } from './user-group-activity';
 export {
+  type CreateWorkspaceUserGroupSessionPayload,
+  createWorkspaceUserGroupSession,
+  type ListWorkspaceUserGroupSessionsParams,
+  type ListWorkspaceUserGroupSessionsResponse,
+  listWorkspaceUserGroupSessions,
+  type UpdateWorkspaceUserGroupSessionPayload,
+  updateWorkspaceUserGroupSession,
+  type WorkspaceUserGroupScheduleGroup,
+  type WorkspaceUserGroupScheduleTag,
+  type WorkspaceUserGroupSession,
+  type WorkspaceUserGroupSessionFile,
+  type WorkspaceUserGroupSessionFilePayload,
+  type WorkspaceUserGroupSessionMutationResponse,
+  type WorkspaceUserGroupSessionRecurrencePayload,
+  type WorkspaceUserGroupSessionTag,
+} from './user-group-schedule';
+export {
   getNextWorkspaceUserGroupsPageParam,
   listAllWorkspaceUserGroups,
   listWorkspaceUserGroups,

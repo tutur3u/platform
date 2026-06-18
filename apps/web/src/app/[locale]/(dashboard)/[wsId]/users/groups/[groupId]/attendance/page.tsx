@@ -7,6 +7,7 @@ import {
   getGroupGuestUserIds,
   getGroupRow,
 } from '@/lib/user-groups/server-data';
+import { listUserGroupSessionDates } from '@/lib/user-groups/session-schedule';
 import type { InitialAttendanceProps } from './client';
 import GroupAttendanceClient from './client';
 
@@ -65,11 +66,7 @@ export default async function UserGroupAttendancePage({
           sessions,
           members,
           attendance: attendanceMap,
-        } = await getInitialAttendanceData(
-          groupId,
-          effectiveDate,
-          (group.sessions as string[] | null) ?? []
-        );
+        } = await getInitialAttendanceData(wsId, groupId, effectiveDate);
 
         return (
           <GroupAttendanceClient
@@ -90,14 +87,14 @@ export default async function UserGroupAttendancePage({
 }
 
 async function getInitialAttendanceData(
+  wsId: string,
   groupId: string,
-  dateYYYYMMDD: string,
-  sessions: string[]
+  dateYYYYMMDD: string
 ) {
   const sbAdmin = await createAdminClient();
 
   // Members and the day's attendance are independent — fetch in parallel.
-  const [membersRes, attRes] = await Promise.all([
+  const [membersRes, attRes, sessions] = await Promise.all([
     sbAdmin
       .from('workspace_user_groups_users')
       .select(
@@ -109,6 +106,7 @@ async function getInitialAttendanceData(
       .select('user_id, status, notes')
       .eq('group_id', groupId)
       .eq('date', dateYYYYMMDD),
+    listUserGroupSessionDates({ groupId, supabase: sbAdmin, wsId }),
   ]);
 
   const membersRows = membersRes.data ?? [];

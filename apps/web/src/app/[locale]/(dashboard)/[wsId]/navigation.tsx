@@ -688,6 +688,7 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/attendance`,
             `/${personalOrWsId}/users/database`,
             `/${personalOrWsId}/users/groups`,
+            `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
             `/${personalOrWsId}/users/feedbacks`,
@@ -734,6 +735,14 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/users/groups`,
               icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
               matchExact: true,
+              disabled:
+                withoutPermission('manage_users') &&
+                withoutPermission('view_user_groups'),
+            },
+            {
+              title: t('workspace-users-tabs.group_calendar'),
+              href: `/${personalOrWsId}/users/groups/calendar`,
+              icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),

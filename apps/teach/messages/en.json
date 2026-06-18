@@ -388,7 +388,7 @@
     "saveSchedule": "Save schedule",
     "saveMetrics": "Save metrics",
     "savedValues": "Saved values",
-    "scheduleLead": "Set the class term and recurring weekdays. Attendance calendars use these sessions.",
+    "scheduleLead": "Set the class term and recurring weekdays. Teach seeds these as 7:00-8:00 AM GMT+7 sessions for attendance.",
     "scheduleSaveError": "Could not save schedule.",
     "scheduleSaved": "Schedule saved.",
     "scheduleTitle": "Class schedule",

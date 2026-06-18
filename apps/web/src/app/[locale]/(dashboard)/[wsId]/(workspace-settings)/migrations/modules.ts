@@ -7,6 +7,7 @@ import {
   classMembersMapping,
   classPackagesMapping,
   classScoresMapping,
+  classSessionsMapping,
   couponsMapping,
   groupedScoreNamesMapping,
   lessonsMapping,
@@ -38,6 +39,11 @@ const availableModules = [
   'workspace-users',
   'workspace-user-fields',
   'workspace-user-groups',
+  'workspace-user-group-session-series',
+  'workspace-user-group-sessions',
+  'workspace-user-group-session-tags',
+  'workspace-user-group-session-tag-links',
+  'workspace-user-group-session-files',
   'workspace-user-groups-users',
   'workspace-user-group-tags',
   'workspace-user-group-tag-groups',
@@ -84,6 +90,7 @@ const availableModules = [
   'payment-methods',
   'roles',
   'classes',
+  'class-sessions',
   'wallets',
   'bills',
   'bill-packages',
@@ -162,6 +169,13 @@ export const generateModules = (): ModulePackage[] => {
       case 'classes':
         // baseModule.name = 'User Groups (Classes)';
         baseModule.mapping = classesMapping;
+        break;
+
+      case 'class-sessions':
+        // baseModule.name = 'User Group Sessions (Class Dates)';
+        baseModule.externalPath = `/migrate/classes`;
+        baseModule.mapping = classSessionsMapping;
+        baseModule.legacyOnly = true;
         break;
 
       case 'bills':
@@ -387,6 +401,15 @@ export const generateModules = (): ModulePackage[] => {
 
       case 'workspace-user-groups':
         // Workspace user groups - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'workspace-user-group-session-series':
+      case 'workspace-user-group-sessions':
+      case 'workspace-user-group-session-tags':
+      case 'workspace-user-group-session-tag-links':
+      case 'workspace-user-group-session-files':
+        // User group schedules - 1:1 sync, Tuturuuu mode only
         baseModule.tuturuuuOnly = true;
         break;
 

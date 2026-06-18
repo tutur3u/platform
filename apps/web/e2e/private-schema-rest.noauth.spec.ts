@@ -246,6 +246,26 @@ const PRIVATE_TABLES = [
     name: 'workspace_tutoring_sessions',
     select: 'id',
   },
+  {
+    name: 'workspace_user_group_session_series',
+    select: 'id',
+  },
+  {
+    name: 'workspace_user_group_sessions',
+    select: 'id',
+  },
+  {
+    name: 'workspace_user_group_session_tags',
+    select: 'id',
+  },
+  {
+    name: 'workspace_user_group_session_tag_links',
+    select: 'session_id',
+  },
+  {
+    name: 'workspace_user_group_session_files',
+    select: 'id',
+  },
 ] as const;
 
 test.describe('Private schema REST surface', () => {

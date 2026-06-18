@@ -33,10 +33,6 @@ const CourseCreateSchema = z.object({
     .nullable()
     .optional(),
   is_course_published: z.boolean().optional(),
-  sessions: z
-    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}/))
-    .max(750)
-    .optional(),
   starting_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -130,7 +126,7 @@ export const GET = withSessionAuth(
     const queryBuilder = context.supabase
       .from('workspace_user_groups')
       .select(
-        'id, name, description, cert_template, created_at, archived, ending_date, is_course_published, sessions, starting_date, workspace_course_modules(id), workspace_user_groups_users!workspace_user_roles_users_role_id_fkey(user_id)',
+        'id, name, description, cert_template, created_at, archived, ending_date, is_course_published, starting_date, workspace_course_modules(id), workspace_user_groups_users!workspace_user_roles_users_role_id_fkey(user_id)',
         { count: 'exact' }
       )
       .eq('ws_id', access.normalizedWsId)
@@ -169,7 +165,6 @@ export const GET = withSessionAuth(
         is_course_published: course.is_course_published,
         members_count: course.workspace_user_groups_users?.length ?? 0,
         modules_count: course.workspace_course_modules?.length ?? 0,
-        sessions: course.sessions ?? [],
         starting_date: course.starting_date,
       })),
       count: count ?? 0,

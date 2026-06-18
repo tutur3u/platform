@@ -14,7 +14,9 @@ type AttendanceStats = {
 };
 
 export type WorkspaceUserGroup =
-  Database['public']['Tables']['workspace_user_groups']['Row'];
+  Database['public']['Tables']['workspace_user_groups']['Row'] & {
+    sessions?: string[] | null;
+  };
 
 export type UserGroup = {
   workspace_user_groups: WorkspaceUserGroup | null;

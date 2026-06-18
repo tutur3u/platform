@@ -1,9 +1,11 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { listUserGroupSessionDatesByGroupIds } from '@/lib/user-groups/session-schedule';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -11,6 +13,44 @@ interface Params {
     wsId: string;
     userId: string;
   }>;
+}
+
+type UserGroupMembershipRow = Record<string, unknown> & {
+  workspace_user_groups?: (Record<string, unknown> & { id?: string }) | null;
+};
+
+async function attachSessionDates({
+  data,
+  sbAdmin,
+  wsId,
+}: {
+  data: unknown[] | null;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const rows = (data ?? []) as UserGroupMembershipRow[];
+  const groupIds = rows
+    .map((row) => row.workspace_user_groups?.id)
+    .filter((id): id is string => Boolean(id));
+
+  const sessionsByGroupId = await listUserGroupSessionDatesByGroupIds({
+    groupIds,
+    supabase: sbAdmin,
+    wsId,
+  });
+
+  return rows.map((row) => {
+    const group = row.workspace_user_groups;
+    if (!group?.id) return row;
+
+    return {
+      ...row,
+      workspace_user_groups: {
+        ...group,
+        sessions: sessionsByGroupId.get(group.id) ?? [],
+      },
+    };
+  });
 }
 
 export async function GET(_: Request, { params }: Params) {
@@ -68,7 +108,7 @@ async function getDataWithApiKey({
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(await attachSessionDates({ data, sbAdmin, wsId }));
 }
 
 async function getDataFromSession({
@@ -108,5 +148,7 @@ async function getDataFromSession({
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(
+    await attachSessionDates({ data, sbAdmin, wsId: normalizedWsId })
+  );
 }

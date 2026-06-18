@@ -103,7 +103,7 @@ export function Toolbar({
     : (statusOptions[0]?.value ?? 'all');
 
   return (
-    <div className="-mx-3 sm:-mx-4 sticky top-0 z-20 grid min-w-0 grid-cols-1 gap-2 border-border/60 border-b bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-center">
+    <div className="sticky top-0 z-20 -mx-3 grid min-w-0 grid-cols-1 gap-2 border-border/60 border-b bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-4 sm:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-center">
       <label className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
