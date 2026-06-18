@@ -77,7 +77,7 @@ dev_dependencies:
     sdk: flutter
   json_serializable: ^6.13.1
   mocktail: ^1.0.4
-  very_good_analysis: ^10.2.0
+  very_good_analysis: ^10.3.0
 
 dependency_overrides:
   flutter_pcm_sound:
