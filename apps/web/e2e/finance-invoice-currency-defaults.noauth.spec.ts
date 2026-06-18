@@ -8,6 +8,7 @@ import {
   expectStoredInvoiceRows,
   seedInvoiceCurrencyFixture,
 } from './helpers/finance-currency-fixtures';
+import { markPersonalWorkspaceSubscriptionRepairAttempted } from './helpers/onboarding';
 import {
   e2eClientHeaders,
   e2eClientIpForTest,
@@ -113,6 +114,10 @@ test.describe('Finance invoice currency defaults', () => {
         lowPrivUserId: profile.id as string,
         request,
       });
+      await markPersonalWorkspaceSubscriptionRepairAttempted(
+        lowPrivContext,
+        origin
+      );
 
       await lowPrivPage.addInitScript(() => {
         window.localStorage.setItem('printAfterCreate', 'false');

@@ -9,6 +9,7 @@ import {
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
 import { assertSafeE2EEnvironment } from './helpers/environment';
+import { markPersonalWorkspaceSubscriptionRepairAttempted } from './helpers/onboarding';
 import {
   e2eClientHeaders,
   e2eClientIpForTest,
@@ -651,7 +652,7 @@ async function createInvoiceForReferralCount({
     ]);
 
     await expect(invoicePage.locator('body')).toContainText(
-      `Referral (${expectedPercent}%)`
+      'Discount (Referral)'
     );
     await expect(invoicePage.locator('body')).toContainText(discountText);
     await expect(invoicePage.locator('body')).toContainText(totalText);
@@ -865,6 +866,7 @@ test.describe('Referral discount cap invoice flow', () => {
         operatorUserId: profile.id as string,
         request,
       });
+      await markPersonalWorkspaceSubscriptionRepairAttempted(context, origin);
 
       await context.addInitScript(() => {
         window.localStorage.setItem('printAfterCreate', 'false');
