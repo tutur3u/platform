@@ -50,12 +50,27 @@ export interface RateLimitWriteCounter {
   window_started_at: string;
 }
 
+export interface RateLimitEdgeBucket {
+  callerClass: string | null;
+  key: string;
+  operation: 'get' | 'mutate' | null;
+  policy: string | null;
+  subject: string | null;
+  subjectKind: string | null;
+  trustSuffix: string | null;
+  window: 'minute' | 'hour' | 'day' | null;
+}
+
+export interface RateLimitEdgeBucketGroup {
+  available: boolean;
+  buckets: RateLimitEdgeBucket[];
+  cursor: string;
+  keys: string[];
+}
+
 export interface RateLimitLiveUsageResponse {
-  readBuckets: {
-    available: boolean;
-    cursor: string;
-    keys: string[];
-  };
+  mutateBuckets: RateLimitEdgeBucketGroup;
+  readBuckets: RateLimitEdgeBucketGroup;
   writeCounters: RateLimitWriteCounter[];
 }
 

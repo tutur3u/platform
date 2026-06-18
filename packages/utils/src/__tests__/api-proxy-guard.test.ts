@@ -947,6 +947,110 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
   });
 
+  it('keys verified users/me reads by session without applying a trust uplift', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number; verified: true }>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, { m: 1, verified: true });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 600,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/users/me/profile', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('600');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('users-me');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 600,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:users-me:authenticated:get:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:users-me:authenticated:t1:get:minute'
+    );
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
+  it('uses the authenticated workspace read policy for verified dashboard reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number; verified: true }>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, { m: 1, verified: true });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 600,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/dashboard/bootstrap', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+      'workspace-dashboard-read'
+    );
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:workspace-dashboard-read:authenticated:get:minute'
+    );
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
   it('rate limits API client-looking bearer reads until route auth validates them', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -1698,9 +1802,9 @@ describe('guardApiProxyRequest', () => {
       limit: 1800,
       window: '1 m',
     });
-    // Trusted traffic gets a tier-suffixed bucket.
+    // Trusted traffic gets an authenticated, tier-suffixed bucket.
     expect(mocks.ratelimitPrefixes).toContain(
-      'proxy:test:api:task-board-read:anonymous:t3:get:minute'
+      'proxy:test:api:task-board-read:authenticated:t3:get:minute'
     );
     // The limiter is keyed by the per-session subject key, not the shared IP.
     const limiterId = mocks.limit.mock.calls[0]?.[0] as string;

@@ -2,13 +2,71 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Activity, Loader2 } from '@tuturuuu/icons';
-import { getRateLimitLiveUsage } from '@tuturuuu/internal-api';
+import {
+  getRateLimitLiveUsage,
+  type RateLimitEdgeBucket,
+} from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 
 function formatWindow(seconds: number) {
   if (seconds <= 60) return '1m';
   if (seconds <= 3600) return '1h';
   return '1d';
+}
+
+function formatBucketSummary(bucket: RateLimitEdgeBucket) {
+  return [
+    bucket.policy,
+    bucket.callerClass,
+    bucket.operation,
+    bucket.window,
+    bucket.trustSuffix,
+  ]
+    .filter(Boolean)
+    .join(':');
+}
+
+function EdgeBucketGroup({
+  buckets,
+  title,
+}: {
+  buckets: RateLimitEdgeBucket[];
+  title: string;
+}) {
+  const t = useTranslations('rate-limits');
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-medium text-sm">{title}</p>
+        <span className="text-muted-foreground text-xs">
+          {t('live.edge_count', { count: buckets.length })}
+        </span>
+      </div>
+      <div className="max-h-40 space-y-2 overflow-y-auto">
+        {buckets.slice(0, 20).map((bucket) => (
+          <div
+            className="space-y-1 rounded-md bg-muted/40 p-2"
+            key={bucket.key}
+          >
+            <div className="truncate font-mono text-xs">
+              {formatBucketSummary(bucket) || t('live.unknown')}
+            </div>
+            <div className="truncate text-muted-foreground text-xs">
+              {t('live.edge_subject', {
+                subject: bucket.subjectKind ?? t('live.unknown'),
+              })}
+            </div>
+          </div>
+        ))}
+        {buckets.length === 0 ? (
+          <p className="text-muted-foreground text-sm">
+            {t('live.edge_empty')}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 export function LiveUsageTable() {
@@ -78,22 +136,24 @@ export function LiveUsageTable() {
             )}
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border p-4">
-            <p className="font-medium text-sm">{t('live.read_title')}</p>
+          <div className="space-y-4 rounded-lg border border-border p-4">
             {usageQuery.data.readBuckets.available ? (
               <>
                 <p className="text-muted-foreground text-sm">
-                  {t('live.read_active', {
-                    count: usageQuery.data.readBuckets.keys.length,
+                  {t('live.edge_active', {
+                    count:
+                      usageQuery.data.readBuckets.buckets.length +
+                      usageQuery.data.mutateBuckets.buckets.length,
                   })}
                 </p>
-                <div className="max-h-48 space-y-1 overflow-y-auto">
-                  {usageQuery.data.readBuckets.keys.slice(0, 20).map((key) => (
-                    <div className="truncate font-mono text-xs" key={key}>
-                      {key}
-                    </div>
-                  ))}
-                </div>
+                <EdgeBucketGroup
+                  buckets={usageQuery.data.readBuckets.buckets}
+                  title={t('live.read_title')}
+                />
+                <EdgeBucketGroup
+                  buckets={usageQuery.data.mutateBuckets.buckets}
+                  title={t('live.mutate_title')}
+                />
               </>
             ) : (
               <p className="text-muted-foreground text-sm">

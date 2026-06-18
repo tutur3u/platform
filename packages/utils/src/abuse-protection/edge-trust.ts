@@ -39,6 +39,8 @@ export interface CachedTrustEntry {
   mode?: 'absolute' | 'unlimited';
   /** For mode=absolute: explicit per-window READ limits. */
   abs?: { minute?: number; hour?: number; day?: number };
+  /** Server-verified session marker. Does not increase limits by itself. */
+  verified?: boolean;
 }
 
 const DEFAULT_TRUST_CACHE_TTL_SECONDS = 3600; // 1 hour
@@ -156,14 +158,25 @@ function parseEntry(value: unknown): CachedTrustEntry | null {
       ? record.mode
       : undefined;
   const abs = parseAbsLimits(record.abs);
+  const verified = record.verified === true;
 
-  return { abs, m, mode };
+  const entry: CachedTrustEntry = { m };
+  if (mode) {
+    entry.mode = mode;
+  }
+  if (abs) {
+    entry.abs = abs;
+  }
+  if (verified) {
+    entry.verified = true;
+  }
+  return entry;
 }
 
 /** Serializes an entry for storage: plain number when multiplier-only. */
 function serializeEntry(entry: CachedTrustEntry): number | CachedTrustEntry {
   const m = clampMultiplier(entry.m);
-  if (!entry.mode && !entry.abs) {
+  if (!entry.mode && !entry.abs && !entry.verified) {
     return m;
   }
 
@@ -182,20 +195,28 @@ function serializeEntry(entry: CachedTrustEntry): number | CachedTrustEntry {
       serialized.abs = abs;
     }
   }
+  if (entry.verified) {
+    serialized.verified = true;
+  }
   return serialized;
 }
 
 function isActiveEntry(entry: CachedTrustEntry): boolean {
-  return entry.mode != null || entry.m > NEUTRAL_TRUST_MULTIPLIER;
+  return (
+    entry.mode != null ||
+    entry.verified === true ||
+    entry.m > NEUTRAL_TRUST_MULTIPLIER
+  );
 }
 
 /**
  * Resolves the cached trust multiplier for each provided subject key.
  *
  * Returns a map of subject key -> clamped multiplier for keys that have a cache
- * entry above the neutral baseline. Missing keys are omitted. Returns an empty
- * map on any Redis error (fail-open). Lets callers distinguish account trust
- * (session key) from location trust (cidr/ip keys).
+ * entry above the neutral baseline, admin-mode entries, or neutral verified
+ * session entries. Missing keys are omitted. Returns an empty map on any Redis
+ * error (fail-open). Lets callers distinguish account trust (session key) from
+ * location trust (cidr/ip keys).
  */
 export async function getCachedTrustEntries(
   subjectKeys: string[]
@@ -336,6 +357,44 @@ export async function writeTrustCacheForSubjects(
     await Promise.all(
       subjectKeys.map((subjectKey) =>
         redis.set(buildTrustCacheKey(subjectKey), clamped, { ex: ttlSeconds })
+      )
+    );
+  } catch {
+    // Cache writes must never block the protected request path.
+  }
+}
+
+/**
+ * Write-through a neutral marker for server-verified browser/app sessions.
+ * This only proves the session cookie was successfully validated downstream; it
+ * does not grant a read-limit multiplier or admin override.
+ */
+export async function writeVerifiedSessionCacheForSubjects(
+  subjectKeys: string[],
+  ttlSeconds: number = getTrustCacheTtlSeconds()
+): Promise<void> {
+  const sessionKeys = subjectKeys.filter((subjectKey) =>
+    subjectKey.startsWith('session:')
+  );
+  if (sessionKeys.length === 0) {
+    return;
+  }
+
+  try {
+    const redis = await getTrustRedisClient();
+    if (!redis) {
+      return;
+    }
+
+    const verifiedEntry = serializeEntry({
+      m: NEUTRAL_TRUST_MULTIPLIER,
+      verified: true,
+    });
+    await Promise.all(
+      sessionKeys.map((subjectKey) =>
+        redis.set(buildTrustCacheKey(subjectKey), verifiedEntry, {
+          ex: ttlSeconds,
+        })
       )
     );
   } catch {

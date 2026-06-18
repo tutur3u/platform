@@ -187,10 +187,22 @@ const DEFAULT_ANONYMOUS_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   createConfig('day', '1 d', 600, 'API_PROXY_ANON_MUTATE_LIMIT_DAY'),
 ];
 
+const DEFAULT_AUTHENTICATED_READ_RATE_LIMITS: RateLimitConfig[] = [
+  createConfig('minute', '1 m', 600, 'API_PROXY_AUTH_READ_LIMIT_MINUTE'),
+  createConfig('hour', '1 h', 6000, 'API_PROXY_AUTH_READ_LIMIT_HOUR'),
+  createConfig('day', '1 d', 40_000, 'API_PROXY_AUTH_READ_LIMIT_DAY'),
+];
+
 const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'minute', limit: 60, duration: '1 m' },
   { window: 'hour', limit: 300, duration: '1 h' },
   { window: 'day', limit: 2000, duration: '1 d' },
+];
+
+const USERS_ME_READ_RATE_LIMITS: RateLimitConfig[] = [
+  createConfig('minute', '1 m', 600, 'API_PROXY_USERS_ME_READ_LIMIT_MINUTE'),
+  createConfig('hour', '1 h', 6000, 'API_PROXY_USERS_ME_READ_LIMIT_HOUR'),
+  createConfig('day', '1 d', 40_000, 'API_PROXY_USERS_ME_READ_LIMIT_DAY'),
 ];
 
 const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
@@ -198,6 +210,15 @@ const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'hour', limit: 200, duration: '1 h' },
   { window: 'day', limit: 1200, duration: '1 d' },
 ];
+
+const WORKSPACE_DASHBOARD_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig('minute', '1 m', 600, 'API_PROXY_WORKSPACE_READ_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 6000, 'API_PROXY_WORKSPACE_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 40_000, 'API_PROXY_WORKSPACE_READ_LIMIT_DAY'),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
+};
 
 const AUTH_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
@@ -398,6 +419,16 @@ function isUsersAdminRead(req: NextRequest) {
   );
 }
 
+function isWorkspaceDashboardRead(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return false;
+  }
+
+  return /^\/api(?:\/v1)?\/workspaces\/[^/]+(?:\/|$)/u.test(
+    req.nextUrl.pathname
+  );
+}
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
     key: 'cron',
@@ -483,6 +514,11 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     rateLimits: USERS_ADMIN_READ_RATE_LIMITS,
   },
   {
+    key: 'workspace-dashboard-read',
+    matches: isWorkspaceDashboardRead,
+    rateLimits: WORKSPACE_DASHBOARD_READ_RATE_LIMITS,
+  },
+  {
     key: 'high-fanout',
     matches: (req) =>
       /^\/api\/v1\/workspaces\/[^/]+\/mail\/send(?:\/|$)/.test(
@@ -508,7 +544,7 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'users-me',
     matches: (req) => req.nextUrl.pathname.startsWith('/api/v1/users/me'),
     rateLimits: {
-      get: NO_READ_RATE_LIMITS,
+      get: USERS_ME_READ_RATE_LIMITS,
       mutate: USERS_ME_MUTATE_RATE_LIMITS,
     },
   },
@@ -1091,6 +1127,13 @@ function getEffectiveRateLimits(
   callerClass: CallerClass
 ): RateLimitProfile {
   if (callerClass === 'authenticated') {
+    if (routePolicy.key === 'default') {
+      return {
+        get: DEFAULT_AUTHENTICATED_READ_RATE_LIMITS,
+        mutate: DEFAULT_MUTATE_RATE_LIMITS,
+      };
+    }
+
     return routePolicy.rateLimits;
   }
 
@@ -1220,10 +1263,10 @@ export async function guardApiProxyRequest(
     const routePolicy = getRoutePolicy(req, routePolicies);
     const isRead = req.method === 'GET' || req.method === 'HEAD';
 
-    // Resolve trust for reads only. Account trust (session key) and location
-    // trust (cidr/ip keys) are distinguished so that:
-    //   * a genuinely trusted SESSION (cache entry keyed on the real cookie's
-    //     hash — unforgeable) gets its OWN per-session bucket, so trusted
+    // Resolve session verification/trust for reads only. Account trust
+    // (session key) and location trust (cidr/ip keys) are distinguished so that:
+    //   * a server-verified SESSION (cache entry keyed on the real cookie's
+    //     hash — unforgeable) gets its OWN per-session bucket, so authenticated
     //     teammates behind one NAT no longer collide; and
     //   * a trusted LOCATION (office cidr/ip) uplifts the shared per-IP bucket
     //     for the whole team without any per-request credential.
@@ -1231,7 +1274,7 @@ export async function guardApiProxyRequest(
     // caps. A forged cookie hashes to a key with no cache entry → no uplift,
     // no per-session escape.
     let trustEntry: CachedTrustEntry | null = null;
-    let sessionTrusted = false;
+    let sessionScoped = false;
     if (isRead && edgeTrustEnabled()) {
       const lookupKeys = [
         identity.sessionKey,
@@ -1253,24 +1296,30 @@ export async function guardApiProxyRequest(
       ]);
 
       trustEntry = combineTrustEntries([sessionEntry, locationEntry]);
-      sessionTrusted = !!identity.sessionKey && !!sessionEntry;
+      sessionScoped = !!identity.sessionKey && !!sessionEntry;
     }
 
-    // Trusted sessions key per-session; everyone else keys per-IP.
+    // Server-verified sessions key per-session; everyone else keys per-IP.
     const limiterId =
-      sessionTrusted && identity.sessionKey
+      sessionScoped && identity.sessionKey
         ? identity.sessionKey
         : identity.ipKey;
 
     if (limiterId) {
-      const baseRateLimits = getEffectiveRateLimits(routePolicy, callerClass);
+      const effectiveCallerClass: CallerClass = sessionScoped
+        ? 'authenticated'
+        : callerClass;
+      const baseRateLimits = getEffectiveRateLimits(
+        routePolicy,
+        effectiveCallerClass
+      );
       const { profile: rateLimits, suffix: trustSuffix } =
         applyTrustEntryToReads(baseRateLimits, trustEntry);
 
       const limiterPrefix = getRateLimitPrefix(
         options.prefixBase,
         routePolicy,
-        callerClass,
+        effectiveCallerClass,
         trustSuffix
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
@@ -1324,7 +1373,7 @@ export async function guardApiProxyRequest(
             'X-RateLimit-Limit': `${limit}`,
             'X-RateLimit-Remaining': `${remaining}`,
             'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-            'X-RateLimit-Caller-Class': callerClass,
+            'X-RateLimit-Caller-Class': effectiveCallerClass,
             'X-RateLimit-Window': window,
             'X-RateLimit-Policy': routePolicy.key,
           });

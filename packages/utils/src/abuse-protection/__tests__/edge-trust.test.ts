@@ -80,6 +80,17 @@ describe('edge-trust cache', () => {
     expect(await getCachedTrustMultiplier(['session:aaa'])).toBe(2.5);
   });
 
+  it('returns neutral verified session entries without treating plain neutral entries as active', async () => {
+    mockRedisClient();
+    mocks.mget.mockResolvedValue([{ m: 1, verified: true }, 1]);
+
+    const { getCachedTrustEntries } = await import('../edge-trust.js');
+    const entries = await getCachedTrustEntries(['session:aaa', 'session:bbb']);
+
+    expect(entries.get('session:aaa')).toEqual({ m: 1, verified: true });
+    expect(entries.has('session:bbb')).toBe(false);
+  });
+
   it('fails open to a neutral multiplier when Redis errors', async () => {
     mockRedisClient();
     mocks.mget.mockRejectedValue(new Error('redis down'));
@@ -137,6 +148,26 @@ describe('edge-trust cache', () => {
     expect(mocks.set).toHaveBeenCalledWith('trust:mult:cidr:1.2.3.0/24', 3, {
       ex: 600,
     });
+  });
+
+  it('writes neutral verified session markers without writing non-session subjects', async () => {
+    mockRedisClient();
+    mocks.set.mockResolvedValue('OK');
+
+    const { writeVerifiedSessionCacheForSubjects } = await import(
+      '../edge-trust.js'
+    );
+    await writeVerifiedSessionCacheForSubjects(
+      ['session:aaa', 'cidr:1.2.3.0/24'],
+      600
+    );
+
+    expect(mocks.set).toHaveBeenCalledTimes(1);
+    expect(mocks.set).toHaveBeenCalledWith(
+      'trust:mult:session:aaa',
+      { m: 1, verified: true },
+      { ex: 600 }
+    );
   });
 
   it('parses legacy plain numbers and rich JSON entries together', async () => {

@@ -29,8 +29,92 @@ export interface ReadUsageScan {
   keys: string[];
 }
 
+export interface ParsedRateLimitBucket {
+  callerClass: string | null;
+  key: string;
+  operation: 'get' | 'mutate' | null;
+  policy: string | null;
+  subject: string | null;
+  subjectKind: string | null;
+  trustSuffix: string | null;
+  window: 'minute' | 'hour' | 'day' | null;
+}
+
+const RATE_LIMIT_OPERATIONS = new Set(['get', 'mutate']);
+const RATE_LIMIT_WINDOWS = new Set(['minute', 'hour', 'day']);
+
+function isTrustSuffix(segment: string | undefined) {
+  return (
+    !!segment &&
+    (segment === 'unl' || segment.startsWith('t') || segment.startsWith('abs-'))
+  );
+}
+
+function getSubjectKind(subject: string | null) {
+  if (!subject) return null;
+  const separatorIndex = subject.indexOf(':');
+  return separatorIndex > 0 ? subject.slice(0, separatorIndex) : subject;
+}
+
+export function parseRateLimitBucketKey(
+  key: string,
+  prefixBase = 'proxy:web:api'
+): ParsedRateLimitBucket {
+  const prefixParts = prefixBase.split(':');
+  const parts = key.split(':');
+  const prefixMatches = prefixParts.every(
+    (part, index) => parts[index] === part
+  );
+
+  if (!prefixMatches) {
+    return {
+      callerClass: null,
+      key,
+      operation: null,
+      policy: null,
+      subject: null,
+      subjectKind: null,
+      trustSuffix: null,
+      window: null,
+    };
+  }
+
+  const policyIndex = prefixParts.length;
+  const policy = parts[policyIndex] ?? null;
+  const callerClass = parts[policyIndex + 1] ?? null;
+  let operationIndex = policyIndex + 2;
+  let trustSuffix: string | null = null;
+
+  if (isTrustSuffix(parts[operationIndex])) {
+    trustSuffix = parts[operationIndex]!;
+    operationIndex += 1;
+  }
+
+  const operation = parts[operationIndex] ?? null;
+  const window = parts[operationIndex + 1] ?? null;
+  const subjectParts = parts.slice(operationIndex + 2);
+  const subject = subjectParts.length > 0 ? subjectParts.join(':') : null;
+  const normalizedOperation = RATE_LIMIT_OPERATIONS.has(operation ?? '')
+    ? (operation as ParsedRateLimitBucket['operation'])
+    : null;
+  const normalizedWindow = RATE_LIMIT_WINDOWS.has(window ?? '')
+    ? (window as ParsedRateLimitBucket['window'])
+    : null;
+
+  return {
+    callerClass,
+    key,
+    operation: normalizedOperation,
+    policy,
+    subject,
+    subjectKind: getSubjectKind(subject),
+    trustSuffix,
+    window: normalizedWindow,
+  };
+}
+
 /**
- * Cursor-based SCAN over edge read-limit bucket keys (best-effort — SCAN is
+ * Cursor-based SCAN over edge rate-limit bucket keys (best-effort — SCAN is
  * incremental, not the blocking KEYS). Returns matched keys for one page.
  */
 export async function scanReadUsageKeys(

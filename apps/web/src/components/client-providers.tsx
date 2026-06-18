@@ -10,7 +10,9 @@ import { AccountSwitcherProvider } from '@/context/account-switcher-context';
 import {
   installFetchInterceptor,
   setRateLimitMessage,
+  setRateLimitToastLabels,
 } from '@/lib/fetch-interceptor';
+import { RateLimitDetailsDialog } from './rate-limit-details-dialog';
 
 const ReactQueryDevtools = dynamic(
   () =>
@@ -33,6 +35,9 @@ function FetchInterceptorI18n() {
     setRateLimitMessage((seconds) =>
       t('rate_limited_retry', { seconds: String(seconds) })
     );
+    setRateLimitToastLabels({
+      viewDetails: t('rate_limited_view_details'),
+    });
   }, [t]);
 
   return null;
@@ -44,6 +49,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       <TooltipProvider>{children}</TooltipProvider>
       <AccountSwitcherKeyboardShortcut />
       <FetchInterceptorI18n />
+      <RateLimitDetailsDialog />
       {process.env.NODE_ENV === 'development' ? (
         <ReactQueryDevtools
           initialIsOpen={false}
