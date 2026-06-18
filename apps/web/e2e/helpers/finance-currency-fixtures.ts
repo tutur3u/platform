@@ -16,11 +16,9 @@ import {
 export interface InvoiceCurrencyFixture {
   customerName: string;
   customerWorkspaceUserId: string;
-  createdPersonalWorkspace: boolean;
   financeCategoryId: string;
   operatorWorkspaceUserId: string;
   ownerId: string;
-  personalWorkspaceId: string;
   productCategoryId: string;
   productId: string;
   productName: string;
@@ -39,11 +37,9 @@ export function createInvoiceCurrencyFixture(): InvoiceCurrencyFixture {
   return {
     customerName: `E2E VND Customer ${suffix}`,
     customerWorkspaceUserId: randomUUID(),
-    createdPersonalWorkspace: false,
     financeCategoryId: randomUUID(),
     operatorWorkspaceUserId: randomUUID(),
     ownerId: randomUUID(),
-    personalWorkspaceId: randomUUID(),
     productCategoryId: randomUUID(),
     productId: randomUUID(),
     productName: `E2E VND Product ${suffix}`,
@@ -80,40 +76,6 @@ export async function seedInvoiceCurrencyFixture({
       personal: false,
     },
   });
-  const personalWorkspaceResponse = await request.get(
-    `${SUPABASE_URL}/rest/v1/workspaces?creator_id=eq.${lowPrivUserId}&personal=eq.true&select=id&limit=1`,
-    { failOnStatusCode: false, headers: serviceHeaders() }
-  );
-  await expectStatus(personalWorkspaceResponse, 200);
-  const existingPersonalWorkspaces =
-    (await personalWorkspaceResponse.json()) as Array<{ id: string }>;
-  const existingPersonalWorkspaceId = existingPersonalWorkspaces[0]?.id;
-
-  if (existingPersonalWorkspaceId) {
-    fixture.personalWorkspaceId = existingPersonalWorkspaceId;
-  } else {
-    await postRestRow({
-      request,
-      table: 'workspaces',
-      data: {
-        creator_id: lowPrivUserId,
-        handle: `e2e-invoice-vnd-personal-${suffix}`,
-        id: fixture.personalWorkspaceId,
-        name: 'E2E Invoice VND Personal',
-        personal: true,
-      },
-    });
-    await postRestRow({
-      request,
-      table: 'workspace_members',
-      data: {
-        type: 'MEMBER',
-        user_id: lowPrivUserId,
-        ws_id: fixture.personalWorkspaceId,
-      },
-    });
-    fixture.createdPersonalWorkspace = true;
-  }
   await expectStatus(
     await request.delete(
       `${SUPABASE_URL}/rest/v1/workspace_default_permissions?ws_id=eq.${fixture.workspaceId}`,
@@ -407,17 +369,5 @@ export async function cleanupInvoiceCurrencyFixture({
     table: 'workspaces',
     filter: `id=eq.${fixture.workspaceId}`,
   });
-  if (fixture.createdPersonalWorkspace) {
-    await deleteRestRows({
-      request,
-      table: 'workspace_members',
-      filter: `ws_id=eq.${fixture.personalWorkspaceId}`,
-    });
-    await deleteRestRows({
-      request,
-      table: 'workspaces',
-      filter: `id=eq.${fixture.personalWorkspaceId}`,
-    });
-  }
   await lowPrivContext.close();
 }

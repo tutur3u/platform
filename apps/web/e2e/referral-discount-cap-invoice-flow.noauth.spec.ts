@@ -57,12 +57,10 @@ function referralPercentFor(count: number) {
 
 type ReferralInvoiceFixture = {
   candidateUserIds: string[];
-  createdPersonalWorkspace: boolean;
   financeCategoryId: string;
   invoiceIds: string[];
   operatorWorkspaceUserId: string;
   ownerId: string;
-  personalWorkspaceId: string;
   productCategoryId: string;
   productId: string;
   productName: string;
@@ -83,12 +81,10 @@ function createReferralInvoiceFixture(): ReferralInvoiceFixture {
 
   return {
     candidateUserIds: Array.from({ length: 15 }, () => randomUUID()),
-    createdPersonalWorkspace: false,
     financeCategoryId: randomUUID(),
     invoiceIds: [],
     operatorWorkspaceUserId: randomUUID(),
     ownerId: randomUUID(),
-    personalWorkspaceId: randomUUID(),
     productCategoryId: randomUUID(),
     productId: randomUUID(),
     productName: `E2E Referral Product ${suffix}`,
@@ -128,41 +124,6 @@ async function seedReferralInvoiceFixture({
       personal: false,
     },
   });
-
-  const personalWorkspaceResponse = await request.get(
-    `${SUPABASE_URL}/rest/v1/workspaces?creator_id=eq.${operatorUserId}&personal=eq.true&select=id&limit=1`,
-    { failOnStatusCode: false, headers: serviceHeaders() }
-  );
-  await expectStatus(personalWorkspaceResponse, 200);
-  const existingPersonalWorkspaces =
-    (await personalWorkspaceResponse.json()) as Array<{ id: string }>;
-  const existingPersonalWorkspaceId = existingPersonalWorkspaces[0]?.id;
-
-  if (existingPersonalWorkspaceId) {
-    fixture.personalWorkspaceId = existingPersonalWorkspaceId;
-  } else {
-    await postRestRow({
-      request,
-      table: 'workspaces',
-      data: {
-        creator_id: operatorUserId,
-        handle: `e2e-referral-cap-personal-${suffix}`,
-        id: fixture.personalWorkspaceId,
-        name: 'E2E Referral Discount Cap Personal',
-        personal: true,
-      },
-    });
-    await postRestRow({
-      request,
-      table: 'workspace_members',
-      data: {
-        type: 'MEMBER',
-        user_id: operatorUserId,
-        ws_id: fixture.personalWorkspaceId,
-      },
-    });
-    fixture.createdPersonalWorkspace = true;
-  }
 
   await expectStatus(
     await request.delete(
@@ -841,18 +802,6 @@ async function cleanupReferralInvoiceFixture({
     table: 'workspaces',
     filter: `id=eq.${fixture.workspaceId}`,
   });
-  if (fixture.createdPersonalWorkspace) {
-    await deleteRestRows({
-      request,
-      table: 'workspace_members',
-      filter: `ws_id=eq.${fixture.personalWorkspaceId}`,
-    });
-    await deleteRestRows({
-      request,
-      table: 'workspaces',
-      filter: `id=eq.${fixture.personalWorkspaceId}`,
-    });
-  }
 
   await context.close();
 }
