@@ -20,6 +20,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
   getCurrencyLocale,
+  resolveSupportedCurrency,
   SUPPORTED_CURRENCIES,
 } from '@tuturuuu/utils/currencies';
 import { useRouter } from 'next/navigation';
@@ -97,6 +98,7 @@ interface Props {
   wsId: string;
   data?: Wallet;
   defaultType?: WalletFormValues['type'];
+  defaultCurrency?: string;
   onFinish?: (data: WalletFormValues) => void;
   isPersonalWorkspace?: boolean;
 }
@@ -105,11 +107,20 @@ export function WalletForm({
   wsId,
   data,
   defaultType = 'STANDARD',
+  defaultCurrency,
   onFinish,
   isPersonalWorkspace,
 }: Props) {
   const t = useTranslations();
-  const { currency: workspaceCurrency } = useWorkspaceCurrency(wsId);
+  const fallbackCurrency = resolveSupportedCurrency(defaultCurrency);
+  const { currency: workspaceCurrency } = useWorkspaceCurrency(
+    wsId,
+    fallbackCurrency
+  );
+  const resolvedWorkspaceCurrency = resolveSupportedCurrency(
+    workspaceCurrency,
+    fallbackCurrency
+  );
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
   const queryClient = useQueryClient();
@@ -127,7 +138,7 @@ export function WalletForm({
       description: data?.description || '',
       balance: data?.balance || 0,
       type: data?.type || defaultType,
-      currency: data?.currency || workspaceCurrency || 'USD',
+      currency: data?.currency || resolvedWorkspaceCurrency,
       icon: data?.icon || null,
       image_src: data?.image_src || null,
       limit: data?.limit ?? undefined,
@@ -193,7 +204,7 @@ export function WalletForm({
                         ? ''
                         : new Intl.NumberFormat(
                             getCurrencyLocale(
-                              walletCurrency || workspaceCurrency || 'USD'
+                              walletCurrency || resolvedWorkspaceCurrency
                             ),
                             {
                               maximumFractionDigits: 2,
@@ -296,7 +307,7 @@ export function WalletForm({
           <WalletCreditFields
             form={form}
             loading={loading}
-            currency={walletCurrency || workspaceCurrency || 'USD'}
+            currency={walletCurrency || resolvedWorkspaceCurrency}
           />
         )}
 

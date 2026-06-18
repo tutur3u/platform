@@ -11,6 +11,7 @@ import type { FinancePermissionRequestUser } from '@tuturuuu/ui/finance/shared/f
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';
 import { getCurrencyLocale } from '@tuturuuu/utils/format';
 import {
@@ -117,8 +118,8 @@ export default async function WalletDetailsPage({
     notFound();
   }
 
-  const currency = wallet.currency || resolvedDefaultCurrency || 'USD';
-  const workspaceCurrency = resolvedDefaultCurrency || 'USD';
+  const workspaceCurrency = resolveSupportedCurrency(resolvedDefaultCurrency);
+  const currency = wallet.currency || workspaceCurrency;
   const initialAction = getInitialWalletAction(searchParams.action);
 
   // Fetch exchange rates for conversion display
@@ -153,6 +154,7 @@ export default async function WalletDetailsPage({
           canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
           canDeleteWallets={canDeleteWallets}
           isPersonalWorkspace={!!resolvedWorkspace.personal}
+          defaultCurrency={workspaceCurrency}
           timezone={resolvedWorkspace.timezone}
           permissionRequestUser={permissionRequestUser}
         />

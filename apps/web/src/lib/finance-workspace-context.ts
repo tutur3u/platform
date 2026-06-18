@@ -1,6 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
   getPermissions,
   getWorkspace,
@@ -85,7 +86,7 @@ export async function getWebFinanceWorkspaceContext(
   }
 
   return {
-    currency: currency ?? 'USD',
+    currency: resolveSupportedCurrency(currency),
     permissions,
     user: financeUser,
     workspace,

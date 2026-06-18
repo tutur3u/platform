@@ -12,6 +12,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
@@ -38,6 +39,7 @@ interface Props {
   canReadInvoiceProducts?: boolean;
   canReadInvoiceProductStock?: boolean;
   canReadGroupLinkedProducts?: boolean;
+  defaultCurrency?: string;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
@@ -49,6 +51,7 @@ export default function NewInvoicePage({
   canReadInvoiceProducts = true,
   canReadInvoiceProductStock = true,
   canReadGroupLinkedProducts = true,
+  defaultCurrency: workspaceDefaultCurrency,
   permissionRequestUser,
 }: Props) {
   const t = useTranslations();
@@ -74,8 +77,10 @@ export default function NewInvoicePage({
   const defaultWalletId = defaultConfigs.default_wallet_id ?? undefined;
   const defaultCategoryId =
     defaultConfigs.DEFAULT_SUBSCRIPTION_CATEGORY_ID ?? undefined;
-  const defaultCurrency =
-    defaultConfigs.DEFAULT_CURRENCY === 'VND' ? 'VND' : 'USD';
+  const defaultCurrency = resolveSupportedCurrency(
+    defaultConfigs.DEFAULT_CURRENCY,
+    resolveSupportedCurrency(workspaceDefaultCurrency)
+  );
 
   const [
     createMultipleInvoices,

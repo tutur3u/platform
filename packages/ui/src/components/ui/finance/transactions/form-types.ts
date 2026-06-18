@@ -55,6 +55,7 @@ export interface TransactionFormProps {
   canUpdateConfidentialTransactions?: boolean;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  defaultCurrency?: string;
   initialMode?: TransactionFormInitialMode;
   initialTransaction?: TransactionFormInitialTransaction;
   initialTransfer?: TransactionFormInitialTransfer;

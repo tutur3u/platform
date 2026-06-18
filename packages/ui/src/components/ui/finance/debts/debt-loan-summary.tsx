@@ -8,6 +8,7 @@ import {
   TrendingUp,
 } from '@tuturuuu/icons';
 import type { DebtLoanSummary } from '@tuturuuu/types/primitives/DebtLoan';
+import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useFinanceHref } from '../finance-route-context';
@@ -22,8 +23,8 @@ interface Props {
 
 export function DebtLoanSummaryCards({
   summary,
-  currency = 'VND',
-  locale = 'vi-VN',
+  currency = 'USD',
+  locale = getCurrencyLocale(currency),
   wsId,
 }: Props) {
   const t = useTranslations('ws-debt-loan');

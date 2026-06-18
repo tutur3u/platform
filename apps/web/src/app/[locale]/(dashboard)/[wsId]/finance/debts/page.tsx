@@ -21,5 +21,11 @@ export default async function WorkspaceDebtsPage({
   if (!context) notFound();
   const sp = await searchParams;
 
-  return <DebtsPage wsId={context.wsId} searchParams={sp} />;
+  return (
+    <DebtsPage
+      wsId={context.wsId}
+      searchParams={sp}
+      currency={context.currency}
+    />
+  );
 }

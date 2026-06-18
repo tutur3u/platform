@@ -180,6 +180,47 @@ describe('workspace settings configs route', () => {
     ]);
   });
 
+  it('allows invoice creators to read invoice creation defaults without settings permission', async () => {
+    mocks.getPermissions.mockResolvedValueOnce({
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'create_invoices'
+      ),
+      withoutPermission: vi.fn(() => true),
+    });
+    mocks.workspaceConfigsIn.mockResolvedValueOnce({
+      data: [
+        { id: 'DEFAULT_CURRENCY', value: 'VND' },
+        { id: 'default_wallet_id', value: 'wallet-1' },
+      ],
+      error: null,
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=default_wallet_id,DEFAULT_SUBSCRIPTION_CATEGORY_ID,DEFAULT_CURRENCY'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      DEFAULT_CURRENCY: 'VND',
+      DEFAULT_SUBSCRIPTION_CATEGORY_ID: null,
+      default_wallet_id: 'wallet-1',
+    });
+    expect(mocks.workspaceConfigsIn).toHaveBeenCalledWith('id', [
+      'default_wallet_id',
+      'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
+      'DEFAULT_CURRENCY',
+    ]);
+  });
+
   it('allows settings managers to read configs', async () => {
     const { GET } = await import(
       '@/app/api/v1/workspaces/[wsId]/settings/configs/route'

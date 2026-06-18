@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -81,7 +82,7 @@ interface Props {
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
   defaultCategoryId?: string;
-  defaultCurrency?: 'VND' | 'USD';
+  defaultCurrency?: string;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
   canReadInvoiceProducts?: boolean;
@@ -98,7 +99,7 @@ export function SubscriptionInvoice({
   downloadImageAfterCreate = false,
   defaultWalletId,
   defaultCategoryId,
-  defaultCurrency = 'USD',
+  defaultCurrency: rawDefaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
   canReadInvoiceProducts = true,
@@ -108,6 +109,7 @@ export function SubscriptionInvoice({
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
+  const defaultCurrency = resolveSupportedCurrency(rawDefaultCurrency);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
   const router = useRouter();

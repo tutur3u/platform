@@ -1067,6 +1067,7 @@ export function InfiniteTransactionsList({
               canUpdateConfidentialTransactions={
                 canUpdateConfidentialTransactions
               }
+              defaultCurrency={currency}
               timezone={resolvedTimezone}
               refreshPageOnFinish={!!walletId}
               permissionRequestUser={permissionRequestUser}
@@ -1102,6 +1103,7 @@ export function InfiniteTransactionsList({
               canCreateConfidentialTransactions={
                 canCreateConfidentialTransactions
               }
+              defaultCurrency={currency}
               timezone={resolvedTimezone}
               preferInitialWalletSelection={!!walletId}
               refreshPageOnFinish={!!walletId}

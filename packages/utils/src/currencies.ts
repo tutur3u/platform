@@ -66,9 +66,8 @@ export type CurrencyConfig = (typeof SUPPORTED_CURRENCIES)[number];
  * @returns The BCP 47 locale string for the currency
  */
 export function getCurrencyLocale(currency = 'VND'): string {
-  const found = SUPPORTED_CURRENCIES.find(
-    (c) => c.code === currency.toUpperCase()
-  );
+  const code = currency.trim().toUpperCase();
+  const found = SUPPORTED_CURRENCIES.find((c) => c.code === code);
   return found?.locale ?? 'en-US';
 }
 
@@ -81,7 +80,30 @@ export function getCurrencyLocale(currency = 'VND'): string {
 export function isSupportedCurrency(
   currency: string
 ): currency is SupportedCurrency {
-  return SUPPORTED_CURRENCIES.some((c) => c.code === currency.toUpperCase());
+  const code = currency.trim().toUpperCase();
+  return SUPPORTED_CURRENCIES.some((c) => c.code === code);
+}
+
+/**
+ * Normalize a currency code to the supported uppercase code set.
+ *
+ * @param value - The candidate currency code
+ * @param fallback - The fallback currency code when value is missing or unsupported
+ * @returns A supported currency code
+ */
+export function resolveSupportedCurrency(
+  value: string | null | undefined,
+  fallback: string = 'USD'
+): SupportedCurrency {
+  const normalizedFallback = fallback.trim().toUpperCase();
+  const safeFallback = isSupportedCurrency(normalizedFallback)
+    ? normalizedFallback
+    : 'USD';
+  const normalizedValue = value?.trim().toUpperCase();
+
+  return normalizedValue && isSupportedCurrency(normalizedValue)
+    ? normalizedValue
+    : safeFallback;
 }
 
 /**
@@ -93,5 +115,6 @@ export function isSupportedCurrency(
 export function getCurrencyConfig(
   currency: string
 ): CurrencyConfig | undefined {
-  return SUPPORTED_CURRENCIES.find((c) => c.code === currency.toUpperCase());
+  const code = currency.trim().toUpperCase();
+  return SUPPORTED_CURRENCIES.find((c) => c.code === code);
 }

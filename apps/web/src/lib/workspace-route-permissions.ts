@@ -63,6 +63,9 @@ export function getWorkspaceRoutePermissionRequirements(
         : ['manage_forms', 'view_form_analytics'];
     case 'finance':
       if (subSection === 'invoices') {
+        if (nestedSection === 'new') {
+          return ['create_invoices', 'view_invoices'];
+        }
         return ['view_invoices'];
       }
       if (subSection === 'transactions' || subSection === 'recurring') {

@@ -228,6 +228,7 @@ export function WalletsDataTable({
             <WalletForm
               wsId={wsId}
               data={selectedWallet}
+              defaultCurrency={currency}
               onFinish={handleEditComplete}
               isPersonalWorkspace={isPersonalWorkspace}
             />

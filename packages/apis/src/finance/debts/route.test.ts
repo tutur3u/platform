@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
   const debtInsertSingle = vi.fn();
   const debtListRpc = vi.fn();
   const getFinanceRouteContext = vi.fn();
+  const getWorkspaceConfig = vi.fn();
   const publicRpc = vi.fn();
   const withoutPermission = vi.fn();
 
@@ -28,6 +29,7 @@ const mocks = vi.hoisted(() => {
     debtInsertSingle,
     debtListRpc,
     getFinanceRouteContext,
+    getWorkspaceConfig,
     publicRpc,
     sbAdmin,
     supabase,
@@ -39,6 +41,11 @@ vi.mock('../request-access', () => ({
   getFinanceRouteContext: (
     ...args: Parameters<typeof mocks.getFinanceRouteContext>
   ) => mocks.getFinanceRouteContext(...args),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
+    mocks.getWorkspaceConfig(...args),
 }));
 
 describe('finance debts route', () => {
@@ -60,6 +67,7 @@ describe('finance debts route', () => {
         },
       },
     });
+    mocks.getWorkspaceConfig.mockResolvedValue('SGD');
     mocks.debtListRpc.mockResolvedValue({
       data: [
         {
@@ -161,12 +169,46 @@ describe('finance debts route', () => {
         start_date: '2026-06-01',
         type: 'debt',
         ws_id: 'ws-1',
+        currency: 'SGD',
       })
+    );
+    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
+      'ws-1',
+      'DEFAULT_CURRENCY'
     );
     await expect(response.json()).resolves.toEqual({
       id: 'debt-1',
       name: 'Laptop loan',
       ws_id: 'ws-1',
     });
+  });
+
+  it('rejects unsupported explicit debt currencies', async () => {
+    const { POST } = await import('./route.js');
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/debts', {
+        body: JSON.stringify({
+          currency: 'DOGE',
+          name: 'Laptop loan',
+          principal_amount: 1000000,
+          start_date: '2026-06-01',
+          type: 'debt',
+        }),
+        method: 'POST',
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Unsupported currency',
+    });
+    expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
+    expect(mocks.debtInsert).not.toHaveBeenCalled();
   });
 });

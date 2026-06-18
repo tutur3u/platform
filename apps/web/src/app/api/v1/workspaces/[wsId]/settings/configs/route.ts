@@ -38,6 +38,12 @@ const REPORT_RENDER_CONFIG_IDS = new Set(
     .filter((id): id is string => Boolean(id))
 );
 
+const INVOICE_CREATION_DEFAULT_CONFIG_IDS = new Set([
+  'default_wallet_id',
+  'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
+  'DEFAULT_CURRENCY',
+]);
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -110,10 +116,17 @@ export async function GET(req: NextRequest, { params }: Params) {
       (permissions.containsPermission('view_user_groups_reports') ||
         permissions.containsPermission('approve_reports') ||
         permissions.containsPermission('manage_user_report_templates'));
+    const onlyInvoiceCreationDefaults = ids.every((id) =>
+      INVOICE_CREATION_DEFAULT_CONFIG_IDS.has(id)
+    );
+    const canReadInvoiceCreationDefaults =
+      onlyInvoiceCreationDefaults &&
+      permissions.containsPermission('create_invoices');
 
     if (
       permissions.withoutPermission('manage_workspace_settings') &&
-      !canReadReportRenderConfigs
+      !canReadReportRenderConfigs &&
+      !canReadInvoiceCreationDefaults
     ) {
       return NextResponse.json(
         { error: 'Insufficient permissions to read workspace settings' },

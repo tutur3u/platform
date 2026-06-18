@@ -5,6 +5,11 @@ import {
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
 } from './helpers/environment';
+import {
+  readWorkspaceDefaultCurrencyConfig,
+  restoreWorkspaceDefaultCurrencyConfig,
+  setWorkspaceDefaultCurrencyConfig,
+} from './helpers/workspace-currency-config';
 
 const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 const SUPABASE_URL =
@@ -155,6 +160,102 @@ test.describe('Workspace wallets private schema API', () => {
           failOnStatusCode: false,
           headers: serviceHeaders({ schema: 'private' }),
         }
+      );
+    }
+  });
+
+  test('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
+    request,
+  }) => {
+    const walletId = randomUUID();
+    const unsupportedWalletId = randomUUID();
+    const previousConfig = await readWorkspaceDefaultCurrencyConfig(
+      request,
+      ROOT_WORKSPACE_ID
+    );
+
+    try {
+      await setWorkspaceDefaultCurrencyConfig(
+        request,
+        ROOT_WORKSPACE_ID,
+        'SGD'
+      );
+
+      const createResponse = await request.post(
+        `/api/workspaces/${ROOT_WORKSPACE_ID}/wallets`,
+        {
+          data: {
+            balance: 1250,
+            id: walletId,
+            name: `Workspace-default wallet ${Date.now()}`,
+            report_opt_in: true,
+            type: 'STANDARD',
+          },
+          failOnStatusCode: false,
+        }
+      );
+
+      expect(createResponse.status()).toBe(200);
+      await expect(createResponse.json()).resolves.toEqual({
+        message: 'success',
+      });
+
+      const privateReadResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_wallets?id=eq.${walletId}&select=id,currency`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+
+      expect(privateReadResponse.status()).toBe(200);
+      await expect(privateReadResponse.json()).resolves.toEqual([
+        {
+          currency: 'SGD',
+          id: walletId,
+        },
+      ]);
+
+      const unsupportedResponse = await request.post(
+        `/api/workspaces/${ROOT_WORKSPACE_ID}/wallets`,
+        {
+          data: {
+            currency: 'DOGE',
+            id: unsupportedWalletId,
+            name: 'Unsupported currency wallet',
+            type: 'STANDARD',
+          },
+          failOnStatusCode: false,
+        }
+      );
+
+      expect(unsupportedResponse.status()).toBe(400);
+      await expect(unsupportedResponse.json()).resolves.toEqual({
+        message: 'Unsupported currency',
+      });
+
+      const unsupportedPrivateReadResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_wallets?id=eq.${unsupportedWalletId}&select=id`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+
+      expect(unsupportedPrivateReadResponse.status()).toBe(200);
+      await expect(unsupportedPrivateReadResponse.json()).resolves.toEqual([]);
+    } finally {
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_wallets?id=in.(${walletId},${unsupportedWalletId})`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+      await restoreWorkspaceDefaultCurrencyConfig(
+        request,
+        ROOT_WORKSPACE_ID,
+        previousConfig
       );
     }
   });

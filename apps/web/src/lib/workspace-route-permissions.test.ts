@@ -38,6 +38,12 @@ describe('workspace route permission mapping', () => {
     expect(getWorkspaceRoutePermissionRequirements(['ai', 'spark'])).toEqual([
       'manage_projects',
     ]);
+    expect(
+      getWorkspaceRoutePermissionRequirements(['finance', 'invoices'])
+    ).toEqual(['view_invoices']);
+    expect(
+      getWorkspaceRoutePermissionRequirements(['finance', 'invoices', 'new'])
+    ).toEqual(['create_invoices', 'view_invoices']);
     expect(getWorkspaceRoutePermissionRequirements(['posts'])).toContain(
       'approve_posts'
     );
@@ -87,6 +93,12 @@ describe('workspace route permission mapping', () => {
       hasRequiredWorkspaceRoutePermission({
         grantedPermissions: ['view_transactions'],
         requiredPermissions: ['manage_finance', 'view_transactions'],
+      })
+    ).toBe(true);
+    expect(
+      hasRequiredWorkspaceRoutePermission({
+        grantedPermissions: ['create_invoices'],
+        requiredPermissions: ['create_invoices', 'view_invoices'],
       })
     ).toBe(true);
     expect(

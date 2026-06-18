@@ -70,6 +70,7 @@ export default async function WorkspaceNewInvoicePage({ params }: Props) {
         canReadGroupLinkedProducts={
           invoiceProductPermissions.canReadGroupLinkedProducts
         }
+        defaultCurrency={context.currency}
         permissionRequestUser={context.user}
       />
     </Suspense>
