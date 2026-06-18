@@ -110,4 +110,40 @@ describe('recordResponseAbuseSignal', () => {
     expect(mocks.writeTrustCacheForSubjects).not.toHaveBeenCalled();
     expect(mocks.writeVerifiedSessionCacheForSubjects).not.toHaveBeenCalled();
   });
+
+  it('does not write verified session markers for API key responses', async () => {
+    const { recordResponseAbuseSignal } = await import('../lib/abuse-risk');
+
+    recordResponseAbuseSignal({
+      apiKeyId: 'api-key-123',
+      decision: standardDecision as any,
+      ipAddress: '1.2.3.4',
+      method: 'GET',
+      response: NextResponse.json({ ok: true }),
+      route: '/api/v1/workspaces/ws-1/tasks',
+      userId: 'user-123',
+    });
+
+    expect(mocks.writeTrustCacheForSubjects).not.toHaveBeenCalled();
+    expect(mocks.writeVerifiedSessionCacheForSubjects).not.toHaveBeenCalled();
+  });
+
+  it('does not write session markers for challenge-tier responses', async () => {
+    const { recordResponseAbuseSignal } = await import('../lib/abuse-risk');
+
+    recordResponseAbuseSignal({
+      decision: {
+        ...standardDecision,
+        tier: 'challenge_required',
+      } as any,
+      ipAddress: '1.2.3.4',
+      method: 'GET',
+      response: NextResponse.json({ ok: true }),
+      route: '/api/v1/users/me/profile',
+      userId: 'user-123',
+    });
+
+    expect(mocks.writeTrustCacheForSubjects).not.toHaveBeenCalled();
+    expect(mocks.writeVerifiedSessionCacheForSubjects).not.toHaveBeenCalled();
+  });
 });

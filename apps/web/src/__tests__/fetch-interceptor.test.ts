@@ -164,6 +164,101 @@ describe('fetch-interceptor', () => {
     );
   });
 
+  it('should sanitize request details without copying credentials or body data', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response('', {
+      status: 429,
+      headers: {
+        'CF-Ray': 'ray-123',
+        'Retry-After': '1',
+        'X-Proxy-Block-Reason': 'route-rate-limit',
+        'X-RateLimit-Limit': '600',
+        'X-RateLimit-Policy': 'users-me',
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': '1893456000',
+        'X-RateLimit-Window': 'minute',
+        'X-Vercel-Id': 'sin1::abc',
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    const request = new Request(
+      `${window.location.origin}/api/v1/users/me/profile?token=raw-token&code=raw-code&secret_id=raw-secret&password=raw-password&tab=settings`,
+      {
+        body: 'request-body-secret',
+        headers: {
+          authorization: 'Bearer raw-token',
+          cookie: 'session=raw-cookie',
+        },
+        method: 'POST',
+      }
+    );
+    const response = await globalThis.fetch(request);
+
+    expect(response.status).toBe(429);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          'CF-Ray': 'ray-123',
+          'Retry-After': '1',
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Limit': '600',
+          'X-RateLimit-Policy': 'users-me',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': '1893456000',
+          'X-RateLimit-Window': 'minute',
+          'X-Vercel-Id': 'sin1::abc',
+        },
+        method: 'POST',
+        requestPath:
+          '/api/v1/users/me/profile?token=[redacted]&code=[redacted]&secret_id=[redacted]&password=[redacted]&tab=settings',
+        willRetry: false,
+      })
+    );
+
+    const serializedDetails = JSON.stringify(detailsHandler.mock.calls[0]?.[0]);
+    expect(serializedDetails).not.toContain('raw-token');
+    expect(serializedDetails).not.toContain('raw-code');
+    expect(serializedDetails).not.toContain('raw-secret');
+    expect(serializedDetails).not.toContain('raw-password');
+    expect(serializedDetails).not.toContain('raw-cookie');
+    expect(serializedDetails).not.toContain('request-body-secret');
+    expect(serializedDetails).not.toContain('authorization');
+    expect(serializedDetails).not.toContain('cookie');
+  });
+
+  it('should use the translated details action label when configured', async () => {
+    const rate429 = new Response('', {
+      status: 429,
+      headers: { 'Retry-After': '1' },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    const mod = await import('../lib/fetch-interceptor');
+    mod.setRateLimitToastLabels({ viewDetails: 'Xem chi tiết' });
+    installFetchInterceptor();
+    await globalThis.fetch('/api/v1/auth/password-login', {
+      method: 'POST',
+    });
+
+    expect(mockWarning.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        action: expect.objectContaining({ label: 'Xem chi tiết' }),
+      })
+    );
+  });
+
   it('should stop after MAX_RETRIES (3) and return the 429 response', async () => {
     const make429 = () =>
       new Response('', {

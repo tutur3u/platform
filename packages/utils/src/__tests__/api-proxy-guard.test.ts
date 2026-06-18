@@ -1051,6 +1051,106 @@ describe('guardApiProxyRequest', () => {
     expect(limiterId.startsWith('session:')).toBe(true);
   });
 
+  it('uses authenticated default read limits for verified sessions on generic reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number; verified: true }>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, { m: 1, verified: true });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 600,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/unknown/read-only-dashboard-fragment', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('600');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:default:authenticated:get:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:default:authenticated:t1:get:minute'
+    );
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
+  it('covers legacy workspace reads with the verified workspace dashboard policy', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number; verified: true }>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, { m: 1, verified: true });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 600,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/workspaces/ws-1/settings', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+      'workspace-dashboard-read'
+    );
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:workspace-dashboard-read:authenticated:get:minute'
+    );
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
   it('rate limits API client-looking bearer reads until route auth validates them', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
