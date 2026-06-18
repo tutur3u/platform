@@ -28,7 +28,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { CostingProfileDialog } from './costing-profile-form';
+import { CostingProfileDialog } from './costing-profile-dialog';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import {
   OperatorActionRail,

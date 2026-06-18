@@ -4,16 +4,20 @@ import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
  * Format a major-unit amount (whole dollars/units) as currency. Used for values
  * that are NOT stored in minor units — e.g. raw product prices and promotion
  * values. For commerce money stored in minor units, use {@link money} instead.
+ *
+ * By default the fraction digits follow the currency's own standard (USD →
+ * `$10.00`, JPY/VND → `¥1000`), so prices always render with a sign and the
+ * right number of decimals. Pass `maximumFractionDigits` only to override.
  */
 export function currency(
   value: number | null | undefined,
   code = 'USD',
-  maximumFractionDigits = 0
+  maximumFractionDigits?: number
 ) {
   return new Intl.NumberFormat(undefined, {
     currency: code,
-    maximumFractionDigits,
     style: 'currency',
+    ...(maximumFractionDigits === undefined ? {} : { maximumFractionDigits }),
   }).format(Number(value ?? 0));
 }
 

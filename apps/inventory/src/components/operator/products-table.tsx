@@ -22,20 +22,22 @@ import {
   OperationsTable,
   type OperationsTableColumn,
 } from './operations-table';
+import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import {
   getInventoryStockState,
+  numberOrZero,
   stockAmountFromRecords,
 } from './operator-stock';
 import { ProductEditDialog } from './product-row-actions';
 import {
-  formatNumber,
   type ProductBadge,
   ProductBadges,
   ProductIdentity,
   stringField,
   TextStack,
 } from './product-table-cells';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 type OperatorTranslator = (
   key: string,
@@ -67,6 +69,7 @@ export function ProductsTable({
   const formsText = useTranslations(
     'inventory.operator.forms'
   ) as OperatorTranslator;
+  const wsCurrency = useWorkspaceCurrency();
   const [editing, setEditing] = useState<InventoryProductSummary | null>(null);
 
   if (rows.length === 0) return <EmptyRow label={t('empty')} />;
@@ -75,6 +78,7 @@ export function ProductsTable({
     toProductTableRow(product, costingProfiles, t)
   );
   const columns = getProductTableColumns({
+    currencyCode: wsCurrency,
     onEdit: setEditing,
     t,
     view,
@@ -114,10 +118,12 @@ export function ProductsTable({
 }
 
 function getProductTableColumns({
+  currencyCode,
   onEdit,
   t,
   view,
 }: {
+  currencyCode: string;
   onEdit: (product: InventoryProductSummary) => void;
   t: OperatorTranslator;
   view: string;
@@ -180,7 +186,9 @@ function getProductTableColumns({
         header: t('columns.unitPrice'),
         key: 'unit-price',
         render: ({ inventory }) => (
-          <span className="font-medium">{formatNumber(inventory.price)}</span>
+          <span className="font-medium">
+            {currency(numberOrZero(inventory.price), currencyCode)}
+          </span>
         ),
       },
       {
@@ -221,6 +229,16 @@ function getProductTableColumns({
       key: 'owner',
       render: ({ product }) => (
         <TextStack primary={product.owner?.name} secondary={product.usage} />
+      ),
+    },
+    {
+      className: 'w-[10rem]',
+      header: t('columns.unitPrice'),
+      key: 'price',
+      render: ({ inventory }) => (
+        <span className="font-medium">
+          {currency(numberOrZero(inventory.price), currencyCode)}
+        </span>
       ),
     },
     {

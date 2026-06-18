@@ -95,7 +95,7 @@ describe('Inventory operator form workflows', () => {
   it('supports direct creation for simple setup-backed combobox fields', () => {
     const productSource = source('product-create-dialog.tsx');
     const setupBatchSource = source('setup-batch-section.tsx');
-    const costingSource = source('costing-profile-form.tsx');
+    const costingSource = source('costing-profile-dialog.tsx');
 
     expect(productSource).toContain('createInventoryProductCategory');
     expect(productSource).toContain('createInventoryOwner');
@@ -141,7 +141,7 @@ describe('Inventory operator form workflows', () => {
     expect(source('storefront-listings-panel.tsx')).toContain('LifecyclePanel');
     expect(source('product-row-actions.tsx')).toContain('LifecyclePanel');
     expect(source('bundle-editor-dialog.tsx')).toContain('LifecyclePanel');
-    expect(source('costing-profile-list.tsx')).toContain('LifecyclePanel');
+    expect(source('costing-profile-dialog.tsx')).toContain('LifecyclePanel');
     expect(source('setup-resource-section.tsx')).toContain('LifecyclePanel');
     expect(source('setup-batch-section.tsx')).toContain('LifecyclePanel');
   });
@@ -170,7 +170,7 @@ describe('Inventory operator form workflows', () => {
   it('uses single-form create flows instead of sequential steppers', () => {
     for (const fileName of [
       'bundle-form-dialog.tsx',
-      'costing-profile-form.tsx',
+      'costing-profile-dialog.tsx',
       'product-create-dialog.tsx',
       'storefront-form-dialog.tsx',
     ]) {
@@ -233,11 +233,11 @@ describe('Inventory operator form workflows', () => {
   });
 
   it('connects costing profiles back to catalog products', () => {
-    const costingSource = source('costing-profile-form.tsx');
+    const costingSource = source('costing-profile-dialog.tsx');
     const tableSource = source('products-table.tsx');
     const dataHookSource = source('use-inventory-data.ts');
 
-    expect(costingSource).toContain('productId: productId || null');
+    expect(costingSource).toContain('productId: form.productId || null');
     expect(costingSource).toContain('handleProductChange');
     expect(costingSource).toContain('product.inventory?.[0]?.price');
     expect(dataHookSource).toMatch(

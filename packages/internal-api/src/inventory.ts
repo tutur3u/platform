@@ -1148,6 +1148,10 @@ export type InventoryCostImportPreviewRow = {
   manufacturingCostPerUnit: number;
   totalCostPerUnit: number | null;
   targetRetailPrice: number;
+  artCommissionCost?: number | null;
+  shippingCost?: number | null;
+  tariffCost?: number | null;
+  packagingCostPerUnit?: number | null;
   talentProfitPerSale?: number | null;
   partnerProfitPerSale?: number | null;
 };

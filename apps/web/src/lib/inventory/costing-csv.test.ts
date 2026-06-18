@@ -12,24 +12,42 @@ Acrylic Keychain,30,$0.70,$1.37,$10.00,$6.04,$2.59
     expect(preview.warnings).toEqual([]);
     expect(preview.rows).toEqual([
       {
+        artCommissionCost: null,
         batchSize: 30,
         itemCategory: 'Acrylic Keychain',
         manufacturingCostPerUnit: 0.7,
+        packagingCostPerUnit: null,
         partnerProfitPerSale: 2.59,
+        shippingCost: null,
         talentProfitPerSale: 6.04,
         targetRetailPrice: 10,
+        tariffCost: null,
         totalCostPerUnit: 1.37,
       },
       {
+        artCommissionCost: null,
         batchSize: 50,
         itemCategory: 'Acrylic Keychain',
         manufacturingCostPerUnit: 0.65,
+        packagingCostPerUnit: null,
         partnerProfitPerSale: 2.69,
+        shippingCost: null,
         talentProfitPerSale: 6.27,
         targetRetailPrice: 10,
+        tariffCost: null,
         totalCostPerUnit: 1.05,
       },
     ]);
+  });
+
+  it('parses optional art-commission and shipping columns for break-even', () => {
+    const csv = `Item Category,Batch Size (Units),Mfg cost/Unit,Total cost/Unit,Target Retail Price,Art Commission,Shipping
+Acrylic Keychain,30,$0.70,$1.37,$10.00,$40.00,$20.00`;
+
+    const [row] = parseInventoryCostingCsv(csv).rows;
+
+    expect(row?.artCommissionCost).toBe(40);
+    expect(row?.shippingCost).toBe(20);
   });
 
   it('returns warnings when no importable rows are found', () => {

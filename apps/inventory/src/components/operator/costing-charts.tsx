@@ -12,14 +12,14 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 const marginConfig = {
   margin: {
-    color: 'hsl(var(--primary))',
+    color: 'var(--chart-1)',
     label: 'Margin',
   },
 } satisfies ChartConfig;
 
 const breakEvenConfig = {
   breakEven: {
-    color: 'hsl(var(--muted-foreground))',
+    color: 'var(--chart-2)',
     label: 'Break-even',
   },
 } satisfies ChartConfig;

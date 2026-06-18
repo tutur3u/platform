@@ -21,6 +21,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PolarSettingsPanel } from '@/components/operator/polar-settings-panel';
+import { InventoryCurrencySettings } from '@/components/settings/currency-settings';
 import { useSidebar } from '@/context/sidebar-context';
 
 interface SettingsDialogProps {
@@ -142,6 +143,14 @@ export function SettingsDialog({
                 {workspace.name || t('common.unnamed')}
               </span>
             </SettingItemTab>
+            {wsId && (
+              <SettingItemTab
+                title={t('settings.inventory.currency_title')}
+                description={t('settings.inventory.currency_description')}
+              >
+                <InventoryCurrencySettings wsId={wsId} />
+              </SettingItemTab>
+            )}
           </div>
         </div>
       )}

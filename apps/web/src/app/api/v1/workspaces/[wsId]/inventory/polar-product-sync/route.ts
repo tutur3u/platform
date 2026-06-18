@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { backfillProductListings } from '@/lib/inventory/commerce/auto-listing';
 import {
   getInventoryPolarProductSyncSummary,
   reconcileWorkspacePolarProducts,
@@ -56,11 +57,14 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
+    // Surface any products that aren't listed yet so they become sellable and
+    // sync to Polar through the listing path, then reconcile every listing.
+    const listed = await backfillProductListings(authorization.value.wsId);
     const result = await reconcileWorkspacePolarProducts(
       authorization.value.wsId
     );
 
-    return NextResponse.json({ ok: true, synced: result });
+    return NextResponse.json({ ok: true, synced: { ...result, listed } });
   } catch (error) {
     serverLogger.error('Failed to sync inventory products to Polar', error);
     return NextResponse.json(

@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
+import { autoCreateProductListing } from '@/lib/inventory/commerce/auto-listing';
 import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
 import {
   canAdjustInventoryStock,
@@ -353,6 +354,19 @@ export async function createInventoryProductResponse({
       workspaceUserId,
     },
   });
+
+  // Auto-surface the product as a draft storefront listing so it is sellable
+  // and converges to Polar without a manual publish step. Best-effort.
+  const firstInventory = inventory[0];
+  if (firstInventory) {
+    await autoCreateProductListing(wsId, {
+      priceMajor: firstInventory.price,
+      productId: product.data.id,
+      title: product.data.name ?? data.name,
+      unitId: firstInventory.unit_id,
+      warehouseId: firstInventory.warehouse_id,
+    });
+  }
 
   return NextResponse.json({ message: 'success' });
 }

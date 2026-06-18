@@ -393,17 +393,39 @@ export async function importCostingCsv(
       currency: 'USD',
       name,
       profitShares: deriveProfitShares(rows),
-      scenarios: rows.map((row, index) => ({
-        batchSize: row.batchSize,
-        manufacturingCostPerUnit: row.manufacturingCostPerUnit,
-        name: `${row.batchSize} units`,
-        otherCostPerUnit: Math.max(
-          (row.totalCostPerUnit ?? row.manufacturingCostPerUnit) -
-            row.manufacturingCostPerUnit,
-          0
-        ),
-        sortOrder: index,
-      })),
+      scenarios: rows.map((row, index) => {
+        const artCommissionCost = row.artCommissionCost ?? 0;
+        const shippingCost = row.shippingCost ?? 0;
+        const tariffCost = row.tariffCost ?? 0;
+        const packagingCostPerUnit = row.packagingCostPerUnit ?? 0;
+        // When granular fixed/packaging costs are provided, model them directly
+        // (so break-even can be computed). Otherwise fall back to the legacy
+        // behaviour of folding any leftover total-vs-unit delta into "other".
+        const hasGranularCosts =
+          artCommissionCost > 0 ||
+          shippingCost > 0 ||
+          tariffCost > 0 ||
+          packagingCostPerUnit > 0;
+        const otherCostPerUnit = hasGranularCosts
+          ? 0
+          : Math.max(
+              (row.totalCostPerUnit ?? row.manufacturingCostPerUnit) -
+                row.manufacturingCostPerUnit,
+              0
+            );
+
+        return {
+          artCommissionCost,
+          batchSize: row.batchSize,
+          manufacturingCostPerUnit: row.manufacturingCostPerUnit,
+          name: `${row.batchSize} units`,
+          otherCostPerUnit,
+          packagingCostPerUnit,
+          shippingCost,
+          sortOrder: index,
+          tariffCost,
+        };
+      }),
       status: 'active',
       targetRetailPrice: first.targetRetailPrice,
     });

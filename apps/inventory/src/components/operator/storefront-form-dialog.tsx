@@ -29,6 +29,7 @@ import {
   StorefrontIdentityFields,
 } from './storefront-form-step';
 import type { StorefrontFormState } from './storefront-form-types';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 const initialForm: StorefrontFormState = {
   accentColor: '',
@@ -60,7 +61,8 @@ export function StorefrontForm({
 }) {
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
-  const [form, setForm] = useState(initialForm);
+  const wsCurrency = useWorkspaceCurrency();
+  const [form, setForm] = useState({ ...initialForm, currency: wsCurrency });
   const [open, setOpen] = useState(false);
   const mutation = useMutation({
     mutationFn: () =>
@@ -86,7 +88,7 @@ export function StorefrontForm({
       }),
     onError: () => toast.error(t('createStorefrontError')),
     onSuccess: () => {
-      setForm(initialForm);
+      setForm({ ...initialForm, currency: wsCurrency });
       setOpen(false);
       toast.success(t('createStorefrontSuccess'));
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });

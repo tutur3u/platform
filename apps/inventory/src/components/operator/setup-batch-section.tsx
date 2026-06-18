@@ -25,8 +25,10 @@ import {
   OperatorDialogHeader,
 } from './operator-dialog-shell';
 import { SelectField } from './operator-form-fields';
+import { currency } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 import { invalidateSetup, namedRows } from './setup-helpers';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 function BatchCreateDialog({
   options,
@@ -168,6 +170,7 @@ function BatchRow({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.forms');
+  const wsCurrency = useWorkspaceCurrency();
   const queryClient = useQueryClient();
   const deleteMutation = useMutation({
     mutationFn: () => deleteInventoryBatch(wsId, batch.id),
@@ -188,7 +191,7 @@ function BatchRow({
           {batch.supplier ?? batch.id}
         </p>
       </div>
-      <span>{batch.price ?? 0}</span>
+      <span>{currency(batch.price ?? 0, wsCurrency)}</span>
       <Dialog>
         <DialogTrigger asChild>
           <Button size="sm" type="button" variant="outline">
@@ -216,7 +219,9 @@ function BatchRow({
                 </div>
                 <div className="grid gap-1 sm:grid-cols-[120px_1fr]">
                   <dt className="text-muted-foreground">{t('price')}</dt>
-                  <dd className="font-medium">{batch.price ?? 0}</dd>
+                  <dd className="font-medium">
+                    {currency(batch.price ?? 0, wsCurrency)}
+                  </dd>
                 </div>
               </dl>
             </FormSection>

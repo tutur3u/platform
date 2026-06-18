@@ -9,6 +9,12 @@ const REQUIRED_COLUMNS = [
 ];
 
 const columnAliases = {
+  artCommissionCost: [
+    'Art Commission',
+    'Art Commission Cost',
+    'Commercial Art Commission Cost',
+    'Commission Cost',
+  ],
   batchSize: ['Batch Size (Units)', 'Batch Size'],
   itemCategory: ['Item Category', 'Category', 'Item'],
   manufacturingCostPerUnit: [
@@ -16,13 +22,21 @@ const columnAliases = {
     'Manufacturing Cost/Unit',
     'Manufacturing Cost',
   ],
+  packagingCostPerUnit: ['Packaging Cost/Unit', 'Packaging Cost', 'Packaging'],
   partnerProfitPerSale: [
     'Veizo Profit Per Sale',
     'Partner Profit Per Sale',
     'Platform Profit Per Sale',
   ],
+  shippingCost: [
+    'Shipping',
+    'Shipping Cost',
+    'Marginal Shipping + Tariffs/Duties',
+    'Shipping + Tariffs',
+  ],
   talentProfitPerSale: ['Talent Profit Per Sale', 'Creator Profit Per Sale'],
   targetRetailPrice: ['Target Retail Price', 'Retail Price', 'Price'],
+  tariffCost: ['Tariff', 'Tariff Cost', 'Tariffs/Duties', 'Duties'],
   totalCostPerUnit: [
     'Total cost/Unit',
     'Total Mfg. Cost + Shipping/Unit',
@@ -148,15 +162,23 @@ export function parseInventoryCostingCsv(
     }
 
     rows.push({
+      artCommissionCost: parseMoney(
+        findValue(row, columnAliases.artCommissionCost)
+      ),
       batchSize,
       itemCategory: currentCategory,
       manufacturingCostPerUnit,
+      packagingCostPerUnit: parseMoney(
+        findValue(row, columnAliases.packagingCostPerUnit)
+      ),
       partnerProfitPerSale: parseMoney(
         findValue(row, columnAliases.partnerProfitPerSale)
       ),
+      shippingCost: parseMoney(findValue(row, columnAliases.shippingCost)),
       talentProfitPerSale: parseMoney(
         findValue(row, columnAliases.talentProfitPerSale)
       ),
+      tariffCost: parseMoney(findValue(row, columnAliases.tariffCost)),
       targetRetailPrice,
       totalCostPerUnit,
     });

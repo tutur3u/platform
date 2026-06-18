@@ -30,9 +30,10 @@ import {
   OperationsTable,
   type OperationsTableColumn,
 } from './operations-table';
+import { money } from './operator-format';
 import { EmptyRow } from './operator-shell';
-import { formatNumber } from './product-table-cells';
 import { StorefrontEditorDialog } from './storefront-editor-dialog';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 type OperatorTranslator = (
   key: string,
@@ -99,6 +100,7 @@ export function SimpleRows({
   const actionText = useTranslations(
     'inventory.operator.forms'
   ) as OperatorTranslator;
+  const wsCurrency = useWorkspaceCurrency();
   const [editingStorefront, setEditingStorefront] =
     useState<InventoryStorefront | null>(null);
   const [editingBundle, setEditingBundle] = useState<InventoryBundle | null>(
@@ -154,6 +156,7 @@ export function SimpleRows({
         ariaLabel={t('views.bundles.title')}
         columns={getBundleColumns({
           actionText,
+          currencyCode: wsCurrency,
           onEdit: wsId ? setEditingBundle : undefined,
           t,
           wsId,
@@ -269,10 +272,12 @@ function getStorefrontColumns({
 
 function getBundleColumns({
   actionText,
+  currencyCode,
   onEdit,
   t,
 }: {
   actionText: OperatorTranslator;
+  currencyCode: string;
   onEdit?: (row: InventoryBundle) => void;
   t: OperatorTranslator;
   wsId?: string;
@@ -318,7 +323,7 @@ function getBundleColumns({
       header: t('columns.price'),
       key: 'price',
       render: (row) => (
-        <span className="font-medium">{formatNumber(row.price)}</span>
+        <span className="font-medium">{money(row.price, currencyCode)}</span>
       ),
     },
     {

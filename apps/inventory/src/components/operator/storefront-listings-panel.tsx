@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Ban,
   Clock,
+  Eye,
+  EyeOff,
   ListTree,
   Pencil,
   Plus,
@@ -326,11 +328,24 @@ function ListingRow({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.forms');
+  const queryClient = useQueryClient();
   const variantCount = (listing.variants ?? []).filter(
     (variant) => variant.status === 'active'
   ).length;
+  const isPublished = listing.status === 'published';
+  const toggleMutation = useMutation({
+    mutationFn: () =>
+      updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
+        status: isPublished ? 'paused' : 'published',
+      }),
+    onError: () => toast.error(t('saveError')),
+    onSuccess: () => {
+      toast.success(t('saveSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+    },
+  });
   return (
-    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
+    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] sm:items-center">
       <div className="min-w-0">
         <p className="truncate font-medium">{listing.title}</p>
         <p className="truncate text-muted-foreground text-xs">
@@ -346,6 +361,21 @@ function ListingRow({
         syncedAt={listing.polarSyncedAt}
       />
       <span>{money(listing.price, currency)}</span>
+      <Button
+        aria-label={isPublished ? t('pauseListing') : t('publishListing')}
+        disabled={toggleMutation.isPending}
+        onClick={() => toggleMutation.mutate()}
+        size="sm"
+        type="button"
+        variant="ghost"
+      >
+        {isPublished ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+        {isPublished ? t('pauseListing') : t('publishListing')}
+      </Button>
       <ListingEditorDialog
         currency={currency}
         listing={listing}

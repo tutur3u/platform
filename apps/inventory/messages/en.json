@@ -984,7 +984,9 @@
         }
       },
       "costing": {
+        "addProfitShare": "Add profit share",
         "addScenario": "Add scenario",
+        "artCommission": "Art commission (batch)",
         "averageMargin": "Average margin",
         "batchSize": "Batch size",
         "bestScenario": "Best margin scenario",
@@ -995,6 +997,13 @@
         "editProfileTitle": "Edit costing profile",
         "emptyDescription": "Import a Google Sheets CSV or create a first batch scenario to start tracking margins.",
         "emptyTitle": "No costing profiles yet.",
+        "hints": {
+          "artCommission": "One-off art/commission cost for the whole batch.",
+          "other": "Any other per-unit cost.",
+          "packaging": "Packaging cost per unit.",
+          "shipping": "Shipping cost for the whole batch.",
+          "tariff": "Tariffs or duties for the whole batch."
+        },
         "importCsv": "Import CSV",
         "importDescription": "Paste an exported Google Sheets CSV with item category, batch size, manufacturing cost, total cost, and target retail price columns.",
         "importError": "Could not import costing CSV.",
@@ -1007,12 +1016,20 @@
         "margin": "Margin",
         "marginChart": "Gross margin by scenario",
         "newProfile": "New costing profile",
+        "other": "Other/unit",
+        "packaging": "Packaging/unit",
         "previewImport": "Preview",
         "profiles": "Profiles",
+        "recipient": "Recipient",
         "retail": "Retail price",
         "saveProfile": "Save profile",
         "scenario": "Scenario",
+        "scenarioName": "Scenario name",
         "scenarios": "Scenarios",
+        "sharePercentage": "Share %",
+        "sharesTotal": "Shares total {total}%",
+        "sharesWarning": "Shares total {total}% (should be 100%)",
+        "shipping": "Shipping (batch)",
         "status": {
           "active": "Active",
           "archived": "Archived",
@@ -1021,11 +1038,13 @@
         "steps": {
           "profile": "Profile",
           "profileDescription": "Name the item, choose a category, and set the target retail price.",
+          "profitSharesDescription": "Split profit between talent, partners, and the platform.",
           "scenarios": "Scenarios",
           "scenariosDescription": "Add batch sizes and unit costs to calculate margins and break-even quantities."
         },
         "summary": "Costing workspace",
         "summaryDescription": "Replace spreadsheet margin tracking with reusable batch scenarios and profit-share assumptions.",
+        "tariff": "Tariff (batch)",
         "totalCost": "Total cost/unit",
         "uncategorized": "Uncategorized",
         "unitCost": "Mfg cost/unit",
@@ -1337,6 +1356,7 @@
         "optionGroups": "Options",
         "optionValues": "Values (comma separated)",
         "owner": "Owner",
+        "pauseListing": "Pause",
         "placeholders": {
           "accentColor": "#111827",
           "amount": "120",
@@ -1401,6 +1421,7 @@
         "product": "Product",
         "productName": "Product name",
         "profitPerUnit": "Profit / unit",
+        "publishListing": "Publish",
         "quantity": "Quantity",
         "remove": "Remove",
         "removeSection": "Remove section",
@@ -2466,6 +2487,13 @@
       "workspace_navigation_title": "Workspace Default"
     },
     "inventory": {
+      "currency_description": "Used across inventory prices and inherited by new storefronts and costing profiles.",
+      "currency_placeholder": "Select currency",
+      "currency_save": "Save",
+      "currency_saving": "Saving…",
+      "currency_title": "Default currency",
+      "currency_update_error": "Could not update currency.",
+      "currency_update_success": "Currency updated.",
       "general": "General",
       "general_description": "Workspace identity and Inventory preferences",
       "polar": "Polar checkout",

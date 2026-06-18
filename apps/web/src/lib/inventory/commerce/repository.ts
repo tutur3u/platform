@@ -13,6 +13,7 @@ import type {
   InventoryStorefrontStatus,
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspaceDefaultCurrency } from '../workspace-currency';
 import {
   type ListQuery,
   mapStorefront,
@@ -286,6 +287,8 @@ export async function createStorefront(
   payload: InventoryStorefrontPayload
 ) {
   const { inventory } = await createPrivateInventoryClient();
+  const currency =
+    payload.currency ?? (await getWorkspaceDefaultCurrency(wsId));
   const { data, error } = await inventory
     .from('inventory_storefronts')
     .insert({
@@ -294,7 +297,7 @@ export async function createStorefront(
       checkout_mode: payload.checkoutMode ?? 'polar',
       corner_style: payload.cornerStyle ?? 'rounded',
       cover_image_url: payload.coverImageUrl ?? null,
-      currency: payload.currency ?? 'USD',
+      currency,
       description: payload.description ?? null,
       hero_image_url: payload.heroImageUrl ?? null,
       layout_style: payload.layoutStyle ?? 'grid',

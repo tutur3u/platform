@@ -984,7 +984,9 @@
         }
       },
       "costing": {
+        "addProfitShare": "Thêm chia lợi nhuận",
         "addScenario": "Thêm kịch bản",
+        "artCommission": "Hoa hồng thiết kế (lô)",
         "averageMargin": "Biên trung bình",
         "batchSize": "Cỡ lô",
         "bestScenario": "Kịch bản biên tốt nhất",
@@ -995,6 +997,13 @@
         "editProfileTitle": "Chỉnh sửa hồ sơ chi phí",
         "emptyDescription": "Nhập CSV từ Google Sheets hoặc tạo kịch bản lô đầu tiên để bắt đầu theo dõi biên lợi nhuận.",
         "emptyTitle": "Chưa có hồ sơ chi phí.",
+        "hints": {
+          "artCommission": "Chi phí thiết kế/hoa hồng một lần cho cả lô.",
+          "other": "Chi phí khác trên mỗi đơn vị.",
+          "packaging": "Chi phí đóng gói mỗi đơn vị.",
+          "shipping": "Chi phí vận chuyển cho cả lô.",
+          "tariff": "Thuế hoặc phí hải quan cho cả lô."
+        },
         "importCsv": "Nhập CSV",
         "importDescription": "Dán CSV xuất từ Google Sheets có các cột danh mục mặt hàng, cỡ lô, chi phí sản xuất, tổng chi phí và giá bán mục tiêu.",
         "importError": "Không thể nhập CSV chi phí.",
@@ -1007,12 +1016,20 @@
         "margin": "Biên lợi nhuận",
         "marginChart": "Biên gộp theo kịch bản",
         "newProfile": "Hồ sơ chi phí mới",
+        "other": "Khác/đơn vị",
+        "packaging": "Đóng gói/đơn vị",
         "previewImport": "Xem trước",
         "profiles": "Hồ sơ",
+        "recipient": "Người nhận",
         "retail": "Giá bán",
         "saveProfile": "Lưu hồ sơ",
         "scenario": "Kịch bản",
+        "scenarioName": "Tên kịch bản",
         "scenarios": "Kịch bản",
+        "sharePercentage": "Tỷ lệ %",
+        "sharesTotal": "Tổng tỷ lệ {total}%",
+        "sharesWarning": "Tổng tỷ lệ {total}% (nên là 100%)",
+        "shipping": "Vận chuyển (lô)",
         "status": {
           "active": "Đang hoạt động",
           "archived": "Đã lưu trữ",
@@ -1021,11 +1038,13 @@
         "steps": {
           "profile": "Hồ sơ",
           "profileDescription": "Đặt tên mặt hàng, chọn danh mục và nhập giá bán mục tiêu.",
+          "profitSharesDescription": "Phân chia lợi nhuận giữa nhân tài, đối tác và nền tảng.",
           "scenarios": "Kịch bản",
           "scenariosDescription": "Thêm cỡ lô và chi phí đơn vị để tính biên lợi nhuận và điểm hòa vốn."
         },
         "summary": "Không gian chi phí",
         "summaryDescription": "Thay thế bảng tính biên lợi nhuận bằng kịch bản lô và giả định chia lợi nhuận có thể tái sử dụng.",
+        "tariff": "Thuế nhập khẩu (lô)",
         "totalCost": "Tổng chi phí/đơn vị",
         "uncategorized": "Chưa phân loại",
         "unitCost": "Chi phí SX/đơn vị",
@@ -1337,6 +1356,7 @@
         "optionGroups": "Tùy chọn",
         "optionValues": "Giá trị (phân tách bằng dấu phẩy)",
         "owner": "Chủ sở hữu",
+        "pauseListing": "Tạm dừng",
         "placeholders": {
           "accentColor": "#111827",
           "amount": "120",
@@ -1401,6 +1421,7 @@
         "product": "Sản phẩm",
         "productName": "Tên sản phẩm",
         "profitPerUnit": "Lợi nhuận / đơn vị",
+        "publishListing": "Xuất bản",
         "quantity": "Số lượng",
         "remove": "Xóa",
         "removeSection": "Xóa khu vực",
@@ -2466,6 +2487,13 @@
       "workspace_navigation_title": "Mặc định của không gian làm việc"
     },
     "inventory": {
+      "currency_description": "Dùng cho giá tồn kho và được kế thừa bởi cửa hàng và hồ sơ chi phí mới.",
+      "currency_placeholder": "Chọn tiền tệ",
+      "currency_save": "Lưu",
+      "currency_saving": "Đang lưu…",
+      "currency_title": "Tiền tệ mặc định",
+      "currency_update_error": "Không thể cập nhật tiền tệ.",
+      "currency_update_success": "Đã cập nhật tiền tệ.",
       "general": "Chung",
       "general_description": "Thông tin workspace và tùy chọn Inventory",
       "polar": "Thanh toán Polar",
