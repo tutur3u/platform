@@ -652,7 +652,7 @@ async function createInvoiceForReferralCount({
     ]);
 
     await expect(invoicePage.locator('body')).toContainText(
-      `Referral (${expectedPercent}%)`
+      'Discount (Referral)'
     );
     await expect(invoicePage.locator('body')).toContainText(discountText);
     await expect(invoicePage.locator('body')).toContainText(totalText);
