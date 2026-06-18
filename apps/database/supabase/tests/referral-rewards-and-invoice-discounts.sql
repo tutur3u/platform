@@ -199,8 +199,8 @@ select is(
       '00000000-0000-4000-8000-000000010104'
     )
   ),
-  'cap_reached',
-  'assignment refuses referrals beyond the configured cap'
+  'success',
+  'assignment allows referrals beyond the configured discount cap'
 );
 
 select is(
@@ -233,7 +233,7 @@ select is(
     )
   ),
   10::numeric,
-  'invoice calculation applies dynamic referral discount amount'
+  'invoice calculation applies capped dynamic referral discount amount'
 );
 
 select is(

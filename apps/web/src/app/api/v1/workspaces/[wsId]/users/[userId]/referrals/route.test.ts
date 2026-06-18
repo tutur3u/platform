@@ -216,7 +216,7 @@ describe('POST /api/v1/workspaces/[wsId]/users/[userId]/referrals', () => {
     );
   });
 
-  it('returns a conflict when the referral cap is reached', async () => {
+  it('keeps a conflict fallback for legacy cap_reached RPC responses', async () => {
     setupMutationRoute('cap_reached');
     const request = new Request(
       `http://localhost/api/v1/workspaces/${WORKSPACE_ID}/users/${REFERRER_ID}/referrals`,

@@ -159,15 +159,22 @@ describe('ReferralSectionClient', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('hydrates the referral count from initial referred users before refetching', () => {
+  it('keeps referral selection available when referred users exceed the discount cap', () => {
     listWorkspaceUserReferralsMock.mockResolvedValue({
-      count: 1,
+      count: 2,
       data: [
         {
           id: 'referred-1',
           full_name: 'Mai Nguyen',
           display_name: null,
           email: 'mai@example.com',
+          phone: null,
+        },
+        {
+          id: 'referred-2',
+          full_name: 'Hoa Pham',
+          display_name: null,
+          email: 'hoa@example.com',
           phone: null,
         },
       ],
@@ -202,16 +209,25 @@ describe('ReferralSectionClient', () => {
             email: 'mai@example.com',
             phone: null,
           },
+          {
+            id: 'referred-2',
+            full_name: 'Hoa Pham',
+            display_name: null,
+            email: 'hoa@example.com',
+            phone: null,
+          },
         ]}
       />
     );
 
     expect(screen.getByText('Mai Nguyen')).toBeInTheDocument();
-    expect(screen.getByText('reached_max_referrals')).toBeInTheDocument();
+    expect(screen.getByText('Hoa Pham')).toBeInTheDocument();
+    expect(screen.getByText('select_person_to_refer')).toBeInTheDocument();
     expect(
-      screen.queryByRole('textbox', {
+      screen.getByRole('textbox', {
         name: 'search_person_to_refer_placeholder',
       })
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
+    expect(screen.queryByText('reached_max_referrals')).not.toBeInTheDocument();
   });
 });
