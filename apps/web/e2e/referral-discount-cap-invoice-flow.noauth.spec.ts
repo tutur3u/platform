@@ -362,17 +362,58 @@ async function setReferralSettingsInBrowser({
   page: Page;
   request: APIRequestContext;
 }) {
-  const response = await page.goto(
-    `${origin}/${DEFAULT_LOCALE}/${fixture.workspaceId}/inventory/promotions`,
-    { waitUntil: 'domcontentloaded' }
-  );
+  const settingsFetchPromise = page
+    .waitForResponse(
+      (apiResponse) =>
+        apiResponse
+          .url()
+          .endsWith(
+            `/api/v1/workspaces/${fixture.workspaceId}/promotions/referral-settings`
+          ) && apiResponse.request().method() === 'GET',
+      { timeout: 20_000 }
+    )
+    .catch((error: unknown) => error);
+
+  const promotionsPath = `/${fixture.workspaceId}/inventory/promotions`;
+  const response = await page.goto(`${origin}${promotionsPath}`, {
+    waitUntil: 'domcontentloaded',
+  });
   expect(response?.status()).toBeLessThan(400);
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+  const currentPath = new URL(page.url()).pathname;
+  if (currentPath !== promotionsPath) {
+    const bodyText = await page
+      .locator('body')
+      .innerText({ timeout: 5_000 })
+      .catch(() => '<unreadable>');
+    throw new Error(
+      `Expected promotions page URL path to be ${promotionsPath}, got ${currentPath}. Body: ${bodyText.slice(0, 500) || '<empty>'}`
+    );
+  }
 
-  await page.getByRole('combobox').filter({ hasText: 'Receiver Only' }).click();
-  await page.getByRole('option', { name: 'Referrer Only' }).click();
+  const settingsFetchResponse = await settingsFetchPromise;
+  if (settingsFetchResponse instanceof Error) {
+    throw new Error(
+      `Timed out waiting for referral settings fetch on ${page.url()}: ${settingsFetchResponse.message}`
+    );
+  }
+  expect(settingsFetchResponse.status()).toBe(200);
+
+  const settingsButton = page.getByRole('button', { name: 'Settings' });
+  await expect(settingsButton).toBeVisible({ timeout: 10_000 });
+  await settingsButton.click({ timeout: 10_000 });
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible({
+    timeout: 10_000,
+  });
+
+  const rewardTypeTrigger = page
+    .getByRole('combobox')
+    .filter({ hasText: 'Receiver Only' });
+  await expect(rewardTypeTrigger).toBeVisible({ timeout: 10_000 });
+  await rewardTypeTrigger.click({ timeout: 10_000 });
+  await page
+    .getByRole('option', { name: 'Referrer Only' })
+    .click({ timeout: 10_000 });
 
   const numberInputs = page.locator('input[type="number"]');
   await numberInputs.nth(0).fill('10');
