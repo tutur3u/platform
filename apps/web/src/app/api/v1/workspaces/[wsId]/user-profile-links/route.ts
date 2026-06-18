@@ -1,3 +1,4 @@
+import { WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS } from '@tuturuuu/internal-api/workspace-configs';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -7,6 +8,10 @@ import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  resolveProfileLinkDefaultExpiresAt,
+  resolveProfileLinkDefaults,
+} from '@/features/user-profile-links/defaults';
 import {
   generateProfileLinkCode,
   PROFILE_LINK_FIELDS,
@@ -55,7 +60,8 @@ const createSchema = z
       .min(1)
       .refine((fields) => new Set(fields).size === fields.length, {
         message: 'allowed_fields must not contain duplicates',
-      }),
+      })
+      .optional(),
     prefill_existing_values: z.boolean().optional(),
     requires_auth: z.boolean().optional(),
     expires_at: z.string().datetime({ offset: true }).nullable().optional(),
@@ -202,6 +208,36 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const { data: defaultConfigRows, error: defaultConfigError } = await sbAdmin
+    .from('workspace_configs')
+    .select('id, value')
+    .eq('ws_id', wsId)
+    .in('id', [...WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS]);
+
+  if (defaultConfigError) {
+    serverLogger.error('Error loading profile link defaults:', {
+      error: defaultConfigError,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error loading profile link defaults' },
+      { status: 500 }
+    );
+  }
+
+  const defaults = resolveProfileLinkDefaults(
+    Object.fromEntries(
+      ((defaultConfigRows ?? []) as { id: string; value: string | null }[]).map(
+        (config) => [config.id, config.value]
+      )
+    )
+  );
+  const expiresAt =
+    parsed.data.expires_at !== undefined
+      ? parsed.data.expires_at
+      : (resolveProfileLinkDefaultExpiresAt(
+          defaults.expirationPreset
+        )?.toISOString() ?? null);
 
   // For per_user links, ensure the target belongs to this workspace.
   if (parsed.data.mode === 'per_user') {
@@ -228,11 +264,15 @@ export async function POST(req: Request, { params }: Params) {
       creator_id: actorUser.id,
       mode: parsed.data.mode,
       target_user_id: parsed.data.target_user_id ?? null,
-      allowed_fields: parsed.data.allowed_fields,
-      prefill_existing_values: parsed.data.prefill_existing_values ?? true,
-      requires_auth: parsed.data.requires_auth ?? true,
-      expires_at: parsed.data.expires_at ?? null,
-      max_uses: parsed.data.max_uses ?? null,
+      allowed_fields: parsed.data.allowed_fields ?? defaults.fields,
+      prefill_existing_values:
+        parsed.data.prefill_existing_values ?? defaults.prefillExistingValues,
+      requires_auth: parsed.data.requires_auth ?? defaults.requiresAuth,
+      expires_at: expiresAt,
+      max_uses:
+        parsed.data.max_uses !== undefined
+          ? parsed.data.max_uses
+          : defaults.maxUses,
     } as never)
     .select('id, code')
     .single();

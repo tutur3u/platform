@@ -7,6 +7,7 @@ import {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
 } from './workspace-config-ids';
 
 export {
@@ -19,6 +20,12 @@ export {
   ENABLE_CMS_GAMES_CONFIG_ID,
   ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
   FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_EXPIRATION_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_FIELDS_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_MAX_USES_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_PREFILL_EXISTING_VALUES_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_REQUIRE_AUTH_CONFIG_ID,
 } from './workspace-config-ids';
 
 type WorkspaceConfigResponse = {
@@ -100,6 +107,22 @@ export async function updateWorkspaceConfig(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ value }),
+    }
+  );
+}
+
+export async function getWorkspaceUserProfileLinkDefaultConfigs(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<Record<string, string | null>>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/configs`,
+    {
+      cache: 'no-store',
+      query: {
+        ids: WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS.join(','),
+      },
     }
   );
 }

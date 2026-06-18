@@ -1,4 +1,7 @@
-import { DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
+import {
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
+} from '@tuturuuu/internal-api/workspace-configs';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -43,6 +46,10 @@ const INVOICE_CREATION_DEFAULT_CONFIG_IDS = new Set([
   'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
   'DEFAULT_CURRENCY',
 ]);
+
+const PROFILE_LINK_DEFAULT_CONFIG_IDS = new Set<string>(
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS
+);
 
 interface Params {
   params: Promise<{
@@ -122,11 +129,18 @@ export async function GET(req: NextRequest, { params }: Params) {
     const canReadInvoiceCreationDefaults =
       onlyInvoiceCreationDefaults &&
       permissions.containsPermission('create_invoices');
+    const onlyProfileLinkDefaults = ids.every((id) =>
+      PROFILE_LINK_DEFAULT_CONFIG_IDS.has(id)
+    );
+    const canReadProfileLinkDefaults =
+      onlyProfileLinkDefaults &&
+      permissions.containsPermission('manage_user_profile_links');
 
     if (
       permissions.withoutPermission('manage_workspace_settings') &&
       !canReadReportRenderConfigs &&
-      !canReadInvoiceCreationDefaults
+      !canReadInvoiceCreationDefaults &&
+      !canReadProfileLinkDefaults
     ) {
       return NextResponse.json(
         { error: 'Insufficient permissions to read workspace settings' },

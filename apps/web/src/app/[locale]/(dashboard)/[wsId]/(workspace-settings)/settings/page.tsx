@@ -18,6 +18,7 @@ import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
+import ProfileLinkDefaultsSettings from './profile-link-defaults';
 import RemoveYourself from './remove-yourself';
 import Security from './security';
 
@@ -116,6 +117,8 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
             allowEdit={canManageWorkspace}
           />
         )}
+
+        {canManageWorkspace && <ProfileLinkDefaultsSettings wsId={wsId} />}
 
         {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
         {id !== 'personal' && (

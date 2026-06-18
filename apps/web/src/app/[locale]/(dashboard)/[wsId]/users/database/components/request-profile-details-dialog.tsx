@@ -1,11 +1,12 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, Info, Loader2 } from '@tuturuuu/icons';
 import {
   createWorkspaceUserProfileLink,
   type WorkspaceUserProfileLinkField,
 } from '@tuturuuu/internal-api/users';
+import { getWorkspaceUserProfileLinkDefaultConfigs } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -22,17 +23,14 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-
-const FIELD_OPTIONS: WorkspaceUserProfileLinkField[] = [
-  'display_name',
-  'full_name',
-  'birthday',
-  'gender',
-  'avatar_url',
-  'email',
-  'phone',
-];
+import { useEffect, useMemo, useState } from 'react';
+import {
+  formatDateTimeLocalInputValue,
+  getProfileLinkDefaultsQueryKey,
+  resolveProfileLinkDefaultExpiresAt,
+  resolveProfileLinkDefaults,
+} from '@/features/user-profile-links/defaults';
+import { PROFILE_LINK_FIELDS } from '@/features/user-profile-links/fields';
 
 function HelpTooltip({ label }: { label: string }) {
   return (
@@ -84,6 +82,17 @@ export function RequestProfileDetailsDialog({
   const [maxUses, setMaxUses] = useState('1');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [hasAppliedDefaults, setHasAppliedDefaults] = useState(false);
+
+  const defaultsQuery = useQuery({
+    queryKey: getProfileLinkDefaultsQueryKey(wsId),
+    queryFn: () => getWorkspaceUserProfileLinkDefaultConfigs(wsId),
+    enabled: open,
+  });
+  const defaults = useMemo(
+    () => resolveProfileLinkDefaults(defaultsQuery.data ?? {}),
+    [defaultsQuery.data]
+  );
 
   const toggleField = (
     field: WorkspaceUserProfileLinkField,
@@ -101,7 +110,24 @@ export function RequestProfileDetailsDialog({
     setMaxUses('1');
     setShareUrl(null);
     setCopied(false);
+    setHasAppliedDefaults(false);
   };
+
+  useEffect(() => {
+    if (!open || hasAppliedDefaults || defaultsQuery.isLoading) return;
+
+    setSelected(defaults.fields);
+    setPrefillExistingValues(defaults.prefillExistingValues);
+    setRequireAuth(defaults.requiresAuth);
+    const defaultExpiresAt = resolveProfileLinkDefaultExpiresAt(
+      defaults.expirationPreset
+    );
+    setExpiresAt(
+      defaultExpiresAt ? formatDateTimeLocalInputValue(defaultExpiresAt) : ''
+    );
+    setMaxUses(defaults.maxUses === null ? '' : String(defaults.maxUses));
+    setHasAppliedDefaults(true);
+  }, [defaults, defaultsQuery.isLoading, hasAppliedDefaults, open]);
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -152,7 +178,7 @@ export function RequestProfileDetailsDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === 'generic' ? t('create_generic_title') : t('create_title')}
@@ -160,7 +186,11 @@ export function RequestProfileDetailsDialog({
           <DialogDescription>{t('create_description')}</DialogDescription>
         </DialogHeader>
 
-        {shareUrl ? (
+        {open && !hasAppliedDefaults && defaultsQuery.isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : shareUrl ? (
           <div className="space-y-3">
             <p className="text-muted-foreground text-sm">
               {t('create_success_hint')}
@@ -193,7 +223,7 @@ export function RequestProfileDetailsDialog({
                 <HelpTooltip label={t('create_fields_tooltip')} />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {FIELD_OPTIONS.map((field) => {
+                {PROFILE_LINK_FIELDS.map((field) => {
                   const currentValue = showCurrentValues
                     ? formatCurrentValue(field, currentValues?.[field])
                     : null;

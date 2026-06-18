@@ -736,7 +736,7 @@ export interface ListWorkspaceUserProfileLinkUsersResponse {
 export interface CreateWorkspaceUserProfileLinkPayload {
   mode: WorkspaceUserProfileLinkMode;
   target_user_id?: string | null;
-  allowed_fields: WorkspaceUserProfileLinkField[];
+  allowed_fields?: WorkspaceUserProfileLinkField[];
   prefill_existing_values?: boolean;
   requires_auth?: boolean;
   expires_at?: string | null;
