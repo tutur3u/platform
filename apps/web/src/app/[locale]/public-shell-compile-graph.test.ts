@@ -36,6 +36,18 @@ const aboutPageSource = source('src/app/[locale]/(marketing)/about/page.tsx');
 const securityPageSource = source(
   'src/app/[locale]/(marketing)/security/page.tsx'
 );
+const securityPolicyPageSource = source(
+  'src/app/[locale]/(marketing)/security/policy/page.tsx'
+);
+const securityPolicyComponentsSource = source(
+  'src/app/[locale]/(marketing)/security/policy/policy-components.tsx'
+);
+const securityBugBountyPageSource = source(
+  'src/app/[locale]/(marketing)/security/bug-bounty/page.tsx'
+);
+const securityBugBountyComponentsSource = source(
+  'src/app/[locale]/(marketing)/security/bug-bounty/bug-bounty-components.tsx'
+);
 const partnersPageSource = source(
   'src/app/[locale]/(marketing)/partners/page.tsx'
 );
@@ -210,6 +222,18 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(securityPageSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps public security subpages off the icon package root', () => {
+    for (const sourceText of [
+      securityPolicyPageSource,
+      securityPolicyComponentsSource,
+      securityBugBountyPageSource,
+      securityBugBountyComponentsSource,
+    ] as const) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).toContain('@tuturuuu/icons/lucide');
+    }
   });
 
   it('keeps the public security page off shared UI primitives', () => {

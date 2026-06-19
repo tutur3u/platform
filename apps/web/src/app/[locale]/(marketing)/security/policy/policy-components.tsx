@@ -1,4 +1,4 @@
-import { CheckCircle2, type LucideIcon } from '@tuturuuu/icons';
+import { CheckCircle2, type LucideIcon } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
