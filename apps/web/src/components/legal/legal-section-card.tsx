@@ -1,7 +1,6 @@
 import { ChevronRight } from '@tuturuuu/icons/lucide';
-import { Card } from '@tuturuuu/ui/card';
-import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { AnimateInView } from './animate-in-view';
+import { LegalMarkdown } from './legal-markdown';
 import type { LegalSection } from './legal-types';
 
 interface LegalSectionCardProps {
@@ -28,8 +27,8 @@ export function LegalSectionCard({
 
   return (
     <AnimateInView id={getSectionId(section.title)} className="scroll-mt-32">
-      <Card
-        className={`group overflow-hidden border-l-4 border-l-dynamic-${color}/30 transition-all duration-200 hover:border-l-dynamic-${color}`}
+      <div
+        className={`group overflow-hidden rounded-xl border border-l-4 bg-card text-card-foreground shadow-sm border-l-dynamic-${color}/30 transition-all duration-200 hover:border-l-dynamic-${color}`}
       >
         <div className="bg-card p-8">
           <div className="mb-5 flex items-center gap-3">
@@ -42,7 +41,7 @@ export function LegalSectionCard({
           </div>
           <div className="prose prose-gray dark:prose-invert max-w-none text-card-foreground">
             {typeof section.content === 'string' ? (
-              <MemoizedReactMarkdown>{section.content}</MemoizedReactMarkdown>
+              <LegalMarkdown>{section.content}</LegalMarkdown>
             ) : (
               section.content
             )}
@@ -64,7 +63,7 @@ export function LegalSectionCard({
             )}
           </div>
         </div>
-      </Card>
+      </div>
     </AnimateInView>
   );
 }

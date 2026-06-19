@@ -1,13 +1,4 @@
 import { AlertCircle } from '@tuturuuu/icons/lucide';
-import { Card } from '@tuturuuu/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@tuturuuu/ui/table';
 import { AnimateInView } from './animate-in-view';
 import type { SummaryRow } from './legal-types';
 
@@ -28,29 +19,38 @@ export function LegalSummaryCard({
 }: LegalSummaryCardProps) {
   return (
     <AnimateInView>
-      <Card className="bg-dynamic-purple/5 p-6">
+      <div className="rounded-xl border bg-dynamic-purple/5 p-6 text-card-foreground shadow-sm">
         <div className="mb-4 flex items-center gap-3">
           <AlertCircle className="h-6 w-6 text-dynamic-purple" />
           <h2 className="font-semibold text-lg">{title}</h2>
         </div>
         <p className="mb-4 text-muted-foreground text-sm">{description}</p>
-        <Table className="mt-4">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-45">{topicColumnLabel}</TableHead>
-              <TableHead>{summaryColumnLabel}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={typeof row.topic === 'string' ? row.topic : ''}>
-                <TableCell className="font-medium">{row.topic}</TableCell>
-                <TableCell>{row.summary}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+        <div className="mt-4 w-full overflow-auto">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="[&_tr]:border-b">
+              <tr className="border-b transition-colors hover:bg-muted/50">
+                <th className="h-10 w-45 px-2 text-left align-middle font-medium text-muted-foreground">
+                  {topicColumnLabel}
+                </th>
+                <th className="h-10 px-2 text-left align-middle font-medium text-muted-foreground">
+                  {summaryColumnLabel}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
+              {rows.map((row) => (
+                <tr
+                  className="border-b transition-colors hover:bg-muted/50"
+                  key={typeof row.topic === 'string' ? row.topic : ''}
+                >
+                  <td className="p-2 align-middle font-medium">{row.topic}</td>
+                  <td className="p-2 align-middle">{row.summary}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </AnimateInView>
   );
 }

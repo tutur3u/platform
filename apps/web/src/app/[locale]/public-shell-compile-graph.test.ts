@@ -30,6 +30,9 @@ const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
 );
+const legalSectionCardSource = source(
+  'src/components/legal/legal-section-card.tsx'
+);
 const dropdownMenuSource = source(
   '../../packages/ui/src/components/ui/dropdown-menu.tsx'
 );
@@ -53,7 +56,7 @@ const legalIconBoundarySources = [
   source('src/app/[locale]/(marketing)/privacy/page.tsx'),
   source('src/app/[locale]/(marketing)/terms/page.tsx'),
   source('src/components/legal/legal-page-layout.tsx'),
-  source('src/components/legal/legal-section-card.tsx'),
+  legalSectionCardSource,
   source('src/components/legal/legal-summary-card.tsx'),
   source('src/components/legal/legal-types.ts'),
   source('src/components/legal/table-of-contents.tsx'),
@@ -80,6 +83,16 @@ const productPageIconBoundarySources = [
 const productPagePrimitivesSource = source(
   'src/app/[locale]/(marketing)/products/product-page-primitives.tsx'
 );
+const legalSharedUiBoundarySources = [
+  source('src/app/[locale]/(marketing)/privacy/page.tsx'),
+  source('src/components/legal/animate-in-view.tsx'),
+  source('src/components/legal/legal-page-layout.tsx'),
+  legalSectionCardSource,
+  source('src/components/legal/legal-summary-card.tsx'),
+  source('src/components/legal/table-of-contents.tsx'),
+  source('src/components/legal/third-party-services-section.tsx'),
+  source('src/data/legal/privacy-summary.tsx'),
+] as const;
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -167,6 +180,22 @@ describe('public shell compile graph', () => {
       expect(sourceText).not.toContain("from '@tuturuuu/icons'");
       expect(sourceText).not.toContain('from "@tuturuuu/icons"');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
+    }
+  });
+
+  it('keeps legal policy pages off the shared markdown renderer', () => {
+    expect(legalSectionCardSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/markdown')
+    );
+  });
+
+  it('keeps static legal pages off shared UI client primitives', () => {
+    for (const sourceText of legalSharedUiBoundarySources) {
+      expect(sourceText).not.toMatch(
+        /^\s*import\s+(?!type\b)[\s\S]*?\sfrom\s+['"]@tuturuuu\/ui(?:\/[^'"]+)?['"];/mu
+      );
+      expect(sourceText).not.toContain("'use client'");
+      expect(sourceText).not.toContain('"use client"');
     }
   });
 

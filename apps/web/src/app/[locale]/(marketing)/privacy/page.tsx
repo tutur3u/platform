@@ -1,5 +1,4 @@
 import { Shield } from '@tuturuuu/icons/lucide';
-import { Card } from '@tuturuuu/ui/card';
 import { LegalPageLayout } from '@/components/legal/legal-page-layout';
 import type { LegalPageConfig } from '@/components/legal/legal-types';
 import { privacySections } from '@/data/legal/privacy-sections';
@@ -19,7 +18,7 @@ const config: LegalPageConfig = {
   footerText:
     'This Privacy Policy outlines our commitment to protecting your personal information. For questions or concerns, please contact our Data Protection team at privacy@tuturuuu.com.',
   extraContent: (
-    <Card className="border-primary/20 p-6">
+    <div className="rounded-xl border border-primary/20 bg-card p-6 text-card-foreground shadow-sm">
       <h3 className="mb-3 flex items-center font-semibold text-md">
         <Shield className="mr-2 h-4 w-4 text-primary" />
         GDPR & International Compliance
@@ -32,7 +31,7 @@ const config: LegalPageConfig = {
         processor for content you create. As an open-source platform, our data
         handling practices are publicly auditable.
       </p>
-    </Card>
+    </div>
   ),
 };
 

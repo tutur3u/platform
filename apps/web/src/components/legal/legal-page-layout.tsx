@@ -1,7 +1,4 @@
 import { Code2, ExternalLink, Mail } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import Link from 'next/link';
 import { AnimateInView } from './animate-in-view';
 import { LegalSectionCard } from './legal-section-card';
 import { LegalSummaryCard } from './legal-summary-card';
@@ -14,6 +11,8 @@ function getSectionId(title: string) {
 
 export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
   const BadgeIcon = config.badgeIcon;
+  const buttonClassName =
+    'inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 font-medium text-sm shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
   const tableOfContents = config.sections.map((s, i) => ({
     id: getSectionId(s.title),
     title: s.title,
@@ -86,10 +85,10 @@ export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
               animation: 'legal-fade-in-scale 0.5s ease-out 0.1s both',
             }}
           >
-            <Badge className="border-dynamic-purple/30 bg-dynamic-purple/10 px-4 py-1.5 text-dynamic-purple transition-transform hover:scale-105">
+            <span className="inline-flex items-center rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-4 py-1.5 font-semibold text-dynamic-purple text-xs transition-transform hover:scale-105">
               <BadgeIcon className="mr-1.5 h-3.5 w-3.5" />
               {config.badgeText}
-            </Badge>
+            </span>
           </div>
 
           <h1 className="font-bold text-4xl text-foreground sm:text-5xl lg:text-6xl">
@@ -109,19 +108,20 @@ export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
           </p>
 
           <div className="flex gap-3">
-            <Button variant="outline" asChild>
-              <Link href="https://github.com/tutur3u/platform" target="_blank">
-                <Code2 className="mr-2 h-4 w-4" />
-                View on GitHub
-                <ExternalLink className="ml-2 h-3 w-3" />
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="mailto:legal@tuturuuu.com">
-                <Mail className="mr-2 h-4 w-4" />
-                Contact Legal
-              </Link>
-            </Button>
+            <a
+              className={buttonClassName}
+              href="https://github.com/tutur3u/platform"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <Code2 className="mr-2 h-4 w-4" />
+              View on GitHub
+              <ExternalLink className="ml-2 h-3 w-3" />
+            </a>
+            <a className={buttonClassName} href="mailto:legal@tuturuuu.com">
+              <Mail className="mr-2 h-4 w-4" />
+              Contact Legal
+            </a>
           </div>
         </div>
       </section>
