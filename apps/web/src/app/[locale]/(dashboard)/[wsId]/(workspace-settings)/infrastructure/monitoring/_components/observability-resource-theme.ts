@@ -1,6 +1,6 @@
 'use client';
 
-import type { ObservabilityResourceSamplingStatus } from '@tuturuuu/internal-api/infrastructure';
+import type { ObservabilityResourceSamplingStatus } from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 export type ResourceTone =
   | 'amber'

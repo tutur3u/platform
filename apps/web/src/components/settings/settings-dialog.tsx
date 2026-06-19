@@ -37,11 +37,8 @@ import {
 } from '@tuturuuu/internal-api/workspace-configs';
 import type { CalendarConnection, Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import CalendarConnectionsUnified from '@tuturuuu/ui/calendar-app/components/calendar-connections-unified';
-import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -59,25 +56,36 @@ import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
 import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
-import { ApprovalsSettings } from './approvals/approvals-settings';
-import AttendanceDisplaySettings from './attendance/attendance-display-settings';
-import { CalendarSettingsContent } from './calendar/calendar-settings-content';
-import { CalendarSettingsLayout } from './calendar/calendar-settings-layout';
-import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
-import DebtLoanSettings from './finance/debt-loan-settings';
-import DefaultCurrencySettings from './finance/default-currency-settings';
-import ExperimentalFinanceSettings from './finance/experimental-finance-settings';
-import FinanceNavigationSettings from './finance/finance-navigation-settings';
-import InvoiceSettings from './finance/invoice-settings';
-import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
-import TransactionDefaultsSettings from './finance/transaction-defaults-settings';
 import { FormsAutosaveSettings } from './forms/forms-autosave-settings';
 import ReferralSettings from './inventory/referral-settings';
 import { KeyboardShortcutsSettings } from './keyboard-shortcuts-settings';
-import { MiraMemorySettings } from './mira/mira-memory-settings';
-import { MiraPersonalitySettings } from './mira/mira-personality-settings';
-import { ReportDefaultTitleSettings } from './reports/report-default-title-settings';
 import UserAvatar from './settings-avatar';
+import {
+  ApprovalsSettings,
+  AttendanceDisplaySettings,
+  CalendarContentSettingsPanel,
+  CalendarGeneralSettingsPanel,
+  CalendarIntegrationsSettingsPanel,
+  DatabaseDefaultFiltersSettings,
+  DebtLoanSettings,
+  DefaultCurrencySettings,
+  ExperimentalFinanceSettings,
+  FeaturedGroupsSettings,
+  FinanceNavigationSettings,
+  InvoiceSettings,
+  InvoiceVisibilitySettings,
+  MiraMemorySettings,
+  MiraPersonalitySettings,
+  ReportDefaultTitleSettings,
+  RequireAttentionColorSettings,
+  TimeTrackerCategoriesSettings,
+  TimeTrackerGeneralSettings,
+  TimeTrackerGoalsSettings,
+  TimeTrackerRequestsSettings,
+  TransactionDefaultsSettings,
+  UsersManagementSettings,
+  WorkspaceBreakTypesSettings,
+} from './settings-dialog-lazy-panels';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import FullNameInput from './settings-full-name-input';
@@ -85,15 +93,6 @@ import UserIdInput from './settings-user-id-input';
 import NavigationSidebarSettings from './sidebar-settings';
 import { BoardDefaultListSettings } from './tasks/board-default-list-settings';
 import { TaskSettings } from './tasks/task-settings';
-import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
-import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
-import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
-import { TimeTrackerRequestsSettings } from './time-tracker/time-tracker-requests-settings';
-import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
-import { DatabaseDefaultFiltersSettings } from './users/database-default-filters-settings';
-import FeaturedGroupsSettings from './users/featured-groups-settings';
-import { RequireAttentionColorSettings } from './users/require-attention-color-settings';
-import UsersManagementSettings from './users/users-management-settings';
 import BillingSettings from './workspace/billing-settings';
 import MembersSettings from './workspace/members-settings';
 import UserStatusSettings from './workspace/user-status-settings';
@@ -239,7 +238,7 @@ export function SettingsDialog({
 
       return payload.connections ?? [];
     },
-    enabled: !!workspace?.id,
+    enabled: !!workspace?.id && activeTab === 'calendar_integrations',
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -646,364 +645,340 @@ export function SettingsDialog({
       expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
-      <CalendarSettingsWrapper
-        wsId={wsId}
-        initialSettings={
-          workspace
-            ? {
-                timezone: {
-                  timezone: workspace.timezone || 'auto',
-                  showSecondaryTimezone: false,
-                },
-              }
-            : undefined
-        }
-      >
-        {activeTab === 'profile' && user && (
-          <div className="space-y-8">
-            <div className="grid gap-6">
-              <SettingItemTab
-                title={t('settings-account.avatar')}
-                description={t('settings-account.avatar-description')}
-              >
-                <UserAvatar user={user} />
-              </SettingItemTab>
-              <AccountStatusSection user={user} />
-              <Separator />
-              <SettingItemTab
-                title={t('settings-account.user-id')}
-                description={t('settings-account.user-id-description')}
-              >
-                <UserIdInput userId={user.id} />
-              </SettingItemTab>
-              <SettingItemTab
-                title={t('settings-account.display-name')}
-                description={t('settings-account.display-name-description')}
-              >
-                <DisplayNameInput defaultValue={user?.display_name} />
-              </SettingItemTab>
-              <SettingItemTab
-                title={t('settings-account.full-name')}
-                description={t('settings-account.full-name-description')}
-              >
-                <FullNameInput defaultValue={user?.full_name} />
-              </SettingItemTab>
-              <SettingItemTab
-                title="Email"
-                description={t('settings-account.email-description')}
-              >
-                <EmailInput oldEmail={user.email} newEmail={user.new_email} />
-              </SettingItemTab>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'security' && user && (
-          <div className="h-full">
-            <SecuritySettings
-              user={user}
-              linkedProvider={linkedProvider}
-              onOpenSessions={() => setActiveTab('sessions')}
-            />
-          </div>
-        )}
-
-        {activeTab === 'sessions' && (
-          <div className="h-full">
-            <SessionSettings />
-          </div>
-        )}
-
-        {activeTab === 'accounts' && (
-          <div className="h-full">
-            <AccountManagementSettings />
-          </div>
-        )}
-
-        {activeTab === 'appearance' && (
-          <div className="h-full">
-            <AppearanceSettings canManageVersionBadge={canManageVersionBadge} />
-          </div>
-        )}
-
-        {activeTab === 'navigation' && (
-          <div className="h-full">
-            <NavigationSidebarSettings wsId={wsId} user={user} />
-          </div>
-        )}
-
-        {activeTab === 'forms' && (
-          <div className="h-full">
-            <FormsAutosaveSettings />
-          </div>
-        )}
-
-        {activeTab === 'notifications' && (
-          <div className="h-full">
-            <NotificationSettings />
-          </div>
-        )}
-
-        {activeTab === 'keyboard_shortcuts' && (
-          <div className="h-full">
-            <KeyboardShortcutsSettings />
-          </div>
-        )}
-
-        {activeTab === 'tasks_general' && (
-          <div className="h-full space-y-8">
-            <TaskSettings workspace={workspace} />
-            {wsId && <BoardDefaultListSettings wsId={wsId} />}
-          </div>
-        )}
-
-        {activeTab === 'mira_personality' && (
-          <div className="h-full">
-            <MiraPersonalitySettings />
-          </div>
-        )}
-
-        {activeTab === 'mira_memories' && (
-          <div className="h-full">
-            <MiraMemorySettings wsId={wsId} />
-          </div>
-        )}
-
-        {activeTab === 'workspace_general' && (
-          <div className="space-y-8">
-            {isLoadingWorkspace ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                  <p className="mt-4 text-muted-foreground text-sm">
-                    {t('settings.loading_workspace')}
-                  </p>
-                </div>
-              </div>
-            ) : workspaceError ? (
-              <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-                <p className="font-medium text-destructive">
-                  {t('settings.failed_to_load_workspace')}
-                </p>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {workspaceError.message ||
-                    t('settings.error_loading_workspace')}
-                </p>
-              </div>
-            ) : workspace ? (
-              <>
-                <BasicInfo
-                  workspace={workspace}
-                  allowEdit={allowWorkspaceBasicsEdit}
-                  isPersonal={workspace.personal}
-                />
-                <WorkspaceAvatarSettings
-                  user={user}
-                  workspace={workspace}
-                  allowEdit={allowWorkspaceBasicsEdit}
-                />
-              </>
-            ) : (
-              <div className="rounded-lg border p-4">
-                <p className="text-muted-foreground text-sm">
-                  {t('settings.workspace_not_found')}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'workspace_members' && (
-          <div className="h-full">
-            {isLoadingWorkspace ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                  <p className="mt-4 text-muted-foreground text-sm">
-                    {t('settings.loading_workspace')}
-                  </p>
-                </div>
-              </div>
-            ) : workspaceError ? (
-              <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-                <p className="font-medium text-destructive">
-                  {t('settings.failed_to_load_workspace')}
-                </p>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {workspaceError.message ||
-                    t('settings.error_loading_workspace')}
-                </p>
-              </div>
-            ) : workspace ? (
-              <div className="space-y-6">
-                <GuestSelfJoinSetting
-                  wsId={workspace.id}
-                  disabled={!canManageWorkspaceMembers}
-                  embedded
-                />
-                <MembersSettings workspace={workspace} />
-              </div>
-            ) : (
-              <div className="rounded-lg border p-4">
-                <p className="text-muted-foreground text-sm">
-                  {t('settings.workspace_not_found')}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
-          <div className="h-full">
-            <BillingSettings wsId={wsId} />
-          </div>
-        )}
-
-        {activeTab === 'user_status' && wsId && (
-          <div className="h-full">
-            <UserStatusSettings wsId={wsId} />
-          </div>
-        )}
-
-        {activeTab === 'database_filters' && wsId && (
-          <div className="space-y-8">
-            <DatabaseDefaultFiltersSettings />
-            <UsersManagementSettings
-              wsId={wsId}
-              initialIncludedGroupIds={defaultIncludedGroupIds}
-              initialSelectedGroupIds={defaultExcludedGroupIds}
-              initialAutoAddNewGroupsToDefaultIncludedGroups={
-                autoAddNewGroupsToDefaultIncludedGroups
-              }
-              isConfigLoading={isLoadingWorkspaceCustomConfigs}
-            />
-          </div>
-        )}
-
-        {activeTab === 'featured_groups' && wsId && (
-          <div className="h-full">
-            <FeaturedGroupsSettings
-              wsId={wsId}
-              initialSelectedGroupIds={featuredGroupIds}
-              isConfigLoading={isLoadingWorkspaceCustomConfigs}
-            />
-          </div>
-        )}
-
-        {activeTab === 'require_attention_color' && (
-          <div className="h-full">
-            <RequireAttentionColorSettings />
-          </div>
-        )}
-
-        {activeTab === 'approvals' && wsId && (
-          <div className="h-full">
-            <ApprovalsSettings wsId={wsId} />
-          </div>
-        )}
-
-        {activeTab === 'report_default_title' && workspace?.id && (
-          <ReportDefaultTitleSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'finance_navigation' && workspace?.id && (
-          <FinanceNavigationSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'invoice_visibility' && workspace?.id && (
-          <InvoiceVisibilitySettings
-            workspaceId={workspace.id}
-            isPersonalWorkspace={workspace.personal}
-          />
-        )}
-
-        {activeTab === 'transaction_defaults' && workspace?.id && (
-          <TransactionDefaultsSettings workspaceId={workspace.id} user={user} />
-        )}
-
-        {activeTab === 'default_currency' && workspace?.id && (
-          <DefaultCurrencySettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'invoice_settings' && workspace?.id && (
-          <InvoiceSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'debt_loan_categories' && workspace?.id && (
-          <DebtLoanSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'experimental_finance' && workspace?.id && (
-          <ExperimentalFinanceSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'referrals' && wsId && <ReferralSettings wsId={wsId} />}
-
-        {activeTab === 'calendar_general' && (
-          <div className="h-full">
-            <CalendarSettingsLayout
-              title={t('settings.calendar.general')}
-              description={t('settings.calendar.general_description')}
-              hideActions
+      {activeTab === 'profile' && user && (
+        <div className="space-y-8">
+          <div className="grid gap-6">
+            <SettingItemTab
+              title={t('settings-account.avatar')}
+              description={t('settings-account.avatar-description')}
             >
-              <LunarCalendarSettings />
-            </CalendarSettingsLayout>
+              <UserAvatar user={user} />
+            </SettingItemTab>
+            <AccountStatusSection user={user} />
+            <Separator />
+            <SettingItemTab
+              title={t('settings-account.user-id')}
+              description={t('settings-account.user-id-description')}
+            >
+              <UserIdInput userId={user.id} />
+            </SettingItemTab>
+            <SettingItemTab
+              title={t('settings-account.display-name')}
+              description={t('settings-account.display-name-description')}
+            >
+              <DisplayNameInput defaultValue={user?.display_name} />
+            </SettingItemTab>
+            <SettingItemTab
+              title={t('settings-account.full-name')}
+              description={t('settings-account.full-name-description')}
+            >
+              <FullNameInput defaultValue={user?.full_name} />
+            </SettingItemTab>
+            <SettingItemTab
+              title="Email"
+              description={t('settings-account.email-description')}
+            >
+              <EmailInput oldEmail={user.email} newEmail={user.new_email} />
+            </SettingItemTab>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'calendar_integrations' && wsId && (
-          <CalendarSyncProvider
-            wsId={wsId}
-            initialCalendarConnections={calendarConnections || []}
-          >
-            <div className="h-full">
-              <CalendarSettingsLayout
-                title={t('settings.calendar.integrations')}
-                description={t('settings.calendar.integrations_description')}
-                hideActions
-              >
-                <CalendarConnectionsUnified wsId={wsId} variant="settings" />
-              </CalendarSettingsLayout>
+      {activeTab === 'security' && user && (
+        <div className="h-full">
+          <SecuritySettings
+            user={user}
+            linkedProvider={linkedProvider}
+            onOpenSessions={() => setActiveTab('sessions')}
+          />
+        </div>
+      )}
+
+      {activeTab === 'sessions' && (
+        <div className="h-full">
+          <SessionSettings />
+        </div>
+      )}
+
+      {activeTab === 'accounts' && (
+        <div className="h-full">
+          <AccountManagementSettings />
+        </div>
+      )}
+
+      {activeTab === 'appearance' && (
+        <div className="h-full">
+          <AppearanceSettings canManageVersionBadge={canManageVersionBadge} />
+        </div>
+      )}
+
+      {activeTab === 'navigation' && (
+        <div className="h-full">
+          <NavigationSidebarSettings wsId={wsId} user={user} />
+        </div>
+      )}
+
+      {activeTab === 'forms' && (
+        <div className="h-full">
+          <FormsAutosaveSettings />
+        </div>
+      )}
+
+      {activeTab === 'notifications' && (
+        <div className="h-full">
+          <NotificationSettings />
+        </div>
+      )}
+
+      {activeTab === 'keyboard_shortcuts' && (
+        <div className="h-full">
+          <KeyboardShortcutsSettings />
+        </div>
+      )}
+
+      {activeTab === 'tasks_general' && (
+        <div className="h-full space-y-8">
+          <TaskSettings workspace={workspace} />
+          {wsId && <BoardDefaultListSettings wsId={wsId} />}
+        </div>
+      )}
+
+      {activeTab === 'mira_personality' && (
+        <div className="h-full">
+          <MiraPersonalitySettings />
+        </div>
+      )}
+
+      {activeTab === 'mira_memories' && (
+        <div className="h-full">
+          <MiraMemorySettings wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'workspace_general' && (
+        <div className="space-y-8">
+          {isLoadingWorkspace ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="mt-4 text-muted-foreground text-sm">
+                  {t('settings.loading_workspace')}
+                </p>
+              </div>
             </div>
-          </CalendarSyncProvider>
-        )}
-
-        {(activeTab === 'calendar_hours' || activeTab === 'calendar_colors') &&
-          wsId && (
-            <CalendarSettingsContent
-              section={activeTab}
-              wsId={wsId}
-              workspace={workspace}
-            />
+          ) : workspaceError ? (
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+              <p className="font-medium text-destructive">
+                {t('settings.failed_to_load_workspace')}
+              </p>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {workspaceError.message ||
+                  t('settings.error_loading_workspace')}
+              </p>
+            </div>
+          ) : workspace ? (
+            <>
+              <BasicInfo
+                workspace={workspace}
+                allowEdit={allowWorkspaceBasicsEdit}
+                isPersonal={workspace.personal}
+              />
+              <WorkspaceAvatarSettings
+                user={user}
+                workspace={workspace}
+                allowEdit={allowWorkspaceBasicsEdit}
+              />
+            </>
+          ) : (
+            <div className="rounded-lg border p-4">
+              <p className="text-muted-foreground text-sm">
+                {t('settings.workspace_not_found')}
+              </p>
+            </div>
           )}
+        </div>
+      )}
 
-        {activeTab === 'break_types' && wsId && (
-          <WorkspaceBreakTypesSettings wsId={wsId} />
-        )}
+      {activeTab === 'workspace_members' && (
+        <div className="h-full">
+          {isLoadingWorkspace ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="mt-4 text-muted-foreground text-sm">
+                  {t('settings.loading_workspace')}
+                </p>
+              </div>
+            </div>
+          ) : workspaceError ? (
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+              <p className="font-medium text-destructive">
+                {t('settings.failed_to_load_workspace')}
+              </p>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {workspaceError.message ||
+                  t('settings.error_loading_workspace')}
+              </p>
+            </div>
+          ) : workspace ? (
+            <div className="space-y-6">
+              <GuestSelfJoinSetting
+                wsId={workspace.id}
+                disabled={!canManageWorkspaceMembers}
+                embedded
+              />
+              <MembersSettings workspace={workspace} />
+            </div>
+          ) : (
+            <div className="rounded-lg border p-4">
+              <p className="text-muted-foreground text-sm">
+                {t('settings.workspace_not_found')}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
-        {activeTab === 'time_tracker_categories' && wsId && (
-          <TimeTrackerCategoriesSettings wsId={wsId} />
-        )}
+      {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
+        <div className="h-full">
+          <BillingSettings wsId={wsId} />
+        </div>
+      )}
 
-        {activeTab === 'time_tracker_goals' && wsId && (
-          <TimeTrackerGoalsSettings wsId={wsId} />
-        )}
+      {activeTab === 'user_status' && wsId && (
+        <div className="h-full">
+          <UserStatusSettings wsId={wsId} />
+        </div>
+      )}
 
-        {activeTab === 'time_tracker_general' && wsId && (
-          <TimeTrackerGeneralSettings wsId={wsId} />
-        )}
-
-        {activeTab === 'time_tracker_requests' && wsId && (
-          <TimeTrackerRequestsSettings
+      {activeTab === 'database_filters' && wsId && (
+        <div className="space-y-8">
+          <DatabaseDefaultFiltersSettings />
+          <UsersManagementSettings
             wsId={wsId}
-            canManageWorkspaceSettings={canManageWorkspaceSettings}
+            initialIncludedGroupIds={defaultIncludedGroupIds}
+            initialSelectedGroupIds={defaultExcludedGroupIds}
+            initialAutoAddNewGroupsToDefaultIncludedGroups={
+              autoAddNewGroupsToDefaultIncludedGroups
+            }
+            isConfigLoading={isLoadingWorkspaceCustomConfigs}
+          />
+        </div>
+      )}
+
+      {activeTab === 'featured_groups' && wsId && (
+        <div className="h-full">
+          <FeaturedGroupsSettings
+            wsId={wsId}
+            initialSelectedGroupIds={featuredGroupIds}
+            isConfigLoading={isLoadingWorkspaceCustomConfigs}
+          />
+        </div>
+      )}
+
+      {activeTab === 'require_attention_color' && (
+        <div className="h-full">
+          <RequireAttentionColorSettings />
+        </div>
+      )}
+
+      {activeTab === 'approvals' && wsId && (
+        <div className="h-full">
+          <ApprovalsSettings wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'report_default_title' && workspace?.id && (
+        <ReportDefaultTitleSettings workspaceId={workspace.id} />
+      )}
+
+      {activeTab === 'finance_navigation' && workspace?.id && (
+        <FinanceNavigationSettings workspaceId={workspace.id} />
+      )}
+
+      {activeTab === 'invoice_visibility' && workspace?.id && (
+        <InvoiceVisibilitySettings
+          workspaceId={workspace.id}
+          isPersonalWorkspace={workspace.personal}
+        />
+      )}
+
+      {activeTab === 'transaction_defaults' && workspace?.id && (
+        <TransactionDefaultsSettings workspaceId={workspace.id} user={user} />
+      )}
+
+      {activeTab === 'default_currency' && workspace?.id && (
+        <DefaultCurrencySettings workspaceId={workspace.id} />
+      )}
+
+      {activeTab === 'invoice_settings' && workspace?.id && (
+        <InvoiceSettings workspaceId={workspace.id} />
+      )}
+
+      {activeTab === 'debt_loan_categories' && workspace?.id && (
+        <DebtLoanSettings workspaceId={workspace.id} />
+      )}
+
+      {activeTab === 'experimental_finance' && workspace?.id && (
+        <ExperimentalFinanceSettings workspaceId={workspace.id} />
+      )}
+
+      {activeTab === 'referrals' && wsId && <ReferralSettings wsId={wsId} />}
+
+      {activeTab === 'calendar_general' && (
+        <CalendarGeneralSettingsPanel
+          title={t('settings.calendar.general')}
+          description={t('settings.calendar.general_description')}
+          workspace={workspace}
+          wsId={wsId}
+        />
+      )}
+
+      {activeTab === 'calendar_integrations' && wsId && (
+        <CalendarIntegrationsSettingsPanel
+          wsId={wsId}
+          title={t('settings.calendar.integrations')}
+          description={t('settings.calendar.integrations_description')}
+          workspace={workspace}
+          calendarConnections={calendarConnections || []}
+        />
+      )}
+
+      {(activeTab === 'calendar_hours' || activeTab === 'calendar_colors') &&
+        wsId && (
+          <CalendarContentSettingsPanel
+            section={activeTab}
+            wsId={wsId}
+            workspace={workspace}
           />
         )}
 
-        {activeTab === 'attendance_display' && wsId && (
-          <AttendanceDisplaySettings wsId={wsId} />
-        )}
-      </CalendarSettingsWrapper>
+      {activeTab === 'break_types' && wsId && (
+        <WorkspaceBreakTypesSettings wsId={wsId} />
+      )}
+
+      {activeTab === 'time_tracker_categories' && wsId && (
+        <TimeTrackerCategoriesSettings wsId={wsId} />
+      )}
+
+      {activeTab === 'time_tracker_goals' && wsId && (
+        <TimeTrackerGoalsSettings wsId={wsId} />
+      )}
+
+      {activeTab === 'time_tracker_general' && wsId && (
+        <TimeTrackerGeneralSettings wsId={wsId} />
+      )}
+
+      {activeTab === 'time_tracker_requests' && wsId && (
+        <TimeTrackerRequestsSettings
+          wsId={wsId}
+          canManageWorkspaceSettings={canManageWorkspaceSettings}
+        />
+      )}
+
+      {activeTab === 'attendance_display' && wsId && (
+        <AttendanceDisplaySettings wsId={wsId} />
+      )}
     </SettingsDialogShell>
   );
 }

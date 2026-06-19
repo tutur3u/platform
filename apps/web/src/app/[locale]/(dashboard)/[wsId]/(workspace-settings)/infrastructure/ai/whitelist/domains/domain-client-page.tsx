@@ -1,6 +1,6 @@
 'use client';
 
-import { createAIWhitelistDomain } from '@tuturuuu/internal-api/infrastructure';
+import { createAIWhitelistDomain } from '@tuturuuu/internal-api/infrastructure/ai';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import WhitelistDomainForm from './domain-form';

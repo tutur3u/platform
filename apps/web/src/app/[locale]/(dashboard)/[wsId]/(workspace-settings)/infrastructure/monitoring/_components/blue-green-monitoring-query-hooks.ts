@@ -12,7 +12,7 @@ import {
   getInfrastructureStressTestSnapshot,
   type QueueInfrastructureStressTestPayload,
   queueInfrastructureStressTest,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 export function useBlueGreenMonitoringSnapshot({
   requestPreviewLimit,

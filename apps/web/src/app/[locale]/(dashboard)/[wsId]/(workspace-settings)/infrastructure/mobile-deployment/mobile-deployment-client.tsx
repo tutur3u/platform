@@ -13,7 +13,7 @@ import {
   rollbackMobileDeploymentVersion,
   saveMobileDeploymentSecret,
   uploadMobileDeploymentFileResource,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/mobile';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';

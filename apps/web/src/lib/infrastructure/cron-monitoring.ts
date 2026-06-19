@@ -7,7 +7,7 @@ import type {
   CronMonitoringJob,
   CronMonitoringSnapshot,
   CronRunRecord,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 const DEFAULT_CRON_STATUS_STALE_MS = 120_000;
 

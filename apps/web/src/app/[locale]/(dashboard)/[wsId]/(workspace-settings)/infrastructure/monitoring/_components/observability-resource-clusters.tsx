@@ -7,7 +7,7 @@ import {
   Radio,
   Terminal,
 } from '@tuturuuu/icons';
-import type { BlueGreenMonitoringDockerContainer } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringDockerContainer } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';

@@ -1,4 +1,4 @@
-import type { BlueGreenMonitoringDeployment } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringDeployment } from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 export type BlueGreenMonitoringDeploymentRollup =
   BlueGreenMonitoringDeployment & {

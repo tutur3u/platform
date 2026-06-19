@@ -1,7 +1,7 @@
 'use client';
 
 import { KeyRound, Trash2 } from '@tuturuuu/icons';
-import type { MobileDeploymentResourceStatus } from '@tuturuuu/internal-api/infrastructure';
+import type { MobileDeploymentResourceStatus } from '@tuturuuu/internal-api/infrastructure/mobile';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';

@@ -1,7 +1,7 @@
 'use client';
 
 import { Activity, Gauge, HardDrive, Radio } from '@tuturuuu/icons';
-import type { InfrastructureStressTestRun } from '@tuturuuu/internal-api/infrastructure';
+import type { InfrastructureStressTestRun } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';

@@ -8,7 +8,7 @@ import type {
   InfrastructureStressTestStatus,
   InfrastructureStressTestTarget,
   QueueInfrastructureStressTestPayload,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { serverLogger } from './log-drain';
 import {
   computeStressTestResourceSpikes,

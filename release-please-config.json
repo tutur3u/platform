@@ -66,6 +66,10 @@
       "component": "hive-realtime",
       "package-name": "@tuturuuu/hive-realtime"
     },
+    "apps/infra": {
+      "component": "infra",
+      "package-name": "@tuturuuu/infra"
+    },
     "apps/inventory": {
       "component": "inventory",
       "package-name": "@tuturuuu/inventory"

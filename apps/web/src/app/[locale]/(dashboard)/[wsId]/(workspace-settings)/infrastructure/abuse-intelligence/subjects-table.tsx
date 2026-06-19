@@ -1,6 +1,6 @@
 'use client';
 
-import type { AbuseReputationSubject } from '@tuturuuu/internal-api/infrastructure';
+import type { AbuseReputationSubject } from '@tuturuuu/internal-api/infrastructure/abuse';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Table,

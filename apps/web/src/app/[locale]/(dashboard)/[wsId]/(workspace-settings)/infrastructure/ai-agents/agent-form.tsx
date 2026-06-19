@@ -4,7 +4,7 @@ import { Loader2, Save } from '@tuturuuu/icons';
 import type {
   AiAgentDefinition,
   SaveAiAgentPayload,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

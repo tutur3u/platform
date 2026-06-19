@@ -1,4 +1,4 @@
-import type { BlueGreenMonitoringDockerContainer } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringDockerContainer } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { formatCompactNumber } from './formatters';
 
 export type ResourceTone =

@@ -18,7 +18,7 @@ vi.mock('next-intl', () => ({
     values?.count === undefined ? key : `${key}:${values.count}`,
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
+vi.mock('@tuturuuu/internal-api/infrastructure/ai', () => ({
   draftAiAgentExternalResponse: (...args: unknown[]) =>
     mocks.draftAiAgentExternalResponse(...args),
   listAiAgentExternalThreads: (...args: unknown[]) =>

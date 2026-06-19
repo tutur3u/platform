@@ -19,14 +19,14 @@ import type {
   AiAgentZaloPersonalPhoneSyncResult,
   AiAgentZaloPersonalQrLoginSession,
   AiAgentZaloPersonalQrLoginStatus,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import {
   abortAiAgentZaloPersonalQrLogin,
   getAiAgentZaloPersonalQrLoginStatus,
   getAiAgentZaloPersonalStatus,
   runAiAgentZaloPersonalAction,
   startAiAgentZaloPersonalQrLogin,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';

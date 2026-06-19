@@ -6,7 +6,7 @@ import type {
   AbuseRiskTier,
   AbuseTrustOverride,
   CreateAbuseTrustOverridePayload,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/abuse';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';

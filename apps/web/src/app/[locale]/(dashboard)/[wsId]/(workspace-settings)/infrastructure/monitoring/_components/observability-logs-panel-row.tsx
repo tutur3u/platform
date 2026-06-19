@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight } from '@tuturuuu/icons';
 import type {
   ObservabilityLogFacet,
   ObservabilityLogGroup,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

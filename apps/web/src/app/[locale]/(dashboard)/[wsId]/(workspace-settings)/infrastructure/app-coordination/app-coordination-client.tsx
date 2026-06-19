@@ -11,7 +11,7 @@ import {
   type AppCoordinationSessionPolicyResponse,
   getAppCoordinationSessionPolicy,
   saveAppCoordinationSessionPolicy,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/apps';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

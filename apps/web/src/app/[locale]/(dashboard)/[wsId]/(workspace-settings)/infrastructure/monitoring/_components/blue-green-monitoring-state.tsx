@@ -1,7 +1,7 @@
 'use client';
 
 import { TriangleAlert } from '@tuturuuu/icons';
-import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import type { useTranslations } from 'next-intl';

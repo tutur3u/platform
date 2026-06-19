@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import type {
   BlueGreenMonitoringDeployment,
   InfrastructureProject,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { readBlueGreenMonitoringSnapshot } from './blue-green-monitoring';
 import {
   ensureLogDrainSchema,

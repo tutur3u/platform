@@ -21,7 +21,7 @@ import {
   type CronRunStatus,
   queueCronRun,
   updateCronMonitoringControl,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

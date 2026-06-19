@@ -74,6 +74,12 @@ describe('mapUrlToApp', () => {
     ).toBe('chat');
   });
 
+  it('maps the Infra production URL to the infra app', () => {
+    expect(
+      mapUrlToApp('https://infra.tuturuuu.com/verify-token?nextUrl=%2F')
+    ).toBe('infra');
+  });
+
   it('maps the Teach development URL to the teach app', () => {
     expect(mapUrlToApp('http://localhost:7813/verify-token?nextUrl=%2F')).toBe(
       'teach'
@@ -93,6 +99,9 @@ describe('mapUrlToApp', () => {
     expect(
       mapUrlToApp('http://localhost:7809/verify-token?nextUrl=%2Fpersonal')
     ).toBe('tasks');
+    expect(mapUrlToApp('http://localhost:7823/verify-token?nextUrl=%2F')).toBe(
+      'infra'
+    );
     expect(mapUrlToApp('http://localhost:7820/verify-token?nextUrl=%2F')).toBe(
       'mail'
     );
@@ -116,6 +125,7 @@ describe('mapUrlToApp', () => {
       'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',
     ],
     ['finance', 'https://finance.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['infra', 'https://infra.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     [
       'chat',
       'https://chat.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',

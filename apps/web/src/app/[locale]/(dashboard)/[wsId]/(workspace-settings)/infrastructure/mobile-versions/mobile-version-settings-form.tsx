@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
-import { updateMobileVersionPolicies } from '@tuturuuu/internal-api/infrastructure';
+import { updateMobileVersionPolicies } from '@tuturuuu/internal-api/infrastructure/mobile';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,

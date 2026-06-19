@@ -6,7 +6,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   BlueGreenMonitoringSnapshot,
   ObservabilityDeployment,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ObservabilityDeploymentsPanel } from './observability-deployments-panel';
 
@@ -15,18 +15,22 @@ const apiMocks = vi.hoisted(() => ({
   requestBlueGreenDeploymentRevert: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import('@tuturuuu/internal-api/infrastructure')
-    >();
+vi.mock(
+  '@tuturuuu/internal-api/infrastructure/monitoring',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@tuturuuu/internal-api/infrastructure/monitoring')
+      >();
 
-  return {
-    ...actual,
-    clearBlueGreenDeploymentPin: apiMocks.clearBlueGreenDeploymentPin,
-    requestBlueGreenDeploymentRevert: apiMocks.requestBlueGreenDeploymentRevert,
-  };
-});
+    return {
+      ...actual,
+      clearBlueGreenDeploymentPin: apiMocks.clearBlueGreenDeploymentPin,
+      requestBlueGreenDeploymentRevert:
+        apiMocks.requestBlueGreenDeploymentRevert,
+    };
+  }
+);
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {

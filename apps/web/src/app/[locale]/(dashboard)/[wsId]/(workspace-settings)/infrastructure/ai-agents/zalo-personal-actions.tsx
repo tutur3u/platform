@@ -11,11 +11,11 @@ import {
 import type {
   AiAgentDefinition,
   AiAgentZaloPersonalAction,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import {
   getAiAgentZaloPersonalStatus,
   runAiAgentZaloPersonalAction,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';

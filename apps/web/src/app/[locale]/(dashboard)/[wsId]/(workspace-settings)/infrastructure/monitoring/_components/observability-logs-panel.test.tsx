@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ObservabilityLogGroup } from '@tuturuuu/internal-api/infrastructure';
+import type { ObservabilityLogGroup } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { describe, expect, it, vi } from 'vitest';
 import { ObservabilityLogsPanel } from './observability-logs-panel';
 

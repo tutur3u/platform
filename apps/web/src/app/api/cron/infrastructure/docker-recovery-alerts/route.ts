@@ -3,7 +3,7 @@ import { sendSystemEmail } from '@tuturuuu/email-service';
 import type {
   BlueGreenDockerRecoverySettings,
   BlueGreenMonitoringWatcherLog,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { type NextRequest, NextResponse } from 'next/server';
 import { readBlueGreenMonitoringSnapshot } from '@/lib/infrastructure/blue-green-monitoring';
 import {

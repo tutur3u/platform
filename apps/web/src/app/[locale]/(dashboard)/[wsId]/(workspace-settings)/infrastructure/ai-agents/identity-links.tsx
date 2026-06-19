@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, Save, UserRoundPlus } from '@tuturuuu/icons';
-import type { AiAgentIdentityLink } from '@tuturuuu/internal-api/infrastructure';
+import type { AiAgentIdentityLink } from '@tuturuuu/internal-api/infrastructure/ai';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';

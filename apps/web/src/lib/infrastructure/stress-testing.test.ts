@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { InfrastructureStressTestTarget } from '@tuturuuu/internal-api/infrastructure';
+import type { InfrastructureStressTestTarget } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { createAdminClientMock, serverLoggerWarnMock } = vi.hoisted(() => ({

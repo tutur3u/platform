@@ -3,7 +3,7 @@ import type {
   InfrastructureStressTestSample,
   InfrastructureStressTestStatus,
   InfrastructureStressTestSummary,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 export function getDefaultStressTestSummary(): InfrastructureStressTestSummary {
   return {

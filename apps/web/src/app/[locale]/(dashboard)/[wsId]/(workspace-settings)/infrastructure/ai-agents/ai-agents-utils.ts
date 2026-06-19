@@ -2,7 +2,7 @@ import type {
   AiAgentDefinition,
   AiAgentIdentityLink,
   SaveAiAgentPayload,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 

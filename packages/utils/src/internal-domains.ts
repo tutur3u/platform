@@ -61,6 +61,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://finance.tuturuuu.com',
   },
   {
+    name: 'infra',
+    url: 'https://infra.tuturuuu.com',
+  },
+  {
     name: 'inventory',
     url: 'https://inventory.tuturuuu.com',
   },
@@ -144,6 +148,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('finance'),
   },
   {
+    name: 'infra',
+    url: getTuturuuuPortlessAppOrigin('infra'),
+  },
+  {
     name: 'inventory',
     url: getTuturuuuPortlessAppOrigin('inventory'),
   },
@@ -225,6 +233,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'finance',
     url: 'http://localhost:7808',
+  },
+  {
+    name: 'infra',
+    url: 'http://localhost:7823',
   },
   {
     name: 'inventory',

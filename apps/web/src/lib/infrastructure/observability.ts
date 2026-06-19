@@ -19,7 +19,7 @@ import type {
   ObservabilityResourceBucket,
   ObservabilityResourceSampling,
   ObservabilityResources,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import {
   readBlueGreenMonitoringRequestArchive,
   readBlueGreenMonitoringSnapshot,

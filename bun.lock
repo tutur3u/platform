@@ -141,7 +141,7 @@
     },
     "apps/cms": {
       "name": "@tuturuuu/cms",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -195,7 +195,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "devDependencies": {
         "supabase": "2.106.0",
         "typescript": "^6.0.3",
@@ -329,7 +329,7 @@
     },
     "apps/hive": {
       "name": "@tuturuuu/hive",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@react-three/drei": "^10.7.7",
@@ -393,9 +393,37 @@
         "vitest": "^4.1.8",
       },
     },
+    "apps/infra": {
+      "name": "@tuturuuu/infra",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "next": "^16.2.9",
+        "next-intl": "^4.13.0",
+        "next-themes": "^0.4.6",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.1",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.9.3",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "postcss": "^8.5.14",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@tanstack/react-query": "^5.101.0",
         "@tuturuuu/auth": "workspace:*",
@@ -430,7 +458,7 @@
     },
     "apps/learn": {
       "name": "@tuturuuu/learn",
-      "version": "0.1.4",
+      "version": "0.2.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@gsap/react": "^2.1.2",
@@ -614,7 +642,7 @@
     },
     "apps/nova": {
       "name": "@tuturuuu/nova",
-      "version": "0.18.2",
+      "version": "0.18.3",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -734,14 +762,14 @@
     },
     "apps/redis": {
       "name": "@tuturuuu/redis",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "devDependencies": {
         "@upstash/cli": "^0.3.0",
       },
     },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
-      "version": "0.18.2",
+      "version": "0.18.3",
       "dependencies": {
         "@deepgram/sdk": "^5.4.0",
         "@emotion/react": "^11.14.0",
@@ -812,7 +840,7 @@
     },
     "apps/shortener": {
       "name": "@tuturuuu/shortener",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
@@ -851,7 +879,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "dependencies": {
         "@tanstack/react-query": "^5.101.0",
         "@tuturuuu/auth": "workspace:*",
@@ -936,7 +964,7 @@
     },
     "apps/teach": {
       "name": "@tuturuuu/teach",
-      "version": "0.1.3",
+      "version": "0.2.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1292,7 +1320,7 @@
     },
     "packages/apis": {
       "name": "@tuturuuu/apis",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -1319,7 +1347,7 @@
     },
     "packages/auth": {
       "name": "@tuturuuu/auth",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -1340,7 +1368,7 @@
     },
     "packages/devbox": {
       "name": "@tuturuuu/devbox",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^25.9.3",
@@ -1479,7 +1507,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "dependencies": {
         "@tuturuuu/types": "workspace:*",
       },
@@ -1592,7 +1620,7 @@
     },
     "packages/payment": {
       "name": "@tuturuuu/payment",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "dependencies": {
         "@polar-sh/checkout": "^0.3.0",
         "@polar-sh/nextjs": "^0.9.6",
@@ -1618,7 +1646,7 @@
     },
     "packages/satellite": {
       "name": "@tuturuuu/satellite",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "dependencies": {
         "@radix-ui/react-dialog": "^1.1.16",
         "@radix-ui/react-tooltip": "^1.2.9",
@@ -1651,7 +1679,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.10.0",
+      "version": "0.10.1",
       "bin": {
         "ttr": "./dist/cli/index.js",
         "tuturuuu": "./dist/cli/index.js",
@@ -1673,7 +1701,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.3.3",
+      "version": "0.3.4",
       "dependencies": {
         "@supabase/ssr": "^0.12.0",
         "@supabase/supabase-js": "^2.108.1",
@@ -1746,7 +1774,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "dependencies": {
         "@tiptap/react": "3.26.1",
         "react": "^19.2.7",
@@ -1767,7 +1795,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1926,7 +1954,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.2.0",
@@ -3435,6 +3463,8 @@
     "@tuturuuu/hooks": ["@tuturuuu/hooks@workspace:packages/hooks"],
 
     "@tuturuuu/icons": ["@tuturuuu/icons@workspace:packages/icons"],
+
+    "@tuturuuu/infra": ["@tuturuuu/infra@workspace:apps/infra"],
 
     "@tuturuuu/internal-api": ["@tuturuuu/internal-api@workspace:packages/internal-api"],
 

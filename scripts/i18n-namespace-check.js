@@ -85,6 +85,7 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
 const UNCHECKED_APPS = new Set([
   'apps/apps',
   'apps/chat',
+  'apps/infra',
   'apps/inventory',
   'apps/learn',
   'apps/mail',

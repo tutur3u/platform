@@ -28,6 +28,10 @@
       "name": "finance.tuturuuu",
       "script": "dev:app"
     },
+    "apps/infra": {
+      "name": "infra.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/inventory": {
       "name": "inventory.tuturuuu",
       "script": "dev:app"

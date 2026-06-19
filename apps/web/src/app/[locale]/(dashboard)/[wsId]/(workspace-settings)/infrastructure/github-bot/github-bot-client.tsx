@@ -10,7 +10,7 @@ import {
   revokeGitHubBotWatcherClient,
   saveGitHubBotConfiguration,
   testGitHubBotConfiguration,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/github-bot';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

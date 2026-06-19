@@ -1,7 +1,7 @@
 'use client';
 
 import { Gauge, Terminal } from '@tuturuuu/icons';
-import type { ObservabilityBuildResources as ObservabilityBuildResourcesPayload } from '@tuturuuu/internal-api/infrastructure';
+import type { ObservabilityBuildResources as ObservabilityBuildResourcesPayload } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {

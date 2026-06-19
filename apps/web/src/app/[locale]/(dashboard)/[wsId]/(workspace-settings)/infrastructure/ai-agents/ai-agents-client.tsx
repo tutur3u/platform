@@ -11,7 +11,7 @@ import {
   saveAiAgent,
   saveAiAgentIdentityLink,
   testAiAgentChannel,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

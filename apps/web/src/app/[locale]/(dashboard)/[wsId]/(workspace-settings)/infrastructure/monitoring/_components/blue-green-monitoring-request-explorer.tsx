@@ -7,7 +7,7 @@ import {
   Search,
   TriangleAlert,
 } from '@tuturuuu/icons';
-import type { BlueGreenMonitoringRequestLog } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringRequestLog } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';

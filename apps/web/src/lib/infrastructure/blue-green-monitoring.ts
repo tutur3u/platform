@@ -25,7 +25,7 @@ import type {
   BlueGreenMonitoringWatcherHealth,
   BlueGreenMonitoringWatcherLog,
   BlueGreenTargetRuntime,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { normalizeBlueGreenDockerRecoverySettings } from './blue-green-monitoring-controls';
 
 type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'> &

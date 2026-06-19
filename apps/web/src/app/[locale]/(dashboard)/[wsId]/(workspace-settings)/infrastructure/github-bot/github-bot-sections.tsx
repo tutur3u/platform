@@ -4,7 +4,7 @@ import { CheckCircle2, KeyRound, Trash2, XCircle } from '@tuturuuu/icons';
 import type {
   GitHubBotConfigurationStatus,
   GitHubBotState,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/github-bot';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';

@@ -1,0 +1,32 @@
+{
+  "infra": {
+    "ai": {
+      "description": "Quan ly mo hinh gateway, whitelist, agent va thong tin tich hop tu bang dieu khien web hien co.",
+      "title": "Van hanh AI"
+    },
+    "appCoordination": {
+      "description": "Kiem tra chinh sach app-session va cau hinh dieu phoi giua cac ung dung.",
+      "title": "Dieu phoi ung dung"
+    },
+    "description": "Be mat satellite rieng cho ha tang nen tang. Cac API duoc bao ve van proxy ve ung dung web trong giai doan tach dau tien.",
+    "externalApps": {
+      "description": "Quan ly ung dung ben ngoai da dang ky, origin, scope va secret da cap.",
+      "title": "Ung dung ben ngoai"
+    },
+    "githubBot": {
+      "description": "Cau hinh GitHub app, watcher client va thong tin auto-pickup.",
+      "title": "GitHub Bot"
+    },
+    "monitoring": {
+      "description": "Mo trien khai blue-green, suc khoe cron, observability, du an va cong cu stress test.",
+      "title": "Giam sat"
+    },
+    "mobile": {
+      "description": "Dieu khien secret trien khai mobile, chinh sach phien ban va thu push notification.",
+      "title": "Trien khai mobile"
+    },
+    "openInWeb": "Mo trong web",
+    "phaseLabel": "Shell giai doan 1",
+    "title": "Ha tang"
+  }
+}

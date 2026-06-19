@@ -3,7 +3,7 @@
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BlueGreenMonitoringRecoverySettings } from './blue-green-monitoring-recovery-settings';
 
@@ -11,18 +11,21 @@ const mocks = vi.hoisted(() => ({
   updateBlueGreenDockerRecoverySettings: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import('@tuturuuu/internal-api/infrastructure')
-    >();
+vi.mock(
+  '@tuturuuu/internal-api/infrastructure/monitoring',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@tuturuuu/internal-api/infrastructure/monitoring')
+      >();
 
-  return {
-    ...actual,
-    updateBlueGreenDockerRecoverySettings:
-      mocks.updateBlueGreenDockerRecoverySettings,
-  };
-});
+    return {
+      ...actual,
+      updateBlueGreenDockerRecoverySettings:
+        mocks.updateBlueGreenDockerRecoverySettings,
+    };
+  }
+);
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {

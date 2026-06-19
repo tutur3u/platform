@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle } from '@tuturuuu/icons';
 import type {
   MobileDeploymentResourceStatus,
   MobileDeploymentState,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/mobile';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 

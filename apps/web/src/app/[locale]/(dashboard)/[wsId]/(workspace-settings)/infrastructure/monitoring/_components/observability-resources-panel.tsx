@@ -1,6 +1,6 @@
 'use client';
 
-import type { ObservabilityResources } from '@tuturuuu/internal-api/infrastructure';
+import type { ObservabilityResources } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { formatBytes } from './formatters';

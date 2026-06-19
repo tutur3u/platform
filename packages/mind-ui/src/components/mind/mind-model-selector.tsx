@@ -2,7 +2,7 @@
 
 import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { Check, ChevronDown } from '@tuturuuu/icons';
-import { listAiGatewayModelsPage } from '@tuturuuu/internal-api/infrastructure';
+import { listAiGatewayModelsPage } from '@tuturuuu/internal-api/infrastructure/ai';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

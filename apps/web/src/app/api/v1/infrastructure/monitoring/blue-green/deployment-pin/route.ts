@@ -1,4 +1,4 @@
-import type { BlueGreenMonitoringDeployment } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringDeployment } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { NextResponse } from 'next/server';
 import { readBlueGreenMonitoringSnapshot } from '@/lib/infrastructure/blue-green-monitoring';
 import {

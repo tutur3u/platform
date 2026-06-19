@@ -4,7 +4,7 @@ import { Plus, Search } from '@tuturuuu/icons';
 import type {
   MobileDeploymentResourceStatus,
   MobileDeploymentScalarName,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/mobile';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';

@@ -3,7 +3,7 @@
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BlueGreenMonitoringRolloutControls } from './blue-green-monitoring-rollout-controls';
 
@@ -11,19 +11,22 @@ const mocks = vi.hoisted(() => ({
   requestBlueGreenInstantRollout: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import('@tuturuuu/internal-api/infrastructure')
-    >();
+vi.mock(
+  '@tuturuuu/internal-api/infrastructure/monitoring',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@tuturuuu/internal-api/infrastructure/monitoring')
+      >();
 
-  return {
-    ...actual,
-    clearBlueGreenDeploymentPin: vi.fn(),
-    pinBlueGreenDeployment: vi.fn(),
-    requestBlueGreenInstantRollout: mocks.requestBlueGreenInstantRollout,
-  };
-});
+    return {
+      ...actual,
+      clearBlueGreenDeploymentPin: vi.fn(),
+      pinBlueGreenDeployment: vi.fn(),
+      requestBlueGreenInstantRollout: mocks.requestBlueGreenInstantRollout,
+    };
+  }
+);
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {

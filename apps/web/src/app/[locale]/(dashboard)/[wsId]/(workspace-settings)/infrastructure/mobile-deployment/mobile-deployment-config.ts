@@ -1,7 +1,7 @@
 import type {
   MobileDeploymentFileKind,
   MobileDeploymentScalarName,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/mobile';
 
 export {
   MOBILE_DEPLOYMENT_FIELD_OPTIONS,

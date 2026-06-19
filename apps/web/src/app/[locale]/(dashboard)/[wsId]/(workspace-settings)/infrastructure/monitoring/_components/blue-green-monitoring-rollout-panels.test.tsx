@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { act, render, screen } from '@testing-library/react';
-import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { describe, expect, it, vi } from 'vitest';
 import type { BlueGreenMonitoringDeploymentRollup } from './blue-green-monitoring-deployments';
 import { RolloutStagePanel } from './blue-green-monitoring-rollout-panels';

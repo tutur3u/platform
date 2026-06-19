@@ -6,7 +6,7 @@ import type {
   InfrastructureStressTestSnapshot,
   InfrastructureStressTestStatus,
   InfrastructureStressTestSummary,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   ensureLogDrainSchema,

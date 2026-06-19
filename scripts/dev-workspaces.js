@@ -49,6 +49,10 @@ const DEV_TARGETS = Object.freeze({
     apps: ['finance', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
+  infra: {
+    apps: ['infra', 'web'],
+    shared: ['@tuturuuu/types', '@tuturuuu/internal-api'],
+  },
   hive: {
     apps: ['hive-realtime', 'hive', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],

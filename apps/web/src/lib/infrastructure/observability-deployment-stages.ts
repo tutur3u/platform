@@ -3,7 +3,7 @@ import type {
   BlueGreenDeploymentTarget,
   BlueGreenMonitoringDeployment,
   ObservabilityDeployment,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 export interface ObservabilitySupportBuildStats {
   supportBuildCacheHits: number;

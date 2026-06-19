@@ -12,7 +12,7 @@ import {
   SquareStack,
   TriangleAlert,
 } from '@tuturuuu/icons';
-import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';

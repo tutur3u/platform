@@ -1,6 +1,6 @@
 'use client';
 
-import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure';
+import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure/ai';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 

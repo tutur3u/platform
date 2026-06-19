@@ -82,6 +82,46 @@
       "import": "./dist/infrastructure.js",
       "require": "./dist/infrastructure.js"
     },
+    "./infrastructure/abuse": {
+      "types": "./dist/infrastructure/abuse.d.ts",
+      "import": "./dist/infrastructure/abuse.js",
+      "require": "./dist/infrastructure/abuse.js"
+    },
+    "./infrastructure/ai": {
+      "types": "./dist/infrastructure/ai.d.ts",
+      "import": "./dist/infrastructure/ai.js",
+      "require": "./dist/infrastructure/ai.js"
+    },
+    "./infrastructure/apps": {
+      "types": "./dist/infrastructure/apps.d.ts",
+      "import": "./dist/infrastructure/apps.js",
+      "require": "./dist/infrastructure/apps.js"
+    },
+    "./infrastructure/github-bot": {
+      "types": "./dist/infrastructure/github-bot.d.ts",
+      "import": "./dist/infrastructure/github-bot.js",
+      "require": "./dist/infrastructure/github-bot.js"
+    },
+    "./infrastructure/mobile": {
+      "types": "./dist/infrastructure/mobile.d.ts",
+      "import": "./dist/infrastructure/mobile.js",
+      "require": "./dist/infrastructure/mobile.js"
+    },
+    "./infrastructure/monitoring": {
+      "types": "./dist/infrastructure/monitoring.d.ts",
+      "import": "./dist/infrastructure/monitoring.js",
+      "require": "./dist/infrastructure/monitoring.js"
+    },
+    "./infrastructure/types": {
+      "types": "./dist/infrastructure/types.d.ts",
+      "import": "./dist/infrastructure/types.js",
+      "require": "./dist/infrastructure/types.js"
+    },
+    "./infrastructure/workspace": {
+      "types": "./dist/infrastructure/workspace.d.ts",
+      "import": "./dist/infrastructure/workspace.js",
+      "require": "./dist/infrastructure/workspace.js"
+    },
     "./inventory": {
       "types": "./dist/inventory.d.ts",
       "import": "./dist/inventory.js",

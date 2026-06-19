@@ -5,7 +5,7 @@ import { ChevronDown, Loader2, Save, ServerCog } from '@tuturuuu/icons';
 import {
   type BlueGreenMonitoringSnapshot,
   updateBlueGreenDockerRecoverySettings,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,

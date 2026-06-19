@@ -1,7 +1,7 @@
 'use client';
 
 import { Bot, Cable, Eye, EyeOff, RotateCcw, Trash2 } from '@tuturuuu/icons';
-import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure';
+import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure/ai';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

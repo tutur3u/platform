@@ -1,0 +1,32 @@
+{
+  "infra": {
+    "ai": {
+      "description": "Manage gateway models, whitelists, agents, and integration credentials from the existing web control plane.",
+      "title": "AI Operations"
+    },
+    "appCoordination": {
+      "description": "Review app-session policy and cross-app coordination settings.",
+      "title": "App Coordination"
+    },
+    "description": "Dedicated satellite surface for platform infrastructure. Protected API routes still proxy to the web app during the first split phase.",
+    "externalApps": {
+      "description": "Manage registered external apps, origins, scopes, and issued secrets.",
+      "title": "External Apps"
+    },
+    "githubBot": {
+      "description": "Configure the GitHub app, watcher clients, and auto-pickup credentials.",
+      "title": "GitHub Bot"
+    },
+    "monitoring": {
+      "description": "Open blue-green deployments, cron health, observability, projects, and stress-test tools.",
+      "title": "Monitoring"
+    },
+    "mobile": {
+      "description": "Control mobile deployment secrets, release policy, and push-notification tests.",
+      "title": "Mobile Deployment"
+    },
+    "openInWeb": "Open in web",
+    "phaseLabel": "Phase 1 shell",
+    "title": "Infrastructure"
+  }
+}

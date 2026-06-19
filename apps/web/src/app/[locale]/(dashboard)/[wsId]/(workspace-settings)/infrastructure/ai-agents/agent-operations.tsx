@@ -1,7 +1,7 @@
 'use client';
 
 import { Copy, FlaskConical, Pause, Play, RotateCw } from '@tuturuuu/icons';
-import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure';
+import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure/ai';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';

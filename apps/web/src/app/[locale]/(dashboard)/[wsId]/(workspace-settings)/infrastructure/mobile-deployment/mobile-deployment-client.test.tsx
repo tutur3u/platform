@@ -21,10 +21,10 @@ const mocks = vi.hoisted(() => ({
   uploadMobileDeploymentFileResource: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', async () => {
+vi.mock('@tuturuuu/internal-api/infrastructure/mobile', async () => {
   const actual = await vi.importActual<
-    typeof import('@tuturuuu/internal-api/infrastructure')
-  >('@tuturuuu/internal-api/infrastructure');
+    typeof import('@tuturuuu/internal-api/infrastructure/mobile')
+  >('@tuturuuu/internal-api/infrastructure/mobile');
 
   return {
     ...actual,

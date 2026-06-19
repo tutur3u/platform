@@ -49,7 +49,7 @@ import {
   type UpdateInfrastructureProjectPayload,
   updateCronMonitoringControl,
   updateInfrastructureProject,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

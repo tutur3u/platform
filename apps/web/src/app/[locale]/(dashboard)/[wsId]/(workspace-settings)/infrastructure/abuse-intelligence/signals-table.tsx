@@ -1,6 +1,6 @@
 'use client';
 
-import type { AbuseActivitySignal } from '@tuturuuu/internal-api/infrastructure';
+import type { AbuseActivitySignal } from '@tuturuuu/internal-api/infrastructure/abuse';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Table,

@@ -18,11 +18,11 @@ import type {
   BlueGreenMonitoringDeployment,
   BlueGreenMonitoringSnapshot,
   ObservabilityDeployment,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import {
   clearBlueGreenDeploymentPin,
   requestBlueGreenDeploymentRevert,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

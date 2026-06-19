@@ -1,6 +1,6 @@
 'use client';
 
-import { createAIWhitelistEmail } from '@tuturuuu/internal-api/infrastructure';
+import { createAIWhitelistEmail } from '@tuturuuu/internal-api/infrastructure/ai';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import WhitelistEmailForm from './form';

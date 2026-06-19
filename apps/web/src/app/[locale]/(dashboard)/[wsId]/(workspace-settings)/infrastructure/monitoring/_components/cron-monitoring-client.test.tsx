@@ -6,7 +6,7 @@ import { render, screen } from '@testing-library/react';
 import type {
   CronExecutionRecord,
   CronMonitoringSnapshot,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CronMonitoringClient } from './cron-monitoring-client';
 
@@ -32,18 +32,21 @@ const mocks = vi.hoisted(() => ({
   updateCronMonitoringControl: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import('@tuturuuu/internal-api/infrastructure')
-    >();
+vi.mock(
+  '@tuturuuu/internal-api/infrastructure/monitoring',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@tuturuuu/internal-api/infrastructure/monitoring')
+      >();
 
-  return {
-    ...actual,
-    queueCronRun: mocks.queueCronRun,
-    updateCronMonitoringControl: mocks.updateCronMonitoringControl,
-  };
-});
+    return {
+      ...actual,
+      queueCronRun: mocks.queueCronRun,
+      updateCronMonitoringControl: mocks.updateCronMonitoringControl,
+    };
+  }
+);
 
 vi.mock('./blue-green-monitoring-query-hooks', () => ({
   useCronMonitoringExecutionArchive: () => mocks.archive,

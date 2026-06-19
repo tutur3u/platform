@@ -1,6 +1,6 @@
 'use client';
 
-import type { ObservabilityResourceBucket } from '@tuturuuu/internal-api/infrastructure';
+import type { ObservabilityResourceBucket } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import {
   ChartContainer,
   ChartTooltip,

@@ -20,7 +20,7 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
+vi.mock('@tuturuuu/internal-api/infrastructure/ai', () => ({
   abortAiAgentZaloPersonalQrLogin: vi.fn(),
   deployAiAgentChannel: vi.fn(),
   getAiAgentZaloPersonalQrLoginStatus: vi.fn(),

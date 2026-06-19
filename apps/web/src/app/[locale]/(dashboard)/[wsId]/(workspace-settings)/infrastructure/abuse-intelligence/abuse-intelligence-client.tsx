@@ -7,7 +7,7 @@ import {
   createAbuseTrustOverride,
   getAbuseIntelligenceSnapshot,
   revokeAbuseTrustOverride,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/abuse';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';

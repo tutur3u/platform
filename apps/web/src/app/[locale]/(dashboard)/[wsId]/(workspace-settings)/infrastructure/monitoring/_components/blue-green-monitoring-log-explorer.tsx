@@ -10,7 +10,7 @@ import {
 import type {
   BlueGreenMonitoringDeployment,
   BlueGreenMonitoringWatcherLog,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';

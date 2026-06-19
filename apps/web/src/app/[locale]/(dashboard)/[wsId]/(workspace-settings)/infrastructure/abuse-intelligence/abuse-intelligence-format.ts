@@ -1,7 +1,7 @@
 import type {
   AbuseRiskTier,
   AbuseSignalType,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/abuse';
 
 export function getTierTone(tier: AbuseRiskTier | string) {
   switch (tier) {

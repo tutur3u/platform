@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
-import { updateAIWhitelistDomain } from '@tuturuuu/internal-api/infrastructure';
+import { updateAIWhitelistDomain } from '@tuturuuu/internal-api/infrastructure/ai';
 import type { AIWhitelistDomain } from '@tuturuuu/types';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';

@@ -3,7 +3,7 @@
 import type {
   BlueGreenMonitoringPeriodMetric,
   BlueGreenMonitoringSnapshot,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import {
   type ChartConfig,
   ChartContainer,

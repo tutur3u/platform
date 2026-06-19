@@ -1,4 +1,4 @@
-import type { BlueGreenMonitoringRequestLog } from '@tuturuuu/internal-api/infrastructure';
+import type { BlueGreenMonitoringRequestLog } from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 export interface ParsedMonitoringRequestPath {
   isServerComponentRequest: boolean;

@@ -6,7 +6,7 @@ import type {
   InfrastructureStressTestProfileId,
   InfrastructureStressTestRun,
   InfrastructureStressTestTarget,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
