@@ -1,7 +1,19 @@
 'use client';
 
 import type { JSONContent } from '@tiptap/react';
-import { CalendarPlus, File, Trash2, Upload } from '@tuturuuu/icons';
+import {
+  CalendarDays,
+  CalendarPlus,
+  Clock,
+  File,
+  FileText,
+  Globe,
+  Repeat,
+  Tags,
+  Trash2,
+  Upload,
+  Users,
+} from '@tuturuuu/icons';
 import type {
   CreateWorkspaceUserGroupSessionPayload,
   UpdateWorkspaceUserGroupSessionPayload,
@@ -16,6 +28,7 @@ import {
   FileUploader,
   type StatedFile,
 } from '@tuturuuu/ui/custom/file-uploader';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -37,9 +50,18 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMessages, useTranslations } from 'next-intl';
+import {
+  type ComponentProps,
+  type ComponentType,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import '@/lib/dayjs-setup';
 import { parseCsv, SESSION_EDITOR_DAYS } from './session-editor-utils';
 import {
@@ -47,6 +69,7 @@ import {
   DEFAULT_SCHEDULE_TIMEZONE,
   localDateTimeParts,
 } from './session-time-utils';
+import { SessionTimezoneCombobox } from './session-timezone-combobox';
 
 type SubmitPayload =
   | CreateWorkspaceUserGroupSessionPayload
@@ -61,6 +84,63 @@ const EMPTY_EDITOR_DOC: JSONContent = {
   type: 'doc',
   content: [{ type: 'paragraph' }],
 };
+
+type FieldIcon = ComponentType<{ className?: string }>;
+
+const editorScheduleMessageFallbacks = {
+  fix_recurring_link: 'Fix recurring link',
+  fix_recurring_link_description:
+    'Attach this detached session back to a recurring schedule, or convert it into a weekly schedule when no match exists.',
+} as const;
+
+type EditorScheduleMessageKey = keyof typeof editorScheduleMessageFallbacks;
+
+function readEditorScheduleMessage(
+  messages: unknown,
+  key: EditorScheduleMessageKey
+) {
+  if (messages && typeof messages === 'object') {
+    const namespace = (messages as Record<string, unknown>)[
+      'ws-user-group-schedule'
+    ];
+    if (namespace && typeof namespace === 'object') {
+      const value = (namespace as Record<string, unknown>)[key];
+      if (typeof value === 'string') return value;
+    }
+  }
+
+  return editorScheduleMessageFallbacks[key];
+}
+
+function FieldLabel({
+  children,
+  htmlFor,
+  icon: Icon,
+}: {
+  children: ReactNode;
+  htmlFor?: string;
+  icon: FieldIcon;
+}) {
+  return (
+    <Label className="flex items-center gap-2" htmlFor={htmlFor}>
+      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      {children}
+    </Label>
+  );
+}
+
+function IconInput({
+  className,
+  icon: Icon,
+  ...props
+}: ComponentProps<typeof Input> & { icon: FieldIcon }) {
+  return (
+    <div className="relative">
+      <Icon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input className={cn('pl-9', className)} {...props} />
+    </div>
+  );
+}
 
 function textToEditorDoc(text: string | null | undefined): JSONContent | null {
   const trimmed = text?.trim();
@@ -107,6 +187,22 @@ function editorDocToText(value: JSONContent | null | undefined): string {
     .trim();
 }
 
+function pickerDateFromParts(
+  date: string,
+  time: string,
+  timezone: string
+): Date {
+  return dayjs.tz(`${date} ${time}`, 'YYYY-MM-DD HH:mm', timezone).toDate();
+}
+
+function pickerPartsFromDate(value: Date, timezone: string) {
+  const zoned = dayjs(value).tz(timezone);
+  return {
+    date: zoned.format('YYYY-MM-DD'),
+    time: zoned.format('HH:mm'),
+  };
+}
+
 interface SessionEditorDialogProps {
   canChooseGroup: boolean;
   defaultEndsAt?: string;
@@ -115,10 +211,12 @@ interface SessionEditorDialogProps {
   groups: WorkspaceUserGroupScheduleGroup[];
   isPending?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onReconcile?: (session: WorkspaceUserGroupSession) => Promise<void> | void;
   onSubmit: (payload: SubmitPayload) => Promise<void> | void;
   open?: boolean;
+  reconcilePending?: boolean;
   session?: WorkspaceUserGroupSession | null;
-  trigger?: React.ReactNode;
+  trigger?: ReactNode;
   wsId?: string;
 }
 
@@ -130,14 +228,17 @@ export function SessionEditorDialog({
   groups,
   isPending,
   onOpenChange,
+  onReconcile,
   onSubmit,
   open: controlledOpen,
+  reconcilePending,
   session,
   trigger,
   wsId,
 }: SessionEditorDialogProps) {
   const t = useTranslations('ws-user-group-schedule');
   const commonT = useTranslations('common');
+  const messages = useMessages();
   const isEditing = !!session;
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
@@ -146,8 +247,8 @@ export function SessionEditorDialog({
     onOpenChange?.(value);
   };
   const [groupId, setGroupId] = useState(defaultGroupId ?? groups[0]?.id ?? '');
-  const [title, setTitle] = useState('');
   const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [endDate, setEndDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [startTime, setStartTime] = useState('19:00');
   const [endTime, setEndTime] = useState('20:30');
   const [timezone, setTimezone] = useState(DEFAULT_SCHEDULE_TIMEZONE);
@@ -175,8 +276,8 @@ export function SessionEditorDialog({
       const parts = localDateTimeParts(session.startsAt, session.startTimezone);
       const endParts = localDateTimeParts(session.endsAt, session.endTimezone);
       setGroupId(session.groupId);
-      setTitle(session.title ?? '');
       setDate(parts.date);
+      setEndDate(endParts.date);
       setStartTime(parts.time);
       setEndTime(endParts.time);
       setTimezone(session.startTimezone || DEFAULT_SCHEDULE_TIMEZONE);
@@ -206,8 +307,9 @@ export function SessionEditorDialog({
       ? localDateTimeParts(defaultEndsAt, DEFAULT_SCHEDULE_TIMEZONE)
       : null;
     setGroupId(defaultGroupId ?? groups[0]?.id ?? '');
-    setTitle('');
-    setDate(defaultStartParts?.date ?? today.format('YYYY-MM-DD'));
+    const nextDate = defaultStartParts?.date ?? today.format('YYYY-MM-DD');
+    setDate(nextDate);
+    setEndDate(defaultEndParts?.date ?? nextDate);
     setStartTime(defaultStartParts?.time ?? '19:00');
     setEndTime(defaultEndParts?.time ?? '20:30');
     setTimezone(DEFAULT_SCHEDULE_TIMEZONE);
@@ -227,6 +329,17 @@ export function SessionEditorDialog({
     () => groups.find((group) => group.id === groupId),
     [groupId, groups]
   );
+  const startDateTime = useMemo(
+    () => pickerDateFromParts(date, startTime, timezone),
+    [date, startTime, timezone]
+  );
+  const endDateTime = useMemo(
+    () => pickerDateFromParts(endDate, endTime, timezone),
+    [endDate, endTime, timezone]
+  );
+  const canFixRecurringLink = isEditing && !!session && !session.seriesId;
+  const scheduleMessage = (key: EditorScheduleMessageKey) =>
+    readEditorScheduleMessage(messages, key);
 
   const handleUpload = async (files: StatedFile[]) => {
     if (!wsId || !groupId || files.length === 0) return;
@@ -260,7 +373,7 @@ export function SessionEditorDialog({
 
   const handleSubmit = async () => {
     const startsAt = buildZonedIso(date, startTime, timezone);
-    let endsAt = buildZonedIso(date, endTime, timezone);
+    let endsAt = buildZonedIso(endDate, endTime, timezone);
     if (!dayjs(endsAt).isAfter(dayjs(startsAt))) {
       endsAt = dayjs(endsAt).add(1, 'day').toISOString();
     }
@@ -284,7 +397,7 @@ export function SessionEditorDialog({
       startTimezone: timezone,
       startsAt,
       tagNames: parseCsv(tagNames),
-      title: title.trim() || selectedGroup?.name || null,
+      title: selectedGroup?.name ?? null,
     };
 
     if (isEditing) {
@@ -339,11 +452,12 @@ export function SessionEditorDialog({
 
           <TabsContent value="details" className="mt-0">
             <div className="grid gap-4 md:grid-cols-2">
-              {canChooseGroup && !isEditing && (
+              {canChooseGroup && !isEditing ? (
                 <div className="space-y-2 md:col-span-2">
-                  <Label>{t('group')}</Label>
+                  <FieldLabel icon={Users}>{t('group')}</FieldLabel>
                   <Select value={groupId} onValueChange={setGroupId}>
                     <SelectTrigger>
+                      <Users className="h-4 w-4 text-muted-foreground" />
                       <SelectValue placeholder={t('group')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -355,55 +469,69 @@ export function SessionEditorDialog({
                     </SelectContent>
                   </Select>
                 </div>
+              ) : (
+                <div className="space-y-2 md:col-span-2">
+                  <FieldLabel icon={Users}>{t('group')}</FieldLabel>
+                  <div className="flex h-10 items-center gap-2 rounded-md border bg-muted/30 px-3 text-sm">
+                    <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate font-medium">
+                      {selectedGroup?.name ?? t('untitled_session')}
+                    </span>
+                  </div>
+                </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="session-title">{t('session_title')}</Label>
-                <Input
-                  id="session-title"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder={selectedGroup?.name ?? t('session_title')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="session-timezone">{t('timezone')}</Label>
-                <Input
-                  id="session-timezone"
-                  value={timezone}
-                  onChange={(event) => setTimezone(event.target.value)}
+                <FieldLabel icon={Globe}>{t('timezone')}</FieldLabel>
+                <SessionTimezoneCombobox
+                  ariaLabel={t('timezone')}
+                  className="h-10 w-full"
+                  emptyLabel={t('no_timezones_found')}
+                  leadingIcon={<Globe className="h-4 w-4" />}
                   placeholder={DEFAULT_SCHEDULE_TIMEZONE}
+                  searchPlaceholder={t('search_timezone')}
+                  value={timezone}
+                  onValueChange={setTimezone}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="session-date">{t('session_date')}</Label>
-                <Input
-                  id="session-date"
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="session-start">{t('start_time')}</Label>
-                  <Input
-                    id="session-start"
-                    type="time"
-                    value={startTime}
-                    onChange={(event) => setStartTime(event.target.value)}
+                  <FieldLabel icon={Clock}>{t('start_time')}</FieldLabel>
+                  <DateTimePicker
+                    allowClear={false}
+                    date={startDateTime}
+                    preferences={{
+                      timeFormat: '24h',
+                      timezone,
+                      weekStartsOn: 1,
+                    }}
+                    setDate={(value) => {
+                      if (!value) return;
+                      const parts = pickerPartsFromDate(value, timezone);
+                      setDate(parts.date);
+                      setStartTime(parts.time);
+                    }}
+                    showTimeSelect
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="session-end">{t('end_time')}</Label>
-                  <Input
-                    id="session-end"
-                    type="time"
-                    value={endTime}
-                    onChange={(event) => setEndTime(event.target.value)}
+                  <FieldLabel icon={Clock}>{t('end_time')}</FieldLabel>
+                  <DateTimePicker
+                    allowClear={false}
+                    date={endDateTime}
+                    preferences={{
+                      timeFormat: '24h',
+                      timezone,
+                      weekStartsOn: 1,
+                    }}
+                    setDate={(value) => {
+                      if (!value) return;
+                      const parts = pickerPartsFromDate(value, timezone);
+                      setEndDate(parts.date);
+                      setEndTime(parts.time);
+                    }}
+                    showTimeSelect
                   />
                 </div>
               </div>
@@ -411,6 +539,7 @@ export function SessionEditorDialog({
               {!isEditing && (
                 <div className="space-y-3 rounded-md border p-3 md:col-span-2">
                   <label className="flex items-center gap-2 text-sm">
+                    <Repeat className="h-4 w-4 text-muted-foreground" />
                     <Checkbox
                       checked={repeat}
                       onCheckedChange={(v) => setRepeat(v === true)}
@@ -444,8 +573,11 @@ export function SessionEditorDialog({
                         ))}
                       </div>
                       <div className="space-y-2">
-                        <Label>{t('interval_weeks')}</Label>
-                        <Input
+                        <FieldLabel icon={Repeat}>
+                          {t('interval_weeks')}
+                        </FieldLabel>
+                        <IconInput
+                          icon={Repeat}
                           min={1}
                           max={52}
                           type="number"
@@ -456,11 +588,28 @@ export function SessionEditorDialog({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>{t('until_date')}</Label>
-                        <Input
-                          type="date"
-                          value={untilDate}
-                          onChange={(event) => setUntilDate(event.target.value)}
+                        <FieldLabel icon={CalendarDays}>
+                          {t('until_date')}
+                        </FieldLabel>
+                        <DateTimePicker
+                          allowClear={false}
+                          date={pickerDateFromParts(
+                            untilDate || date,
+                            '00:00',
+                            timezone
+                          )}
+                          preferences={{
+                            timeFormat: '24h',
+                            timezone,
+                            weekStartsOn: 1,
+                          }}
+                          setDate={(value) => {
+                            if (!value) return;
+                            setUntilDate(
+                              dayjs(value).tz(timezone).format('YYYY-MM-DD')
+                            );
+                          }}
+                          showTimeSelect={false}
                         />
                       </div>
                     </div>
@@ -470,7 +619,7 @@ export function SessionEditorDialog({
 
               {isEditing && session?.seriesId && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label>{t('edit_scope')}</Label>
+                  <FieldLabel icon={Repeat}>{t('edit_scope')}</FieldLabel>
                   <Select
                     value={scope}
                     onValueChange={(value) =>
@@ -478,6 +627,7 @@ export function SessionEditorDialog({
                     }
                   >
                     <SelectTrigger>
+                      <Repeat className="h-4 w-4 text-muted-foreground" />
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -493,20 +643,52 @@ export function SessionEditorDialog({
               )}
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="session-tags">{t('tags')}</Label>
-                <Input
+                <FieldLabel htmlFor="session-tags" icon={Tags}>
+                  {t('tags')}
+                </FieldLabel>
+                <IconInput
                   id="session-tags"
+                  icon={Tags}
                   value={tagNames}
                   onChange={(event) => setTagNames(event.target.value)}
                   placeholder={t('tags_placeholder')}
                 />
               </div>
+
+              {canFixRecurringLink && onReconcile && (
+                <div className="flex flex-col gap-3 rounded-md border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between md:col-span-2">
+                  <div className="flex min-w-0 gap-3">
+                    <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">
+                        {scheduleMessage('fix_recurring_link')}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {scheduleMessage('fix_recurring_link_description')}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    className="shrink-0"
+                    disabled={reconcilePending || isPending}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (session) void onReconcile(session);
+                    }}
+                  >
+                    <Repeat className="h-4 w-4" />
+                    {scheduleMessage('fix_recurring_link')}
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="description" className="mt-0">
             <div className="space-y-2">
-              <Label>{t('description_tab')}</Label>
+              <FieldLabel icon={FileText}>{t('description_tab')}</FieldLabel>
               <RichTextEditor
                 content={descriptionJson ?? EMPTY_EDITOR_DOC}
                 flushPendingRef={descriptionFlushRef}
@@ -517,7 +699,7 @@ export function SessionEditorDialog({
                 onImmediateChange={(content) => {
                   setDescriptionJson(content);
                 }}
-                titlePlaceholder={t('session_title')}
+                titlePlaceholder={selectedGroup?.name ?? t('untitled_session')}
                 writePlaceholder={t('description_placeholder')}
                 workspaceId={wsId}
               />

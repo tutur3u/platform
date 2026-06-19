@@ -165,6 +165,9 @@ const CalendarContext = createContext<{
   setHideNonPreviewEvents: (hide: boolean) => void;
   // UX: allow callers (e.g. create button) to influence default tab for *new* events.
   defaultNewEventTab: 'manual' | 'ai';
+  disableBuiltInEventUi: boolean;
+  preservePastEventOpacity: boolean;
+  renderEventContextMenu?: (event: CalendarEvent) => ReactNode;
   readOnly: boolean;
 }>({
   getEvent: () => undefined,
@@ -218,6 +221,9 @@ const CalendarContext = createContext<{
   hideNonPreviewEvents: false,
   setHideNonPreviewEvents: () => undefined,
   defaultNewEventTab: 'manual',
+  disableBuiltInEventUi: false,
+  preservePastEventOpacity: false,
+  renderEventContextMenu: undefined,
   readOnly: false,
 });
 
@@ -232,6 +238,8 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
 
 export type CalendarEventAdapter = {
   disableBuiltInEventUi?: boolean;
+  preservePastEventOpacity?: boolean;
+  renderContextMenu?: (event: CalendarEvent) => ReactNode;
   onCreate?: (
     event: Omit<CalendarEvent, 'id'>
   ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
@@ -1634,6 +1642,9 @@ export const CalendarProvider = ({
     hideNonPreviewEvents,
     setHideNonPreviewEvents,
     defaultNewEventTab,
+    disableBuiltInEventUi: eventAdapter?.disableBuiltInEventUi ?? false,
+    preservePastEventOpacity: eventAdapter?.preservePastEventOpacity ?? false,
+    renderEventContextMenu: eventAdapter?.renderContextMenu,
     readOnly,
   };
 

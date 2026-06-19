@@ -580,7 +580,7 @@ export const CalendarContent = ({
   return (
     <div
       className={cn(
-        'grid h-full w-full',
+        'grid h-full min-h-0 w-full',
         view === 'month' || view === 'year'
           ? 'grid-rows-[auto_1fr]'
           : 'grid-rows-[auto_auto_1fr]'
@@ -623,7 +623,7 @@ export const CalendarContent = ({
 
       <div
         className={cn(
-          'scrollbar-none relative flex-1 overflow-auto rounded-lg focus:outline-none',
+          'scrollbar-none relative min-h-0 flex-1 overflow-auto rounded-lg focus:outline-none',
           view === 'agenda' ||
             view === 'month' ||
             view === 'year' ||

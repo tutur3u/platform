@@ -12,10 +12,16 @@ vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
     eventAdapter,
   }: {
     children: ReactNode;
-    eventAdapter?: { disableBuiltInEventUi?: boolean };
+    eventAdapter?: {
+      disableBuiltInEventUi?: boolean;
+      preservePastEventOpacity?: boolean;
+    };
   }) => (
     <div
       data-adapter={eventAdapter ? 'true' : 'false'}
+      data-preserve-past-opacity={
+        eventAdapter?.preservePastEventOpacity ? 'true' : 'false'
+      }
       data-testid="calendar-provider"
     >
       {children}
@@ -117,7 +123,10 @@ describe('SmartCalendar', () => {
         {...baseProps}
         workspace={{ id: 'workspace-1' } as Workspace}
         showConnectionsManager={false}
-        eventAdapter={{ disableBuiltInEventUi: true }}
+        eventAdapter={{
+          disableBuiltInEventUi: true,
+          preservePastEventOpacity: true,
+        }}
         externalEvents={[
           {
             id: 'session-1',
@@ -135,6 +144,10 @@ describe('SmartCalendar', () => {
     );
     expect(screen.getByTestId('calendar-provider')).toHaveAttribute(
       'data-adapter',
+      'true'
+    );
+    expect(screen.getByTestId('calendar-provider')).toHaveAttribute(
+      'data-preserve-past-opacity',
       'true'
     );
     expect(screen.getByTestId('calendar-content')).toHaveAttribute(

@@ -34,6 +34,7 @@ export const metadata: Metadata = {
 
 interface SearchParams extends UserGroupActivityLogSearchParams {
   q?: string;
+  month?: string;
   page?: string;
   pageSize?: string;
   excludedGroups?: string | string[];
@@ -109,6 +110,7 @@ export default async function UserGroupDetailsPage({
                   wsId={wsId}
                   groupId={groupId}
                   canUpdateUserGroups={canUpdateUserGroups}
+                  month={sp.month}
                 />
               </Suspense>
 

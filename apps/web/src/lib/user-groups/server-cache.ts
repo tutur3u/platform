@@ -1,6 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import dayjs from 'dayjs';
 import { cache } from 'react';
+import '@/lib/dayjs-setup';
 import {
   type GroupMembersPage,
   type GroupPostsPage,
@@ -10,7 +12,10 @@ import {
   getGroupPostsPage,
   type LinkedProductRow,
 } from './server-data';
-import { listUserGroupSessionDates } from './session-schedule';
+import {
+  listUserGroupSessionDates,
+  listUserGroupSessions,
+} from './session-schedule';
 
 /**
  * Request-scoped cache wrappers for the user-group overview.
@@ -57,6 +62,60 @@ export const getCachedGroupSchedule = cache(
       sessions,
       starting_date: row.starting_date ?? null,
       ending_date: row.ending_date ?? null,
+    };
+  }
+);
+
+function resolveCompactScheduleMonth(month?: string | null) {
+  if (month && /^\d{4}-\d{2}$/.test(month)) {
+    const parsed = dayjs(`${month}-01`, 'YYYY-MM-DD', true);
+    if (parsed.isValid()) return parsed.startOf('month');
+  }
+
+  return dayjs().startOf('month');
+}
+
+function getCompactScheduleRange(month?: string | null) {
+  const monthStart = resolveCompactScheduleMonth(month);
+  const weekday = monthStart.day();
+  const offset = weekday === 0 ? 6 : weekday - 1;
+  const start = monthStart.subtract(offset, 'day').startOf('day');
+  const end = start.add(41, 'day').endOf('day');
+
+  return {
+    from: start.toISOString(),
+    month: monthStart.format('YYYY-MM'),
+    to: end.toISOString(),
+  };
+}
+
+export const getCachedGroupScheduleSessions = cache(
+  async (wsId: string, groupId: string, month?: string | null) => {
+    const row = (await getCachedGroupRow(wsId, groupId)) as
+      | (UserGroup & {
+          starting_date?: string | null;
+          ending_date?: string | null;
+        })
+      | null;
+    if (!row) return null;
+
+    const range = getCompactScheduleRange(month);
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const sessions = await listUserGroupSessions({
+      from: range.from,
+      groupId,
+      includeMissing: true,
+      supabase: sbAdmin,
+      to: range.to,
+      wsId,
+    });
+
+    return {
+      ...sessions,
+      ending_date: row.ending_date ?? null,
+      month: range.month,
+      range,
+      starting_date: row.starting_date ?? null,
     };
   }
 );

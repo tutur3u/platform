@@ -77,6 +77,7 @@ export async function GET(req: Request, { params }: Params) {
   const url = new URL(req.url);
   const groupId = url.searchParams.get('groupId');
   const from = url.searchParams.get('from');
+  const includeMissing = url.searchParams.get('includeMissing') === 'true';
   const to = url.searchParams.get('to');
 
   try {
@@ -84,6 +85,7 @@ export async function GET(req: Request, { params }: Params) {
     const result = await listUserGroupSessions({
       from,
       groupId,
+      includeMissing,
       supabase,
       to,
       wsId: normalizedWsId,

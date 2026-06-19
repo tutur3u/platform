@@ -45,6 +45,20 @@ export interface WorkspaceUserGroupSession {
   title: string | null;
 }
 
+export interface WorkspaceUserGroupMissingSessionOccurrence {
+  date: string;
+  description: string | null;
+  descriptionJson: WorkspaceUserGroupSessionDescriptionJson | null;
+  endTimezone: string;
+  endsAt: string;
+  groupId: string;
+  groupName: string | null;
+  seriesId: string;
+  startTimezone: string;
+  startsAt: string;
+  title: string | null;
+}
+
 export interface WorkspaceUserGroupScheduleTag {
   color: string | null;
   id: string;
@@ -59,12 +73,14 @@ export interface WorkspaceUserGroupScheduleGroup {
 export interface ListWorkspaceUserGroupSessionsParams extends InternalApiQuery {
   from?: string;
   groupId?: string;
+  includeMissing?: boolean;
   to?: string;
 }
 
 export interface ListWorkspaceUserGroupSessionsResponse {
   data: WorkspaceUserGroupSession[];
   groups: WorkspaceUserGroupScheduleGroup[];
+  missing?: WorkspaceUserGroupMissingSessionOccurrence[];
   tags: WorkspaceUserGroupScheduleTag[];
 }
 
@@ -110,6 +126,45 @@ export interface UpdateWorkspaceUserGroupSessionPayload {
 
 export interface WorkspaceUserGroupSessionMutationResponse {
   data?: WorkspaceUserGroupSession | WorkspaceUserGroupSession[];
+  message: string;
+}
+
+export interface RepairWorkspaceUserGroupSessionOccurrencePayload {
+  date: string;
+  groupId: string;
+  seriesId: string;
+}
+
+export interface RepairWorkspaceUserGroupSessionOccurrenceResponse {
+  data?: WorkspaceUserGroupSession;
+  message: string;
+}
+
+export interface ReconcileWorkspaceUserGroupSessionResponse {
+  data?: WorkspaceUserGroupSession;
+  message: string;
+}
+
+export type WorkspaceUserGroupSessionReconciliationMode =
+  | 'convert_weekly'
+  | 'exact'
+  | 'snap'
+  | 'weekly';
+
+export interface ReconcileWorkspaceUserGroupSessionPayload {
+  mode?: WorkspaceUserGroupSessionReconciliationMode;
+}
+
+export interface WorkspaceUserGroupSessionReconciliationPreview {
+  date: string;
+  mode: WorkspaceUserGroupSessionReconciliationMode;
+  occurrence: WorkspaceUserGroupMissingSessionOccurrence;
+  seriesId: string;
+  session: WorkspaceUserGroupSession;
+}
+
+export interface PreviewWorkspaceUserGroupSessionReconciliationResponse {
+  data?: WorkspaceUserGroupSessionReconciliationPreview;
   message: string;
 }
 
@@ -166,6 +221,58 @@ export function updateWorkspaceUserGroupSession(
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
+    }
+  );
+}
+
+export function repairWorkspaceUserGroupSessionOccurrence(
+  workspaceId: string,
+  payload: RepairWorkspaceUserGroupSessionOccurrencePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<RepairWorkspaceUserGroupSessionOccurrenceResponse>(
+    `${basePath(workspaceId)}/occurrences`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export function reconcileWorkspaceUserGroupSession(
+  workspaceId: string,
+  sessionId: string,
+  payload: ReconcileWorkspaceUserGroupSessionPayload = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<ReconcileWorkspaceUserGroupSessionResponse>(
+    `${basePath(workspaceId)}/${encodePathSegment(sessionId)}/reconcile`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export function previewWorkspaceUserGroupSessionReconciliation(
+  workspaceId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<PreviewWorkspaceUserGroupSessionReconciliationResponse>(
+    `${basePath(workspaceId)}/${encodePathSegment(sessionId)}/reconcile`,
+    {
+      cache: 'no-store',
     }
   );
 }

@@ -2,7 +2,7 @@ import {
   getCachedGroupLinkedProducts,
   getCachedGroupMembersPage,
   getCachedGroupPostsPage,
-  getCachedGroupSchedule,
+  getCachedGroupScheduleSessions,
 } from '@/lib/user-groups/server-cache';
 import { getGroupStorageFiles } from '@/lib/user-groups/server-storage';
 import type { GroupMember } from '../group-member-card';
@@ -55,18 +55,21 @@ export async function ScheduleCardServer({
   wsId,
   groupId,
   canUpdateUserGroups,
+  month,
 }: {
   wsId: string;
   groupId: string;
   canUpdateUserGroups: boolean;
+  month?: string | null;
 }) {
-  const schedule = await getCachedGroupSchedule(wsId, groupId);
+  const schedule = await getCachedGroupScheduleSessions(wsId, groupId, month);
 
   return (
     <GroupSchedule
       wsId={wsId}
       groupId={groupId}
       canUpdateUserGroups={canUpdateUserGroups}
+      initialMonth={schedule?.month ?? month ?? undefined}
       initialSchedule={schedule}
     />
   );

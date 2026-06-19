@@ -255,6 +255,186 @@ test.describe('User group session calendar', () => {
     }
   });
 
+  test('auto-reconciles stale recurring metadata in the compact schedule card', async ({
+    page,
+    request,
+  }) => {
+    const groupId = randomUUID();
+    const seriesId = randomUUID();
+    const conflictingSessionId = randomUUID();
+    const staleSessionId = randomUUID();
+    const targetDate = formatDate(
+      new Date(getWeekStart(new Date()).getTime() + 2 * 24 * 60 * 60 * 1000)
+    );
+    const staleRecurrenceDate = formatDate(
+      new Date(
+        new Date(`${targetDate}T00:00:00.000Z`).getTime() -
+          2 * 24 * 60 * 60 * 1000
+      )
+    );
+    const dayOfWeek = new Date(`${targetDate}T00:00:00.000Z`).getUTCDay();
+    const month = targetDate.slice(0, 7);
+    const dayLabel = new Intl.DateTimeFormat('en-US', {
+      day: 'numeric',
+      month: 'short',
+      weekday: 'short',
+      year: 'numeric',
+    }).format(new Date(`${targetDate}T00:00:00`));
+
+    try {
+      const groupResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_user_groups`,
+        {
+          data: {
+            id: groupId,
+            name: 'Compact reconciliation E2E',
+            ws_id: ROOT_WORKSPACE_ID,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(groupResponse.status()).toBe(201);
+
+      const seriesResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_user_group_session_series`,
+        {
+          data: {
+            days_of_week: [dayOfWeek],
+            end_time: '16:00',
+            end_timezone: 'Asia/Ho_Chi_Minh',
+            group_id: groupId,
+            id: seriesId,
+            interval_weeks: 1,
+            start_date: targetDate,
+            start_time: '14:00',
+            start_timezone: 'Asia/Ho_Chi_Minh',
+            title: 'Testing',
+            until_date: targetDate,
+            ws_id: ROOT_WORKSPACE_ID,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(seriesResponse.status()).toBe(201);
+
+      const sessionResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_user_group_sessions`,
+        {
+          data: [
+            {
+              ends_at: `${targetDate}T09:00:00.000Z`,
+              end_timezone: 'Asia/Ho_Chi_Minh',
+              group_id: groupId,
+              id: staleSessionId,
+              recurrence_instance_date: staleRecurrenceDate,
+              series_id: seriesId,
+              starts_at: `${targetDate}T07:00:00.000Z`,
+              start_timezone: 'Asia/Ho_Chi_Minh',
+              title: 'Testing',
+              ws_id: ROOT_WORKSPACE_ID,
+            },
+            {
+              ends_at: `${staleRecurrenceDate}T09:00:00.000Z`,
+              end_timezone: 'Asia/Ho_Chi_Minh',
+              group_id: groupId,
+              id: conflictingSessionId,
+              recurrence_instance_date: targetDate,
+              series_id: seriesId,
+              starts_at: `${staleRecurrenceDate}T07:00:00.000Z`,
+              start_timezone: 'Asia/Ho_Chi_Minh',
+              title: 'Testing',
+              ws_id: ROOT_WORKSPACE_ID,
+            },
+          ],
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(sessionResponse.status()).toBe(201);
+
+      await page.goto(
+        `/${DEFAULT_LOCALE}/${ROOT_WORKSPACE_ID}/users/groups/${groupId}?month=${month}`,
+        {
+          waitUntil: 'domcontentloaded',
+        }
+      );
+
+      await expect(page.getByText('Compact reconciliation E2E')).toBeVisible({
+        timeout: 30_000,
+      });
+      await page
+        .getByRole('button', { name: `Open schedule for ${dayLabel}` })
+        .click();
+
+      await expect(page.getByText('Testing')).toBeVisible();
+      await expect(page.getByText('14:00-16:00')).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Add missing session' })
+      ).toHaveCount(0);
+
+      const reconciledResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_user_group_sessions?id=in.(${staleSessionId},${conflictingSessionId})&select=id,series_id,recurrence_instance_date,source`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+      expect(reconciledResponse.status()).toBe(200);
+      const reconciledRows = (await reconciledResponse.json()) as {
+        id: string;
+        recurrence_instance_date: string | null;
+        series_id: string | null;
+        source: string | null;
+      }[];
+      expect(reconciledRows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: staleSessionId,
+            recurrence_instance_date: targetDate,
+            series_id: seriesId,
+            source: 'series_reconciled',
+          }),
+          expect.objectContaining({
+            id: conflictingSessionId,
+            recurrence_instance_date: null,
+            series_id: seriesId,
+            source: 'series_reconciliation_pending',
+          }),
+        ])
+      );
+    } finally {
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_user_group_sessions?group_id=eq.${groupId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_user_group_session_series?id=eq.${seriesId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_user_groups?id=eq.${groupId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders(),
+        }
+      );
+    }
+  });
+
   test('keeps attendance separate for two sessions on the same date', async ({
     page,
     request,

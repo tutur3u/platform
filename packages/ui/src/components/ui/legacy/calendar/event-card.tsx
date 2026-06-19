@@ -107,6 +107,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     hoveredEventColumn,
     setHoveredEventColumn,
     affectedEventIds,
+    disableBuiltInEventUi,
+    preservePastEventOpacity,
+    renderEventContextMenu,
   } = useCalendar();
 
   // NOTE: Event filtering for hideNonPreviewEvents is handled in CalendarEventMatrix
@@ -443,7 +446,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     if (shouldBeTransparent) {
       cardEl.style.opacity = '0.05';
       cardEl.style.pointerEvents = 'none';
-    } else if (isPastEvent) {
+    } else if (isPastEvent && !preservePastEventOpacity) {
       cardEl.style.opacity = '0.5';
       cardEl.style.pointerEvents = 'all';
     } else {
@@ -467,6 +470,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     hoveredBaseEventId,
     hoveredEventColumn,
     endDate,
+    preservePastEventOpacity,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -1038,6 +1042,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // For visual effects, check if this is likely a shorter event (higher in stack)
   // Shorter events get enhanced visual treatment
   const isLikelyTopEvent = hasOverlaps && duration < 1.5; // Events < 1.5 hours likely on top
+  const customContextMenu = renderEventContextMenu?.(event);
 
   return (
     <ContextMenu>
@@ -1054,7 +1059,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
               'shadow-sm': hasOverlaps && !isDragging && !isResizing, // Subtle shadow for stacked events
               'hover:shadow-md': hasOverlaps, // Enhanced shadow on hover for stacked events
-              'opacity-50': isPastEvent && !isAffectedByPreview, // Lower opacity for past events
+              'opacity-50':
+                isPastEvent &&
+                !isAffectedByPreview &&
+                !preservePastEventOpacity, // Lower opacity for past events
               'opacity-30 grayscale transition-all duration-500':
                 isAffectedByPreview, // Dim affected events during preview
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
@@ -1164,24 +1172,26 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
 
           {/* Edit button overlay */}
-          <div
-            className={cn(
-              'absolute top-2 rounded-full p-0.5 opacity-0 shadow-sm',
-              _isHabit ? 'right-5' : 'right-2', // Offset if habit icon is shown
-              'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
-              {
-                'opacity-0!':
-                  isDragging || isResizing || updateStatus !== 'idle',
-              } // Hide during interaction or status updates
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              openModal(event._originalId || id);
-            }}
-          >
-            <Pencil className="h-3 w-3" />
-          </div>
+          {!disableBuiltInEventUi && (
+            <div
+              className={cn(
+                'absolute top-2 rounded-full p-0.5 opacity-0 shadow-sm',
+                _isHabit ? 'right-5' : 'right-2', // Offset if habit icon is shown
+                'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
+                {
+                  'opacity-0!':
+                    isDragging || isResizing || updateStatus !== 'idle',
+                } // Hide during interaction or status updates
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                openModal(event._originalId || id);
+              }}
+            >
+              <Pencil className="h-3 w-3" />
+            </div>
+          )}
 
           {/* Status indicators */}
           {updateStatus === 'syncing' && (
@@ -1311,121 +1321,124 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
         </button>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem
-          onClick={() => openModal(event._originalId || id)}
-          className="flex items-center gap-2"
-        >
-          <Edit className="h-4 w-4" />
-          <span>Edit Event</span>
-        </ContextMenuItem>
+      {customContextMenu ??
+        (!disableBuiltInEventUi && (
+          <ContextMenuContent className="w-48">
+            <ContextMenuItem
+              onClick={() => openModal(event._originalId || id)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              <span>Edit Event</span>
+            </ContextMenuItem>
 
-        <ContextMenuItem
-          onClick={handleLockToggle}
-          className="flex items-center gap-2"
-        >
-          {locked ? (
-            <>
-              <Unlock className="h-4 w-4" />
-              <span>Unlock Event</span>
-            </>
-          ) : (
-            <>
-              <Lock className="h-4 w-4" />
-              <span>Lock Event</span>
-            </>
-          )}
-        </ContextMenuItem>
+            <ContextMenuItem
+              onClick={handleLockToggle}
+              className="flex items-center gap-2"
+            >
+              {locked ? (
+                <>
+                  <Unlock className="h-4 w-4" />
+                  <span>Unlock Event</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" />
+                  <span>Lock Event</span>
+                </>
+              )}
+            </ContextMenuItem>
 
-        <ContextMenuSub>
-          <ContextMenuSubTrigger className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            <span className="text-foreground">Change Color</span>
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="grid w-56 grid-cols-2 gap-1 p-2">
-            <ContextMenuItem
-              onClick={() => handleColorChange('RED')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-red/80 bg-calendar-bg-red"></div>
-              <span>Red</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('BLUE')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-blue/80 bg-calendar-bg-blue"></div>
-              <span>Blue</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('GREEN')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-green/80 bg-calendar-bg-green"></div>
-              <span>Green</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('YELLOW')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-yellow/80 bg-calendar-bg-yellow"></div>
-              <span>Yellow</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('PURPLE')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-purple/80 bg-calendar-bg-purple"></div>
-              <span>Purple</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('PINK')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-pink/80 bg-calendar-bg-pink"></div>
-              <span>Pink</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('ORANGE')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-orange/80 bg-calendar-bg-orange"></div>
-              <span>Orange</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('INDIGO')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-indigo/80 bg-calendar-bg-indigo"></div>
-              <span>Indigo</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('CYAN')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-cyan/80 bg-calendar-bg-cyan"></div>
-              <span>Cyan</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('GRAY')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-gray/80 bg-calendar-bg-gray"></div>
-              <span>Gray</span>
-            </ContextMenuItem>
-          </ContextMenuSubContent>
-        </ContextMenuSub>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                <span className="text-foreground">Change Color</span>
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="grid w-56 grid-cols-2 gap-1 p-2">
+                <ContextMenuItem
+                  onClick={() => handleColorChange('RED')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-red/80 bg-calendar-bg-red"></div>
+                  <span>Red</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('BLUE')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-blue/80 bg-calendar-bg-blue"></div>
+                  <span>Blue</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('GREEN')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-green/80 bg-calendar-bg-green"></div>
+                  <span>Green</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('YELLOW')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-yellow/80 bg-calendar-bg-yellow"></div>
+                  <span>Yellow</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('PURPLE')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-purple/80 bg-calendar-bg-purple"></div>
+                  <span>Purple</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('PINK')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-pink/80 bg-calendar-bg-pink"></div>
+                  <span>Pink</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('ORANGE')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-orange/80 bg-calendar-bg-orange"></div>
+                  <span>Orange</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('INDIGO')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-indigo/80 bg-calendar-bg-indigo"></div>
+                  <span>Indigo</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('CYAN')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-cyan/80 bg-calendar-bg-cyan"></div>
+                  <span>Cyan</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('GRAY')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-gray/80 bg-calendar-bg-gray"></div>
+                  <span>Gray</span>
+                </ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
 
-        <ContextMenuSeparator />
+            <ContextMenuSeparator />
 
-        <ContextMenuItem
-          onClick={handleDelete}
-          className="flex items-center gap-2"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span>Delete Event</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
+            <ContextMenuItem
+              onClick={handleDelete}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete Event</span>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        ))}
     </ContextMenu>
   );
 }
