@@ -1,7 +1,9 @@
 import { Calendar, FileText, type LucideIcon } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
+import {
+  SecuritySubpageBadge as Badge,
+  SecuritySubpageCard as Card,
+} from '../security-subpage-primitives';
 
 export type Researcher = {
   accent: 'green' | 'orange';

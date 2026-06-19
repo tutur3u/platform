@@ -11,11 +11,13 @@ import {
   ShieldCheck,
   Trophy,
 } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import {
+  SecuritySubpageBadge as Badge,
+  SecuritySubpageCard as Card,
+  SecuritySubpageLinkButton,
+} from '../security-subpage-primitives';
 import {
   type ListPanel,
   type PolicyCard,
@@ -159,18 +161,21 @@ export default async function SecurityPolicyPage() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" asChild>
-                <a href="mailto:security@tuturuuu.com">
-                  <Mail className="mr-2 h-5 w-5" />
-                  {t('hero.report_cta')}
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href="/security/bug-bounty">
-                  <Trophy className="mr-2 h-5 w-5" />
-                  {t('hero.hall_cta')}
-                </a>
-              </Button>
+              <SecuritySubpageLinkButton
+                href="mailto:security@tuturuuu.com"
+                size="lg"
+              >
+                <Mail className="mr-2 h-5 w-5" />
+                {t('hero.report_cta')}
+              </SecuritySubpageLinkButton>
+              <SecuritySubpageLinkButton
+                href="/security/bug-bounty"
+                size="lg"
+                variant="outline"
+              >
+                <Trophy className="mr-2 h-5 w-5" />
+                {t('hero.hall_cta')}
+              </SecuritySubpageLinkButton>
             </div>
           </div>
 
@@ -312,18 +317,21 @@ export default async function SecurityPolicyPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" asChild>
-                  <a href="mailto:security@tuturuuu.com">
-                    <Mail className="mr-2 h-5 w-5" />
-                    {t('cta.report_cta')}
-                  </a>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <a href="/security/bug-bounty">
-                    {t('cta.hall_cta')}
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </a>
-                </Button>
+                <SecuritySubpageLinkButton
+                  href="mailto:security@tuturuuu.com"
+                  size="lg"
+                >
+                  <Mail className="mr-2 h-5 w-5" />
+                  {t('cta.report_cta')}
+                </SecuritySubpageLinkButton>
+                <SecuritySubpageLinkButton
+                  href="/security/bug-bounty"
+                  size="lg"
+                  variant="outline"
+                >
+                  {t('cta.hall_cta')}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </SecuritySubpageLinkButton>
               </div>
             </div>
           </Card>

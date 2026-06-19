@@ -302,6 +302,25 @@ describe('public shell compile graph', () => {
     }
   });
 
+  it('keeps public security subpages off shared UI primitives', () => {
+    for (const sourceText of [
+      securityPolicyPageSource,
+      securityPolicyComponentsSource,
+      securityBugBountyPageSource,
+      securityBugBountyComponentsSource,
+    ] as const) {
+      for (const modulePath of [
+        '@tuturuuu/ui/badge',
+        '@tuturuuu/ui/button',
+        '@tuturuuu/ui/card',
+      ] as const) {
+        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+      }
+
+      expect(sourceText).toContain('../security-subpage-primitives');
+    }
+  });
+
   it('keeps the public security page off shared UI primitives', () => {
     for (const modulePath of [
       '@tuturuuu/ui/badge',
