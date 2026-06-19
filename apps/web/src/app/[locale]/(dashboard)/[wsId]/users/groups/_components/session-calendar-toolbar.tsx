@@ -28,6 +28,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
 import '@/lib/dayjs-setup';
+import { QuickWeeklyScheduleDialog } from './quick-weekly-schedule-dialog';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { getWeekStart } from './session-time-utils';
 import { SessionTimezoneCombobox } from './session-timezone-combobox';
@@ -79,17 +80,28 @@ export function SessionCalendarToolbar({
 }: SessionCalendarToolbarProps) {
   const t = useTranslations('ws-user-group-schedule');
   const locale = useLocale();
-  const newSessionButton = canUpdateSchedule ? (
-    <SessionEditorDialog
-      canChooseGroup={canChooseGroup}
-      defaultGroupId={activeGroupId ?? undefined}
-      groups={groups}
-      isPending={createPending}
-      onSubmit={(payload) =>
-        onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
-      }
-      wsId={wsId}
-    />
+  const scheduleActions = canUpdateSchedule ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <QuickWeeklyScheduleDialog
+        canChooseGroup={canChooseGroup}
+        defaultGroupId={activeGroupId ?? undefined}
+        groups={groups}
+        isPending={createPending}
+        onSubmit={(payload) =>
+          onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
+        }
+      />
+      <SessionEditorDialog
+        canChooseGroup={canChooseGroup}
+        defaultGroupId={activeGroupId ?? undefined}
+        groups={groups}
+        isPending={createPending}
+        onSubmit={(payload) =>
+          onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
+        }
+        wsId={wsId}
+      />
+    </div>
   ) : null;
 
   const controls = (
@@ -201,7 +213,7 @@ export function SessionCalendarToolbar({
           <Maximize2 className="h-4 w-4" />
         )}
       </Button>
-      {fullscreen && <div className="ml-auto">{newSessionButton}</div>}
+      {fullscreen && <div className="ml-auto">{scheduleActions}</div>}
     </div>
   );
 
@@ -218,7 +230,7 @@ export function SessionCalendarToolbar({
               {t('calendar_subtitle')}
             </p>
           </div>
-          {newSessionButton}
+          {scheduleActions}
         </div>
       )}
 

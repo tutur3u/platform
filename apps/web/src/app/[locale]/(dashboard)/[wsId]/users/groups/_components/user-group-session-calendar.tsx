@@ -414,14 +414,19 @@ export function UserGroupSessionCalendar({
     mutationFn: (payload: CreateWorkspaceUserGroupSessionPayload) =>
       createWorkspaceUserGroupSession(wsId, payload),
     onError: () => toast.error(t('failed_to_save_session')),
-    onSuccess: (response) => {
+    onSuccess: (response, payload) => {
       if (response.data) {
         queryClient.setQueryData<ListWorkspaceUserGroupSessionsResponse>(
           queryKey,
           (current) => upsertSessions(current, response.data!)
         );
       }
-      void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace-user-group-sessions', wsId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['group-schedule', payload.groupId],
+      });
       toast.success(t('session_saved'));
     },
   });

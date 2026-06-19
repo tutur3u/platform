@@ -8,7 +8,6 @@ import {
 } from '@tanstack/react-query';
 import {
   CalendarDays,
-  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
@@ -30,12 +29,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import '@/lib/dayjs-setup';
 import { SessionEditorDialog } from '../_components/session-editor-dialog';
 import { SessionScopeDialog } from '../_components/session-scope-dialog';
+import { CompactScheduleActions } from './_components/compact-schedule-actions';
 import { CompactScheduleDay } from './_components/compact-schedule-day';
 import {
   buildMoveSessionPayload,
@@ -142,12 +141,15 @@ export default function GroupSchedule({
     mutationFn: (payload: CreateWorkspaceUserGroupSessionPayload) =>
       createWorkspaceUserGroupSession(wsId, payload),
     onError: () => toast.error(t('failed_to_save_session')),
-    onSuccess: (response) => {
+    onSuccess: (response, payload) => {
       if (response.data) {
         queryClient.setQueryData<CompactScheduleData>(queryKey, (current) =>
           upsertCompactScheduleSessions(current, response.data!)
         );
       }
+      void queryClient.invalidateQueries({
+        queryKey: ['group-schedule', payload.groupId],
+      });
       toast.success(t('session_saved'));
     },
     onSettled: () => {
@@ -245,12 +247,16 @@ export default function GroupSchedule({
       title={detailsT('schedule')}
       description={currentMonthDate.locale(locale).format('MMMM YYYY')}
       action={
-        <Button asChild variant="outline" size="sm">
-          <Link href={fullScheduleHref}>
-            <CalendarPlus className="h-4 w-4" />
-            {detailsT('modify_schedule')}
-          </Link>
-        </Button>
+        <CompactScheduleActions
+          canUpdateUserGroups={canUpdateUserGroups}
+          createPending={createMutation.isPending}
+          fullScheduleHref={fullScheduleHref}
+          groupId={groupId}
+          groups={groups}
+          onCreate={async (payload) => {
+            await createMutation.mutateAsync(payload);
+          }}
+        />
       }
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
