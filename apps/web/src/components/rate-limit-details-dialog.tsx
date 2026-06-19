@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy } from '@tuturuuu/icons';
+import { Copy } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

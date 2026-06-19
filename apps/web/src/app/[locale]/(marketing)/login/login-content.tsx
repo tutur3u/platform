@@ -1,6 +1,6 @@
 'use client';
 
-import { XIcon } from '@tuturuuu/icons';
+import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';

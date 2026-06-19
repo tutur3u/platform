@@ -123,9 +123,10 @@ It reports generated cache sizes, Next slow-filesystem warnings, and the
 slowest `.next/dev/trace` spans from the previous `next dev` session. It also
 flags watcher `EMFILE` errors; the web dev launcher raises the child process
 open-file limit to `65536` by default, and unusual local shells can override
-that with `TUTURUUU_DEV_MAX_OPEN_FILES`. It also defaults
-`WATCHPACK_POLLING=true` for web dev commands so native watcher descriptor
-limits do not prevent route discovery.
+that with `TUTURUUU_DEV_MAX_OPEN_FILES`. Native local dev leaves
+`WATCHPACK_POLLING` unset by default for lower watcher overhead; set
+`WATCHPACK_POLLING=true` only when a local filesystem or container workflow
+needs polling to keep route discovery reliable.
 
 ### 4. Remote Caching
 

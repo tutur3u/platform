@@ -49,9 +49,23 @@ formatting behavior, or repo-wide verification.
 - If diagnostics show `Watchpack Error (watcher): Error: EMFILE`, fix the dev
   launcher or shell open-file limit first. The default web dev wrapper raises
   the child process limit with `TUTURUUU_DEV_MAX_OPEN_FILES=65536`; set the env
-  var to another positive value or `0` to disable the wrapper behavior. The
-  same wrapper defaults `WATCHPACK_POLLING=true`; override it only when native
-  watchers are known to be stable on the local machine.
+  var to another positive value or `0` to disable the wrapper behavior. Native
+  local dev leaves `WATCHPACK_POLLING` unset by default for faster, lower-memory
+  watcher behavior; set `WATCHPACK_POLLING=true` only when a local filesystem or
+  container workflow needs polling.
+- `bun dev:web` is the lean web-only launcher by default. It skips
+  `@tuturuuu/types` and `@tuturuuu/supabase` watch builds unless the caller
+  passes `--with-shared-watchers`; use that opt-in only while editing those
+  package sources and needing live `dist` rebuilds.
+- `apps/web` does not mount React Query Devtools in the default development
+  provider. Keep it out of the always-mounted provider graph; add a temporary
+  local mount only for query-cache debugging and remove it before handoff.
+- Keep the `apps/web` public shell compile graph lean. Mobile-only menu drawers,
+  marketing footer bodies, report-problem dialogs, and authenticated-dropdown
+  only UI should stay behind dynamic imports where practical, and shell icons
+  should use `@tuturuuu/icons/lucide-static` instead of the root icon entrypoint
+  or broad `@tuturuuu/icons/lucide` barrel. Protect these split points with
+  compile-graph tests when changing shell code.
 
 ## CI And Dependency Drift
 

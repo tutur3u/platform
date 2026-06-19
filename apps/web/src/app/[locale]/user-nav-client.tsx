@@ -13,7 +13,7 @@ import {
   Terminal,
   User,
   Users,
-} from '@tuturuuu/icons/lucide';
+} from '@tuturuuu/icons/lucide-static';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';

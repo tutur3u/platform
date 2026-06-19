@@ -577,22 +577,65 @@ test('createDevPlan separates shared watchers from sequential app starts', async
   );
 });
 
+test('createDevPlan can skip shared package watchers for lean app startup', async () => {
+  const catalog = loadAppCatalog({ rootDir: repoRoot });
+  const states = await resolveAppStates(['web'], {
+    catalog,
+    checkPort: async () => false,
+    portlessListOutput: '',
+    registerAliases: false,
+    resolvePortlessUrl: getBasePortlessUrl,
+  });
+  const plan = createDevPlan('web', {
+    appStates: states,
+    catalog,
+    includeSharedWatchers: false,
+  });
+
+  assert.equal(plan.sharedCommand, null);
+  assert.deepEqual(plan.sharedFilters, []);
+  assert.deepEqual(plan.skippedSharedFilters, [
+    '@tuturuuu/types',
+    '@tuturuuu/supabase',
+  ]);
+  assert.deepEqual(
+    plan.commands.map((command) => command.label),
+    ['web']
+  );
+});
+
 test('parseArgs consumes reuse flags and forwards other Turbo args', () => {
   assert.deepEqual(parseArgs(['chat', '--force', '--parallel']), {
     dryRun: false,
     forceStart: true,
+    includeSharedWatchers: null,
     targetName: 'chat',
     turboArgs: ['--parallel'],
   });
   assert.deepEqual(parseArgs(['chat', '--no-reuse', '--dry-run']), {
     dryRun: true,
     forceStart: true,
+    includeSharedWatchers: null,
     targetName: 'chat',
     turboArgs: [],
   });
+  assert.deepEqual(parseArgs(['web', '--with-shared-watchers']), {
+    dryRun: false,
+    forceStart: false,
+    includeSharedWatchers: true,
+    targetName: 'web',
+    turboArgs: [],
+  });
+  assert.deepEqual(parseArgs(['web', '--no-shared-watchers', '--summarize']), {
+    dryRun: false,
+    forceStart: false,
+    includeSharedWatchers: false,
+    targetName: 'web',
+    turboArgs: ['--summarize'],
+  });
 });
 
-test('runDevWorkspaces dry run does not start Portless or register aliases', async () => {
+test('runDevWorkspaces web dry run skips shared package watchers by default', async () => {
   let setupCalled = false;
   const aliasCalls = [];
   const output = {
@@ -629,6 +672,37 @@ test('runDevWorkspaces dry run does not start Portless or register aliases', asy
   assert.equal(setupCalled, false);
   assert.deepEqual(aliasCalls, []);
   assert.match(output.stdout, /Starting dev:web/u);
+  assert.match(output.stdout, /Skipping shared package watchers for dev:web/u);
+  assert.doesNotMatch(output.stdout, /shared package watchers: bun/u);
+});
+
+test('runDevWorkspaces web dry run can include shared package watchers', async () => {
+  const output = {
+    stderr: '',
+    stdout: '',
+  };
+  const writeTo = (key) => ({
+    write: (value) => {
+      output[key] += value.toString();
+    },
+  });
+
+  const exitCode = await runDevWorkspaces({
+    argv: ['web', '--dry-run', '--with-shared-watchers'],
+    checkPort: async () => false,
+    getPortlessListOutputImpl: () => '',
+    setupPortless: () => {
+      throw new Error('dry run should not start Portless');
+    },
+    spawnImpl: () => {
+      throw new Error('dry run should not spawn commands');
+    },
+    stderr: writeTo('stderr'),
+    stdout: writeTo('stdout'),
+  });
+
+  assert.equal(exitCode, 0);
+  assert.match(output.stdout, /shared package watchers: bun/u);
 });
 
 test('spawnDevCommands retries Portless route-lock app startup once', async () => {

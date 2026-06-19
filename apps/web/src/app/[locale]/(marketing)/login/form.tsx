@@ -13,7 +13,7 @@ import {
   Lock,
   Mail,
   Smartphone,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide-static';
 import {
   createCrossAppReturnUrlWithInternalApi,
   createMfaMobileApprovalChallengeWithInternalApi,

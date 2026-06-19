@@ -1,6 +1,6 @@
 'use client';
 
-import { BookText } from '@tuturuuu/icons/lucide';
+import { BookText } from '@tuturuuu/icons/lucide-static';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {

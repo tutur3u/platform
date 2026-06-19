@@ -9,7 +9,6 @@ const NEXT_READY_PATTERNS = [
   /Ready in \d/u,
 ];
 const DEFAULT_DEV_MAX_OPEN_FILES = '65536';
-const DEFAULT_WATCHPACK_POLLING = 'true';
 const DEV_ENV_FILE_ORDER = [
   '.env',
   '.env.development',
@@ -142,7 +141,6 @@ function prepareCommandForOpenFilesLimit({
     env: {
       ...env,
       TUTURUUU_DEV_MAX_OPEN_FILES: requestedLimit,
-      WATCHPACK_POLLING: env.WATCHPACK_POLLING || DEFAULT_WATCHPACK_POLLING,
     },
   };
 }
@@ -243,7 +241,6 @@ if (require.main === module) {
 
 module.exports = {
   DEFAULT_DEV_MAX_OPEN_FILES,
-  DEFAULT_WATCHPACK_POLLING,
   DEV_ENV_FILE_ORDER,
   formatPortlessBanner,
   getSharedLocalEnvFilePaths,

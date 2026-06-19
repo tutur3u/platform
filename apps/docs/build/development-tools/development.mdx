@@ -132,6 +132,31 @@ cross-app auth can still use the `*.tuturuuu.localhost` URL. Pass `--force` or
 app workspaces. Force mode starts the package `dev --force` path so Portless can
 take over the matching route instead of leaving a stale static alias in place.
 
+`bun dev:web` is intentionally lean: by default it starts only `apps/web` and
+does not start the `@tuturuuu/types` or `@tuturuuu/supabase` package watch
+builds. Use this default for app-route and UI work so the local process tree
+stays small. When you are actively editing those package sources and need their
+`dist` output rebuilt live, opt in explicitly:
+
+```bash
+bun dev:web --with-shared-watchers
+```
+
+You can also pass `--no-shared-watchers` to other root app launchers when you
+want the same low-memory posture for a focused app session.
+
+`apps/web` does not mount React Query Devtools in its default development
+provider. Keep the default off for faster cold route compiles and lower
+Turbopack memory pressure; add a local, temporary devtools mount only while
+debugging query cache behavior, then remove it before committing.
+
+Keep the always-mounted public shell small. The mobile menu drawer, marketing
+footer body, report-problem dialog, and authenticated dropdown-only affordances
+should stay behind dynamic imports when possible, and shell icons should use
+`@tuturuuu/icons/lucide-static` instead of the root `@tuturuuu/icons` entrypoint.
+This prevents the public `/login` compile graph from pulling large Radix,
+footer, or full icon-package chunks into every `bun dev:web` session.
+
 `bun dev:chat` also manages the local chat realtime sidecar. It reuses
 `localhost:7817` when a sidecar is already running; otherwise it starts
 `apps/chat-realtime` so `apps/web` can proxy chat SSE traffic for `apps/chat`.
@@ -351,6 +376,15 @@ narrow package subpath imports and lazy-loaded settings panels before splitting
 an app boundary. A dedicated infrastructure app only reduces `apps/web` memory
 when infrastructure pages leave the web route graph; running `apps/web` and an
 infrastructure app together can increase total RAM.
+
+Native local dev leaves Watchpack polling off unless the environment explicitly
+sets `WATCHPACK_POLLING`. This keeps file watching lighter on macOS and Linux.
+If the diagnostic reports watcher `EMFILE` errors or route discovery stops
+updating on your machine, restart with polling enabled:
+
+```bash
+WATCHPACK_POLLING=true bun dev:web
+```
 
 If the doctor warns that apps/web is missing Redis env, configure the local SRH
 bridge and start the Redis stack in one step:

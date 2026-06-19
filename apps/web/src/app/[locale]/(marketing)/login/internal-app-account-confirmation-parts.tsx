@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCcw } from '@tuturuuu/icons';
+import { RefreshCcw } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';

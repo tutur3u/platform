@@ -2,28 +2,14 @@
 
 import {
   BookText,
-  Building,
-  Calendar,
-  CheckCircle2,
-  Factory,
   FileText,
-  GraduationCap,
-  HardHat,
   HeartHandshake,
   History,
-  Hotel,
-  MessageSquare,
   Paintbrush,
-  Pill,
   Shield,
-  Store,
   Users,
-  Utensils,
-  Wallet,
-} from '@tuturuuu/icons/lucide';
-import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+} from '@tuturuuu/icons/lucide-static';
 import type { ReactNode } from 'react';
-import { DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;
@@ -56,114 +42,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       href: '/?hash-nav=1#pricing',
       label: t('common.pricing'),
       description: '',
-    },
-  ];
-
-  const products: NavItem[] = [
-    {
-      href: DEV_MODE
-        ? getTuturuuuPortlessAppOrigin('calendar')
-        : 'https://calendar.tuturuuu.com',
-      label: t(`landing.features.apps.tuplan.title`),
-      description: t(`landing.features.apps.tuplan.description`),
-      badge: t('common.waitlist'),
-      icon: <Calendar className="h-4 w-4" />,
-    },
-    {
-      href: DEV_MODE
-        ? getTuturuuuPortlessAppOrigin('tasks')
-        : 'https://tasks.tuturuuu.com',
-      label: t(`landing.features.apps.tudo.title`),
-      description: t(`landing.features.apps.tudo.description`),
-      badge: t('common.waitlist'),
-      icon: <CheckCircle2 className="h-4 w-4" />,
-    },
-    {
-      // href: '/meet-together',
-      href: DEV_MODE
-        ? getTuturuuuPortlessAppOrigin('meet')
-        : 'https://meet.tuturuuu.com',
-      label: t(`landing.features.apps.tumeet.title`),
-      description: t(`landing.features.apps.tumeet.description`),
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      href: DEV_MODE
-        ? getTuturuuuPortlessAppOrigin('track')
-        : 'https://tuchat.com',
-      label: t(`landing.features.apps.tuchat.title`),
-      description: t(`landing.features.apps.tuchat.description`),
-      badge: t('common.coming_soon'),
-      icon: <MessageSquare className="h-4 w-4" />,
-    },
-    {
-      href: DEV_MODE
-        ? getTuturuuuPortlessAppOrigin('finance')
-        : 'https://tufinance.com',
-      label: t(`landing.features.apps.tufinance.title`),
-      description: t(`landing.features.apps.tufinance.description`),
-      badge: t('common.coming_soon'),
-      icon: <Wallet className="h-4 w-4" />,
-    },
-    {
-      href: DEV_MODE
-        ? getTuturuuuPortlessAppOrigin('nova')
-        : 'https://nova.ai.vn',
-      label: t(`landing.features.apps.nova.title`),
-      description: t(`landing.features.apps.nova.description`),
-      icon: <GraduationCap className="h-4 w-4" />,
-      external: true,
-    },
-  ];
-
-  const solutions: NavItem[] = [
-    {
-      href: '/solutions/manufacturing',
-      label: t('common.manufacturing'),
-      description: t('common.manufacturing-description'),
-      icon: <Factory className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/restaurants',
-      label: t('common.restaurants'),
-      description: t('common.restaurants-description'),
-      icon: <Utensils className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/pharmacies',
-      label: t('common.pharmacies'),
-      description: t('common.pharmacies-description'),
-      icon: <Pill className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/realestate',
-      label: t('common.realestate'),
-      description: t('common.realestate-description'),
-      icon: <Building className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/retail',
-      label: t('common.retail'),
-      description: t('common.retail-description'),
-      icon: <Store className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/education',
-      label: t('common.education'),
-      description: t('common.education-description'),
-      icon: <GraduationCap className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/hospitality',
-      label: t('common.hospitality'),
-      description: t('common.hospitality-description'),
-      icon: <Hotel className="h-4 w-4" />,
-    },
-    {
-      href: '/solutions/construction',
-      label: t('common.construction'),
-      description: t('common.construction-description'),
-      icon: <HardHat className="h-4 w-4" />,
     },
   ];
 
@@ -229,8 +107,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   return {
     categories: [
       { title: 'main', items: main },
-      { title: 'products', items: products },
-      { title: 'solutions', items: solutions },
       { title: 'resources', items: resources },
     ],
   };
