@@ -51,6 +51,7 @@ const securityBugBountyComponentsSource = source(
 const partnersPageSource = source(
   'src/app/[locale]/(marketing)/partners/page.tsx'
 );
+const blogPageSource = source('src/app/[locale]/(marketing)/blog/page.tsx');
 const careersPageSource = source(
   'src/app/[locale]/(marketing)/careers/page.tsx'
 );
@@ -377,6 +378,10 @@ describe('public shell compile graph', () => {
     );
     expect(careersPageSource).toContain('@tuturuuu/icons/lucide');
     expect(careersPageSource).not.toMatch(staticImportPattern('next/link'));
+  });
+
+  it('keeps the public blog page off Next link', () => {
+    expect(blogPageSource).not.toMatch(staticImportPattern('next/link'));
   });
 
   it('keeps the public women-in-tech page off the icon package root', () => {

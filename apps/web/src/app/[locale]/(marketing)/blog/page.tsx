@@ -23,7 +23,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
@@ -220,11 +219,11 @@ export default function BlogPage() {
                 className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
                 asChild
               >
-                <Link href="#subscribe">
+                <a href="#subscribe">
                   <Mail className="mr-2 h-5 w-5" />
                   Subscribe for Updates
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -232,10 +231,10 @@ export default function BlogPage() {
                 className="w-full transition-all hover:scale-105 sm:w-auto"
                 asChild
               >
-                <Link href="#upcoming">
+                <a href="#upcoming">
                   <Calendar className="mr-2 h-5 w-5" />
                   View Upcoming Topics
-                </Link>
+                </a>
               </Button>
             </motion.div>
           </motion.div>
@@ -492,15 +491,15 @@ export default function BlogPage() {
                 </div>
 
                 <div className="mt-12 flex flex-wrap items-center justify-center gap-8">
-                  <Link
+                  <a
                     href="/contact"
                     className="flex items-center gap-2 text-foreground/60 text-sm transition-colors hover:text-foreground"
                   >
                     <BookText className="h-4 w-4" />
                     <span>Submit a guest post</span>
-                  </Link>
+                  </a>
 
-                  <Link
+                  <a
                     href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -508,7 +507,7 @@ export default function BlogPage() {
                   >
                     <Globe className="h-4 w-4" />
                     <span>Follow our journey</span>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </Card>
