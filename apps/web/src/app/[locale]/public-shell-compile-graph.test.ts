@@ -13,6 +13,7 @@ const footerSource = source('src/components/layouts/Footer.tsx');
 const navigationConfigSource = source(
   'src/app/[locale]/shared/navigation-config.tsx'
 );
+const navigationMenuSource = source('src/app/[locale]/navigation-menu.tsx');
 const userNavClientSource = source('src/app/[locale]/user-nav-client.tsx');
 const reportProblemMenuItemSource = source(
   'src/app/[locale]/report-problem-menu-item.tsx'
@@ -147,6 +148,17 @@ describe('public shell compile graph', () => {
     );
     expect(navigationConfigSource).not.toContain("{ title: 'products'");
     expect(navigationConfigSource).not.toContain("{ title: 'solutions'");
+  });
+
+  it('keeps desktop public navigation off shared navigation primitives', () => {
+    for (const modulePath of [
+      '@tuturuuu/ui/badge',
+      '@tuturuuu/ui/card',
+      '@tuturuuu/ui/navigation-menu',
+      'next/link',
+    ] as const) {
+      expect(navigationMenuSource).not.toMatch(staticImportPattern(modulePath));
+    }
   });
 
   it('keeps shell dropdown icons on the static lucide subpath', () => {

@@ -1,21 +1,9 @@
 'use client';
 
 import { BookText } from '@tuturuuu/icons/lucide-static';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import * as React from 'react';
+import type { ReactNode } from 'react';
 import { useNavigation } from './shared/navigation-config';
 
 export function MainNavigationMenu() {
@@ -23,182 +11,116 @@ export function MainNavigationMenu() {
   const { categories } = useNavigation(t);
 
   const mainLinks = categories.find((cat) => cat.title === 'main')?.items || [];
-  // const products =
-  //   categories.find((cat) => cat.title === 'products')?.items || [];
-  // const solutions =
-  //   categories.find((cat) => cat.title === 'solutions')?.items || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
 
   return (
-    <NavigationMenu className="flex w-full max-w-none">
-      <NavigationMenuList className="flex w-full justify-between">
+    <nav className="flex w-full max-w-none">
+      <div className="flex w-full items-center justify-between">
         {mainLinks.map((item) => {
           if (item.href === `/`) return null;
 
           return (
-            <NavigationMenuItem key={item.href}>
-              <NavigationMenuLink
-                href={item.href}
-                className={cn(
-                  navigationMenuTriggerStyle(),
-                  'bg-transparent px-6 font-semibold transition-all duration-300 hover:bg-foreground/5'
-                )}
-              >
-                <span className="flex items-center gap-2">{item.label}</span>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
+            <a
+              key={item.href}
+              href={item.href}
+              className={cn(
+                marketingNavTriggerClassName,
+                'bg-transparent px-6 font-semibold transition-all duration-300 hover:bg-foreground/5'
+              )}
+            >
+              <span className="flex items-center gap-2">{item.label}</span>
+            </a>
           );
         })}
 
-        {/* <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
-            <span className="flex items-center gap-2">
-              {t('common.products')}
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/50 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-              </span>
-            </span>
-          </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid w-100 gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-125 md:grid-cols-2 lg:w-[800px] xl:w-[1000px] xl:grid-cols-3">
-              <Card className="col-span-full mb-2 bg-primary/5 p-4">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <Zap className="h-4 w-4" />
-                  <span>Featured Products</span>
-                </div>
-              </Card>
-              {products.map((product) => (
-                <ListItem
-                  key={product.href}
-                  title={product.label}
-                  href={product.href}
-                  icon={product.icon}
-                  badge={product.badge}
-                >
-                  {product.description}
-                </ListItem>
-              ))}
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem> */}
-
-        {/* <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
-            <span className="flex items-center gap-2">
-              {t('common.solutions')}
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary text-xs">
-                {t('common.new')}
-              </span>
-            </span>
-          </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid w-100 gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-125 md:grid-cols-2 lg:w-[800px]">
-              <Card className="col-span-full mb-2 bg-primary/5 p-4">
-                <div className="flex items-center gap-2 font-medium text-sm">
-                  <Building className="h-4 w-4" />
-                  <span>Industry Solutions</span>
-                </div>
-              </Card>
-              {solutions.map((solution) => (
-                <ListItem
-                  key={solution.href}
-                  title={solution.label}
-                  href={solution.href}
-                  icon={solution.icon}
-                >
-                  {solution.description}
-                </ListItem>
-              ))}
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem> */}
-
-        <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
+        <div className="group relative">
+          <button
+            type="button"
+            className={cn(
+              marketingNavTriggerClassName,
+              'group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5'
+            )}
+          >
             {t('common.resources')}
-          </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid w-100 gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-125 md:grid-cols-2 lg:w-[800px]">
-              <Card className="col-span-full mb-2 bg-primary/5 p-4">
+          </button>
+          <div className="invisible absolute top-full right-0 z-50 mt-2 w-[800px] rounded-md border bg-popover p-0 text-popover-foreground opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+            <ul className="grid w-full gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:grid-cols-2">
+              <li className="col-span-full mb-2 rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
                 <div className="flex items-center gap-2 font-medium text-sm">
                   <BookText className="h-4 w-4" />
                   <span>Learning Resources</span>
                 </div>
-              </Card>
+              </li>
               {resources.map((resource) => (
                 <ListItem
                   key={resource.href}
                   title={resource.label}
                   href={resource.href}
                   icon={resource.icon}
+                  badge={resource.badge}
                 >
                   {resource.description}
                 </ListItem>
               ))}
             </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-      </NavigationMenuList>
-    </NavigationMenu>
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 }
 
-const ListItem = React.forwardRef<
-  React.ComponentRef<'a'>,
-  React.ComponentPropsWithoutRef<'a'> & {
-    title: string;
-    icon: React.ReactNode;
-    badge?: string;
-    disabled?: boolean;
-  }
->(
-  (
-    { className, href, title, icon, badge, disabled, children, ...props },
-    ref
-  ) => {
-    if (!href) return null;
-    return (
-      <li>
-        <NavigationMenuLink asChild>
-          <Link
-            href={href}
-            ref={ref}
-            className={cn(
-              'group relative block h-full select-none space-y-1 rounded-md border border-transparent p-4 leading-none no-underline outline-hidden transition-all duration-300',
-              'opacity-90 hover:opacity-100',
-              'hover:scale-[1.02] hover:border-border active:scale-[0.98]',
-              disabled && 'cursor-not-allowed opacity-50',
-              className
-            )}
-            {...props}
-          >
-            <div className="relative">
-              <div className="flex items-center gap-2">
-                <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
-                  {icon}
-                </div>
-                <div className="font-semibold text-sm leading-none">
-                  {title}
-                </div>
-                {badge && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-auto flex-none animate-pulse text-xs"
-                  >
-                    {badge}
-                  </Badge>
-                )}
-              </div>
-              <p className="mt-2 line-clamp-3 text-muted-foreground text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
-                {children}
-              </p>
+const marketingNavTriggerClassName =
+  'inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm ring-offset-background transition-colors focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50';
+
+function ListItem({
+  children,
+  className,
+  href,
+  title,
+  icon,
+  badge,
+  disabled,
+  ...props
+}: React.ComponentPropsWithoutRef<'a'> & {
+  badge?: string;
+  disabled?: boolean;
+  icon: ReactNode;
+  title: string;
+}) {
+  if (!href) return null;
+
+  return (
+    <li>
+      <a
+        href={href}
+        className={cn(
+          'group relative block h-full select-none space-y-1 rounded-md border border-transparent p-4 leading-none no-underline outline-hidden transition-all duration-300',
+          'opacity-90 hover:opacity-100',
+          'hover:scale-[1.02] hover:border-border active:scale-[0.98]',
+          disabled && 'cursor-not-allowed opacity-50',
+          className
+        )}
+        {...props}
+      >
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
+              {icon}
             </div>
-          </Link>
-        </NavigationMenuLink>
-      </li>
-    );
-  }
-);
-ListItem.displayName = 'ListItem';
+            <div className="font-semibold text-sm leading-none">{title}</div>
+            {badge && (
+              <span className="ml-auto inline-flex w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md border border-transparent bg-secondary px-2 py-0.5 font-semibold text-secondary-foreground text-xs">
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="mt-2 line-clamp-3 text-muted-foreground text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+            {children}
+          </p>
+        </div>
+      </a>
+    </li>
+  );
+}
