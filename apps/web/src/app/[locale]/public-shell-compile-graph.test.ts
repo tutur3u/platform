@@ -75,6 +75,9 @@ const constructionSolutionPageSource = source(
 const manufacturingSolutionPageSource = source(
   'src/app/[locale]/(marketing)/solutions/manufacturing/page.tsx'
 );
+const pharmaciesSolutionPageSource = source(
+  'src/app/[locale]/(marketing)/solutions/pharmacies/page.tsx'
+);
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -303,6 +306,7 @@ describe('public shell compile graph', () => {
       hospitalitySolutionPageSource,
       constructionSolutionPageSource,
       manufacturingSolutionPageSource,
+      pharmaciesSolutionPageSource,
     ] as const) {
       expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
