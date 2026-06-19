@@ -12,7 +12,7 @@ import {
   Sparkles,
   Sun,
   Type,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
