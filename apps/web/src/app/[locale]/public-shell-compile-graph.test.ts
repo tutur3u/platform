@@ -17,6 +17,10 @@ const userNavClientSource = source('src/app/[locale]/user-nav-client.tsx');
 const reportProblemMenuItemSource = source(
   'src/app/[locale]/report-problem-menu-item.tsx'
 );
+const loginContentSource = source(
+  'src/app/[locale]/(marketing)/login/login-content.tsx'
+);
+const loginFormSource = source('src/app/[locale]/(marketing)/login/form.tsx');
 const dropdownMenuSource = source(
   '../../packages/ui/src/components/ui/dropdown-menu.tsx'
 );
@@ -105,6 +109,12 @@ describe('public shell compile graph', () => {
         staticImportPattern('@tuturuuu/icons/lucide')
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
+    }
+  });
+
+  it('keeps the login route off framer-motion', () => {
+    for (const sourceText of [loginContentSource, loginFormSource] as const) {
+      expect(sourceText).not.toContain('framer-motion');
     }
   });
 
