@@ -16,19 +16,20 @@ import {
   Truck,
   Warehouse,
   Wrench,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { motion, type Variants } from 'framer-motion';
-import Link from 'next/link';
+import {
+  SolutionBadge,
+  SolutionCard,
+  SolutionGradientHeadline,
+  SolutionLinkButton,
+} from '../solution-page-primitives';
 
 export default function ManufacturingPage() {
   const features = [
@@ -141,25 +142,23 @@ export default function ManufacturingPage() {
     >
       {/* Hero Section */}
       <motion.div variants={itemVariants} className="mb-8 text-center">
-        <Badge variant="secondary" className="mb-4">
+        <SolutionBadge className="mb-4">
           Manufacturing Management Solutions
-        </Badge>
+        </SolutionBadge>
         <h1 className="mb-4 text-balance text-center font-bold text-2xl tracking-tight md:text-4xl lg:text-6xl">
-          <GradientHeadline>
+          <SolutionGradientHeadline>
             Transform Your Manufacturing Operations
-          </GradientHeadline>
+          </SolutionGradientHeadline>
         </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Optimize production, improve quality, and drive efficiency with our
           comprehensive manufacturing management platform.
         </p>
         <div className="mt-8 flex justify-center gap-4">
-          <Button size="lg" asChild>
-            <Link href="/contact">Get Started</Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/pricing">View Pricing</Link>
-          </Button>
+          <SolutionLinkButton href="/contact">Get Started</SolutionLinkButton>
+          <SolutionLinkButton href="/pricing" variant="outline">
+            View Pricing
+          </SolutionLinkButton>
         </div>
       </motion.div>
 
@@ -186,7 +185,7 @@ export default function ManufacturingPage() {
 
       {/* Trust Indicators */}
       <section className="mb-24">
-        <Card className="border-primary bg-primary/5 p-8">
+        <SolutionCard className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <Cog className="h-12 w-12 text-primary" />
             <h2 className="font-bold text-2xl">
@@ -197,7 +196,7 @@ export default function ManufacturingPage() {
               operations with our platform.
             </p>
           </div>
-        </Card>
+        </SolutionCard>
       </section>
 
       {/* Features Grid */}
@@ -213,13 +212,13 @@ export default function ManufacturingPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Card className="h-full p-6 transition-colors hover:border-primary">
+              <SolutionCard className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
                   <h3 className="font-semibold text-xl">{feature.title}</h3>
                 </div>
                 <p className="text-muted-foreground">{feature.description}</p>
-              </Card>
+              </SolutionCard>
             </motion.div>
           ))}
         </div>
@@ -229,7 +228,7 @@ export default function ManufacturingPage() {
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center font-bold text-3xl">Key Benefits</h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
-          <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
+          <SolutionCard className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <Factory className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-2 font-bold text-xl">
@@ -247,10 +246,10 @@ export default function ManufacturingPage() {
                 </div>
               </div>
             </div>
-          </Card>
+          </SolutionCard>
 
           {benefits.map((benefit) => (
-            <Card key={benefit.title} className="group overflow-hidden">
+            <SolutionCard key={benefit.title} className="group overflow-hidden">
               <motion.div
                 className="flex h-full flex-col p-6"
                 whileHover={{ y: -5 }}
@@ -262,7 +261,7 @@ export default function ManufacturingPage() {
                 </p>
                 <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
               </motion.div>
-            </Card>
+            </SolutionCard>
           ))}
         </div>
       </motion.section>
@@ -271,33 +270,33 @@ export default function ManufacturingPage() {
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center font-bold text-3xl">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="p-6 text-center">
+          <SolutionCard className="p-6 text-center">
             <Scan className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Quality Tracking</h3>
             <p className="text-muted-foreground text-sm">
               Advanced quality control systems
             </p>
-          </Card>
-          <Card className="p-6 text-center">
+          </SolutionCard>
+          <SolutionCard className="p-6 text-center">
             <LineChart className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Production Analytics</h3>
             <p className="text-muted-foreground text-sm">
               Real-time performance metrics
             </p>
-          </Card>
-          <Card className="p-6 text-center">
+          </SolutionCard>
+          <SolutionCard className="p-6 text-center">
             <PackageSearch className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Inventory Tracking</h3>
             <p className="text-muted-foreground text-sm">
               Automated stock management
             </p>
-          </Card>
+          </SolutionCard>
         </div>
       </motion.section>
 
       {/* Success Story */}
       <motion.section variants={itemVariants} className="mb-24">
-        <Card className="overflow-hidden">
+        <SolutionCard className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
               <Star className="mb-4 h-8 w-8 text-primary" />
@@ -341,7 +340,7 @@ export default function ManufacturingPage() {
               </div>
             </div>
           </div>
-        </Card>
+        </SolutionCard>
       </motion.section>
 
       {/* FAQ Section */}
@@ -378,7 +377,7 @@ export default function ManufacturingPage() {
 
       {/* CTA Section */}
       <motion.section variants={itemVariants} className="mt-24 text-center">
-        <Card className="border-primary bg-primary/5 p-12">
+        <SolutionCard className="border-primary bg-primary/5 p-12">
           <h2 className="mb-4 font-bold text-3xl">
             Ready to Transform Your Manufacturing Operations?
           </h2>
@@ -387,14 +386,12 @@ export default function ManufacturingPage() {
             and drive growth.
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/contact">Get Started</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/pricing">View Pricing</Link>
-            </Button>
+            <SolutionLinkButton href="/contact">Get Started</SolutionLinkButton>
+            <SolutionLinkButton href="/pricing" variant="outline">
+              View Pricing
+            </SolutionLinkButton>
           </div>
-        </Card>
+        </SolutionCard>
       </motion.section>
     </motion.div>
   );
