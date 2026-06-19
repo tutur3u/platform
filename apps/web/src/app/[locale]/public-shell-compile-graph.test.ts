@@ -54,6 +54,9 @@ const partnersPageSource = source(
 const careersPageSource = source(
   'src/app/[locale]/(marketing)/careers/page.tsx'
 );
+const educationSolutionPageSource = source(
+  'src/app/[locale]/(marketing)/solutions/education/page.tsx'
+);
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -271,6 +274,25 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(careersPageSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the education solution page off heavy public primitives', () => {
+    expect(educationSolutionPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(educationSolutionPageSource).toContain('@tuturuuu/icons/lucide');
+
+    for (const modulePath of [
+      '@tuturuuu/ui/badge',
+      '@tuturuuu/ui/button',
+      '@tuturuuu/ui/card',
+      '@tuturuuu/ui/custom/gradient-headline',
+      'next/link',
+    ] as const) {
+      expect(educationSolutionPageSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
+    }
   });
 
   it('keeps legal page icons off the package root export', () => {
