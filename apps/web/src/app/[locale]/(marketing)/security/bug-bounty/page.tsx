@@ -14,7 +14,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
   badgeAccentClasses,
@@ -120,10 +119,10 @@ export default async function BugBountyPage() {
                 </a>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/security/policy">
+                <a href="/security/policy">
                   <FileText className="mr-2 h-5 w-5" />
                   {t('hero.policy_cta')}
-                </Link>
+                </a>
               </Button>
             </div>
           </div>
@@ -205,11 +204,11 @@ export default async function BugBountyPage() {
                   </a>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="/security">
+                  <a href="/security">
                     <Shield className="mr-2 h-5 w-5" />
                     {t('program.security_cta')}
                     <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </div>

@@ -15,7 +15,6 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
   type ListPanel,
@@ -167,10 +166,10 @@ export default async function SecurityPolicyPage() {
                 </a>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/security/bug-bounty">
+                <a href="/security/bug-bounty">
                   <Trophy className="mr-2 h-5 w-5" />
                   {t('hero.hall_cta')}
-                </Link>
+                </a>
               </Button>
             </div>
           </div>
@@ -320,10 +319,10 @@ export default async function SecurityPolicyPage() {
                   </a>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="/security/bug-bounty">
+                  <a href="/security/bug-bounty">
                     {t('cta.hall_cta')}
                     <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </div>

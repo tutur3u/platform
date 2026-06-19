@@ -281,6 +281,15 @@ describe('public shell compile graph', () => {
     }
   });
 
+  it('keeps public security subpages off Next link', () => {
+    for (const sourceText of [
+      securityPolicyPageSource,
+      securityBugBountyPageSource,
+    ] as const) {
+      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+    }
+  });
+
   it('keeps the public security page off shared UI primitives', () => {
     for (const modulePath of [
       '@tuturuuu/ui/badge',
