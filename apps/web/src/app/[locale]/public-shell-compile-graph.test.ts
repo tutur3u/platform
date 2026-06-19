@@ -72,8 +72,10 @@ const legalIconBoundarySources = [
   source('src/data/legal/community-guidelines-sections.tsx'),
   source('src/data/legal/privacy-sections.tsx'),
   source('src/data/legal/terms-sections.tsx'),
-  source('src/data/legal/third-party-providers.ts'),
 ] as const;
+const thirdPartyProvidersSource = source(
+  'src/data/legal/third-party-providers.ts'
+);
 const productPageIconBoundarySources = [
   source('src/app/[locale]/(marketing)/products/ai/page.tsx'),
   source('src/app/[locale]/(marketing)/products/calendar/page.tsx'),
@@ -199,6 +201,10 @@ describe('public shell compile graph', () => {
       expect(sourceText).not.toContain('from "@tuturuuu/icons"');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
     }
+  });
+
+  it('keeps third-party legal provider data icon-free', () => {
+    expect(thirdPartyProvidersSource).not.toContain('@tuturuuu/icons');
   });
 
   it('keeps legal policy pages off the shared markdown renderer', () => {

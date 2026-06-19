@@ -34,7 +34,11 @@ export function ThirdPartyServicesSection({
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm [&::-webkit-details-marker]:hidden">
                 <div className="flex items-center gap-2">
-                  <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                  {CategoryIcon ? (
+                    <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <span className="h-2 w-2 rounded-full bg-muted-foreground/60" />
+                  )}
                   <span>{category.name}</span>
                   <span className="text-muted-foreground text-xs">
                     ({category.providers.length})

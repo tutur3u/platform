@@ -21,7 +21,7 @@ export interface ThirdPartyProvider {
 
 export interface ThirdPartyCategory {
   name: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   providers: ThirdPartyProvider[];
 }
 
