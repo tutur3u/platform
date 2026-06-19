@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight } from '@tuturuuu/icons';
+import { ArrowLeft, ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import useEmblaCarousel, {
   type UseEmblaCarouselType,

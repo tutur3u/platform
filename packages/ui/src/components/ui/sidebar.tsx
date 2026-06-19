@@ -1,7 +1,7 @@
 'use client';
 
 import { Slot } from '@radix-ui/react-slot';
-import { PanelLeftIcon } from '@tuturuuu/icons';
+import { PanelLeftIcon } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';

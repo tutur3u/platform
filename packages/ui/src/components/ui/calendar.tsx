@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';

@@ -20,6 +20,20 @@ const reportProblemMenuItemSource = source(
 const dropdownMenuSource = source(
   '../../packages/ui/src/components/ui/dropdown-menu.tsx'
 );
+const commonPrimitiveSources = [
+  source('../../packages/ui/src/components/ui/breadcrumb.tsx'),
+  source('../../packages/ui/src/components/ui/calendar.tsx'),
+  source('../../packages/ui/src/components/ui/carousel.tsx'),
+  source('../../packages/ui/src/components/ui/checkbox.tsx'),
+  source('../../packages/ui/src/components/ui/color-picker.tsx'),
+  source('../../packages/ui/src/components/ui/command.tsx'),
+  source('../../packages/ui/src/components/ui/context-menu.tsx'),
+  source('../../packages/ui/src/components/ui/pagination.tsx'),
+  source('../../packages/ui/src/components/ui/radio-group.tsx'),
+  source('../../packages/ui/src/components/ui/select.tsx'),
+  source('../../packages/ui/src/components/ui/sidebar.tsx'),
+  source('../../packages/ui/src/components/ui/toast.tsx'),
+] as const;
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -76,6 +90,16 @@ describe('public shell compile graph', () => {
       userNavClientSource,
       reportProblemMenuItemSource,
     ] as const) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).not.toMatch(
+        staticImportPattern('@tuturuuu/icons/lucide')
+      );
+      expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
+    }
+  });
+
+  it('keeps common UI primitive icons on the static lucide subpath', () => {
+    for (const sourceText of commonPrimitiveSources) {
       expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
       expect(sourceText).not.toMatch(
         staticImportPattern('@tuturuuu/icons/lucide')
