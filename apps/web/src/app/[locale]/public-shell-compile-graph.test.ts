@@ -21,6 +21,9 @@ const loginContentSource = source(
   'src/app/[locale]/(marketing)/login/login-content.tsx'
 );
 const loginFormSource = source('src/app/[locale]/(marketing)/login/form.tsx');
+const loginConfirmationPartsSource = source(
+  'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
+);
 const dropdownMenuSource = source(
   '../../packages/ui/src/components/ui/dropdown-menu.tsx'
 );
@@ -113,9 +116,22 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the login route off framer-motion', () => {
-    for (const sourceText of [loginContentSource, loginFormSource] as const) {
+    for (const sourceText of [
+      loginContentSource,
+      loginFormSource,
+      loginConfirmationPartsSource,
+    ] as const) {
       expect(sourceText).not.toContain('framer-motion');
     }
+  });
+
+  it('loads the internal-app confirmation UI only after login needs it', () => {
+    expect(loginFormSource).not.toMatch(
+      staticImportPattern('./internal-app-account-confirmation')
+    );
+    expect(loginFormSource).toMatch(
+      /import\(\s*['"]\.\/internal-app-account-confirmation['"]\s*\)/u
+    );
   });
 
   it('keeps the login Turnstile widget behind a dynamic import', () => {

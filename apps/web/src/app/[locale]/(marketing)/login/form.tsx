@@ -68,7 +68,6 @@ import {
 } from '@/lib/auth/oauth-providers';
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
-import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { PasskeyLoginButton } from './passkey-login-button';
@@ -93,12 +92,30 @@ const Turnstile = lazy(async () => {
   return { default: TurnstileComponent };
 });
 
+const InternalAppAccountConfirmation = lazy(async () => {
+  const { InternalAppAccountConfirmation: Confirmation } = await import(
+    './internal-app-account-confirmation'
+  );
+
+  return { default: Confirmation };
+});
+
 function TurnstileLoadingFallback() {
   return (
     <div
       aria-hidden="true"
       className="h-[65px] w-[300px] max-w-full animate-pulse rounded-xl bg-muted/50"
     />
+  );
+}
+
+function InternalAppAccountConfirmationFallback() {
+  return (
+    <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+      <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <LoadingIndicator className="size-6" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1579,31 +1596,33 @@ export default function LoginForm({
       hasMatchingCurrentProfile && !currentProfileIsLoading;
 
     return (
-      <InternalAppAccountConfirmation
-        accounts={accounts}
-        activeAccountId={activeAccountId}
-        appName={returnAppName}
-        confirming={confirmingReturn}
-        currentAvatarUrl={currentUserProfile?.avatar_url}
-        currentDisplayName={
-          currentUserProfile?.display_name ?? currentUserProfile?.full_name
-        }
-        currentEmail={currentUserProfile?.email}
-        currentUserId={user.id}
-        isAccountSwitcherReady={accountSwitcherInitialized}
-        onContinue={() => void continueToInternalApp()}
-        onRetryProfile={() => void currentUserProfileQuery.refetch()}
-        onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
-        onUseAnotherAccount={() => void handleUseAnotherAccount()}
-        profileState={
-          currentProfileIsReady
-            ? 'ready'
-            : currentProfileIsLoading
-              ? 'loading'
-              : 'unavailable'
-        }
-        switchingAccountId={switchingAccountId}
-      />
+      <Suspense fallback={<InternalAppAccountConfirmationFallback />}>
+        <InternalAppAccountConfirmation
+          accounts={accounts}
+          activeAccountId={activeAccountId}
+          appName={returnAppName}
+          confirming={confirmingReturn}
+          currentAvatarUrl={currentUserProfile?.avatar_url}
+          currentDisplayName={
+            currentUserProfile?.display_name ?? currentUserProfile?.full_name
+          }
+          currentEmail={currentUserProfile?.email}
+          currentUserId={user.id}
+          isAccountSwitcherReady={accountSwitcherInitialized}
+          onContinue={() => void continueToInternalApp()}
+          onRetryProfile={() => void currentUserProfileQuery.refetch()}
+          onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
+          onUseAnotherAccount={() => void handleUseAnotherAccount()}
+          profileState={
+            currentProfileIsReady
+              ? 'ready'
+              : currentProfileIsLoading
+                ? 'loading'
+                : 'unavailable'
+          }
+          switchingAccountId={switchingAccountId}
+        />
+      </Suspense>
     );
   }
 
