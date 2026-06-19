@@ -57,6 +57,9 @@ const careersPageSource = source(
 const womenInTechPageSource = source(
   'src/app/[locale]/(marketing)/women-in-tech/page.tsx'
 );
+const accountDeletePageSource = source(
+  'src/app/[locale]/(marketing)/account/delete/page.tsx'
+);
 const educationSolutionPageSource = source(
   'src/app/[locale]/(marketing)/solutions/education/page.tsx'
 );
@@ -308,6 +311,13 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(womenInTechPageSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the account deletion page off the icon package root', () => {
+    expect(accountDeletePageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(accountDeletePageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps migrated solution pages off heavy public primitives', () => {

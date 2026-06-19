@@ -8,7 +8,7 @@ import {
   Info,
   ShieldAlert,
   Trash2,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
