@@ -201,6 +201,10 @@ describe('public shell compile graph', () => {
     expect(aboutPageSource).toContain('@tuturuuu/icons/lucide-static');
   });
 
+  it('keeps the about page off next link', () => {
+    expect(aboutPageSource).not.toMatch(staticImportPattern('next/link'));
+  });
+
   it('keeps the public security page off the icon package root', () => {
     expect(securityPageSource).not.toMatch(
       staticImportPattern('@tuturuuu/icons')

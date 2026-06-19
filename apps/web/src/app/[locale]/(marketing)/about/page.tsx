@@ -40,7 +40,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
 export default function AboutPage() {
@@ -161,10 +160,10 @@ export default function AboutPage() {
                 className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
                 asChild
               >
-                <Link href="#vision">
+                <a href="#vision">
                   {t('hero.cta.vision')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -172,13 +171,14 @@ export default function AboutPage() {
                 className="w-full transition-all hover:scale-105 sm:w-auto"
                 asChild
               >
-                <Link
+                <a
                   href="https://github.com/tutur3u/platform"
                   target="_blank"
+                  rel="noopener"
                 >
                   <Globe className="mr-2 h-4 w-4" />
                   {t('hero.cta.openSource')}
-                </Link>
+                </a>
               </Button>
             </motion.div>
           </motion.div>
@@ -1215,25 +1215,26 @@ export default function AboutPage() {
 
               <div className="mt-8 flex flex-wrap gap-3 border-dynamic-blue/20 border-t pt-8">
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="https://tuturuuu.com" target="_blank">
+                  <a href="https://tuturuuu.com" target="_blank" rel="noopener">
                     <Globe className="mr-2 h-4 w-4" />
                     {t('companyInfo.links.website')}
-                  </Link>
+                  </a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <Link
+                  <a
                     href="https://github.com/tutur3u/platform"
                     target="_blank"
+                    rel="noopener"
                   >
                     <Layers className="mr-2 h-4 w-4" />
                     {t('companyInfo.links.github')}
-                  </Link>
+                  </a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="mailto:contact@tuturuuu.com">
+                  <a href="mailto:contact@tuturuuu.com">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     {t('companyInfo.links.contact')}
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </Card>
@@ -1259,18 +1260,19 @@ export default function AboutPage() {
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <Button size="lg" asChild>
-                  <Link
+                  <a
                     href="https://github.com/tutur3u/platform"
                     target="_blank"
+                    rel="noopener"
                   >
                     <Layers className="mr-2 h-5 w-5" />
                     {t('cta.contribute')}
-                  </Link>
+                  </a>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="mailto:contact@tuturuuu.com">
+                  <a href="mailto:contact@tuturuuu.com">
                     {t('cta.getInTouch')}
-                  </Link>
+                  </a>
                 </Button>
               </div>
             </Card>
