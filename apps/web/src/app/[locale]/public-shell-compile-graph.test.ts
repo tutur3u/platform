@@ -63,6 +63,9 @@ const accountDeletePageSource = source(
 const brandingClientSource = source(
   'src/app/[locale]/(marketing)/branding/branding-client.tsx'
 );
+const modelsClientSource = source(
+  'src/app/[locale]/(marketing)/models/models-client.tsx'
+);
 const educationSolutionPageSource = source(
   'src/app/[locale]/(marketing)/solutions/education/page.tsx'
 );
@@ -328,6 +331,13 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(brandingClientSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the models page off the icon package root', () => {
+    expect(modelsClientSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(modelsClientSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps migrated solution pages off heavy public primitives', () => {
