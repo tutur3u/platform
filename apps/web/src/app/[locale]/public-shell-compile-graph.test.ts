@@ -66,6 +66,18 @@ const brandingClientSource = source(
 const modelsClientSource = source(
   'src/app/[locale]/(marketing)/models/models-client.tsx'
 );
+const facebookMockupIconBoundarySources = [
+  source(
+    '../../packages/ui/src/components/ui/custom/facebook-mockup/facebook-mockup.tsx'
+  ),
+  source('../../packages/ui/src/components/ui/custom/facebook-mockup/form.tsx'),
+  source(
+    '../../packages/ui/src/components/ui/custom/facebook-mockup/image-upload-field.tsx'
+  ),
+  source(
+    '../../packages/ui/src/components/ui/custom/facebook-mockup/preview.tsx'
+  ),
+] as const;
 const meetCreatePlanDialogSource = source(
   '../../packages/ui/src/components/ui/legacy/meet/create-plan-dialog.tsx'
 );
@@ -350,6 +362,13 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(modelsClientSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the Facebook mockup widget off the icon package root', () => {
+    for (const sourceText of facebookMockupIconBoundarySources) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).toContain('@tuturuuu/icons/lucide');
+    }
   });
 
   it('keeps the meet rich text editor out of the initial route graph', () => {

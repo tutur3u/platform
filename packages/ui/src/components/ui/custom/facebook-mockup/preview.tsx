@@ -15,7 +15,7 @@ import {
   ThumbsUp,
   Tv,
   X,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
 import {
   forwardRef,
