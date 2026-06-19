@@ -376,6 +376,7 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(careersPageSource).toContain('@tuturuuu/icons/lucide');
+    expect(careersPageSource).not.toMatch(staticImportPattern('next/link'));
   });
 
   it('keeps the public women-in-tech page off the icon package root', () => {

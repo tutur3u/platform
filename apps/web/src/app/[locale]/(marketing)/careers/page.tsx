@@ -33,7 +33,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 
 export default function CareersPage() {
   const values = [
@@ -350,10 +349,10 @@ export default function CareersPage() {
                 className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
                 asChild
               >
-                <Link href="#roles">
+                <a href="#roles">
                   View Open Roles
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -361,10 +360,10 @@ export default function CareersPage() {
                 className="w-full transition-all hover:scale-105 sm:w-auto"
                 asChild
               >
-                <Link href="mailto:contact@tuturuuu.com">
+                <a href="mailto:contact@tuturuuu.com">
                   <Mail className="mr-2 h-5 w-5" />
                   Get in Touch
-                </Link>
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -372,13 +371,14 @@ export default function CareersPage() {
                 className="w-full transition-all hover:scale-105 sm:w-auto"
                 asChild
               >
-                <Link
+                <a
                   href="https://github.com/tutur3u/platform"
                   target="_blank"
+                  rel="noreferrer"
                 >
                   <GithubIcon className="mr-2 h-5 w-5" />
                   View Our Work
-                </Link>
+                </a>
               </Button>
             </motion.div>
 
@@ -773,10 +773,10 @@ export default function CareersPage() {
                   </div>
 
                   <Button className="w-full" variant="outline" asChild>
-                    <Link href="mailto:contact@tuturuuu.com">
+                    <a href="mailto:contact@tuturuuu.com">
                       <Mail className="mr-2 h-4 w-4" />
                       Apply Now
-                    </Link>
+                    </a>
                   </Button>
                 </Card>
               </motion.div>
@@ -798,10 +798,10 @@ export default function CareersPage() {
                 out with your story.
               </p>
               <Button size="lg" asChild>
-                <Link href="mailto:contact@tuturuuu.com">
+                <a href="mailto:contact@tuturuuu.com">
                   <Mail className="mr-2 h-5 w-5" />
                   Get in Touch
-                </Link>
+                </a>
               </Button>
             </Card>
           </motion.div>
@@ -1013,25 +1013,26 @@ export default function CareersPage() {
 
                 <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
                   <Button size="lg" asChild>
-                    <Link href="mailto:contact@tuturuuu.com">
+                    <a href="mailto:contact@tuturuuu.com">
                       <Mail className="mr-2 h-5 w-5" />
                       Apply Now
-                    </Link>
+                    </a>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
-                    <Link href="/about">
+                    <a href="/about">
                       <Heart className="mr-2 h-5 w-5" />
                       Learn Our Story
-                    </Link>
+                    </a>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
-                    <Link
+                    <a
                       href="https://github.com/tutur3u/platform"
                       target="_blank"
+                      rel="noreferrer"
                     >
                       <GithubIcon className="mr-2 h-5 w-5" />
                       View GitHub
-                    </Link>
+                    </a>
                   </Button>
                 </div>
 
