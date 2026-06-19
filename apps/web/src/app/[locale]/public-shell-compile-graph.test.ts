@@ -51,6 +51,9 @@ const securityBugBountyComponentsSource = source(
 const partnersPageSource = source(
   'src/app/[locale]/(marketing)/partners/page.tsx'
 );
+const careersPageSource = source(
+  'src/app/[locale]/(marketing)/careers/page.tsx'
+);
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -261,6 +264,13 @@ describe('public shell compile graph', () => {
     ] as const) {
       expect(partnersPageSource).not.toMatch(staticImportPattern(modulePath));
     }
+  });
+
+  it('keeps the public careers page off the icon package root', () => {
+    expect(careersPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(careersPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps legal page icons off the package root export', () => {
