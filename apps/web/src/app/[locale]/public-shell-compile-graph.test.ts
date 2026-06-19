@@ -66,6 +66,9 @@ const brandingClientSource = source(
 const modelsClientSource = source(
   'src/app/[locale]/(marketing)/models/models-client.tsx'
 );
+const meetCreatePlanDialogSource = source(
+  '../../packages/ui/src/components/ui/legacy/meet/create-plan-dialog.tsx'
+);
 const educationSolutionPageSource = source(
   'src/app/[locale]/(marketing)/solutions/education/page.tsx'
 );
@@ -338,6 +341,15 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(modelsClientSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the meet rich text editor out of the initial route graph', () => {
+    expect(meetCreatePlanDialogSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/text-editor/editor')
+    );
+    expect(meetCreatePlanDialogSource).toMatch(
+      /import\(\s*['"]@tuturuuu\/ui\/text-editor\/editor['"]\s*\)/u
+    );
   });
 
   it('keeps migrated solution pages off heavy public primitives', () => {
