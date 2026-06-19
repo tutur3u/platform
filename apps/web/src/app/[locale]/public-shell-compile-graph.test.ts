@@ -362,6 +362,21 @@ describe('public shell compile graph', () => {
     expect(womenInTechPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
+  it('keeps the public women-in-tech page off heavy shared UI primitives', () => {
+    for (const modulePath of [
+      '@tuturuuu/ui/badge',
+      '@tuturuuu/ui/card',
+    ] as const) {
+      expect(womenInTechPageSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
+    }
+
+    expect(womenInTechPageSource).toMatch(
+      staticImportPattern('@tuturuuu/ui/button')
+    );
+  });
+
   it('keeps the account deletion page off the icon package root', () => {
     expect(accountDeletePageSource).not.toMatch(
       staticImportPattern('@tuturuuu/icons')
