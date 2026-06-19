@@ -33,6 +33,9 @@ const landingVideoHeroSource = source(
   'src/components/landing/hero/video-hero.tsx'
 );
 const aboutPageSource = source('src/app/[locale]/(marketing)/about/page.tsx');
+const securityPageSource = source(
+  'src/app/[locale]/(marketing)/security/page.tsx'
+);
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -193,6 +196,13 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons/lucide')
     );
     expect(aboutPageSource).toContain('@tuturuuu/icons/lucide-static');
+  });
+
+  it('keeps the public security page off the icon package root', () => {
+    expect(securityPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(securityPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps legal page icons off the package root export', () => {
