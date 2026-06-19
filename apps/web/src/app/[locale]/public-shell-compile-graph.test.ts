@@ -66,6 +66,12 @@ const brandingClientSource = source(
 const modelsClientSource = source(
   'src/app/[locale]/(marketing)/models/models-client.tsx'
 );
+const contributorsPageSource = source(
+  'src/app/[locale]/(marketing)/contributors/page.tsx'
+);
+const contributorsAnalyticsSource = source(
+  'src/app/[locale]/(marketing)/contributors/contribution-analytics.tsx'
+);
 const horseRacingVisualizationSource = source(
   'src/components/visualizations/horse-racing/visualization.tsx'
 );
@@ -429,6 +435,16 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(modelsClientSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps contributors charts out of the initial route graph', () => {
+    expect(contributorsPageSource).not.toMatch(staticImportPattern('recharts'));
+    expect(contributorsPageSource).toContain(
+      "import('./contribution-analytics')"
+    );
+    expect(contributorsAnalyticsSource).toMatch(
+      staticImportPattern('recharts')
+    );
   });
 
   it('keeps the Facebook mockup widget off the icon package root', () => {
