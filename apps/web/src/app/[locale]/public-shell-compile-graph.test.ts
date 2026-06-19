@@ -369,6 +369,22 @@ describe('public shell compile graph', () => {
     expect(accountDeletePageSource).toContain('@tuturuuu/icons/lucide');
   });
 
+  it('keeps the account deletion page off heavy shared UI primitives', () => {
+    for (const modulePath of [
+      '@tuturuuu/ui/badge',
+      '@tuturuuu/ui/card',
+      '@tuturuuu/ui/separator',
+    ] as const) {
+      expect(accountDeletePageSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
+    }
+
+    expect(accountDeletePageSource).toMatch(
+      staticImportPattern('@tuturuuu/ui/button')
+    );
+  });
+
   it('keeps the branding page off the icon package root', () => {
     expect(brandingClientSource).not.toMatch(
       staticImportPattern('@tuturuuu/icons')
