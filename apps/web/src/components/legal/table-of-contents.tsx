@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Clock, FileText } from '@tuturuuu/icons';
+import { Check, Clock, FileText } from '@tuturuuu/icons/lucide';
 import { Card } from '@tuturuuu/ui/card';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';

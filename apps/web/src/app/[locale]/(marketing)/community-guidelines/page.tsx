@@ -1,4 +1,4 @@
-import { Heart } from '@tuturuuu/icons';
+import { Heart } from '@tuturuuu/icons/lucide';
 import { LegalPageLayout } from '@/components/legal/legal-page-layout';
 import type { LegalPageConfig } from '@/components/legal/legal-types';
 import { communityGuidelinesSections } from '@/data/legal/community-guidelines-sections';

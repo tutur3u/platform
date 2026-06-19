@@ -47,6 +47,23 @@ const commonPrimitiveSources = [
   source('../../packages/ui/src/components/ui/sidebar.tsx'),
   source('../../packages/ui/src/components/ui/toast.tsx'),
 ] as const;
+const legalIconBoundarySources = [
+  source('src/app/[locale]/(marketing)/acceptable-use/page.tsx'),
+  source('src/app/[locale]/(marketing)/community-guidelines/page.tsx'),
+  source('src/app/[locale]/(marketing)/privacy/page.tsx'),
+  source('src/app/[locale]/(marketing)/terms/page.tsx'),
+  source('src/components/legal/legal-page-layout.tsx'),
+  source('src/components/legal/legal-section-card.tsx'),
+  source('src/components/legal/legal-summary-card.tsx'),
+  source('src/components/legal/legal-types.ts'),
+  source('src/components/legal/table-of-contents.tsx'),
+  source('src/components/legal/third-party-services-section.tsx'),
+  source('src/data/legal/acceptable-use-sections.tsx'),
+  source('src/data/legal/community-guidelines-sections.tsx'),
+  source('src/data/legal/privacy-sections.tsx'),
+  source('src/data/legal/terms-sections.tsx'),
+  source('src/data/legal/third-party-providers.ts'),
+] as const;
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -127,6 +144,14 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons/lucide')
     );
     expect(aboutPageSource).toContain('@tuturuuu/icons/lucide-static');
+  });
+
+  it('keeps legal page icons off the package root export', () => {
+    for (const sourceText of legalIconBoundarySources) {
+      expect(sourceText).not.toContain("from '@tuturuuu/icons'");
+      expect(sourceText).not.toContain('from "@tuturuuu/icons"');
+      expect(sourceText).toContain('@tuturuuu/icons/lucide');
+    }
   });
 
   it('keeps the login route off framer-motion', () => {

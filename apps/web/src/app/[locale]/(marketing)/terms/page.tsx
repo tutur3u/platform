@@ -1,4 +1,4 @@
-import { FileText } from '@tuturuuu/icons';
+import { FileText } from '@tuturuuu/icons/lucide';
 import { LegalPageLayout } from '@/components/legal/legal-page-layout';
 import type { LegalPageConfig } from '@/components/legal/legal-types';
 import { termsSections } from '@/data/legal/terms-sections';

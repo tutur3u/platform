@@ -9,7 +9,7 @@ import {
   Monitor,
   Server,
   Shield,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import type { ThirdPartyCategory } from '@/components/legal/legal-types';
 
 export const thirdPartyCategories: ThirdPartyCategory[] = [

@@ -1,4 +1,4 @@
-import { Code2, ExternalLink, Mail } from '@tuturuuu/icons';
+import { Code2, ExternalLink, Mail } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';

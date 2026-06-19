@@ -1,4 +1,4 @@
-import { AlertCircle } from '@tuturuuu/icons';
+import { AlertCircle } from '@tuturuuu/icons/lucide';
 import { Card } from '@tuturuuu/ui/card';
 import {
   Table,

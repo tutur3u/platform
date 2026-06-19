@@ -1,4 +1,4 @@
-import { Shield } from '@tuturuuu/icons';
+import { Shield } from '@tuturuuu/icons/lucide';
 import { Card } from '@tuturuuu/ui/card';
 import { LegalPageLayout } from '@/components/legal/legal-page-layout';
 import type { LegalPageConfig } from '@/components/legal/legal-types';

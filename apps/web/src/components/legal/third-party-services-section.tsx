@@ -1,4 +1,4 @@
-import { ExternalLink, ShieldCheck } from '@tuturuuu/icons';
+import { ExternalLink, ShieldCheck } from '@tuturuuu/icons/lucide';
 import {
   Accordion,
   AccordionContent,

@@ -1,4 +1,4 @@
-import { ChevronRight } from '@tuturuuu/icons';
+import { ChevronRight } from '@tuturuuu/icons/lucide';
 import { Card } from '@tuturuuu/ui/card';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { AnimateInView } from './animate-in-view';

@@ -1,4 +1,4 @@
-import type { LucideIcon } from '@tuturuuu/icons';
+import type { LucideIcon } from '@tuturuuu/icons/lucide';
 import type { ReactNode } from 'react';
 
 export interface LegalSection {
