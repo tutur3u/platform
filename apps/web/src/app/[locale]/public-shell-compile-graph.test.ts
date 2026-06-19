@@ -54,6 +54,9 @@ const partnersPageSource = source(
 const careersPageSource = source(
   'src/app/[locale]/(marketing)/careers/page.tsx'
 );
+const womenInTechPageSource = source(
+  'src/app/[locale]/(marketing)/women-in-tech/page.tsx'
+);
 const educationSolutionPageSource = source(
   'src/app/[locale]/(marketing)/solutions/education/page.tsx'
 );
@@ -298,6 +301,13 @@ describe('public shell compile graph', () => {
       staticImportPattern('@tuturuuu/icons')
     );
     expect(careersPageSource).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the public women-in-tech page off the icon package root', () => {
+    expect(womenInTechPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(womenInTechPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps migrated solution pages off heavy public primitives', () => {
