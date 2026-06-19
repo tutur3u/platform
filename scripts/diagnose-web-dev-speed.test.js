@@ -10,6 +10,7 @@ const {
   extractWatcherErrors,
   formatBytes,
   formatDiagnosticsReport,
+  getCleanupRecommendations,
   getLatestDevServerStartTime,
   getLatestDevServerTraceEvents,
   parseTraceEvents,
@@ -226,6 +227,38 @@ test('collectMatchingProcessTree includes matching web dev descendants', () => {
   );
 });
 
+test('collectMatchingProcessTree excludes Vitest roots from Next dev RSS', () => {
+  assert.deepEqual(
+    collectMatchingProcessTree([
+      {
+        command: 'node apps/web/node_modules/.bin/vitest run',
+        pid: 10,
+        ppid: 1,
+        rssBytes: 400,
+      },
+      {
+        command: 'node vitest/dist/workers/forks.js',
+        pid: 11,
+        ppid: 10,
+        rssBytes: 300,
+      },
+      {
+        command: 'node apps/web/node_modules/.bin/next dev -p 7803 --turbopack',
+        pid: 20,
+        ppid: 1,
+        rssBytes: 100,
+      },
+      {
+        command: 'next-server (v16.2.9)',
+        pid: 21,
+        ppid: 20,
+        rssBytes: 200,
+      },
+    ]).map(({ pid }) => pid),
+    [21, 20]
+  );
+});
+
 test('extractDockerBuildMemoryPolicy tolerates missing package JSON', () => {
   const files = new Map([
     [
@@ -275,7 +308,30 @@ test('classifyDiagnostics separates RSS, cache, watcher, and build pressure', ()
   assert.match(findings.join('\n'), /Turbopack dev cache is large/);
   assert.match(findings.join('\n'), /watcher errors are present/);
   assert.match(findings.join('\n'), /build memory policy is configured/);
-  assert.doesNotMatch(findings.join('\n'), /live web dev process RSS is high/);
+  assert.doesNotMatch(findings.join('\n'), /live Next dev process RSS is high/);
+});
+
+test('getCleanupRecommendations suggests targeted dev cache cleanup', () => {
+  assert.deepEqual(
+    getCleanupRecommendations({
+      cacheSummaries: [
+        {
+          bytes: 3 * 1024 * 1024 * 1024,
+          exists: true,
+          path: 'apps/web/.next/dev/cache/turbopack',
+        },
+        {
+          bytes: 2 * 1024 * 1024 * 1024,
+          exists: true,
+          path: '.turbo/cache',
+        },
+      ],
+    }),
+    [
+      'run `bun clean:dev:web --dry-run`, then `bun clean:dev:web` to remove the web Next dev cache',
+      'add `--include-turbo-cache` when you also want to clear `.turbo/cache` after branch or graph churn',
+    ]
+  );
 });
 
 test('formatDiagnosticsReport prints missing traces without failing', () => {

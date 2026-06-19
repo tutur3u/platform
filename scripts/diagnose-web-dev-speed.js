@@ -12,11 +12,12 @@ const DEFAULT_CACHE_PATHS = [
   'apps/web/.next/dev/cache/turbopack',
 ];
 const DEFAULT_PROCESS_MATCHERS = [
-  'apps/web',
+  'apps/web/node_modules/.bin/next dev',
   'next dev -p 7803',
   'next-server',
   '.next/dev',
 ];
+const DEFAULT_PROCESS_EXCLUDE_MATCHERS = ['vitest', 'node --test'];
 const TRACE_EVENT_NAMES = new Set([
   'compile-path',
   'ensure-page',
@@ -33,6 +34,7 @@ const WATCHER_ERROR_PATTERN = /EMFILE|too many open files|Watchpack Error/iu;
 const PROCESS_RSS_WARNING_BYTES = 1024 * 1024 * 1024;
 const PROCESS_RSS_CRITICAL_BYTES = 4 * PROCESS_RSS_WARNING_BYTES;
 const TURBOPACK_CACHE_WARNING_BYTES = 2 * PROCESS_RSS_WARNING_BYTES;
+const TURBO_CACHE_WARNING_BYTES = PROCESS_RSS_WARNING_BYTES;
 
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) return 'unknown';
@@ -107,11 +109,21 @@ function parseProcessList(output = '') {
   );
 }
 
+function processCommandMatches(command, matchers) {
+  const normalizedCommand = command.toLowerCase();
+
+  return matchers.some((matcher) => normalizedCommand.includes(matcher));
+}
+
 function collectMatchingProcessTree(
   processes,
-  matchers = DEFAULT_PROCESS_MATCHERS
+  matchers = DEFAULT_PROCESS_MATCHERS,
+  { excludeMatchers = DEFAULT_PROCESS_EXCLUDE_MATCHERS } = {}
 ) {
   const normalizedMatchers = matchers.map((matcher) => matcher.toLowerCase());
+  const normalizedExcludeMatchers = excludeMatchers.map((matcher) =>
+    matcher.toLowerCase()
+  );
   const childrenByPpid = new Map();
   const selectedPids = new Set();
 
@@ -120,9 +132,9 @@ function collectMatchingProcessTree(
     children.push(processInfo);
     childrenByPpid.set(processInfo.ppid, children);
 
-    const normalizedCommand = processInfo.command.toLowerCase();
     if (
-      normalizedMatchers.some((matcher) => normalizedCommand.includes(matcher))
+      processCommandMatches(processInfo.command, normalizedMatchers) &&
+      !processCommandMatches(processInfo.command, normalizedExcludeMatchers)
     ) {
       selectedPids.add(processInfo.pid);
     }
@@ -145,6 +157,7 @@ function collectMatchingProcessTree(
 
 function collectProcessDiagnostics({
   execFileSyncImpl = execFileSync,
+  excludeMatchers = DEFAULT_PROCESS_EXCLUDE_MATCHERS,
   matchers = DEFAULT_PROCESS_MATCHERS,
 } = {}) {
   try {
@@ -158,7 +171,8 @@ function collectProcessDiagnostics({
     );
     const processes = collectMatchingProcessTree(
       parseProcessList(output),
-      matchers
+      matchers,
+      { excludeMatchers }
     );
     const totalRssBytes = processes.reduce(
       (sum, processInfo) => sum + processInfo.rssBytes,
@@ -228,17 +242,19 @@ function classifyDiagnostics(diagnostics) {
       diagnostics.cacheSummaries,
       'apps/web/.next/dev/cache/turbopack'
     )?.bytes ?? 0;
+  const turboCache =
+    findCacheSummary(diagnostics.cacheSummaries, '.turbo/cache')?.bytes ?? 0;
   const nextDevCache =
     findCacheSummary(diagnostics.cacheSummaries, 'apps/web/.next/dev')?.bytes ??
     0;
 
   if (processTotal >= PROCESS_RSS_CRITICAL_BYTES) {
     findings.push(
-      `live web dev process RSS is high (${formatBytes(processTotal)}); inspect heap or active routes before focusing on cache cleanup`
+      `live Next dev process RSS is high (${formatBytes(processTotal)}); inspect heap or active routes before focusing on cache cleanup`
     );
   } else if (processTotal >= PROCESS_RSS_WARNING_BYTES) {
     findings.push(
-      `live web dev process RSS is elevated (${formatBytes(processTotal)}); compare this with cache size before changing app structure`
+      `live Next dev process RSS is elevated (${formatBytes(processTotal)}); compare this with cache size before changing app structure`
     );
   }
 
@@ -249,6 +265,12 @@ function classifyDiagnostics(diagnostics) {
   } else if (nextDevCache >= TURBOPACK_CACHE_WARNING_BYTES) {
     findings.push(
       `.next/dev is large (${formatBytes(nextDevCache)}); inspect cache contents before treating this as RSS`
+    );
+  }
+
+  if (turboCache >= TURBO_CACHE_WARNING_BYTES) {
+    findings.push(
+      `Turborepo cache is large (${formatBytes(turboCache)}); targeted cleanup can reclaim disk after major graph changes`
     );
   }
 
@@ -274,6 +296,37 @@ function classifyDiagnostics(diagnostics) {
   }
 
   return findings;
+}
+
+function getCleanupRecommendations(diagnostics) {
+  const recommendations = [];
+  const turbopackCache =
+    findCacheSummary(
+      diagnostics.cacheSummaries,
+      'apps/web/.next/dev/cache/turbopack'
+    )?.bytes ?? 0;
+  const nextDevCache =
+    findCacheSummary(diagnostics.cacheSummaries, 'apps/web/.next/dev')?.bytes ??
+    0;
+  const turboCache =
+    findCacheSummary(diagnostics.cacheSummaries, '.turbo/cache')?.bytes ?? 0;
+
+  if (
+    turbopackCache >= TURBOPACK_CACHE_WARNING_BYTES ||
+    nextDevCache >= TURBOPACK_CACHE_WARNING_BYTES
+  ) {
+    recommendations.push(
+      'run `bun clean:dev:web --dry-run`, then `bun clean:dev:web` to remove the web Next dev cache'
+    );
+  }
+
+  if (turboCache >= TURBO_CACHE_WARNING_BYTES) {
+    recommendations.push(
+      'add `--include-turbo-cache` when you also want to clear `.turbo/cache` after branch or graph churn'
+    );
+  }
+
+  return recommendations;
 }
 
 function extractSlowFilesystemWarnings(logText) {
@@ -399,7 +452,7 @@ function formatDiagnosticsReport(diagnostics) {
     );
   }
 
-  lines.push('', 'Live web dev process RSS:');
+  lines.push('', 'Live Next dev process RSS:');
   const processDiagnostics = diagnostics.processDiagnostics ?? {
     available: false,
     processes: [],
@@ -412,7 +465,7 @@ function formatDiagnosticsReport(diagnostics) {
       }`
     );
   } else if (processDiagnostics.processes.length === 0) {
-    lines.push('- no matching web dev processes found');
+    lines.push('- no matching Next dev processes found');
   } else {
     lines.push(`- total: ${formatBytes(processDiagnostics.totalRssBytes)}`);
     for (const processInfo of processDiagnostics.processes.slice(0, 12)) {
@@ -463,6 +516,16 @@ function formatDiagnosticsReport(diagnostics) {
     lines.push(`- ${finding}`);
   }
 
+  lines.push('', 'Suggested cleanup:');
+  const cleanupRecommendations = getCleanupRecommendations(diagnostics);
+  if (cleanupRecommendations.length === 0) {
+    lines.push('- none');
+  } else {
+    for (const recommendation of cleanupRecommendations) {
+      lines.push(`- ${recommendation}`);
+    }
+  }
+
   lines.push('', 'Top trace spans (latest dev server):');
   if ((diagnostics.latestTraceSpans ?? []).length === 0) {
     lines.push('- none');
@@ -504,6 +567,7 @@ module.exports = {
   extractWatcherErrors,
   formatBytes,
   formatDiagnosticsReport,
+  getCleanupRecommendations,
   getLatestDevServerStartTime,
   getLatestDevServerTraceEvents,
   parseTraceEvents,

@@ -307,7 +307,7 @@ bun diagnose:dev:web
 
 Read the report by pressure type:
 
-- `Live web dev process RSS` is the memory held by the running `next dev`
+- `Live Next dev process RSS` is the memory held by the running `next dev`
   process tree. If this is high, inspect the top processes and the latest trace
   spans before changing architecture.
 - `apps/web/.next/dev/cache/turbopack` is generated Turbopack filesystem cache.
@@ -322,18 +322,24 @@ Read the report by pressure type:
   cache growth, watcher limits, or build-only memory settings.
 
 If the report points at Turbopack cache growth, stop the web dev server and
-clear the generated dev cache:
+preview the targeted cleanup first:
 
 ```bash
-rm -rf apps/web/.next/dev/cache/turbopack
+bun clean:dev:web --dry-run
 ```
 
-If the next dev session is still stuck on stale generated state, remove the
-whole local dev output:
+Then remove the web Next dev output:
 
 ```bash
-rm -rf apps/web/.next/dev
+bun clean:dev:web
 ```
+
+Use `bun clean:dev:web --all-next-dev --dry-run` when several app dev caches
+exist and you want to inspect every `apps/*/.next/dev` target before deleting
+them. Add `--include-turbo-cache` only when the report also calls out
+`.turbo/cache` growth after branch or dependency graph churn. Avoid the broad
+root `bun clean` command for this problem because it deletes dependency and
+build state that is unrelated to the current dev-server slowdown.
 
 Then restart the targeted app command you were using, such as `bun dev:web`.
 Avoid deleting unrelated app output while other agents or local sessions are
