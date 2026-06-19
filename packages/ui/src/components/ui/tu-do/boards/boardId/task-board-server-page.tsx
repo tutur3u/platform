@@ -53,7 +53,10 @@ async function getAuthorizedBoard(wsId: string, boardId: string) {
   } catch (error) {
     if (
       error instanceof InternalApiError &&
-      (error.status === 401 || error.status === 403 || error.status === 404)
+      (error.status === 400 ||
+        error.status === 401 ||
+        error.status === 403 ||
+        error.status === 404)
     ) {
       return null;
     }
@@ -82,7 +85,7 @@ export default async function TaskBoardServerPage({
 
   const isMemberBoardAccess = board.access_type === 'member';
   const workspace = isMemberBoardAccess
-    ? await getWorkspace(id, { useAdmin: true })
+    ? await getWorkspace(board.ws_id, { useAdmin: true })
     : createBoardGuestWorkspace(board.ws_id);
   if (!workspace) notFound();
 

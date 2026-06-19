@@ -11,6 +11,21 @@ export const metadata: Metadata = {
     'Manage Board Details in the Boards area of your Tuturuuu workspace.',
 };
 
+async function getTaskBoardAssistantName(userId: string) {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('mira_soul')
+      .select('name')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    return data?.name?.trim() || 'Mira';
+  } catch {
+    return 'Mira';
+  }
+}
+
 interface Props {
   params: Promise<{
     wsId: string;
@@ -24,13 +39,7 @@ export default async function Page({ params }: Props) {
 
   if (!currentUser) redirect('/login');
 
-  const supabase = await createClient();
-  const { data: miraSoul } = await supabase
-    .from('mira_soul')
-    .select('name')
-    .eq('user_id', currentUser.id)
-    .maybeSingle();
-  const assistantName = miraSoul?.name?.trim() || 'Mira';
+  const assistantName = await getTaskBoardAssistantName(currentUser.id);
 
   return (
     <TaskBoardServerPage

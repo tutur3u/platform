@@ -111,6 +111,28 @@ describe('TaskBoardServerPage', () => {
     expect(mocks.getWorkspace).not.toHaveBeenCalled();
   });
 
+  it('treats invalid board routes as not found instead of crashing the server render', async () => {
+    mocks.getWorkspaceTaskBoard.mockRejectedValue(
+      new mocks.InternalApiError('Invalid workspace or board ID', 400)
+    );
+
+    await expect(renderServerPage()).rejects.toThrow('NEXT_NOT_FOUND');
+
+    expect(mocks.getWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('keeps unexpected board loader failures visible', async () => {
+    mocks.getWorkspaceTaskBoard.mockRejectedValue(
+      new mocks.InternalApiError('Failed to load task board', 500)
+    );
+
+    await expect(renderServerPage()).rejects.toThrow(
+      'Failed to load task board'
+    );
+
+    expect(mocks.getWorkspace).not.toHaveBeenCalled();
+  });
+
   it('uses a minimal workspace shell for board guests', async () => {
     mocks.getWorkspaceTaskBoard.mockResolvedValue({
       board: {
@@ -134,10 +156,10 @@ describe('TaskBoardServerPage', () => {
     expect(element.props.currentUserId).toBe('user-1');
   });
 
-  it('loads the full member workspace only after board access succeeds', async () => {
+  it('loads the full member workspace from the resolved board workspace', async () => {
     const workspace = {
       creator_id: 'creator-1',
-      id: 'ws-1',
+      id: 'ws-board',
       joined: true,
       name: 'Member Workspace',
       personal: false,
@@ -147,14 +169,14 @@ describe('TaskBoardServerPage', () => {
       board: {
         access_type: 'member',
         id: BOARD_ID,
-        ws_id: 'ws-1',
+        ws_id: 'ws-board',
       },
     });
     mocks.getWorkspace.mockResolvedValue(workspace);
 
     const element = await renderServerPage();
 
-    expect(mocks.getWorkspace).toHaveBeenCalledWith('ws-1', {
+    expect(mocks.getWorkspace).toHaveBeenCalledWith('ws-board', {
       useAdmin: true,
     });
     expect(element.type).toBe(mocks.BoardClient);
