@@ -36,6 +36,9 @@ const aboutPageSource = source('src/app/[locale]/(marketing)/about/page.tsx');
 const securityPageSource = source(
   'src/app/[locale]/(marketing)/security/page.tsx'
 );
+const partnersPageSource = source(
+  'src/app/[locale]/(marketing)/partners/page.tsx'
+);
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -213,6 +216,22 @@ describe('public shell compile graph', () => {
       'next/link',
     ] as const) {
       expect(securityPageSource).not.toMatch(staticImportPattern(modulePath));
+    }
+  });
+
+  it('keeps the public partners page off heavy shared primitives', () => {
+    expect(partnersPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(partnersPageSource).toContain('@tuturuuu/icons/lucide');
+
+    for (const modulePath of [
+      '@tuturuuu/ui/button',
+      '@tuturuuu/ui/card',
+      'next/image',
+      'next/link',
+    ] as const) {
+      expect(partnersPageSource).not.toMatch(staticImportPattern(modulePath));
     }
   });
 
