@@ -44,7 +44,6 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {
@@ -221,6 +220,17 @@ function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
         WebkitMaskSize: 'contain',
         maskSize: 'contain',
       }}
+    />
+  );
+}
+
+function SocialImageLogo({ src, alt }: { src: string; alt: string }) {
+  return (
+    <span
+      aria-label={alt}
+      role="img"
+      className="block size-5 shrink-0 bg-center bg-contain bg-no-repeat transition-transform duration-200 group-hover:scale-110"
+      style={{ backgroundImage: `url(${src})` }}
     />
   );
 }
@@ -1291,15 +1301,7 @@ export default function LoginForm({
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('google')}
-        icon={
-          <Image
-            src="/media/google-logo.png"
-            alt="Google"
-            width={20}
-            height={20}
-            className="object-contain transition-transform duration-200 group-hover:scale-110"
-          />
-        }
+        icon={<SocialImageLogo src="/media/google-logo.png" alt="Google" />}
       >
         {t('login.continue_with_google')}
       </SocialLoginButton>

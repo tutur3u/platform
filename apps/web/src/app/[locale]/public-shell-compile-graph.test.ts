@@ -256,6 +256,12 @@ describe('public shell compile graph', () => {
     expect(loginPageSource).toContain("headerStore.get('cookie')");
   });
 
+  it('keeps the login shell off Next link and image primitives', () => {
+    expect(loginContentSource).not.toMatch(staticImportPattern('next/link'));
+    expect(loginContentSource).not.toMatch(staticImportPattern('next/image'));
+    expect(loginFormSource).not.toMatch(staticImportPattern('next/image'));
+  });
+
   it('loads OTP input UI only after login needs it', () => {
     expect(loginFormSource).not.toMatch(
       staticImportPattern('@tuturuuu/ui/input-otp')
