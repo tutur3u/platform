@@ -40,7 +40,6 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -100,12 +99,50 @@ const InternalAppAccountConfirmation = lazy(async () => {
   return { default: Confirmation };
 });
 
+const InputOTP = lazy(async () => {
+  const { InputOTP: InputOTPComponent } = await import(
+    '@tuturuuu/ui/input-otp'
+  );
+
+  return { default: InputOTPComponent };
+});
+
+const InputOTPGroup = lazy(async () => {
+  const { InputOTPGroup: InputOTPGroupComponent } = await import(
+    '@tuturuuu/ui/input-otp'
+  );
+
+  return { default: InputOTPGroupComponent };
+});
+
+const InputOTPSlot = lazy(async () => {
+  const { InputOTPSlot: InputOTPSlotComponent } = await import(
+    '@tuturuuu/ui/input-otp'
+  );
+
+  return { default: InputOTPSlotComponent };
+});
+
 function TurnstileLoadingFallback() {
   return (
     <div
       aria-hidden="true"
       className="h-[65px] w-[300px] max-w-full animate-pulse rounded-xl bg-muted/50"
     />
+  );
+}
+
+function InputOTPRowFallback() {
+  return (
+    <div className="flex w-full justify-center gap-2">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div
+          aria-hidden="true"
+          className="h-12 w-full animate-pulse rounded-2xl border border-border/60 bg-muted/50"
+          key={`otp-fallback-${index + 1}`}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -1669,22 +1706,24 @@ export default function LoginForm({
                         {t('login.verification_code_label')}
                       </FormLabel>
                       <FormControl>
-                        <InputOTP
-                          maxLength={6}
-                          {...field}
-                          disabled={loading}
-                          className="justify-center"
-                        >
-                          <InputOTPGroup className="w-full gap-2">
-                            {Array.from({ length: 6 }).map((_, index) => (
-                              <InputOTPSlot
-                                key={`totp-${index + 1}`}
-                                index={index}
-                                className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                              />
-                            ))}
-                          </InputOTPGroup>
-                        </InputOTP>
+                        <Suspense fallback={<InputOTPRowFallback />}>
+                          <InputOTP
+                            maxLength={6}
+                            {...field}
+                            disabled={loading}
+                            className="justify-center"
+                          >
+                            <InputOTPGroup className="w-full gap-2">
+                              {Array.from({ length: 6 }).map((_, index) => (
+                                <InputOTPSlot
+                                  key={`totp-${index + 1}`}
+                                  index={index}
+                                  className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                />
+                              ))}
+                            </InputOTPGroup>
+                          </InputOTP>
+                        </Suspense>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1990,22 +2029,24 @@ export default function LoginForm({
                             {t('login.verification_code_label')}
                           </FormLabel>
                           <FormControl>
-                            <InputOTP
-                              maxLength={6}
-                              {...field}
-                              disabled={loading}
-                              className="justify-center"
-                            >
-                              <InputOTPGroup className="w-full gap-2">
-                                {Array.from({ length: 6 }).map((_, index) => (
-                                  <InputOTPSlot
-                                    key={`otp-${index + 1}`}
-                                    index={index}
-                                    className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                                  />
-                                ))}
-                              </InputOTPGroup>
-                            </InputOTP>
+                            <Suspense fallback={<InputOTPRowFallback />}>
+                              <InputOTP
+                                maxLength={6}
+                                {...field}
+                                disabled={loading}
+                                className="justify-center"
+                              >
+                                <InputOTPGroup className="w-full gap-2">
+                                  {Array.from({ length: 6 }).map((_, index) => (
+                                    <InputOTPSlot
+                                      key={`otp-${index + 1}`}
+                                      index={index}
+                                      className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                    />
+                                  ))}
+                                </InputOTPGroup>
+                              </InputOTP>
+                            </Suspense>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

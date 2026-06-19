@@ -134,6 +134,15 @@ describe('public shell compile graph', () => {
     );
   });
 
+  it('loads OTP input UI only after login needs it', () => {
+    expect(loginFormSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/input-otp')
+    );
+    expect(loginFormSource).toMatch(
+      /import\(\s*['"]@tuturuuu\/ui\/input-otp['"]\s*\)/u
+    );
+  });
+
   it('keeps the login Turnstile widget behind a dynamic import', () => {
     expect(loginFormSource).not.toMatch(
       staticImportPattern('@marsidev/react-turnstile')
