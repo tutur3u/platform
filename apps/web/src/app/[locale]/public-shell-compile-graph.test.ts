@@ -25,6 +25,12 @@ const loginPageSource = source('src/app/[locale]/(marketing)/login/page.tsx');
 const loginConfirmationPartsSource = source(
   'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
 );
+const landingHeroSource = source(
+  'src/components/landing/hero/hero-section.tsx'
+);
+const landingVideoHeroSource = source(
+  'src/components/landing/hero/video-hero.tsx'
+);
 const aboutPageSource = source('src/app/[locale]/(marketing)/about/page.tsx');
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
@@ -260,6 +266,20 @@ describe('public shell compile graph', () => {
     expect(loginContentSource).not.toMatch(staticImportPattern('next/link'));
     expect(loginContentSource).not.toMatch(staticImportPattern('next/image'));
     expect(loginFormSource).not.toMatch(staticImportPattern('next/image'));
+  });
+
+  it('keeps the landing hero off shared UI and Next primitives', () => {
+    for (const modulePath of [
+      '@tuturuuu/ui/badge',
+      '@tuturuuu/ui/button',
+      'next/link',
+    ] as const) {
+      expect(landingHeroSource).not.toMatch(staticImportPattern(modulePath));
+    }
+
+    expect(landingVideoHeroSource).not.toMatch(
+      staticImportPattern('next/image')
+    );
   });
 
   it('loads OTP input UI only after login needs it', () => {

@@ -8,7 +8,6 @@ import {
   Sparkles,
   TrendingUp,
 } from '@tuturuuu/icons/lucide';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 
@@ -143,12 +142,11 @@ export function VideoHero() {
               className="group relative block aspect-video w-full cursor-pointer focus:outline-none"
             >
               {/* Thumbnail */}
-              <Image
+              {/* biome-ignore lint/performance/noImgElement: Keeps the landing dev compile graph off next/image. */}
+              <img
                 src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`}
                 alt={t('thumbnail')}
-                fill
-                unoptimized
-                className="block object-cover opacity-90 transition-all duration-500 group-hover:scale-[1.02] group-hover:opacity-100"
+                className="absolute inset-0 block h-full w-full object-cover opacity-90 transition-all duration-500 group-hover:scale-[1.02] group-hover:opacity-100"
               />
 
               {/* Play Button */}
