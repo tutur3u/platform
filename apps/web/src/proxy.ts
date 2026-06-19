@@ -1276,7 +1276,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath || isDashboardRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    hasSupabaseSessionCookie(req)
   ) {
     try {
       const supabase = await createClient();

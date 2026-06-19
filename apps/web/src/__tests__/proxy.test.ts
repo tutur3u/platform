@@ -105,6 +105,9 @@ vi.mock('@tuturuuu/utils/email/client', () => ({
 }));
 
 describe('web proxy api handling', () => {
+  const AUTH_COOKIE_HEADER =
+    'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue';
+
   function createAuthenticatedSupabaseClient() {
     const completedOnboardingBuilder = {
       select: vi.fn().mockReturnThis(),
@@ -174,6 +177,14 @@ describe('web proxy api handling', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
   });
+
+  function createSessionRequest(url: string) {
+    return new NextRequest(url, {
+      headers: {
+        cookie: AUTH_COOKIE_HEADER,
+      },
+    });
+  }
 
   afterEach(() => {
     vi.useRealTimers();
@@ -983,12 +994,28 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
       'http://localhost/ws-1/tasks/boards/board-1'
     );
+  });
+
+  it('skips default workspace redirect auth when root requests have no session cookie', async () => {
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-1',
+      personal: false,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
   });
 
   it('redirects the legacy dashboard alias to the default workspace home', async () => {
@@ -1008,7 +1035,9 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/dashboard'));
+    const response = await proxy(
+      createSessionRequest('http://localhost/dashboard')
+    );
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('http://localhost/ws-1');
@@ -1065,7 +1094,7 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
@@ -1104,7 +1133,7 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/vi'));
+    const response = await proxy(createSessionRequest('http://localhost/vi'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
@@ -1130,7 +1159,7 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/vi/dashboard')
+      createSessionRequest('http://localhost/vi/dashboard')
     );
 
     expect(response.status).toBe(307);
@@ -1351,7 +1380,7 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
