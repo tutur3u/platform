@@ -19,18 +19,58 @@ import {
   UserCheck,
   Users,
 } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import type { ComponentProps } from 'react';
 
 interface SecurityFeature {
   icon: LucideIcon;
   title: string;
   description: string;
   color: string;
+}
+
+function SecurityBadge({ className, ...props }: ComponentProps<'span'>) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md border border-transparent bg-secondary px-2 py-0.5 font-semibold text-secondary-foreground text-xs transition-[color,box-shadow]',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function SecurityCard({ className, ...props }: ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border bg-card text-card-foreground shadow-sm',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function SecurityLinkButton({
+  className,
+  variant = 'default',
+  ...props
+}: ComponentProps<'a'> & { variant?: 'default' | 'outline' }) {
+  return (
+    <a
+      className={cn(
+        'inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md px-8 font-medium text-sm shadow-xs transition-[color,box-shadow] hover:scale-105',
+        variant === 'outline'
+          ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+          : 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+        className
+      )}
+      {...props}
+    />
+  );
 }
 
 const securityFeatures: SecurityFeature[] = [
@@ -155,13 +195,10 @@ export default function SecurityPage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <Badge
-                variant="secondary"
-                className="mb-6 border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue transition-all hover:scale-105 hover:bg-dynamic-blue/20 hover:shadow-dynamic-blue/20 hover:shadow-lg"
-              >
+              <SecurityBadge className="mb-6 border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue transition-all hover:scale-105 hover:bg-dynamic-blue/20 hover:shadow-dynamic-blue/20 hover:shadow-lg">
                 <Shield className="mr-1.5 h-3.5 w-3.5" />
                 Security First
-              </Badge>
+              </SecurityBadge>
             </motion.div>
 
             <motion.h1
@@ -219,7 +256,7 @@ export default function SecurityPage() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card
+                <SecurityCard
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
                     `border-dynamic-${feature.color}/30 bg-linear-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
@@ -241,7 +278,7 @@ export default function SecurityPage() {
                   <p className="text-foreground/60 text-sm leading-relaxed">
                     {feature.description}
                   </p>
-                </Card>
+                </SecurityCard>
               </motion.div>
             ))}
           </div>
@@ -256,7 +293,7 @@ export default function SecurityPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-background to-background p-8 md:p-12">
+            <SecurityCard className="overflow-hidden border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-background to-background p-8 md:p-12">
               <div className="grid gap-12 lg:grid-cols-2">
                 <div className="flex flex-col justify-center">
                   <motion.div
@@ -280,37 +317,36 @@ export default function SecurityPage() {
                   </p>
 
                   <div className="mb-8 flex flex-col flex-wrap gap-3 sm:flex-row sm:gap-4">
-                    <Button size="lg" asChild>
-                      <a href="mailto:security@tuturuuu.com">
-                        <Mail className="mr-2 h-5 w-5" />
-                        Contact Security Team
-                      </a>
-                    </Button>
-                    <Button size="lg" variant="outline" asChild>
-                      <Link href="/security/policy">
-                        <FileText className="mr-2 h-5 w-5" />
-                        Security Policy
-                      </Link>
-                    </Button>
+                    <SecurityLinkButton href="mailto:security@tuturuuu.com">
+                      <Mail className="mr-2 h-5 w-5" />
+                      Contact Security Team
+                    </SecurityLinkButton>
+                    <SecurityLinkButton
+                      href="/security/policy"
+                      variant="outline"
+                    >
+                      <FileText className="mr-2 h-5 w-5" />
+                      Security Policy
+                    </SecurityLinkButton>
                   </div>
 
                   <div className="flex flex-wrap gap-6">
-                    <Link
+                    <a
                       href="/security/bug-bounty"
                       className="group flex items-center gap-2 text-foreground/60 transition-colors hover:text-foreground"
                     >
                       <Trophy className="h-5 w-5 text-dynamic-yellow" />
                       <span>Bug Bounty Hall of Fame</span>
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                    <Link
+                    </a>
+                    <a
                       href="/contributors"
                       className="group flex items-center gap-2 text-foreground/60 transition-colors hover:text-foreground"
                     >
                       <Users className="h-5 w-5 text-dynamic-purple" />
                       <span>Contributors</span>
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
+                    </a>
                   </div>
                 </div>
 
@@ -320,7 +356,7 @@ export default function SecurityPage() {
                       Reporting Guidelines
                     </h3>
 
-                    <Card className="border-dynamic-orange/30 bg-dynamic-orange/5 p-6">
+                    <SecurityCard className="border-dynamic-orange/30 bg-dynamic-orange/5 p-6">
                       <div className="mb-3 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-orange/10">
                           <AlertTriangle className="h-5 w-5 text-dynamic-orange" />
@@ -330,9 +366,9 @@ export default function SecurityPage() {
                       <p className="text-foreground/70 text-sm leading-relaxed">
                         Security issues in our core services and infrastructure
                       </p>
-                    </Card>
+                    </SecurityCard>
 
-                    <Card className="border-dynamic-blue/30 bg-dynamic-blue/5 p-6">
+                    <SecurityCard className="border-dynamic-blue/30 bg-dynamic-blue/5 p-6">
                       <div className="mb-3 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-blue/10">
                           <Mail className="h-5 w-5 text-dynamic-blue" />
@@ -342,9 +378,9 @@ export default function SecurityPage() {
                       <p className="text-foreground/70 text-sm leading-relaxed">
                         Email security@tuturuuu.com with detailed reports
                       </p>
-                    </Card>
+                    </SecurityCard>
 
-                    <Card className="border-dynamic-green/30 bg-dynamic-green/5 p-6">
+                    <SecurityCard className="border-dynamic-green/30 bg-dynamic-green/5 p-6">
                       <div className="mb-3 flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-green/10">
                           <Shield className="h-5 w-5 text-dynamic-green" />
@@ -354,11 +390,11 @@ export default function SecurityPage() {
                       <p className="text-foreground/70 text-sm leading-relaxed">
                         We'll respond within 24 hours to acknowledge reports
                       </p>
-                    </Card>
+                    </SecurityCard>
                   </div>
                 </div>
               </div>
-            </Card>
+            </SecurityCard>
           </motion.div>
         </div>
       </section>
@@ -414,7 +450,7 @@ export default function SecurityPage() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card
+                <SecurityCard
                   className={cn(
                     'h-full p-8 text-center transition-all hover:shadow-lg',
                     `border-dynamic-${item.color}/30 bg-linear-to-br from-dynamic-${item.color}/5 via-background to-background hover:border-dynamic-${item.color}/50 hover:shadow-dynamic-${item.color}/10`
@@ -434,7 +470,7 @@ export default function SecurityPage() {
                   <p className="text-foreground/60 text-sm leading-relaxed">
                     {item.description}
                   </p>
-                </Card>
+                </SecurityCard>
               </motion.div>
             ))}
           </div>

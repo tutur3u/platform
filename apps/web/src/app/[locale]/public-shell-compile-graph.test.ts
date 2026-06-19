@@ -205,6 +205,17 @@ describe('public shell compile graph', () => {
     expect(securityPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
+  it('keeps the public security page off shared UI primitives', () => {
+    for (const modulePath of [
+      '@tuturuuu/ui/badge',
+      '@tuturuuu/ui/button',
+      '@tuturuuu/ui/card',
+      'next/link',
+    ] as const) {
+      expect(securityPageSource).not.toMatch(staticImportPattern(modulePath));
+    }
+  });
+
   it('keeps legal page icons off the package root export', () => {
     for (const sourceText of legalIconBoundarySources) {
       expect(sourceText).not.toContain("from '@tuturuuu/icons'");
