@@ -118,6 +118,15 @@ describe('public shell compile graph', () => {
     }
   });
 
+  it('keeps the login Turnstile widget behind a dynamic import', () => {
+    expect(loginFormSource).not.toMatch(
+      staticImportPattern('@marsidev/react-turnstile')
+    );
+    expect(loginFormSource).toMatch(
+      /import\(\s*['"]@marsidev\/react-turnstile['"]\s*\)/u
+    );
+  });
+
   it('loads the report-problem dialog only after the menu action opens it', () => {
     expect(reportProblemMenuItemSource).not.toMatch(
       staticImportPattern('@tuturuuu/ui/report-problem-dialog')

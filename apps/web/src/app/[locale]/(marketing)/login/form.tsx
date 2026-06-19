@@ -1,6 +1,6 @@
 'use client';
 
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   mapUrlToApp,
@@ -48,7 +48,15 @@ import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
@@ -76,6 +84,23 @@ const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
 const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
 const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
+
+const Turnstile = lazy(async () => {
+  const { Turnstile: TurnstileComponent } = await import(
+    '@marsidev/react-turnstile'
+  );
+
+  return { default: TurnstileComponent };
+});
+
+function TurnstileLoadingFallback() {
+  return (
+    <div
+      aria-hidden="true"
+      className="h-[65px] w-[300px] max-w-full animate-pulse rounded-xl bg-muted/50"
+    />
+  );
+}
 
 function getSafeLocalReturnPath(returnUrl: string | null | undefined) {
   const normalizedReturnUrl = normalizeClientRedirectPath(
@@ -569,6 +594,19 @@ export default function LoginForm({
     console.warn('[Turnstile] Timeout - resetting widget');
     resetCaptcha();
   }, [resetCaptcha]);
+
+  const renderTurnstile = (siteKey: string) => (
+    <Suspense fallback={<TurnstileLoadingFallback />}>
+      <Turnstile
+        ref={captchaRefPassword}
+        siteKey={siteKey}
+        onSuccess={handleCaptchaSuccess}
+        onExpire={() => setCaptchaToken(undefined)}
+        onError={handleCaptchaError}
+        onTimeout={handleCaptchaTimeout}
+      />
+    </Suspense>
+  );
 
   const needsMFA = useCallback(async () => {
     const { data: assuranceLevel } =
@@ -1825,14 +1863,7 @@ export default function LoginForm({
                         {turnstileClientState.canRenderWidget &&
                         turnstileSiteKey ? (
                           <div className="flex flex-col items-center gap-2">
-                            <Turnstile
-                              ref={captchaRefPassword}
-                              siteKey={turnstileSiteKey}
-                              onSuccess={handleCaptchaSuccess}
-                              onExpire={() => setCaptchaToken(undefined)}
-                              onError={handleCaptchaError}
-                              onTimeout={handleCaptchaTimeout}
-                            />
+                            {renderTurnstile(turnstileSiteKey)}
                             {captchaError ? (
                               <p className="text-destructive text-sm">
                                 {captchaError}
@@ -1982,14 +2013,7 @@ export default function LoginForm({
                         {turnstileClientState.canRenderWidget &&
                         turnstileSiteKey ? (
                           <div className="flex flex-col items-center gap-2">
-                            <Turnstile
-                              ref={captchaRefPassword}
-                              siteKey={turnstileSiteKey}
-                              onSuccess={handleCaptchaSuccess}
-                              onExpire={() => setCaptchaToken(undefined)}
-                              onError={handleCaptchaError}
-                              onTimeout={handleCaptchaTimeout}
-                            />
+                            {renderTurnstile(turnstileSiteKey)}
                             {captchaError ? (
                               <p className="text-destructive text-sm">
                                 {captchaError}
@@ -2128,14 +2152,7 @@ export default function LoginForm({
                         {turnstileClientState.canRenderWidget &&
                         turnstileSiteKey ? (
                           <div className="flex flex-col items-center gap-2">
-                            <Turnstile
-                              ref={captchaRefPassword}
-                              siteKey={turnstileSiteKey}
-                              onSuccess={handleCaptchaSuccess}
-                              onExpire={() => setCaptchaToken(undefined)}
-                              onError={handleCaptchaError}
-                              onTimeout={handleCaptchaTimeout}
-                            />
+                            {renderTurnstile(turnstileSiteKey)}
                             {captchaError ? (
                               <p className="text-destructive text-sm">
                                 {captchaError}
