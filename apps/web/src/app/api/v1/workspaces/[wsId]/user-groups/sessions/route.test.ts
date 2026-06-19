@@ -55,6 +55,15 @@ describe('workspace user group sessions route', () => {
         {
           body: JSON.stringify({
             description: '# Lesson plan',
+            descriptionJson: {
+              content: [
+                {
+                  content: [{ text: 'Lesson plan', type: 'text' }],
+                  type: 'paragraph',
+                },
+              ],
+              type: 'doc',
+            },
             endTimezone: 'Asia/Ho_Chi_Minh',
             endsAt: '2026-01-12T13:30:00.000Z',
             files: [{ storagePath: 'user-groups/group-1/lesson.pdf' }],
@@ -86,6 +95,15 @@ describe('workspace user group sessions route', () => {
           daysOfWeek: [2, 4, 6],
           intervalWeeks: 1,
           untilDate: '2026-06-30',
+        },
+        descriptionJson: {
+          content: [
+            {
+              content: [{ text: 'Lesson plan', type: 'text' }],
+              type: 'paragraph',
+            },
+          ],
+          type: 'doc',
         },
         files: [{ storagePath: 'user-groups/group-1/lesson.pdf' }],
         tagNames: ['Exam prep', 'Makeup'],

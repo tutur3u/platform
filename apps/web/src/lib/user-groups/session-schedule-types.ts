@@ -18,6 +18,7 @@ export type UntypedSchemaClient = {
 
 export type SessionRow = {
   description: string | null;
+  description_json: Record<string, unknown> | null;
   end_timezone: string;
   ends_at: string;
   group_id: string;
@@ -35,6 +36,7 @@ export type SessionRow = {
 export type SeriesRow = {
   days_of_week: number[];
   description: string | null;
+  description_json: Record<string, unknown> | null;
   end_time: string;
   end_timezone: string;
   group_id: string;

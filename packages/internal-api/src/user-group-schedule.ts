@@ -17,8 +17,18 @@ export interface WorkspaceUserGroupSessionFile {
   storagePath: string;
 }
 
+export type WorkspaceUserGroupSessionDescriptionJson = {
+  [key: string]: unknown;
+  attrs?: Record<string, unknown>;
+  content?: WorkspaceUserGroupSessionDescriptionJson[];
+  marks?: { attrs?: Record<string, unknown>; type: string }[];
+  text?: string;
+  type?: string;
+};
+
 export interface WorkspaceUserGroupSession {
   description: string | null;
+  descriptionJson: WorkspaceUserGroupSessionDescriptionJson | null;
   endTimezone: string;
   endsAt: string;
   files: WorkspaceUserGroupSessionFile[];
@@ -71,6 +81,7 @@ export interface WorkspaceUserGroupSessionRecurrencePayload {
 
 export interface CreateWorkspaceUserGroupSessionPayload {
   description?: string | null;
+  descriptionJson?: WorkspaceUserGroupSessionDescriptionJson | null;
   endTimezone: string;
   endsAt: string;
   files?: WorkspaceUserGroupSessionFilePayload[];
@@ -85,6 +96,7 @@ export interface CreateWorkspaceUserGroupSessionPayload {
 
 export interface UpdateWorkspaceUserGroupSessionPayload {
   description?: string | null;
+  descriptionJson?: WorkspaceUserGroupSessionDescriptionJson | null;
   endTimezone?: string;
   endsAt?: string;
   files?: WorkspaceUserGroupSessionFilePayload[];

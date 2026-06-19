@@ -190,6 +190,7 @@ function serializeSession(
 ): WorkspaceUserGroupSession {
   return {
     description: row.description,
+    descriptionJson: row.description_json,
     endTimezone: row.end_timezone,
     endsAt: row.ends_at,
     files,

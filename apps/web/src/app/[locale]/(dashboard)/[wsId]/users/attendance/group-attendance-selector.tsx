@@ -2,6 +2,7 @@
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { CalendarDays, Check, ChevronsUpDown, Users } from '@tuturuuu/icons';
+import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
 import {
   getNextWorkspaceUserGroupsPageParam,
   listWorkspaceUserGroups,
@@ -168,16 +169,31 @@ export default function GroupAttendanceSelector({
     ],
     queryFn: async () => {
       if (!selectedGroupId) return null;
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}`,
-        { cache: 'no-store' }
-      );
+      const now = new Date();
+      const from = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        -6
+      ).toISOString();
+      const to = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        8
+      ).toISOString();
+      const [res, schedule] = await Promise.all([
+        fetch(`/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}`, {
+          cache: 'no-store',
+        }),
+        listWorkspaceUserGroupSessions(wsId, {
+          from,
+          groupId: selectedGroupId,
+          to,
+        }),
+      ]);
       if (!res.ok) throw new Error('Failed to fetch group details');
       const { data } = await res.json();
       return {
-        sessions: Array.isArray(data?.sessions)
-          ? (data.sessions as string[])
-          : [],
+        sessions: schedule.data,
         startingDate: (data?.starting_date ?? null) as string | null,
         endingDate: (data?.ending_date ?? null) as string | null,
       };

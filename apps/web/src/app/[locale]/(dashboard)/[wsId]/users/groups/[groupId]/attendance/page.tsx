@@ -7,7 +7,7 @@ import {
   getGroupGuestUserIds,
   getGroupRow,
 } from '@/lib/user-groups/server-data';
-import { listUserGroupSessionDates } from '@/lib/user-groups/session-schedule';
+import { listUserGroupSessions } from '@/lib/user-groups/session-schedule';
 import type { InitialAttendanceProps } from './client';
 import GroupAttendanceClient from './client';
 
@@ -50,9 +50,13 @@ export default async function UserGroupAttendancePage({
         const sp = await searchParams;
 
         const requestedDateParam = sp?.date;
+        const requestedSessionParam = sp?.session;
         const requestedDate = Array.isArray(requestedDateParam)
           ? requestedDateParam[0]
           : requestedDateParam;
+        const requestedSessionId = Array.isArray(requestedSessionParam)
+          ? requestedSessionParam[0]
+          : requestedSessionParam;
         const fallbackToday = new Date().toISOString().slice(0, 10);
         const effectiveDate =
           requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
@@ -66,7 +70,12 @@ export default async function UserGroupAttendancePage({
           sessions,
           members,
           attendance: attendanceMap,
-        } = await getInitialAttendanceData(wsId, groupId, effectiveDate);
+        } = await getInitialAttendanceData(
+          wsId,
+          groupId,
+          effectiveDate,
+          requestedSessionId
+        );
 
         return (
           <GroupAttendanceClient
@@ -89,27 +98,54 @@ export default async function UserGroupAttendancePage({
 async function getInitialAttendanceData(
   wsId: string,
   groupId: string,
-  dateYYYYMMDD: string
+  dateYYYYMMDD: string,
+  sessionId?: string | null
 ) {
   const sbAdmin = await createAdminClient();
+  const monthStart = new Date(`${dateYYYYMMDD}T00:00:00.000Z`);
+  const rangeStart = new Date(
+    monthStart.getUTCFullYear(),
+    monthStart.getUTCMonth(),
+    1 - 7
+  );
+  const rangeEnd = new Date(
+    monthStart.getUTCFullYear(),
+    monthStart.getUTCMonth() + 1,
+    8
+  );
 
   // Members and the day's attendance are independent — fetch in parallel.
-  const [membersRes, attRes, sessions] = await Promise.all([
+  const attendanceQuery = sbAdmin
+    .from('user_group_attendance')
+    .select('user_id, status, notes, session_id')
+    .eq('group_id', groupId)
+    .eq('date', dateYYYYMMDD);
+
+  const [membersRes, attRes, sessionData] = await Promise.all([
     sbAdmin
       .from('workspace_user_groups_users')
       .select(
         'workspace_users!workspace_user_roles_users_user_id_fkey!inner(*), role'
       )
       .eq('group_id', groupId),
-    sbAdmin
-      .from('user_group_attendance')
-      .select('user_id, status, notes')
-      .eq('group_id', groupId)
-      .eq('date', dateYYYYMMDD),
-    listUserGroupSessionDates({ groupId, supabase: sbAdmin, wsId }),
+    sessionId
+      ? attendanceQuery.or(`session_id.eq.${sessionId},session_id.is.null`)
+      : attendanceQuery.is('session_id', null),
+    listUserGroupSessions({
+      from: rangeStart.toISOString(),
+      groupId,
+      supabase: sbAdmin,
+      to: rangeEnd.toISOString(),
+      wsId,
+    }),
   ]);
 
   const membersRows = membersRes.data ?? [];
+  const attendanceRows = (attRes.data ?? []) as unknown as Array<{
+    user_id: string;
+    status: string;
+    notes: string | null;
+  }>;
 
   // Batch guest lookup instead of one is_user_guest RPC per member.
   const guestIds = await getGroupGuestUserIds(
@@ -135,7 +171,7 @@ async function getInitialAttendanceData(
   >[string];
 
   const attendance: Record<string, AttendanceEntry> = {};
-  for (const r of attRes.data || []) {
+  for (const r of attendanceRows) {
     attendance[r.user_id] = {
       status: r.status as AttendanceEntry['status'],
       note: r.notes ?? '',
@@ -143,7 +179,7 @@ async function getInitialAttendanceData(
   }
 
   return {
-    sessions,
+    sessions: sessionData.data,
     members,
     attendance,
   };

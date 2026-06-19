@@ -1,3 +1,4 @@
+import type { WorkspaceUserGroupSessionDescriptionJson } from '@tuturuuu/internal-api';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -13,6 +14,10 @@ const SessionFileSchema = z.object({
   name: z.string().trim().max(255).nullable().optional(),
   storagePath: z.string().trim().min(1).max(1024),
 });
+
+const DescriptionJsonSchema = z
+  .custom<WorkspaceUserGroupSessionDescriptionJson | null>()
+  .optional();
 
 const RecurrenceSchema = z.object({
   daysOfWeek: z
@@ -31,6 +36,7 @@ const RecurrenceSchema = z.object({
 const CreateSessionSchema = z
   .object({
     description: z.string().max(10_000).nullable().optional(),
+    descriptionJson: DescriptionJsonSchema,
     endTimezone: z.string().trim().min(1).max(128),
     endsAt: z.string().datetime(),
     files: z.array(SessionFileSchema).max(50).optional(),

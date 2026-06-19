@@ -102,6 +102,7 @@ export const CalendarContent = ({
   externalState,
   extras,
   overlay,
+  disableBuiltInEventUi,
 }: {
   t: any;
   locale: string;
@@ -118,6 +119,7 @@ export const CalendarContent = ({
   };
   extras?: React.ReactNode;
   overlay?: React.ReactNode;
+  disableBuiltInEventUi?: boolean;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendarSettings();
@@ -665,7 +667,7 @@ export const CalendarContent = ({
         )}
       </div>
 
-      {disabled
+      {disabled || disableBuiltInEventUi
         ? null
         : workspace && (
             <>

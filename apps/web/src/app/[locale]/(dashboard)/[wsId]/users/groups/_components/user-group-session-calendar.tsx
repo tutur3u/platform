@@ -12,23 +12,23 @@ import {
   listWorkspaceUserGroupSessions,
   updateWorkspaceUserGroupSession,
 } from '@tuturuuu/internal-api';
+import type { Workspace } from '@tuturuuu/types';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEventAdapter } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
+import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { toast } from '@tuturuuu/ui/sonner';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useMemo, useState } from 'react';
 import '@/lib/dayjs-setup';
-import { SessionCalendarGrid } from './session-calendar-grid';
 import { SessionCalendarToolbar } from './session-calendar-toolbar';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { SessionScopeDialog } from './session-scope-dialog';
 import {
   DEFAULT_SCHEDULE_TIMEZONE,
-  getTimeSlots,
-  getWeekDays,
+  formatSessionTime,
   getWeekStart,
-  moveSessionToSlot,
-  resizeSessionByMinutes,
-  sessionSlotKey,
 } from './session-time-utils';
 
 type PendingUpdate = {
@@ -46,15 +46,52 @@ interface UserGroupSessionCalendarProps {
 
 function scheduleQueryKey(
   wsId: string,
-  weekStart: Date,
+  range: { from: string; to: string },
   groupId?: string | null
 ) {
   return [
     'workspace-user-group-sessions',
     wsId,
-    dayjs(weekStart).format('YYYY-MM-DD'),
+    range.from,
+    range.to,
     groupId ?? 'all',
   ] as const;
+}
+
+function calendarQueryRange(date: Date, view: CalendarView) {
+  if (view === 'day') {
+    return {
+      from: dayjs(date).startOf('day').toISOString(),
+      to: dayjs(date).add(1, 'day').startOf('day').toISOString(),
+    };
+  }
+
+  if (view === '4-days') {
+    return {
+      from: dayjs(date).startOf('day').toISOString(),
+      to: dayjs(date).add(4, 'day').startOf('day').toISOString(),
+    };
+  }
+
+  if (view === 'month') {
+    return {
+      from: dayjs(date).startOf('month').subtract(7, 'day').toISOString(),
+      to: dayjs(date).endOf('month').add(7, 'day').toISOString(),
+    };
+  }
+
+  if (view === 'agenda') {
+    return {
+      from: dayjs(date).startOf('day').toISOString(),
+      to: dayjs(date).add(30, 'day').endOf('day').toISOString(),
+    };
+  }
+
+  const weekStart = getWeekStart(date);
+  return {
+    from: dayjs(weekStart).startOf('day').toISOString(),
+    to: dayjs(weekStart).add(7, 'day').startOf('day').toISOString(),
+  };
 }
 
 function optimisticPatch(
@@ -74,6 +111,10 @@ function optimisticPatch(
               payload.description === undefined
                 ? session.description
                 : payload.description,
+            descriptionJson:
+              payload.descriptionJson === undefined
+                ? session.descriptionJson
+                : payload.descriptionJson,
             endTimezone: payload.endTimezone ?? session.endTimezone,
             endsAt: payload.endsAt ?? session.endsAt,
             startTimezone: payload.startTimezone ?? session.startTimezone,
@@ -125,28 +166,28 @@ export function UserGroupSessionCalendar({
   wsId,
 }: UserGroupSessionCalendarProps) {
   const t = useTranslations('ws-user-group-schedule');
+  const calendarT = useTranslations('calendar');
+  const locale = useLocale();
   const queryClient = useQueryClient();
-  const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
+  const [calendarDate, setCalendarDate] = useState(() => new Date());
+  const [calendarView, setCalendarView] = useState<CalendarView>('week');
   const [groupFilter, setGroupFilter] = useState(groupId ?? 'all');
   const [tagFilter, setTagFilter] = useState('all');
   const [timezone, setTimezone] = useState(DEFAULT_SCHEDULE_TIMEZONE);
   const [editingSession, setEditingSession] =
     useState<WorkspaceUserGroupSession | null>(null);
+  const [draftEvent, setDraftEvent] = useState<CalendarEvent | null>(null);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(
     null
   );
 
   const activeGroupId = groupId ?? (groupFilter === 'all' ? null : groupFilter);
-  const queryKey = scheduleQueryKey(wsId, weekStart, activeGroupId);
-  const days = useMemo(() => getWeekDays(weekStart), [weekStart]);
-  const slots = useMemo(() => getTimeSlots(), []);
+  const weekStart = useMemo(() => getWeekStart(calendarDate), [calendarDate]);
   const range = useMemo(
-    () => ({
-      from: dayjs(weekStart).startOf('day').toISOString(),
-      to: dayjs(weekStart).add(7, 'day').startOf('day').toISOString(),
-    }),
-    [weekStart]
+    () => calendarQueryRange(calendarDate, calendarView),
+    [calendarDate, calendarView]
   );
+  const queryKey = scheduleQueryKey(wsId, range, activeGroupId);
 
   const sessionsQuery = useQuery({
     queryKey,
@@ -169,16 +210,51 @@ export function UserGroupSessionCalendar({
     });
   }, [scheduleData?.data, tagFilter]);
 
-  const sessionsBySlot = useMemo(() => {
-    const map = new Map<string, WorkspaceUserGroupSession[]>();
-    for (const session of filteredSessions) {
-      const key = sessionSlotKey(session);
-      const list = map.get(key) ?? [];
-      list.push(session);
-      map.set(key, list);
-    }
-    return map;
-  }, [filteredSessions]);
+  const sessionsById = useMemo(
+    () =>
+      new Map(
+        (scheduleData?.data ?? []).map((session) => [session.id, session])
+      ),
+    [scheduleData?.data]
+  );
+
+  const calendarEvents = useMemo<CalendarEvent[]>(() => {
+    return filteredSessions.map((session) => {
+      const tags = session.tags.map((tag) => tag.name).join(', ');
+      const badges = [
+        session.seriesId ? t('recurring_badge') : null,
+        tags || null,
+        session.files.length
+          ? t('files_attached_count', { count: session.files.length })
+          : null,
+      ].filter(Boolean);
+      const titleParts = [
+        session.title || session.groupName || t('untitled_session'),
+        badges.length ? badges.join(' / ') : null,
+      ].filter(Boolean);
+
+      return {
+        id: session.id,
+        title: titleParts.join(' - '),
+        description: [
+          formatSessionTime(session),
+          session.groupName,
+          session.description,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        start_at: session.startsAt,
+        end_at: session.endsAt,
+        color: session.seriesId
+          ? 'PURPLE'
+          : session.tags.length
+            ? 'GREEN'
+            : 'BLUE',
+        locked: false,
+        ws_id: wsId,
+      };
+    });
+  }, [filteredSessions, t, wsId]);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateWorkspaceUserGroupSessionPayload) =>
@@ -234,34 +310,76 @@ export function UserGroupSessionCalendar({
     },
   });
 
-  const requestUpdate = (
-    session: WorkspaceUserGroupSession,
-    payload: UpdateWorkspaceUserGroupSessionPayload
-  ) => {
-    if (session.seriesId && !payload.scope) {
-      setPendingUpdate({ payload, session });
-      return;
-    }
+  const requestUpdate = useCallback(
+    (
+      session: WorkspaceUserGroupSession,
+      payload: UpdateWorkspaceUserGroupSessionPayload
+    ) => {
+      if (session.seriesId && !payload.scope) {
+        setPendingUpdate({ payload, session });
+        return;
+      }
 
-    updateMutation.mutate({
-      payload: { ...payload, scope: payload.scope ?? 'once' },
-      sessionId: session.id,
-    });
-  };
+      updateMutation.mutate({
+        payload: { ...payload, scope: payload.scope ?? 'once' },
+        sessionId: session.id,
+      });
+    },
+    [updateMutation]
+  );
 
-  const handleDrop = (date: string, time: string, sessionId: string) => {
-    const session = filteredSessions.find((item) => item.id === sessionId);
-    if (!session || !canUpdateSchedule) return;
-    const moved = moveSessionToSlot(session, date, time);
-    requestUpdate(session, {
-      ...moved,
-      endTimezone: session.endTimezone,
-      startTimezone: session.startTimezone,
-    });
-  };
+  const eventAdapter = useMemo<CalendarEventAdapter>(
+    () => ({
+      disableBuiltInEventUi: true,
+      onCreate: (event) => {
+        if (!canUpdateSchedule) return undefined;
+        setDraftEvent({ id: 'new', ...event });
+        return undefined;
+      },
+      onCreateDraft: (event) => {
+        if (!canUpdateSchedule) return;
+        setDraftEvent(event);
+      },
+      onOpen: (eventId, event) => {
+        if (!eventId || eventId === 'new') {
+          if (canUpdateSchedule) setDraftEvent(event ?? null);
+          return;
+        }
+
+        const session = sessionsById.get(eventId);
+        if (session) setEditingSession(session);
+      },
+      onUpdate: (eventId, updates, event) => {
+        if (!canUpdateSchedule) return event;
+
+        const session = sessionsById.get(eventId);
+        if (!session) return event;
+
+        const payload: UpdateWorkspaceUserGroupSessionPayload = {
+          endTimezone: session.endTimezone,
+          startTimezone: session.startTimezone,
+        };
+
+        if (updates.start_at) payload.startsAt = updates.start_at;
+        if (updates.end_at) payload.endsAt = updates.end_at;
+        if (updates.title !== undefined) payload.title = updates.title;
+        if (updates.description !== undefined) {
+          payload.description = updates.description;
+        }
+
+        requestUpdate(session, payload);
+
+        return event ? { ...event, ...updates } : undefined;
+      },
+      onDelete: () => {
+        toast.info(t('delete_session_not_available'));
+      },
+    }),
+    [canUpdateSchedule, sessionsById, t, requestUpdate]
+  );
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-[calc(100dvh-12rem)] flex-col gap-4">
       <SessionCalendarToolbar
         activeGroupId={activeGroupId}
         canChooseGroup={canChooseGroup}
@@ -278,28 +396,64 @@ export function UserGroupSessionCalendar({
         }}
         onTagFilterChange={setTagFilter}
         onTimezoneChange={setTimezone}
-        onWeekStartChange={setWeekStart}
+        onWeekStartChange={setCalendarDate}
         tagFilter={tagFilter}
         tags={tags}
         timezone={timezone}
         title={title}
         weekStart={weekStart}
+        wsId={wsId}
       />
 
-      <SessionCalendarGrid
-        canUpdateSchedule={canUpdateSchedule}
-        days={days}
-        onDrop={handleDrop}
-        onEdit={setEditingSession}
-        onResize={(item, minutes) =>
-          requestUpdate(item, {
-            endTimezone: item.endTimezone,
-            endsAt: resizeSessionByMinutes(item, minutes),
-          })
-        }
-        sessionsBySlot={sessionsBySlot}
-        slots={slots}
-        timezone={timezone}
+      <div className="min-h-[720px] flex-1 overflow-hidden rounded-md border bg-background">
+        <SmartCalendar
+          t={calendarT}
+          locale={locale}
+          workspace={{ id: wsId } as Workspace}
+          useQuery={useQuery}
+          useQueryClient={useQueryClient}
+          disabled={!canUpdateSchedule}
+          eventAdapter={eventAdapter}
+          externalEvents={calendarEvents}
+          externalEventsLoading={sessionsQuery.isLoading}
+          externalEventsRefresh={() => {
+            void sessionsQuery.refetch();
+          }}
+          externalState={{
+            date: calendarDate,
+            setDate: setCalendarDate,
+            view: calendarView,
+            setView: setCalendarView,
+            availableViews: [
+              { value: 'day', label: calendarT('day') },
+              { value: '4-days', label: calendarT('4-days') },
+              { value: 'week', label: calendarT('week') },
+              { value: 'month', label: calendarT('month') },
+              { value: 'agenda', label: calendarT('agenda') },
+            ],
+          }}
+          showConnectionsManager={false}
+        />
+      </div>
+
+      <SessionEditorDialog
+        canChooseGroup={canChooseGroup}
+        defaultEndsAt={draftEvent?.end_at}
+        defaultGroupId={activeGroupId ?? undefined}
+        defaultStartsAt={draftEvent?.start_at}
+        groups={groups}
+        isPending={createMutation.isPending}
+        onOpenChange={(open) => {
+          if (!open) setDraftEvent(null);
+        }}
+        onSubmit={async (payload) => {
+          await createMutation.mutateAsync(
+            payload as CreateWorkspaceUserGroupSessionPayload
+          );
+        }}
+        open={!!draftEvent}
+        trigger={null}
+        wsId={wsId}
       />
 
       <SessionEditorDialog
@@ -320,6 +474,7 @@ export function UserGroupSessionCalendar({
         open={!!editingSession}
         session={editingSession}
         trigger={null}
+        wsId={wsId}
       />
 
       <SessionScopeDialog

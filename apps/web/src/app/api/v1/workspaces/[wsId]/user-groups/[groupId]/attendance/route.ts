@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -17,13 +18,81 @@ interface Params {
 }
 
 const AttendanceSchema = z.object({
-  user_id: z.guid(),
-  status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'NONE']),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   notes: z.string().optional(),
+  session_id: z.guid().nullable().optional(),
+  status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'NONE']),
+  user_id: z.guid(),
 });
 
 const BatchAttendanceSchema = z.array(AttendanceSchema);
+
+type PrivateSessionRow = {
+  id: string;
+  starts_at: string;
+  start_timezone: string;
+};
+
+type AttendanceResponseRow = {
+  id: string;
+  user_id: string;
+  status: string;
+  notes: string | null;
+  session_id: string | null;
+};
+
+type UntypedSchemaClient = {
+  from: (table: string) => any;
+  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: any }>;
+};
+
+function privateSchema(sbAdmin: TypedSupabaseClient): UntypedSchemaClient {
+  return (sbAdmin as any).schema('private') as UntypedSchemaClient;
+}
+
+async function validateSessionIds({
+  date,
+  groupId,
+  sbAdmin,
+  sessionIds,
+  wsId,
+}: {
+  date: string;
+  groupId: string;
+  sbAdmin: TypedSupabaseClient;
+  sessionIds: string[];
+  wsId: string;
+}) {
+  const uniqueSessionIds = Array.from(new Set(sessionIds.filter(Boolean)));
+  if (uniqueSessionIds.length === 0) return true;
+
+  const { data, error } = (await privateSchema(sbAdmin)
+    .from('workspace_user_group_sessions')
+    .select('id, starts_at, start_timezone')
+    .eq('ws_id', wsId)
+    .eq('group_id', groupId)
+    .eq('status', 'scheduled')
+    .in('id', uniqueSessionIds)) as {
+    data: PrivateSessionRow[] | null;
+    error: unknown;
+  };
+
+  if (error) throw error;
+
+  const validIds = new Set(
+    (data ?? [])
+      .filter((session) => {
+        const localDate = new Date(session.starts_at).toLocaleDateString(
+          'en-CA',
+          { timeZone: session.start_timezone }
+        );
+        return localDate === date;
+      })
+      .map((session) => session.id)
+  );
+
+  return uniqueSessionIds.every((sessionId) => validIds.has(sessionId));
+}
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
@@ -34,9 +103,16 @@ export async function GET(req: Request, { params }: Params) {
   }
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
+  const sessionId = searchParams.get('sessionId');
 
   if (!date) {
     return NextResponse.json({ message: 'Date is required' }, { status: 400 });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return NextResponse.json({ message: 'Invalid date' }, { status: 400 });
+  }
+  if (sessionId && !z.guid().safeParse(sessionId).success) {
+    return NextResponse.json({ message: 'Invalid sessionId' }, { status: 400 });
   }
 
   // Check permissions
@@ -67,11 +143,49 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await sbAdmin
+  if (sessionId) {
+    try {
+      const validSession = await validateSessionIds({
+        date,
+        groupId,
+        sbAdmin,
+        sessionIds: [sessionId],
+        wsId: normalizedWsId,
+      });
+
+      if (!validSession) {
+        return NextResponse.json(
+          { message: 'User group session not found' },
+          { status: 404 }
+        );
+      }
+    } catch (error) {
+      serverLogger.error('Error validating group attendance session:', error);
+      return NextResponse.json(
+        { message: 'Error fetching attendance' },
+        { status: 500 }
+      );
+    }
+  }
+
+  let attendanceQuery = sbAdmin
     .from('user_group_attendance')
-    .select('user_id, status, notes')
+    .select('id, user_id, status, notes, session_id')
     .eq('group_id', groupId)
     .eq('date', date);
+
+  if (sessionId) {
+    attendanceQuery = attendanceQuery.or(
+      `session_id.eq.${sessionId},session_id.is.null`
+    );
+  } else {
+    attendanceQuery = attendanceQuery.is('session_id', null);
+  }
+
+  const { data, error } = (await attendanceQuery) as unknown as {
+    data: AttendanceResponseRow[] | null;
+    error: unknown;
+  };
 
   if (error) {
     serverLogger.error('Error fetching group attendance:', error);
@@ -123,17 +237,45 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const sessionIds = payload
+    .map((entry) => entry.session_id)
+    .filter((sessionId): sessionId is string => Boolean(sessionId));
+
+  try {
+    const validSessions = await validateSessionIds({
+      date,
+      groupId,
+      sbAdmin,
+      sessionIds,
+      wsId: normalizedWsId,
+    });
+
+    if (!validSessions) {
+      return NextResponse.json(
+        { message: 'Invalid attendance session' },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    serverLogger.error('Error validating group attendance session:', error);
+    return NextResponse.json(
+      { message: 'Error saving attendance' },
+      { status: 500 }
+    );
+  }
+
   const actorAuthUid = await resolveRequestActorAuthUid(req);
 
-  const { error } = await sbAdmin
-    .schema('private')
-    .rpc('admin_save_user_group_attendance_with_audit_actor', {
+  const { error } = await privateSchema(sbAdmin).rpc(
+    'admin_save_user_group_attendance_with_audit_actor',
+    {
       p_actor_auth_uid: actorAuthUid ?? undefined,
       p_date: date,
       p_group_id: groupId,
       p_payload: payload,
       p_ws_id: normalizedWsId,
-    });
+    }
+  );
 
   if (error) {
     serverLogger.error('Error saving group attendance:', error);

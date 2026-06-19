@@ -26,6 +26,7 @@ type AttendanceExportRow = {
   date: string;
   status: string;
   notes: string;
+  session_id?: string | null;
   user: {
     id: string;
     display_name?: string | null;
@@ -91,6 +92,7 @@ export async function GET(request: Request, { params }: Params) {
     .select(
       `
         date,
+        session_id,
         status,
         notes,
         user:workspace_users!user_group_attendance_user_id_fkey!inner(${userFields}),
@@ -113,7 +115,7 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  const rows = ((data ?? []) as AttendanceExportRow[]).map((row) => {
+  const rows = ((data ?? []) as unknown as AttendanceExportRow[]).map((row) => {
     const userName =
       row.user?.full_name?.trim() ||
       row.user?.display_name?.trim() ||
@@ -124,6 +126,7 @@ export async function GET(request: Request, { params }: Params) {
     return {
       date: row.date,
       status: row.status,
+      sessionId: row.session_id ?? null,
       notes: row.notes ?? '',
       userId: row.user?.id ?? '',
       userName,

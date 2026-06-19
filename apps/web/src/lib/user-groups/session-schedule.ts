@@ -159,6 +159,7 @@ export async function createUserGroupSession({
       .insert({
         days_of_week: payload.recurrence.daysOfWeek,
         description: payload.description ?? null,
+        description_json: payload.descriptionJson ?? null,
         end_time: toTime(payload.endsAt, endTimezone),
         end_timezone: endTimezone,
         group_id: payload.groupId,
@@ -204,6 +205,7 @@ export async function createUserGroupSession({
     .from('workspace_user_group_sessions')
     .insert({
       description: payload.description ?? null,
+      description_json: payload.descriptionJson ?? null,
       end_timezone: payload.endTimezone,
       ends_at: payload.endsAt,
       group_id: payload.groupId,
@@ -327,6 +329,10 @@ export async function updateUserGroupSession({
         .insert({
           days_of_week: series.days_of_week,
           description: payload.description ?? current.description,
+          description_json:
+            payload.descriptionJson === undefined
+              ? current.description_json
+              : payload.descriptionJson,
           end_time: toTime(endsAt, endTimezone),
           end_timezone: endTimezone,
           group_id: current.group_id,
@@ -372,6 +378,10 @@ export async function updateUserGroupSession({
     .from('workspace_user_group_sessions')
     .update({
       description: payload.description ?? current.description,
+      description_json:
+        payload.descriptionJson === undefined
+          ? current.description_json
+          : payload.descriptionJson,
       end_timezone: endTimezone,
       ends_at: endsAt,
       series_id: null,

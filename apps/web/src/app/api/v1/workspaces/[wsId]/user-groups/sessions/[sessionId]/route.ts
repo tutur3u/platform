@@ -1,3 +1,4 @@
+import type { WorkspaceUserGroupSessionDescriptionJson } from '@tuturuuu/internal-api';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -11,9 +12,14 @@ const SessionFileSchema = z.object({
   storagePath: z.string().trim().min(1).max(1024),
 });
 
+const DescriptionJsonSchema = z
+  .custom<WorkspaceUserGroupSessionDescriptionJson | null>()
+  .optional();
+
 const UpdateSessionSchema = z
   .object({
     description: z.string().max(10_000).nullable().optional(),
+    descriptionJson: DescriptionJsonSchema,
     endTimezone: z.string().trim().min(1).max(128).optional(),
     endsAt: z.string().datetime().optional(),
     files: z.array(SessionFileSchema).max(50).optional(),

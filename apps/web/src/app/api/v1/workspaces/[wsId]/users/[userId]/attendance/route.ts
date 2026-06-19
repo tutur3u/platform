@@ -36,7 +36,7 @@ export async function GET(req: Request, { params }: Params) {
 
   let query = sbAdmin
     .from('user_group_attendance')
-    .select('date, status, groups:workspace_user_groups(id, name)')
+    .select('date, session_id, status, groups:workspace_user_groups(id, name)')
     .eq('user_id', userId)
     .gte('date', startDate.toISOString())
     .lt('date', endDate.toISOString());

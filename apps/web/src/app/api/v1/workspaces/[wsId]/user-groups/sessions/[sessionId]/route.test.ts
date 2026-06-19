@@ -52,6 +52,15 @@ describe('workspace user group session update route', () => {
         'http://localhost/api/v1/workspaces/00000000-0000-0000-0000-000000000001/user-groups/sessions/00000000-0000-0000-0000-000000000201',
         {
           body: JSON.stringify({
+            descriptionJson: {
+              content: [
+                {
+                  content: [{ text: 'Updated notes', type: 'text' }],
+                  type: 'paragraph',
+                },
+              ],
+              type: 'doc',
+            },
             endTimezone: 'Asia/Ho_Chi_Minh',
             endsAt: '2026-01-12T14:00:00.000Z',
             scope: 'once',
@@ -73,6 +82,15 @@ describe('workspace user group session update route', () => {
     expect(updateUserGroupSessionMock).toHaveBeenCalledWith({
       payload: expect.objectContaining({
         endsAt: '2026-01-12T14:00:00.000Z',
+        descriptionJson: {
+          content: [
+            {
+              content: [{ text: 'Updated notes', type: 'text' }],
+              type: 'paragraph',
+            },
+          ],
+          type: 'doc',
+        },
         scope: 'once',
         startsAt: '2026-01-12T12:30:00.000Z',
       }),

@@ -9596,6 +9596,7 @@ export type Database = {
           created_at: string;
           days_of_week: number[];
           description: string | null;
+          description_json: Json | null;
           end_time: string;
           end_timezone: string;
           group_id: string;
@@ -9614,6 +9615,7 @@ export type Database = {
           created_at?: string;
           days_of_week: number[];
           description?: string | null;
+          description_json?: Json | null;
           end_time: string;
           end_timezone?: string;
           group_id: string;
@@ -9632,6 +9634,7 @@ export type Database = {
           created_at?: string;
           days_of_week?: number[];
           description?: string | null;
+          description_json?: Json | null;
           end_time?: string;
           end_timezone?: string;
           group_id?: string;
@@ -9723,6 +9726,7 @@ export type Database = {
         Row: {
           created_at: string;
           description: string | null;
+          description_json: Json | null;
           end_timezone: string;
           ends_at: string;
           group_id: string;
@@ -9741,6 +9745,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           description?: string | null;
+          description_json?: Json | null;
           end_timezone?: string;
           ends_at: string;
           group_id: string;
@@ -9759,6 +9764,7 @@ export type Database = {
         Update: {
           created_at?: string;
           description?: string | null;
+          description_json?: Json | null;
           end_timezone?: string;
           ends_at?: string;
           group_id?: string;
@@ -23173,7 +23179,9 @@ export type Database = {
           created_at: string;
           date: string;
           group_id: string;
+          id: string;
           notes: string;
+          session_id: string | null;
           status: string;
           user_id: string;
         };
@@ -23181,7 +23189,9 @@ export type Database = {
           created_at?: string;
           date: string;
           group_id: string;
+          id?: string;
           notes?: string;
+          session_id?: string | null;
           status: string;
           user_id: string;
         };
@@ -23189,7 +23199,9 @@ export type Database = {
           created_at?: string;
           date?: string;
           group_id?: string;
+          id?: string;
           notes?: string;
+          session_id?: string | null;
           status?: string;
           user_id?: string;
         };

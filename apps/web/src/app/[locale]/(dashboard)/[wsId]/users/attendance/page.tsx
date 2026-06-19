@@ -1,5 +1,6 @@
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -60,15 +61,27 @@ export default async function WorkspaceUserAttendancePage({ params }: Props) {
               description={t('ws-user-attendance.description')}
             />
             <Separator className="my-4" />
-            <div className="space-y-6">
-              <AttendanceExportCard wsId={wsId} />
-              <GroupAttendanceSelector
-                wsId={wsId}
-                workspaceUserId={user?.virtual_user_id}
-                hasManageUsers={hasManageUsers}
-                canUpdateAttendance={canUpdateAttendance}
-              />
-            </div>
+            <Tabs defaultValue="groups" className="space-y-6">
+              <TabsList>
+                <TabsTrigger value="groups">
+                  {t('ws-user-attendance.selector_title')}
+                </TabsTrigger>
+                <TabsTrigger value="export">
+                  {t('ws-user-attendance.export.title')}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="groups" className="mt-0">
+                <GroupAttendanceSelector
+                  wsId={wsId}
+                  workspaceUserId={user?.virtual_user_id}
+                  hasManageUsers={hasManageUsers}
+                  canUpdateAttendance={canUpdateAttendance}
+                />
+              </TabsContent>
+              <TabsContent value="export" className="mt-0">
+                <AttendanceExportCard wsId={wsId} />
+              </TabsContent>
+            </Tabs>
           </>
         );
       }}

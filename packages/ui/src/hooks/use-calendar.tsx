@@ -230,6 +230,21 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _reject?: (reason: any) => void;
 }
 
+export type CalendarEventAdapter = {
+  disableBuiltInEventUi?: boolean;
+  onCreate?: (
+    event: Omit<CalendarEvent, 'id'>
+  ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
+  onCreateDraft?: (event: CalendarEvent) => void;
+  onDelete?: (eventId: string, event?: CalendarEvent) => Promise<void> | void;
+  onOpen?: (eventId?: string, event?: CalendarEvent) => void;
+  onUpdate?: (
+    eventId: string,
+    updates: Partial<CalendarEvent>,
+    event?: CalendarEvent
+  ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
+};
+
 /**
  * Syncs task total_duration after a calendar event is resized or moved.
  * - Uses canonical workspace calendar events as the source of truth
@@ -376,6 +391,7 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   experimentalGoogleToken: _experimentalGoogleToken,
+  eventAdapter,
   readOnly = false,
 }: {
   ws?: Workspace;
@@ -383,6 +399,7 @@ export const CalendarProvider = ({
   useQueryClient: any;
   children: ReactNode;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
+  eventAdapter?: CalendarEventAdapter;
   readOnly?: boolean;
 }) => {
   const queryClient = useQueryClient();
@@ -586,13 +603,26 @@ export const CalendarProvider = ({
         console.warn('Calendar is in read-only mode');
         return undefined;
       }
-      if (!ws) throw new Error('No workspace selected');
 
       // Round start and end times to nearest 15-minute interval
       const startDate = roundToNearest15Minutes(new Date(event.start_at));
       const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
       const eventColor = event.color || 'BLUE';
+
+      if (eventAdapter?.onCreate) {
+        const created = await eventAdapter.onCreate({
+          ...event,
+          start_at: startDate.toISOString(),
+          end_at: endDate.toISOString(),
+          color: eventColor as SupportedColor,
+        });
+        setPendingNewEvent(null);
+        refresh();
+        return created;
+      }
+
+      if (!ws) throw new Error('No workspace selected');
 
       // Create an event signature to check for duplicates
       const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
@@ -649,7 +679,7 @@ export const CalendarProvider = ({
 
       return {} as CalendarEvent;
     },
-    [ws, refresh, events, readOnly]
+    [ws, refresh, events, readOnly, eventAdapter]
   );
 
   const addEmptyEvent = useCallback(
@@ -699,6 +729,12 @@ export const CalendarProvider = ({
         ws_id: ws?.id || '',
       };
 
+      if (eventAdapter) {
+        eventAdapter.onCreateDraft?.(newEvent);
+        eventAdapter.onOpen?.(undefined, newEvent);
+        return newEvent as CalendarEvent;
+      }
+
       // Store the pending new event
       setPendingNewEvent(newEvent);
       setActiveEventId('new');
@@ -709,7 +745,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id]
+    [ws?.id, eventAdapter]
   );
 
   const addEmptyEventWithDuration = useCallback(
@@ -732,6 +768,12 @@ export const CalendarProvider = ({
         ws_id: ws?.id || '',
       };
 
+      if (eventAdapter) {
+        eventAdapter.onCreateDraft?.(newEvent);
+        eventAdapter.onOpen?.(undefined, newEvent);
+        return newEvent as CalendarEvent;
+      }
+
       // Store the pending new event
       setPendingNewEvent(newEvent);
       setActiveEventId('new');
@@ -742,7 +784,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id]
+    [ws?.id, eventAdapter]
   );
 
   // Process the update queue
@@ -906,7 +948,6 @@ export const CalendarProvider = ({
         console.warn('Calendar is in read-only mode');
         return undefined;
       }
-      if (!ws) throw new Error('No workspace selected');
 
       // Clean and validate the event updates - only allow known CalendarEvent fields
       const allowedFields: (keyof CalendarEvent)[] = [
@@ -946,6 +987,29 @@ export const CalendarProvider = ({
       if (cleanedUpdates.start_at || cleanedUpdates.end_at) {
         cleanedUpdates.locked = true;
       }
+
+      if (eventAdapter?.onUpdate || eventAdapter?.onCreate) {
+        if (pendingNewEvent && eventId === 'new') {
+          const result = await addEvent({
+            ...pendingNewEvent,
+            ...cleanedUpdates,
+          } as Omit<CalendarEvent, 'id'>);
+          return result;
+        }
+
+        const existingEvent = events.find(
+          (event: CalendarEvent) => event.id === eventId
+        );
+        const result = await eventAdapter.onUpdate?.(
+          eventId,
+          cleanedUpdates,
+          existingEvent
+        );
+        refresh();
+        return result;
+      }
+
+      if (!ws) throw new Error('No workspace selected');
 
       // If this is a newly created event that hasn't been saved to the database yet
       if (pendingNewEvent && eventId === 'new') {
@@ -1021,7 +1085,16 @@ export const CalendarProvider = ({
         }, 250); // Reduced from 2000ms to 250ms for better responsiveness
       });
     },
-    [ws, processUpdateQueue, pendingNewEvent, addEvent, events, readOnly]
+    [
+      ws,
+      processUpdateQueue,
+      pendingNewEvent,
+      addEvent,
+      events,
+      readOnly,
+      eventAdapter,
+      refresh,
+    ]
   );
 
   const deleteEvent = useCallback(
@@ -1034,6 +1107,17 @@ export const CalendarProvider = ({
       if (pendingNewEvent && eventId === 'new') {
         // Just clear the pending event
         setPendingNewEvent(null);
+        setActiveEventId(null);
+        setPreviewEventId(null);
+        return;
+      }
+
+      if (eventAdapter?.onDelete) {
+        await eventAdapter.onDelete(
+          eventId,
+          events.find((event: CalendarEvent) => event.id === eventId)
+        );
+        refresh();
         setActiveEventId(null);
         setPreviewEventId(null);
         return;
@@ -1093,6 +1177,7 @@ export const CalendarProvider = ({
       queryClient,
       onTaskScheduled,
       readOnly,
+      eventAdapter,
     ]
   );
 
@@ -1103,6 +1188,36 @@ export const CalendarProvider = ({
   const openEventEditor = useCallback(
     (eventId?: string, options?: { defaultNewEventTab?: 'manual' | 'ai' }) => {
       setPreviewEventId(null);
+
+      if (eventAdapter?.onOpen) {
+        if (eventId) {
+          eventAdapter.onOpen(
+            eventId,
+            events.find((event: CalendarEvent) => event.id === eventId)
+          );
+          return;
+        }
+
+        setDefaultNewEventTab(options?.defaultNewEventTab ?? 'manual');
+
+        const now = roundToNearest15Minutes(new Date());
+        const oneHourLater = new Date(now);
+        oneHourLater.setHours(oneHourLater.getHours() + 1);
+
+        const newEvent: CalendarEvent = {
+          id: 'new',
+          title: '',
+          description: '',
+          start_at: now.toISOString(),
+          end_at: oneHourLater.toISOString(),
+          color: 'BLUE',
+          ws_id: ws?.id || '',
+        };
+
+        eventAdapter.onCreateDraft?.(newEvent);
+        eventAdapter.onOpen(undefined, newEvent);
+        return;
+      }
 
       if (eventId) {
         setActiveEventId(eventId);
@@ -1130,7 +1245,7 @@ export const CalendarProvider = ({
       setActiveEventId('new');
       setModalHidden(false);
     },
-    [ws?.id]
+    [ws?.id, eventAdapter, events]
   );
 
   const openModal = useCallback(
@@ -1139,6 +1254,14 @@ export const CalendarProvider = ({
       _modalType?: 'all-day' | 'event',
       options?: { defaultNewEventTab?: 'manual' | 'ai' }
     ) => {
+      if (eventAdapter?.onOpen && eventId) {
+        eventAdapter.onOpen(
+          eventId,
+          events.find((event: CalendarEvent) => event.id === eventId)
+        );
+        return;
+      }
+
       if (eventId) {
         setPendingNewEvent(null);
         setActiveEventId(null);
@@ -1148,7 +1271,7 @@ export const CalendarProvider = ({
 
       openEventEditor(undefined, options);
     },
-    [openEventEditor]
+    [openEventEditor, eventAdapter, events]
   );
 
   const closeModal = useCallback(() => {

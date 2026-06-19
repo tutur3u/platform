@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(17);
+select plan(26);
 
 select ok(
   to_regclass('private.workspace_user_group_sessions') is not null,
@@ -45,6 +45,52 @@ select ok(
 select ok(
   not has_schema_privilege('anon', 'private', 'usage'),
   'anon cannot use private schema'
+);
+
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'workspace_user_group_sessions'
+      and column_name = 'description_json'
+      and data_type = 'jsonb'
+  ),
+  'sessions store rich description json'
+);
+
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'workspace_user_group_session_series'
+      and column_name = 'description_json'
+      and data_type = 'jsonb'
+  ),
+  'session series store rich description json'
+);
+
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'user_group_attendance'
+      and column_name = 'session_id'
+      and data_type = 'uuid'
+  ),
+  'attendance rows can point at a scheduled session'
+);
+
+select ok(
+  to_regclass('public.user_group_attendance_session_key') is not null,
+  'attendance has a unique session-level key'
+);
+
+select ok(
+  to_regclass('public.user_group_attendance_legacy_date_key') is not null,
+  'attendance keeps a unique legacy date key'
 );
 
 select ok(
@@ -232,6 +278,142 @@ select is(
   ),
   '2026-01-06 12:00:00+00'::timestamp with time zone,
   'recurring session preserves 7PM GMT+7 start'
+);
+
+insert into public.users (id)
+values ('00000000-0000-0000-0000-000000020401')
+on conflict (id) do nothing;
+
+insert into public.workspace_users (id, ws_id, display_name)
+values (
+  '00000000-0000-0000-0000-000000020402',
+  '00000000-0000-0000-0000-000000020010',
+  'Session Attendance Learner'
+)
+on conflict (id) do update
+set display_name = excluded.display_name;
+
+insert into public.workspace_user_groups_users (group_id, user_id, role)
+values (
+  '00000000-0000-0000-0000-000000020101',
+  '00000000-0000-0000-0000-000000020402',
+  'STUDENT'
+)
+on conflict (group_id, user_id) do update
+set role = excluded.role;
+
+insert into private.workspace_user_group_sessions (
+  id,
+  ws_id,
+  group_id,
+  title,
+  starts_at,
+  ends_at,
+  start_timezone,
+  end_timezone,
+  recurrence_instance_date,
+  source
+)
+values
+  (
+    '00000000-0000-0000-0000-000000020501',
+    '00000000-0000-0000-0000-000000020010',
+    '00000000-0000-0000-0000-000000020101',
+    'Morning Session',
+    make_timestamptz(2026, 1, 13, 7, 0, 0, 'Asia/Ho_Chi_Minh'),
+    make_timestamptz(2026, 1, 13, 8, 0, 0, 'Asia/Ho_Chi_Minh'),
+    'Asia/Ho_Chi_Minh',
+    'Asia/Ho_Chi_Minh',
+    '2026-01-13',
+    'test'
+  ),
+  (
+    '00000000-0000-0000-0000-000000020502',
+    '00000000-0000-0000-0000-000000020010',
+    '00000000-0000-0000-0000-000000020101',
+    'Evening Session',
+    make_timestamptz(2026, 1, 13, 19, 0, 0, 'Asia/Ho_Chi_Minh'),
+    make_timestamptz(2026, 1, 13, 20, 0, 0, 'Asia/Ho_Chi_Minh'),
+    'Asia/Ho_Chi_Minh',
+    'Asia/Ho_Chi_Minh',
+    '2026-01-13',
+    'test'
+  )
+on conflict (id) do update
+set starts_at = excluded.starts_at,
+    ends_at = excluded.ends_at,
+    recurrence_instance_date = excluded.recurrence_instance_date;
+
+select lives_ok(
+  $$
+    insert into public.user_group_attendance
+      (group_id, user_id, date, session_id, status, notes)
+    values
+      (
+        '00000000-0000-0000-0000-000000020101',
+        '00000000-0000-0000-0000-000000020402',
+        '2026-01-13',
+        '00000000-0000-0000-0000-000000020501',
+        'PRESENT',
+        'morning'
+      ),
+      (
+        '00000000-0000-0000-0000-000000020101',
+        '00000000-0000-0000-0000-000000020402',
+        '2026-01-13',
+        '00000000-0000-0000-0000-000000020502',
+        'LATE',
+        'evening'
+      )
+  $$,
+  'attendance accepts multiple same-day session rows for one user'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.user_group_attendance
+    where group_id = '00000000-0000-0000-0000-000000020101'
+      and user_id = '00000000-0000-0000-0000-000000020402'
+      and date = '2026-01-13'
+      and session_id is not null
+  ),
+  2,
+  'session-level attendance rows remain separate'
+);
+
+select lives_ok(
+  $$
+    insert into public.user_group_attendance
+      (group_id, user_id, date, session_id, status, notes)
+    values (
+      '00000000-0000-0000-0000-000000020101',
+      '00000000-0000-0000-0000-000000020402',
+      '2026-01-13',
+      null,
+      'ABSENT',
+      'legacy'
+    )
+  $$,
+  'legacy date-only attendance can coexist with session rows'
+);
+
+select throws_ok(
+  $$
+    insert into public.user_group_attendance
+      (group_id, user_id, date, session_id, status, notes)
+    values (
+      '00000000-0000-0000-0000-000000020101',
+      '00000000-0000-0000-0000-000000020402',
+      '2026-01-14',
+      '00000000-0000-0000-0000-000000020501',
+      'PRESENT',
+      'wrong date'
+    )
+  $$,
+  '22023',
+  'invalid_attendance_session',
+  'session-level attendance rejects mismatched session dates'
 );
 
 select * from finish();

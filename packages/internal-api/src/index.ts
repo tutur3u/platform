@@ -1237,6 +1237,7 @@ export {
   type WorkspaceUserGroupScheduleGroup,
   type WorkspaceUserGroupScheduleTag,
   type WorkspaceUserGroupSession,
+  type WorkspaceUserGroupSessionDescriptionJson,
   type WorkspaceUserGroupSessionFile,
   type WorkspaceUserGroupSessionFilePayload,
   type WorkspaceUserGroupSessionMutationResponse,

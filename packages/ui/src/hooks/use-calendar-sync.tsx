@@ -167,15 +167,22 @@ export const CalendarSyncProvider = ({
   wsId,
   experimentalGoogleToken: _experimentalGoogleToken,
   initialCalendarConnections = [],
+  externalEvents,
+  externalEventsLoading = false,
+  externalRefresh,
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   initialCalendarConnections?: CalendarConnection[];
+  externalEvents?: CalendarEvent[];
+  externalEventsLoading?: boolean;
+  externalRefresh?: () => void;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [events, setEvents] = useState<CalendarEventWithHabitInfo[]>([]);
+  const hasExternalEvents = externalEvents !== undefined;
 
   const [error, setError] = useState<Error | null>(null);
   const [dates, setDates] = useState<Date[]>([]);
@@ -377,7 +384,7 @@ export const CalendarSyncProvider = ({
   // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
     queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    enabled: !!wsId && dates.length > 0,
+    enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
@@ -463,7 +470,7 @@ export const CalendarSyncProvider = ({
   // Fetch habit calendar events to identify which events are habits
   const { data: habitEventData } = useQuery({
     queryKey: ['habitCalendarEvents', wsId, getCacheKey(dates)],
-    enabled: !!wsId && dates.length > 0,
+    enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 60000, // Consider data fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
@@ -516,6 +523,11 @@ export const CalendarSyncProvider = ({
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
+    if (hasExternalEvents) {
+      externalRefresh?.();
+      return null;
+    }
+
     const cacheKey = getCacheKey(dates);
     if (!cacheKey) return null;
 
@@ -524,7 +536,14 @@ export const CalendarSyncProvider = ({
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, cacheKey],
     });
-  }, [queryClient, wsId, dates, getCacheKey]);
+  }, [
+    queryClient,
+    wsId,
+    dates,
+    getCacheKey,
+    hasExternalEvents,
+    externalRefresh,
+  ]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -650,6 +669,10 @@ export const CalendarSyncProvider = ({
 
   // Trigger refetch from DB when changing views (optimized to reduce load)
   useEffect(() => {
+    if (hasExternalEvents) {
+      return;
+    }
+
     // Skip if dates haven't actually changed
     if (areDatesEqual(dates)) {
       return;
@@ -683,6 +706,7 @@ export const CalendarSyncProvider = ({
     areDatesEqual,
     getCacheKey,
     updateCache,
+    hasExternalEvents,
   ]);
 
   /*
@@ -777,20 +801,24 @@ export const CalendarSyncProvider = ({
     [wsId, queryClient, createEventSignature]
   );
 
-  const visibleDatabaseEvents = data ?? fetchedData ?? null;
+  const visibleDatabaseEvents = hasExternalEvents
+    ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
+    : (data ?? fetchedData ?? null);
 
   useEffect(() => {
     const processEvents = async () => {
       if (visibleDatabaseEvents) {
-        const result = await removeDuplicateEvents(
-          visibleDatabaseEvents as CalendarEvent[]
-        );
+        const result = hasExternalEvents
+          ? (visibleDatabaseEvents as CalendarEvent[])
+          : await removeDuplicateEvents(
+              visibleDatabaseEvents as CalendarEvent[]
+            );
 
         // Filter external events by enabled provider calendars. Local Tuturuuu
         // events are always shown here; native calendar visibility is handled
         // by the workspace calendar endpoints.
         const filteredEvents =
-          calendarConnections.length > 0
+          !hasExternalEvents && calendarConnections.length > 0
             ? result.filter((event) => {
                 const eventCalendarId =
                   (event as any).external_calendar_id ||
@@ -827,6 +855,7 @@ export const CalendarSyncProvider = ({
     calendarConnections.length,
     enabledCalendarIds,
     habitEventData,
+    hasExternalEvents,
   ]);
 
   const eventsWithoutAllDays = useMemo(() => {
@@ -875,7 +904,9 @@ export const CalendarSyncProvider = ({
   }, []);
 
   const value = {
-    data,
+    data: hasExternalEvents
+      ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
+      : data,
     googleData,
     error,
     dates,
@@ -905,7 +936,7 @@ export const CalendarSyncProvider = ({
     syncStatus,
 
     // Loading states
-    isLoading: isDatabaseLoading || isGoogleLoading,
+    isLoading: externalEventsLoading || isDatabaseLoading || isGoogleLoading,
     isSyncing,
   };
 

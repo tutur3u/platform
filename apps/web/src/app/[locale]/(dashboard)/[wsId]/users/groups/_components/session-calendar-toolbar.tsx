@@ -44,6 +44,7 @@ interface SessionCalendarToolbarProps {
   timezone: string;
   title?: string;
   weekStart: Date;
+  wsId: string;
 }
 
 export function SessionCalendarToolbar({
@@ -64,6 +65,7 @@ export function SessionCalendarToolbar({
   timezone,
   title,
   weekStart,
+  wsId,
 }: SessionCalendarToolbarProps) {
   const t = useTranslations('ws-user-group-schedule');
   const locale = useLocale();
@@ -89,6 +91,7 @@ export function SessionCalendarToolbar({
             onSubmit={(payload) =>
               onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
             }
+            wsId={wsId}
           />
         )}
       </div>
