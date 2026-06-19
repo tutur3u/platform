@@ -175,6 +175,20 @@ describe('public shell compile graph', () => {
     }
   });
 
+  it('keeps static product pages off shared UI primitive imports', () => {
+    for (const sourceText of productPageIconBoundarySources) {
+      for (const modulePath of [
+        '@tuturuuu/ui/badge',
+        '@tuturuuu/ui/button',
+        '@tuturuuu/ui/card',
+      ] as const) {
+        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+      }
+
+      expect(sourceText).toContain('../product-page-primitives');
+    }
+  });
+
   it('keeps the login route off framer-motion', () => {
     for (const sourceText of [
       loginContentSource,
