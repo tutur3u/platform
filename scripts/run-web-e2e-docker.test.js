@@ -16,6 +16,9 @@ const {
   DNS_IPV4_FIRST_NODE_OPTION,
   DEFAULT_PORTLESS_HEALTH_URL,
   DEFAULT_PORTLESS_PROXY_TLS_MARKER,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
   DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
   DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
   ensurePortlessRoute,
@@ -32,6 +35,7 @@ const {
   getPortlessProxyStartArgs,
   getReadinessFetchOptions,
   getDockerImageRefCandidates,
+  getReusableLocalRedisRuntime,
   getReusableWebImageProject,
   getReusableWebImageRef,
   getReusableWebImageSource,
@@ -46,13 +50,17 @@ const {
   isPortlessProxyStartExitError,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
+  isReusableLocalRedisResponse,
+  isReusingLocalRedis,
   parseE2EProjectImageTags,
+  probeReusableLocalRedis,
   prepareReusableWebImage,
   prepareReusableSupportImages,
   printE2EFailureDiagnostics,
   readReusableWebImageColor,
   removeE2EProjectImages,
   removePortlessProxyTlsMarker,
+  resolveReusableLocalRedisRuntime,
   resolveReusableWebImageSourceFromList,
   routeListHasPortlessAlias,
   shouldKeepStack,
@@ -89,6 +97,31 @@ test('getDockerWebUpArgs starts production blue-green Docker with reset local Su
       '2',
       '--build-max-parallelism',
       '1',
+    ]
+  );
+});
+
+test('getDockerWebUpArgs reuses a detected local Redis bridge', () => {
+  assert.deepEqual(
+    getDockerWebUpArgs('tmp/e2e/web.env', {
+      E2E_REUSED_LOCAL_REDIS: '1',
+    }),
+    [
+      'up',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--reset-supabase',
+      '--without-redis',
+      '--build-memory',
+      'auto',
+      '--build-cpus',
+      '4',
+      '--build-max-parallelism',
+      '1',
+      '--env-file',
+      'tmp/e2e/web.env',
     ]
   );
 });
@@ -134,6 +167,24 @@ test('getDockerWebDownArgs stops the same production blue-green Docker stack', (
       '--env-file',
       'tmp/e2e/web.env',
       '--volumes',
+    ]
+  );
+  assert.deepEqual(
+    getDockerWebDownArgs('tmp/e2e/web.env', {
+      E2E_REUSED_LOCAL_REDIS: 'true',
+    }),
+    [
+      'down',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--without-redis',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '--volumes',
+      '--rmi',
+      'local',
     ]
   );
 });
@@ -183,12 +234,147 @@ test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
   }
 });
 
+test('ensureLocalE2EEnvFile writes reusable Redis overrides', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ttr-e2e-env-'));
+  const envFilePath = path.join(tempDir, 'web.env');
+
+  try {
+    ensureLocalE2EEnvFile(envFilePath, {
+      DOCKER_UPSTASH_REDIS_REST_TOKEN: 'reuse-token',
+      DOCKER_UPSTASH_REDIS_REST_URL: 'http://host.docker.internal:8079',
+      UPSTASH_REDIS_REST_TOKEN: 'reuse-token',
+      UPSTASH_REDIS_REST_URL: 'http://host.docker.internal:8079',
+    });
+    const content = fs.readFileSync(envFilePath, 'utf8');
+
+    assert.match(content, /DOCKER_UPSTASH_REDIS_REST_TOKEN=reuse-token/u);
+    assert.match(
+      content,
+      /DOCKER_UPSTASH_REDIS_REST_URL=http:\/\/host\.docker\.internal:8079/u
+    );
+    assert.match(content, /UPSTASH_REDIS_REST_TOKEN=reuse-token/u);
+    assert.match(
+      content,
+      /UPSTASH_REDIS_REST_URL=http:\/\/host\.docker\.internal:8079/u
+    );
+    assert.doesNotMatch(content, /serverless-redis-http/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('shouldKeepStack supports explicit local debugging opt-in', () => {
   assert.equal(shouldKeepStack({}), false);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: '1' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'true' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'on' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'false' }), false);
+});
+
+test('getReusableLocalRedisRuntime defaults to the local Redis app bridge', () => {
+  assert.equal(isReusingLocalRedis({}), false);
+  assert.equal(isReusingLocalRedis({ E2E_REUSED_LOCAL_REDIS: '1' }), true);
+  assert.deepEqual(getReusableLocalRedisRuntime({}), {
+    probeUrl: DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
+    token: DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
+    url: DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
+  });
+  assert.deepEqual(
+    getReusableLocalRedisRuntime({
+      DOCKER_UPSTASH_REDIS_REST_TOKEN: 'docker-token',
+      DOCKER_UPSTASH_REDIS_REST_URL: 'https://redis.example.test',
+      E2E_REUSE_LOCAL_REDIS_REST_PROBE_URL: 'http://127.0.0.1:18079/',
+      E2E_REUSE_LOCAL_REDIS_REST_TOKEN: 'local-token',
+      E2E_REUSE_LOCAL_REDIS_REST_URL: 'http://host.docker.internal:18079',
+    }),
+    {
+      probeUrl: 'http://127.0.0.1:18079/',
+      token: 'local-token',
+      url: 'http://host.docker.internal:18079',
+    }
+  );
+});
+
+test('resolveReusableLocalRedisRuntime reuses a reachable local bridge', async () => {
+  const chunks = [];
+  const runtime = await resolveReusableLocalRedisRuntime({
+    env: {},
+    fetchImpl: async (url, options = {}) => {
+      assert.equal(url, DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL);
+      assert.equal(options.redirect, 'manual');
+
+      return {
+        status: 200,
+        text: async () => '"Welcome to Serverless Redis HTTP!"',
+      };
+    },
+    output: {
+      write(chunk) {
+        chunks.push(String(chunk));
+      },
+    },
+  });
+
+  assert.deepEqual(runtime, getReusableLocalRedisRuntime({}));
+  assert.equal(
+    isReusableLocalRedisResponse(
+      { status: 404 },
+      '{"error":"SRH: Endpoint not found."}'
+    ),
+    true
+  );
+  assert.equal(
+    await probeReusableLocalRedis(getReusableLocalRedisRuntime({}), {
+      fetchImpl: async () => ({
+        status: 200,
+        text: async () => '"Welcome to Serverless Redis HTTP!"',
+      }),
+    }),
+    true
+  );
+  assert.match(chunks.join(''), /Reusing local Redis HTTP bridge/u);
+});
+
+test('resolveReusableLocalRedisRuntime preserves bundled Redis fallback by default', async () => {
+  assert.equal(
+    await resolveReusableLocalRedisRuntime({
+      env: {},
+      fetchImpl: async () => {
+        throw new Error('connection refused');
+      },
+      output: {
+        write() {},
+      },
+    }),
+    null
+  );
+  assert.equal(
+    await resolveReusableLocalRedisRuntime({
+      env: { E2E_REUSE_LOCAL_REDIS: 'false' },
+      fetchImpl: async () => {
+        throw new Error('should not probe');
+      },
+      output: {
+        write() {},
+      },
+    }),
+    null
+  );
+
+  await assert.rejects(
+    () =>
+      resolveReusableLocalRedisRuntime({
+        env: { E2E_REUSE_LOCAL_REDIS: 'true' },
+        fetchImpl: async () => ({
+          status: 200,
+          text: async () => '<html>different service</html>',
+        }),
+        output: {
+          write() {},
+        },
+      }),
+    /Expected a Serverless Redis HTTP bridge/u
+  );
 });
 
 test('getReusableWebImageSource defaults to the active serve:web:docker:bg lane', () => {

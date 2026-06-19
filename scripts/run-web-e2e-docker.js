@@ -33,6 +33,10 @@ const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const DEFAULT_DOCKER_BUILD_CPUS = '4';
 const DEFAULT_DOCKER_BUILD_MAX_PARALLELISM = '1';
 const DEFAULT_E2E_DOCKER_NATIVE_BUILD = '1';
+const DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL = 'http://127.0.0.1:8079/';
+const DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL =
+  'http://host.docker.internal:8079';
+const DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN = 'example_token';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
 const PORTLESS_ROUTE_NAME = 'tuturuuu';
 const DEFAULT_WEB_PROXY_HOST_PORT = '7803';
@@ -89,6 +93,7 @@ function getDockerWebUpArgs(envFilePath, env = process.env) {
     '--strategy',
     'blue-green',
     '--reset-supabase',
+    ...(isReusingLocalRedis(env) ? ['--without-redis'] : []),
     '--build-memory',
     env.E2E_DOCKER_BUILD_MEMORY ?? 'auto',
     '--build-cpus',
@@ -116,6 +121,7 @@ function getDockerWebDownArgs(envFilePath, env = process.env) {
     'prod',
     '--strategy',
     'blue-green',
+    ...(isReusingLocalRedis(env) ? ['--without-redis'] : []),
     '--env-file',
     envFilePath,
     '--volumes',
@@ -854,9 +860,9 @@ async function ensurePortlessRoute({
   }
 }
 
-function ensureLocalE2EEnvFile(envFilePath) {
+function ensureLocalE2EEnvFile(envFilePath, overrides = {}) {
   fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-  fs.writeFileSync(envFilePath, createLocalE2EEnvFileContent(), {
+  fs.writeFileSync(envFilePath, createLocalE2EEnvFileContent(overrides), {
     encoding: 'utf8',
     mode: 0o600,
   });
@@ -868,6 +874,105 @@ function isTruthyEnvValue(value) {
 
 function isFalsyEnvValue(value) {
   return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
+}
+
+function getFirstNonBlank(candidates) {
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') {
+      continue;
+    }
+
+    const value = candidate.trim();
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function isReusingLocalRedis(env = process.env) {
+  return isTruthyEnvValue(env.E2E_REUSED_LOCAL_REDIS);
+}
+
+function getReusableLocalRedisRuntime(env = process.env) {
+  return {
+    probeUrl:
+      getFirstNonBlank([env.E2E_REUSE_LOCAL_REDIS_REST_PROBE_URL]) ??
+      DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
+    token:
+      getFirstNonBlank([
+        env.E2E_REUSE_LOCAL_REDIS_REST_TOKEN,
+        env.DOCKER_UPSTASH_REDIS_REST_TOKEN,
+      ]) ?? DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
+    url:
+      getFirstNonBlank([
+        env.E2E_REUSE_LOCAL_REDIS_REST_URL,
+        env.DOCKER_UPSTASH_REDIS_REST_URL,
+      ]) ?? DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
+  };
+}
+
+function isReusableLocalRedisResponse(response, body) {
+  if (!response || response.status < 200 || response.status >= 500) {
+    return false;
+  }
+
+  return /Serverless Redis HTTP|SRH:/iu.test(String(body ?? ''));
+}
+
+async function probeReusableLocalRedis(
+  runtime,
+  { fetchImpl = fetchReadinessUrl } = {}
+) {
+  const response = await fetchImpl(runtime.probeUrl, {
+    redirect: 'manual',
+    requestTimeoutMs: 5_000,
+  });
+  const body = typeof response.text === 'function' ? await response.text() : '';
+
+  return isReusableLocalRedisResponse(response, body);
+}
+
+async function resolveReusableLocalRedisRuntime({
+  env = process.env,
+  fetchImpl = fetchReadinessUrl,
+  output = process.stderr,
+} = {}) {
+  if (isFalsyEnvValue(env.E2E_REUSE_LOCAL_REDIS)) {
+    return null;
+  }
+
+  const forced = isTruthyEnvValue(env.E2E_REUSE_LOCAL_REDIS);
+  const runtime = getReusableLocalRedisRuntime(env);
+
+  try {
+    if (!(await probeReusableLocalRedis(runtime, { fetchImpl }))) {
+      if (forced) {
+        throw new Error(
+          `Expected a Serverless Redis HTTP bridge at ${runtime.probeUrl}.`
+        );
+      }
+
+      return null;
+    }
+  } catch (error) {
+    if (forced) {
+      throw error;
+    }
+
+    return null;
+  }
+
+  if (output) {
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] Reusing local Redis HTTP bridge at ${runtime.probeUrl}.`
+    );
+  }
+
+  return runtime;
 }
 
 function shouldKeepStack(env = process.env) {
@@ -1343,6 +1448,24 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     };
   }
 
+  const reusableLocalRedis = await resolveReusableLocalRedisRuntime({ env });
+
+  if (reusableLocalRedis) {
+    const redisEnv = {
+      DOCKER_UPSTASH_REDIS_REST_TOKEN: reusableLocalRedis.token,
+      DOCKER_UPSTASH_REDIS_REST_URL: reusableLocalRedis.url,
+      UPSTASH_REDIS_REST_TOKEN: reusableLocalRedis.token,
+      UPSTASH_REDIS_REST_URL: reusableLocalRedis.url,
+    };
+
+    env = {
+      ...env,
+      ...redisEnv,
+      E2E_REUSED_LOCAL_REDIS: '1',
+    };
+    ensureLocalE2EEnvFile(envFilePath, redisEnv);
+  }
+
   assertSafeE2EEnvironment(env);
 
   const reusableWebImage = await prepareReusableWebImage({ env });
@@ -1437,6 +1560,9 @@ module.exports = {
   DEFAULT_PORTLESS_PROXY_TLS_MARKER,
   DEFAULT_PORTLESS_READY_STATUS_CODES,
   DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
   DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
   DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
   DEFAULT_WEB_PROXY_HOST_PORT,
@@ -1458,6 +1584,7 @@ module.exports = {
   getPortlessProxyStartArgs,
   getReadinessFetchOptions,
   getDockerImageRefCandidates,
+  getReusableLocalRedisRuntime,
   getReusableWebImageProject,
   getReusableWebImageRef,
   getReusableWebImageSource,
@@ -1471,7 +1598,10 @@ module.exports = {
   isPortlessProxyStartExitError,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
+  isReusableLocalRedisResponse,
+  isReusingLocalRedis,
   parseE2EProjectImageTags,
+  probeReusableLocalRedis,
   prepareReusableWebImage,
   prepareReusableSupportImages,
   printE2EFailureDiagnostics,
@@ -1479,6 +1609,7 @@ module.exports = {
   removePortlessProxyTlsMarker,
   resolveReusableWebImageSourceFromList,
   removeE2EProjectImages,
+  resolveReusableLocalRedisRuntime,
   routeListHasPortlessAlias,
   runCommand,
   runCommandForOutput,
