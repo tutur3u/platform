@@ -25,6 +25,7 @@ const loginPageSource = source('src/app/[locale]/(marketing)/login/page.tsx');
 const loginConfirmationPartsSource = source(
   'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
 );
+const aboutPageSource = source('src/app/[locale]/(marketing)/about/page.tsx');
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -118,6 +119,14 @@ describe('public shell compile graph', () => {
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
+  });
+
+  it('keeps public marketing page icons on the static lucide subpath', () => {
+    expect(aboutPageSource).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+    expect(aboutPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons/lucide')
+    );
+    expect(aboutPageSource).toContain('@tuturuuu/icons/lucide-static');
   });
 
   it('keeps the login route off framer-motion', () => {
