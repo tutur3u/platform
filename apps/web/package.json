@@ -74,7 +74,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@tiptap/extension-highlight": "3.26.1",
     "@tiptap/extension-link": "3.26.1",
-    "@tiptap/extension-strike": "3.26.1",
+    "@tiptap/extension-strike": "3.27.1",
     "@tiptap/extension-subscript": "3.26.1",
     "@tiptap/extension-superscript": "3.26.1",
     "@tiptap/extension-text-align": "3.26.1",
