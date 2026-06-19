@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { ComponentProps } from 'react';
 
 const joinClassNames = (...classNames: (string | undefined)[]) =>
@@ -46,9 +45,9 @@ export function ProductCard({ className, ...props }: ComponentProps<'div'>) {
 export function ProductLinkButton({
   className,
   ...props
-}: ComponentProps<typeof Link>) {
+}: ComponentProps<'a'>) {
   return (
-    <Link
+    <a
       className={joinClassNames(
         'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-6 font-medium text-sm shadow-xs transition-[color,box-shadow] hover:bg-accent hover:text-accent-foreground',
         className

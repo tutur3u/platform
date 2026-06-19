@@ -77,6 +77,9 @@ const productPageIconBoundarySources = [
   source('src/app/[locale]/(marketing)/products/tasks/page.tsx'),
   source('src/app/[locale]/(marketing)/products/workflows/page.tsx'),
 ] as const;
+const productPagePrimitivesSource = source(
+  'src/app/[locale]/(marketing)/products/product-page-primitives.tsx'
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -187,6 +190,10 @@ describe('public shell compile graph', () => {
 
       expect(sourceText).toContain('../product-page-primitives');
     }
+
+    expect(productPagePrimitivesSource).not.toMatch(
+      staticImportPattern('next/link')
+    );
   });
 
   it('keeps the login route off framer-motion', () => {
