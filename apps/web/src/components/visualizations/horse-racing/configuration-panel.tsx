@@ -1,4 +1,4 @@
-import { HelpCircle, RefreshCw } from '@tuturuuu/icons';
+import { HelpCircle, RefreshCw } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';

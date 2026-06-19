@@ -1,7 +1,7 @@
 'use client';
 
 // Icons
-import { ChevronUp, Lightbulb } from '@tuturuuu/icons';
+import { ChevronUp, Lightbulb } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';

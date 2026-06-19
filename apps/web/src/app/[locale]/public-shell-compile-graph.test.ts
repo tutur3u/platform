@@ -69,6 +69,20 @@ const modelsClientSource = source(
 const horseRacingVisualizationSource = source(
   'src/components/visualizations/horse-racing/visualization.tsx'
 );
+const horseRacingIconBoundarySources = [
+  horseRacingVisualizationSource,
+  source('src/components/visualizations/horse-racing/algorithm-benchmarks.tsx'),
+  source(
+    'src/components/visualizations/horse-racing/algorithm-diagnostics.tsx'
+  ),
+  source('src/components/visualizations/horse-racing/algorithm-insights.tsx'),
+  source('src/components/visualizations/horse-racing/benchmark-runner.tsx'),
+  source('src/components/visualizations/horse-racing/configuration-panel.tsx'),
+  source('src/components/visualizations/horse-racing/explaination.tsx'),
+  source('src/components/visualizations/horse-racing/race-controls.tsx'),
+  source('src/components/visualizations/horse-racing/race-details.tsx'),
+  source('src/components/visualizations/horse-racing/race-insights.tsx'),
+] as const;
 const facebookMockupIconBoundarySources = [
   source(
     '../../packages/ui/src/components/ui/custom/facebook-mockup/facebook-mockup.tsx'
@@ -447,6 +461,13 @@ describe('public shell compile graph', () => {
       expect(horseRacingVisualizationSource).toContain(
         `import('${modulePath}')`
       );
+    }
+  });
+
+  it('keeps horse-racing icons off the icon package root', () => {
+    for (const sourceText of horseRacingIconBoundarySources) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).toContain('@tuturuuu/icons/lucide');
     }
   });
 

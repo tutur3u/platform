@@ -1,4 +1,4 @@
-import { AlertCircleIcon, TrendingUpIcon } from '@tuturuuu/icons';
+import { AlertCircleIcon, TrendingUpIcon } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 

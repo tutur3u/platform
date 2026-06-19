@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Trophy, Zap } from '@tuturuuu/icons';
+import { ChevronDown, ChevronUp, Trophy, Zap } from '@tuturuuu/icons/lucide';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 
 export default function Explanation() {

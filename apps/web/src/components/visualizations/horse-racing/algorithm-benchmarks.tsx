@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, HelpCircle, Lightbulb } from '@tuturuuu/icons';
+import { ChevronRight, HelpCircle, Lightbulb } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
