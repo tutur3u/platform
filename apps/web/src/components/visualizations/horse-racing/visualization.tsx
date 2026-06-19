@@ -6,17 +6,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import dynamic from 'next/dynamic';
 import { useCallback, useMemo, useRef, useState } from 'react';
 // Utils
 import { findHorseRanking } from '@/utils/horseRacing';
 import type { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
 // UI Components
 // Components
-import { AlgorithmAnalytics } from './algorithm-analytics';
-import { AlgorithmBenchmarks } from './algorithm-benchmarks';
-import { AlgorithmDiagnostics } from './algorithm-diagnostics';
-import { AlgorithmInsights } from './algorithm-insights';
-import { BenchmarkRunner } from './benchmark-runner';
 import { ConfigurationPanel } from './configuration-panel';
 import { CurrentStandings } from './current-standings';
 import Explaination from './explaination';
@@ -24,6 +20,62 @@ import { RaceAnimation } from './race-animation';
 import { RaceControls } from './race-controls';
 import { RaceDetails } from './race-details';
 import { RelationshipGraph } from './relationship-graph';
+
+function DeferredPanelFallback() {
+  return (
+    <div className="flex h-40 items-center justify-center text-muted-foreground">
+      Loading panel...
+    </div>
+  );
+}
+
+const AlgorithmAnalytics = dynamic(
+  () =>
+    import('./algorithm-analytics').then((module) => module.AlgorithmAnalytics),
+  {
+    loading: DeferredPanelFallback,
+    ssr: false,
+  }
+);
+
+const AlgorithmBenchmarks = dynamic(
+  () =>
+    import('./algorithm-benchmarks').then(
+      (module) => module.AlgorithmBenchmarks
+    ),
+  {
+    loading: DeferredPanelFallback,
+    ssr: false,
+  }
+);
+
+const AlgorithmDiagnostics = dynamic(
+  () =>
+    import('./algorithm-diagnostics').then(
+      (module) => module.AlgorithmDiagnostics
+    ),
+  {
+    loading: DeferredPanelFallback,
+    ssr: false,
+  }
+);
+
+const AlgorithmInsights = dynamic(
+  () =>
+    import('./algorithm-insights').then((module) => module.AlgorithmInsights),
+  {
+    loading: DeferredPanelFallback,
+    ssr: false,
+  }
+);
+
+const BenchmarkRunner = dynamic(
+  () => import('./benchmark-runner').then((module) => module.BenchmarkRunner),
+  {
+    loading: DeferredPanelFallback,
+    ssr: false,
+  }
+);
 
 // Types
 interface Horse {

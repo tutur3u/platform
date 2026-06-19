@@ -66,6 +66,9 @@ const brandingClientSource = source(
 const modelsClientSource = source(
   'src/app/[locale]/(marketing)/models/models-client.tsx'
 );
+const horseRacingVisualizationSource = source(
+  'src/components/visualizations/horse-racing/visualization.tsx'
+);
 const facebookMockupIconBoundarySources = [
   source(
     '../../packages/ui/src/components/ui/custom/facebook-mockup/facebook-mockup.tsx'
@@ -428,6 +431,23 @@ describe('public shell compile graph', () => {
     expect(meetCreatePlanDialogSource).toMatch(
       /import\(\s*['"]@tuturuuu\/ui\/text-editor\/editor['"]\s*\)/u
     );
+  });
+
+  it('keeps horse-racing analytics panels out of the initial route graph', () => {
+    for (const modulePath of [
+      './algorithm-analytics',
+      './algorithm-benchmarks',
+      './algorithm-diagnostics',
+      './algorithm-insights',
+      './benchmark-runner',
+    ] as const) {
+      expect(horseRacingVisualizationSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
+      expect(horseRacingVisualizationSource).toContain(
+        `import('${modulePath}')`
+      );
+    }
   });
 
   it('keeps migrated solution pages off heavy public primitives', () => {
