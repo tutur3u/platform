@@ -15,7 +15,7 @@ import {
   Send,
   ShieldCheck,
   Smartphone,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';

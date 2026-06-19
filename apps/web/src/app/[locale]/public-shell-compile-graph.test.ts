@@ -64,6 +64,19 @@ const legalIconBoundarySources = [
   source('src/data/legal/terms-sections.tsx'),
   source('src/data/legal/third-party-providers.ts'),
 ] as const;
+const productPageIconBoundarySources = [
+  source('src/app/[locale]/(marketing)/products/ai/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/calendar/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/crm/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/documents/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/drive/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/finance/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/inventory/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/lms/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/mail/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/tasks/page.tsx'),
+  source('src/app/[locale]/(marketing)/products/workflows/page.tsx'),
+] as const;
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -148,6 +161,14 @@ describe('public shell compile graph', () => {
 
   it('keeps legal page icons off the package root export', () => {
     for (const sourceText of legalIconBoundarySources) {
+      expect(sourceText).not.toContain("from '@tuturuuu/icons'");
+      expect(sourceText).not.toContain('from "@tuturuuu/icons"');
+      expect(sourceText).toContain('@tuturuuu/icons/lucide');
+    }
+  });
+
+  it('keeps product page icons off the package root export', () => {
+    for (const sourceText of productPageIconBoundarySources) {
       expect(sourceText).not.toContain("from '@tuturuuu/icons'");
       expect(sourceText).not.toContain('from "@tuturuuu/icons"');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');

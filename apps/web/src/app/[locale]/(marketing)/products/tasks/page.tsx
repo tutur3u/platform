@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Tag,
   Users,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
