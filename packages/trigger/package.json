@@ -5,6 +5,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./effect": "./src/effect.ts",
     "./calendar-sync-coordination": "./src/calendar-sync-coordination.ts",
     "./google-calendar-sync": "./src/google-calendar-sync.ts",
     "./google-calendar-full-sync": "./src/google-calendar-full-sync.ts",

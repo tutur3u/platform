@@ -1,0 +1,121 @@
+---
+title: "@tuturuuu/utils/effect"
+description: "Curated Effect entrypoint and Tuturuuu error helpers"
+---
+
+# @tuturuuu/utils/effect
+
+`@tuturuuu/utils/effect` is the platform entrypoint for [Effect](https://effect.website/docs/quickstart).
+It keeps Effect adoption consistent across Tuturuuu apps and services while
+preserving existing React, TanStack Query, Zod, and Supabase conventions.
+
+```ts
+import {
+  Effect,
+  fromDataError,
+  runEffectAsResult,
+  TuturuuuEffectError,
+} from '@tuturuuu/utils/effect';
+```
+
+## Exports
+
+The entrypoint re-exports the Effect modules that Tuturuuu code should use by
+default:
+
+- `Effect`
+- `Data`
+- `Context`
+- `Layer`
+- `Schedule`
+- `Duration`
+- `Option`
+- `Either`
+- `Cause`
+
+It also exports Tuturuuu helpers:
+
+- `TuturuuuEffectError`
+- `toTuturuuuEffectError`
+- `serializeTuturuuuEffectError`
+- `fromDataError`
+- `fromPromise`
+- `runEffectAsResult`
+
+## Expected Errors
+
+Use `TuturuuuEffectError` for expected, typed failures that can cross a
+server/action/API boundary in a sanitized shape.
+
+```ts
+import { Effect, TuturuuuEffectError } from '@tuturuuu/utils/effect';
+
+const requireWorkspace = (wsId?: string) =>
+  wsId
+    ? Effect.succeed(wsId)
+    : Effect.fail(
+        new TuturuuuEffectError({
+          code: 'WORKSPACE_REQUIRED',
+          message: 'Workspace ID is required.',
+          status: 400,
+        })
+      );
+```
+
+## Supabase-Style Results
+
+Use `fromDataError` for APIs that return `{ data, error }`, including Supabase
+queries and RPC calls.
+
+```ts
+const program = fromDataError(
+  () =>
+    supabase
+      .from('workspaces')
+      .select('id')
+      .eq('id', wsId)
+      .maybeSingle(),
+  {
+    code: 'WORKSPACE_READ_FAILED',
+    message: 'Workspace read failed.',
+    context: { wsId },
+  }
+);
+```
+
+`fromDataError` preserves service-specific `code`, `message`, `details`, and
+`hint` fields when present, then falls back to the provided Tuturuuu metadata.
+
+## Promise Results
+
+Use `fromPromise` for async work that can throw or reject.
+
+```ts
+const response = fromPromise(
+  () => fetch(url, { cache: 'no-store' }),
+  {
+    code: 'UPSTREAM_REQUEST_FAILED',
+    message: 'Upstream request failed.',
+    context: { url },
+  }
+);
+```
+
+## Boundary Conversion
+
+Use `runEffectAsResult` at route, action, or helper boundaries that already
+return result objects.
+
+```ts
+const result = await runEffectAsResult(program);
+
+if (!result.ok) {
+  return Response.json({ error: result.error.message }, { status: 500 });
+}
+
+return Response.json(result.data);
+```
+
+Do not expose raw upstream diagnostics, secrets, URLs with credentials, stack
+traces, or filesystem paths in public responses. Add safe metadata to
+`context`, and keep detailed diagnostics in the existing server logging path.

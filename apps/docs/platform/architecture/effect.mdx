@@ -1,0 +1,134 @@
+---
+title: "Effect Orchestration"
+description: "How Tuturuuu uses Effect for server and service workflows"
+---
+
+# Effect Orchestration
+
+Tuturuuu uses [Effect](https://effect.website/docs/quickstart) as the default
+tool for new or substantially edited TypeScript server/service orchestration
+when it adds concrete value: typed expected errors, explicit dependencies,
+retry/scheduling policy, resource boundaries, or controlled concurrency.
+
+Import Effect through the platform entrypoint:
+
+```ts
+import {
+  Effect,
+  Layer,
+  runEffectAsResult,
+  TuturuuuEffectError,
+} from '@tuturuuu/utils/effect';
+```
+
+Do not import directly from `effect` in app or package code unless the curated
+entrypoint is missing a module that the code genuinely needs. Add that module to
+`@tuturuuu/utils/effect` first when it should become a platform pattern.
+
+## Where Effect Fits
+
+Use Effect for:
+
+- Server-side workflows that coordinate several async operations.
+- Expected failures that should stay typed until the route/action boundary.
+- Service dependencies that need live, test, or mock implementations.
+- Retry, timeout, scheduling, queue, stream, or concurrency policy.
+- Shared packages that expose additive orchestration subpaths such as
+  `@tuturuuu/ai/effect` or `@tuturuuu/trigger/effect`.
+
+Avoid Effect for:
+
+- React UI state and component-local event handlers.
+- TanStack Query client fetching and mutation wrappers.
+- Zod validation and generated database type contracts.
+- Simple pure helpers, formatting utilities, and one-line transforms.
+- Existing stable call sites where a rewrite adds churn without improving an
+  error boundary or dependency boundary.
+
+## Boundary Pattern
+
+Keep route handlers and client helpers familiar. Build the richer orchestration
+inside shared server modules, then convert to existing result shapes at the
+boundary.
+
+```ts
+import {
+  Effect,
+  fromDataError,
+  runEffectAsResult,
+} from '@tuturuuu/utils/effect';
+
+const loadWorkspace = (query: () => Promise<{
+  data: { id: string } | null;
+  error: unknown;
+}>) =>
+  fromDataError(query, {
+    code: 'WORKSPACE_READ_FAILED',
+    message: 'Workspace read failed.',
+  });
+
+export async function loadWorkspaceResult(query: Parameters<typeof loadWorkspace>[0]) {
+  return runEffectAsResult(
+    Effect.map(loadWorkspace(query), (workspace) => ({ workspace }))
+  );
+}
+```
+
+API routes should still return sanitized public errors. Use
+`serializeTuturuuuEffectError` or `runEffectAsResult` to cross the route/action
+boundary, and log only sanitized server-side context through the existing
+logging path.
+
+## Services And Layers
+
+For dependencies that need replacement in tests, define a service tag and a live
+layer near the owning package:
+
+```ts
+import { Context, Effect, Layer } from '@tuturuuu/utils/effect';
+
+interface BillingServiceShape {
+  readonly charge: (amount: number) => Promise<{ ok: true }>;
+}
+
+class BillingService extends Context.Tag('BillingService')<
+  BillingService,
+  BillingServiceShape
+>() {}
+
+export const BillingLive = Layer.succeed(BillingService, {
+  charge: async (amount) => ({ ok: true }),
+});
+
+export const chargeEffect = (amount: number) =>
+  Effect.gen(function* () {
+    const billing = yield* BillingService;
+    return yield* Effect.promise(() => billing.charge(amount));
+  });
+```
+
+Prefer package-specific entrypoints such as `@tuturuuu/ai/effect` when the
+service belongs to a domain package. Keep the root `@tuturuuu/utils/effect`
+entrypoint for shared primitives and small platform helpers.
+
+## App Integration
+
+- Server Components may call Effect programs from server-only helpers and then
+  render plain data.
+- Server Actions may return existing action result shapes after
+  `runEffectAsResult`.
+- API routes may use Effect for orchestration but must keep existing auth,
+  tenant binding, Zod parsing, and sanitized response rules.
+- Client components should consume normal props, TanStack Query hooks, or
+  `packages/internal-api` helpers. Do not push Effect requirements into React
+  component trees.
+
+## Verification
+
+When adding an Effect workflow:
+
+1. Test the Effect program with a provided service/layer or a fake service.
+2. Test the boundary conversion with `runEffectAsResult`.
+3. Run the owning package test and type-check commands.
+4. Finish with `bun check` when TypeScript, JavaScript, package metadata, docs,
+   or repo guidance changed.

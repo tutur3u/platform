@@ -14,6 +14,45 @@ For queue-heavy dashboards that run expensive row + summary RPCs (for example po
 - Fetch through `@tuturuuu/internal-api` helpers, not ad-hoc client fetch calls.
 - Avoid `router.refresh()` for routine list refreshes; prefer query refetch/invalidation.
 
+## Server And Service Orchestration
+
+When a server-side data flow coordinates multiple async resources, expected
+failures, retry/scheduling policy, or replaceable dependencies, use
+`@tuturuuu/utils/effect` inside the server/shared helper and keep the route or
+client boundary plain. Effect complements this page's data-fetching strategy; it
+does not replace React state, TanStack Query, `packages/internal-api`, Zod, or
+generated database types.
+
+Use Effect for server/service orchestration:
+
+```ts
+import {
+  Effect,
+  fromDataError,
+  runEffectAsResult,
+} from '@tuturuuu/utils/effect';
+
+const program = fromDataError(
+  () =>
+    supabase
+      .from('workspace_tasks')
+      .select('id, name')
+      .eq('ws_id', wsId),
+  {
+    code: 'TASKS_READ_FAILED',
+    message: 'Task list read failed.',
+    context: { wsId },
+  }
+);
+
+const result = await runEffectAsResult(Effect.map(program, (tasks) => ({ tasks })));
+```
+
+Client components should still call TanStack Query hooks and internal API
+helpers. Server Components, Server Actions, API routes, cron jobs, and shared
+packages may use Effect behind their public boundary when it improves typed
+failure handling or orchestration clarity.
+
 ## Builder Migration Pattern (Education Module Groups)
 
 For highly interactive editors (for example the course builder with module groups + drag/drop):

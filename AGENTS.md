@@ -84,6 +84,9 @@ surface you are changing:
 - For TypeScript, JavaScript, root script, or repo config changes, finish with
   `bun check` unless an unrelated pre-existing blocker prevents it. Run focused
   tests first.
+- For new or substantially edited TypeScript server/service orchestration,
+  prefer `@tuturuuu/utils/effect` when typed expected errors, dependency
+  services, retry/scheduling, or controlled concurrency make the flow safer.
 - After Flutter ARB key changes, run `flutter gen-l10n` before Flutter analysis
   or tests.
 

@@ -22,6 +22,25 @@ shared-package changes.
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
 
+## Effect Orchestration
+
+- Import Effect through `@tuturuuu/utils/effect`, not directly from `effect`,
+  so Tuturuuu code uses one curated server/service orchestration entrypoint.
+- Prefer Effect for new or substantially edited TypeScript server/shared flows
+  that coordinate multiple async resources, expected failures, dependency
+  services/layers, retry/schedule policy, resource lifetime, or bounded
+  concurrency.
+- Keep client fetching in TanStack Query and shared app API boundaries in
+  `packages/internal-api`; Effect programs can sit behind those boundaries, but
+  should not replace query hooks or React state.
+- Keep input validation in Zod and generated DB types. Use Effect to compose
+  validated operations, not as a replacement for existing schema contracts.
+- Do not wrap simple pure helpers, formatting utilities, or one-line data
+  transforms in Effect unless they are part of a larger Effect workflow.
+- Expose adoption through additive subpaths such as `@tuturuuu/ai/effect` or
+  `@tuturuuu/trigger/effect`; avoid rewriting stable call sites solely to make
+  them Effect-based.
+
 ## Routes, Auth, And API Boundaries
 
 - Dashboard routes should stay thin server gates when the UI needs search,

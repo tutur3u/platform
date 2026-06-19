@@ -50,6 +50,7 @@
                 "pages": [
                   "platform/architecture/routing",
                   "platform/architecture/data-fetching",
+                  "platform/architecture/effect",
                   "platform/architecture/api-routes",
                   "platform/architecture/trpc",
                   "platform/architecture/authentication",
@@ -353,6 +354,7 @@
                 "pages": [
                   "reference/packages/sdk",
                   "reference/packages/masonry",
+                  "reference/packages/utils-effect",
                   "reference/packages/supabase",
                   "reference/packages/trigger"
                 ]
