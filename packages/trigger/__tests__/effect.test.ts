@@ -49,6 +49,7 @@ describe('@tuturuuu/trigger/effect', () => {
         },
       })
     );
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('fails when the internal trigger secret is missing', async () => {
@@ -70,7 +71,7 @@ describe('@tuturuuu/trigger/effect', () => {
 
   it('fails when the internal response is not ok', async () => {
     const result = await runEffectAsResult(
-      provideTriggerHttp(scheduleTasksEffect('ws-1'), {
+      provideTriggerHttp(scheduleTasksEffect('ws-1', { retry: false }), {
         fetch: vi.fn().mockResolvedValue({
           ok: false,
           status: 503,
@@ -89,6 +90,62 @@ describe('@tuturuuu/trigger/effect', () => {
         context: {
           path: '/api/ws-1/calendar/auto-schedule?stream=false',
         },
+      },
+    });
+  });
+
+  it('retries retryable internal platform failures', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: () => Promise.resolve({}),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: () => Promise.resolve({}),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ scheduled: true }),
+      });
+
+    const result = await Effect.runPromise(
+      provideTriggerHttp(
+        scheduleTasksEffect('ws-1', {
+          retry: { times: 2 },
+          timeout: false,
+        }),
+        { fetch: fetchMock }
+      )
+    );
+
+    expect(result).toEqual({ scheduled: true });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('fails with a typed timeout when the request exceeds its limit', async () => {
+    const result = await runEffectAsResult(
+      provideTriggerHttp(
+        callInternalPlatformJsonEffect('/api/slow', {
+          retry: false,
+          timeout: 0,
+        }),
+        {
+          fetch: vi.fn(() => new Promise<Response>(() => {})),
+        }
+      )
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        _tag: 'TuturuuuEffectError',
+        code: 'TRIGGER_INTERNAL_REQUEST_TIMEOUT',
+        message: 'Internal platform request timed out.',
+        context: { path: '/api/slow' },
       },
     });
   });

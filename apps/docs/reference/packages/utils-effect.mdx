@@ -40,6 +40,9 @@ It also exports Tuturuuu helpers:
 - `serializeTuturuuuEffectError`
 - `fromDataError`
 - `fromPromise`
+- `withTuturuuuRetry`
+- `withTuturuuuTimeout`
+- `forEachConcurrently`
 - `runEffectAsResult`
 
 ## Expected Errors
@@ -98,6 +101,47 @@ const response = fromPromise(
     message: 'Upstream request failed.',
     context: { url },
   }
+);
+```
+
+`fromPromise` receives the Effect-managed `AbortSignal`. Pass it into
+`fetch`, SDK calls, or other abortable APIs so timeouts and fiber interruption
+can cancel the underlying work.
+
+## Retry And Timeout
+
+Use `withTuturuuuRetry` and `withTuturuuuTimeout` when a server/service workflow
+needs explicit resilience policy with Tuturuuu error metadata.
+
+```ts
+const resilient = withTuturuuuRetry(
+  withTuturuuuTimeout(response, {
+    code: 'UPSTREAM_TIMEOUT',
+    duration: '10 seconds',
+    message: 'Upstream timed out.',
+  }),
+  {
+    times: 2,
+    delay: '250 millis',
+    while: (error) => error.code === 'UPSTREAM_REQUEST_FAILED',
+  }
+);
+```
+
+Keep retry predicates narrow. Retry transient network, timeout, and temporary
+upstream failures. Do not retry validation, permission, or tenant-boundary
+errors unless the domain package documents idempotency.
+
+## Controlled Concurrency
+
+Use `forEachConcurrently` for bounded parallel work. It defaults to Tuturuuu's
+shared concurrency value and can be tightened per service.
+
+```ts
+const enrichedRows = forEachConcurrently(
+  rows,
+  (row) => enrichRowEffect(row),
+  { concurrency: 4 }
 );
 ```
 

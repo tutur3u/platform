@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   Effect,
+  forEachConcurrently,
   fromDataError,
   fromPromise,
   runEffectAsResult,
   serializeTuturuuuEffectError,
   TuturuuuEffectError,
   toTuturuuuEffectError,
+  withTuturuuuRetry,
+  withTuturuuuTimeout,
 } from './effect';
 
 describe('@tuturuuu/utils/effect', () => {
@@ -127,5 +130,118 @@ describe('@tuturuuu/utils/effect', () => {
         message: 'Expected failure',
       },
     });
+  });
+
+  it('retries expected failures with a typed retry predicate', async () => {
+    let attempts = 0;
+    const program = Effect.flatMap(
+      Effect.sync(() => {
+        attempts += 1;
+        return attempts;
+      }),
+      (attempt) =>
+        attempt < 3
+          ? Effect.fail(
+              new TuturuuuEffectError({
+                code: 'TRANSIENT_FAILURE',
+                message: 'Try again',
+              })
+            )
+          : Effect.succeed('ready')
+    );
+
+    await expect(
+      Effect.runPromise(
+        withTuturuuuRetry(program, {
+          times: 2,
+          while: (error) => error.code === 'TRANSIENT_FAILURE',
+        })
+      )
+    ).resolves.toBe('ready');
+    expect(attempts).toBe(3);
+  });
+
+  it('does not retry when the retry predicate rejects the error', async () => {
+    let attempts = 0;
+
+    const result = await runEffectAsResult(
+      withTuturuuuRetry(
+        Effect.flatMap(
+          Effect.sync(() => {
+            attempts += 1;
+          }),
+          () =>
+            Effect.fail(
+              new TuturuuuEffectError({
+                code: 'PERMANENT_FAILURE',
+                message: 'Do not retry',
+              })
+            )
+        ),
+        {
+          times: 3,
+          while: (error) => error.code === 'TRANSIENT_FAILURE',
+        }
+      )
+    );
+
+    expect(attempts).toBe(1);
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        _tag: 'TuturuuuEffectError',
+        code: 'PERMANENT_FAILURE',
+        message: 'Do not retry',
+      },
+    });
+  });
+
+  it('converts timeouts into Tuturuuu effect errors', async () => {
+    const result = await runEffectAsResult(
+      withTuturuuuTimeout(Effect.never, {
+        code: 'TIMED_OUT',
+        duration: 0,
+        message: 'Operation timed out',
+        context: { operation: 'test' },
+      })
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        _tag: 'TuturuuuEffectError',
+        code: 'TIMED_OUT',
+        message: 'Operation timed out',
+        context: { operation: 'test' },
+      },
+    });
+  });
+
+  it('runs effectful collections with bounded concurrency', async () => {
+    let active = 0;
+    let maxActive = 0;
+
+    const result = await Effect.runPromise(
+      forEachConcurrently(
+        [1, 2, 3, 4],
+        (item) =>
+          Effect.promise(
+            () =>
+              new Promise<number>((resolve) => {
+                active += 1;
+                maxActive = Math.max(maxActive, active);
+
+                setTimeout(() => {
+                  active -= 1;
+                  resolve(item * 2);
+                }, 5);
+              })
+          ),
+        { concurrency: 2 }
+      )
+    );
+
+    expect(result).toEqual([2, 4, 6, 8]);
+    expect(maxActive).toBeLessThanOrEqual(2);
   });
 });

@@ -64,6 +64,23 @@ export type DataErrorResult<TData, TError = unknown> = {
   readonly error: TError | null;
 };
 
+export interface TuturuuuEffectRetryOptions<E = unknown> {
+  readonly times?: number;
+  readonly delay?: Duration.DurationInput;
+  readonly while?: (error: E) => boolean;
+}
+
+export interface TuturuuuEffectTimeoutOptions
+  extends TuturuuuEffectErrorOptions {
+  readonly duration: Duration.DurationInput;
+}
+
+export interface TuturuuuEffectConcurrencyOptions {
+  readonly concurrency?: number | 'unbounded';
+}
+
+export const DEFAULT_TUTURUUU_EFFECT_CONCURRENCY = 4;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -164,6 +181,54 @@ export function fromDataError<TData, TError = unknown>(
       ? Effect.fail(toTuturuuuEffectError(result.error, fallback))
       : Effect.succeed(result.data)
   );
+}
+
+export function withTuturuuuRetry<A, E, R>(
+  program: Effect.Effect<A, E, R>,
+  options: TuturuuuEffectRetryOptions<E> = {}
+): Effect.Effect<A, E, R> {
+  const times = Math.max(0, options.times ?? 2);
+
+  if (times === 0) {
+    return program;
+  }
+
+  return program.pipe(
+    Effect.retry({
+      ...(options.delay ? { schedule: Schedule.spaced(options.delay) } : {}),
+      times,
+      ...(options.while ? { while: options.while } : {}),
+    })
+  );
+}
+
+export function withTuturuuuTimeout<A, E, R>(
+  program: Effect.Effect<A, E, R>,
+  options: TuturuuuEffectTimeoutOptions
+): Effect.Effect<A, E | TuturuuuEffectError, R> {
+  return program.pipe(
+    Effect.timeoutFail({
+      duration: options.duration,
+      onTimeout: () =>
+        new TuturuuuEffectError({
+          code: options.code,
+          message: options.message,
+          status: options.status,
+          cause: options.cause,
+          context: options.context,
+        }),
+    })
+  );
+}
+
+export function forEachConcurrently<A, B, E, R>(
+  items: Iterable<A>,
+  evaluate: (item: A, index: number) => Effect.Effect<B, E, R>,
+  options: TuturuuuEffectConcurrencyOptions = {}
+): Effect.Effect<readonly B[], E, R> {
+  return Effect.forEach(items, evaluate, {
+    concurrency: options.concurrency ?? DEFAULT_TUTURUUU_EFFECT_CONCURRENCY,
+  });
 }
 
 export async function runEffectAsResult<T>(

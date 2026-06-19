@@ -35,6 +35,9 @@ shared-package changes.
   should not replace query hooks or React state.
 - Keep input validation in Zod and generated DB types. Use Effect to compose
   validated operations, not as a replacement for existing schema contracts.
+- Use the Tuturuuu helpers (`withTuturuuuRetry`, `withTuturuuuTimeout`, and
+  `forEachConcurrently`) for common service reliability policy before adding
+  ad hoc retry loops, raw timeout races, or unbounded parallel maps.
 - Do not wrap simple pure helpers, formatting utilities, or one-line data
   transforms in Effect unless they are part of a larger Effect workflow.
 - Expose adoption through additive subpaths such as `@tuturuuu/ai/effect` or
