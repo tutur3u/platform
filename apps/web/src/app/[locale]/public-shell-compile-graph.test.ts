@@ -24,6 +24,10 @@ const loginFormSource = source('src/app/[locale]/(marketing)/login/form.tsx');
 const loginConfirmationPartsSource = source(
   'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
 );
+const rootLayoutSource = source('src/app/[locale]/layout.tsx');
+const timeTrackerLayoutSource = source(
+  'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
+);
 const dropdownMenuSource = source(
   '../../packages/ui/src/components/ui/dropdown-menu.tsx'
 );
@@ -160,5 +164,15 @@ describe('public shell compile graph', () => {
       /import\(\s*['"]@tuturuuu\/ui\/report-problem-dialog['"]\s*\)/u
     );
     expect(reportProblemMenuItemSource).toContain('{open && (');
+  });
+
+  it('keeps Mantine styles scoped to the time tracker layout', () => {
+    for (const modulePath of [
+      '@mantine/charts/styles.layer.css',
+      '@mantine/core/styles.layer.css',
+    ] as const) {
+      expect(rootLayoutSource).not.toContain(modulePath);
+      expect(timeTrackerLayoutSource).toContain(modulePath);
+    }
   });
 });
