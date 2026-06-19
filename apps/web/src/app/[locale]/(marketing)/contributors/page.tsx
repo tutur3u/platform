@@ -28,7 +28,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
@@ -382,14 +381,15 @@ export default function ContributorsPage() {
                 className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
                 asChild
               >
-                <Link
+                <a
                   href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
                   target="_blank"
+                  rel="noreferrer"
                 >
                   <GithubIcon className="mr-2 h-5 w-5" />
                   View Repository
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -397,13 +397,14 @@ export default function ContributorsPage() {
                 className="w-full transition-all hover:scale-105 sm:w-auto"
                 asChild
               >
-                <Link
+                <a
                   href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/fork`}
                   target="_blank"
+                  rel="noreferrer"
                 >
                   <GitBranch className="mr-2 h-5 w-5" />
                   Fork Project
-                </Link>
+                </a>
               </Button>
               <Button
                 size="lg"
@@ -411,10 +412,10 @@ export default function ContributorsPage() {
                 className="w-full transition-all hover:scale-105 sm:w-auto"
                 asChild
               >
-                <Link href="/careers">
+                <a href="/careers">
                   <Users className="mr-2 h-5 w-5" />
                   Join Our Team
-                </Link>
+                </a>
               </Button>
             </motion.div>
 
@@ -721,28 +722,30 @@ export default function ContributorsPage() {
 
                 <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
                   <Button size="lg" asChild>
-                    <Link
+                    <a
                       href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
                       target="_blank"
+                      rel="noreferrer"
                     >
                       <GithubIcon className="mr-2 h-5 w-5" />
                       View on GitHub
-                    </Link>
+                    </a>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
-                    <Link
+                    <a
                       href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/fork`}
                       target="_blank"
+                      rel="noreferrer"
                     >
                       <GitBranch className="mr-2 h-5 w-5" />
                       Fork Repository
-                    </Link>
+                    </a>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
-                    <Link href="mailto:contributors@tuturuuu.com">
+                    <a href="mailto:contributors@tuturuuu.com">
                       <Mail className="mr-2 h-5 w-5" />
                       Contact Us
-                    </Link>
+                    </a>
                   </Button>
                 </div>
 

@@ -453,6 +453,12 @@ describe('public shell compile graph', () => {
     );
   });
 
+  it('keeps the contributors page off Next link', () => {
+    expect(contributorsPageSource).not.toMatch(
+      staticImportPattern('next/link')
+    );
+  });
+
   it('keeps the Facebook mockup widget off the icon package root', () => {
     for (const sourceText of facebookMockupIconBoundarySources) {
       expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
