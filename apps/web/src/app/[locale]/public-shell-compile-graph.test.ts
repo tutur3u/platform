@@ -21,6 +21,7 @@ const loginContentSource = source(
   'src/app/[locale]/(marketing)/login/login-content.tsx'
 );
 const loginFormSource = source('src/app/[locale]/(marketing)/login/form.tsx');
+const loginPageSource = source('src/app/[locale]/(marketing)/login/page.tsx');
 const loginConfirmationPartsSource = source(
   'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
 );
@@ -136,6 +137,18 @@ describe('public shell compile graph', () => {
     expect(loginFormSource).toMatch(
       /import\(\s*['"]\.\/internal-app-account-confirmation['"]\s*\)/u
     );
+  });
+
+  it('loads login server auth only when cookies can contain a session', () => {
+    for (const modulePath of [
+      '@tuturuuu/supabase/next/auth-session-user',
+      '@tuturuuu/supabase/next/server',
+    ] as const) {
+      expect(loginPageSource).not.toMatch(staticImportPattern(modulePath));
+      expect(loginPageSource).toContain(`import('${modulePath}')`);
+    }
+
+    expect(loginPageSource).toContain("headerStore.get('cookie')");
   });
 
   it('loads OTP input UI only after login needs it', () => {

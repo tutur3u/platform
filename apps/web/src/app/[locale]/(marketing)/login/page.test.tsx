@@ -6,6 +6,7 @@ import Login from './page';
 const mocks = vi.hoisted(() => ({
   getLocalE2ESupabaseBrowserConfig: vi.fn(),
   isLocalE2EAuthBypassEnabled: vi.fn(),
+  cookieHeader: '',
   loginFormProps: [] as Array<{
     localE2EAuthBypass?: boolean;
     runtimeSupabaseConfig?: {
@@ -39,6 +40,13 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => ({})),
+}));
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => ({
+    get: (name: string) =>
+      name.toLowerCase() === 'cookie' ? mocks.cookieHeader : null,
+  })),
 }));
 
 vi.mock('@/constants/common', () => ({
@@ -164,6 +172,7 @@ describe('Login page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.loginFormProps = [];
+    mocks.cookieHeader = '';
     mocks.getLocalE2ESupabaseBrowserConfig.mockReturnValue(null);
     mocks.isLocalE2EAuthBypassEnabled.mockReturnValue(false);
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({ user: null });
@@ -194,6 +203,7 @@ describe('Login page', () => {
       screen.getByRole('heading', { name: 'Welcome Back' })
     ).toBeInTheDocument();
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
   });
 
   it('threads the runtime local E2E auth bypass into the login form', async () => {
@@ -256,6 +266,7 @@ describe('Login page', () => {
   });
 
   it('redirects authenticated hard loads away from plain login', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
@@ -271,6 +282,7 @@ describe('Login page', () => {
   });
 
   it('redirects authenticated hard loads to safe local returnUrls', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
@@ -288,6 +300,7 @@ describe('Login page', () => {
   });
 
   it('keeps authenticated external returnUrls on the confirmation flow', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
@@ -302,6 +315,7 @@ describe('Login page', () => {
   });
 
   it('does not redirect authenticated multi-account hard loads', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
