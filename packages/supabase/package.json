@@ -71,6 +71,11 @@
       "bun": "./src/next/realtime-log-provider.tsx",
       "default": "./dist/next/realtime-log-provider.js"
     },
+    "./request/server": {
+      "types": "./dist/request/server.d.ts",
+      "bun": "./src/request/server.ts",
+      "default": "./dist/request/server.js"
+    },
     "./next/server": {
       "types": "./dist/next/server.d.ts",
       "bun": "./src/next/server.ts",
