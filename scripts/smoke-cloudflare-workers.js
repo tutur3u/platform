@@ -151,6 +151,19 @@ function createSmokePlan({ backendOrigin, tanstackOrigin, token }) {
   ];
 }
 
+function createSmokeProvenance(
+  { backendOrigin, tanstackOrigin, timeoutMs },
+  probes
+) {
+  return {
+    backendOrigin,
+    probeIds: probes.map((probe) => probe.id),
+    reporter: 'scripts/smoke-cloudflare-workers.js',
+    tanstackOrigin,
+    timeoutMs,
+  };
+}
+
 function isSuccessfulStatus(status) {
   return status >= 200 && status < 400;
 }
@@ -245,6 +258,7 @@ async function runSmoke(options, fetchImpl = fetch) {
   return {
     generatedAt: new Date().toISOString(),
     ok: results.every((result) => result.ok),
+    provenance: createSmokeProvenance(options, probes),
     results,
   };
 }
@@ -344,6 +358,7 @@ if (require.main === module) {
 
 module.exports = {
   createSmokePlan,
+  createSmokeProvenance,
   formatResult,
   isSuccessfulStatus,
   normalizeOrigin,

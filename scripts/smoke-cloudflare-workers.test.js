@@ -124,6 +124,19 @@ test('runSmoke validates migration JSON shape and TanStack backend-connected she
   );
 
   assert.equal(report.ok, true);
+  assert.deepEqual(report.provenance, {
+    backendOrigin: 'https://backend.example.workers.dev',
+    probeIds: [
+      'backend-health',
+      'backend-ready',
+      'backend-migration-status',
+      'tanstack-root',
+    ],
+    reporter: 'scripts/smoke-cloudflare-workers.js',
+    tanstackOrigin: 'https://tanstack.example.workers.dev',
+    timeoutMs: 1000,
+  });
+  assert.doesNotMatch(JSON.stringify(report.provenance), /secret-token/u);
 });
 
 test('runSmoke fails when the TanStack shell cannot reach the Rust backend', async () => {
@@ -178,6 +191,13 @@ test('writeSmokeReport keeps reports under ignored benchmark output', () => {
   const report = {
     generatedAt: '2026-06-20T00:00:00.000Z',
     ok: true,
+    provenance: {
+      backendOrigin: 'https://backend.example.workers.dev',
+      probeIds: [],
+      reporter: 'scripts/smoke-cloudflare-workers.js',
+      tanstackOrigin: 'https://tanstack.example.workers.dev',
+      timeoutMs: 1000,
+    },
     results: [],
   };
   const writes = [];
