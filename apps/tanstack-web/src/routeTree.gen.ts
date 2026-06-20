@@ -27,6 +27,7 @@ import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-to
 import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup'
 import { Route as LocaleDocsRouteImport } from './routes/$locale/docs'
 import { Route as LocaleContributorsRouteImport } from './routes/$locale/contributors'
+import { Route as LocaleContactRouteImport } from './routes/$locale/contact'
 import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines'
 import { Route as LocaleCareersRouteImport } from './routes/$locale/careers'
 import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding'
@@ -63,6 +64,7 @@ import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce'
 import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator'
+import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls'
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects'
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm'
@@ -171,6 +173,11 @@ const LocaleDocsRoute = LocaleDocsRouteImport.update({
 const LocaleContributorsRoute = LocaleContributorsRouteImport.update({
   id: '/$locale/contributors',
   path: '/$locale/contributors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleContactRoute = LocaleContactRouteImport.update({
+  id: '/$locale/contact',
+  path: '/$locale/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleCommunityGuidelinesRoute =
@@ -365,6 +372,11 @@ const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
   path: '/$locale/$wsId/qr-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
+  id: '/$locale/$wsId/polls',
+  path: '/$locale/$wsId/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
   id: '/$locale/$wsId/meet',
   path: '/$locale/$wsId/meet',
@@ -485,6 +497,7 @@ export interface FileRoutesByFullPath {
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
+  '/$locale/contact': typeof LocaleContactRoute
   '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
@@ -502,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -560,6 +574,7 @@ export interface FileRoutesByTo {
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
+  '/$locale/contact': typeof LocaleContactRoute
   '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
@@ -577,6 +592,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -636,6 +652,7 @@ export interface FileRoutesById {
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
+  '/$locale/contact': typeof LocaleContactRoute
   '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
@@ -653,6 +670,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -713,6 +731,7 @@ export interface FileRouteTypes {
     | '/$locale/branding'
     | '/$locale/careers'
     | '/$locale/community-guidelines'
+    | '/$locale/contact'
     | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
@@ -730,6 +749,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/polls'
     | '/$locale/$wsId/qr-generator'
     | '/$locale/$wsId/workforce'
     | '/$locale/calendar/meet-together'
@@ -788,6 +808,7 @@ export interface FileRouteTypes {
     | '/$locale/branding'
     | '/$locale/careers'
     | '/$locale/community-guidelines'
+    | '/$locale/contact'
     | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
@@ -805,6 +826,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/polls'
     | '/$locale/$wsId/qr-generator'
     | '/$locale/$wsId/workforce'
     | '/$locale/calendar/meet-together'
@@ -863,6 +885,7 @@ export interface FileRouteTypes {
     | '/$locale/branding'
     | '/$locale/careers'
     | '/$locale/community-guidelines'
+    | '/$locale/contact'
     | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
@@ -880,6 +903,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/polls'
     | '/$locale/$wsId/qr-generator'
     | '/$locale/$wsId/workforce'
     | '/$locale/calendar/meet-together'
@@ -939,6 +963,7 @@ export interface RootRouteChildren {
   LocaleBrandingRoute: typeof LocaleBrandingRoute
   LocaleCareersRoute: typeof LocaleCareersRoute
   LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
+  LocaleContactRoute: typeof LocaleContactRoute
   LocaleContributorsRoute: typeof LocaleContributorsRoute
   LocaleDocsRoute: typeof LocaleDocsRoute
   LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
@@ -956,6 +981,7 @@ export interface RootRouteChildren {
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRoute
+  LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
   LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -1125,6 +1151,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/contributors'
       fullPath: '/$locale/contributors'
       preLoaderRoute: typeof LocaleContributorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/contact': {
+      id: '/$locale/contact'
+      path: '/$locale/contact'
+      fullPath: '/$locale/contact'
+      preLoaderRoute: typeof LocaleContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/community-guidelines': {
@@ -1379,6 +1412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdQrGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/polls': {
+      id: '/$locale/$wsId/polls'
+      path: '/$locale/$wsId/polls'
+      fullPath: '/$locale/$wsId/polls'
+      preLoaderRoute: typeof LocaleWsIdPollsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/meet': {
       id: '/$locale/$wsId/meet'
       path: '/$locale/$wsId/meet'
@@ -1569,6 +1609,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleBrandingRoute: LocaleBrandingRoute,
   LocaleCareersRoute: LocaleCareersRoute,
   LocaleCommunityGuidelinesRoute: LocaleCommunityGuidelinesRoute,
+  LocaleContactRoute: LocaleContactRoute,
   LocaleContributorsRoute: LocaleContributorsRoute,
   LocaleDocsRoute: LocaleDocsRoute,
   LocaleFacebookMockupRoute: LocaleFacebookMockupRoute,
@@ -1586,6 +1627,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
   LocaleWsIdMeetRoute: LocaleWsIdMeetRoute,
+  LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
   LocaleWsIdQrGeneratorRoute: LocaleWsIdQrGeneratorRoute,
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
@@ -1637,13 +1679,10 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-
 import type { createStart } from '@tanstack/react-start'
-
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
-
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }

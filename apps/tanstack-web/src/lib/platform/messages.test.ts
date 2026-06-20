@@ -35,4 +35,26 @@ describe('message adapters', () => {
       legacyViMessages.common['back-to-home']
     );
   });
+
+  it('keeps migrated polls page messages aligned with the legacy web namespace', () => {
+    expect(getMessages('en').sidebar_tabs.polls).toBe(
+      legacyEnMessages.sidebar_tabs.polls
+    );
+    expect(getMessages('vi').sidebar_tabs.polls).toBe(
+      legacyViMessages.sidebar_tabs.polls
+    );
+    expect(getMessages('en')['ws-polls']).toEqual(legacyEnMessages['ws-polls']);
+    expect(getMessages('vi')['ws-polls']).toEqual(legacyViMessages['ws-polls']);
+  });
+
+  it('keeps migrated contact page messages aligned with the legacy web namespace', () => {
+    expect(getMessages('en').contact).toMatchObject(legacyEnMessages.contact);
+    expect(getMessages('vi').contact).toMatchObject(legacyViMessages.contact);
+    expect(getMessages('en').contact.form.status.success.title).toBe(
+      'Message sent'
+    );
+    expect(getMessages('vi').contact.form.validation.email).toBe(
+      'Vui lòng nhập email hợp lệ'
+    );
+  });
 });

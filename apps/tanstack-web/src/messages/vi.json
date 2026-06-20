@@ -339,5 +339,215 @@
   "common": {
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
     "back-to-home": "Quay lại trang chủ"
+  },
+  "sidebar_tabs": {
+    "polls": "Bỏ phiếu"
+  },
+  "ws-polls": {
+    "active": "Đang hoạt động",
+    "active_polls": "Bỏ phiếu đang hoạt động",
+    "add": "Thêm",
+    "average_rating": "Đánh giá trung bình",
+    "cancel": "Hủy",
+    "cannot_use_anonymous": "Vui lòng đăng nhập bằng tài khoản Khách hoặc tài khoản Tuturuuu để sử dụng tính năng này",
+    "completed": "Đã hoàn thành",
+    "confirm": "Xác nhận",
+    "create": "Tạo bỏ phiếu",
+    "create_description": "Tạo cuộc bỏ phiếu mới để thu thập ý kiến và phản hồi từ các thành viên trong nhóm",
+    "create_first_poll": "Tạo cuộc bỏ phiếu đầu tiên",
+    "create_new_option": "Thêm tùy chọn của bạn...",
+    "created_by": "bởi",
+    "delete": "Xóa",
+    "delete_option": "Xóa Tùy chọn",
+    "delete_option_confirm": "Bạn có chắc chắn muốn xóa tùy chọn này không? Hành động này không thể hoàn tác.",
+    "delete_poll": "Xóa Bình chọn",
+    "delete_poll_confirm": "Bạn có chắc chắn muốn xóa bình chọn \"{pollName}\"? Hành động này không thể hoàn tác và sẽ xóa tất cả phiếu bầu và tùy chọn.",
+    "description": "Tạo và quản lý các cuộc bỏ phiếu để thu thập phản hồi và đưa ra quyết định tập thể trong không gian làm việc của bạn.",
+    "draft": "Bản nháp",
+    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'",
+    "enable_where_poll_desc": "Bạn có thể bật tính năng bình chọn 'Nơi gặp mặt' cho kế hoạch của mình.",
+    "ended": "Đã kết thúc",
+    "ends": "Kết thúc",
+    "expired": "Đã hết hạn",
+    "filter": "Lọc",
+    "more_options": "tùy chọn khác",
+    "multiple_choice": "Nhiều lựa chọn",
+    "no_more_polls": "Không còn cuộc bỏ phiếu nào",
+    "no_more_polls_desc": "Tạo cuộc bỏ phiếu đầu tiên để bắt đầu thu thập phản hồi từ nhóm của bạn.",
+    "participation_rate": "Tỷ lệ tham gia",
+    "plural": "Bỏ phiếu",
+    "ranking": "Xếp hạng",
+    "rating": "Đánh giá",
+    "recent_polls": "Bỏ phiếu gần đây",
+    "select_options": "Chọn các tùy chọn để bỏ phiếu",
+    "singular": "Bỏ phiếu",
+    "sort": "Sắp xếp",
+    "total_polls": "Tổng số bỏ phiếu",
+    "total_votes": "Tổng số lượt bỏ phiếu",
+    "vote": "lượt bỏ phiếu",
+    "vote_again": "Bỏ phiếu lại",
+    "vote_confirm": "Bạn có chắc chắn muốn gửi phiếu bầu cho những tùy chọn này không?",
+    "vote_for": "Bỏ phiếu cho",
+    "vote_now": "Bỏ phiếu ngay",
+    "voted_for": "Bạn đã bình chọn cho",
+    "voter": "người bỏ phiếu",
+    "voters": "người bỏ phiếu",
+    "votes": "lượt bỏ phiếu",
+    "yes_no": "Có/Không"
+  },
+  "contact": {
+    "banner": {
+      "description": "Đội ngũ của chúng tôi cam kết cung cấp hỗ trợ xuất sắc và giúp bạn tận dụng tối đa Tuturuuu.",
+      "features": {
+        "dedicated": "Đội Ngũ Tận Tâm",
+        "expert": "Hỗ Trợ Chuyên Nghiệp",
+        "response": "Phản Hồi Trong 24h"
+      },
+      "title": "Chúng Tôi Luôn Sẵn Sàng Hỗ Trợ"
+    },
+    "form": {
+      "authRequired": {
+        "description": "Để đảm bảo hệ thống được bảo vệ và danh tính của bạn được xác minh, bạn cần đăng nhập để gửi yêu cầu. Điều này giúp chúng tôi duy trì một kênh giao tiếp an toàn và đáng tin cậy.",
+        "loginButton": "Đăng Nhập để Tiếp Tục",
+        "title": "Yêu Cầu Xác Thực"
+      },
+      "button": {
+        "send": "Gửi Tin Nhắn",
+        "sending": "Đang gửi..."
+      },
+      "description": "Chia sẻ ý tưởng, câu hỏi của bạn, hoặc yêu cầu truy cập beta các tính năng thử nghiệm. Chúng tôi sẽ phản hồi sớm nhất có thể.",
+      "fields": {
+        "email": {
+          "label": "Email",
+          "placeholder": "you@example.com"
+        },
+        "message": {
+          "label": "Tin nhắn",
+          "placeholder": "Cho chúng tôi biết về câu hỏi, ý tưởng, hoặc yêu cầu truy cập beta của bạn..."
+        },
+        "name": {
+          "label": "Tên",
+          "placeholder": "Tên của bạn"
+        },
+        "product": {
+          "label": "Sản Phẩm",
+          "options": {
+            "calendar": "Lịch",
+            "finance": "Tài Chính",
+            "nova": "Nova (Học Tập)",
+            "other": "Khác",
+            "rewise": "Rewise (AI Chat)",
+            "tudo": "Tuturuuu Tasks",
+            "tumeet": "Tuturuuu Meet",
+            "web": "Nền Tảng Web"
+          },
+          "placeholder": "Chọn sản phẩm"
+        },
+        "subject": {
+          "label": "Tiêu đề",
+          "placeholder": "Bạn muốn nói về điều gì?"
+        },
+        "type": {
+          "label": "Loại Yêu Cầu",
+          "options": {
+            "bug": "Báo Lỗi",
+            "featureRequest": "Yêu Cầu Tính Năng",
+            "jobApplication": "Ứng Tuyển",
+            "support": "Hỗ Trợ Chung"
+          },
+          "placeholder": "Chọn loại"
+        }
+      },
+      "title": "Gửi Tin Nhắn",
+      "status": {
+        "success": {
+          "type": "success",
+          "title": "Đã gửi tin nhắn",
+          "description": "Chúng tôi đã nhận được yêu cầu của bạn và sẽ phản hồi sớm nhất có thể."
+        },
+        "error": {
+          "type": "error",
+          "title": "Đã xảy ra lỗi",
+          "description": "Vui lòng thử lại sau hoặc liên hệ trực tiếp qua email."
+        },
+        "authRequired": {
+          "type": "error",
+          "title": "Yêu cầu đăng nhập",
+          "description": "Vui lòng đăng nhập để gửi yêu cầu."
+        }
+      },
+      "validation": {
+        "email": "Vui lòng nhập email hợp lệ",
+        "emailMax": "Email quá dài",
+        "messageMin": "Tin nhắn phải có ít nhất 10 ký tự",
+        "messageMax": "Tin nhắn quá dài",
+        "nameMin": "Tên phải có ít nhất 2 ký tự",
+        "nameMax": "Tên quá dài",
+        "subjectMin": "Tiêu đề phải có ít nhất 5 ký tự",
+        "subjectMax": "Tiêu đề quá dài",
+        "type": "Vui lòng chọn loại yêu cầu"
+      }
+    },
+    "founder": {
+      "contact": {
+        "email": "Email",
+        "github": "GitHub"
+      },
+      "description": "Thúc đẩy đổi mới và xuất sắc trong công nghệ. Đừng ngần ngại liên hệ trực tiếp để hợp tác, đối tác, hoặc yêu cầu truy cập beta.",
+      "name": "Võ Hoàng Phúc",
+      "role": "Người Sáng Lập & CEO",
+      "title": "Kết Nối Với Người Sáng Lập"
+    },
+    "hero": {
+      "badge": "Kết Nối Cùng Chúng Tôi",
+      "description": "Dù bạn muốn đổi mới, hợp tác, yêu cầu truy cập beta các tính năng thử nghiệm, hay đơn giản là tìm hiểu thêm về nền tảng của chúng tôi, chúng tôi luôn sẵn sàng hỗ trợ.",
+      "title": {
+        "highlight": "Tương Lai",
+        "part1": "Cùng Xây Dựng"
+      }
+    },
+    "highlights": {
+      "beta": {
+        "description": "Yêu cầu truy cập sớm các tính năng thử nghiệm",
+        "title": "Truy Cập Beta"
+      },
+      "premium": {
+        "description": "Quan tâm tận tình đến nhu cầu của bạn",
+        "title": "Dịch Vụ Cao Cấp"
+      },
+      "technical": {
+        "description": "Hỗ trợ chuyên nghiệp từ đội ngũ kỹ sư",
+        "title": "Chuyên Môn Kỹ Thuật"
+      },
+      "title": "Tại Sao Chọn Chúng Tôi"
+    },
+    "methods": {
+      "email": {
+        "description": "Cho các câu hỏi chung và hỗ trợ",
+        "title": "Email"
+      },
+      "github": {
+        "description": "Khám phá các dự án mã nguồn mở",
+        "title": "GitHub"
+      },
+      "response": {
+        "description": "Phản hồi nhanh và hữu ích",
+        "title": "Thời Gian Phản Hồi",
+        "value": "Trong Vòng 24 Giờ"
+      },
+      "subtitle": "Chọn cách thức liên hệ bạn ưa thích",
+      "support": {
+        "description": "Luôn sẵn sàng hỗ trợ bạn",
+        "title": "Hỗ Trợ Toàn Cầu",
+        "value": "Có Mặt 24/7"
+      },
+      "title": "Liên Hệ"
+    },
+    "quickLinks": {
+      "about": "Về Chúng Tôi",
+      "github": "GitHub Repository",
+      "pricing": "Bảng Giá",
+      "title": "Liên Kết Nhanh"
+    }
   }
 }

@@ -210,6 +210,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/topic-announcements preserves the legacy 307 redirect to /:wsId/users/topic-announcements/announcements. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/polls:apps/web/src/app/[locale]/(dashboard)/[wsId]/polls/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/polls ports the legacy static mock polls dashboard with local message bundles and shared UI primitives, without adding auth, Supabase, protected API, or server-action access. Parent dashboard layout/session ownership remains legacy-owned."
+    },
     "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
