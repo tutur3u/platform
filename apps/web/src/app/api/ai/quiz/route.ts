@@ -86,6 +86,7 @@ export const POST = withSessionAuth(
 
       const {
         lessonId,
+        testId,
         wsId,
         context: teacherContext,
         questionType,
@@ -285,17 +286,30 @@ ${lessonInfo}`;
           )
         );
 
-        // Link quizzes to course module
-        const { error: linkError } = await sbAdmin
-          .from('course_module_quizzes')
-          .insert(
-            createdQuizzes.map((q) => ({
-              module_id: lesson.id,
-              quiz_id: q.id,
-            }))
-          );
-
-        if (linkError) throw linkError;
+        if (testId) {
+          // Link quizzes to course test
+          const { error: linkError } = await sbAdmin
+            .from('course_test_quizzes')
+            .insert(
+              createdQuizzes.map((q) => ({
+                test_id: testId,
+                module_id: lesson.id,
+                quiz_id: q.id,
+              }))
+            );
+          if (linkError) throw linkError;
+        } else {
+          // Link quizzes to course module
+          const { error: linkError } = await sbAdmin
+            .from('course_module_quizzes')
+            .insert(
+              createdQuizzes.map((q) => ({
+                module_id: lesson.id,
+                quiz_id: q.id,
+              }))
+            );
+          if (linkError) throw linkError;
+        }
 
         await revalidateCourseModuleQuizPaths({
           db: sbAdmin,

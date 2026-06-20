@@ -99,10 +99,11 @@ export const QuizGenerationSchema = z.object({
 
 export const GenerateQuizRequestSchema = z.object({
   lessonId: z.string().uuid(),
+  testId: z.string().uuid().optional(),
   wsId: z.string().min(1),
   context: z.string().max(4000).optional(),
   questionType: z
     .enum(['multiple_choice', 'true_false', 'matching', 'ordering', 'mix'])
     .default('mix'),
-  count: z.number().int().min(1).max(20).default(5),
+  count: z.number().int().min(1).max(50).default(5),
 });

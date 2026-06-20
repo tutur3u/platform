@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader, Plus, Trash } from '@tuturuuu/icons';
 import {
+  createWorkspaceCourseTestQuestions,
   createWorkspaceQuiz,
   updateWorkspaceQuiz,
 } from '@tuturuuu/internal-api';
@@ -26,6 +27,8 @@ import { useState } from 'react';
 interface Props {
   wsId: string;
   moduleId: string;
+  courseId?: string;
+  testId?: string;
   data?: {
     id?: string;
     question?: string;
@@ -39,6 +42,8 @@ interface Props {
 export default function DynamicQuizForm({
   wsId,
   moduleId,
+  courseId,
+  testId,
   data,
   onFinish,
 }: Props) {
@@ -126,17 +131,31 @@ export default function DynamicQuizForm({
         });
       } else {
         // Create Mode
-        await createWorkspaceQuiz(wsId, {
-          moduleId,
-          quizzes: [
-            {
-              question,
-              type,
-              content: payloadContent,
-              answer: payloadAnswer,
-            },
-          ],
-        });
+        if (testId && courseId) {
+          await createWorkspaceCourseTestQuestions(wsId, courseId, testId, {
+            moduleId,
+            quizzes: [
+              {
+                question,
+                type,
+                content: payloadContent,
+                answer: payloadAnswer,
+              },
+            ],
+          });
+        } else {
+          await createWorkspaceQuiz(wsId, {
+            moduleId,
+            quizzes: [
+              {
+                question,
+                type,
+                content: payloadContent,
+                answer: payloadAnswer,
+              },
+            ],
+          });
+        }
       }
     },
     onSuccess: () => {

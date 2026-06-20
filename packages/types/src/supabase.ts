@@ -14792,6 +14792,42 @@ export type Database = {
           },
         ];
       };
+      course_test_quizzes: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          quiz_id: string;
+          test_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          quiz_id: string;
+          test_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          quiz_id?: string;
+          test_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_quizzes_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_quizzes_test_id_module_id_fkey';
+            columns: ['test_id', 'module_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_test_modules';
+            referencedColumns: ['test_id', 'module_id'];
+          },
+        ];
+      };
       course_tests: {
         Row: {
           course_id: string;

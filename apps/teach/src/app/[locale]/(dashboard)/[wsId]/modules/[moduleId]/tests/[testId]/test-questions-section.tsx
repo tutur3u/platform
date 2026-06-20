@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BookOpenCheck, Loader2, Plus, Sparkles } from '@tuturuuu/icons';
 import {
   generateQuizFromLesson,
-  getWorkspaceQuizzes,
+  getWorkspaceCourseTestQuestions,
 } from '@tuturuuu/internal-api';
 import {
   Dialog,
@@ -41,12 +41,16 @@ type QuestionType =
 
 interface ModuleQuestionsManagerProps {
   wsId: string;
+  courseId: string;
+  testId: string;
   moduleId: string;
   moduleName: string;
 }
 
 function ModuleQuestionsManager({
   wsId,
+  courseId,
+  testId,
   moduleId,
   moduleName,
 }: ModuleQuestionsManagerProps) {
@@ -65,8 +69,8 @@ function ModuleQuestionsManager({
   // Fetch quizzes for this module
   const { data: quizzesData, isLoading, isError, refetch } = useQuery({
     queryKey,
-    queryFn: () => getWorkspaceQuizzes(wsId, { moduleId }),
-    enabled: Boolean(wsId) && Boolean(moduleId),
+    queryFn: () => getWorkspaceCourseTestQuestions(wsId, courseId, testId, { moduleId }),
+    enabled: Boolean(wsId) && Boolean(courseId) && Boolean(testId) && Boolean(moduleId),
   });
 
   const quizzes = quizzesData?.data ?? [];
@@ -79,7 +83,7 @@ function ModuleQuestionsManager({
         count?: number;
         context?: string;
       } = {}
-    ) => generateQuizFromLesson(wsId, { lessonId: moduleId, ...payload }),
+    ) => generateQuizFromLesson(wsId, { lessonId: moduleId, testId, ...payload }),
     onSuccess: (res) => {
       if (res.success) {
         toast.success(t('ws-quizzes.generation_success'));
@@ -162,6 +166,8 @@ function ModuleQuestionsManager({
           </h4>
           <DynamicQuizForm
             wsId={wsId}
+            courseId={courseId}
+            testId={testId}
             moduleId={moduleId}
             onFinish={() => {
               setCreating(false);
@@ -249,11 +255,11 @@ function ModuleQuestionsManager({
                 id="ai-question-count"
                 type="number"
                 min={1}
-                max={20}
+                max={50}
                 value={count}
                 onChange={(e) =>
                   setCount(
-                    Math.min(20, Math.max(1, parseInt(e.target.value, 10) || 1))
+                    Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1))
                   )
                 }
                 disabled={generateMutation.isPending}
@@ -312,11 +318,15 @@ function ModuleQuestionsManager({
 
 interface TestQuestionsSectionProps {
   wsId: string;
+  courseId: string;
+  testId: string;
   testModules: Array<{ id: string; name: string }>;
 }
 
 export function TestQuestionsSection({
   wsId,
+  courseId,
+  testId,
   testModules,
 }: TestQuestionsSectionProps) {
   return (
@@ -342,6 +352,8 @@ export function TestQuestionsSection({
             <ModuleQuestionsManager
               key={module.id}
               wsId={wsId}
+              courseId={courseId}
+              testId={testId}
               moduleId={module.id}
               moduleName={module.name}
             />

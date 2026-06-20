@@ -281,7 +281,12 @@ export function TestDetailClient({
         </div>
 
         {/* Test Questions Section */}
-        <TestQuestionsSection wsId={wsId} testModules={testModules} />
+        <TestQuestionsSection
+          wsId={wsId}
+          courseId={courseId}
+          testId={testId}
+          testModules={testModules}
+        />
       </div>
     </main>
   );

@@ -356,6 +356,7 @@ export async function generateWorkspaceCourseModulesFromStorage(
 
 export interface GenerateQuizFromLessonPayload {
   lessonId: string;
+  testId?: string;
   context?: string;
   questionType?:
     | 'multiple_choice'
