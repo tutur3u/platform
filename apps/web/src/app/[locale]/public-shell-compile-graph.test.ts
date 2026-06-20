@@ -433,6 +433,7 @@ describe('public shell compile graph', () => {
     expect(brandingClientSource).not.toMatch(
       staticImportPattern('@tuturuuu/icons')
     );
+    expect(brandingClientSource).not.toMatch(staticImportPattern('next/image'));
     expect(brandingClientSource).toContain('@tuturuuu/icons/lucide');
   });
 

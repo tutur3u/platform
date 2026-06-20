@@ -24,7 +24,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Inter, Noto_Sans } from 'next/font/google';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -707,11 +706,12 @@ function HeroBrandStage({ reduceMotion }: { reduceMotion: boolean | null }) {
           repeat: Infinity,
         }}
       >
-        <Image
+        {/* biome-ignore lint/performance/noImgElement: local branding SVG stays native to keep this dev route off next/image. */}
+        <img
           alt=""
           className="relative h-48 w-48 object-contain drop-shadow-[0_24px_36px_rgba(0,0,0,0.18)]"
           height={192}
-          priority
+          loading="eager"
           src="/media/branding/tuturuuu.svg"
           width={192}
         />
@@ -801,7 +801,8 @@ function KineticAssetStrip({
             className="flex h-16 w-52 shrink-0 items-center gap-3 border-border border-x bg-background/55 px-5"
             key={`${asset.key}-${index}`}
           >
-            <Image
+            {/* biome-ignore lint/performance/noImgElement: local branding SVGs stay native to keep this dev route off next/image. */}
+            <img
               alt=""
               className="h-8 w-8 object-contain"
               height={32}
@@ -1041,7 +1042,8 @@ function PreviewAssetVisual({
   }
 
   return (
-    <Image
+    // biome-ignore lint/performance/noImgElement: local branding assets stay native to keep this dev route off next/image.
+    <img
       alt={name}
       className={cn(
         'pointer-events-none select-none object-contain',
