@@ -15,6 +15,7 @@ import {
   workspaceChatRedirectHref,
   workspaceInfrastructureAppCoordinationRedirectHref,
   workspaceMeetPlansRedirectHref,
+  workspaceRolesRedirectHref,
   workspaceTopicAnnouncementsRedirectHref,
   workspaceUserDatabaseRedirectHref,
 } from './redirects';
@@ -42,6 +43,7 @@ describe('public redirect helpers', () => {
     );
     expect(workspaceChatRedirectHref('ws-1')).toBe('/ws-1/chat');
     expect(workspaceMeetPlansRedirectHref('ws-1')).toBe('/ws-1/meet/plans');
+    expect(workspaceRolesRedirectHref('ws-1')).toBe('/ws-1/members?tab=roles');
     expect(workspaceTopicAnnouncementsRedirectHref('ws-1')).toBe(
       '/ws-1/users/topic-announcements/announcements'
     );

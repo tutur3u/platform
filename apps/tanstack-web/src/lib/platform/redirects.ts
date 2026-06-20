@@ -25,6 +25,10 @@ export function workspaceMeetPlansRedirectHref(wsId: string) {
   return `/${wsId}/meet/plans`;
 }
 
+export function workspaceRolesRedirectHref(wsId: string) {
+  return `/${wsId}/members?tab=roles`;
+}
+
 export function workspaceTopicAnnouncementsRedirectHref(wsId: string) {
   return `/${wsId}/users/topic-announcements/announcements`;
 }

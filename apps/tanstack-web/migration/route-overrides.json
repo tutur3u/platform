@@ -284,6 +284,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/meet preserves the legacy 307 redirect to /:wsId/meet/plans. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/roles:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/roles/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/roles preserves the legacy 307 redirect to /:wsId/members?tab=roles. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
     "page:/:locale/:wsId/qr-generator:apps/web/src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

@@ -63,6 +63,7 @@ import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/pro
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai'
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce'
+import { Route as LocaleWsIdRolesRouteImport } from './routes/$locale/$wsId/roles'
 import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator'
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls'
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
@@ -367,6 +368,11 @@ const LocaleWsIdWorkforceRoute = LocaleWsIdWorkforceRouteImport.update({
   path: '/$locale/$wsId/workforce',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdRolesRoute = LocaleWsIdRolesRouteImport.update({
+  id: '/$locale/$wsId/roles',
+  path: '/$locale/$wsId/roles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
   id: '/$locale/$wsId/qr-generator',
   path: '/$locale/$wsId/qr-generator',
@@ -517,6 +523,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
+  '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
@@ -594,6 +601,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
+  '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
@@ -672,6 +680,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
+  '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
@@ -751,6 +760,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
@@ -905,6 +916,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
@@ -983,6 +995,7 @@ export interface RootRouteChildren {
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRoute
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
   LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute
+  LocaleWsIdRolesRoute: typeof LocaleWsIdRolesRoute
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
   LocaleProductsAiRoute: typeof LocaleProductsAiRoute
@@ -1405,6 +1418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdWorkforceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/roles': {
+      id: '/$locale/$wsId/roles'
+      path: '/$locale/$wsId/roles'
+      fullPath: '/$locale/$wsId/roles'
+      preLoaderRoute: typeof LocaleWsIdRolesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/qr-generator': {
       id: '/$locale/$wsId/qr-generator'
       path: '/$locale/$wsId/qr-generator'
@@ -1629,6 +1649,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdMeetRoute: LocaleWsIdMeetRoute,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
   LocaleWsIdQrGeneratorRoute: LocaleWsIdQrGeneratorRoute,
+  LocaleWsIdRolesRoute: LocaleWsIdRolesRoute,
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
   LocaleProductsAiRoute: LocaleProductsAiRoute,
