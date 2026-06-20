@@ -1,8 +1,10 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildCmsCollectionRedirectHref,
   buildCmsEntryRedirectHref,
   buildCmsRedirectHref,
+  buildFinanceTransactionCategoriesRedirectHref,
   buildMailRedirectHref,
   buildQrGeneratorRedirectHref,
   buildVerifyTokenRedirectHref,
@@ -54,6 +56,44 @@ describe('public redirect helpers', () => {
     expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
       '/ws-1/infrastructure/app-coordination'
     );
+  });
+
+  it('preserves legacy finance transaction categories workspace slugs', () => {
+    expect(buildFinanceTransactionCategoriesRedirectHref('ws-1')).toBe(
+      '/ws-1/finance/categories'
+    );
+    expect(
+      buildFinanceTransactionCategoriesRedirectHref('personal-ws', {
+        personal: true,
+      })
+    ).toBe('/personal/finance/categories');
+    expect(
+      buildFinanceTransactionCategoriesRedirectHref(ROOT_WORKSPACE_ID)
+    ).toBe('/internal/finance/categories');
+  });
+
+  it('preserves legacy finance transaction categories query forwarding', () => {
+    expect(
+      buildFinanceTransactionCategoriesRedirectHref('ws-1', {
+        searchParams: {
+          empty: '',
+          range: 'month',
+          tag: ['food', ''],
+          unset: undefined,
+        },
+      })
+    ).toBe('/ws-1/finance/categories?range=month&tag=food&tag=');
+
+    const searchParams = new URLSearchParams();
+    searchParams.append('wallet', 'wallet 1');
+    searchParams.append('wallet', 'wallet/2');
+    searchParams.append('empty', '');
+
+    expect(
+      buildFinanceTransactionCategoriesRedirectHref('ws-1', {
+        searchParams,
+      })
+    ).toBe('/ws-1/finance/categories?wallet=wallet+1&wallet=wallet%2F2&empty=');
   });
 
   it('preserves legacy education permanent redirect targets', () => {

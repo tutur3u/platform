@@ -1,5 +1,8 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+
+type LegacySearchParams = Record<string, string | string[] | undefined>;
 
 export function pricingRedirectHref() {
   return '/?hash-nav=1#pricing';
@@ -45,6 +48,26 @@ export function workspaceInfrastructureAppCoordinationRedirectHref(
   wsId: string
 ) {
   return `/${wsId}/infrastructure/app-coordination`;
+}
+
+export function buildFinanceTransactionCategoriesRedirectHref(
+  workspaceId: string,
+  options: {
+    personal?: boolean;
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId, {
+    personal: options.personal,
+  });
+  const url = new URL(
+    `/${workspaceSlug}/finance/categories`,
+    'https://finance.local'
+  );
+
+  appendSearchParams(url, options.searchParams);
+
+  return `${url.pathname}${url.search}`;
 }
 
 export function educationLibraryRedirectHref(
@@ -106,6 +129,34 @@ function normalizeSearchParams(search: string | URLSearchParams) {
   if (typeof search !== 'string') return search;
 
   return new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+}
+
+function appendSearchParams(
+  url: URL,
+  searchParams?: LegacySearchParams | string | URLSearchParams
+) {
+  if (!searchParams) return;
+
+  if (
+    typeof searchParams === 'string' ||
+    searchParams instanceof URLSearchParams
+  ) {
+    for (const [key, value] of normalizeSearchParams(searchParams)) {
+      url.searchParams.append(key, value);
+    }
+
+    return;
+  }
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (!value) continue;
+
+    const values = Array.isArray(value) ? value : [value];
+
+    for (const entry of values) {
+      url.searchParams.append(key, entry);
+    }
+  }
 }
 
 export function buildQrGeneratorRedirectHref(search: string | URLSearchParams) {
