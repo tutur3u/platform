@@ -499,10 +499,10 @@ function isPassedE2EStatus(status) {
 function validateE2EReport(report) {
   const failures = [];
 
-  if (report.frontend === 'compare') {
-    if (!isPassedE2EStatus(report.status) && report.passed !== true) {
-      failures.push('E2E compare report did not pass.');
-    }
+  if (report.frontend !== 'compare') {
+    failures.push('E2E report must be generated with frontend compare mode.');
+  } else if (!isPassedE2EStatus(report.status) && report.passed !== true) {
+    failures.push('E2E compare report did not pass.');
   }
 
   const frontends = report.frontends ?? report.results ?? {};

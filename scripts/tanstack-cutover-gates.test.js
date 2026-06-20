@@ -586,6 +586,19 @@ test('validateE2EReport accepts Docker compare report output', () => {
   assert.equal(validation.ok, true);
 });
 
+test('validateE2EReport requires explicit compare frontend mode', () => {
+  const validation = validateE2EReport({
+    frontends: {
+      next: { passRate: 1, status: 'passed', wallMs: 10000 },
+      tanstack: { passRate: 1, status: 'passed', wallMs: 11000 },
+    },
+    status: 'passed',
+  });
+
+  assert.equal(validation.ok, false);
+  assert.match(validation.failures.join('\n'), /frontend compare mode/u);
+});
+
 test('validateE2EReport rejects pass-rate and wall-time regressions without accepted notes', () => {
   const validation = validateE2EReport({
     frontend: 'compare',
