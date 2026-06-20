@@ -479,6 +479,12 @@ manifest entry can move out of `legacy-next`:
 - a `packages/internal-api` facade when the TanStack app or shared UI needs to
   call the endpoint
 
+`scripts/backend-openapi-migration-contract.test.js` compares the migrated
+Rust-owned route artifacts in `apps/tanstack-web/migration/route-manifest.json`
+with `apps/backend/api/openapi.yaml`. Add or update the OpenAPI operation in the
+same commit that marks a Rust route artifact `migrated`; otherwise `bun check`
+fails.
+
 For method-level overrides, the same evidence applies to each migrated method,
 and the route override must leave every unmigrated sibling method as a generated
 `legacy-next` artifact. Do not mark a full route migrated only because a safe
