@@ -530,6 +530,9 @@ export function UserGroupSessionCalendar({
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace-user-group-schedule-group-summaries', wsId],
+      });
     },
   });
 
@@ -595,6 +598,9 @@ export function UserGroupSessionCalendar({
 
       void queryClient.invalidateQueries({
         queryKey: ['workspace-user-group-sessions', wsId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace-user-group-schedule-group-summaries', wsId],
       });
       for (const groupId of result.groupIds) {
         void queryClient.invalidateQueries({
@@ -710,6 +716,25 @@ export function UserGroupSessionCalendar({
       setSelectedTimeblockId(eventId);
     },
     [calendarDensity.timeblocksByEventId]
+  );
+
+  const handleGroupedInlineUpdate = useCallback(
+    async (
+      session: WorkspaceUserGroupSession,
+      payload: UpdateWorkspaceUserGroupSessionPayload
+    ) => {
+      await updateMutation.mutateAsync({
+        payload: withSessionRelations(session, {
+          ...payload,
+          scope: payload.scope ?? 'once',
+        }),
+        sessionId: session.id,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['group-schedule', session.groupId],
+      });
+    },
+    [queryClient, updateMutation]
   );
 
   const eventAdapter = useMemo<CalendarEventAdapter>(
@@ -922,6 +947,7 @@ export function UserGroupSessionCalendar({
         canUpdateSchedule={canUpdateSchedule}
         initialMoveTarget={selectedTimeblockMoveTarget}
         isMoving={bulkMoveMutation.isPending}
+        isUpdatingSession={updateMutation.isPending}
         onEditSession={(session) => {
           setSelectedTimeblockId(null);
           setSelectedTimeblockMoveTarget(null);
@@ -933,6 +959,7 @@ export function UserGroupSessionCalendar({
           setSelectedTimeblockId(null);
           setSelectedTimeblockMoveTarget(null);
         }}
+        onInlineUpdate={handleGroupedInlineUpdate}
         onMoveSessions={(request) => bulkMoveMutation.mutateAsync(request)}
         onOpenChange={(open) => {
           if (!open) {
@@ -942,6 +969,7 @@ export function UserGroupSessionCalendar({
         }}
         open={!!selectedTimeblock}
         timeblock={selectedTimeblock}
+        wsId={wsId}
       />
 
       <SessionEditorDialog

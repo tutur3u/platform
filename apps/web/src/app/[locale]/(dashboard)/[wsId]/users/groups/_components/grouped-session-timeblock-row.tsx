@@ -1,31 +1,57 @@
 'use client';
 
-import { Edit, Files, Filter, Repeat, Tags } from '@tuturuuu/icons';
-import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
+import {
+  ExternalLink,
+  Files,
+  Filter,
+  Pencil,
+  Repeat,
+  Tags,
+} from '@tuturuuu/icons';
+import type {
+  UpdateWorkspaceUserGroupSessionPayload,
+  WorkspaceUserGroupScheduleGroupSummary,
+  WorkspaceUserGroupSession,
+} from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { GroupRosterHover } from './group-roster-hover';
+import { GroupScheduleSummaryChips } from './group-schedule-summary-chips';
+import { GroupedSessionInlineEdit } from './grouped-session-inline-edit';
 import { sessionName } from './grouped-session-timeblock-utils';
 
 interface GroupedSessionTimeblockRowProps {
   canChooseGroup: boolean;
   canUpdateSchedule: boolean;
+  isInlineUpdating?: boolean;
+  isSummaryLoading?: boolean;
   onEditSession: (session: WorkspaceUserGroupSession) => void;
   onFilterGroup: (groupId: string) => void;
+  onInlineUpdate: (
+    session: WorkspaceUserGroupSession,
+    payload: UpdateWorkspaceUserGroupSessionPayload
+  ) => Promise<void>;
+  onRosterSearchTextChange?: (groupId: string, value: string) => void;
   onToggleSelected: (sessionId: string) => void;
   selected: boolean;
   session: WorkspaceUserGroupSession;
+  summary?: WorkspaceUserGroupScheduleGroupSummary;
+  wsId: string;
 }
 
 function IconAction({
   children,
+  disabled,
   label,
   onClick,
 }: {
   children: ReactNode;
+  disabled?: boolean;
   label: string;
   onClick: () => void;
 }) {
@@ -35,6 +61,7 @@ function IconAction({
         <Button
           aria-label={label}
           className="size-8 shrink-0 p-0"
+          disabled={disabled}
           size="sm"
           type="button"
           variant="outline"
@@ -93,56 +120,100 @@ function SessionBadges({ session }: { session: WorkspaceUserGroupSession }) {
 export function GroupedSessionTimeblockRow({
   canChooseGroup,
   canUpdateSchedule,
+  isInlineUpdating,
+  isSummaryLoading,
   onEditSession,
   onFilterGroup,
+  onInlineUpdate,
+  onRosterSearchTextChange,
   onToggleSelected,
   selected,
   session,
+  summary,
+  wsId,
 }: GroupedSessionTimeblockRowProps) {
   const t = useTranslations('ws-user-group-schedule');
   const name = sessionName(session, t('untitled_session'));
+  const [inlineOpen, setInlineOpen] = useState(false);
 
   return (
     <div
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border bg-card px-3 py-2 shadow-xs"
+      className="rounded-md border bg-card px-3 py-2 shadow-xs"
       key={session.id}
     >
-      {canUpdateSchedule ? (
-        <Checkbox
-          aria-label={t('select_session_named', { name })}
-          checked={selected}
-          onCheckedChange={() => onToggleSelected(session.id)}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 lg:grid-cols-[auto_minmax(0,1.3fr)_minmax(180px,0.8fr)_minmax(180px,0.9fr)_auto] lg:items-center">
+        {canUpdateSchedule ? (
+          <Checkbox
+            aria-label={t('select_session_named', { name })}
+            checked={selected}
+            onCheckedChange={() => onToggleSelected(session.id)}
+          />
+        ) : (
+          <div />
+        )}
+        <div className="min-w-0 space-y-1">
+          <div className="truncate font-medium text-sm">{name}</div>
+          {session.title && session.title !== session.groupName && (
+            <div className="truncate text-muted-foreground text-xs">
+              {session.title}
+            </div>
+          )}
+          <SessionBadges session={session} />
+        </div>
+        <div className="col-start-2 min-w-0 lg:col-start-auto">
+          <GroupRosterHover
+            groupId={session.groupId}
+            managerCount={summary?.managerCount}
+            nonManagerCount={summary?.nonManagerCount}
+            wsId={wsId}
+            onSearchTextChange={onRosterSearchTextChange}
+          />
+        </div>
+        <div className="col-start-2 min-w-0 lg:col-start-auto">
+          <GroupScheduleSummaryChips
+            isLoading={isSummaryLoading}
+            summary={summary}
+          />
+        </div>
+        <div className="col-start-2 flex shrink-0 items-center gap-1.5 lg:col-start-auto">
+          {canChooseGroup && (
+            <IconAction
+              label={t('filter_group_named', { name })}
+              onClick={() => onFilterGroup(session.groupId)}
+            >
+              <Filter className="h-4 w-4" />
+            </IconAction>
+          )}
+          {canUpdateSchedule && (
+            <>
+              <IconAction
+                disabled={isInlineUpdating}
+                label={t('quick_edit_session_named', { name })}
+                onClick={() => setInlineOpen((current) => !current)}
+              >
+                <Pencil className="h-4 w-4" />
+              </IconAction>
+              <IconAction
+                label={t('open_full_editor_named', { name })}
+                onClick={() => onEditSession(session)}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </IconAction>
+            </>
+          )}
+        </div>
+      </div>
+      {inlineOpen && (
+        <GroupedSessionInlineEdit
+          disabled={isInlineUpdating}
+          session={session}
+          onCancel={() => setInlineOpen(false)}
+          onSave={async (targetSession, payload) => {
+            await onInlineUpdate(targetSession, payload);
+            setInlineOpen(false);
+          }}
         />
-      ) : (
-        <div />
       )}
-      <div className="min-w-0 space-y-1">
-        <div className="truncate font-medium text-sm">{name}</div>
-        {session.title && session.title !== session.groupName && (
-          <div className="truncate text-muted-foreground text-xs">
-            {session.title}
-          </div>
-        )}
-        <SessionBadges session={session} />
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        {canChooseGroup && (
-          <IconAction
-            label={t('filter_group_named', { name })}
-            onClick={() => onFilterGroup(session.groupId)}
-          >
-            <Filter className="h-4 w-4" />
-          </IconAction>
-        )}
-        {canUpdateSchedule && (
-          <IconAction
-            label={t('edit_session_named', { name })}
-            onClick={() => onEditSession(session)}
-          >
-            <Edit className="h-4 w-4" />
-          </IconAction>
-        )}
-      </div>
     </div>
   );
 }

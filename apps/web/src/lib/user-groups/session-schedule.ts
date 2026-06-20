@@ -5,6 +5,7 @@ import type {
   ReconcileWorkspaceUserGroupSessionPayload,
   UpdateWorkspaceUserGroupSessionPayload,
   WorkspaceUserGroupMissingSessionOccurrence,
+  WorkspaceUserGroupScheduleGroupSummary,
   WorkspaceUserGroupSessionReconciliationMode,
   WorkspaceUserGroupSessionReconciliationPreview,
 } from '@tuturuuu/internal-api';
@@ -26,6 +27,9 @@ import {
   toIsoDate,
   toTime,
 } from './session-schedule-data';
+import { summarizeNextFourWeekSchedule } from './session-schedule-summary';
+
+const SCHEDULE_SUMMARY_DAYS = 28;
 
 export async function listUserGroupSessionDates({
   groupId,
@@ -146,6 +150,129 @@ export async function listUserGroupSessions({
     ...(includeMissing ? { missing: missing ?? [] } : {}),
     tags: relationData.tags,
   };
+}
+
+export async function listUserGroupScheduleGroupSummaries({
+  from,
+  groupIds,
+  supabase,
+  timezone = DEFAULT_TIMEZONE,
+  wsId,
+}: {
+  from: string;
+  groupIds: string[];
+  supabase: TypedSupabaseClient;
+  timezone?: string;
+  wsId: string;
+}): Promise<WorkspaceUserGroupScheduleGroupSummary[]> {
+  const uniqueGroupIds = Array.from(new Set(groupIds.filter(Boolean)));
+  if (uniqueGroupIds.length === 0) return [];
+
+  const { data: groups, error: groupsError } = await supabase
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('ws_id', wsId)
+    .in('id', uniqueGroupIds);
+
+  if (groupsError) throw groupsError;
+
+  const validGroupIds = new Set(
+    ((groups ?? []) as Array<{ id: string | null }>)
+      .map((group) => group.id)
+      .filter((id): id is string => Boolean(id))
+  );
+
+  if (validGroupIds.size === 0) return [];
+
+  const orderedGroupIds = uniqueGroupIds.filter((groupId) =>
+    validGroupIds.has(groupId)
+  );
+  const privateDb = privateClient(supabase);
+  const rangeStart = dayjs(from).tz(timezone).startOf('day');
+  const rangeEnd = rangeStart.add(SCHEDULE_SUMMARY_DAYS, 'day');
+
+  const [membershipResult, sessionsResult] = await Promise.all([
+    supabase
+      .from('workspace_user_groups_users')
+      .select(
+        'group_id, role, user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(id, ws_id)'
+      )
+      .in('group_id', orderedGroupIds)
+      .eq('user.ws_id', wsId),
+    privateDb
+      .from('workspace_user_group_sessions')
+      .select('group_id, starts_at, ends_at')
+      .eq('ws_id', wsId)
+      .eq('status', 'scheduled')
+      .in('group_id', orderedGroupIds)
+      .gte('starts_at', rangeStart.toISOString())
+      .lt('starts_at', rangeEnd.toISOString())
+      .order('starts_at'),
+  ]);
+
+  if (membershipResult.error) throw membershipResult.error;
+  if (sessionsResult.error) throw sessionsResult.error;
+
+  const countsByGroup = new Map<
+    string,
+    { managerCount: number; nonManagerCount: number }
+  >();
+  for (const groupId of orderedGroupIds) {
+    countsByGroup.set(groupId, { managerCount: 0, nonManagerCount: 0 });
+  }
+
+  for (const row of (membershipResult.data ?? []) as Array<{
+    group_id: string | null;
+    role: string | null;
+  }>) {
+    if (!row.group_id || !validGroupIds.has(row.group_id)) continue;
+    const counts = countsByGroup.get(row.group_id) ?? {
+      managerCount: 0,
+      nonManagerCount: 0,
+    };
+    if (row.role === 'TEACHER') counts.managerCount += 1;
+    else counts.nonManagerCount += 1;
+    countsByGroup.set(row.group_id, counts);
+  }
+
+  const sessionsByGroup = new Map<
+    string,
+    Array<{ endsAt: string; groupId: string; startsAt: string }>
+  >();
+  for (const row of (sessionsResult.data ?? []) as Array<{
+    ends_at: string;
+    group_id: string;
+    starts_at: string;
+  }>) {
+    const list = sessionsByGroup.get(row.group_id) ?? [];
+    list.push({
+      endsAt: row.ends_at,
+      groupId: row.group_id,
+      startsAt: row.starts_at,
+    });
+    sessionsByGroup.set(row.group_id, list);
+  }
+
+  return orderedGroupIds.map((groupId) => {
+    const schedule = summarizeNextFourWeekSchedule({
+      from,
+      occurrences: sessionsByGroup.get(groupId) ?? [],
+      timezone,
+    });
+    const counts = countsByGroup.get(groupId) ?? {
+      managerCount: 0,
+      nonManagerCount: 0,
+    };
+
+    return {
+      exceptionCount: schedule.exceptionCount,
+      groupId,
+      managerCount: counts.managerCount,
+      nonManagerCount: counts.nonManagerCount,
+      patterns: schedule.patterns,
+      upcomingCount: schedule.upcomingCount,
+    };
+  });
 }
 
 function normalizeDbTime(value: string) {

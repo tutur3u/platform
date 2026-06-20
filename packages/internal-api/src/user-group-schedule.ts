@@ -70,6 +70,34 @@ export interface WorkspaceUserGroupScheduleGroup {
   name: string;
 }
 
+export interface WorkspaceUserGroupSchedulePattern {
+  daysOfWeek: number[];
+  endTime: string;
+  exceptionCount: number;
+  expectedCount: number;
+  occurrenceCount: number;
+  startTime: string;
+}
+
+export interface WorkspaceUserGroupScheduleGroupSummary {
+  exceptionCount: number;
+  groupId: string;
+  managerCount: number;
+  nonManagerCount: number;
+  patterns: WorkspaceUserGroupSchedulePattern[];
+  upcomingCount: number;
+}
+
+export interface WorkspaceUserGroupRosterMember {
+  avatar_url?: string | null;
+  display_name?: string | null;
+  email?: string | null;
+  full_name?: string | null;
+  id: string;
+  phone?: string | null;
+  role?: string | null;
+}
+
 export interface ListWorkspaceUserGroupSessionsParams extends InternalApiQuery {
   from?: string;
   groupId?: string;
@@ -82,6 +110,27 @@ export interface ListWorkspaceUserGroupSessionsResponse {
   groups: WorkspaceUserGroupScheduleGroup[];
   missing?: WorkspaceUserGroupMissingSessionOccurrence[];
   tags: WorkspaceUserGroupScheduleTag[];
+}
+
+export interface ListWorkspaceUserGroupScheduleGroupSummariesParams {
+  from: string;
+  groupIds: string[];
+  timezone: string;
+}
+
+export interface ListWorkspaceUserGroupScheduleGroupSummariesResponse {
+  data: WorkspaceUserGroupScheduleGroupSummary[];
+}
+
+export interface ListWorkspaceUserGroupMembersParams extends InternalApiQuery {
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListWorkspaceUserGroupMembersResponse {
+  count?: number;
+  data: WorkspaceUserGroupRosterMember[];
+  next?: number;
 }
 
 export interface WorkspaceUserGroupSessionFilePayload {
@@ -184,6 +233,46 @@ export function listWorkspaceUserGroupSessions(
     {
       cache: 'no-store',
       query: params,
+    }
+  );
+}
+
+export function listWorkspaceUserGroupScheduleGroupSummaries(
+  workspaceId: string,
+  params: ListWorkspaceUserGroupScheduleGroupSummariesParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<ListWorkspaceUserGroupScheduleGroupSummariesResponse>(
+    `${basePath(workspaceId)}/group-summaries`,
+    {
+      cache: 'no-store',
+      query: {
+        from: params.from,
+        groupIds: params.groupIds.join(','),
+        timezone: params.timezone,
+      },
+    }
+  );
+}
+
+export function listWorkspaceUserGroupMembers(
+  workspaceId: string,
+  groupId: string,
+  params: ListWorkspaceUserGroupMembersParams = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<ListWorkspaceUserGroupMembersResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/members`,
+    {
+      cache: 'no-store',
+      query: {
+        limit: params.limit,
+        offset: params.offset,
+      },
     }
   );
 }

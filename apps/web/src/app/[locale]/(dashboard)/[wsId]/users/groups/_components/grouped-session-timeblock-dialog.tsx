@@ -1,7 +1,18 @@
 'use client';
 
-import { CalendarDays, CheckSquare, MoveRight, Search } from '@tuturuuu/icons';
-import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  CalendarDays,
+  CheckSquare,
+  MoveRight,
+  Search,
+  X,
+} from '@tuturuuu/icons';
+import type {
+  UpdateWorkspaceUserGroupSessionPayload,
+  WorkspaceUserGroupSession,
+} from '@tuturuuu/internal-api';
+import { listWorkspaceUserGroupScheduleGroupSummaries } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -43,14 +54,20 @@ interface GroupedSessionTimeblockDialogProps {
   canUpdateSchedule: boolean;
   initialMoveTarget?: GroupedTimeblockMoveTarget | null;
   isMoving?: boolean;
+  isUpdatingSession?: boolean;
   onEditSession: (session: WorkspaceUserGroupSession) => void;
   onFilterGroup: (groupId: string) => void;
+  onInlineUpdate: (
+    session: WorkspaceUserGroupSession,
+    payload: UpdateWorkspaceUserGroupSessionPayload
+  ) => Promise<void>;
   onMoveSessions: (
     request: GroupedTimeblockMoveRequest
   ) => Promise<GroupedTimeblockMoveResult>;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   timeblock: GroupedSessionTimeblock | null;
+  wsId: string;
 }
 
 export function GroupedSessionTimeblockDialog({
@@ -58,12 +75,15 @@ export function GroupedSessionTimeblockDialog({
   canUpdateSchedule,
   initialMoveTarget,
   isMoving,
+  isUpdatingSession,
   onEditSession,
   onFilterGroup,
+  onInlineUpdate,
   onMoveSessions,
   onOpenChange,
   open,
   timeblock,
+  wsId,
 }: GroupedSessionTimeblockDialogProps) {
   const t = useTranslations('ws-user-group-schedule');
   const locale = useLocale();
@@ -75,6 +95,9 @@ export function GroupedSessionTimeblockDialog({
   const [moveTime, setMoveTime] = useState('');
   const [moveTimezone, setMoveTimezone] = useState(DEFAULT_SCHEDULE_TIMEZONE);
   const [moveScope, setMoveScope] = useState<GroupedTimeblockMoveScope>('once');
+  const [rosterSearchByGroupId, setRosterSearchByGroupId] = useState(
+    () => new Map<string, string>()
+  );
 
   useEffect(() => {
     if (!open || !timeblock) return;
@@ -87,15 +110,70 @@ export function GroupedSessionTimeblockDialog({
     setMoveTime(parts.time);
     setMoveTimezone(timezone);
     setMoveScope('once');
+    setRosterSearchByGroupId(new Map());
   }, [initialMoveTarget, open, timeblock]);
+
+  const summaryGroupIds = useMemo(
+    () =>
+      Array.from(
+        new Set(timeblock?.sessions.map((session) => session.groupId) ?? [])
+      ).sort(),
+    [timeblock?.sessions]
+  );
+
+  const summariesQuery = useQuery({
+    enabled: open && !!timeblock && summaryGroupIds.length > 0,
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      timeblock
+        ? listWorkspaceUserGroupScheduleGroupSummaries(wsId, {
+            from: timeblock.startAt,
+            groupIds: summaryGroupIds,
+            timezone: timeblock.timezone || DEFAULT_SCHEDULE_TIMEZONE,
+          })
+        : Promise.resolve({ data: [] }),
+    queryKey: [
+      'workspace-user-group-schedule-group-summaries',
+      wsId,
+      timeblock?.startAt,
+      timeblock?.timezone,
+      summaryGroupIds.join(','),
+    ],
+    staleTime: 60_000,
+  });
+
+  const summaryByGroupId = useMemo(
+    () =>
+      new Map(
+        (summariesQuery.data?.data ?? []).map((summary) => [
+          summary.groupId,
+          summary,
+        ])
+      ),
+    [summariesQuery.data?.data]
+  );
 
   const range = timeblock ? formatTimeblockRange(timeblock, locale) : '';
   const filteredSessions = useMemo(
     () =>
       timeblock?.sessions.filter((session) =>
-        searchSession(session, searchValue, t('untitled_session'))
+        searchSession(
+          session,
+          searchValue,
+          t('untitled_session'),
+          summaryByGroupId.get(session.groupId),
+          rosterSearchByGroupId.get(session.groupId),
+          locale
+        )
       ) ?? [],
-    [searchValue, t, timeblock?.sessions]
+    [
+      locale,
+      rosterSearchByGroupId,
+      searchValue,
+      summaryByGroupId,
+      t,
+      timeblock?.sessions,
+    ]
   );
   const selectedSessions = useMemo(
     () =>
@@ -186,15 +264,27 @@ export function GroupedSessionTimeblockDialog({
         </DialogHeader>
 
         <div className="border-b px-4 py-3 sm:px-6">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="grid gap-3">
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                className="pl-9"
+                className="h-10 w-full pr-9 pl-9"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder={t('grouped_timeblock_search_placeholder')}
               />
+              {searchValue && (
+                <Button
+                  aria-label={t('clear_grouped_timeblock_search')}
+                  className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 p-0"
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setSearchValue('')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             {canUpdateSchedule && (
               <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -266,11 +356,23 @@ export function GroupedSessionTimeblockDialog({
                 <GroupedSessionTimeblockRow
                   canChooseGroup={canChooseGroup}
                   canUpdateSchedule={canUpdateSchedule}
+                  isInlineUpdating={isUpdatingSession}
+                  isSummaryLoading={summariesQuery.isFetching}
                   key={session.id}
                   selected={selectedIds.has(session.id)}
                   session={session}
+                  summary={summaryByGroupId.get(session.groupId)}
+                  wsId={wsId}
                   onEditSession={onEditSession}
                   onFilterGroup={onFilterGroup}
+                  onInlineUpdate={onInlineUpdate}
+                  onRosterSearchTextChange={(groupId, value) => {
+                    setRosterSearchByGroupId((current) => {
+                      const next = new Map(current);
+                      next.set(groupId, value);
+                      return next;
+                    });
+                  }}
                   onToggleSelected={toggleSession}
                 />
               ))}

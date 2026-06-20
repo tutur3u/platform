@@ -17,6 +17,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserGroupSessionCalendar } from './user-group-session-calendar';
 
 const createWorkspaceUserGroupSessionMock = vi.fn();
+const listWorkspaceUserGroupMembersMock = vi.fn();
+const listWorkspaceUserGroupScheduleGroupSummariesMock = vi.fn();
 const listWorkspaceUserGroupSessionsMock = vi.fn();
 const previewWorkspaceUserGroupSessionReconciliationMock = vi.fn();
 const reconcileWorkspaceUserGroupSessionMock = vi.fn();
@@ -39,6 +41,12 @@ vi.mock('@tuturuuu/internal-api', () => ({
   listWorkspaceUserGroupSessions: (
     ...args: Parameters<typeof listWorkspaceUserGroupSessionsMock>
   ) => listWorkspaceUserGroupSessionsMock(...args),
+  listWorkspaceUserGroupMembers: (
+    ...args: Parameters<typeof listWorkspaceUserGroupMembersMock>
+  ) => listWorkspaceUserGroupMembersMock(...args),
+  listWorkspaceUserGroupScheduleGroupSummaries: (
+    ...args: Parameters<typeof listWorkspaceUserGroupScheduleGroupSummariesMock>
+  ) => listWorkspaceUserGroupScheduleGroupSummariesMock(...args),
   previewWorkspaceUserGroupSessionReconciliation: (
     ...args: Parameters<
       typeof previewWorkspaceUserGroupSessionReconciliationMock
@@ -74,6 +82,7 @@ vi.mock('next-intl', () => {
       bulk_move_sessions_success: 'Moved {count} sessions',
       bulk_move_time: 'Start time',
       cancel_move_mode: 'Cancel move mode',
+      clear_grouped_timeblock_search: 'Clear search',
       clear_visible_sessions: 'Clear visible',
       confirm_move_sessions: 'Move {count} sessions',
       detached_session: 'Detached session',
@@ -89,12 +98,26 @@ vi.mock('next-intl', () => {
       files_attached_count: '{count} files',
       fix_recurring_preview_description:
         'Review the matching recurring occurrence before attaching this session.',
+      fix_recurring_preview_title: 'Fix recurring link',
+      group_managers_count_short: '{count} managers',
+      group_members_count: '{count} users',
+      group_roster_counts: '{managers} managers / {members} non-managers',
+      group_roster_empty: 'No visible members.',
+      group_roster_title: 'Group roster',
       grouped_timeblock_description: '{count} sessions: {groups}',
       grouped_timeblock_dialog_title: '{count} sessions in this timeblock',
       grouped_timeblock_no_search_results: 'No sessions match this search.',
-      grouped_timeblock_search_placeholder: 'Search groups, titles, or tags...',
+      grouped_timeblock_search_placeholder:
+        'Search groups, titles, tags, members, or schedule...',
       grouped_timeblock_title: '{count} sessions',
-      fix_recurring_preview_title: 'Fix recurring link',
+      inline_edit_cancel: 'Cancel',
+      inline_edit_date: 'Date',
+      inline_edit_end_time: 'End',
+      inline_edit_save: 'Save quick edit',
+      inline_edit_start_time: 'Start',
+      inline_edit_tags: 'Tags',
+      inline_edit_title: 'Title',
+      manager_role: 'Manager',
       matching_recurring_occurrence: 'Matching recurring occurrence',
       more_sessions: '+{count} more',
       move_all_timeblock: 'Move all',
@@ -102,6 +125,8 @@ vi.mock('next-intl', () => {
       new_weekly_recurring_schedule: 'New weekly recurring schedule',
       no_matching_recurring_schedule: 'No matching recurring schedule found',
       no_timezones_found: 'No timezones found',
+      open_full_editor_named: 'Open full editor for {name}',
+      quick_edit_session_named: 'Quick edit {name}',
       recurring_repair_exact_session:
         'This session already matches the recurring timeblock.',
       recurring_repair_adds_weekday:
@@ -111,6 +136,9 @@ vi.mock('next-intl', () => {
       recurring_repair_moves_session:
         'This will move the detached session back to the recurring timeblock and attach it to the series.',
       recurring_link_fixed: 'Recurring link fixed',
+      schedule_exception_count: '{count} exceptions',
+      schedule_no_upcoming: 'No upcoming schedule',
+      schedule_upcoming_count: '{count} upcoming',
       search_timezone: 'Search timezone...',
       select_session_named: 'Select {name}',
       select_visible_sessions: 'Select visible',
@@ -119,6 +147,7 @@ vi.mock('next-intl', () => {
       timezone_group_all: 'All timezones',
       timezone_group_current: 'Current',
       timezone_group_suggested: 'Suggested',
+      unknown_member: 'Unknown member',
       untitled_session: 'Session',
       view_grouped_timeblock: 'View sessions',
     },
@@ -288,9 +317,20 @@ function session(
   };
 }
 
+function resetInternalApiMocks() {
+  vi.clearAllMocks();
+  listWorkspaceUserGroupMembersMock.mockResolvedValue({
+    data: [],
+    next: undefined,
+  });
+  listWorkspaceUserGroupScheduleGroupSummariesMock.mockResolvedValue({
+    data: [],
+  });
+}
+
 describe('UserGroupSessionCalendar dense all-groups rendering', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetInternalApiMocks();
   });
 
   it('groups same-slot all-groups sessions into one drilldown event', async () => {
@@ -372,12 +412,104 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
     );
 
     fireEvent.change(
-      within(manager).getByPlaceholderText('Search groups, titles, or tags...'),
+      within(manager).getByPlaceholderText(
+        'Search groups, titles, tags, members, or schedule...'
+      ),
       { target: { value: 'Speaking' } }
     );
 
     expect(within(manager).queryByText('Group A')).toBeNull();
     expect(within(manager).getByText('Group B')).toBeTruthy();
+  });
+
+  it('filters grouped rows with unaccented fuzzy search', async () => {
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: [
+        session({
+          groupId: 'group-1',
+          groupName: '246-EGET0- MS HƯỞNG',
+          id: 'session-1',
+        }),
+        session({
+          groupId: 'group-2',
+          groupName: '246-EDD1 - MS. TUYẾT',
+          id: 'session-2',
+        }),
+      ],
+      groups: [
+        { id: 'group-1', name: '246-EGET0- MS HƯỞNG' },
+        { id: 'group-2', name: '246-EDD1 - MS. TUYẾT' },
+      ],
+      tags: [],
+    });
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    const search = within(manager).getByPlaceholderText(
+      'Search groups, titles, tags, members, or schedule...'
+    );
+
+    fireEvent.change(search, { target: { value: 'huong' } });
+    expect(within(manager).getByText('246-EGET0- MS HƯỞNG')).toBeTruthy();
+    expect(within(manager).queryByText('246-EDD1 - MS. TUYẾT')).toBeNull();
+
+    fireEvent.change(search, { target: { value: 'tuyt' } });
+    expect(within(manager).queryByText('246-EGET0- MS HƯỞNG')).toBeNull();
+    expect(within(manager).getByText('246-EDD1 - MS. TUYẾT')).toBeTruthy();
+  });
+
+  it('renders group roster counts and next four week schedule chips', async () => {
+    listWorkspaceUserGroupScheduleGroupSummariesMock.mockResolvedValue({
+      data: [
+        {
+          exceptionCount: 1,
+          groupId: 'group-1',
+          managerCount: 2,
+          nonManagerCount: 9,
+          patterns: [
+            {
+              daysOfWeek: [2, 4],
+              endTime: '08:00',
+              exceptionCount: 1,
+              expectedCount: 8,
+              occurrenceCount: 7,
+              startTime: '07:00',
+            },
+          ],
+          upcomingCount: 8,
+        },
+      ],
+    });
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: [
+        session({
+          groupId: 'group-1',
+          groupName: 'Group A',
+          id: 'session-1',
+        }),
+        session({
+          groupId: 'group-2',
+          groupName: 'Group B',
+          id: 'session-2',
+        }),
+      ],
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+
+    expect(await screen.findByText('11 users')).toBeTruthy();
+    expect(screen.getByText('2 managers')).toBeTruthy();
+    expect(screen.getByText('Tue/Thu 07:00-08:00')).toBeTruthy();
+    expect(screen.getByText('1 exceptions')).toBeTruthy();
   });
 
   it('opens the existing editor from a grouped timeblock row', async () => {
@@ -405,10 +537,149 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Edit Group A' })
+      await screen.findByRole('button', {
+        name: 'Open full editor for Group A',
+      })
     );
 
     expect(await screen.findByText('Editing Group A')).toBeTruthy();
+  });
+
+  it('saves inline schedule edits through the existing update path', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+        tags: [{ color: null, id: 'tag-a', name: 'Old tag' }],
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+      }),
+    ];
+
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: allSessions,
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+    updateWorkspaceUserGroupSessionMock.mockImplementation(
+      (_wsId: string, sessionId: string, payload: Record<string, unknown>) =>
+        Promise.resolve({
+          data: {
+            ...allSessions.find((item) => item.id === sessionId)!,
+            ...payload,
+          },
+          message: 'success',
+        })
+    );
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Quick edit Group A' })
+    );
+    fireEvent.change(within(manager).getByLabelText('Title'), {
+      target: { value: 'Updated lesson' },
+    });
+    fireEvent.change(within(manager).getByLabelText('Tags'), {
+      target: { value: 'Makeup, Exam prep' },
+    });
+    fireEvent.change(within(manager).getByLabelText('Date'), {
+      target: { value: '2026-06-27' },
+    });
+    fireEvent.change(within(manager).getByLabelText('Start'), {
+      target: { value: '08:00' },
+    });
+    fireEvent.change(within(manager).getByLabelText('End'), {
+      target: { value: '09:30' },
+    });
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Save quick edit' })
+    );
+
+    await waitFor(() =>
+      expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledWith(
+        'workspace-1',
+        'session-1',
+        expect.objectContaining({
+          endTimezone: 'Asia/Ho_Chi_Minh',
+          endsAt: '2026-06-27T02:30:00.000Z',
+          files: [],
+          scope: 'once',
+          startTimezone: 'Asia/Ho_Chi_Minh',
+          startsAt: '2026-06-27T01:00:00.000Z',
+          tagNames: ['Makeup', 'Exam prep'],
+          title: 'Updated lesson',
+        })
+      )
+    );
+  });
+
+  it('sends future scope for inline recurring edits only when chosen', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+        seriesId: 'series-1',
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+      }),
+    ];
+
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: allSessions,
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+    updateWorkspaceUserGroupSessionMock.mockImplementation(
+      (_wsId: string, sessionId: string, payload: Record<string, unknown>) =>
+        Promise.resolve({
+          data: {
+            ...allSessions.find((item) => item.id === sessionId)!,
+            ...payload,
+          },
+          message: 'success',
+        })
+    );
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Quick edit Group A' })
+    );
+    fireEvent.click(
+      within(manager).getByRole('button', {
+        name: 'This and future sessions',
+      })
+    );
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Save quick edit' })
+    );
+
+    await waitFor(() =>
+      expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledWith(
+        'workspace-1',
+        'session-1',
+        expect.objectContaining({ scope: 'future' })
+      )
+    );
   });
 
   it('bulk moves visible selected sessions with the recurring scope defaulting once', async () => {
@@ -695,7 +966,7 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
 
 describe('UserGroupSessionCalendar recurring repair preview', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    resetInternalApiMocks();
   });
 
   it('confirms snap repairs with the previewed mode', async () => {
