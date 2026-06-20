@@ -65,16 +65,24 @@ const GROUPED_SCORE_NAMES_MIGRATION_PATH: &str =
     "/api/v1/infrastructure/migrate/grouped-score-names";
 const GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE: &str = "Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.";
 const USER_FIELD_TYPES_PATH: &str = "/api/v1/infrastructure/users/fields/types";
-const MOBILE_AUTH_CORS_PREFLIGHT_PATHS: [&str; 4] = [
+const AUTH_CORS_PREFLIGHT_PATHS: [&str; 8] = [
+    "/api/v1/auth/password-login",
     "/api/v1/auth/mobile/password-login",
     "/api/v1/auth/mobile/send-otp",
     "/api/v1/auth/mobile/verify-otp",
+    "/api/v1/auth/otp/send",
+    "/api/v1/auth/otp/verify",
     "/api/v1/auth/otp/settings",
+    "/api/v1/mobile/version-check",
 ];
 const MOBILE_AUTH_CORS_ALLOW_METHODS: &str = "GET, POST, OPTIONS";
 const MOBILE_AUTH_CORS_ALLOW_HEADERS: &str = "Content-Type, Authorization";
 const MOBILE_AUTH_CORS_MAX_AGE: &str = "86400";
-const MFA_MOBILE_APPROVALS_PATH: &str = "/api/v1/auth/mfa/mobile/approvals";
+const BARE_AUTH_PREFLIGHT_PATHS: [&str; 3] = [
+    "/api/v1/auth/qr-login/challenges",
+    "/api/v1/auth/mfa/mobile/challenges",
+    "/api/v1/auth/mfa/mobile/approvals",
+];
 const DISABLED_GROUP_CHECK_EMAIL_MESSAGE: &str = "Direct post email sending has been removed. Emails are now sent by the system queue after approval.";
 #[cfg(feature = "native")]
 const TRUTHY_ENV_VALUES: [&str; 4] = ["1", "true", "yes", "on"];
@@ -422,10 +430,10 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         (method, GROUPED_SCORE_NAMES_MIGRATION_PATH) => method_not_allowed(method, "PUT"),
         ("GET", USER_FIELD_TYPES_PATH) => user_field_types_response(),
         (method, USER_FIELD_TYPES_PATH) => method_not_allowed(method, "GET"),
-        ("OPTIONS", path) if is_mobile_auth_cors_preflight_path(path) => {
+        ("OPTIONS", path) if is_auth_cors_preflight_path(path) => {
             mobile_auth_cors_preflight_response()
         }
-        ("OPTIONS", MFA_MOBILE_APPROVALS_PATH) => empty_response(204),
+        ("OPTIONS", path) if is_bare_auth_preflight_path(path) => empty_response(204),
         ("POST", path) if is_group_check_email_path(path) => disabled_group_check_email_response(),
         (method, path) if is_group_check_email_path(path) => method_not_allowed(method, "POST"),
         ("GET", "/healthz") => json_response(
@@ -1303,8 +1311,39 @@ fn is_serwist_route_path(path: &str) -> bool {
     segments.len() == 2 && segments[0] == "serwist" && !segments[1].is_empty()
 }
 
-fn is_mobile_auth_cors_preflight_path(path: &str) -> bool {
-    MOBILE_AUTH_CORS_PREFLIGHT_PATHS.contains(&path)
+fn is_auth_cors_preflight_path(path: &str) -> bool {
+    AUTH_CORS_PREFLIGHT_PATHS.contains(&path)
+}
+
+fn is_bare_auth_preflight_path(path: &str) -> bool {
+    BARE_AUTH_PREFLIGHT_PATHS.contains(&path)
+        || is_qr_login_challenge_path(path)
+        || is_mfa_mobile_challenge_path(path)
+}
+
+fn is_qr_login_challenge_path(path: &str) -> bool {
+    let segments = path_segments(path);
+
+    (segments.len() == 6 || (segments.len() == 7 && segments[6] == "approve"))
+        && segments[0] == "api"
+        && segments[1] == "v1"
+        && segments[2] == "auth"
+        && segments[3] == "qr-login"
+        && segments[4] == "challenges"
+        && !segments[5].is_empty()
+}
+
+fn is_mfa_mobile_challenge_path(path: &str) -> bool {
+    let segments = path_segments(path);
+
+    (segments.len() == 7 || (segments.len() == 8 && segments[7] == "approve"))
+        && segments[0] == "api"
+        && segments[1] == "v1"
+        && segments[2] == "auth"
+        && segments[3] == "mfa"
+        && segments[4] == "mobile"
+        && segments[5] == "challenges"
+        && !segments[6].is_empty()
 }
 
 fn is_workspace_slides_collection_path(path: &str) -> bool {
@@ -1880,8 +1919,8 @@ mod tests {
     }
 
     #[test]
-    fn legacy_mobile_auth_options_routes_are_migrated() {
-        for path in MOBILE_AUTH_CORS_PREFLIGHT_PATHS {
+    fn legacy_auth_cors_options_routes_are_migrated() {
+        for path in AUTH_CORS_PREFLIGHT_PATHS {
             let response = route_request(
                 &BackendConfig::new("test", "backend"),
                 request("OPTIONS", path),
@@ -1914,38 +1953,72 @@ mod tests {
     }
 
     #[test]
-    fn legacy_mobile_auth_preflight_routes_do_not_claim_auth_methods() {
-        let response = route_request(
-            &BackendConfig::new("test", "backend"),
-            request("POST", "/api/v1/auth/mobile/password-login"),
-        );
+    fn legacy_auth_cors_preflight_routes_do_not_claim_auth_methods() {
+        for (method, path) in [
+            ("POST", "/api/v1/auth/password-login"),
+            ("POST", "/api/v1/auth/mobile/password-login"),
+            ("POST", "/api/v1/auth/otp/send"),
+            ("POST", "/api/v1/auth/otp/verify"),
+            ("GET", "/api/v1/mobile/version-check"),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("test", "backend"),
+                request(method, path),
+            );
 
-        assert_eq!(response.status, 404);
-        assert_eq!(response.body["error"], "not found");
+            assert_eq!(response.status, 404, "{method} {path}");
+            assert_eq!(response.body["error"], "not found", "{method} {path}");
+        }
     }
 
     #[test]
-    fn legacy_mfa_mobile_approvals_options_route_is_migrated() {
-        let response = route_request(
-            &BackendConfig::new("test", "backend"),
-            request("OPTIONS", MFA_MOBILE_APPROVALS_PATH),
-        );
+    fn legacy_bare_auth_options_routes_are_migrated() {
+        for path in [
+            "/api/v1/auth/qr-login/challenges",
+            "/api/v1/auth/qr-login/challenges/challenge-123",
+            "/api/v1/auth/qr-login/challenges/challenge-123/approve",
+            "/api/v1/auth/mfa/mobile/challenges",
+            "/api/v1/auth/mfa/mobile/challenges/challenge-123",
+            "/api/v1/auth/mfa/mobile/challenges/challenge-123/approve",
+            "/api/v1/auth/mfa/mobile/approvals",
+        ] {
+            let response = route_request(
+                &BackendConfig::new("test", "backend"),
+                request("OPTIONS", path),
+            );
 
-        assert_eq!(response.status, 204);
-        assert!(response.body_empty);
-        assert_eq!(response.content_type, None);
-        assert!(response.headers.is_empty());
+            assert_eq!(response.status, 204, "{path}");
+            assert!(response.body_empty, "{path}");
+            assert_eq!(response.content_type, None, "{path}");
+            assert!(response.headers.is_empty(), "{path}");
+        }
     }
 
     #[test]
-    fn legacy_mfa_mobile_approvals_preflight_route_does_not_claim_get() {
-        let response = route_request(
-            &BackendConfig::new("test", "backend"),
-            request("GET", MFA_MOBILE_APPROVALS_PATH),
-        );
+    fn legacy_bare_auth_preflight_routes_do_not_claim_auth_methods() {
+        for (method, path) in [
+            ("POST", "/api/v1/auth/qr-login/challenges"),
+            ("GET", "/api/v1/auth/qr-login/challenges/challenge-123"),
+            (
+                "POST",
+                "/api/v1/auth/qr-login/challenges/challenge-123/approve",
+            ),
+            ("POST", "/api/v1/auth/mfa/mobile/challenges"),
+            ("GET", "/api/v1/auth/mfa/mobile/challenges/challenge-123"),
+            (
+                "POST",
+                "/api/v1/auth/mfa/mobile/challenges/challenge-123/approve",
+            ),
+            ("GET", "/api/v1/auth/mfa/mobile/approvals"),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("test", "backend"),
+                request(method, path),
+            );
 
-        assert_eq!(response.status, 404);
-        assert_eq!(response.body["error"], "not found");
+            assert_eq!(response.status, 404, "{method} {path}");
+            assert_eq!(response.body["error"], "not found", "{method} {path}");
+        }
     }
 
     #[test]

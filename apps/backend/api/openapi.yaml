@@ -270,6 +270,34 @@ paths:
                 $ref: "#/components/schemas/CalendarMockResponse"
         "405":
           description: Unsupported HTTP method.
+  /api/v1/auth/password-login:
+    options:
+      summary: Legacy password login CORS preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/password-login/route.ts. POST remains legacy-owned until password auth/session handling moves behind the Rust backend.
+      responses:
+        "204":
+          description: Empty CORS preflight response.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                examples:
+                  - "*"
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                examples:
+                  - GET, POST, OPTIONS
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                examples:
+                  - Content-Type, Authorization
+            Access-Control-Max-Age:
+              schema:
+                type: string
+                examples:
+                  - "86400"
   /api/v1/auth/mobile/password-login:
     options:
       summary: Legacy mobile password login CORS preflight
@@ -354,6 +382,62 @@ paths:
                 type: string
                 examples:
                   - "86400"
+  /api/v1/auth/otp/send:
+    options:
+      summary: Legacy OTP send CORS preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/otp/send/route.ts. POST remains legacy-owned until OTP send side effects move behind the Rust backend.
+      responses:
+        "204":
+          description: Empty CORS preflight response.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                examples:
+                  - "*"
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                examples:
+                  - GET, POST, OPTIONS
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                examples:
+                  - Content-Type, Authorization
+            Access-Control-Max-Age:
+              schema:
+                type: string
+                examples:
+                  - "86400"
+  /api/v1/auth/otp/verify:
+    options:
+      summary: Legacy OTP verify CORS preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/otp/verify/route.ts. POST remains legacy-owned until OTP verification and session responses move behind the Rust backend.
+      responses:
+        "204":
+          description: Empty CORS preflight response.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                examples:
+                  - "*"
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                examples:
+                  - GET, POST, OPTIONS
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                examples:
+                  - Content-Type, Authorization
+            Access-Control-Max-Age:
+              schema:
+                type: string
+                examples:
+                  - "86400"
   /api/v1/auth/otp/settings:
     options:
       summary: Legacy OTP settings CORS preflight
@@ -382,6 +466,41 @@ paths:
                 type: string
                 examples:
                   - "86400"
+  /api/v1/auth/mfa/mobile/challenges:
+    options:
+      summary: Legacy MFA mobile challenge creation preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts. POST remains legacy-owned until mobile approval challenge creation moves behind the Rust backend.
+      responses:
+        "204":
+          description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/auth/mfa/mobile/challenges/{challengeId}:
+    options:
+      summary: Legacy MFA mobile challenge polling preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts. GET remains legacy-owned until mobile approval polling moves behind the Rust backend.
+      parameters:
+        - name: challengeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: MFA mobile challenge identifier.
+      responses:
+        "204":
+          description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/auth/mfa/mobile/challenges/{challengeId}/approve:
+    options:
+      summary: Legacy MFA mobile challenge approval preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts. POST remains legacy-owned until mobile approval completion moves behind the Rust backend.
+      parameters:
+        - name: challengeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: MFA mobile challenge identifier.
+      responses:
+        "204":
+          description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
   /api/v1/auth/mfa/mobile/approvals:
     options:
       summary: Legacy MFA mobile approvals preflight
@@ -389,6 +508,69 @@ paths:
       responses:
         "204":
           description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/auth/qr-login/challenges:
+    options:
+      summary: Legacy QR login challenge creation preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts. POST remains legacy-owned until QR challenge creation moves behind the Rust backend.
+      responses:
+        "204":
+          description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/auth/qr-login/challenges/{challengeId}:
+    options:
+      summary: Legacy QR login challenge polling preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts. GET remains legacy-owned until QR challenge polling moves behind the Rust backend.
+      parameters:
+        - name: challengeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: QR login challenge identifier.
+      responses:
+        "204":
+          description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/auth/qr-login/challenges/{challengeId}/approve:
+    options:
+      summary: Legacy QR login challenge approval preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts. POST remains legacy-owned until QR challenge approval moves behind the Rust backend.
+      parameters:
+        - name: challengeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: QR login challenge identifier.
+      responses:
+        "204":
+          description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/mobile/version-check:
+    options:
+      summary: Legacy mobile version-check CORS preflight
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/mobile/version-check/route.ts. GET remains legacy-owned until mobile version policy lookup moves behind the Rust backend.
+      responses:
+        "204":
+          description: Empty CORS preflight response.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                examples:
+                  - "*"
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                examples:
+                  - GET, POST, OPTIONS
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                examples:
+                  - Content-Type, Authorization
+            Access-Control-Max-Age:
+              schema:
+                type: string
+                examples:
+                  - "86400"
   /api/v1/infrastructure/migrate/grouped-score-names:
     put:
       summary: Disabled grouped score names infrastructure migration

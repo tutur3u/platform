@@ -50,6 +50,15 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/v1/infrastructure/users/fields/types with the deterministic legacy field type payload and no longer opens a Supabase admin client for static metadata."
     },
+    "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy password login CORS preflight with the shared wildcard 204 response. POST remains legacy-owned until password auth/session handling moves behind the Rust backend."
+        }
+      }
+    },
     "api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts": {
       "methods": {
         "OPTIONS": {
@@ -77,6 +86,24 @@
         }
       }
     },
+    "api:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy OTP send CORS preflight with the shared wildcard 204 response. POST remains legacy-owned until OTP send side effects move behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy OTP verify CORS preflight with the shared wildcard 204 response. POST remains legacy-owned until OTP verification and session responses move behind the Rust backend."
+        }
+      }
+    },
     "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts": {
       "methods": {
         "OPTIONS": {
@@ -86,12 +113,75 @@
         }
       }
     },
+    "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy MFA mobile challenge creation bare 204 preflight. POST remains legacy-owned until mobile approval challenge creation moves behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy MFA mobile challenge polling bare 204 preflight. GET remains legacy-owned until mobile approval polling moves behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy MFA mobile challenge approval bare 204 preflight. POST remains legacy-owned until mobile approval completion moves behind the Rust backend."
+        }
+      }
+    },
     "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
           "targetOwner": "rust-backend",
           "note": "Rust backend route_request handles the legacy MFA mobile approvals bare 204 preflight. GET remains legacy-owned until approval listing and request log-drain behavior move behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy QR login challenge creation bare 204 preflight. POST remains legacy-owned until QR challenge creation moves behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy QR login challenge polling bare 204 preflight. GET remains legacy-owned until QR challenge polling moves behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy QR login challenge approval bare 204 preflight. POST remains legacy-owned until QR challenge approval moves behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy mobile version-check CORS preflight with the shared wildcard 204 response. GET remains legacy-owned until mobile version policy lookup moves behind the Rust backend."
         }
       }
     },

@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 1078,
-        "migrated": 15,
-        "percentComplete": 1.46,
+        "migrated": 25,
+        "percentComplete": 2.36,
         "remaining": 1078,
-        "terminal": 16,
-        "total": 1094,
+        "terminal": 26,
+        "total": 1104,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 1098,
-        "migrated": 18,
-        "percentComplete": 1.7,
+        "migrated": 28,
+        "percentComplete": 2.57,
         "remaining": 1098,
-        "terminal": 19,
-        "total": 1117,
+        "terminal": 29,
+        "total": 1127,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1369,
-      "migrated": 124,
-      "percentComplete": 8.37,
+      "migrated": 134,
+      "percentComplete": 8.98,
       "remaining": 1369,
-      "terminal": 125,
-      "total": 1494,
+      "terminal": 135,
+      "total": 1504,
       "unknownStatus": 0
     }
   },
@@ -1346,31 +1346,70 @@
       "parentId": "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts",
+      "id": "api:POST:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/mfa/mobile/challenges",
       "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts",
       "kind": "api",
-      "methods": ["GET", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mfa/mobile/challenges",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts"
+    },
+    {
+      "id": "api:GET:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
       "routePath": "/api/v1/auth/mfa/mobile/challenges/:challengeId",
       "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mfa/mobile/challenges/:challengeId",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/mfa/mobile/challenges/:challengeId/approve",
       "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mfa/mobile/challenges/:challengeId/approve",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts"
     },
     {
       "id": "api:POST:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
@@ -1439,13 +1478,26 @@
       "parentId": "api:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts",
+      "id": "api:POST:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/otp/send",
       "sourceFile": "apps/web/src/app/api/v1/auth/otp/send/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/otp/send",
+      "sourceFile": "apps/web/src/app/api/v1/auth/otp/send/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts"
     },
     {
       "id": "api:GET:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts",
@@ -1470,49 +1522,114 @@
       "parentId": "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts",
+      "id": "api:POST:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/otp/verify",
       "sourceFile": "apps/web/src/app/api/v1/auth/otp/verify/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/otp/verify",
+      "sourceFile": "apps/web/src/app/api/v1/auth/otp/verify/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/password-login",
       "sourceFile": "apps/web/src/app/api/v1/auth/password-login/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/password-login",
+      "sourceFile": "apps/web/src/app/api/v1/auth/password-login/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/qr-login/challenges",
       "sourceFile": "apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts",
       "kind": "api",
-      "methods": ["GET", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/qr-login/challenges",
+      "sourceFile": "apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts"
+    },
+    {
+      "id": "api:GET:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
       "routePath": "/api/v1/auth/qr-login/challenges/:challengeId",
       "sourceFile": "apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/qr-login/challenges/:challengeId",
+      "sourceFile": "apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/qr-login/challenges/:challengeId/approve",
       "sourceFile": "apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/qr-login/challenges/:challengeId/approve",
+      "sourceFile": "apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts"
     },
     {
       "id": "api:/api/v1/calendar/audio:apps/web/src/app/api/v1/calendar/audio/route.ts",
@@ -4179,13 +4296,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts",
+      "id": "api:GET:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts",
       "kind": "api",
-      "methods": ["GET", "OPTIONS"],
+      "methods": ["GET"],
       "routePath": "/api/v1/mobile/version-check",
       "sourceFile": "apps/web/src/app/api/v1/mobile/version-check/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/mobile/version-check",
+      "sourceFile": "apps/web/src/app/api/v1/mobile/version-check/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts"
     },
     {
       "id": "api:/api/v1/notifications:apps/web/src/app/api/v1/notifications/route.ts",
@@ -13801,11 +13931,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1094,
+    "apiRoutes": 1104,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 305,
-    "routeHandlers": 1117,
+    "routeHandlers": 1127,
     "methodCounts": {
       "GET": 634,
       "HEAD": 1,
@@ -13815,6 +13945,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1494
+    "total": 1504
   }
 }

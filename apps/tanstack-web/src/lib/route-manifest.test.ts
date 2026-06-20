@@ -72,6 +72,36 @@ describe('tanstackRouteManifest', () => {
       status: 'legacy-next',
       targetOwner: 'rust-backend',
     });
+    expect(
+      tanstackRouteManifest.routes.find(
+        (route) =>
+          route.id ===
+          'api:OPTIONS:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts'
+      )
+    ).toMatchObject({
+      method: 'OPTIONS',
+      methods: ['OPTIONS'],
+      parentId:
+        'api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts',
+      routePath: '/api/v1/auth/qr-login/challenges/:challengeId/approve',
+      status: 'migrated',
+      targetOwner: 'rust-backend',
+    });
+    expect(
+      tanstackRouteManifest.routes.find(
+        (route) =>
+          route.id ===
+          'api:POST:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts'
+      )
+    ).toMatchObject({
+      method: 'POST',
+      methods: ['POST'],
+      parentId:
+        'api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts',
+      routePath: '/api/v1/auth/qr-login/challenges/:challengeId/approve',
+      status: 'legacy-next',
+      targetOwner: 'rust-backend',
+    });
   });
 
   it('marks the .well-known catch-all route as Rust-migrated', () => {
