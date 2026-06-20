@@ -611,10 +611,12 @@ bun test:e2e:web:docker -- --frontend compare
 ```
 
 Compare mode writes `tmp/e2e/web-migration/compare-report.json` after running
-both frontends. Each frontend result includes `passRate` and `wallMs` so
-`bun migration:tanstack:gates` can evaluate E2E regressions from the same
-evidence file. Set `E2E_COMPARE_REPORT_PATH` when a run needs to write the file
-elsewhere under `tmp/`.
+both frontends. Each frontend result includes normalized origin evidence,
+`passRate`, and `wallMs` so `bun migration:tanstack:gates` can evaluate
+same-origin mistakes and E2E regressions from the same evidence file. The gate
+rejects missing, credentialed, invalid, or identical Next/TanStack origins. Set
+`E2E_COMPARE_REPORT_PATH` when a run needs to write the file elsewhere under
+`tmp/`.
 
 `apps/web/e2e/public-marketing-routes.noauth.spec.ts` is the first shared
 public-route parity suite for this migration. It runs under the existing
@@ -658,7 +660,8 @@ came from distinct normalized frontend origins. `bun benchmark:web-setups`
 rejects same-origin compare runs before writing a report, and
 `bun migration:tanstack:gates` rejects benchmark evidence with missing origins,
 identical Next/TanStack origins, or route/sample URLs that do not match the
-recorded setup origin.
+recorded setup origin. Docker E2E compare evidence uses the same distinct-origin
+rule for the browser-facing Next and TanStack frontend runs.
 
 Use full mode when both frontends are running with representative seeded data:
 

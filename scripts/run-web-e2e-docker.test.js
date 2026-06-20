@@ -53,6 +53,7 @@ const {
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
+  getFrontendE2EBaseUrl,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
   isPortlessProxyConfigMismatchError,
@@ -806,7 +807,12 @@ test('parseE2EFrontendArgs strips frontend flags before Playwright runs', () => 
 test('createE2ECompareReport summarizes next and TanStack results', () => {
   const report = createE2ECompareReport(
     {
-      next: { durationMs: 1000, passed: true, status: 'passed' },
+      next: {
+        durationMs: 1000,
+        origin: 'https://tuturuuu.localhost',
+        passed: true,
+        status: 'passed',
+      },
       tanstack: { durationMs: 1200, passed: true, status: 'passed' },
     },
     new Date('2026-06-20T00:00:00.000Z')
@@ -817,6 +823,7 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
     frontends: {
       next: {
         durationMs: 1000,
+        origin: 'https://tuturuuu.localhost',
         passed: true,
         passRate: 1,
         status: 'passed',
@@ -824,6 +831,7 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
       },
       tanstack: {
         durationMs: 1200,
+        origin: null,
         passed: true,
         passRate: 1,
         status: 'passed',
@@ -831,6 +839,10 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
       },
     },
     generatedAt: '2026-06-20T00:00:00.000Z',
+    origins: {
+      next: 'https://tuturuuu.localhost',
+      tanstack: null,
+    },
     passed: true,
     status: 'passed',
   });
@@ -847,6 +859,7 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
     }).frontends.tanstack,
     {
       durationMs: 1200,
+      origin: null,
       passed: true,
       passRate: 0.95,
       status: 'passed',
@@ -924,6 +937,13 @@ test('writeE2ECompareReport writes ignored cutover evidence under tmp by default
 test('getFrontendE2EEnv points TanStack runs at the TanStack route', () => {
   const env = getFrontendE2EEnv('tanstack', {});
 
+  assert.equal(getFrontendE2EBaseUrl('next', {}), LOCAL_E2E_BASE_URL);
+  assert.equal(
+    getFrontendE2EBaseUrl('next', {
+      BASE_URL: 'https://custom.localhost/path',
+    }),
+    'https://custom.localhost/path'
+  );
   assert.equal(env.BASE_URL, DEFAULT_TANSTACK_PORTLESS_BASE_URL);
   assert.equal(env.DOCKER_WEB_FRONTEND, 'tanstack');
   assert.equal(env.E2E_PORTLESS_HEALTH_PATH, '/');
@@ -932,6 +952,7 @@ test('getFrontendE2EEnv points TanStack runs at the TanStack route', () => {
     getE2EPortlessTargetPort(env),
     DEFAULT_TANSTACK_DIRECT_HOST_PORT
   );
+  assert.equal(getFrontendE2EEnv('next', {}).BASE_URL, LOCAL_E2E_BASE_URL);
   assert.equal(getFrontendE2EEnv('next', {}).DOCKER_WEB_FRONTEND, 'next');
 });
 

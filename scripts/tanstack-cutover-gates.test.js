@@ -170,6 +170,34 @@ function createValidCloudflareSmokeReport(
   };
 }
 
+function createValidE2EReport(generatedAt = new Date().toISOString()) {
+  const origins = {
+    next: 'https://next.example.com',
+    tanstack: 'https://tanstack.example.com',
+  };
+
+  return {
+    frontend: 'compare',
+    frontends: {
+      next: {
+        origin: origins.next,
+        passRate: 1,
+        status: 'passed',
+        wallMs: 10000,
+      },
+      tanstack: {
+        origin: origins.tanstack,
+        passRate: 1,
+        status: 'passed',
+        wallMs: 11000,
+      },
+    },
+    generatedAt,
+    origins,
+    status: 'passed',
+  };
+}
+
 function createCutoverFixture(generatedAt = new Date().toISOString()) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanstack-gates-'));
   const appDir = path.join(rootDir, 'apps', 'web', 'src', 'app');
@@ -224,15 +252,7 @@ function createCutoverFixture(generatedAt = new Date().toISOString()) {
   );
 
   const e2eReportPath = path.join(rootDir, 'e2e-report.json');
-  writeJson(e2eReportPath, {
-    frontend: 'compare',
-    frontends: {
-      next: { passRate: 1, status: 'passed', wallMs: 10000 },
-      tanstack: { passRate: 1, status: 'passed', wallMs: 11000 },
-    },
-    generatedAt,
-    status: 'passed',
-  });
+  writeJson(e2eReportPath, createValidE2EReport(generatedAt));
 
   return {
     appDir,
@@ -799,7 +819,15 @@ test('validateE2EReport requires both frontend results', () => {
   const validation = validateE2EReport({
     frontend: 'compare',
     frontends: {
-      next: { passRate: 1, status: 'passed', wallMs: 10000 },
+      next: {
+        origin: 'https://next.example.com',
+        passRate: 1,
+        status: 'passed',
+        wallMs: 10000,
+      },
+    },
+    origins: {
+      next: 'https://next.example.com',
     },
     status: 'passed',
   });
@@ -811,8 +839,18 @@ test('validateE2EReport requires both frontend results', () => {
 test('validateE2EReport accepts Docker compare report output', () => {
   const report = createE2ECompareReport(
     {
-      next: { durationMs: 10000, passed: true, status: 'passed' },
-      tanstack: { durationMs: 11000, passed: true, status: 'passed' },
+      next: {
+        durationMs: 10000,
+        origin: 'https://next.example.com',
+        passed: true,
+        status: 'passed',
+      },
+      tanstack: {
+        durationMs: 11000,
+        origin: 'https://tanstack.example.com',
+        passed: true,
+        status: 'passed',
+      },
     },
     new Date('2026-06-20T00:00:00.000Z')
   );
@@ -822,11 +860,62 @@ test('validateE2EReport accepts Docker compare report output', () => {
   assert.equal(validation.ok, true);
 });
 
+test('validateE2EReport requires distinct frontend origin evidence', () => {
+  const missing = createValidE2EReport();
+  delete missing.frontends.next.origin;
+  delete missing.origins.next;
+
+  const missingValidation = validateE2EReport(missing);
+
+  assert.equal(missingValidation.ok, false);
+  assert.match(
+    missingValidation.failures.join('\n'),
+    /next is missing E2E origin evidence/u
+  );
+
+  const sameOrigin = createValidE2EReport();
+  sameOrigin.frontends.tanstack.origin = sameOrigin.frontends.next.origin;
+  sameOrigin.origins.tanstack = sameOrigin.origins.next;
+
+  const sameOriginValidation = validateE2EReport(sameOrigin);
+
+  assert.equal(sameOriginValidation.ok, false);
+  assert.match(
+    sameOriginValidation.failures.join('\n'),
+    /distinct Next and TanStack origins/u
+  );
+
+  const credentialed = createValidE2EReport();
+  credentialed.frontends.next.origin = 'https://user:pass@next.example.com';
+
+  const credentialedValidation = validateE2EReport(credentialed);
+
+  assert.equal(credentialedValidation.ok, false);
+  assert.match(
+    credentialedValidation.failures.join('\n'),
+    /next E2E origin must not include credentials/u
+  );
+});
+
 test('validateE2EReport requires explicit compare frontend mode', () => {
   const validation = validateE2EReport({
     frontends: {
-      next: { passRate: 1, status: 'passed', wallMs: 10000 },
-      tanstack: { passRate: 1, status: 'passed', wallMs: 11000 },
+      next: {
+        origin: 'https://next.example.com',
+        passRate: 1,
+        status: 'passed',
+        wallMs: 10000,
+      },
+      tanstack: {
+        origin: 'https://tanstack.example.com',
+        passRate: 1,
+        status: 'passed',
+        wallMs: 11000,
+      },
+    },
+    origins: {
+      next: 'https://next.example.com',
+      tanstack: 'https://tanstack.example.com',
     },
     status: 'passed',
   });
@@ -839,8 +928,22 @@ test('validateE2EReport rejects pass-rate and wall-time regressions without acce
   const validation = validateE2EReport({
     frontend: 'compare',
     frontends: {
-      next: { passRate: 1, status: 'passed', wallMs: 10000 },
-      tanstack: { passRate: 0.9, status: 'passed', wallMs: 13000 },
+      next: {
+        origin: 'https://next.example.com',
+        passRate: 1,
+        status: 'passed',
+        wallMs: 10000,
+      },
+      tanstack: {
+        origin: 'https://tanstack.example.com',
+        passRate: 0.9,
+        status: 'passed',
+        wallMs: 13000,
+      },
+    },
+    origins: {
+      next: 'https://next.example.com',
+      tanstack: 'https://tanstack.example.com',
     },
     status: 'passed',
   });
@@ -857,8 +960,22 @@ test('validateE2EReport allows accepted wall-time regressions', () => {
     },
     frontend: 'compare',
     frontends: {
-      next: { passRate: 1, status: 'passed', wallMs: 10000 },
-      tanstack: { passRate: 1, status: 'passed', wallMs: 13000 },
+      next: {
+        origin: 'https://next.example.com',
+        passRate: 1,
+        status: 'passed',
+        wallMs: 10000,
+      },
+      tanstack: {
+        origin: 'https://tanstack.example.com',
+        passRate: 1,
+        status: 'passed',
+        wallMs: 13000,
+      },
+    },
+    origins: {
+      next: 'https://next.example.com',
+      tanstack: 'https://tanstack.example.com',
     },
     status: 'passed',
   });

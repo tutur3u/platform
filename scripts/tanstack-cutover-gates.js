@@ -486,6 +486,73 @@ function validateBenchmarkOriginEvidence(report, expectedSetup) {
   };
 }
 
+function normalizeE2EOriginEvidence(value, label) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return {
+      failure: `${label} is missing E2E origin evidence.`,
+      origin: null,
+    };
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return {
+        failure: `${label} E2E origin must use http or https.`,
+        origin: null,
+      };
+    }
+
+    if (url.username || url.password) {
+      return {
+        failure: `${label} E2E origin must not include credentials.`,
+        origin: null,
+      };
+    }
+
+    return {
+      failure: null,
+      origin: url.origin,
+    };
+  } catch {
+    return {
+      failure: `${label} has invalid E2E origin evidence.`,
+      origin: null,
+    };
+  }
+}
+
+function validateE2EOriginEvidence(report, frontends) {
+  const failures = [];
+  const origins = {};
+
+  for (const frontend of ['next', 'tanstack']) {
+    const normalized = normalizeE2EOriginEvidence(
+      frontends[frontend]?.origin ?? report.origins?.[frontend],
+      frontend
+    );
+
+    if (normalized.failure) {
+      failures.push(normalized.failure);
+      continue;
+    }
+
+    origins[frontend] = normalized.origin;
+  }
+
+  if (origins.next && origins.tanstack && origins.next === origins.tanstack) {
+    failures.push(
+      `E2E report must use distinct Next and TanStack origins; both normalized to ${origins.next}.`
+    );
+  }
+
+  return {
+    failures,
+    origins,
+  };
+}
+
 function validateRequiredBenchmarkComparison(comparison) {
   const failures = [];
 
@@ -754,6 +821,8 @@ function validateE2EReport(report) {
   }
 
   const frontends = report.frontends ?? report.results ?? {};
+  const originValidation = validateE2EOriginEvidence(report, frontends);
+
   for (const frontend of ['next', 'tanstack']) {
     const result = frontends[frontend];
 
@@ -770,6 +839,8 @@ function validateE2EReport(report) {
   if (Array.isArray(report.failedTests) && report.failedTests.length > 0) {
     failures.push(`E2E report has ${report.failedTests.length} failed tests.`);
   }
+
+  failures.push(...originValidation.failures);
 
   for (const metric of REQUIRED_E2E_REGRESSION_METRICS) {
     const nextValue = Number(frontends.next?.[metric.key]);
@@ -809,6 +880,7 @@ function validateE2EReport(report) {
   return {
     failures,
     ok: failures.length === 0,
+    origins: originValidation.origins,
   };
 }
 
@@ -855,6 +927,7 @@ function checkE2EGate({
     report: {
       frontend: report.frontend,
       generatedAt: report.generatedAt,
+      origins: validation.origins,
       status: report.status,
     },
   };

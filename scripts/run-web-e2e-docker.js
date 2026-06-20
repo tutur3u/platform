@@ -325,6 +325,40 @@ function normalizeE2ECompareResult(result) {
   return normalized;
 }
 
+function getFrontendE2EBaseUrl(frontend, env = process.env) {
+  const fallback =
+    frontend === 'tanstack'
+      ? DEFAULT_TANSTACK_PORTLESS_BASE_URL
+      : DEFAULT_PORTLESS_BASE_URL;
+  const envValue =
+    frontend === 'tanstack' ? env.TANSTACK_WEB_E2E_BASE_URL : env.BASE_URL;
+  const value = typeof envValue === 'string' ? envValue.trim() : '';
+
+  return value || fallback;
+}
+
+function normalizeFrontendE2EOrigin(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    if (url.username || url.password) {
+      return null;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 function createE2ECompareReport(frontends, generatedAt = new Date()) {
   const next = normalizeE2ECompareResult(
     frontends.next ?? { passed: false, status: 'missing' }
@@ -332,6 +366,12 @@ function createE2ECompareReport(frontends, generatedAt = new Date()) {
   const tanstack = normalizeE2ECompareResult(
     frontends.tanstack ?? { passed: false, status: 'missing' }
   );
+  const origins = {
+    next: normalizeFrontendE2EOrigin(next.origin),
+    tanstack: normalizeFrontendE2EOrigin(tanstack.origin),
+  };
+  next.origin = origins.next;
+  tanstack.origin = origins.tanstack;
   const passed = next.passed === true && tanstack.passed === true;
 
   return {
@@ -341,6 +381,7 @@ function createE2ECompareReport(frontends, generatedAt = new Date()) {
       tanstack,
     },
     generatedAt: generatedAt.toISOString(),
+    origins,
     passed,
     status: passed ? 'passed' : 'failed',
   };
@@ -376,6 +417,9 @@ function writeE2ECompareReport({
 
 async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
   const startedAt = Date.now();
+  const origin = normalizeFrontendE2EOrigin(
+    getFrontendE2EBaseUrl(frontend, process.env)
+  );
 
   try {
     await runWebE2E([], {
@@ -386,6 +430,7 @@ async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
 
     return {
       durationMs: Date.now() - startedAt,
+      origin,
       passed: true,
       status: 'passed',
     };
@@ -393,6 +438,7 @@ async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
     return {
       durationMs: Date.now() - startedAt,
       error: getErrorMessage(error),
+      origin,
       passed: false,
       status: 'failed',
     };
@@ -401,8 +447,7 @@ async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
 
 function getFrontendE2EEnv(frontend, env = process.env) {
   if (frontend === 'tanstack') {
-    const baseUrl =
-      env.TANSTACK_WEB_E2E_BASE_URL ?? DEFAULT_TANSTACK_PORTLESS_BASE_URL;
+    const baseUrl = getFrontendE2EBaseUrl('tanstack', env);
 
     return {
       ...env,
@@ -416,6 +461,7 @@ function getFrontendE2EEnv(frontend, env = process.env) {
 
   return {
     ...env,
+    BASE_URL: getFrontendE2EBaseUrl('next', env),
     DOCKER_WEB_FRONTEND: 'next',
   };
 }
@@ -1879,6 +1925,7 @@ module.exports = {
   getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  getFrontendE2EBaseUrl,
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
   getTanStackDirectHostPort,
