@@ -3,6 +3,8 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod contact;
+
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
     include_str!("../../tanstack-web/migration/route-manifest.json");
@@ -133,9 +135,9 @@ const SUPABASE_REFERENCE_KEYS: [&str; 7] = [
     "SUPABASE_SERVER_URL",
     "SUPABASE_URL",
 ];
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BackendConfig {
+    pub app_coordination_secrets: Vec<String>,
     pub deployment_target: String,
     pub environment: String,
     pub internal_token: String,
@@ -149,6 +151,7 @@ pub struct BackendConfig {
 impl BackendConfig {
     pub fn new(environment: impl Into<String>, service_name: impl Into<String>) -> Self {
         Self {
+            app_coordination_secrets: Vec::new(),
             deployment_target: default_deployment_target().to_owned(),
             environment: environment.into(),
             internal_token: String::new(),
@@ -162,9 +165,12 @@ impl BackendConfig {
 
     #[cfg(feature = "native")]
     pub fn from_env() -> Self {
+        let environment = env("BACKEND_ENV", "development");
+
         Self {
+            app_coordination_secrets: contact::app_coordination_secrets_from_env(&environment),
             deployment_target: env("BACKEND_DEPLOYMENT_TARGET", default_deployment_target()),
-            environment: env("BACKEND_ENV", "development"),
+            environment,
             internal_token: std::env::var("BACKEND_INTERNAL_TOKEN")
                 .unwrap_or_default()
                 .trim()
@@ -441,6 +447,17 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         (method, GROUPED_SCORE_NAMES_MIGRATION_PATH) => method_not_allowed(method, "PUT"),
         ("GET", USER_FIELD_TYPES_PATH) => user_field_types_response(),
         (method, USER_FIELD_TYPES_PATH) => method_not_allowed(method, "GET"),
+        ("GET", contact::CURRENT_USER_PROFILE_PATH) => {
+            contact::current_user_profile_response(config, request)
+        }
+        ("PATCH", contact::CURRENT_USER_PROFILE_PATH) => {
+            contact::current_user_profile_patch_response(config, request)
+        }
+        (method, contact::CURRENT_USER_PROFILE_PATH) => method_not_allowed(method, "GET, PATCH"),
+        ("POST", contact::SUPPORT_INQUIRIES_PATH) => {
+            contact::support_inquiry_post_response(config, request)
+        }
+        (method, contact::SUPPORT_INQUIRIES_PATH) => method_not_allowed(method, "POST"),
         ("OPTIONS", path) if is_auth_cors_preflight_path(path) => {
             mobile_auth_cors_preflight_response()
         }
@@ -798,7 +815,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
         ("POST", "/api/v1/infrastructure/languages")
             | ("POST", "/api/v1/infrastructure/sidebar")
             | ("POST", "/api/v1/infrastructure/sidebar/sizes")
-    )
+    ) || contact::should_buffer_request_body(method, path)
 }
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
@@ -1829,9 +1846,12 @@ pub mod worker_runtime {
     }
 
     fn worker_config(env: &Env) -> BackendConfig {
+        let environment = var(env, "BACKEND_ENV", "production");
+
         BackendConfig {
+            app_coordination_secrets: app_coordination_secrets_from_worker_env(env, &environment),
             deployment_target: "cloudflare-workers".to_owned(),
-            environment: var(env, "BACKEND_ENV", "production"),
+            environment,
             internal_token: var(env, "BACKEND_INTERNAL_TOKEN", ""),
             local_e2e_migration_access: false,
             port: 7820,
@@ -1845,6 +1865,24 @@ pub mod worker_runtime {
         env.var(name)
             .map(|value| value.to_string())
             .unwrap_or_else(|_| fallback.to_owned())
+    }
+
+    fn app_coordination_secrets_from_worker_env(env: &Env, environment: &str) -> Vec<String> {
+        let mut secrets = Vec::new();
+
+        for key in super::contact::APP_COORDINATION_SECRET_KEYS {
+            let value = var(env, key, "");
+            let value = value.trim();
+            if !value.is_empty() && !secrets.iter().any(|secret| secret == value) {
+                secrets.push(value.to_owned());
+            }
+        }
+
+        if secrets.is_empty() && !environment.trim().eq_ignore_ascii_case("production") {
+            secrets.push(super::contact::LOCAL_DEVELOPMENT_APP_COORDINATION_SECRET.to_owned());
+        }
+
+        secrets
     }
 
     impl BackendResponse {
@@ -1886,6 +1924,11 @@ pub mod worker_runtime {
 
 #[cfg(test)]
 mod tests {
+    use super::contact::{
+        APP_SESSION_COOKIE_NAME, APP_SESSION_SCOPE, AppCoordinationClaims,
+        CONTACT_DATA_LAYER_NOT_READY_MESSAGE, CURRENT_USER_PROFILE_PATH, SUPPORT_INQUIRIES_PATH,
+        verify_app_session_token,
+    };
     use super::*;
 
     fn request(method: &'static str, path: &'static str) -> BackendRequest<'static> {
@@ -1926,6 +1969,14 @@ mod tests {
         config
     }
 
+    fn backend_config_with_app_session_secret() -> BackendConfig {
+        let mut config = BackendConfig::new("test", "backend");
+        config
+            .app_coordination_secrets
+            .push("test-app-session-secret".to_owned());
+        config
+    }
+
     fn request_with_origin(
         method: &'static str,
         path: &'static str,
@@ -1935,6 +1986,69 @@ mod tests {
             origin: Some(origin),
             ..request(method, path)
         }
+    }
+
+    fn request_with_cookie(
+        method: &'static str,
+        path: &'static str,
+        cookie: String,
+    ) -> BackendRequest<'static> {
+        BackendRequest {
+            cookie: Some(Box::leak(cookie.into_boxed_str())),
+            url: Some("https://tanstack.tuturuuu.localhost/contact"),
+            ..request(method, path)
+        }
+    }
+
+    fn request_with_bearer(
+        method: &'static str,
+        path: &'static str,
+        token: String,
+    ) -> BackendRequest<'static> {
+        BackendRequest {
+            authorization: Some(Box::leak(format!("Bearer {token}").into_boxed_str())),
+            url: Some("https://tanstack.tuturuuu.localhost/contact"),
+            ..request(method, path)
+        }
+    }
+
+    fn app_session_claims(target_app: &str, scopes: Vec<&str>, exp: u64) -> AppCoordinationClaims {
+        AppCoordinationClaims {
+            aud: contact::app_coordination_token_audience().to_owned(),
+            email: Some("app-session@example.com".to_owned()),
+            exp,
+            iat: 0,
+            iss: contact::app_coordination_token_issuer().to_owned(),
+            jti: "test-jti".to_owned(),
+            origin_app: "web".to_owned(),
+            scopes: scopes.into_iter().map(str::to_owned).collect(),
+            sub: "app-session-user-1".to_owned(),
+            target_app: target_app.to_owned(),
+            typ: "app_coordination".to_owned(),
+        }
+    }
+
+    fn app_session_token(claims: &AppCoordinationClaims) -> String {
+        let encoded_header = contact::encode_app_session_part(r#"{"alg":"HS256","typ":"JWT"}"#);
+        let encoded_payload =
+            contact::encode_app_session_part(serde_json::to_string(claims).unwrap());
+        let unsigned = format!("{encoded_header}.{encoded_payload}");
+        let signature =
+            contact::sign_app_coordination_content(&unsigned, "test-app-session-secret")
+                .expect("test app-session signature");
+
+        format!(
+            "{}{unsigned}.{signature}",
+            contact::app_coordination_token_prefix()
+        )
+    }
+
+    fn valid_app_session_token() -> String {
+        app_session_token(&app_session_claims(
+            "platform",
+            vec![APP_SESSION_SCOPE, "cli:access"],
+            4_102_444_800,
+        ))
     }
 
     fn header_value<'a>(response: &'a BackendResponse, header: &str) -> Option<&'a str> {
@@ -1981,11 +2095,20 @@ mod tests {
             "/api/v1/infrastructure/languages",
             "/api/v1/infrastructure/sidebar",
             "/api/v1/infrastructure/sidebar/sizes",
+            SUPPORT_INQUIRIES_PATH,
         ] {
             assert!(should_buffer_request_body("POST", path), "{path}");
-            assert!(!should_buffer_request_body("GET", path), "{path}");
-            assert!(!should_buffer_request_body("DELETE", path), "{path}");
         }
+
+        assert!(should_buffer_request_body(
+            "PATCH",
+            CURRENT_USER_PROFILE_PATH
+        ));
+        assert!(!should_buffer_request_body(
+            "POST",
+            CURRENT_USER_PROFILE_PATH
+        ));
+        assert!(!should_buffer_request_body("PATCH", SUPPORT_INQUIRIES_PATH));
 
         for (method, path) in [
             ("GET", "/healthz"),
@@ -1993,6 +2116,7 @@ mod tests {
             ("GET", "/api/migration/manifest"),
             ("POST", "/~recover-browser-state"),
             ("POST", "/internal/jobs/noop"),
+            ("GET", CURRENT_USER_PROFILE_PATH),
         ] {
             assert!(!should_buffer_request_body(method, path), "{method} {path}");
         }
@@ -2012,6 +2136,7 @@ mod tests {
             ("GET", "/api/migration/manifest"),
             ("POST", "/~recover-browser-state"),
             ("POST", "/internal/jobs/noop"),
+            ("GET", CURRENT_USER_PROFILE_PATH),
         ] {
             assert!(
                 !buffered_request_body_exceeds_limit(method, path, Some("65537")),
@@ -2030,6 +2155,68 @@ mod tests {
         assert_eq!(
             response.body["maxBytes"].as_u64(),
             Some(MAX_REQUEST_BODY_BYTES as u64)
+        );
+    }
+
+    #[test]
+    fn app_session_token_verification_accepts_current_user_targets() {
+        let claims = verify_app_session_token(
+            &valid_app_session_token(),
+            &backend_config_with_app_session_secret().app_coordination_secrets,
+            contact::current_user_app_session_targets(),
+            1,
+        )
+        .expect("valid app session");
+
+        assert_eq!(claims.sub, "app-session-user-1");
+        assert_eq!(claims.email.as_deref(), Some("app-session@example.com"));
+        assert_eq!(claims.target_app, "platform");
+    }
+
+    #[test]
+    fn app_session_token_verification_rejects_bad_target_scope_and_expiry() {
+        let config = backend_config_with_app_session_secret();
+
+        let bad_target = app_session_token(&app_session_claims(
+            "unknown-app",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        assert_eq!(
+            verify_app_session_token(
+                &bad_target,
+                &config.app_coordination_secrets,
+                contact::current_user_app_session_targets(),
+                1,
+            ),
+            Err("App session target mismatch".to_owned())
+        );
+
+        let missing_scope = app_session_token(&app_session_claims(
+            "platform",
+            vec!["cli:access"],
+            4_102_444_800,
+        ));
+        assert_eq!(
+            verify_app_session_token(
+                &missing_scope,
+                &config.app_coordination_secrets,
+                contact::current_user_app_session_targets(),
+                1,
+            ),
+            Err("App session missing required scope".to_owned())
+        );
+
+        let expired =
+            app_session_token(&app_session_claims("platform", vec![APP_SESSION_SCOPE], 1));
+        assert_eq!(
+            verify_app_session_token(
+                &expired,
+                &config.app_coordination_secrets,
+                contact::current_user_app_session_targets(),
+                1,
+            ),
+            Err("Token expired".to_owned())
         );
     }
 
@@ -2128,6 +2315,237 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
         assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[test]
+    fn current_user_profile_requires_app_session_auth() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            request("GET", CURRENT_USER_PROFILE_PATH),
+        );
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Unauthorized");
+    }
+
+    #[test]
+    fn current_user_profile_requires_app_coordination_secret_for_tokens() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request_with_bearer("GET", CURRENT_USER_PROFILE_PATH, valid_app_session_token()),
+        );
+
+        assert_eq!(response.status, 503);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body["message"],
+            "App coordination secret is not configured"
+        );
+    }
+
+    #[test]
+    fn current_user_profile_returns_app_session_identity_preview() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            request_with_cookie(
+                "GET",
+                CURRENT_USER_PROFILE_PATH,
+                format!("{APP_SESSION_COOKIE_NAME}={}", valid_app_session_token()),
+            ),
+        );
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            header_value(&response, "cdn-cache-control"),
+            Some("no-store")
+        );
+        assert_eq!(response.body["id"], "app-session-user-1");
+        assert_eq!(response.body["email"], "app-session@example.com");
+        assert_eq!(response.body["created_at"], "1970-01-01T00:00:00.000Z");
+        assert_eq!(response.body["display_name"], Value::Null);
+        assert_eq!(response.body["default_workspace_id"], Value::Null);
+    }
+
+    #[test]
+    fn current_user_profile_rejects_wrong_app_session_target() {
+        let token = app_session_token(&app_session_claims(
+            "unknown-app",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            request_with_bearer("GET", CURRENT_USER_PROFILE_PATH, token),
+        );
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "App session target mismatch");
+    }
+
+    #[test]
+    fn current_user_profile_patch_requires_auth_before_data_layer_placeholder() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            request_with_body(
+                "PATCH",
+                CURRENT_USER_PROFILE_PATH,
+                r#"{"display_name":"New"}"#,
+            ),
+        );
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+    }
+
+    #[test]
+    fn current_user_profile_patch_requires_same_origin_for_cookie_auth() {
+        let token = valid_app_session_token();
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            BackendRequest {
+                body_text: Some(r#"{"display_name":"New"}"#),
+                cookie: Some(Box::leak(
+                    format!("{APP_SESSION_COOKIE_NAME}={token}").into_boxed_str(),
+                )),
+                method: "PATCH",
+                origin: Some("https://evil.example"),
+                path: CURRENT_USER_PROFILE_PATH,
+                url: Some("https://tanstack.tuturuuu.localhost/contact"),
+                ..request("PATCH", CURRENT_USER_PROFILE_PATH)
+            },
+        );
+
+        assert_eq!(response.status, 403);
+        assert_eq!(
+            response.body["message"],
+            "Profile updates require same-origin confirmation"
+        );
+    }
+
+    #[test]
+    fn current_user_profile_patch_returns_data_layer_placeholder_after_auth() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            BackendRequest {
+                body_text: Some(r#"{"display_name":"New"}"#),
+                origin: Some("https://tanstack.tuturuuu.localhost"),
+                ..request_with_cookie(
+                    "PATCH",
+                    CURRENT_USER_PROFILE_PATH,
+                    format!("{APP_SESSION_COOKIE_NAME}={}", valid_app_session_token()),
+                )
+            },
+        );
+
+        assert_eq!(response.status, 501);
+        assert_eq!(response.body["code"], "CONTACT_DATA_LAYER_NOT_READY");
+        assert_eq!(
+            response.body["message"],
+            CONTACT_DATA_LAYER_NOT_READY_MESSAGE
+        );
+    }
+
+    #[test]
+    fn support_inquiry_requires_auth_before_parsing_body() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            request_with_body("POST", SUPPORT_INQUIRIES_PATH, "{}"),
+        );
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+    }
+
+    #[test]
+    fn support_inquiry_requires_same_origin_for_cookie_auth() {
+        let token = valid_app_session_token();
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            BackendRequest {
+                body_text: Some(
+                    r#"{"name":"Jane","email":"jane@example.com","type":"support","product":"web","subject":"Need help","message":"Please help me with this issue."}"#,
+                ),
+                cookie: Some(Box::leak(
+                    format!("{APP_SESSION_COOKIE_NAME}={token}").into_boxed_str(),
+                )),
+                method: "POST",
+                origin: Some("https://evil.example"),
+                path: SUPPORT_INQUIRIES_PATH,
+                url: Some("https://tanstack.tuturuuu.localhost/contact"),
+                ..request("POST", SUPPORT_INQUIRIES_PATH)
+            },
+        );
+
+        assert_eq!(response.status, 403);
+        assert_eq!(
+            response.body["message"],
+            "Support inquiry creation requires same-origin confirmation"
+        );
+    }
+
+    #[test]
+    fn support_inquiry_validates_payload_after_auth() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            BackendRequest {
+                body_text: Some(
+                    r#"{"name":"J","email":"bad","type":"sales","product":"bad","subject":"Hi","message":"short"}"#,
+                ),
+                origin: Some("https://tanstack.tuturuuu.localhost"),
+                ..request_with_cookie(
+                    "POST",
+                    SUPPORT_INQUIRIES_PATH,
+                    format!("{APP_SESSION_COOKIE_NAME}={}", valid_app_session_token()),
+                )
+            },
+        );
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid request body");
+        assert!(
+            response.body["errors"]
+                .as_array()
+                .is_some_and(|errors| errors.len() >= 6)
+        );
+    }
+
+    #[test]
+    fn support_inquiry_returns_data_layer_placeholder_for_valid_bearer_request() {
+        let response = route_request(
+            &backend_config_with_app_session_secret(),
+            BackendRequest {
+                body_text: Some(
+                    r#"{"name":"Jane","email":"jane@example.com","type":"support","product":"web","subject":"Need help","message":"Please help me with this issue."}"#,
+                ),
+                ..request_with_bearer("POST", SUPPORT_INQUIRIES_PATH, valid_app_session_token())
+            },
+        );
+
+        assert_eq!(response.status, 501);
+        assert_eq!(response.body["code"], "CONTACT_DATA_LAYER_NOT_READY");
+        assert_eq!(
+            response.body["message"],
+            CONTACT_DATA_LAYER_NOT_READY_MESSAGE
+        );
+    }
+
+    #[test]
+    fn contact_api_routes_reject_unsupported_methods() {
+        let profile_response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("POST", CURRENT_USER_PROFILE_PATH),
+        );
+        assert_eq!(profile_response.status, 405);
+        assert_eq!(profile_response.allow, Some("GET, PATCH"));
+
+        let inquiry_response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("GET", SUPPORT_INQUIRIES_PATH),
+        );
+        assert_eq!(inquiry_response.status, 405);
+        assert_eq!(inquiry_response.allow, Some("POST"));
     }
 
     #[test]

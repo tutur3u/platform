@@ -16,7 +16,7 @@
     "head_sampling_rate": 0.05
   },
   "secrets": {
-    "required": ["BACKEND_INTERNAL_TOKEN"]
+    "required": ["BACKEND_INTERNAL_TOKEN", "TUTURUUU_APP_COORDINATION_SECRET"]
   },
   "vars": {
     "BACKEND_ENV": "preview",

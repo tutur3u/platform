@@ -12,6 +12,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   for native builds and `cloudflare-workers` for Workers builds.
 - `BACKEND_INTERNAL_TOKEN`: Bearer token required for internal job and migration
   inventory routes.
+- `TUTURUUU_APP_COORDINATION_SECRET`: Preferred secret for verifying
+  Tuturuuu-managed `ttr_app_` app-session JWTs on contact/profile foundation
+  routes. The backend also accepts the existing fallback secret names
+  `APP_COORDINATION_TOKEN_SECRET`, `SUPABASE_SECRET_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_SERVICE_KEY` for compatibility.
+  Non-production local runs fall back to the shared development secret used by
+  the TypeScript auth package; production and Cloudflare preview must configure
+  an explicit secret.
 
 ## Endpoints
 
@@ -39,6 +47,22 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `GET /api/v1/infrastructure/users/fields/types`: legacy-compatible static
   user field type metadata migrated from `apps/web`. The Rust route returns the
   deterministic ordered legacy payload without opening a Supabase admin client.
+- `GET /api/v1/users/me/profile`: contact migration foundation route. It
+  verifies Tuturuuu app-session JWTs from `Authorization: Bearer ttr_app_...`,
+  `tuturuuu_web_app_session`, or `tuturuuu_app_session`, then returns the
+  token-derived identity in the legacy profile response shape with no-store
+  cache headers. This is not terminal profile route ownership yet because
+  Supabase session revalidation and private profile-row hydration still need
+  the Rust data adapter.
+- `PATCH /api/v1/users/me/profile`: authenticated mutation foundation route.
+  Cookie-authenticated requests require same-origin `Origin` or `Referer`
+  confirmation, then return `501 CONTACT_DATA_LAYER_NOT_READY` until Rust owns
+  profile persistence.
+- `POST /api/v1/inquiries`: authenticated support-inquiry foundation route.
+  It verifies app-session JWTs, requires same-origin confirmation for cookie
+  auth, validates the legacy inquiry JSON shape and field limits, then returns
+  `501 CONTACT_DATA_LAYER_NOT_READY` until Rust owns the
+  `support_inquiries` insert with `creator_id` from the resolved user.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
   /api/v1/auth/mobile/password-login`, `OPTIONS
   /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,
@@ -100,6 +124,14 @@ published as an unauthenticated preview endpoint. Do not place token values in
 `wrangler.jsonc`, Dockerfiles, or docs; configure them through environment
 variables or Cloudflare secrets.
 
+The contact/profile foundation endpoints require app-session authentication,
+not `BACKEND_INTERNAL_TOKEN`. Mutating cookie-authenticated contact routes also
+require same-origin confirmation so Cloudflare previews do not accidentally
+create credentialed cross-site write APIs. Browser-facing TanStack code should
+call these only through Start server functions or `packages/internal-api`
+facades that forward request cookies server-side; do not expose backend bearer
+tokens or service-role secrets to browser bundles.
+
 Run locally:
 
 ```sh
@@ -130,6 +162,7 @@ Deploy the backend Worker for preview traffic:
 rustup target add wasm32-unknown-unknown
 cargo install worker-build
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
