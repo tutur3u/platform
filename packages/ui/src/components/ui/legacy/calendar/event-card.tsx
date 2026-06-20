@@ -110,6 +110,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     disableBuiltInEventUi,
     preservePastEventOpacity,
     renderEventContextMenu,
+    isEventReadOnly,
+    readOnly,
   } = useCalendar();
 
   // NOTE: Event filtering for hideNonPreviewEvents is handled in CalendarEventMatrix
@@ -117,6 +119,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const { settings } = useCalendarSettings();
   const queryClient = useQueryClient();
   const tz = settings?.timezone?.timezone;
+  const isReadOnlyEvent = readOnly || isEventReadOnly(event);
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
@@ -477,6 +480,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   useEffect(() => {
     // Disable resizing for middle segments of multi-day events
     // Note: locked events CAN still be resized - locked only prevents auto-scheduling
+    if (isReadOnlyEvent) return;
     if (_isMultiDay && _dayPosition === 'middle') return;
 
     const handleEl = handleRef.current;
@@ -667,12 +671,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     showStatusFeedback, // Update visual state
     updateVisualState,
     queryClient,
+    isReadOnlyEvent,
   ]);
 
   // Event dragging - only enable for non-multi-day events
   useEffect(() => {
     // Disable dragging for multi-day events only
     // Note: locked events CAN still be dragged - locked only prevents auto-scheduling
+    if (isReadOnlyEvent) return;
     if (_isMultiDay) return;
 
     const contentEl = contentRef.current;
@@ -918,6 +924,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     scheduleUpdate,
     showStatusFeedback, // Update visual state for immediate feedback
     updateVisualState,
+    isReadOnlyEvent,
   ]);
 
   // Color styles based on event color
@@ -1310,7 +1317,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           </div>
 
           {/* Only show resize handle for non-multi-day events or start/end segments */}
-          {(!_isMultiDay || _dayPosition !== 'middle') && (
+          {!isReadOnlyEvent && (!_isMultiDay || _dayPosition !== 'middle') && (
             <div
               ref={handleRef}
               className={cn(

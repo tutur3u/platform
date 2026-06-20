@@ -21017,6 +21017,7 @@
     "all_groups": "Tất cả nhóm",
     "all_tags": "Tất cả thẻ",
     "attached_files": "Tệp đính kèm",
+    "calendar_density_summary": "{sessionCount} phiên học được gộp vào {timeblockCount} khung giờ",
     "calendar_subtitle": "Kéo phiên học giữa các khung giờ, đổi thời lượng và chọn phạm vi áp dụng cho lịch lặp lại.",
     "calendar_title": "Lịch nhóm người dùng",
     "cancel_move_mode": "Hủy chế độ di chuyển",
@@ -21057,11 +21058,15 @@
     "files_attached_count": "{count, plural, one {# tệp} other {# tệp}}",
     "files_tab": "Tệp",
     "files_uploaded": "Đã tải tệp lên",
+    "filter_group": "Lọc nhóm",
     "fix_recurring_link": "Sửa liên kết lặp lại",
     "fix_recurring_link_description": "Gắn phiên học rời này trở lại lịch lặp lại, hoặc chuyển thành lịch hằng tuần khi không có lịch nào khớp.",
     "fix_recurring_preview_description": "Kiểm tra phiên lặp lại khớp trước khi gắn phiên học này.",
     "fix_recurring_preview_title": "Sửa liên kết lặp lại",
     "group": "Nhóm",
+    "grouped_timeblock_description": "{count} phiên học: {groups}",
+    "grouped_timeblock_dialog_title": "{count} phiên học trong khung giờ này",
+    "grouped_timeblock_title": "{count} phiên học",
     "interval_weeks": "Khoảng cách (tuần)",
     "matching_recurring_occurrence": "Phiên lặp lại khớp",
     "missing_session": "Phiên học bị thiếu",
@@ -21134,7 +21139,8 @@
     "today": "Hôm nay",
     "unlink_file": "Bỏ liên kết tệp",
     "until_date": "Đến ngày",
-    "untitled_session": "Phiên học"
+    "untitled_session": "Phiên học",
+    "view_grouped_timeblock": "Xem phiên học"
   },
   "ws-user-group-tags": {
     "add_collaboration": "Thêm hợp tác",

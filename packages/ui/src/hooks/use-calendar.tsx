@@ -168,6 +168,7 @@ const CalendarContext = createContext<{
   disableBuiltInEventUi: boolean;
   preservePastEventOpacity: boolean;
   renderEventContextMenu?: (event: CalendarEvent) => ReactNode;
+  isEventReadOnly: (event: CalendarEvent) => boolean;
   readOnly: boolean;
 }>({
   getEvent: () => undefined,
@@ -224,6 +225,7 @@ const CalendarContext = createContext<{
   disableBuiltInEventUi: false,
   preservePastEventOpacity: false,
   renderEventContextMenu: undefined,
+  isEventReadOnly: () => false,
   readOnly: false,
 });
 
@@ -240,6 +242,7 @@ export type CalendarEventAdapter = {
   disableBuiltInEventUi?: boolean;
   preservePastEventOpacity?: boolean;
   renderContextMenu?: (event: CalendarEvent) => ReactNode;
+  isEventReadOnly?: (event: CalendarEvent) => boolean;
   onCreate?: (
     event: Omit<CalendarEvent, 'id'>
   ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
@@ -1645,6 +1648,7 @@ export const CalendarProvider = ({
     disableBuiltInEventUi: eventAdapter?.disableBuiltInEventUi ?? false,
     preservePastEventOpacity: eventAdapter?.preservePastEventOpacity ?? false,
     renderEventContextMenu: eventAdapter?.renderContextMenu,
+    isEventReadOnly: eventAdapter?.isEventReadOnly ?? (() => false),
     readOnly,
   };
 

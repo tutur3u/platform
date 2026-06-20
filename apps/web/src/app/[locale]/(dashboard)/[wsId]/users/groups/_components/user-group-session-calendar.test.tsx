@@ -2,8 +2,11 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { InternalApiError } from '@tuturuuu/internal-api';
-import type { ReactNode } from 'react';
+import {
+  InternalApiError,
+  type WorkspaceUserGroupSession,
+} from '@tuturuuu/internal-api';
+import type { ComponentProps, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserGroupSessionCalendar } from './user-group-session-calendar';
 
@@ -63,11 +66,16 @@ vi.mock('next-intl', () => {
       detached_session: 'Detached session',
       edit_session: 'Edit session',
       failed_to_fix_recurring_link: 'Failed to fix recurring link',
+      filter_group: 'Filter group',
       files_attached_count: '{count} files',
       fix_recurring_preview_description:
         'Review the matching recurring occurrence before attaching this session.',
+      grouped_timeblock_description: '{count} sessions: {groups}',
+      grouped_timeblock_dialog_title: '{count} sessions in this timeblock',
+      grouped_timeblock_title: '{count} sessions',
       fix_recurring_preview_title: 'Fix recurring link',
       matching_recurring_occurrence: 'Matching recurring occurrence',
+      more_sessions: '+{count} more',
       new_weekly_recurring_schedule: 'New weekly recurring schedule',
       no_matching_recurring_schedule: 'No matching recurring schedule found',
       recurring_repair_exact_session:
@@ -80,6 +88,7 @@ vi.mock('next-intl', () => {
         'This will move the detached session back to the recurring timeblock and attach it to the series.',
       recurring_link_fixed: 'Recurring link fixed',
       untitled_session: 'Session',
+      view_grouped_timeblock: 'View sessions',
     },
   };
 
@@ -108,20 +117,60 @@ vi.mock('@tuturuuu/ui/legacy/calendar/smart-calendar', () => ({
     eventAdapter: {
       onOpen?: (eventId: string) => void;
     };
-    externalEvents: { id: string }[];
+    externalEvents: { id: string; title?: string }[];
   }) => (
-    <button
-      disabled={externalEvents.length === 0}
-      type="button"
-      onClick={() => eventAdapter.onOpen?.(externalEvents[0]?.id ?? '')}
-    >
-      Open detached session
-    </button>
+    <div>
+      <div
+        data-event-count={externalEvents.length}
+        data-testid="calendar-events"
+      >
+        {externalEvents.map((event) => (
+          <button
+            key={event.id}
+            type="button"
+            onClick={() => eventAdapter.onOpen?.(event.id)}
+          >
+            {event.title ?? event.id}
+          </button>
+        ))}
+      </div>
+      <button
+        disabled={externalEvents.length === 0}
+        type="button"
+        onClick={() => eventAdapter.onOpen?.(externalEvents[0]?.id ?? '')}
+      >
+        Open detached session
+      </button>
+    </div>
   ),
 }));
 
 vi.mock('./session-calendar-toolbar', () => ({
-  SessionCalendarToolbar: () => <div data-testid="schedule-toolbar" />,
+  SessionCalendarToolbar: ({
+    densityStats,
+    groupFilter,
+    onGroupFilterChange,
+    onTagFilterChange,
+  }: {
+    densityStats?: { groupedTimeblockCount: number; sessionCount: number };
+    groupFilter: string;
+    onGroupFilterChange: (value: string) => void;
+    onTagFilterChange: (value: string) => void;
+  }) => (
+    <div
+      data-group-filter={groupFilter}
+      data-grouped-count={densityStats?.groupedTimeblockCount ?? 0}
+      data-session-count={densityStats?.sessionCount ?? 0}
+      data-testid="schedule-toolbar"
+    >
+      <button type="button" onClick={() => onGroupFilterChange('group-1')}>
+        Filter first group
+      </button>
+      <button type="button" onClick={() => onTagFilterChange('tag-a')}>
+        Filter tag A
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('./session-editor-dialog', () => ({
@@ -133,12 +182,20 @@ vi.mock('./session-editor-dialog', () => ({
     onReconcile?: (session: unknown) => void;
     open?: boolean;
     session?: unknown;
-  }) =>
-    open && session && onReconcile ? (
-      <button type="button" onClick={() => onReconcile(session)}>
-        Fix from editor
-      </button>
-    ) : null,
+  }) => {
+    if (!open || !session) return null;
+
+    return (
+      <div>
+        <div>Editing {(session as { groupName?: string }).groupName}</div>
+        {onReconcile && (
+          <button type="button" onClick={() => onReconcile(session)}>
+            Fix from editor
+          </button>
+        )}
+      </div>
+    );
+  },
 }));
 
 vi.mock('./session-scope-dialog', () => ({
@@ -147,7 +204,7 @@ vi.mock('./session-scope-dialog', () => ({
   ),
 }));
 
-const detachedSession = {
+const detachedSession: WorkspaceUserGroupSession = {
   description: null,
   descriptionJson: null,
   endTimezone: 'Asia/Ho_Chi_Minh',
@@ -166,7 +223,9 @@ const detachedSession = {
   title: 'Test group',
 };
 
-function renderCalendar() {
+function renderCalendar(
+  props: Partial<ComponentProps<typeof UserGroupSessionCalendar>> = {}
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -180,10 +239,193 @@ function renderCalendar() {
         canUpdateSchedule
         title="Test group"
         wsId="workspace-1"
+        {...props}
       />
     </QueryClientProvider>
   );
 }
+
+function session(
+  overrides: Partial<WorkspaceUserGroupSession>
+): WorkspaceUserGroupSession {
+  return {
+    ...detachedSession,
+    ...overrides,
+    files: overrides.files ?? detachedSession.files,
+    tags: overrides.tags ?? detachedSession.tags,
+  };
+}
+
+describe('UserGroupSessionCalendar dense all-groups rendering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('groups same-slot all-groups sessions into one drilldown event', async () => {
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: [
+        session({
+          groupId: 'group-1',
+          groupName: 'Group A',
+          id: 'session-1',
+        }),
+        session({
+          groupId: 'group-2',
+          groupName: 'Group B',
+          id: 'session-2',
+        }),
+        session({
+          groupId: 'group-3',
+          groupName: 'Group C',
+          id: 'session-3',
+        }),
+      ],
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+        { id: 'group-3', name: 'Group C' },
+      ],
+      tags: [],
+    });
+
+    renderCalendar({ canChooseGroup: true });
+
+    const events = await screen.findByTestId('calendar-events');
+    await waitFor(() =>
+      expect(events).toHaveAttribute('data-event-count', '1')
+    );
+    expect(screen.getByTestId('schedule-toolbar')).toHaveAttribute(
+      'data-grouped-count',
+      '1'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '3 sessions' }));
+
+    expect(
+      await screen.findByText('3 sessions in this timeblock')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Group A')).toBeInTheDocument();
+    expect(screen.getByText('Group B')).toBeInTheDocument();
+    expect(screen.getByText('Group C')).toBeInTheDocument();
+  });
+
+  it('opens the existing editor from a grouped timeblock row', async () => {
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: [
+        session({
+          groupId: 'group-1',
+          groupName: 'Group A',
+          id: 'session-1',
+        }),
+        session({
+          groupId: 'group-2',
+          groupName: 'Group B',
+          id: 'session-2',
+        }),
+      ],
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Edit session' }))[0]!
+    );
+
+    expect(await screen.findByText('Editing Group A')).toBeInTheDocument();
+  });
+
+  it('renders individual events again after filtering to one group', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+      }),
+    ];
+
+    listWorkspaceUserGroupSessionsMock.mockImplementation(
+      (_wsId: string, params?: { groupId?: string }) =>
+        Promise.resolve({
+          data: params?.groupId
+            ? allSessions.filter((item) => item.groupId === params.groupId)
+            : allSessions,
+          groups: [
+            { id: 'group-1', name: 'Group A' },
+            { id: 'group-2', name: 'Group B' },
+          ],
+          tags: [],
+        })
+    );
+
+    renderCalendar({ canChooseGroup: true });
+
+    expect(
+      await screen.findByRole('button', { name: '2 sessions' })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter first group' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: '2 sessions' })).toBeNull();
+      expect(
+        screen.getByRole('button', { name: 'Group A' })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('applies tag filtering before grouping', async () => {
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: [
+        session({
+          groupId: 'group-1',
+          groupName: 'Group A',
+          id: 'session-1',
+          tags: [{ color: null, id: 'tag-a', name: 'Tag A' }],
+        }),
+        session({
+          groupId: 'group-2',
+          groupName: 'Group B',
+          id: 'session-2',
+          tags: [{ color: null, id: 'tag-b', name: 'Tag B' }],
+        }),
+      ],
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [
+        { color: null, id: 'tag-a', name: 'Tag A' },
+        { color: null, id: 'tag-b', name: 'Tag B' },
+      ],
+    });
+
+    renderCalendar({ canChooseGroup: true });
+
+    expect(
+      await screen.findByRole('button', { name: '2 sessions' })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter tag A' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: '2 sessions' })).toBeNull();
+      expect(
+        screen.getByRole('button', { name: 'Group A' })
+      ).toBeInTheDocument();
+    });
+  });
+});
 
 describe('UserGroupSessionCalendar recurring repair preview', () => {
   beforeEach(() => {

@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { ArrowRight, CalendarDays, Clock, Edit, Repeat } from '@tuturuuu/icons';
 import type {
   CreateWorkspaceUserGroupSessionPayload,
@@ -42,10 +47,15 @@ import dayjs from 'dayjs';
 import { useLocale, useMessages, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import '@/lib/dayjs-setup';
+import { GroupedSessionTimeblockDialog } from './grouped-session-timeblock-dialog';
 import { SessionCalendarToolbar } from './session-calendar-toolbar';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { SessionScopeDialog } from './session-scope-dialog';
 import { DEFAULT_SCHEDULE_TIMEZONE, getWeekStart } from './session-time-utils';
+import {
+  buildUserGroupCalendarDensity,
+  isGroupedSessionEventId,
+} from './user-group-calendar-density';
 
 type PendingUpdate = {
   payload: UpdateWorkspaceUserGroupSessionPayload;
@@ -301,6 +311,9 @@ export function UserGroupSessionCalendar({
   const [editingSession, setEditingSession] =
     useState<WorkspaceUserGroupSession | null>(null);
   const [draftEvent, setDraftEvent] = useState<CalendarEvent | null>(null);
+  const [selectedTimeblockId, setSelectedTimeblockId] = useState<string | null>(
+    null
+  );
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(
     null
   );
@@ -327,9 +340,10 @@ export function UserGroupSessionCalendar({
       listWorkspaceUserGroupSessions(wsId, {
         from: range.from,
         groupId: activeGroupId ?? undefined,
-        includeMissing: true,
         to: range.to,
       }),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
   });
 
   const scheduleData = sessionsQuery.data;
@@ -351,36 +365,30 @@ export function UserGroupSessionCalendar({
     [scheduleData?.data]
   );
 
-  const calendarEvents = useMemo<CalendarEvent[]>(() => {
-    return filteredSessions.map((session) => {
-      const tags = session.tags.map((tag) => tag.name).join(', ');
-      const metadata = [
-        session.seriesId ? t('recurring_badge') : null,
-        session.files.length
-          ? t('files_attached_count', { count: session.files.length })
-          : null,
-        tags || null,
-        session.startTimezone || DEFAULT_SCHEDULE_TIMEZONE,
-      ].filter(Boolean);
+  const calendarDensity = useMemo(
+    () =>
+      buildUserGroupCalendarDensity({
+        groupSessions: !activeGroupId,
+        labels: {
+          filesAttachedCount: (count) => t('files_attached_count', { count }),
+          groupedTimeblockDescription: (values) =>
+            t('grouped_timeblock_description', values),
+          groupedTimeblockTitle: (count) =>
+            t('grouped_timeblock_title', { count }),
+          moreSessions: (count) => t('more_sessions', { count }),
+          recurringBadge: t('recurring_badge'),
+          untitledSession: t('untitled_session'),
+        },
+        sessions: filteredSessions,
+        timezone,
+        wsId,
+      }),
+    [activeGroupId, filteredSessions, t, timezone, wsId]
+  );
 
-      return {
-        id: session.id,
-        title: session.groupName || t('untitled_session'),
-        description: [metadata.join(' / '), session.description]
-          .filter(Boolean)
-          .join('\n'),
-        start_at: session.startsAt,
-        end_at: session.endsAt,
-        color: session.seriesId
-          ? 'PURPLE'
-          : session.tags.length
-            ? 'GREEN'
-            : 'BLUE',
-        locked: false,
-        ws_id: wsId,
-      };
-    });
-  }, [filteredSessions, t, wsId]);
+  const selectedTimeblock = selectedTimeblockId
+    ? (calendarDensity.timeblocksByEventId.get(selectedTimeblockId) ?? null)
+    : null;
 
   const calendarInitialSettings = useMemo(
     () => ({
@@ -563,7 +571,24 @@ export function UserGroupSessionCalendar({
         if (!canUpdateSchedule) return;
         setDraftEvent(event);
       },
+      isEventReadOnly: (event) => isGroupedSessionEventId(event.id),
       renderContextMenu: (event) => {
+        if (isGroupedSessionEventId(event.id)) {
+          const timeblock = calendarDensity.timeblocksByEventId.get(event.id);
+          if (!timeblock) return null;
+
+          return (
+            <ContextMenuContent className="w-52">
+              <ContextMenuItem
+                onSelect={() => setSelectedTimeblockId(event.id)}
+              >
+                <CalendarDays className="h-4 w-4" />
+                {t('view_grouped_timeblock')}
+              </ContextMenuItem>
+            </ContextMenuContent>
+          );
+        }
+
         const session = sessionsById.get(event._originalId || event.id);
         if (!session) return null;
 
@@ -606,11 +631,19 @@ export function UserGroupSessionCalendar({
           return;
         }
 
+        if (isGroupedSessionEventId(eventId)) {
+          if (calendarDensity.timeblocksByEventId.has(eventId)) {
+            setSelectedTimeblockId(eventId);
+          }
+          return;
+        }
+
         const session = sessionsById.get(eventId);
         if (session) setEditingSession(session);
       },
       onUpdate: (eventId, updates, event) => {
         if (!canUpdateSchedule) return event;
+        if (isGroupedSessionEventId(eventId)) return event;
 
         const session = sessionsById.get(eventId);
         if (!session) return event;
@@ -636,6 +669,7 @@ export function UserGroupSessionCalendar({
     }),
     [
       canUpdateSchedule,
+      calendarDensity.timeblocksByEventId,
       sessionsById,
       t,
       requestUpdate,
@@ -660,6 +694,14 @@ export function UserGroupSessionCalendar({
         canChooseGroup={canChooseGroup}
         canUpdateSchedule={canUpdateSchedule}
         createPending={createMutation.isPending}
+        densityStats={
+          !activeGroupId && calendarDensity.groupedTimeblockCount > 0
+            ? {
+                groupedTimeblockCount: calendarDensity.groupedTimeblockCount,
+                sessionCount: calendarDensity.visibleSessionCount,
+              }
+            : undefined
+        }
         groupFilter={groupFilter}
         groups={groups}
         onCreate={async (payload) => {
@@ -691,7 +733,7 @@ export function UserGroupSessionCalendar({
           useQueryClient={useQueryClient}
           disabled={!canUpdateSchedule}
           eventAdapter={eventAdapter}
-          externalEvents={calendarEvents}
+          externalEvents={calendarDensity.calendarEvents}
           externalEventsLoading={sessionsQuery.isLoading}
           externalEventsRefresh={() => {
             void sessionsQuery.refetch();
@@ -713,6 +755,24 @@ export function UserGroupSessionCalendar({
           showConnectionsManager={false}
         />
       </div>
+
+      <GroupedSessionTimeblockDialog
+        canChooseGroup={canChooseGroup}
+        onEditSession={(session) => {
+          setSelectedTimeblockId(null);
+          setEditingSession(session);
+        }}
+        onFilterGroup={(nextGroupId) => {
+          if (!canChooseGroup) return;
+          setGroupFilter(nextGroupId);
+          setSelectedTimeblockId(null);
+        }}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTimeblockId(null);
+        }}
+        open={!!selectedTimeblock}
+        timeblock={selectedTimeblock}
+      />
 
       <SessionEditorDialog
         canChooseGroup={canChooseGroup}

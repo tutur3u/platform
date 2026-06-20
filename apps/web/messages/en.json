@@ -21017,6 +21017,7 @@
     "all_groups": "All groups",
     "all_tags": "All tags",
     "attached_files": "Attached files",
+    "calendar_density_summary": "{sessionCount, plural, one {# session} other {# sessions}} grouped into {timeblockCount, plural, one {# timeblock} other {# timeblocks}}",
     "calendar_subtitle": "Drag sessions between timeblocks, resize durations, and keep recurring changes scoped.",
     "calendar_title": "User Group Calendar",
     "cancel_move_mode": "Cancel move mode",
@@ -21057,11 +21058,15 @@
     "files_attached_count": "{count, plural, one {# file} other {# files}}",
     "files_tab": "Files",
     "files_uploaded": "Files uploaded",
+    "filter_group": "Filter group",
     "fix_recurring_link": "Fix recurring link",
     "fix_recurring_link_description": "Attach this detached session back to a recurring schedule, or convert it into a weekly schedule when no match exists.",
     "fix_recurring_preview_description": "Review the matching recurring occurrence before attaching this session.",
     "fix_recurring_preview_title": "Fix recurring link",
     "group": "Group",
+    "grouped_timeblock_description": "{count, plural, one {# session: {groups}} other {# sessions: {groups}}}",
+    "grouped_timeblock_dialog_title": "{count, plural, one {# session in this timeblock} other {# sessions in this timeblock}}",
+    "grouped_timeblock_title": "{count, plural, one {# session} other {# sessions}}",
     "interval_weeks": "Interval (weeks)",
     "matching_recurring_occurrence": "Matching recurring occurrence",
     "missing_session": "Missing session",
@@ -21134,7 +21139,8 @@
     "today": "Today",
     "unlink_file": "Unlink file",
     "until_date": "Until date",
-    "untitled_session": "Session"
+    "untitled_session": "Session",
+    "view_grouped_timeblock": "View sessions"
   },
   "ws-user-group-tags": {
     "add_collaboration": "Add collaboration",
