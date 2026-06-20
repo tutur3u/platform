@@ -380,6 +380,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/about ports the legacy about page with local English and Vietnamese message bundles, local about primitives, and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
     },
+    "layout:/:locale/contact:apps/web/src/app/[locale]/(marketing)/contact/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/contact defines the legacy static Contact metadata through createPageHead. This marks only the metadata layout artifact migrated; the contact page remains legacy-owned until current-user profile and support-inquiry endpoints move behind Rust/backend or TanStack server-function ownership."
+    },
     "layout:/:locale/partners:apps/web/src/app/[locale]/(marketing)/partners/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

@@ -10,9 +10,9 @@ export const Route = createFileRoute('/$locale/contact')({
 
     return createPageHead({
       description:
-        'Get in touch with Tuturuuu for partnerships, support, beta access, and product inquiries.',
+        'Reach out to the Tuturuuu team for support, partnerships, or general questions.',
       locale,
-      title: 'Contact | Tuturuuu',
+      title: 'Contact Tuturuuu',
     });
   },
 });
