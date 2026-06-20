@@ -276,6 +276,39 @@ describe('withForwardedInternalApiAuth', () => {
     );
   });
 
+  it('forwards TanStack production requests to the platform API with sanitized shared auth', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://tanstack.tuturuuu.com');
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://resolved-kingfish-21146.supabase.co'
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      authorization: 'Bearer user-token',
+      cookie:
+        'tuturuuu_app_session=ttr_app_123; sb-resolved-kingfish-21146-auth-token=web-session; sb-stale-auth-token=stale; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json('/api/v1/workspaces');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://tuturuuu.com/api/v1/workspaces');
+    expect((init.headers as Headers).get('authorization')).toBe(
+      'Bearer user-token'
+    );
+    expect((init.headers as Headers).get('cookie')).toBe(
+      'tuturuuu_app_session=ttr_app_123; sb-resolved-kingfish-21146-auth-token=web-session; theme=dark'
+    );
+  });
+
   it('preserves canonical shared Supabase auth cookies for local Tuturuuu internal API calls', async () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:8001');
     const fetchMock = vi.fn().mockResolvedValue({
@@ -301,6 +334,36 @@ describe('withForwardedInternalApiAuth', () => {
     );
   });
 
+  it('forwards TanStack local requests to the platform API with sanitized shared auth', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:7824');
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:8001');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      authorization: 'Bearer local-token',
+      cookie:
+        'tuturuuu_app_session=ttr_app_123; sb-127-auth-token=local-session; sb-stale-auth-token=stale; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json('/api/v1/workspaces');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://tuturuuu.localhost/api/v1/workspaces');
+    expect((init.headers as Headers).get('authorization')).toBe(
+      'Bearer local-token'
+    );
+    expect((init.headers as Headers).get('cookie')).toBe(
+      'tuturuuu_app_session=ttr_app_123; sb-127-auth-token=local-session; theme=dark'
+    );
+  });
+
   it('preserves Supabase auth cookies when no app-session cookie is present', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -321,5 +384,30 @@ describe('withForwardedInternalApiAuth', () => {
     expect((init.headers as Headers).get('cookie')).toBe(
       'sb-resolved-kingfish-21146-auth-token=web-session; theme=dark'
     );
+  });
+
+  it('does not forward incoming auth back to the TanStack app origin', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://tanstack.tuturuuu.com');
+    vi.stubEnv('NODE_ENV', 'production');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      authorization: 'Bearer user-token',
+      cookie: 'tuturuuu_app_session=ttr_app_123; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json(
+      'https://tanstack.tuturuuu.com/api/probe'
+    );
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect((init.headers as Headers).get('authorization')).toBeNull();
+    expect((init.headers as Headers).get('cookie')).toBeNull();
   });
 });
