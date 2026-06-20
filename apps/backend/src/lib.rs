@@ -65,6 +65,16 @@ const GROUPED_SCORE_NAMES_MIGRATION_PATH: &str =
     "/api/v1/infrastructure/migrate/grouped-score-names";
 const GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE: &str = "Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.";
 const USER_FIELD_TYPES_PATH: &str = "/api/v1/infrastructure/users/fields/types";
+const MOBILE_AUTH_CORS_PREFLIGHT_PATHS: [&str; 4] = [
+    "/api/v1/auth/mobile/password-login",
+    "/api/v1/auth/mobile/send-otp",
+    "/api/v1/auth/mobile/verify-otp",
+    "/api/v1/auth/otp/settings",
+];
+const MOBILE_AUTH_CORS_ALLOW_METHODS: &str = "GET, POST, OPTIONS";
+const MOBILE_AUTH_CORS_ALLOW_HEADERS: &str = "Content-Type, Authorization";
+const MOBILE_AUTH_CORS_MAX_AGE: &str = "86400";
+const MFA_MOBILE_APPROVALS_PATH: &str = "/api/v1/auth/mfa/mobile/approvals";
 const DISABLED_GROUP_CHECK_EMAIL_MESSAGE: &str = "Direct post email sending has been removed. Emails are now sent by the system queue after approval.";
 #[cfg(feature = "native")]
 const TRUTHY_ENV_VALUES: [&str; 4] = ["1", "true", "yes", "on"];
@@ -260,8 +270,11 @@ struct RouteManifestSummary {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RouteManifestRoute {
+    id: String,
     kind: String,
+    method: Option<String>,
     methods: Vec<String>,
+    parent_id: Option<String>,
     route_path: String,
     source_file: String,
     status: String,
@@ -305,8 +318,11 @@ struct RouteManifestProgressBucket {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RouteManifestProgressRoute {
+    id: Option<String>,
     kind: String,
+    method: Option<String>,
     methods: Vec<String>,
+    parent_id: Option<String>,
     route_path: String,
     source_file: String,
     status: String,
@@ -406,6 +422,10 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         (method, GROUPED_SCORE_NAMES_MIGRATION_PATH) => method_not_allowed(method, "PUT"),
         ("GET", USER_FIELD_TYPES_PATH) => user_field_types_response(),
         (method, USER_FIELD_TYPES_PATH) => method_not_allowed(method, "GET"),
+        ("OPTIONS", path) if is_mobile_auth_cors_preflight_path(path) => {
+            mobile_auth_cors_preflight_response()
+        }
+        ("OPTIONS", MFA_MOBILE_APPROVALS_PATH) => empty_response(204),
         ("POST", path) if is_group_check_email_path(path) => disabled_group_check_email_response(),
         (method, path) if is_group_check_email_path(path) => method_not_allowed(method, "POST"),
         ("GET", "/healthz") => json_response(
@@ -539,6 +559,26 @@ fn user_field_types_response() -> BackendResponse {
             UserFieldType { id: "DATETIME" },
         ],
     )
+}
+
+fn mobile_auth_cors_preflight_response() -> BackendResponse {
+    let mut response = empty_response(204);
+    response
+        .headers
+        .push(("access-control-allow-origin", "*".to_owned()));
+    response.headers.push((
+        "access-control-allow-methods",
+        MOBILE_AUTH_CORS_ALLOW_METHODS.to_owned(),
+    ));
+    response.headers.push((
+        "access-control-allow-headers",
+        MOBILE_AUTH_CORS_ALLOW_HEADERS.to_owned(),
+    ));
+    response.headers.push((
+        "access-control-max-age",
+        MOBILE_AUTH_CORS_MAX_AGE.to_owned(),
+    ));
+    response
 }
 
 fn disabled_group_check_email_response() -> BackendResponse {
@@ -1023,8 +1063,11 @@ fn route_manifest_progress(routes: &[RouteManifestRoute]) -> RouteManifestProgre
             && top_legacy_routes.len() < TOP_LEGACY_ROUTE_LIMIT
         {
             top_legacy_routes.push(RouteManifestProgressRoute {
+                id: Some(route.id.clone()),
                 kind: route.kind.clone(),
+                method: route.method.clone(),
                 methods: route.methods.clone(),
+                parent_id: route.parent_id.clone(),
                 route_path: route.route_path.clone(),
                 source_file: route.source_file.clone(),
                 status: route.status.clone(),
@@ -1258,6 +1301,10 @@ fn is_serwist_route_path(path: &str) -> bool {
     let segments = path_segments(path);
 
     segments.len() == 2 && segments[0] == "serwist" && !segments[1].is_empty()
+}
+
+fn is_mobile_auth_cors_preflight_path(path: &str) -> bool {
+    MOBILE_AUTH_CORS_PREFLIGHT_PATHS.contains(&path)
 }
 
 fn is_workspace_slides_collection_path(path: &str) -> bool {
@@ -1709,6 +1756,14 @@ mod tests {
         config
     }
 
+    fn header_value<'a>(response: &'a BackendResponse, header: &str) -> Option<&'a str> {
+        response
+            .headers
+            .iter()
+            .find(|(name, _)| *name == header)
+            .map(|(_, value)| value.as_str())
+    }
+
     fn browser_recovery_request(
         origin: Option<&'static str>,
         referer: Option<&'static str>,
@@ -1822,6 +1877,75 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
         assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[test]
+    fn legacy_mobile_auth_options_routes_are_migrated() {
+        for path in MOBILE_AUTH_CORS_PREFLIGHT_PATHS {
+            let response = route_request(
+                &BackendConfig::new("test", "backend"),
+                request("OPTIONS", path),
+            );
+
+            assert_eq!(response.status, 204, "{path}");
+            assert!(response.body_empty, "{path}");
+            assert_eq!(response.content_type, None, "{path}");
+            assert_eq!(
+                header_value(&response, "access-control-allow-origin"),
+                Some("*"),
+                "{path}"
+            );
+            assert_eq!(
+                header_value(&response, "access-control-allow-methods"),
+                Some(MOBILE_AUTH_CORS_ALLOW_METHODS),
+                "{path}"
+            );
+            assert_eq!(
+                header_value(&response, "access-control-allow-headers"),
+                Some(MOBILE_AUTH_CORS_ALLOW_HEADERS),
+                "{path}"
+            );
+            assert_eq!(
+                header_value(&response, "access-control-max-age"),
+                Some(MOBILE_AUTH_CORS_MAX_AGE),
+                "{path}"
+            );
+        }
+    }
+
+    #[test]
+    fn legacy_mobile_auth_preflight_routes_do_not_claim_auth_methods() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("POST", "/api/v1/auth/mobile/password-login"),
+        );
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["error"], "not found");
+    }
+
+    #[test]
+    fn legacy_mfa_mobile_approvals_options_route_is_migrated() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("OPTIONS", MFA_MOBILE_APPROVALS_PATH),
+        );
+
+        assert_eq!(response.status, 204);
+        assert!(response.body_empty);
+        assert_eq!(response.content_type, None);
+        assert!(response.headers.is_empty());
+    }
+
+    #[test]
+    fn legacy_mfa_mobile_approvals_preflight_route_does_not_claim_get() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("GET", MFA_MOBILE_APPROVALS_PATH),
+        );
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["error"], "not found");
     }
 
     #[test]

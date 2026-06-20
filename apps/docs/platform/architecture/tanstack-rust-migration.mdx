@@ -242,17 +242,20 @@ The current migration manifest is checked in at
 progress summary grouped by target owner and route kind. API and route-handler
 entries also include a `methods` array derived from exported Next route methods;
 `summary.methodCounts` tracks total exported `GET`, `POST`, `PUT`, `PATCH`,
-`DELETE`, `HEAD`, and `OPTIONS` handlers.
+`DELETE`, `HEAD`, and `OPTIONS` handlers. When only some methods on a legacy
+`route.ts` are migrated, `route-overrides.json` can split that file into
+method-level artifacts with `parentId` and `method`; the unmigrated paired
+methods stay visible as `legacy-next`.
 
 Current inventory:
 
 - `305` pages
 - `67` layouts
-- `1,112` route handlers
+- `1,117` route handler artifacts
 - `19` cron handlers
-- `1,489` total tracked route artifacts
-- `119` migrated artifacts, `120` terminal artifacts, and `1,369` remaining
-  legacy-owned artifacts after the current women-in-tech metadata batch
+- `1,494` total tracked route artifacts
+- `124` migrated artifacts, `125` terminal artifacts, and `1,369` remaining
+  legacy-owned artifacts after the current auth preflight method batch
 
 Regenerate it after adding or removing legacy routes:
 
@@ -315,6 +318,13 @@ GET /api/migration/progress
 `apps/tanstack-web` reads that endpoint through `packages/internal-api` and
 falls back to the checked manifest when the backend is offline.
 
+Method-level migration ownership is only valid when the deployment path can
+route traffic by HTTP method or otherwise avoid sending still-legacy methods to
+Rust. For example, the Rust backend can own `OPTIONS` preflight responses for an
+auth route while the corresponding `POST` or `GET` artifact remains
+`legacy-next`; a path-only proxy must keep that whole path on Next until the
+auth method is migrated too.
+
 First migrated ownership:
 
 | Legacy route                                                                    | New owner                            | Evidence                                                                                                                                                                                                                                                                                                                                       |
@@ -328,6 +338,9 @@ First migrated ownership:
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar`                              | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy collapsed-sidebar validation body and `sidebar-collapsed` set/delete cookie behavior.                                                                                                                                                                             |
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar/sizes`                        | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy size validation body, two-cookie write behavior, and DELETE behavior that clears only `sidebar-size`.                                                                                                                                                             |
 | `GET /api/v1/infrastructure/users/fields/types`                                 | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust returns the deterministic ordered legacy field type payload without opening a Supabase admin client for static metadata.                                                                                                                                                               |
+| `OPTIONS /api/v1/auth/mobile/{password-login,send-otp,verify-otp}`              | `apps/backend` Rust route dispatcher | `route-overrides.json` marks only the `OPTIONS` method artifacts `migrated`; Rust preserves the shared legacy wildcard CORS `204` response while the `POST` auth methods remain `legacy-next`.                                                                                                                                                 |
+| `OPTIONS /api/v1/auth/otp/settings`                                             | `apps/backend` Rust route dispatcher | `route-overrides.json` marks only the `OPTIONS` method artifact `migrated`; Rust preserves the shared legacy wildcard CORS `204` response while the `GET` OTP settings lookup remains `legacy-next`.                                                                                                                                           |
+| `OPTIONS /api/v1/auth/mfa/mobile/approvals`                                     | `apps/backend` Rust route dispatcher | `route-overrides.json` marks only the `OPTIONS` method artifact `migrated`; Rust preserves the legacy bare empty `204` response while the `GET` approval listing remains `legacy-next`.                                                                                                                                                        |
 | `POST /api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email` | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy `410 Gone` response for removed direct post email sending.                                                                                                                                                                                                        |
 | `GET` / `POST` `/api/v1/workspaces/:wsId/slides`                                | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the current `501 Not implemented` placeholder contract without adding protected workspace slide data access.                                                                                                                                                                 |
 | `PUT` / `DELETE` `/api/v1/workspaces/:wsId/slides/:slideId`                     | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the current `501 Not implemented` placeholder contract without adding protected workspace slide data access.                                                                                                                                                                 |
@@ -433,10 +446,16 @@ manifest entry can move out of `legacy-next`:
 - a `route-overrides.json` entry that marks the legacy artifact as `migrated`
   or `accepted-removal`
 - an OpenAPI path or schema update in `apps/backend/api/openapi.yaml`
-- a Rust route dispatcher test covering the success case and unsupported method
-  behavior
+- a Rust route dispatcher test covering the success case; full-route ownership
+  also needs unsupported method behavior, while method-level ownership needs an
+  assertion that still-legacy sibling methods are not claimed by Rust
 - a `packages/internal-api` facade when the TanStack app or shared UI needs to
   call the endpoint
+
+For method-level overrides, the same evidence applies to each migrated method,
+and the route override must leave every unmigrated sibling method as a generated
+`legacy-next` artifact. Do not mark a full route migrated only because a safe
+preflight or placeholder method is implemented in Rust.
 
 The manifest check compares both aggregate method counts and each route's method
 list against the current `apps/web/src/app` tree, including generated export

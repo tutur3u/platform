@@ -77,14 +77,28 @@ function summarizeMigrationProgress(routes) {
       !TERMINAL_STATUSES.has(route.status) &&
       topLegacyRoutes.length < TOP_LEGACY_ROUTE_LIMIT
     ) {
-      topLegacyRoutes.push({
+      const legacyRoute = {
         kind: route.kind,
         methods: route.methods,
         routePath: route.routePath,
         sourceFile: route.sourceFile,
         status: route.status,
         targetOwner: route.targetOwner,
-      });
+      };
+
+      if (route.id) {
+        legacyRoute.id = route.id;
+      }
+
+      if (route.method) {
+        legacyRoute.method = route.method;
+      }
+
+      if (route.parentId) {
+        legacyRoute.parentId = route.parentId;
+      }
+
+      topLegacyRoutes.push(legacyRoute);
     }
   }
 
@@ -165,7 +179,8 @@ function formatBucket(bucket) {
 
 function formatRoute(route) {
   const methods = route.methods?.length ? route.methods.join(',') : 'none';
-  return `${route.routePath} [${route.kind}; ${route.targetOwner}; ${methods}] ${route.sourceFile}`;
+  const parent = route.parentId ? ` parent=${route.parentId}` : '';
+  return `${route.routePath} [${route.kind}; ${route.targetOwner}; ${methods}] ${route.sourceFile}${parent}`;
 }
 
 function formatProgressReport(progress, manifestPath) {

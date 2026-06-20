@@ -278,12 +278,14 @@ function compareManifestToInventory(manifest, inventory) {
     }
 
     if (
+      route.method !== expected.method ||
+      route.parentId !== expected.parentId ||
       route.status !== expected.status ||
       route.targetOwner !== expected.targetOwner ||
       JSON.stringify(route.methods) !== JSON.stringify(expected.methods)
     ) {
       errors.push(
-        `Manifest route ownership is stale for ${route.id}. Expected status=${expected.status} targetOwner=${expected.targetOwner} methods=${expected.methods.join(',')}, got status=${route.status} targetOwner=${route.targetOwner} methods=${(route.methods ?? []).join(',')}.`
+        `Manifest route ownership is stale for ${route.id}. Expected status=${expected.status} targetOwner=${expected.targetOwner} methods=${expected.methods.join(',')} method=${expected.method ?? ''} parentId=${expected.parentId ?? ''}, got status=${route.status} targetOwner=${route.targetOwner} methods=${(route.methods ?? []).join(',')} method=${route.method ?? ''} parentId=${route.parentId ?? ''}.`
       );
     }
   }

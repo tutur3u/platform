@@ -50,12 +50,12 @@ describe('readTanStackMigrationStatus', () => {
     vi.mocked(getBackendMigrationCutoverGates).mockResolvedValue({
       counts: {
         acceptedRemoval: 1,
-        backendOwned: 1112,
-        backendRouteArtifacts: 1112,
+        backendOwned: 1117,
+        backendRouteArtifacts: 1117,
         frontendOwned: 377,
-        legacyNext: 1395,
-        migrated: 93,
-        total: 1489,
+        legacyNext: 1369,
+        migrated: 124,
+        total: 1494,
         unknownStatus: 0,
         unmapped: 0,
       },
@@ -64,13 +64,13 @@ describe('readTanStackMigrationStatus', () => {
       manifest: 'apps/tanstack-web/migration/route-manifest.json',
       ok: false,
       summary: {
-        apiRoutes: 1089,
+        apiRoutes: 1094,
         cronRoutes: 19,
         layouts: 67,
         methodCounts: ROUTE_METHOD_COUNTS,
         pages: 305,
-        routeHandlers: 1112,
-        total: 1489,
+        routeHandlers: 1117,
+        total: 1494,
       },
     });
     vi.mocked(getBackendMigrationProgress).mockResolvedValue({
@@ -84,23 +84,23 @@ describe('readTanStackMigrationStatus', () => {
             acceptedRemoval: 1,
             key: 'rust-backend',
             label: 'Rust backend',
-            legacyNext: 1099,
-            migrated: 12,
-            percentComplete: 1.17,
-            remaining: 1099,
-            terminal: 13,
-            total: 1112,
+            legacyNext: 1098,
+            migrated: 19,
+            percentComplete: 1.7,
+            remaining: 1098,
+            terminal: 19,
+            total: 1117,
             unknownStatus: 0,
           },
           {
             acceptedRemoval: 0,
             key: 'tanstack-start',
             label: 'TanStack Start',
-            legacyNext: 296,
-            migrated: 81,
-            percentComplete: 21.49,
-            remaining: 296,
-            terminal: 81,
+            legacyNext: 271,
+            migrated: 106,
+            percentComplete: 28.12,
+            remaining: 271,
+            terminal: 106,
             total: 377,
             unknownStatus: 0,
           },
@@ -110,30 +110,30 @@ describe('readTanStackMigrationStatus', () => {
           acceptedRemoval: 1,
           key: 'total',
           label: 'All route artifacts',
-          legacyNext: 1395,
-          migrated: 93,
-          percentComplete: 6.31,
-          remaining: 1395,
-          terminal: 94,
-          total: 1489,
+          legacyNext: 1369,
+          migrated: 124,
+          percentComplete: 8.37,
+          remaining: 1369,
+          terminal: 125,
+          total: 1494,
           unknownStatus: 0,
         },
       },
       summary: {
-        apiRoutes: 1089,
+        apiRoutes: 1094,
         cronRoutes: 19,
         layouts: 67,
         methodCounts: ROUTE_METHOD_COUNTS,
         pages: 305,
-        routeHandlers: 1112,
-        total: 1489,
+        routeHandlers: 1117,
+        total: 1494,
       },
     });
 
     const status = await readTanStackMigrationStatus();
 
     expect(status.backendReachable).toBe(true);
-    expect(status.cutoverGates.counts.legacyNext).toBe(1395);
+    expect(status.cutoverGates.counts.legacyNext).toBe(1369);
     expect(status.migrationProgress.progress.byOwner[0]?.key).toBe(
       'rust-backend'
     );
@@ -153,7 +153,9 @@ describe('readTanStackMigrationStatus', () => {
     const status = await readTanStackMigrationStatus();
 
     expect(status.backendReachable).toBe(false);
-    expect(status.cutoverGates.summary.total).toBe(1489);
+    expect(status.cutoverGates.summary.total).toBe(
+      tanstackRouteManifest.summary.total
+    );
     expect(status.cutoverGates.gates[0]?.id).toBe('backend-reachable');
     expect(status.migrationProgress.progress.totals.remaining).toBe(
       tanstackRouteManifest.progress.totals.remaining

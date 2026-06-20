@@ -41,7 +41,9 @@ export type BackendRouteManifestSummary = {
 export type BackendRouteManifestRoute = {
   id: string;
   kind: string;
+  method?: string;
   methods: string[];
+  parentId?: string;
   routePath: string;
   sourceFile: string;
   status: 'accepted-removal' | 'legacy-next' | 'migrated';
@@ -66,7 +68,15 @@ export type BackendRouteManifestProgress = {
   byOwner: BackendRouteManifestProgressBucket[];
   topLegacyRoutes: Pick<
     BackendRouteManifestRoute,
-    'kind' | 'methods' | 'routePath' | 'sourceFile' | 'status' | 'targetOwner'
+    | 'id'
+    | 'kind'
+    | 'method'
+    | 'methods'
+    | 'parentId'
+    | 'routePath'
+    | 'sourceFile'
+    | 'status'
+    | 'targetOwner'
   >[];
   totals: BackendRouteManifestProgressBucket;
 };

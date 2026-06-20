@@ -39,6 +39,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `GET /api/v1/infrastructure/users/fields/types`: legacy-compatible static
   user field type metadata migrated from `apps/web`. The Rust route returns the
   deterministic ordered legacy payload without opening a Supabase admin client.
+- `OPTIONS /api/v1/auth/mobile/password-login`, `OPTIONS
+  /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`, and
+  `OPTIONS /api/v1/auth/otp/settings`: method-level legacy-compatible CORS
+  preflights that return the shared wildcard empty `204` response. Their
+  paired auth `POST` or settings `GET` methods remain legacy-owned.
+- `OPTIONS /api/v1/auth/mfa/mobile/approvals`: method-level legacy-compatible
+  bare empty `204` preflight. Its paired `GET` approval listing remains
+  legacy-owned.
 - `POST /api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email`:
   legacy-compatible removed direct email route that returns `410 Gone`; emails
   are sent by the system queue after approval.

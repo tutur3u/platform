@@ -235,6 +235,77 @@ test('runCutoverGates fails when required E2E or benchmark evidence is missing',
   }
 });
 
+test('checkManifestGates keeps method-split legacy siblings blocking cutover', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanstack-gates-'));
+  const appDir = path.join(rootDir, 'apps', 'web', 'src', 'app');
+  const routeFile = path.join(
+    appDir,
+    'api',
+    'v1',
+    'auth',
+    'mobile',
+    'password-login',
+    'route.ts'
+  );
+  const manifestPath = path.join(
+    rootDir,
+    'apps',
+    'tanstack-web',
+    'migration',
+    'route-manifest.json'
+  );
+  const overridesPath = path.join(
+    rootDir,
+    'apps',
+    'tanstack-web',
+    'migration',
+    'route-overrides.json'
+  );
+  const routeId =
+    'api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts';
+
+  try {
+    fs.mkdirSync(path.dirname(routeFile), { recursive: true });
+    fs.writeFileSync(
+      routeFile,
+      'export function OPTIONS() {}\nexport async function POST() {}\n'
+    );
+    writeJson(overridesPath, {
+      routes: {
+        [routeId]: {
+          methods: {
+            OPTIONS: {
+              status: 'migrated',
+              targetOwner: 'rust-backend',
+            },
+          },
+        },
+      },
+    });
+    writeManifest({ appDir, manifestPath, overridesPath, rootDir });
+
+    const result = checkManifestGates({
+      appDir,
+      manifestPath,
+      overridesPath,
+      requireMigrated: true,
+      rootDir,
+    });
+    const legacyGate = result.gates.find(
+      (gate) => gate.id === 'no-legacy-routes'
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(legacyGate.ok, false);
+    assert.match(
+      legacyGate.detail,
+      /1 route artifacts still have legacy-next/u
+    );
+  } finally {
+    fs.rmSync(rootDir, { force: true, recursive: true });
+  }
+});
+
 test('checkManifestGates fails when any route or API is unmapped', () => {
   const fixture = createCutoverFixture();
 

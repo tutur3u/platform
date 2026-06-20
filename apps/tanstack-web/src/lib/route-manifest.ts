@@ -16,7 +16,9 @@ export type RouteManifestSummary = {
 export type RouteManifestRoute = {
   id: string;
   kind: string;
+  method?: string;
   methods: string[];
+  parentId?: string;
   routePath: string;
   sourceFile: string;
   status: 'accepted-removal' | 'legacy-next' | 'migrated';
@@ -41,7 +43,15 @@ export type RouteManifestProgress = {
   byOwner: RouteManifestProgressBucket[];
   topLegacyRoutes: Pick<
     RouteManifestRoute,
-    'kind' | 'methods' | 'routePath' | 'sourceFile' | 'status' | 'targetOwner'
+    | 'id'
+    | 'kind'
+    | 'method'
+    | 'methods'
+    | 'parentId'
+    | 'routePath'
+    | 'sourceFile'
+    | 'status'
+    | 'targetOwner'
   >[];
   totals: RouteManifestProgressBucket;
 };

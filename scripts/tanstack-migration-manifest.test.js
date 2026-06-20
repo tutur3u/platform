@@ -279,6 +279,122 @@ test('route overrides preserve migrated route-handler ownership', () => {
   );
 });
 
+test('route overrides can split method-level ownership', () => {
+  const { appDir, rootDir } = makeTempFixture();
+  const manifestPath = path.join(rootDir, 'route-manifest.json');
+  const overridesPath = path.join(rootDir, 'route-overrides.json');
+  const routeDir = path.join(appDir, 'api', 'auth', 'mobile', 'password-login');
+  const sourceFile = 'apps/web/src/app/api/auth/mobile/password-login/route.ts';
+  const routeId = `api:/api/auth/mobile/password-login:${sourceFile}`;
+
+  fs.mkdirSync(routeDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(routeDir, 'route.ts'),
+    'export function OPTIONS() {}\nexport async function POST() {}\n'
+  );
+  writeJson(overridesPath, {
+    routes: {
+      [routeId]: {
+        methods: {
+          OPTIONS: {
+            note: 'Rust owns preflight only.',
+            status: 'migrated',
+            targetOwner: 'rust-backend',
+          },
+        },
+      },
+    },
+  });
+
+  const manifest = writeManifest({
+    appDir,
+    manifestPath,
+    overridesPath,
+    rootDir,
+  });
+  const optionsRoute = manifest.routes.find(
+    (route) =>
+      route.id === `api:OPTIONS:/api/auth/mobile/password-login:${sourceFile}`
+  );
+  const postRoute = manifest.routes.find(
+    (route) =>
+      route.id === `api:POST:/api/auth/mobile/password-login:${sourceFile}`
+  );
+
+  assert.equal(
+    manifest.routes.some((route) => route.id === routeId),
+    false
+  );
+  assert.equal(optionsRoute.parentId, routeId);
+  assert.equal(optionsRoute.method, 'OPTIONS');
+  assert.deepEqual(optionsRoute.methods, ['OPTIONS']);
+  assert.equal(optionsRoute.status, 'migrated');
+  assert.equal(postRoute.parentId, routeId);
+  assert.equal(postRoute.method, 'POST');
+  assert.deepEqual(postRoute.methods, ['POST']);
+  assert.equal(postRoute.status, 'legacy-next');
+  assert.equal(manifest.progress.totals.migrated, 1);
+  assert.equal(manifest.progress.totals.remaining, 7);
+  assert.deepEqual(
+    checkManifest({
+      appDir,
+      manifestPath,
+      overridesPath,
+      requireMigrated: false,
+      rootDir,
+    }),
+    []
+  );
+});
+
+test('checkManifest reports stale method-level ownership metadata', () => {
+  const { appDir, rootDir } = makeTempFixture();
+  const manifestPath = path.join(rootDir, 'route-manifest.json');
+  const overridesPath = path.join(rootDir, 'route-overrides.json');
+  const routeDir = path.join(appDir, 'api', 'auth', 'mobile', 'password-login');
+  const routeId =
+    'api:/api/auth/mobile/password-login:apps/web/src/app/api/auth/mobile/password-login/route.ts';
+
+  fs.mkdirSync(routeDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(routeDir, 'route.ts'),
+    'export function OPTIONS() {}\nexport async function POST() {}\n'
+  );
+  writeJson(overridesPath, {
+    routes: {
+      [routeId]: {
+        methods: {
+          OPTIONS: {
+            status: 'migrated',
+            targetOwner: 'rust-backend',
+          },
+        },
+      },
+    },
+  });
+  const manifest = writeManifest({
+    appDir,
+    manifestPath,
+    overridesPath,
+    rootDir,
+  });
+  const optionRoute = manifest.routes.find(
+    (route) => route.method === 'OPTIONS' && route.parentId === routeId
+  );
+  delete optionRoute.parentId;
+  writeJson(manifestPath, manifest);
+
+  const errors = checkManifest({
+    appDir,
+    manifestPath,
+    overridesPath,
+    requireMigrated: false,
+    rootDir,
+  });
+
+  assert.match(errors.join('\n'), /parentId=/u);
+});
+
 test('route overrides reject unsupported ownership values', () => {
   const { appDir, rootDir } = makeTempFixture();
   const routeId = 'api:/api/health:apps/web/src/app/api/health/route.ts';
@@ -299,6 +415,33 @@ test('route overrides reject unsupported ownership values', () => {
         ]),
       }),
     /unsupported status: done[\s\S]*unsupported targetOwner: next/u
+  );
+});
+
+test('route overrides reject unknown method ownership', () => {
+  const { appDir, rootDir } = makeTempFixture();
+  const routeId = 'api:/api/health:apps/web/src/app/api/health/route.ts';
+
+  assert.throws(
+    () =>
+      inventoryNextAppRoutes({
+        appDir,
+        rootDir,
+        routeOverrides: new Map([
+          [
+            routeId,
+            {
+              methods: {
+                PATCH: {
+                  status: 'migrated',
+                  targetOwner: 'rust-backend',
+                },
+              },
+            },
+          ],
+        ]),
+      }),
+    /unknown exported method: PATCH/u
   );
 });
 

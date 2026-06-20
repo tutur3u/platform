@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 1078,
-        "migrated": 10,
-        "percentComplete": 1.01,
+        "migrated": 15,
+        "percentComplete": 1.46,
         "remaining": 1078,
-        "terminal": 11,
-        "total": 1089,
+        "terminal": 16,
+        "total": 1094,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 1098,
-        "migrated": 13,
-        "percentComplete": 1.26,
+        "migrated": 18,
+        "percentComplete": 1.7,
         "remaining": 1098,
-        "terminal": 14,
-        "total": 1112,
+        "terminal": 19,
+        "total": 1117,
         "unknownStatus": 0
       },
       {
@@ -144,7 +144,8 @@
         "routePath": "/api/:wsId/calendar/auto-schedule",
         "sourceFile": "apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/:wsId/calendar/auto-schedule:apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts"
       },
       {
         "kind": "api",
@@ -152,7 +153,8 @@
         "routePath": "/api/:wsId/crawlers/domains",
         "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/domains/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts"
       },
       {
         "kind": "api",
@@ -160,7 +162,8 @@
         "routePath": "/api/:wsId/crawlers/list",
         "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/list/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/:wsId/crawlers/list:apps/web/src/app/api/[wsId]/crawlers/list/route.ts"
       },
       {
         "kind": "api",
@@ -168,7 +171,8 @@
         "routePath": "/api/:wsId/crawlers/uncrawled",
         "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/:wsId/crawlers/uncrawled:apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts"
       },
       {
         "kind": "api",
@@ -176,7 +180,8 @@
         "routePath": "/api/:wsId/task/:taskId/edit",
         "sourceFile": "apps/web/src/app/api/[wsId]/task/[taskId]/edit/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/:wsId/task/:taskId/edit:apps/web/src/app/api/[wsId]/task/[taskId]/edit/route.ts"
       },
       {
         "kind": "api",
@@ -184,7 +189,8 @@
         "routePath": "/api/:wsId/task/create",
         "sourceFile": "apps/web/src/app/api/[wsId]/task/create/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/:wsId/task/create:apps/web/src/app/api/[wsId]/task/create/route.ts"
       },
       {
         "kind": "api",
@@ -192,7 +198,8 @@
         "routePath": "/api/admin/tasks/embeddings/generate",
         "sourceFile": "apps/web/src/app/api/admin/tasks/embeddings/generate/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/admin/tasks/embeddings/generate:apps/web/src/app/api/admin/tasks/embeddings/generate/route.ts"
       },
       {
         "kind": "api",
@@ -200,7 +207,8 @@
         "routePath": "/api/admin/tasks/embeddings/stats",
         "sourceFile": "apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/admin/tasks/embeddings/stats:apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts"
       },
       {
         "kind": "api",
@@ -208,7 +216,8 @@
         "routePath": "/api/ai/chat",
         "sourceFile": "apps/web/src/app/api/ai/chat/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat:apps/web/src/app/api/ai/chat/route.ts"
       },
       {
         "kind": "api",
@@ -216,7 +225,8 @@
         "routePath": "/api/ai/chat/delete-file",
         "sourceFile": "apps/web/src/app/api/ai/chat/delete-file/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/delete-file:apps/web/src/app/api/ai/chat/delete-file/route.ts"
       },
       {
         "kind": "api",
@@ -224,7 +234,8 @@
         "routePath": "/api/ai/chat/file-urls",
         "sourceFile": "apps/web/src/app/api/ai/chat/file-urls/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/file-urls:apps/web/src/app/api/ai/chat/file-urls/route.ts"
       },
       {
         "kind": "api",
@@ -232,7 +243,8 @@
         "routePath": "/api/ai/chat/google",
         "sourceFile": "apps/web/src/app/api/ai/chat/google/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/google:apps/web/src/app/api/ai/chat/google/route.ts"
       },
       {
         "kind": "api",
@@ -240,7 +252,8 @@
         "routePath": "/api/ai/chat/google/new",
         "sourceFile": "apps/web/src/app/api/ai/chat/google/new/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/google/new:apps/web/src/app/api/ai/chat/google/new/route.ts"
       },
       {
         "kind": "api",
@@ -248,7 +261,8 @@
         "routePath": "/api/ai/chat/google/summary",
         "sourceFile": "apps/web/src/app/api/ai/chat/google/summary/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/google/summary:apps/web/src/app/api/ai/chat/google/summary/route.ts"
       },
       {
         "kind": "api",
@@ -256,7 +270,8 @@
         "routePath": "/api/ai/chat/new",
         "sourceFile": "apps/web/src/app/api/ai/chat/new/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/new:apps/web/src/app/api/ai/chat/new/route.ts"
       },
       {
         "kind": "api",
@@ -264,7 +279,8 @@
         "routePath": "/api/ai/chat/restore",
         "sourceFile": "apps/web/src/app/api/ai/chat/restore/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/restore:apps/web/src/app/api/ai/chat/restore/route.ts"
       },
       {
         "kind": "api",
@@ -272,7 +288,8 @@
         "routePath": "/api/ai/chat/signed-read-url",
         "sourceFile": "apps/web/src/app/api/ai/chat/signed-read-url/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/signed-read-url:apps/web/src/app/api/ai/chat/signed-read-url/route.ts"
       },
       {
         "kind": "api",
@@ -280,7 +297,8 @@
         "routePath": "/api/ai/chat/summary",
         "sourceFile": "apps/web/src/app/api/ai/chat/summary/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/summary:apps/web/src/app/api/ai/chat/summary/route.ts"
       },
       {
         "kind": "api",
@@ -288,7 +306,8 @@
         "routePath": "/api/ai/chat/upload-url",
         "sourceFile": "apps/web/src/app/api/ai/chat/upload-url/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/upload-url:apps/web/src/app/api/ai/chat/upload-url/route.ts"
       },
       {
         "kind": "api",
@@ -296,7 +315,8 @@
         "routePath": "/api/ai/course",
         "sourceFile": "apps/web/src/app/api/ai/course/route.ts",
         "status": "legacy-next",
-        "targetOwner": "rust-backend"
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/course:apps/web/src/app/api/ai/course/route.ts"
       }
     ],
     "totals": {
@@ -304,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1369,
-      "migrated": 119,
-      "percentComplete": 8.06,
+      "migrated": 124,
+      "percentComplete": 8.37,
       "remaining": 1369,
-      "terminal": 120,
-      "total": 1489,
+      "terminal": 125,
+      "total": 1494,
       "unknownStatus": 0
     }
   },
@@ -1304,13 +1324,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts",
+      "id": "api:GET:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts",
       "kind": "api",
-      "methods": ["GET", "OPTIONS"],
+      "methods": ["GET"],
       "routePath": "/api/v1/auth/mfa/mobile/approvals",
       "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mfa/mobile/approvals",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts"
     },
     {
       "id": "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts",
@@ -1340,31 +1373,70 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
+      "id": "api:POST:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/mobile/password-login",
       "sourceFile": "apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mobile/password-login",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/mobile/send-otp",
       "sourceFile": "apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts"
     },
     {
-      "id": "api:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts",
+      "id": "api:OPTIONS:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts",
       "kind": "api",
-      "methods": ["POST", "OPTIONS"],
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mobile/send-otp",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/auth/mobile/verify-otp",
       "sourceFile": "apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/mobile/verify-otp",
+      "sourceFile": "apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts"
     },
     {
       "id": "api:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts",
@@ -1376,13 +1448,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts",
+      "id": "api:GET:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts",
       "kind": "api",
-      "methods": ["GET", "OPTIONS"],
+      "methods": ["GET"],
       "routePath": "/api/v1/auth/otp/settings",
       "sourceFile": "apps/web/src/app/api/v1/auth/otp/settings/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/auth/otp/settings",
+      "sourceFile": "apps/web/src/app/api/v1/auth/otp/settings/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts"
     },
     {
       "id": "api:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts",
@@ -13716,11 +13801,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1089,
+    "apiRoutes": 1094,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 305,
-    "routeHandlers": 1112,
+    "routeHandlers": 1117,
     "methodCounts": {
       "GET": 634,
       "HEAD": 1,
@@ -13730,6 +13815,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1489
+    "total": 1494
   }
 }

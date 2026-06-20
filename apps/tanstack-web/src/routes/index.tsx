@@ -99,7 +99,10 @@ function MigrationDashboard() {
             </p>
             <div className="mt-5 grid gap-2">
               {progress.topLegacyRoutes.slice(0, 5).map((route) => (
-                <RouteBlocker route={route} key={route.sourceFile} />
+                <RouteBlocker
+                  route={route}
+                  key={route.id ?? `${route.sourceFile}:${route.method ?? ''}`}
+                />
               ))}
             </div>
           </div>

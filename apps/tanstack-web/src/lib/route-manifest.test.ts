@@ -41,6 +41,39 @@ describe('tanstackRouteManifest', () => {
     });
   });
 
+  it('marks auth preflight methods as Rust-migrated without hiding auth methods', () => {
+    expect(
+      tanstackRouteManifest.routes.find(
+        (route) =>
+          route.id ===
+          'api:OPTIONS:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts'
+      )
+    ).toMatchObject({
+      method: 'OPTIONS',
+      methods: ['OPTIONS'],
+      parentId:
+        'api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts',
+      routePath: '/api/v1/auth/mobile/password-login',
+      status: 'migrated',
+      targetOwner: 'rust-backend',
+    });
+    expect(
+      tanstackRouteManifest.routes.find(
+        (route) =>
+          route.id ===
+          'api:POST:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts'
+      )
+    ).toMatchObject({
+      method: 'POST',
+      methods: ['POST'],
+      parentId:
+        'api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts',
+      routePath: '/api/v1/auth/mobile/password-login',
+      status: 'legacy-next',
+      targetOwner: 'rust-backend',
+    });
+  });
+
   it('marks the .well-known catch-all route as Rust-migrated', () => {
     expect(
       tanstackRouteManifest.routes.find(

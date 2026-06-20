@@ -50,6 +50,51 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/v1/infrastructure/users/fields/types with the deterministic legacy field type payload and no longer opens a Supabase admin client for static metadata."
     },
+    "api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy mobile password login CORS preflight with the shared wildcard 204 response. POST remains legacy-owned until password auth/session handling moves behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy mobile send OTP CORS preflight with the shared wildcard 204 response. POST remains legacy-owned until OTP send side effects move behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy mobile verify OTP CORS preflight with the shared wildcard 204 response. POST remains legacy-owned until OTP verification and session responses move behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy OTP settings CORS preflight with the shared wildcard 204 response. GET remains legacy-owned until OTP settings lookup and diagnostics move behind the Rust backend."
+        }
+      }
+    },
+    "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy MFA mobile approvals bare 204 preflight. GET remains legacy-owned until approval listing and request log-drain behavior move behind the Rust backend."
+        }
+      }
+    },
     "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email:apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
