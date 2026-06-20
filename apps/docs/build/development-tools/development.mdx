@@ -155,7 +155,8 @@ do not add literal tokens or account-specific origins to docs, Wrangler config,
 package manifests, or source. After deploying preview Workers, run
 `bun smoke:cloudflare` with `BACKEND_WORKER_ORIGIN`,
 `TANSTACK_WEB_WORKER_ORIGIN`, and `BACKEND_INTERNAL_TOKEN` to verify backend
-health/readiness, protected migration status, and the TanStack root shell.
+health/readiness, protected migration status, missing/invalid token rejection,
+and the TanStack root shell.
 
 `bun dev:web` is intentionally lean: by default it starts only `apps/web` and
 does not start the `@tuturuuu/types` or `@tuturuuu/supabase` package watch

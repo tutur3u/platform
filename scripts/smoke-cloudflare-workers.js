@@ -169,6 +169,23 @@ function createSmokePlan({ backendOrigin, tanstackOrigin, token }) {
       path: '/api/migration/status',
     },
     {
+      expectedStatus: 401,
+      id: 'backend-migration-status-missing-token',
+      label: 'Rust migration status rejects missing token',
+      origin: backendOrigin,
+      path: '/api/migration/status',
+    },
+    {
+      expectedStatus: 401,
+      headers: {
+        authorization: 'Bearer invalid-cloudflare-smoke-token',
+      },
+      id: 'backend-migration-status-invalid-token',
+      label: 'Rust migration status rejects invalid token',
+      origin: backendOrigin,
+      path: '/api/migration/status',
+    },
+    {
       bodyIncludes: ['TanStack Start + Rust readiness', 'Backend reachable'],
       id: 'tanstack-root',
       label: 'TanStack Start root',
@@ -222,6 +239,8 @@ function getFailureDetail({ bodyIncludes, jsonCheck, payload, responseText }) {
 async function runProbe(probe, { fetchImpl = fetch, timeoutMs }) {
   const startedAt = performance.now();
   const url = new URL(probe.path, probe.origin).toString();
+  const expectedStatus = Number(probe.expectedStatus);
+  const hasExpectedStatus = Number.isFinite(expectedStatus);
 
   try {
     const response = await fetchImpl(url, {
@@ -230,7 +249,9 @@ async function runProbe(probe, { fetchImpl = fetch, timeoutMs }) {
       redirect: 'manual',
       signal: AbortSignal.timeout(timeoutMs),
     });
-    const successfulStatus = isSuccessfulStatus(response.status);
+    const successfulStatus = hasExpectedStatus
+      ? response.status === expectedStatus
+      : isSuccessfulStatus(response.status);
     const responseText =
       successfulStatus && (probe.bodyIncludes || probe.jsonCheck)
         ? await response.text()
@@ -246,11 +267,14 @@ async function runProbe(probe, { fetchImpl = fetch, timeoutMs }) {
           payload,
           responseText,
         })
-      : `HTTP ${response.status}`;
+      : hasExpectedStatus
+        ? `HTTP ${response.status}; expected ${expectedStatus}`
+        : `HTTP ${response.status}`;
 
     return {
       detail: failureDetail,
       durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+      expectedStatus: hasExpectedStatus ? expectedStatus : undefined,
       id: probe.id,
       label: probe.label,
       ok: successfulStatus && !failureDetail,

@@ -92,7 +92,7 @@ test('parseArgs requires worker origins and token', () => {
   );
 });
 
-test('createSmokePlan sends authorization only to the protected backend probe', () => {
+test('createSmokePlan sends the real authorization only to the protected success probe', () => {
   const plan = createSmokePlan({
     backendOrigin: 'https://backend.example.workers.dev',
     tanstackOrigin: 'https://tanstack.example.workers.dev',
@@ -102,9 +102,24 @@ test('createSmokePlan sends authorization only to the protected backend probe', 
   const migrationProbe = plan.find(
     (probe) => probe.id === 'backend-migration-status'
   );
+  const invalidTokenProbe = plan.find(
+    (probe) => probe.id === 'backend-migration-status-invalid-token'
+  );
   const publicProbe = plan.find((probe) => probe.id === 'backend-health');
 
   assert.equal(migrationProbe.headers.authorization, 'Bearer secret-token');
+  assert.equal(
+    invalidTokenProbe.headers.authorization,
+    'Bearer invalid-cloudflare-smoke-token'
+  );
+  assert.equal(
+    plan.filter(
+      (probe) =>
+        new Headers(probe.headers).get('authorization') ===
+        'Bearer secret-token'
+    ).length,
+    1
+  );
   assert.equal(publicProbe.headers, undefined);
 });
 
@@ -136,11 +151,21 @@ test('runSmoke fails unauthorized protected migration status responses', async (
     'Bearer secret-token'
   );
   assert.equal(report.results[2].status, 401);
+  assert.equal(report.results[3].ok, true);
+  assert.equal(report.results[3].expectedStatus, 401);
+  assert.equal(report.results[4].ok, true);
+  assert.equal(report.results[4].expectedStatus, 401);
 });
 
 test('runSmoke validates migration JSON shape and TanStack backend-connected shell body', async () => {
-  const fetchImpl = async (url) => {
+  const fetchImpl = async (url, init) => {
     if (url.endsWith('/api/migration/status')) {
+      const authorization = new Headers(init.headers).get('authorization');
+
+      if (authorization !== 'Bearer secret-token') {
+        return Response.json({ error: 'unauthorized' }, { status: 401 });
+      }
+
       return Response.json({
         backend: {
           deploymentTarget: 'cloudflare-workers',
@@ -171,6 +196,8 @@ test('runSmoke validates migration JSON shape and TanStack backend-connected she
       'backend-health',
       'backend-ready',
       'backend-migration-status',
+      'backend-migration-status-missing-token',
+      'backend-migration-status-invalid-token',
       'tanstack-root',
     ],
     reporter: 'scripts/smoke-cloudflare-workers.js',
@@ -181,8 +208,14 @@ test('runSmoke validates migration JSON shape and TanStack backend-connected she
 });
 
 test('runSmoke fails when the TanStack shell cannot reach the Rust backend', async () => {
-  const fetchImpl = async (url) => {
+  const fetchImpl = async (url, init) => {
     if (url.endsWith('/api/migration/status')) {
+      const authorization = new Headers(init.headers).get('authorization');
+
+      if (authorization !== 'Bearer secret-token') {
+        return Response.json({ error: 'unauthorized' }, { status: 401 });
+      }
+
       return Response.json({
         backend: {
           deploymentTarget: 'cloudflare-workers',
@@ -208,7 +241,7 @@ test('runSmoke fails when the TanStack shell cannot reach the Rust backend', asy
 
   assert.equal(report.ok, false);
   assert.equal(
-    report.results[3].detail,
+    report.results[5].detail,
     'response body did not include "Backend reachable"'
   );
 });

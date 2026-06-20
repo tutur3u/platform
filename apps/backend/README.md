@@ -150,8 +150,8 @@ curl -fsS \
 ```
 
 After both preview Workers are deployed, use the repo smoke command so the
-backend health/readiness probes, authenticated migration status, and TanStack
-root shell are verified together:
+backend health/readiness probes, authenticated migration status, missing/invalid
+migration-token rejection, and TanStack root shell are verified together:
 
 ```sh
 BACKEND_WORKER_ORIGIN=https://<backend-worker-origin> \

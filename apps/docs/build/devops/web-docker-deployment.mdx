@@ -233,7 +233,9 @@ incremental preview validation:
    ```
 
    Keep `BACKEND_INTERNAL_TOKEN` in the shell, ignored local env, or Wrangler
-   secret storage only.
+   secret storage only. The smoke report must include the positive authenticated
+   migration-status probe and the missing/invalid-token rejection probes before
+   the Cloudflare cutover gate can pass.
 
 Security expectations for this path:
 

@@ -109,6 +109,24 @@ function createValidCloudflareSmokeReport() {
       },
       {
         durationMs: 10,
+        expectedStatus: 401,
+        id: 'backend-migration-status-missing-token',
+        label: 'Rust migration status rejects missing token',
+        ok: true,
+        status: 401,
+        url: 'https://backend.example.workers.dev/api/migration/status',
+      },
+      {
+        durationMs: 10,
+        expectedStatus: 401,
+        id: 'backend-migration-status-invalid-token',
+        label: 'Rust migration status rejects invalid token',
+        ok: true,
+        status: 401,
+        url: 'https://backend.example.workers.dev/api/migration/status',
+      },
+      {
+        durationMs: 10,
         id: 'tanstack-root',
         label: 'TanStack Start root',
         ok: true,
@@ -472,6 +490,23 @@ test('validateCloudflareSmokeReport rejects failed Worker smoke probes', () => {
   assert.match(validation.failures.join('\n'), /did not pass/u);
   assert.match(validation.failures.join('\n'), /backend-migration-status/u);
   assert.match(validation.failures.join('\n'), /status 401/u);
+});
+
+test('validateCloudflareSmokeReport rejects negative auth probes that unexpectedly succeed', () => {
+  const report = createValidCloudflareSmokeReport();
+  const missingTokenProbe = report.results.find(
+    (result) => result.id === 'backend-migration-status-missing-token'
+  );
+  missingTokenProbe.status = 200;
+
+  const validation = validateCloudflareSmokeReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(
+    validation.failures.join('\n'),
+    /backend-migration-status-missing-token/u
+  );
+  assert.match(validation.failures.join('\n'), /expected 401/u);
 });
 
 test('validateBenchmarkReport rejects frontend 404 benchmark samples', () => {

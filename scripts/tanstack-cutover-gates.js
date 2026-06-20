@@ -38,6 +38,8 @@ const REQUIRED_CLOUDFLARE_SMOKE_PROBES = Object.freeze([
   'backend-health',
   'backend-ready',
   'backend-migration-status',
+  'backend-migration-status-missing-token',
+  'backend-migration-status-invalid-token',
   'tanstack-root',
 ]);
 
@@ -627,11 +629,20 @@ function validateCloudflareSmokeReport(report) {
     }
 
     const status = Number(result.status);
-    if (!Number.isFinite(status) || status < 200 || status >= 400) {
+    const expectedStatus = Number(result.expectedStatus);
+    const statusMatchesExpectation = Number.isFinite(expectedStatus)
+      ? status === expectedStatus
+      : status >= 200 && status < 400;
+
+    if (!Number.isFinite(status) || !statusMatchesExpectation) {
       failures.push(
-        `${requiredProbe} smoke probe returned status ${
-          result.status ?? 'missing'
-        }.`
+        Number.isFinite(expectedStatus)
+          ? `${requiredProbe} smoke probe returned status ${
+              result.status ?? 'missing'
+            }; expected ${expectedStatus}.`
+          : `${requiredProbe} smoke probe returned status ${
+              result.status ?? 'missing'
+            }.`
       );
     }
   }

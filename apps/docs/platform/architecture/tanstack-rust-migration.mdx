@@ -184,12 +184,13 @@ bun smoke:cloudflare \
 For deployed previews, replace those local origins with the `workers.dev` or
 custom preview origins returned by Wrangler. Set `BACKEND_INTERNAL_TOKEN` in the
 shell before running the smoke command. The smoke command probes `/healthz`,
-`/readyz`, authenticated `/api/migration/status`, and the TanStack root shell.
-It fails on `4xx` and `5xx` responses, requires the TanStack root shell to show
-`Backend reachable`, and redacts the bearer token from output. That final check
-proves the deployed Start server function can reach the Rust Worker through the
-configured backend origin and token, not just that the static shell rendered.
-Use `--output` to persist the smoke report under ignored
+`/readyz`, authenticated `/api/migration/status`, missing/invalid-token
+rejection for the protected migration status endpoint, and the TanStack root
+shell. It fails on unexpected `4xx` and `5xx` responses, requires the TanStack
+root shell to show `Backend reachable`, and redacts the bearer token from
+output. That final check proves the deployed Start server function can reach
+the Rust Worker through the configured backend origin and token, not just that
+the static shell rendered. Use `--output` to persist the smoke report under ignored
 `tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json` when the run is
 part of a cutover rehearsal.
 For deployed E2E smoke runs, set `TANSTACK_EXPECT_BACKEND_REACHABLE=1` and
@@ -723,7 +724,9 @@ Default gates:
 
 - frontend route p95 must not regress more than `25%`
 - Cloudflare smoke evidence must include passing `backend-health`,
-  `backend-ready`, `backend-migration-status`, and `tanstack-root` probes
+  `backend-ready`, `backend-migration-status`,
+  `backend-migration-status-missing-token`,
+  `backend-migration-status-invalid-token`, and `tanstack-root` probes
 - cutover reports must include the full metric comparison contract:
   API p50/p95/p99, dev ready time, first-route cold time, warm navigation time,
   Docker build time, image size, JS output size, production RSS/CPU baseline,
