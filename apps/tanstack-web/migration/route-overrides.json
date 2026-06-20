@@ -324,6 +324,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/quizzes preserves the legacy 308 redirect to /:wsId/education/library/quizzes. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/library:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/education/library ports the legacy static education library card index with localized copy and shared education shell primitives. This marks only the page artifact migrated; parent dashboard layout/session and library resource pages remain legacy-owned."
+    },
     "page:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

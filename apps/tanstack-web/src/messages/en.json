@@ -344,6 +344,16 @@
   "sidebar_tabs": {
     "polls": "Polls"
   },
+  "workspace-education-tabs": {
+    "library": "Library",
+    "library_description": "Manage reusable quizzes, quiz sets, and flashcards for course builders.",
+    "library_flashcards": "Library Flashcards",
+    "library_quiz_sets": "Library Quiz Sets",
+    "library_quizzes": "Library Quizzes"
+  },
+  "ws-flashcards": {
+    "description": "Manage flashcards in your workspace that have a front and back side for learning purposes."
+  },
   "ws-polls": {
     "active": "Active",
     "active_polls": "Active Polls",
@@ -395,6 +405,12 @@
     "voters": "voters",
     "votes": "votes",
     "yes_no": "Yes/No"
+  },
+  "ws-quiz-sets": {
+    "description": "Quiz sets are used to group quizzes together for learning purposes."
+  },
+  "ws-quizzes": {
+    "description": "Manage quizzes in your workspace across multiple question types for learning purposes."
   },
   "contact": {
     "banner": {

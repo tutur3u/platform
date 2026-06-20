@@ -344,6 +344,16 @@
   "sidebar_tabs": {
     "polls": "Bỏ phiếu"
   },
+  "workspace-education-tabs": {
+    "library": "Thư viện",
+    "library_description": "Quản lý bộ câu hỏi, bộ đề và thẻ ghi nhớ dùng lại cho trình xây dựng khóa học.",
+    "library_flashcards": "Thẻ ghi nhớ thư viện",
+    "library_quiz_sets": "Bộ đề thư viện",
+    "library_quizzes": "Câu hỏi thư viện"
+  },
+  "ws-flashcards": {
+    "description": "Quản lý thẻ từ vựng trong không gian làm việc của bạn có một mặt trước và mặt sau dành cho mục đích học tập."
+  },
   "ws-polls": {
     "active": "Đang hoạt động",
     "active_polls": "Bỏ phiếu đang hoạt động",
@@ -395,6 +405,12 @@
     "voters": "người bỏ phiếu",
     "votes": "lượt bỏ phiếu",
     "yes_no": "Có/Không"
+  },
+  "ws-quiz-sets": {
+    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập."
+  },
+  "ws-quizzes": {
+    "description": "Quản lý bộ câu hỏi trắc nghiệm trong không gian làm việc của bạn với nhiều loại câu hỏi phục vụ học tập."
   },
   "contact": {
     "banner": {

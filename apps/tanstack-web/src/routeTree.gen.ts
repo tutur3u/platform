@@ -84,6 +84,7 @@ import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent'
 import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale/$wsId/education/quizzes'
 import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$locale/$wsId/education/quiz-sets'
+import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library'
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards'
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new'
 import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/settings/infrastructure/app-coordination'
@@ -486,6 +487,12 @@ const LocaleWsIdEducationQuizSetsRoute =
     path: '/$locale/$wsId/education/quiz-sets',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdEducationLibraryRoute =
+  LocaleWsIdEducationLibraryRouteImport.update({
+    id: '/$locale/$wsId/education/library',
+    path: '/$locale/$wsId/education/library',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleWsIdEducationFlashcardsRoute =
   LocaleWsIdEducationFlashcardsRouteImport.update({
     id: '/$locale/$wsId/education/flashcards',
@@ -596,6 +603,7 @@ export interface FileRoutesByFullPath {
   '/$locale/ui/': typeof LocaleUiIndexRoute
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute
+  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
@@ -680,6 +688,7 @@ export interface FileRoutesByTo {
   '/$locale/ui': typeof LocaleUiIndexRoute
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute
+  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
@@ -765,6 +774,7 @@ export interface FileRoutesById {
   '/$locale/ui/': typeof LocaleUiIndexRoute
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute
+  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
@@ -851,6 +861,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/education/flashcards'
+    | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
     | '/$locale/$wsId/mail/sent'
@@ -935,6 +946,7 @@ export interface FileRouteTypes {
     | '/$locale/ui'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/education/flashcards'
+    | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
     | '/$locale/$wsId/mail/sent'
@@ -1019,6 +1031,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/education/flashcards'
+    | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
     | '/$locale/$wsId/mail/sent'
@@ -1102,6 +1115,7 @@ export interface RootRouteChildren {
   LocaleUiIndexRoute: typeof LocaleUiIndexRoute
   LocaleWsIdAiChatNewRoute: typeof LocaleWsIdAiChatNewRoute
   LocaleWsIdEducationFlashcardsRoute: typeof LocaleWsIdEducationFlashcardsRoute
+  LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute
@@ -1643,6 +1657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationQuizSetsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/education/library': {
+      id: '/$locale/$wsId/education/library'
+      path: '/$locale/$wsId/education/library'
+      fullPath: '/$locale/$wsId/education/library'
+      preLoaderRoute: typeof LocaleWsIdEducationLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/education/flashcards': {
       id: '/$locale/$wsId/education/flashcards'
       path: '/$locale/$wsId/education/flashcards'
@@ -1804,6 +1825,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleUiIndexRoute: LocaleUiIndexRoute,
   LocaleWsIdAiChatNewRoute: LocaleWsIdAiChatNewRoute,
   LocaleWsIdEducationFlashcardsRoute: LocaleWsIdEducationFlashcardsRoute,
+  LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRoute,
   LocaleWsIdEducationQuizSetsRoute: LocaleWsIdEducationQuizSetsRoute,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,

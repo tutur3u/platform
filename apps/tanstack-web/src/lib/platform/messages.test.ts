@@ -47,6 +47,40 @@ describe('message adapters', () => {
     expect(getMessages('vi')['ws-polls']).toEqual(legacyViMessages['ws-polls']);
   });
 
+  it('keeps migrated education library messages aligned with the legacy web namespace', () => {
+    expect(getMessages('en')['workspace-education-tabs']).toMatchObject({
+      library: legacyEnMessages['workspace-education-tabs'].library,
+      library_description:
+        legacyEnMessages['workspace-education-tabs'].library_description,
+      library_flashcards:
+        legacyEnMessages['workspace-education-tabs'].library_flashcards,
+      library_quiz_sets:
+        legacyEnMessages['workspace-education-tabs'].library_quiz_sets,
+      library_quizzes:
+        legacyEnMessages['workspace-education-tabs'].library_quizzes,
+    });
+    expect(getMessages('vi')['workspace-education-tabs']).toMatchObject({
+      library: legacyViMessages['workspace-education-tabs'].library,
+      library_description:
+        legacyViMessages['workspace-education-tabs'].library_description,
+      library_flashcards:
+        legacyViMessages['workspace-education-tabs'].library_flashcards,
+      library_quiz_sets:
+        legacyViMessages['workspace-education-tabs'].library_quiz_sets,
+      library_quizzes:
+        legacyViMessages['workspace-education-tabs'].library_quizzes,
+    });
+    expect(getMessages('en')['ws-quizzes'].description).toBe(
+      legacyEnMessages['ws-quizzes'].description
+    );
+    expect(getMessages('vi')['ws-quiz-sets'].description).toBe(
+      legacyViMessages['ws-quiz-sets'].description
+    );
+    expect(getMessages('en')['ws-flashcards'].description).toBe(
+      legacyEnMessages['ws-flashcards'].description
+    );
+  });
+
   it('keeps migrated contact page messages aligned with the legacy web namespace', () => {
     expect(getMessages('en').contact).toMatchObject(legacyEnMessages.contact);
     expect(getMessages('vi').contact).toMatchObject(legacyViMessages.contact);
