@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 
 const {
   createSmokePlan,
@@ -7,6 +8,7 @@ const {
   isSuccessfulStatus,
   parseArgs,
   runSmoke,
+  writeSmokeReport,
 } = require('./smoke-cloudflare-workers.js');
 
 test('parseArgs reads Cloudflare smoke inputs from env', () => {
@@ -19,6 +21,22 @@ test('parseArgs reads Cloudflare smoke inputs from env', () => {
   assert.equal(args.backendOrigin, 'https://backend.example.workers.dev');
   assert.equal(args.tanstackOrigin, 'https://tanstack.example.workers.dev');
   assert.equal(args.token, 'token');
+});
+
+test('parseArgs accepts Cloudflare smoke report output paths', () => {
+  const args = parseArgs(
+    ['--output', 'tmp/benchmarks/web-migration/smoke/report.json'],
+    {
+      BACKEND_INTERNAL_TOKEN: 'token',
+      BACKEND_WORKER_ORIGIN: 'https://backend.example.workers.dev',
+      TANSTACK_WEB_WORKER_ORIGIN: 'https://tanstack.example.workers.dev',
+    }
+  );
+
+  assert.equal(
+    args.outputPath,
+    'tmp/benchmarks/web-migration/smoke/report.json'
+  );
 });
 
 test('parseArgs requires worker origins and token', () => {
@@ -153,5 +171,44 @@ test('status helper and formatted output do not expose bearer tokens', () => {
       status: 401,
     }),
     /Bearer|secret-token/u
+  );
+});
+
+test('writeSmokeReport keeps reports under ignored benchmark output', () => {
+  const report = {
+    generatedAt: '2026-06-20T00:00:00.000Z',
+    ok: true,
+    results: [],
+  };
+  const writes = [];
+  const fsImpl = {
+    mkdirSync: (dirPath) => writes.push(['mkdir', dirPath]),
+    writeFileSync: (filePath, content) =>
+      writes.push(['write', filePath, content]),
+  };
+
+  const reportPath = writeSmokeReport(
+    report,
+    'tmp/benchmarks/web-migration/cloudflare/smoke.json',
+    fsImpl
+  );
+
+  assert.match(
+    reportPath,
+    /tmp\/benchmarks\/web-migration\/cloudflare\/smoke\.json$/u
+  );
+  assert.equal(writes.length, 2);
+  assert.equal(
+    JSON.parse(writes[1][2]).generatedAt,
+    '2026-06-20T00:00:00.000Z'
+  );
+  assert.throws(
+    () =>
+      writeSmokeReport(
+        report,
+        path.join('/tmp', 'outside-cloudflare-smoke.json'),
+        fsImpl
+      ),
+    /Cloudflare smoke reports must be written under tmp\/benchmarks\/web-migration/u
   );
 });

@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
+const fs = require('node:fs');
+const path = require('node:path');
 const { performance } = require('node:perf_hooks');
 
+const ROOT_DIR = path.resolve(__dirname, '..');
+const DEFAULT_OUTPUT_DIR = path.join(
+  ROOT_DIR,
+  'tmp',
+  'benchmarks',
+  'web-migration'
+);
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 function parsePositiveInteger(value, fallback) {
@@ -31,6 +40,7 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
   const args = {
     backendOrigin: env.BACKEND_WORKER_ORIGIN,
     help: false,
+    outputPath: env.CLOUDFLARE_SMOKE_REPORT_PATH ?? null,
     tanstackOrigin: env.TANSTACK_WEB_WORKER_ORIGIN,
     timeoutMs: parsePositiveInteger(
       env.CLOUDFLARE_SMOKE_TIMEOUT_MS,
@@ -62,6 +72,12 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
 
     if (arg === '--timeout-ms') {
       args.timeoutMs = parsePositiveInteger(argv[index + 1], args.timeoutMs);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--output') {
+      args.outputPath = argv[index + 1];
       index += 1;
       continue;
     }
@@ -241,6 +257,40 @@ function formatResult(result) {
   return `${prefix} ${result.label} ${status} durationMs=${result.durationMs}${detail}`;
 }
 
+function isInsideDirectory(candidatePath, parentPath) {
+  const relativePath = path.relative(parentPath, candidatePath);
+
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+  );
+}
+
+function writeSmokeReport(report, outputPath, fsImpl = fs) {
+  if (!outputPath) {
+    return null;
+  }
+
+  const resolvedOutputPath = path.resolve(outputPath);
+
+  if (!isInsideDirectory(resolvedOutputPath, DEFAULT_OUTPUT_DIR)) {
+    throw new Error(
+      `Cloudflare smoke reports must be written under ${path.relative(
+        ROOT_DIR,
+        DEFAULT_OUTPUT_DIR
+      )}; got ${path.relative(ROOT_DIR, resolvedOutputPath)}.`
+    );
+  }
+
+  fsImpl.mkdirSync(path.dirname(resolvedOutputPath), { recursive: true });
+  fsImpl.writeFileSync(
+    resolvedOutputPath,
+    `${JSON.stringify(report, null, 2)}\n`
+  );
+
+  return resolvedOutputPath;
+}
+
 function printHelp() {
   console.log(`Usage: bun smoke:cloudflare [options]
 
@@ -250,6 +300,7 @@ Required inputs, via environment or flags:
   BACKEND_INTERNAL_TOKEN / --token <token>
 
 Options:
+  --output <path>
   --timeout-ms <milliseconds>
   --insecure
 `);
@@ -264,9 +315,16 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   const report = await runSmoke(options);
+  const reportPath = writeSmokeReport(report, options.outputPath);
 
   for (const result of report.results) {
     console.log(formatResult(result));
+  }
+
+  if (reportPath) {
+    console.log(
+      `Cloudflare smoke report written to ${path.relative(ROOT_DIR, reportPath)}`
+    );
   }
 
   return report.ok ? 0 : 1;
@@ -292,4 +350,5 @@ module.exports = {
   parseArgs,
   runProbe,
   runSmoke,
+  writeSmokeReport,
 };

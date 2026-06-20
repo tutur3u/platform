@@ -34,6 +34,12 @@ const REQUIRED_E2E_REGRESSION_METRICS = Object.freeze([
   { key: 'passRate', label: 'pass rate', threshold: 0, higherIsBetter: true },
   { key: 'wallMs', label: 'wall time', threshold: 0.25 },
 ]);
+const REQUIRED_CLOUDFLARE_SMOKE_PROBES = Object.freeze([
+  'backend-health',
+  'backend-ready',
+  'backend-migration-status',
+  'tanstack-root',
+]);
 
 function readJson(filePath, fsImpl = fs) {
   return JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
@@ -45,11 +51,13 @@ function parseArgs(argv = process.argv.slice(2)) {
     benchmarkProfile: 'full',
     benchmarkReportPath: null,
     benchmarkSetup: 'compare',
+    cloudflareSmokeReportPath: null,
     e2eReportPath: null,
     manifestPath: DEFAULT_MANIFEST_PATH,
     outputPath: null,
     overridesPath: DEFAULT_OVERRIDES_PATH,
     requireBenchmark: true,
+    requireCloudflareSmoke: true,
     requireE2E: true,
     requireMigrated: true,
   };
@@ -99,6 +107,12 @@ function parseArgs(argv = process.argv.slice(2)) {
       continue;
     }
 
+    if (arg === '--cloudflare-smoke-report') {
+      args.cloudflareSmokeReportPath = path.resolve(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--output') {
       args.outputPath = path.resolve(argv[index + 1]);
       index += 1;
@@ -112,6 +126,11 @@ function parseArgs(argv = process.argv.slice(2)) {
 
     if (arg === '--skip-benchmark') {
       args.requireBenchmark = false;
+      continue;
+    }
+
+    if (arg === '--skip-cloudflare-smoke') {
+      args.requireCloudflareSmoke = false;
       continue;
     }
 
@@ -580,14 +599,105 @@ function checkE2EGate({ e2eReportPath, fsImpl = fs, requireE2E = true } = {}) {
   };
 }
 
+function validateCloudflareSmokeReport(report) {
+  const failures = [];
+  const results = Array.isArray(report.results) ? report.results : [];
+  const resultById = new Map(
+    results
+      .filter((result) => typeof result?.id === 'string')
+      .map((result) => [result.id, result])
+  );
+
+  if (report.ok !== true) {
+    failures.push('Cloudflare smoke report did not pass.');
+  }
+
+  for (const requiredProbe of REQUIRED_CLOUDFLARE_SMOKE_PROBES) {
+    const result = resultById.get(requiredProbe);
+
+    if (!result) {
+      failures.push(`Cloudflare smoke report is missing ${requiredProbe}.`);
+      continue;
+    }
+
+    if (result.ok !== true) {
+      failures.push(
+        `${requiredProbe} smoke probe failed: ${result.detail ?? 'no detail'}.`
+      );
+    }
+
+    const status = Number(result.status);
+    if (!Number.isFinite(status) || status < 200 || status >= 400) {
+      failures.push(
+        `${requiredProbe} smoke probe returned status ${
+          result.status ?? 'missing'
+        }.`
+      );
+    }
+  }
+
+  return {
+    failures,
+    ok: failures.length === 0,
+  };
+}
+
+function checkCloudflareSmokeGate({
+  cloudflareSmokeReportPath,
+  fsImpl = fs,
+  requireCloudflareSmoke = true,
+} = {}) {
+  if (!cloudflareSmokeReportPath) {
+    return {
+      gate: gate(
+        'cloudflare-smoke',
+        'Cloudflare smoke',
+        !requireCloudflareSmoke,
+        requireCloudflareSmoke
+          ? 'No Cloudflare smoke report was provided.'
+          : 'Cloudflare smoke report was not required for this run.'
+      ),
+      report: null,
+    };
+  }
+
+  const report = readJson(cloudflareSmokeReportPath, fsImpl);
+  const validation = validateCloudflareSmokeReport(report);
+
+  return {
+    gate: gate(
+      'cloudflare-smoke',
+      'Cloudflare smoke',
+      validation.ok,
+      validation.ok
+        ? 'Cloudflare smoke report passed for Rust backend and TanStack Workers.'
+        : validation.failures.join('\n')
+    ),
+    report: {
+      generatedAt: report.generatedAt,
+      ok: report.ok,
+      probes: Array.isArray(report.results)
+        ? report.results.map((result) => result.id).filter(Boolean)
+        : [],
+    },
+  };
+}
+
 function runCutoverGates(options = {}) {
   const manifest = checkManifestGates(options);
   const benchmark = checkBenchmarkGate(options);
   const e2e = checkE2EGate(options);
-  const gates = [...manifest.gates, benchmark.gate, e2e.gate];
+  const cloudflareSmoke = checkCloudflareSmokeGate(options);
+  const gates = [
+    ...manifest.gates,
+    benchmark.gate,
+    e2e.gate,
+    cloudflareSmoke.gate,
+  ];
 
   return {
     benchmark: benchmark.report,
+    cloudflareSmoke: cloudflareSmoke.report,
     e2e: e2e.report,
     generatedAt: new Date().toISOString(),
     gates,
@@ -619,9 +729,11 @@ Options:
   --benchmark-profile <profile>   default: full
   --benchmark-setup <setup>       default: compare
   --e2e-report <path>
+  --cloudflare-smoke-report <path>
   --output <path>
   --allow-legacy
   --skip-benchmark
+  --skip-cloudflare-smoke
   --skip-e2e
 `);
 }
@@ -662,11 +774,13 @@ if (require.main === module) {
 
 module.exports = {
   checkBenchmarkGate,
+  checkCloudflareSmokeGate,
   checkE2EGate,
   checkManifestGates,
   countManifestRoutes,
   parseArgs,
   runCutoverGates,
   validateBenchmarkReport,
+  validateCloudflareSmokeReport,
   validateE2EReport,
 };

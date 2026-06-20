@@ -177,7 +177,8 @@ Then run the preview smoke command against the returned Worker origins:
 BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
 BACKEND_WORKER_ORIGIN=http://localhost:8780 \
 TANSTACK_WEB_WORKER_ORIGIN=http://localhost:8784 \
-bun smoke:cloudflare
+bun smoke:cloudflare \
+  --output tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json
 ```
 
 For deployed previews, replace those local origins with the `workers.dev` or
@@ -188,6 +189,9 @@ It fails on `4xx` and `5xx` responses, requires the TanStack root shell to show
 `Backend reachable`, and redacts the bearer token from output. That final check
 proves the deployed Start server function can reach the Rust Worker through the
 configured backend origin and token, not just that the static shell rendered.
+Use `--output` to persist the smoke report under ignored
+`tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json` when the run is
+part of a cutover rehearsal.
 For deployed E2E smoke runs, set `TANSTACK_EXPECT_BACKEND_REACHABLE=1` and
 `TANSTACK_EXPECT_BACKEND_TARGET=cloudflare-workers` so the migration shell must
 prove the frontend can reach the Rust Worker.
@@ -300,12 +304,14 @@ as `legacy-next`:
 bun migration:tanstack:cutover-check
 ```
 
-The full cutover gate also requires explicit Docker E2E and benchmark evidence:
+The full cutover gate also requires explicit Docker E2E, benchmark, and
+Cloudflare smoke evidence:
 
 ```bash
 bun migration:tanstack:gates -- \
   --e2e-report tmp/e2e/web-migration/compare-report.json \
-  --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json
+  --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json \
+  --cloudflare-smoke-report tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json
 ```
 
 This command validates route parity, terminal migration statuses, backend-owned
@@ -313,7 +319,8 @@ route mapping, compare-mode Docker E2E evidence, and a full compare benchmark
 report without committing generated artifacts. The benchmark report must be
 created with `--setup compare --profile full` and include every required metric
 comparison; smoke reports are useful for previews, but they are not cutover
-evidence.
+evidence. The Cloudflare smoke report must come from `bun smoke:cloudflare`
+against live Rust backend and TanStack Worker origins.
 
 The manifest also includes `progress.byOwner`, `progress.byKind`, and
 `progress.topLegacyRoutes`. Use those fields when splitting the remaining port
@@ -708,12 +715,15 @@ bun benchmark:web-setups -- \
 ```
 
 After the full benchmark writes a report, pass that report to
-`bun migration:tanstack:gates` with the Docker E2E compare report. Generated
-benchmark and E2E reports stay under ignored `tmp/` paths.
+`bun migration:tanstack:gates` with the Docker E2E compare report and
+Cloudflare smoke report. Generated benchmark, smoke, and E2E reports stay under
+ignored `tmp/` paths.
 
 Default gates:
 
 - frontend route p95 must not regress more than `25%`
+- Cloudflare smoke evidence must include passing `backend-health`,
+  `backend-ready`, `backend-migration-status`, and `tanstack-root` probes
 - cutover reports must include the full metric comparison contract:
   API p50/p95/p99, dev ready time, first-route cold time, warm navigation time,
   Docker build time, image size, JS output size, production RSS/CPU baseline,
@@ -741,7 +751,8 @@ to make a run pass.
 3. `bun test:e2e:web:docker -- --frontend compare` passes and has a compare
    evidence report.
 4. `bun benchmark:web-setups -- --setup compare --profile full --require-all --insecure` passes or has approved exceptions.
-5. `bun migration:tanstack:gates -- --e2e-report <path> --benchmark-report <path>` passes.
-6. `bun check:docker` and `bun check` pass.
-7. Legacy `apps/web` remains available as the rollback fixture until production
+5. `bun smoke:cloudflare --output <path>` passes against the preview Workers.
+6. `bun migration:tanstack:gates -- --e2e-report <path> --benchmark-report <path> --cloudflare-smoke-report <path>` passes.
+7. `bun check:docker` and `bun check` pass.
+8. Legacy `apps/web` remains available as the rollback fixture until production
    monitoring shows the TanStack/Rust path is stable.

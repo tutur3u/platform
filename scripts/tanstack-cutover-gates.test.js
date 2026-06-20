@@ -10,6 +10,7 @@ const {
   parseArgs,
   runCutoverGates,
   validateBenchmarkReport,
+  validateCloudflareSmokeReport,
   validateE2EReport,
 } = require('./tanstack-cutover-gates.js');
 const { METRIC_DEFINITIONS } = require('./benchmark-web-setups.js');
@@ -77,6 +78,47 @@ function createValidBenchmarkReport() {
   };
 }
 
+function createValidCloudflareSmokeReport() {
+  return {
+    generatedAt: '2026-06-20T00:00:00.000Z',
+    ok: true,
+    results: [
+      {
+        durationMs: 10,
+        id: 'backend-health',
+        label: 'Rust backend health',
+        ok: true,
+        status: 200,
+        url: 'https://backend.example.workers.dev/healthz',
+      },
+      {
+        durationMs: 10,
+        id: 'backend-ready',
+        label: 'Rust backend readiness',
+        ok: true,
+        status: 200,
+        url: 'https://backend.example.workers.dev/readyz',
+      },
+      {
+        durationMs: 10,
+        id: 'backend-migration-status',
+        label: 'Rust migration status',
+        ok: true,
+        status: 200,
+        url: 'https://backend.example.workers.dev/api/migration/status',
+      },
+      {
+        durationMs: 10,
+        id: 'tanstack-root',
+        label: 'TanStack Start root',
+        ok: true,
+        status: 200,
+        url: 'https://tanstack.example.workers.dev/',
+      },
+    ],
+  };
+}
+
 function createCutoverFixture() {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanstack-gates-'));
   const appDir = path.join(rootDir, 'apps', 'web', 'src', 'app');
@@ -121,6 +163,12 @@ function createCutoverFixture() {
   const benchmarkReportPath = path.join(rootDir, 'benchmark-report.json');
   writeJson(benchmarkReportPath, createValidBenchmarkReport());
 
+  const cloudflareSmokeReportPath = path.join(
+    rootDir,
+    'cloudflare-smoke-report.json'
+  );
+  writeJson(cloudflareSmokeReportPath, createValidCloudflareSmokeReport());
+
   const e2eReportPath = path.join(rootDir, 'e2e-report.json');
   writeJson(e2eReportPath, {
     frontend: 'compare',
@@ -135,6 +183,7 @@ function createCutoverFixture() {
   return {
     appDir,
     benchmarkReportPath,
+    cloudflareSmokeReportPath,
     e2eReportPath,
     manifestPath,
     overridesPath,
@@ -150,21 +199,26 @@ test('parseArgs accepts cutover evidence paths', () => {
     'overrides.json',
     '--benchmark-report',
     'benchmark.json',
+    '--cloudflare-smoke-report',
+    'cloudflare-smoke.json',
     '--e2e-report',
     'e2e.json',
     '--output',
     'result.json',
     '--allow-legacy',
     '--skip-benchmark',
+    '--skip-cloudflare-smoke',
     '--skip-e2e',
   ]);
 
   assert.equal(args.requireMigrated, false);
   assert.equal(args.requireBenchmark, false);
+  assert.equal(args.requireCloudflareSmoke, false);
   assert.equal(args.requireE2E, false);
   assert.match(args.manifestPath, /manifest\.json$/u);
   assert.match(args.overridesPath, /overrides\.json$/u);
   assert.match(args.benchmarkReportPath, /benchmark\.json$/u);
+  assert.match(args.cloudflareSmokeReportPath, /cloudflare-smoke\.json$/u);
   assert.match(args.e2eReportPath, /e2e\.json$/u);
 });
 
@@ -206,7 +260,7 @@ test('runCutoverGates passes with manifest, benchmark, and E2E evidence', () => 
   }
 });
 
-test('runCutoverGates fails when required E2E or benchmark evidence is missing', () => {
+test('runCutoverGates fails when required E2E, benchmark, or Cloudflare smoke evidence is missing', () => {
   const fixture = createCutoverFixture();
 
   try {
@@ -220,6 +274,7 @@ test('runCutoverGates fails when required E2E or benchmark evidence is missing',
     assert.equal(result.ok, false);
     assert.ok(result.gates.some((gate) => gate.id === 'benchmark-compare'));
     assert.ok(result.gates.some((gate) => gate.id === 'docker-e2e-compare'));
+    assert.ok(result.gates.some((gate) => gate.id === 'cloudflare-smoke'));
   } finally {
     fs.rmSync(fixture.rootDir, { force: true, recursive: true });
   }
@@ -332,6 +387,36 @@ test('validateBenchmarkReport requires compare full setup metrics', () => {
   assert.match(validation.failures.join('\n'), /setup must be compare/u);
   assert.match(validation.failures.join('\n'), /profile must be full/u);
   assert.match(validation.failures.join('\n'), /missing next setup/u);
+});
+
+test('validateCloudflareSmokeReport requires all Worker readiness probes', () => {
+  const report = createValidCloudflareSmokeReport();
+  report.results = report.results.filter(
+    (result) => result.id !== 'tanstack-root'
+  );
+
+  const validation = validateCloudflareSmokeReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(validation.failures.join('\n'), /missing tanstack-root/u);
+});
+
+test('validateCloudflareSmokeReport rejects failed Worker smoke probes', () => {
+  const report = createValidCloudflareSmokeReport();
+  report.ok = false;
+  const migrationProbe = report.results.find(
+    (result) => result.id === 'backend-migration-status'
+  );
+  migrationProbe.ok = false;
+  migrationProbe.status = 401;
+  migrationProbe.detail = 'HTTP 401';
+
+  const validation = validateCloudflareSmokeReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(validation.failures.join('\n'), /did not pass/u);
+  assert.match(validation.failures.join('\n'), /backend-migration-status/u);
+  assert.match(validation.failures.join('\n'), /status 401/u);
 });
 
 test('validateBenchmarkReport rejects frontend 404 benchmark samples', () => {
