@@ -1,6 +1,6 @@
 'use client';
 
-import { SquareTerminal } from '@tuturuuu/icons';
+import { SquareTerminal } from '@tuturuuu/icons/lucide-static';
 import { Kbd } from '@tuturuuu/ui/kbd';
 
 /**

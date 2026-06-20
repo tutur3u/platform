@@ -143,6 +143,11 @@ const uiDocsOverviewIconBoundarySources = [
   source('src/app/[locale]/ui/ui-docs-sidebar.tsx'),
   source('src/app/[locale]/ui/ui-docs-mobile-nav.tsx'),
 ] as const;
+const uiDocsComponentsIconBoundarySources = [
+  source('src/app/[locale]/ui/component-index-card.tsx'),
+  source('src/app/[locale]/ui/docs-navigation.tsx'),
+  source('src/app/[locale]/ui/ui-docs-command-trigger.tsx'),
+] as const;
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -428,6 +433,16 @@ describe('public shell compile graph', () => {
 
   it('keeps the UI docs overview shell off the icon package root', () => {
     for (const sourceText of uiDocsOverviewIconBoundarySources) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).not.toMatch(
+        staticImportPattern('@tuturuuu/icons/lucide')
+      );
+      expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
+    }
+  });
+
+  it('keeps the UI docs components index off the icon package root', () => {
+    for (const sourceText of uiDocsComponentsIconBoundarySources) {
       expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
       expect(sourceText).not.toMatch(
         staticImportPattern('@tuturuuu/icons/lucide')

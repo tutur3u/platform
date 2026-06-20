@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight } from '@tuturuuu/icons';
+import { ArrowLeft, ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
