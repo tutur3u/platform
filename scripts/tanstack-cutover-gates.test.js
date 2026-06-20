@@ -32,10 +32,16 @@ function createBenchmarkRoute(routePath, status = 200) {
 
 function createValidBenchmarkReport() {
   const benchmarkMetricComparisons = Object.values(METRIC_DEFINITIONS).map(
-    ({ metric }) => ({
+    ({ metric, thresholdType }) => ({
+      baselineSetup: 'next',
+      baselineValue: 100,
+      candidateSetup: thresholdType === 'api' ? 'backend' : 'tanstack',
+      candidateValue: 100,
       metric,
       passed: true,
-      threshold: metric.startsWith('api-latency-') ? 0.1 : 0.25,
+      ratio: 0,
+      threshold:
+        thresholdType === 'api' ? 0.1 : thresholdType === 'strict' ? 0 : 0.25,
     })
   );
 
@@ -43,8 +49,11 @@ function createValidBenchmarkReport() {
     gates: {
       comparisons: [
         {
+          baselineP95Ms: 100,
+          candidateP95Ms: 100,
           metric: 'frontend-route-p95',
           passed: true,
+          ratio: 0,
           routePath: '/',
           threshold: 0.25,
         },
@@ -576,6 +585,37 @@ test('validateBenchmarkReport requires the full cutover benchmark metric contrac
   assert.match(validation.failures.join('\n'), /production-cpu-baseline/u);
   assert.match(validation.failures.join('\n'), /production-rss-baseline/u);
   assert.match(validation.failures.join('\n'), /warm-navigation-time/u);
+});
+
+test('validateBenchmarkReport rejects required comparisons without numeric evidence', () => {
+  const report = createValidBenchmarkReport();
+  const comparison = report.gates.comparisons.find(
+    (item) => item.metric === 'dev-ready-time'
+  );
+  delete comparison.baselineValue;
+  delete comparison.ratio;
+
+  const validation = validateBenchmarkReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(validation.failures.join('\n'), /dev-ready-time/u);
+  assert.match(validation.failures.join('\n'), /numeric ratio evidence/u);
+  assert.match(validation.failures.join('\n'), /baseline value evidence/u);
+});
+
+test('validateBenchmarkReport rejects frontend route p95 comparisons without route values', () => {
+  const report = createValidBenchmarkReport();
+  const comparison = report.gates.comparisons.find(
+    (item) => item.metric === 'frontend-route-p95'
+  );
+  delete comparison.routePath;
+  delete comparison.candidateP95Ms;
+
+  const validation = validateBenchmarkReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(validation.failures.join('\n'), /route path evidence/u);
+  assert.match(validation.failures.join('\n'), /candidate p95 evidence/u);
 });
 
 test('validateBenchmarkReport rejects API p95 regressions over 10 percent without accepted notes', () => {

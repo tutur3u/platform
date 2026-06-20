@@ -730,7 +730,8 @@ Default gates:
 - cutover reports must include the full metric comparison contract:
   API p50/p95/p99, dev ready time, first-route cold time, warm navigation time,
   Docker build time, image size, JS output size, production RSS/CPU baseline,
-  E2E wall time, and E2E pass rate
+  E2E wall time, and E2E pass rate, with numeric baseline, candidate, ratio,
+  and threshold values for each required comparison
 - full compare evidence must include complete matching frontend route coverage;
   unmatched Next-only or TanStack-only routes fail `--require-all` and cutover
   gate validation

@@ -301,6 +301,59 @@ function findComparison(report, metric) {
   );
 }
 
+function isFiniteNumber(value) {
+  return Number.isFinite(Number(value));
+}
+
+function hasPositiveNumber(value) {
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) && numericValue > 0;
+}
+
+function validateRequiredBenchmarkComparison(comparison) {
+  const failures = [];
+
+  if (!isFiniteNumber(comparison.ratio)) {
+    failures.push(`${comparison.metric} is missing numeric ratio evidence.`);
+  }
+
+  if (!isFiniteNumber(comparison.threshold)) {
+    failures.push(
+      `${comparison.metric} is missing numeric threshold evidence.`
+    );
+  }
+
+  if (comparison.metric === 'frontend-route-p95') {
+    if (
+      typeof comparison.routePath !== 'string' ||
+      !comparison.routePath.trim()
+    ) {
+      failures.push('frontend-route-p95 is missing route path evidence.');
+    }
+
+    if (!hasPositiveNumber(comparison.baselineP95Ms)) {
+      failures.push('frontend-route-p95 is missing baseline p95 evidence.');
+    }
+
+    if (!hasPositiveNumber(comparison.candidateP95Ms)) {
+      failures.push('frontend-route-p95 is missing candidate p95 evidence.');
+    }
+
+    return failures;
+  }
+
+  if (!hasPositiveNumber(comparison.baselineValue)) {
+    failures.push(`${comparison.metric} is missing baseline value evidence.`);
+  }
+
+  if (!hasPositiveNumber(comparison.candidateValue)) {
+    failures.push(`${comparison.metric} is missing candidate value evidence.`);
+  }
+
+  return failures;
+}
+
 function validateBenchmarkReport(report, options = {}) {
   const failures = [];
   const expectedSetup = options.benchmarkSetup ?? 'compare';
@@ -380,6 +433,8 @@ function validateBenchmarkReport(report, options = {}) {
         );
         continue;
       }
+
+      failures.push(...validateRequiredBenchmarkComparison(comparison));
 
       if (
         comparison.passed === false &&
