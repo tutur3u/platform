@@ -1,4 +1,3 @@
-import { queryOptions, useQuery } from '@tanstack/react-query';
 import {
   Brain,
   Clock,
@@ -6,10 +5,6 @@ import {
   Sparkles,
   Star,
 } from '@tuturuuu/icons/lucide';
-import {
-  getCurrentUserProfile,
-  InternalApiError,
-} from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -17,7 +12,11 @@ import {
   getContactHighlights,
   getContactMethods,
 } from '../../data/contact/contact-content';
-import type { ContactProfile } from '../../data/contact/contact-form';
+import type {
+  ContactFormValues,
+  ContactInquirySubmissionResult,
+  ContactProfile,
+} from '../../data/contact/contact-form';
 import type { Locale } from '../../lib/platform/locale';
 import { getMessages } from '../../lib/platform/messages';
 import {
@@ -28,31 +27,20 @@ import {
 } from './contact-card';
 import { ContactForm } from './contact-form';
 
-const currentUserContactProfileQuery = queryOptions({
-  queryFn: async (): Promise<ContactProfile | null> => {
-    try {
-      const profile = await getCurrentUserProfile();
-      return {
-        display_name: profile.display_name,
-        email: profile.email,
-        id: profile.id,
-      };
-    } catch (error) {
-      if (error instanceof InternalApiError && error.status === 401) {
-        return null;
-      }
-
-      throw error;
-    }
-  },
-  queryKey: ['contact', 'current-user-profile'],
-  retry: false,
-});
-
-export function ContactPage({ locale }: { locale: Locale }) {
+export function ContactPage({
+  isProfilePending,
+  locale,
+  profile,
+  submitInquiry,
+}: {
+  isProfilePending: boolean;
+  locale: Locale;
+  profile: ContactProfile | null;
+  submitInquiry: (
+    values: ContactFormValues
+  ) => Promise<ContactInquirySubmissionResult>;
+}) {
   const messages = getMessages(locale).contact;
-  const profileQuery = useQuery(currentUserContactProfileQuery);
-  const profile = profileQuery.data ?? null;
 
   return (
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
@@ -72,11 +60,12 @@ export function ContactPage({ locale }: { locale: Locale }) {
                 {messages.form.description}
               </p>
               <ContactForm
-                isProfilePending={profileQuery.isPending}
+                isProfilePending={isProfilePending}
                 key={profile?.id ?? 'anonymous'}
                 locale={locale}
                 messages={messages}
                 profile={profile}
+                submitInquiry={submitInquiry}
               />
             </div>
             <div className="space-y-8">

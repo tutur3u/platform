@@ -27,6 +27,18 @@ export type ContactFormValues = {
   type: InquiryType;
 };
 
+export type ContactInquirySubmissionResult =
+  | {
+      inquiryId: string;
+      ok: true;
+    }
+  | {
+      code?: string;
+      message: string;
+      ok: false;
+      status: number;
+    };
+
 export type SubmissionStatus = {
   description: string;
   title: string;

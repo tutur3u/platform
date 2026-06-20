@@ -2,7 +2,12 @@ import {
   createInternalApiClient,
   type InternalApiClientOptions,
   type InternalApiFetchInit,
+  withForwardedInternalApiAuth,
 } from './client';
+import type {
+  CreateSupportInquiryPayload,
+  CurrentUserProfileResponse,
+} from './users';
 
 export type BackendMigrationStatus = {
   backend: {
@@ -23,6 +28,11 @@ export type BackendMigrationStatus = {
 
 export type BackendLegacyHealth = {
   status: 'ok';
+};
+
+export type BackendCreateSupportInquiryResponse = {
+  inquiryId: string;
+  success: true;
 };
 
 export type BackendRouteManifestSummary = {
@@ -133,6 +143,10 @@ const INTERNAL_PLAINTEXT_BACKEND_HOSTS = new Set([
   'backend',
   'host.docker.internal',
 ]);
+const CONTACT_SERVER_FUNCTION_REFERER_PATH =
+  '/tanstack-contact-server-function';
+
+type RequestHeaderAccessor = Pick<Headers, 'get'>;
 
 function getServerBackendInternalAuthorization() {
   if (typeof window !== 'undefined') {
@@ -274,6 +288,44 @@ export function createBackendApiClient(options: InternalApiClientOptions = {}) {
   });
 }
 
+export function withForwardedBackendApiAuth(
+  requestHeaders: RequestHeaderAccessor,
+  options: InternalApiClientOptions = {}
+) {
+  return withForwardedInternalApiAuth(requestHeaders, {
+    ...options,
+    baseUrl: options.baseUrl ?? getConfiguredBackendApiBaseUrl(),
+  });
+}
+
+function withBackendSameOriginMutationHeaders(
+  options: InternalApiClientOptions,
+  headers: HeadersInit
+) {
+  const requestHeaders = new Headers(options.defaultHeaders);
+  const headersToMerge = new Headers(headers);
+  headersToMerge.forEach((value, key) => {
+    requestHeaders.set(key, value);
+  });
+
+  if (typeof window === 'undefined') {
+    const backendOrigin = options.baseUrl ?? getConfiguredBackendApiBaseUrl();
+
+    if (!requestHeaders.has('origin')) {
+      requestHeaders.set('origin', backendOrigin);
+    }
+
+    if (!requestHeaders.has('referer')) {
+      requestHeaders.set(
+        'referer',
+        new URL(CONTACT_SERVER_FUNCTION_REFERER_PATH, backendOrigin).toString()
+      );
+    }
+  }
+
+  return requestHeaders;
+}
+
 export function getBackendLegacyHealth(options: InternalApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendLegacyHealth>(
     '/api/health',
@@ -281,6 +333,33 @@ export function getBackendLegacyHealth(options: InternalApiClientOptions = {}) {
       cache: 'no-store',
     }
   );
+}
+
+export function getBackendCurrentUserProfile(
+  options: InternalApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<CurrentUserProfileResponse>(
+    '/api/v1/users/me/profile',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function createBackendSupportInquiry(
+  payload: CreateSupportInquiryPayload,
+  options: InternalApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendCreateSupportInquiryResponse>('/api/v1/inquiries', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: withBackendSameOriginMutationHeaders(options, {
+      'Content-Type': 'application/json',
+    }),
+    method: 'POST',
+  });
 }
 
 export function getBackendMigrationStatus(

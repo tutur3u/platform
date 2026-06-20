@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query';
-import { createSupportInquiry, InternalApiError } from '@tuturuuu/internal-api';
 import { Card } from '@tuturuuu/ui/card';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
@@ -8,6 +7,7 @@ import { useState } from 'react';
 import type { ContactMessages } from '../../data/contact/contact-content';
 import {
   type ContactFormValues,
+  type ContactInquirySubmissionResult,
   type ContactProfile,
   createContactFormSchema,
   createDefaultContactFormValues,
@@ -23,11 +23,15 @@ export function ContactForm({
   locale,
   messages,
   profile,
+  submitInquiry,
 }: {
   isProfilePending: boolean;
   locale: Locale;
   messages: ContactMessages;
   profile: ContactProfile | null;
+  submitInquiry: (
+    values: ContactFormValues
+  ) => Promise<ContactInquirySubmissionResult>;
 }) {
   const [submissionStatus, setSubmissionStatus] =
     useState<SubmissionStatus | null>(null);
@@ -39,19 +43,25 @@ export function ContactForm({
   const canSubmit = Boolean(profile);
 
   const supportInquiryMutation = useMutation({
-    mutationFn: (values: ContactFormValues) => createSupportInquiry(values),
-    onError: (error) => {
-      const isUnauthorized =
-        error instanceof InternalApiError && error.status === 401;
-      setSubmissionStatus(
-        createSubmissionStatus(
-          isUnauthorized
-            ? messages.form.status.authRequired
-            : messages.form.status.error
-        )
-      );
+    mutationFn: submitInquiry,
+    onError: () => {
+      setSubmissionStatus(createSubmissionStatus(messages.form.status.error));
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (!result.ok) {
+        const isUnauthorized = result.status === 401;
+
+        setSubmissionStatus(
+          createSubmissionStatus(
+            isUnauthorized
+              ? messages.form.status.authRequired
+              : messages.form.status.error
+          )
+        );
+
+        return;
+      }
+
       form.reset(createDefaultContactFormValues(profile));
       setSubmissionStatus(createSubmissionStatus(messages.form.status.success));
     },

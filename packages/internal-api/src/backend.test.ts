@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createBackendApiClient,
+  createBackendSupportInquiry,
+  getBackendCurrentUserProfile,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
   getBackendMigrationManifest,
   getBackendMigrationProgress,
   getBackendMigrationStatus,
   getConfiguredBackendApiBaseUrl,
+  withForwardedBackendApiAuth,
 } from './backend';
 
 const EMPTY_METHOD_COUNTS = {
@@ -185,6 +188,116 @@ describe('backend API client', () => {
       })
     );
     expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('reads the Rust-owned current user profile route', async () => {
+    vi.stubEnv('BACKEND_INTERNAL_TOKEN', 'server-token');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        avatar_url: null,
+        created_at: '2026-06-20T00:00:00.000Z',
+        default_workspace_id: null,
+        display_name: null,
+        email: 'ada@example.com',
+        full_name: null,
+        id: 'user_123',
+        new_email: null,
+      }),
+    });
+
+    const profile = await getBackendCurrentUserProfile({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(profile.email).toBe('ada@example.com');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/users/me/profile',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('creates Rust-owned support inquiries without backend internal auth', async () => {
+    vi.stubEnv('BACKEND_INTERNAL_TOKEN', 'server-token');
+    const payload = {
+      email: 'ada@example.com',
+      message: 'Please help me with this contact request.',
+      name: 'Ada Lovelace',
+      product: 'web' as const,
+      subject: 'Need help',
+      type: 'support' as const,
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        inquiryId: 'inquiry_123',
+        success: true,
+      }),
+    });
+
+    const inquiry = await createBackendSupportInquiry(payload, {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(inquiry.inquiryId).toBe('inquiry_123');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/inquiries',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+
+    const headers = getFetchHeaders(fetchMock);
+    expect(headers.get('content-type')).toBe('application/json');
+    expect(headers.get('origin')).toBe('http://backend:7820');
+    expect(headers.get('referer')).toBe(
+      'http://backend:7820/tanstack-contact-server-function'
+    );
+    expect(headers.has('authorization')).toBe(false);
+  });
+
+  it('forwards app-session auth to the backend origin', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        avatar_url: null,
+        created_at: '2026-06-20T00:00:00.000Z',
+        default_workspace_id: null,
+        display_name: 'Ada',
+        email: 'ada@example.com',
+        full_name: null,
+        id: 'user_123',
+        new_email: null,
+      }),
+    });
+
+    await getBackendCurrentUserProfile(
+      withForwardedBackendApiAuth(
+        new Headers({
+          authorization: 'Bearer ttr_app_token',
+          cookie:
+            'tuturuuu_app_session=ttr_app_cookie; sb-localhost-auth-token=secret',
+        }),
+        {
+          baseUrl: 'http://backend:7820',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    );
+
+    const headers = getFetchHeaders(fetchMock);
+    expect(headers.get('authorization')).toBe('Bearer ttr_app_token');
+    expect(headers.get('cookie')).toBe('tuturuuu_app_session=ttr_app_cookie');
   });
 
   it('does not overwrite explicit migration authorization headers', async () => {

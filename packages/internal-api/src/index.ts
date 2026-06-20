@@ -81,6 +81,7 @@ export {
   type WebAccountsResponse,
 } from './auth';
 export {
+  type BackendCreateSupportInquiryResponse,
   type BackendLegacyHealth,
   type BackendMigrationCutoverGates,
   type BackendMigrationManifest,
@@ -91,12 +92,15 @@ export {
   type BackendRouteManifestRoute,
   type BackendRouteManifestSummary,
   createBackendApiClient,
+  createBackendSupportInquiry,
+  getBackendCurrentUserProfile,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
   getBackendMigrationManifest,
   getBackendMigrationProgress,
   getBackendMigrationStatus,
   getConfiguredBackendApiBaseUrl,
+  withForwardedBackendApiAuth,
 } from './backend';
 export {
   applyWorkspaceCalendarSchedule,
