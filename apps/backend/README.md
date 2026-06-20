@@ -102,6 +102,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `PUT /api/v1/infrastructure/migrate/grouped-score-names`: legacy-compatible
   disabled migration route; preserves the development-only guard and returns
   `410 MIGRATION_DISABLED` because the backing table was removed.
+- `GET` / `PUT` / `PATCH` / `POST` `/api/v1/infrastructure/migrate/:migration`:
+  terminal decommission for legacy one-off batch migration helpers. Rust keeps
+  the development/local-E2E guard and returns `410 MIGRATION_DISABLED` for
+  methods the legacy route exported, instead of exposing broad admin batch
+  reads or writes from the Cloudflare-compatible backend.
 - `GET /api/migration/status`: runtime and route-ownership status consumed by
   `apps/tanstack-web`; requires `Authorization: Bearer <BACKEND_INTERNAL_TOKEN>`.
   The response includes redacted contact data adapter readiness

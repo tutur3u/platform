@@ -775,6 +775,90 @@ paths:
                 type: string
                 examples:
                   - PUT
+  /api/v1/infrastructure/migrate/{migration}:
+    parameters:
+      - name: migration
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy infrastructure batch migration slug.
+    get:
+      deprecated: true
+      summary: Disabled infrastructure batch migration read
+      description: Terminal decommission replacement for legacy apps/web/src/app/api/v1/infrastructure/migrate/* routes that exported GET. The Rust backend keeps the development-only guard and returns a disabled migration response instead of preserving broad admin batch-fetch behavior.
+      responses:
+        "410":
+          description: Infrastructure migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteInfrastructureMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method for this migration slug.
+    put:
+      deprecated: true
+      summary: Disabled infrastructure batch migration write
+      description: Terminal decommission replacement for legacy apps/web/src/app/api/v1/infrastructure/migrate/* routes that exported PUT. The Rust backend keeps the development-only guard and returns a disabled migration response instead of preserving broad admin batch-upsert behavior.
+      responses:
+        "410":
+          description: Infrastructure migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteInfrastructureMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method for this migration slug.
+    patch:
+      deprecated: true
+      summary: Disabled infrastructure batch migration patch
+      description: Terminal decommission replacement for legacy apps/web/src/app/api/v1/infrastructure/migrate/* routes that exported PATCH. The Rust backend keeps the development-only guard and returns a disabled migration response instead of preserving broad admin batch-update behavior.
+      responses:
+        "410":
+          description: Infrastructure migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteInfrastructureMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method for this migration slug.
+    post:
+      deprecated: true
+      summary: Disabled infrastructure batch migration action
+      description: Terminal decommission replacement for legacy apps/web/src/app/api/v1/infrastructure/migrate/* routes that exported POST. The Rust backend keeps the development-only guard and returns a disabled migration response instead of preserving one-off admin migration actions.
+      responses:
+        "410":
+          description: Infrastructure migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteInfrastructureMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method for this migration slug.
   /api/workspaces/{wsId}/products/categories/migrate:
     put:
       deprecated: true
@@ -1989,6 +2073,20 @@ components:
           type: string
           examples:
             - This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.
+    ObsoleteInfrastructureMigrationDisabled:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - MIGRATION_DISABLED
+        message:
+          type: string
+          examples:
+            - This infrastructure batch migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.
     InfrastructureMigrationForbidden:
       type: object
       required:

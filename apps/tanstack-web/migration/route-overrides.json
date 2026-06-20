@@ -858,6 +858,336 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/ ports the public landing page with local English and Vietnamese content, local landing primitives, and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "api:/api/v1/infrastructure/migrate/bill-coupons:apps/web/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/bill-packages:apps/web/src/app/api/v1/infrastructure/migrate/bill-packages/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/bills:apps/web/src/app/api/v1/infrastructure/migrate/bills/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/class-attendance:apps/web/src/app/api/v1/infrastructure/migrate/class-attendance/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/class-members:apps/web/src/app/api/v1/infrastructure/migrate/class-members/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/class-packages:apps/web/src/app/api/v1/infrastructure/migrate/class-packages/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/class-scores:apps/web/src/app/api/v1/infrastructure/migrate/class-scores/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/class-sessions:apps/web/src/app/api/v1/infrastructure/migrate/class-sessions/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/classes:apps/web/src/app/api/v1/infrastructure/migrate/classes/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/coupons:apps/web/src/app/api/v1/infrastructure/migrate/coupons/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/credit-wallets:apps/web/src/app/api/v1/infrastructure/migrate/credit-wallets/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/email-blacklist:apps/web/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/ensure-platform-users:apps/web/src/app/api/v1/infrastructure/migrate/ensure-platform-users/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy POST batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/finance-budgets:apps/web/src/app/api/v1/infrastructure/migrate/finance-budgets/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/finance-invoice-products:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/finance-invoice-promotions:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/finance-invoice-transaction-links:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/finance-invoice-user-groups:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/finance-invoices:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/inventory-batch-products:apps/web/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/inventory-batches:apps/web/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/inventory-manufacturers:apps/web/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/inventory-products:apps/web/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/inventory-suppliers:apps/web/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/lessons:apps/web/src/app/api/v1/infrastructure/migrate/lessons/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/package-stock-changes:apps/web/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/packages:apps/web/src/app/api/v1/infrastructure/migrate/packages/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/payment-methods:apps/web/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/post-email-queue:apps/web/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/product-categories:apps/web/src/app/api/v1/infrastructure/migrate/product-categories/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/product-prices:apps/web/src/app/api/v1/infrastructure/migrate/product-prices/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/product-units:apps/web/src/app/api/v1/infrastructure/migrate/product-units/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/roles:apps/web/src/app/api/v1/infrastructure/migrate/roles/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/score-names:apps/web/src/app/api/v1/infrastructure/migrate/score-names/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/sent-emails:apps/web/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/student-feedbacks:apps/web/src/app/api/v1/infrastructure/migrate/student-feedbacks/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/transaction-categories:apps/web/src/app/api/v1/infrastructure/migrate/transaction-categories/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/user-coupons:apps/web/src/app/api/v1/infrastructure/migrate/user-coupons/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/user-group-post-checks:apps/web/src/app/api/v1/infrastructure/migrate/user-group-post-checks/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/user-monthly-report-logs:apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-report-logs/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/user-monthly-reports:apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-reports/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/user-roles:apps/web/src/app/api/v1/infrastructure/migrate/user-roles/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/user-status-changes:apps/web/src/app/api/v1/infrastructure/migrate/user-status-changes/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/users:apps/web/src/app/api/v1/infrastructure/migrate/users/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/wallet-transaction-tags:apps/web/src/app/api/v1/infrastructure/migrate/wallet-transaction-tags/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/wallet-transactions:apps/web/src/app/api/v1/infrastructure/migrate/wallet-transactions/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT / PATCH batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/wallet-types:apps/web/src/app/api/v1/infrastructure/migrate/wallet-types/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/wallets:apps/web/src/app/api/v1/infrastructure/migrate/wallets/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/warehouses:apps/web/src/app/api/v1/infrastructure/migrate/warehouses/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-configs:apps/web/src/app/api/v1/infrastructure/migrate/workspace-configs/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-settings:apps/web/src/app/api/v1/infrastructure/migrate/workspace-settings/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT / PATCH batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-fields:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-fields/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-files:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-series:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tags:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-sessions:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-tag-groups:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-tags:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tags/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-groups-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups-users/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-groups:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-linked-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-linked-users/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-user-status-changes:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-status-changes/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-users/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT / PATCH batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-wallet-transfers:apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "api:/api/v1/infrastructure/migrate/workspace-wallets:apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallets/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
     }
   }
 }

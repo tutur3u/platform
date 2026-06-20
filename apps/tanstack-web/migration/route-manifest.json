@@ -3,14 +3,14 @@
   "progress": {
     "byKind": [
       {
-        "acceptedRemoval": 7,
+        "acceptedRemoval": 73,
         "key": "api",
         "label": "api",
-        "legacyNext": 1070,
+        "legacyNext": 1004,
         "migrated": 28,
-        "percentComplete": 3.17,
-        "remaining": 1070,
-        "terminal": 35,
+        "percentComplete": 9.14,
+        "remaining": 1004,
+        "terminal": 101,
         "total": 1105,
         "unknownStatus": 0
       },
@@ -113,14 +113,14 @@
     ],
     "byOwner": [
       {
-        "acceptedRemoval": 7,
+        "acceptedRemoval": 73,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1088,
+        "legacyNext": 1022,
         "migrated": 33,
-        "percentComplete": 3.55,
-        "remaining": 1088,
-        "terminal": 40,
+        "percentComplete": 9.4,
+        "remaining": 1022,
+        "terminal": 106,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -320,14 +320,14 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 7,
+      "acceptedRemoval": 73,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1346,
+      "legacyNext": 1280,
       "migrated": 152,
-      "percentComplete": 10.56,
-      "remaining": 1346,
-      "terminal": 159,
+      "percentComplete": 14.95,
+      "remaining": 1280,
+      "terminal": 225,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -2771,7 +2771,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/bill-coupons",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2780,7 +2780,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/bill-packages",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/bill-packages/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2789,7 +2789,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/bills",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/bills/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2798,7 +2798,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/class-attendance",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/class-attendance/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2807,7 +2807,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/class-members",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/class-members/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2816,7 +2816,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/class-packages",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/class-packages/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2825,7 +2825,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/class-scores",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/class-scores/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2834,7 +2834,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/class-sessions",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/class-sessions/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2843,7 +2843,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/classes",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/classes/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2852,7 +2852,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/coupons",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/coupons/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2861,7 +2861,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/credit-wallets",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/credit-wallets/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2870,7 +2870,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/email-blacklist",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2879,7 +2879,7 @@
       "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/migrate/ensure-platform-users",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/ensure-platform-users/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2888,7 +2888,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/finance-budgets",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/finance-budgets/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2897,7 +2897,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/finance-invoice-products",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2906,7 +2906,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/finance-invoice-promotions",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2915,7 +2915,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/finance-invoice-transaction-links",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2924,7 +2924,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/finance-invoice-user-groups",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2933,7 +2933,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/finance-invoices",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2951,7 +2951,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/inventory-batch-products",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2960,7 +2960,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/inventory-batches",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2969,7 +2969,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/inventory-manufacturers",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2978,7 +2978,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/inventory-products",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2987,7 +2987,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/inventory-suppliers",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -2996,7 +2996,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/lessons",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/lessons/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3005,7 +3005,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/package-stock-changes",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3014,7 +3014,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/packages",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/packages/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3023,7 +3023,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/payment-methods",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3032,7 +3032,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/post-email-queue",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3041,7 +3041,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/product-categories",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/product-categories/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3050,7 +3050,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/product-prices",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/product-prices/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3059,7 +3059,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/product-units",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/product-units/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3068,7 +3068,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/roles",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/roles/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3077,7 +3077,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/score-names",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/score-names/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3086,7 +3086,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/sent-emails",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3095,7 +3095,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/student-feedbacks",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/student-feedbacks/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3104,7 +3104,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/transaction-categories",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/transaction-categories/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3113,7 +3113,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/user-coupons",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/user-coupons/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3122,7 +3122,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/user-group-post-checks",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/user-group-post-checks/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3131,7 +3131,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/user-monthly-report-logs",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-report-logs/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3140,7 +3140,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/user-monthly-reports",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-reports/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3149,7 +3149,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/user-roles",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/user-roles/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3158,7 +3158,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/user-status-changes",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/user-status-changes/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3167,7 +3167,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/users",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/users/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3176,7 +3176,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/wallet-transaction-tags",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/wallet-transaction-tags/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3185,7 +3185,7 @@
       "methods": ["GET", "PUT", "PATCH"],
       "routePath": "/api/v1/infrastructure/migrate/wallet-transactions",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/wallet-transactions/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3194,7 +3194,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/wallet-types",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/wallet-types/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3203,7 +3203,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/wallets",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/wallets/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3212,7 +3212,7 @@
       "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/migrate/warehouses",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/warehouses/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3221,7 +3221,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-configs",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-configs/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3230,7 +3230,7 @@
       "methods": ["GET", "PUT", "PATCH"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-settings",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-settings/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3239,7 +3239,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-fields",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-fields/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3248,7 +3248,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-session-files",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3257,7 +3257,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-session-series",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3266,7 +3266,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3275,7 +3275,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-session-tags",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3284,7 +3284,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-sessions",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3293,7 +3293,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-tag-groups",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3302,7 +3302,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-group-tags",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tags/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3311,7 +3311,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-groups-users",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups-users/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3320,7 +3320,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-groups",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3329,7 +3329,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-linked-users",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-linked-users/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3338,7 +3338,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-user-status-changes",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-status-changes/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3347,7 +3347,7 @@
       "methods": ["GET", "PUT", "PATCH"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-users",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-users/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3356,7 +3356,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-wallet-transfers",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -3365,7 +3365,7 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/infrastructure/migrate/workspace-wallets",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallets/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {

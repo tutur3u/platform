@@ -68,7 +68,80 @@ const COOKIE_DELETE_VALUE: &str = "; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970
 const GROUPED_SCORE_NAMES_MIGRATION_PATH: &str =
     "/api/v1/infrastructure/migrate/grouped-score-names";
 const GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE: &str = "Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.";
+const OBSOLETE_INFRASTRUCTURE_MIGRATION_DISABLED_MESSAGE: &str = "This infrastructure batch migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.";
 const OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE: &str = "This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.";
+const OBSOLETE_INFRASTRUCTURE_MIGRATION_POST_ONLY: [&str; 1] = ["ensure-platform-users"];
+const OBSOLETE_INFRASTRUCTURE_MIGRATION_GET_PUT_PATCH: [&str; 3] = [
+    "wallet-transactions",
+    "workspace-settings",
+    "workspace-users",
+];
+const OBSOLETE_INFRASTRUCTURE_MIGRATION_GET_PUT: [&str; 37] = [
+    "class-scores",
+    "class-sessions",
+    "credit-wallets",
+    "email-blacklist",
+    "finance-budgets",
+    "finance-invoice-products",
+    "finance-invoice-promotions",
+    "finance-invoice-transaction-links",
+    "finance-invoice-user-groups",
+    "finance-invoices",
+    "inventory-batch-products",
+    "inventory-batches",
+    "inventory-manufacturers",
+    "inventory-products",
+    "inventory-suppliers",
+    "post-email-queue",
+    "sent-emails",
+    "student-feedbacks",
+    "user-coupons",
+    "user-group-post-checks",
+    "wallet-transaction-tags",
+    "wallet-types",
+    "workspace-configs",
+    "workspace-user-fields",
+    "workspace-user-group-session-files",
+    "workspace-user-group-session-series",
+    "workspace-user-group-session-tag-links",
+    "workspace-user-group-session-tags",
+    "workspace-user-group-sessions",
+    "workspace-user-group-tag-groups",
+    "workspace-user-group-tags",
+    "workspace-user-groups-users",
+    "workspace-user-groups",
+    "workspace-user-linked-users",
+    "workspace-user-status-changes",
+    "workspace-wallet-transfers",
+    "workspace-wallets",
+];
+const OBSOLETE_INFRASTRUCTURE_MIGRATION_PUT_ONLY: [&str; 25] = [
+    "bill-coupons",
+    "bill-packages",
+    "bills",
+    "class-attendance",
+    "class-members",
+    "class-packages",
+    "classes",
+    "coupons",
+    "lessons",
+    "package-stock-changes",
+    "packages",
+    "payment-methods",
+    "product-categories",
+    "product-prices",
+    "product-units",
+    "roles",
+    "score-names",
+    "transaction-categories",
+    "user-monthly-report-logs",
+    "user-monthly-reports",
+    "user-roles",
+    "user-status-changes",
+    "users",
+    "wallets",
+    "warehouses",
+];
 const USER_FIELD_TYPES_PATH: &str = "/api/v1/infrastructure/users/fields/types";
 const AUTH_CORS_PREFLIGHT_PATHS: [&str; 8] = [
     "/api/v1/auth/password-login",
@@ -562,6 +635,13 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
             grouped_score_names_migration_response(config)
         }
         (method, GROUPED_SCORE_NAMES_MIGRATION_PATH) => method_not_allowed(method, "PUT"),
+        (method, path) if is_obsolete_infrastructure_migration_method(method, path) => {
+            obsolete_infrastructure_migration_response(config)
+        }
+        (method, path) if is_obsolete_infrastructure_migration_path(path) => method_not_allowed(
+            method,
+            obsolete_infrastructure_migration_allowed_methods(path).unwrap_or("PUT"),
+        ),
         ("PUT", path) if is_obsolete_workspace_migration_path(path) => {
             obsolete_workspace_migration_response(config)
         }
@@ -1072,6 +1152,20 @@ fn grouped_score_names_migration_response(config: &BackendConfig) -> BackendResp
         410,
         json!({
             "message": GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE,
+            "error": "MIGRATION_DISABLED",
+        }),
+    )
+}
+
+fn obsolete_infrastructure_migration_response(config: &BackendConfig) -> BackendResponse {
+    if let Some(response) = require_infrastructure_migration_dev_mode(config) {
+        return response;
+    }
+
+    json_response(
+        410,
+        json!({
+            "message": OBSOLETE_INFRASTRUCTURE_MIGRATION_DISABLED_MESSAGE,
             "error": "MIGRATION_DISABLED",
         }),
     )
@@ -1631,6 +1725,45 @@ fn is_obsolete_workspace_migration_path(path: &str) -> bool {
             | ("users", "indicators")
             | ("wallets", "transactions")
     )
+}
+
+fn is_obsolete_infrastructure_migration_method(method: &str, path: &str) -> bool {
+    obsolete_infrastructure_migration_allowed_methods(path).is_some_and(|allowed| {
+        allowed
+            .split(", ")
+            .any(|allowed_method| allowed_method == method)
+    })
+}
+
+fn is_obsolete_infrastructure_migration_path(path: &str) -> bool {
+    obsolete_infrastructure_migration_allowed_methods(path).is_some()
+}
+
+fn obsolete_infrastructure_migration_allowed_methods(path: &str) -> Option<&'static str> {
+    let segments = path_segments(path);
+
+    if segments.len() != 5
+        || segments[0] != "api"
+        || segments[1] != "v1"
+        || segments[2] != "infrastructure"
+        || segments[3] != "migrate"
+    {
+        return None;
+    }
+
+    let slug = segments[4];
+
+    if OBSOLETE_INFRASTRUCTURE_MIGRATION_POST_ONLY.contains(&slug) {
+        Some("POST")
+    } else if OBSOLETE_INFRASTRUCTURE_MIGRATION_GET_PUT_PATCH.contains(&slug) {
+        Some("GET, PUT, PATCH")
+    } else if OBSOLETE_INFRASTRUCTURE_MIGRATION_GET_PUT.contains(&slug) {
+        Some("GET, PUT")
+    } else if OBSOLETE_INFRASTRUCTURE_MIGRATION_PUT_ONLY.contains(&slug) {
+        Some("PUT")
+    } else {
+        None
+    }
 }
 
 fn is_workspace_slide_item_path(path: &str) -> bool {
@@ -3891,6 +4024,81 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("PUT"));
         assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[test]
+    fn obsolete_infrastructure_migration_routes_are_disabled_in_dev() {
+        for (method, path) in [
+            ("PUT", "/api/v1/infrastructure/migrate/score-names"),
+            ("PUT", "/api/v1/infrastructure/migrate/classes"),
+            ("PUT", "/api/v1/infrastructure/migrate/lessons"),
+            ("PUT", "/api/v1/infrastructure/migrate/payment-methods"),
+            ("GET", "/api/v1/infrastructure/migrate/class-scores"),
+            ("PATCH", "/api/v1/infrastructure/migrate/workspace-users"),
+            (
+                "POST",
+                "/api/v1/infrastructure/migrate/ensure-platform-users",
+            ),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("development", "backend"),
+                request(method, path),
+            );
+
+            assert_eq!(response.status, 410, "{method} {path}");
+            assert_eq!(response.content_type, Some(APPLICATION_JSON));
+            assert_eq!(response.body["error"], "MIGRATION_DISABLED");
+            assert_eq!(
+                response.body["message"],
+                OBSOLETE_INFRASTRUCTURE_MIGRATION_DISABLED_MESSAGE
+            );
+        }
+    }
+
+    #[test]
+    fn obsolete_infrastructure_migration_routes_require_dev_mode() {
+        let response = route_request(
+            &BackendConfig::new("production", "backend"),
+            request("PUT", "/api/v1/infrastructure/migrate/score-names"),
+        );
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["error"], "Forbidden");
+        assert_eq!(
+            response.body["message"],
+            "Infrastructure migration routes are only accessible in development mode"
+        );
+    }
+
+    #[test]
+    fn obsolete_infrastructure_migration_routes_preserve_legacy_allowed_methods() {
+        for (method, path, allow) in [
+            ("GET", "/api/v1/infrastructure/migrate/score-names", "PUT"),
+            (
+                "POST",
+                "/api/v1/infrastructure/migrate/class-scores",
+                "GET, PUT",
+            ),
+            (
+                "DELETE",
+                "/api/v1/infrastructure/migrate/workspace-users",
+                "GET, PUT, PATCH",
+            ),
+            (
+                "GET",
+                "/api/v1/infrastructure/migrate/ensure-platform-users",
+                "POST",
+            ),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("development", "backend"),
+                request(method, path),
+            );
+
+            assert_eq!(response.status, 405, "{method} {path}");
+            assert_eq!(response.allow, Some(allow));
+            assert_eq!(response.body["error"], "method not allowed");
+        }
     }
 
     #[test]
