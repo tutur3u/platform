@@ -718,7 +718,9 @@ bun benchmark:web-setups -- \
 After the full benchmark writes a report, pass that report to
 `bun migration:tanstack:gates` with the Docker E2E compare report and
 Cloudflare smoke report. Generated benchmark, smoke, and E2E reports stay under
-ignored `tmp/` paths.
+ignored `tmp/` paths. Cutover gates reject evidence older than 24 hours by
+default; use `--evidence-max-age-ms <milliseconds>` only when a rehearsal
+explicitly accepts a longer freshness window.
 
 Default gates:
 

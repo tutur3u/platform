@@ -30,7 +30,7 @@ function createBenchmarkRoute(routePath, status = 200) {
   };
 }
 
-function createValidBenchmarkReport() {
+function createValidBenchmarkReport(generatedAt = new Date().toISOString()) {
   const benchmarkMetricComparisons = Object.values(METRIC_DEFINITIONS).map(
     ({ metric, thresholdType }) => ({
       baselineSetup: 'next',
@@ -70,7 +70,7 @@ function createValidBenchmarkReport() {
       },
       passed: true,
     },
-    generatedAt: '2026-06-20T00:00:00.000Z',
+    generatedAt,
     profile: 'full',
     setup: 'compare',
     setups: {
@@ -87,9 +87,11 @@ function createValidBenchmarkReport() {
   };
 }
 
-function createValidCloudflareSmokeReport() {
+function createValidCloudflareSmokeReport(
+  generatedAt = new Date().toISOString()
+) {
   return {
-    generatedAt: '2026-06-20T00:00:00.000Z',
+    generatedAt,
     ok: true,
     results: [
       {
@@ -146,7 +148,7 @@ function createValidCloudflareSmokeReport() {
   };
 }
 
-function createCutoverFixture() {
+function createCutoverFixture(generatedAt = new Date().toISOString()) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanstack-gates-'));
   const appDir = path.join(rootDir, 'apps', 'web', 'src', 'app');
   const routeFile = path.join(appDir, 'api', 'health', 'route.ts');
@@ -188,13 +190,16 @@ function createCutoverFixture() {
   writeManifest({ appDir, manifestPath, overridesPath, rootDir });
 
   const benchmarkReportPath = path.join(rootDir, 'benchmark-report.json');
-  writeJson(benchmarkReportPath, createValidBenchmarkReport());
+  writeJson(benchmarkReportPath, createValidBenchmarkReport(generatedAt));
 
   const cloudflareSmokeReportPath = path.join(
     rootDir,
     'cloudflare-smoke-report.json'
   );
-  writeJson(cloudflareSmokeReportPath, createValidCloudflareSmokeReport());
+  writeJson(
+    cloudflareSmokeReportPath,
+    createValidCloudflareSmokeReport(generatedAt)
+  );
 
   const e2eReportPath = path.join(rootDir, 'e2e-report.json');
   writeJson(e2eReportPath, {
@@ -203,7 +208,7 @@ function createCutoverFixture() {
       next: { passRate: 1, status: 'passed', wallMs: 10000 },
       tanstack: { passRate: 1, status: 'passed', wallMs: 11000 },
     },
-    generatedAt: '2026-06-20T00:00:00.000Z',
+    generatedAt,
     status: 'passed',
   });
 
@@ -230,6 +235,8 @@ test('parseArgs accepts cutover evidence paths', () => {
     'cloudflare-smoke.json',
     '--e2e-report',
     'e2e.json',
+    '--evidence-max-age-ms',
+    '60000',
     '--output',
     'result.json',
     '--allow-legacy',
@@ -242,6 +249,7 @@ test('parseArgs accepts cutover evidence paths', () => {
   assert.equal(args.requireBenchmark, false);
   assert.equal(args.requireCloudflareSmoke, false);
   assert.equal(args.requireE2E, false);
+  assert.equal(args.evidenceMaxAgeMs, 60_000);
   assert.match(args.manifestPath, /manifest\.json$/u);
   assert.match(args.overridesPath, /overrides\.json$/u);
   assert.match(args.benchmarkReportPath, /benchmark\.json$/u);
@@ -302,6 +310,37 @@ test('runCutoverGates fails when required E2E, benchmark, or Cloudflare smoke ev
     assert.ok(result.gates.some((gate) => gate.id === 'benchmark-compare'));
     assert.ok(result.gates.some((gate) => gate.id === 'docker-e2e-compare'));
     assert.ok(result.gates.some((gate) => gate.id === 'cloudflare-smoke'));
+  } finally {
+    fs.rmSync(fixture.rootDir, { force: true, recursive: true });
+  }
+});
+
+test('runCutoverGates rejects stale benchmark, E2E, and Cloudflare smoke evidence', () => {
+  const fixture = createCutoverFixture('2026-06-20T00:00:00.000Z');
+
+  try {
+    const result = runCutoverGates({
+      ...fixture,
+      evidenceMaxAgeMs: 60 * 60 * 1000,
+      evidenceNowMs: Date.parse('2026-06-20T03:00:00.000Z'),
+    });
+    const benchmarkGate = result.gates.find(
+      (gate) => gate.id === 'benchmark-compare'
+    );
+    const e2eGate = result.gates.find(
+      (gate) => gate.id === 'docker-e2e-compare'
+    );
+    const cloudflareGate = result.gates.find(
+      (gate) => gate.id === 'cloudflare-smoke'
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(benchmarkGate.ok, false);
+    assert.equal(e2eGate.ok, false);
+    assert.equal(cloudflareGate.ok, false);
+    assert.match(benchmarkGate.detail, /Benchmark report is stale/u);
+    assert.match(e2eGate.detail, /Docker E2E compare report is stale/u);
+    assert.match(cloudflareGate.detail, /Cloudflare smoke report is stale/u);
   } finally {
     fs.rmSync(fixture.rootDir, { force: true, recursive: true });
   }

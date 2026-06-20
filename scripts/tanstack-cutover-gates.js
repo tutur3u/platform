@@ -25,6 +25,8 @@ const DEFAULT_OVERRIDES_PATH = path.join(
   'migration',
   'route-overrides.json'
 );
+const DEFAULT_EVIDENCE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const FUTURE_EVIDENCE_SKEW_MS = 5 * 60 * 1000;
 const BACKEND_ROUTE_KINDS = new Set(['api', 'cron', 'route-handler', 'trpc']);
 const REQUIRED_BENCHMARK_COMPARISONS = Object.freeze([
   'frontend-route-p95',
@@ -47,6 +49,12 @@ function readJson(filePath, fsImpl = fs) {
   return JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
 }
 
+function parsePositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function parseArgs(argv = process.argv.slice(2)) {
   const args = {
     appDir: DEFAULT_APP_DIR,
@@ -55,6 +63,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     benchmarkSetup: 'compare',
     cloudflareSmokeReportPath: null,
     e2eReportPath: null,
+    evidenceMaxAgeMs: DEFAULT_EVIDENCE_MAX_AGE_MS,
     manifestPath: DEFAULT_MANIFEST_PATH,
     outputPath: null,
     overridesPath: DEFAULT_OVERRIDES_PATH,
@@ -105,6 +114,15 @@ function parseArgs(argv = process.argv.slice(2)) {
 
     if (arg === '--e2e-report') {
       args.e2eReportPath = path.resolve(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--evidence-max-age-ms') {
+      args.evidenceMaxAgeMs = parsePositiveInteger(
+        argv[index + 1],
+        args.evidenceMaxAgeMs
+      );
       index += 1;
       continue;
     }
@@ -200,6 +218,45 @@ function gate(id, label, ok, detail) {
     ok,
     status: ok ? 'pass' : 'blocked',
   };
+}
+
+function formatDurationMs(durationMs) {
+  const minutes = Math.round(durationMs / 60_000);
+
+  if (minutes < 120) {
+    return `${minutes} minutes`;
+  }
+
+  return `${Math.round(minutes / 60)} hours`;
+}
+
+function validateEvidenceFreshness(
+  report,
+  label,
+  { maxAgeMs = DEFAULT_EVIDENCE_MAX_AGE_MS, nowMs = Date.now() } = {}
+) {
+  const failures = [];
+  const generatedAtMs = Date.parse(String(report?.generatedAt ?? ''));
+
+  if (!Number.isFinite(generatedAtMs)) {
+    return [`${label} report is missing a valid generatedAt timestamp.`];
+  }
+
+  if (generatedAtMs > nowMs + FUTURE_EVIDENCE_SKEW_MS) {
+    failures.push(`${label} report generatedAt is in the future.`);
+  }
+
+  const ageMs = Math.max(0, nowMs - generatedAtMs);
+
+  if (ageMs > maxAgeMs) {
+    failures.push(
+      `${label} report is stale: generatedAt is ${formatDurationMs(
+        ageMs
+      )} old, exceeding the ${formatDurationMs(maxAgeMs)} max age.`
+    );
+  }
+
+  return failures;
 }
 
 function checkManifestGates({
@@ -507,6 +564,8 @@ function checkBenchmarkGate({
   benchmarkProfile,
   benchmarkReportPath,
   benchmarkSetup,
+  evidenceMaxAgeMs = DEFAULT_EVIDENCE_MAX_AGE_MS,
+  evidenceNowMs,
   fsImpl = fs,
   requireBenchmark = true,
 } = {}) {
@@ -529,15 +588,22 @@ function checkBenchmarkGate({
     benchmarkProfile,
     benchmarkSetup,
   });
+  const failures = [
+    ...validation.failures,
+    ...validateEvidenceFreshness(report, 'Benchmark', {
+      maxAgeMs: evidenceMaxAgeMs,
+      nowMs: evidenceNowMs,
+    }),
+  ];
 
   return {
     gate: gate(
       'benchmark-compare',
       'Benchmark compare',
-      validation.ok,
-      validation.ok
+      failures.length === 0,
+      failures.length === 0
         ? `Benchmark ${report.setup}/${report.profile} passed.`
-        : validation.failures.join('\n')
+        : failures.join('\n')
     ),
     report: {
       generatedAt: report.generatedAt,
@@ -621,7 +687,13 @@ function validateE2EReport(report) {
   };
 }
 
-function checkE2EGate({ e2eReportPath, fsImpl = fs, requireE2E = true } = {}) {
+function checkE2EGate({
+  e2eReportPath,
+  evidenceMaxAgeMs = DEFAULT_EVIDENCE_MAX_AGE_MS,
+  evidenceNowMs,
+  fsImpl = fs,
+  requireE2E = true,
+} = {}) {
   if (!e2eReportPath) {
     return {
       gate: gate(
@@ -638,15 +710,22 @@ function checkE2EGate({ e2eReportPath, fsImpl = fs, requireE2E = true } = {}) {
 
   const report = readJson(e2eReportPath, fsImpl);
   const validation = validateE2EReport(report);
+  const failures = [
+    ...validation.failures,
+    ...validateEvidenceFreshness(report, 'Docker E2E compare', {
+      maxAgeMs: evidenceMaxAgeMs,
+      nowMs: evidenceNowMs,
+    }),
+  ];
 
   return {
     gate: gate(
       'docker-e2e-compare',
       'Docker E2E compare',
-      validation.ok,
-      validation.ok
+      failures.length === 0,
+      failures.length === 0
         ? 'Docker E2E compare report passed for next and tanstack frontends.'
-        : validation.failures.join('\n')
+        : failures.join('\n')
     ),
     report: {
       frontend: report.frontend,
@@ -710,6 +789,8 @@ function validateCloudflareSmokeReport(report) {
 
 function checkCloudflareSmokeGate({
   cloudflareSmokeReportPath,
+  evidenceMaxAgeMs = DEFAULT_EVIDENCE_MAX_AGE_MS,
+  evidenceNowMs,
   fsImpl = fs,
   requireCloudflareSmoke = true,
 } = {}) {
@@ -729,15 +810,22 @@ function checkCloudflareSmokeGate({
 
   const report = readJson(cloudflareSmokeReportPath, fsImpl);
   const validation = validateCloudflareSmokeReport(report);
+  const failures = [
+    ...validation.failures,
+    ...validateEvidenceFreshness(report, 'Cloudflare smoke', {
+      maxAgeMs: evidenceMaxAgeMs,
+      nowMs: evidenceNowMs,
+    }),
+  ];
 
   return {
     gate: gate(
       'cloudflare-smoke',
       'Cloudflare smoke',
-      validation.ok,
-      validation.ok
+      failures.length === 0,
+      failures.length === 0
         ? 'Cloudflare smoke report passed for Rust backend and TanStack Workers.'
-        : validation.failures.join('\n')
+        : failures.join('\n')
     ),
     report: {
       generatedAt: report.generatedAt,
@@ -830,6 +918,7 @@ Options:
   --benchmark-setup <setup>       default: compare
   --e2e-report <path>
   --cloudflare-smoke-report <path>
+  --evidence-max-age-ms <ms>      default: ${DEFAULT_EVIDENCE_MAX_AGE_MS}
   --output <path>
   --allow-legacy
   --skip-benchmark
