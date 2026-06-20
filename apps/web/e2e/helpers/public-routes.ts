@@ -8,10 +8,11 @@ const runtimeErrorPatterns = [
 ];
 
 export async function expectNoPublicRouteRuntimeError(page: Page) {
-  const bodyText = await page.locator('body').textContent();
-
   for (const pattern of runtimeErrorPatterns) {
-    expect(bodyText).not.toContain(pattern);
+    await expect(
+      page.getByText(pattern).first(),
+      `Expected public route not to render visible runtime error text: ${pattern}`
+    ).toBeHidden();
   }
 }
 
