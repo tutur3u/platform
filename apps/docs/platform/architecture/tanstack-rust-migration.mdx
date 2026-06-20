@@ -49,7 +49,7 @@ Current compatibility contract:
 
 | Runtime                 | Cloudflare entrypoint              | Deploy command                                             | Compatibility status                                                                                                                                                |
 | ----------------------- | ---------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Preview-ready for the migrated pure dispatcher routes, health/readiness, protected migration inventory, and static/cookie endpoints that do not need outbound HTTP. |
+| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Preview-ready for migrated pure dispatcher routes, health/readiness, protected migration inventory, static/cookie endpoints, and the native/Worker outbound boundary. |
 | TanStack Start frontend | `apps/tanstack-web/wrangler.jsonc` | `bun --cwd apps/tanstack-web run deploy:cloudflare`        | Preview-ready for migrated public routes, redirects, the root migration shell, and Start server-function calls to the Rust backend.                                 |
 
 `apps/tanstack-web` deployment runs `bun run build` internally through the
@@ -107,8 +107,10 @@ values in `wrangler.jsonc`, `vars`, docs, or shell history.
 Worker secrets now to exercise the redacted contact data readiness signal on
 `GET /api/migration/status`. They are not listed as required bootstrap secrets
 yet because the contact data adapter still returns
-`CONTACT_DATA_LAYER_NOT_READY` until an async native/Worker HTTP layer owns
-profile hydration and support-inquiry persistence.
+`CONTACT_DATA_LAYER_NOT_READY`. The async native/Worker HTTP boundary exists,
+but profile hydration and support-inquiry persistence still need route wiring,
+Supabase auth revalidation, and persistence tests before those endpoints can be
+terminally migrated.
 
 Smoke-test the returned `workers.dev` URL before pointing the frontend at it:
 
@@ -264,8 +266,9 @@ Current Cloudflare limitations:
 
 - Service bindings are pending. `BACKEND_INTERNAL_URL` still points at an HTTP
   origin, usually the backend Worker preview URL.
-- Outbound HTTP proxy parity for the Discord cron routes is pending an async
-  Rust abstraction that works in both native Axum and Cloudflare Workers.
+- Outbound HTTP proxy parity for the Discord cron routes is pending route
+  wiring and tests that use the async outbound abstraction in both native Axum
+  and Cloudflare Workers.
 - Production host routing is pending full route manifest completion, Docker
   compare-mode E2E evidence, benchmark evidence, and
   `bun migration:tanstack:gates`.
@@ -439,7 +442,7 @@ Backend migration candidates blocked on runtime design:
 
 | Legacy route                             | Blocker                                                                                                                                                                                                | Required design                                                                                                                                                                                                                                    |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/cron/discord/daily-report`     | Exact parity proxies a POST to `DISCORD_APP_DEPLOYMENT_URL/daily-report`, but the Rust backend dispatcher is currently a synchronous pure route function shared by native Axum and Cloudflare Workers. | Add an async outbound HTTP abstraction with native and Worker implementations, cron bearer config for `CRON_SECRET` / `VERCEL_CRON_SECRET`, upstream JSON/status passthrough, and invalid-JSON fallback parity before marking this route migrated. |
+| `GET /api/cron/discord/daily-report`     | Exact parity proxies a POST to `DISCORD_APP_DEPLOYMENT_URL/daily-report`; the shared native/Worker outbound boundary exists, but the route-specific cron proxy behavior is not wired yet.             | Use the outbound abstraction, add cron bearer config for `CRON_SECRET` / `VERCEL_CRON_SECRET`, upstream JSON/status passthrough, invalid-JSON fallback parity, OpenAPI coverage, and route tests before marking this route migrated.              |
 | `GET /api/cron/discord/wol/daily/remind` | Same Discord proxy behavior and runtime split as the daily report route.                                                                                                                               | Reuse the async cron proxy abstraction for the `wol-reminder` upstream path and document both routes in `apps/backend/api/openapi.yaml`.                                                                                                           |
 
 Frontend migration candidates blocked on auth/data ownership:

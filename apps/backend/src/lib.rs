@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contact;
+mod outbound;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -224,6 +225,14 @@ pub struct BackendResponse {
 
 pub fn json_security_headers() -> &'static [(&'static str, &'static str)] {
     &JSON_SECURITY_HEADERS
+}
+
+pub(crate) async fn handle_backend_request(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    _outbound: &impl outbound::OutboundHttpClient,
+) -> BackendResponse {
+    route_request(config, request)
 }
 
 #[derive(Serialize)]
@@ -1652,7 +1661,7 @@ fn default_deployment_target() -> &'static str {
 pub mod native {
     use super::{
         BackendConfig, BackendRequest, BackendResponse, MAX_REQUEST_BODY_BYTES,
-        json_security_headers, route_request, should_buffer_request_body,
+        handle_backend_request, json_security_headers, outbound, should_buffer_request_body,
     };
     use axum::Router;
     use axum::body::{Body, to_bytes};
@@ -1663,8 +1672,17 @@ pub mod native {
     use axum::http::{HeaderValue, Request, Response, StatusCode};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
+    #[derive(Clone)]
+    struct NativeState {
+        config: BackendConfig,
+        outbound: outbound::NativeOutboundHttpClient,
+    }
+
     pub fn router(config: BackendConfig) -> Router {
-        Router::new().fallback(handle).with_state(config)
+        Router::new().fallback(handle).with_state(NativeState {
+            config,
+            outbound: outbound::NativeOutboundHttpClient::default(),
+        })
     }
 
     pub fn listen_addr(config: &BackendConfig) -> SocketAddr {
@@ -1675,7 +1693,7 @@ pub mod native {
         SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), config.port)
     }
 
-    async fn handle(State(config): State<BackendConfig>, request: Request<Body>) -> Response<Body> {
+    async fn handle(State(state): State<NativeState>, request: Request<Body>) -> Response<Body> {
         let (parts, body) = request.into_parts();
         let method = parts.method.as_str().to_owned();
         let path = parts.uri.path().to_owned();
@@ -1715,8 +1733,8 @@ pub mod native {
             None
         };
 
-        route_request(
-            &config,
+        handle_backend_request(
+            &state.config,
             BackendRequest {
                 authorization: authorization.as_deref(),
                 body_text: body_text.as_deref(),
@@ -1728,7 +1746,9 @@ pub mod native {
                 request_id: request_id.as_deref(),
                 url: Some(url.as_str()),
             },
+            &state.outbound,
         )
+        .await
         .into_response()
     }
 
@@ -1800,7 +1820,7 @@ pub mod native {
 pub mod worker_runtime {
     use super::{
         BackendConfig, BackendRequest, BackendResponse, buffered_request_body_exceeds_limit,
-        json_security_headers, request_body_too_large_response, route_request,
+        handle_backend_request, json_security_headers, outbound, request_body_too_large_response,
         should_buffer_request_body,
     };
     use worker::{Env, Request, Response, Result, event};
@@ -1833,7 +1853,9 @@ pub mod worker_runtime {
             None
         };
 
-        route_request(
+        let outbound = outbound::WorkerFetchOutboundHttpClient;
+
+        handle_backend_request(
             &config,
             BackendRequest {
                 authorization: authorization.as_deref(),
@@ -1846,7 +1868,9 @@ pub mod worker_runtime {
                 request_id: request_id.as_deref(),
                 url: Some(url.as_str()),
             },
+            &outbound,
         )
+        .await
         .into_worker_response()
     }
 
@@ -1949,7 +1973,12 @@ mod tests {
         CONTACT_DATA_LAYER_NOT_READY_MESSAGE, CURRENT_USER_PROFILE_PATH, SUPPORT_INQUIRIES_PATH,
         verify_app_session_token,
     };
+    use super::outbound::{
+        OutboundError, OutboundFuture, OutboundHttpClient, OutboundMethod, OutboundRequest,
+        OutboundResponse,
+    };
     use super::*;
+    use std::cell::Cell;
 
     fn request(method: &'static str, path: &'static str) -> BackendRequest<'static> {
         BackendRequest {
@@ -2004,6 +2033,76 @@ mod tests {
             "test-service-role-secret",
         );
         config
+    }
+
+    #[derive(Default)]
+    struct RecordingOutboundClient {
+        calls: Cell<usize>,
+    }
+
+    impl OutboundHttpClient for RecordingOutboundClient {
+        fn send<'a>(&'a self, request: OutboundRequest<'a>) -> OutboundFuture<'a> {
+            self.calls.set(self.calls.get() + 1);
+
+            Box::pin(async move {
+                Ok(OutboundResponse {
+                    body_text: format!(
+                        r#"{{"method":"{}","url":"{}"}}"#,
+                        request.method.as_str(),
+                        request.url
+                    ),
+                    headers: vec![("content-type".to_owned(), "application/json".to_owned())],
+                    status: 200,
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn async_handler_preserves_pure_route_dispatch_without_outbound_calls() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, authorized_request("GET", "/api/health"), &outbound)
+                .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["status"], "ok");
+        assert_eq!(outbound.calls.get(), 0);
+    }
+
+    #[tokio::test]
+    async fn outbound_client_boundary_accepts_mocked_requests() {
+        let outbound = RecordingOutboundClient::default();
+        let response = outbound
+            .send(
+                OutboundRequest::new(OutboundMethod::Post, "https://api.example.test/rpc")
+                    .with_header("Content-Type", APPLICATION_JSON)
+                    .with_body(r#"{"hello":"world"}"#),
+            )
+            .await
+            .expect("mock outbound response");
+
+        assert_eq!(outbound.calls.get(), 1);
+        assert_eq!(response.status, 200);
+        assert_eq!(response.header("Content-Type"), Some(APPLICATION_JSON));
+
+        let payload: serde_json::Value = response.json().expect("json payload");
+        assert_eq!(payload["method"], "POST");
+        assert_eq!(payload["url"], "https://api.example.test/rpc");
+    }
+
+    #[test]
+    fn native_outbound_client_installs_tls_provider_before_construction() {
+        let _client = outbound::NativeOutboundHttpClient::default();
+    }
+
+    #[test]
+    fn outbound_errors_are_display_safe() {
+        let error = OutboundError::Transport("upstream unavailable".to_owned());
+
+        assert_eq!(error.to_string(), "upstream unavailable");
     }
 
     fn request_with_origin(

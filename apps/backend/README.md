@@ -167,6 +167,7 @@ tooling:
 cd apps/backend
 rustup target add wasm32-unknown-unknown
 cargo install worker-build --locked
+cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker
 worker-build --release -- --no-default-features --features worker
 ```
 
