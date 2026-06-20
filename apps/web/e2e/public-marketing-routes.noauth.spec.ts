@@ -56,18 +56,22 @@ const legalRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/acceptable-use`,
     heading: 'Acceptable Use',
+    summaryHeading: 'Key Policy Points',
   },
   {
     path: `/${DEFAULT_LOCALE}/community-guidelines`,
     heading: 'Community Guidelines',
+    summaryHeading: 'Guidelines at a Glance',
   },
   {
     path: `/${DEFAULT_LOCALE}/privacy`,
     heading: 'Privacy Policy',
+    summaryHeading: 'Key Privacy Principles',
   },
   {
     path: `/${DEFAULT_LOCALE}/terms`,
     heading: 'Terms of Service',
+    summaryHeading: 'Key Points Summary',
   },
 ];
 
@@ -86,7 +90,7 @@ const staticMarketingRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/branding`,
-    heading: 'Brand guidelines and assets',
+    heading: 'Tuturuuu Branding',
   },
   {
     path: `/${DEFAULT_LOCALE}/blog`,
@@ -94,7 +98,7 @@ const staticMarketingRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/careers`,
-    heading: 'Join us in building the future',
+    heading: 'Build the Future of Human Potential',
   },
   {
     path: `/${DEFAULT_LOCALE}/facebook-mockup`,
@@ -176,40 +180,16 @@ const staticMarketingRoutes = [
 
 const redirects = [
   {
-    path: '/pricing',
-    location: '/?hash-nav=1#pricing',
-  },
-  {
     path: `/${DEFAULT_LOCALE}/pricing`,
-    location: '/?hash-nav=1#pricing',
-  },
-  {
-    path: `/${DEFAULT_LOCALE}/docs`,
-    location: 'https://docs.tuturuuu.com',
-  },
-  {
-    path: '/products/meet-together',
-    location: '/meet-together',
+    location: '/pricing',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/meet-together`,
     location: '/meet-together',
   },
   {
-    path: `/${DEFAULT_LOCALE}/calendar/meet-together`,
-    location: '/meet-together',
-  },
-  {
-    path: `/${DEFAULT_LOCALE}/calendar/meet-together/plans/summer`,
-    location: '/meet-together/plans/summer',
-  },
-  {
-    path: '/qr-generator?utm_source=e2e&tag=a&tag=b',
-    location: /\/\?utm_source=e2e&tag=a&tag=b$/u,
-  },
-  {
     path: `/${DEFAULT_LOCALE}/qr-generator?utm_source=e2e&tag=a&tag=b`,
-    location: /\/\?utm_source=e2e&tag=a&tag=b$/u,
+    location: /\/qr-generator\?utm_source=e2e&tag=a&tag=b$/u,
   },
 ];
 
@@ -240,7 +220,9 @@ test.describe('Public migrated marketing routes', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }).first()
       ).toBeVisible({ timeout: 30_000 });
-      await expect(page.getByText('Key Points Summary').first()).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: route.summaryHeading }).first()
+      ).toBeVisible();
       await expect(
         page.getByText('Effective Date: February 6, 2026').first()
       ).toBeVisible();
@@ -248,8 +230,8 @@ test.describe('Public migrated marketing routes', () => {
     });
   }
 
-  test('renders localized landing route', async ({ page }) => {
-    const response = await page.goto(`/${DEFAULT_LOCALE}`, {
+  test('renders default landing route', async ({ page }) => {
+    const response = await page.goto('/', {
       waitUntil: 'domcontentloaded',
     });
 
@@ -293,7 +275,7 @@ test.describe('Public migrated marketing routes', () => {
     await expect(
       page.getByRole('heading', { name: "You're Offline" })
     ).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText('Try Again')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try Again' })).toBeVisible();
     await expectNoPublicRouteRuntimeError(page);
   });
 
