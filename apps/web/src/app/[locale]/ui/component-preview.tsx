@@ -6,6 +6,7 @@ import type { PreviewEntry } from './preview-thumbnail';
 
 const PreviewRender = dynamic(() => import('./preview-render'), {
   loading: () => <PreviewSkeleton />,
+  ssr: false,
 });
 
 export function PreviewSkeleton() {

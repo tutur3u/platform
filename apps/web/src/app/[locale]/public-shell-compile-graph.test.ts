@@ -148,6 +148,9 @@ const uiDocsComponentsIconBoundarySources = [
   source('src/app/[locale]/ui/docs-navigation.tsx'),
   source('src/app/[locale]/ui/ui-docs-command-trigger.tsx'),
 ] as const;
+const uiDocsComponentPreviewSource = source(
+  'src/app/[locale]/ui/component-preview.tsx'
+);
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -449,6 +452,13 @@ describe('public shell compile graph', () => {
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
+  });
+
+  it('keeps UI docs live previews out of the server-rendered detail route', () => {
+    expect(uiDocsComponentPreviewSource).toContain(
+      "dynamic(() => import('./preview-render')"
+    );
+    expect(uiDocsComponentPreviewSource).toContain('ssr: false');
   });
 
   it('keeps the account deletion page off the icon package root', () => {
