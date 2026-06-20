@@ -63,6 +63,65 @@ describe('backend API client', () => {
     expect(getConfiguredBackendApiBaseUrl()).toBe('http://backend:7820');
   });
 
+  it('normalizes schemeless public backend origins to HTTPS', () => {
+    vi.stubEnv('BACKEND_PUBLIC_ORIGIN', 'backend.example.com');
+    vi.stubGlobal('window', {});
+
+    expect(getConfiguredBackendApiBaseUrl()).toBe(
+      'https://backend.example.com'
+    );
+  });
+
+  it('rejects remote plaintext public backend origins in browser runtimes', () => {
+    vi.stubEnv('BACKEND_PUBLIC_ORIGIN', 'http://backend.example.com');
+    vi.stubEnv('NEXT_PUBLIC_BACKEND_URL', 'https://fallback.example.com');
+    vi.stubGlobal('window', {});
+
+    expect(getConfiguredBackendApiBaseUrl()).toBe(
+      'https://fallback.example.com'
+    );
+  });
+
+  it('allows localhost plaintext public backend origins for local development', () => {
+    vi.stubEnv('BACKEND_PUBLIC_ORIGIN', 'http://localhost:7820');
+    vi.stubGlobal('window', {});
+
+    expect(getConfiguredBackendApiBaseUrl()).toBe('http://localhost:7820');
+  });
+
+  it('rejects backend origins with embedded credentials', () => {
+    vi.stubEnv(
+      'BACKEND_PUBLIC_ORIGIN',
+      'https://user:pass@backend.example.com'
+    );
+    vi.stubEnv('NEXT_PUBLIC_BACKEND_URL', 'https://fallback.example.com');
+
+    expect(getConfiguredBackendApiBaseUrl()).toBe(
+      'https://fallback.example.com'
+    );
+  });
+
+  it('rejects backend origin values that include paths or query strings', () => {
+    vi.stubEnv(
+      'BACKEND_INTERNAL_URL',
+      'https://backend.example.com/api?token=secret'
+    );
+    vi.stubEnv('BACKEND_PUBLIC_ORIGIN', 'https://fallback.example.com');
+
+    expect(getConfiguredBackendApiBaseUrl()).toBe(
+      'https://fallback.example.com'
+    );
+  });
+
+  it('rejects unsupported backend origin protocols', () => {
+    vi.stubEnv('BACKEND_INTERNAL_URL', 'ftp://backend.example.com');
+    vi.stubEnv('BACKEND_PUBLIC_ORIGIN', 'https://fallback.example.com');
+
+    expect(getConfiguredBackendApiBaseUrl()).toBe(
+      'https://fallback.example.com'
+    );
+  });
+
   it('reads migration status through the shared internal API client wrapper', async () => {
     vi.stubEnv('BACKEND_INTERNAL_TOKEN', 'server-token');
     const fetchMock = vi.fn().mockResolvedValue({

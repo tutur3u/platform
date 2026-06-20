@@ -122,6 +122,17 @@ export type BackendMigrationCutoverGates = {
 };
 
 const DEFAULT_LOCAL_BACKEND_ORIGIN = 'http://localhost:7820';
+const LOCAL_PLAINTEXT_BACKEND_HOSTS = new Set([
+  '0.0.0.0',
+  '127.0.0.1',
+  '[::1]',
+  '::1',
+  'localhost',
+]);
+const INTERNAL_PLAINTEXT_BACKEND_HOSTS = new Set([
+  'backend',
+  'host.docker.internal',
+]);
 
 function getServerBackendInternalAuthorization() {
   if (typeof window !== 'undefined') {
@@ -162,7 +173,33 @@ function withServerBackendInternalAuthorization(
   };
 }
 
-function resolveConfiguredBackendOrigin(value?: string) {
+function isLocalPlaintextBackendHost(hostname: string) {
+  const normalizedHostname = hostname.toLowerCase();
+
+  return (
+    LOCAL_PLAINTEXT_BACKEND_HOSTS.has(normalizedHostname) ||
+    normalizedHostname.endsWith('.localhost') ||
+    normalizedHostname.startsWith('127.')
+  );
+}
+
+function isAllowedPlaintextBackendHost(
+  hostname: string,
+  allowInternalPlaintextHosts: boolean
+) {
+  const normalizedHostname = hostname.toLowerCase();
+
+  return (
+    isLocalPlaintextBackendHost(normalizedHostname) ||
+    (allowInternalPlaintextHosts &&
+      INTERNAL_PLAINTEXT_BACKEND_HOSTS.has(normalizedHostname))
+  );
+}
+
+function resolveConfiguredBackendOrigin(
+  value?: string,
+  options: { allowInternalPlaintextHosts?: boolean } = {}
+) {
   if (!value) {
     return null;
   }
@@ -181,7 +218,31 @@ function resolveConfiguredBackendOrigin(value?: string) {
     : `https://${firstValue}`;
 
   try {
-    return new URL(normalized).origin;
+    const parsedUrl = new URL(normalized);
+
+    if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+      return null;
+    }
+
+    if (parsedUrl.username || parsedUrl.password) {
+      return null;
+    }
+
+    if (parsedUrl.pathname !== '/' || parsedUrl.search || parsedUrl.hash) {
+      return null;
+    }
+
+    if (
+      parsedUrl.protocol === 'http:' &&
+      !isAllowedPlaintextBackendHost(
+        parsedUrl.hostname,
+        options.allowInternalPlaintextHosts ?? false
+      )
+    ) {
+      return null;
+    }
+
+    return parsedUrl.origin;
   } catch {
     return null;
   }
@@ -190,7 +251,9 @@ function resolveConfiguredBackendOrigin(value?: string) {
 export function getConfiguredBackendApiBaseUrl() {
   if (typeof window === 'undefined') {
     return (
-      resolveConfiguredBackendOrigin(process.env.BACKEND_INTERNAL_URL) ??
+      resolveConfiguredBackendOrigin(process.env.BACKEND_INTERNAL_URL, {
+        allowInternalPlaintextHosts: true,
+      }) ??
       resolveConfiguredBackendOrigin(process.env.BACKEND_PUBLIC_ORIGIN) ??
       resolveConfiguredBackendOrigin(process.env.NEXT_PUBLIC_BACKEND_URL) ??
       DEFAULT_LOCAL_BACKEND_ORIGIN
