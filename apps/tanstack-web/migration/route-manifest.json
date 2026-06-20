@@ -3,14 +3,14 @@
   "progress": {
     "byKind": [
       {
-        "acceptedRemoval": 1,
+        "acceptedRemoval": 2,
         "key": "api",
         "label": "api",
-        "legacyNext": 1078,
+        "legacyNext": 1077,
         "migrated": 26,
-        "percentComplete": 2.44,
-        "remaining": 1078,
-        "terminal": 27,
+        "percentComplete": 2.53,
+        "remaining": 1077,
+        "terminal": 28,
         "total": 1105,
         "unknownStatus": 0
       },
@@ -113,14 +113,14 @@
     ],
     "byOwner": [
       {
-        "acceptedRemoval": 1,
+        "acceptedRemoval": 2,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1098,
+        "legacyNext": 1097,
         "migrated": 29,
-        "percentComplete": 2.66,
-        "remaining": 1098,
-        "terminal": 30,
+        "percentComplete": 2.75,
+        "remaining": 1097,
+        "terminal": 31,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -320,14 +320,14 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 1,
+      "acceptedRemoval": 2,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1359,
+      "legacyNext": 1358,
       "migrated": 145,
-      "percentComplete": 9.7,
-      "remaining": 1359,
-      "terminal": 146,
+      "percentComplete": 9.77,
+      "remaining": 1358,
+      "terminal": 147,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -699,7 +699,7 @@
       "methods": ["GET"],
       "routePath": "/api/auth/me/session",
       "sourceFile": "apps/web/src/app/api/auth/me/session/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {

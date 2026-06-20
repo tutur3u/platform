@@ -20,6 +20,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/health with the legacy response body."
     },
+    "api:/api/auth/me/session:apps/web/src/app/api/auth/me/session/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: this debug-style endpoint exposes raw sb-* auth cookie values and the full Supabase session payload. No in-repo callers reference /api/auth/me/session, and the TanStack/Rust cutover must not preserve raw session export behavior."
+    },
     "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

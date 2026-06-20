@@ -404,6 +404,7 @@ Accepted removals:
 
 | Legacy artifact                                              | Decision           | Evidence                                                                                                                                                                                              |
 | ------------------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/app/api/auth/me/session/route.ts`              | `accepted-removal` | The debug-style route returns raw `sb-*` auth cookie values plus the full Supabase session payload. No in-repo caller references `/api/auth/me/session`, and the TanStack/Rust cutover must not preserve raw session export behavior. |
 | `apps/web/src/app/api/workspaces/[wsId]/categories/route.ts` | `accepted-removal` | The file is zero bytes and exports no HTTP methods, so there is no runtime behavior to port. The override keeps the artifact visible and terminal instead of silently dropping it from the inventory. |
 
 Backend migration candidates blocked on runtime design:
