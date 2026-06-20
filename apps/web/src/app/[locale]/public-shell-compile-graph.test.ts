@@ -151,6 +151,7 @@ const uiDocsComponentsIconBoundarySources = [
 const uiDocsComponentPreviewSource = source(
   'src/app/[locale]/ui/component-preview.tsx'
 );
+const uiDocsShikiSource = source('src/app/[locale]/ui/shiki.ts');
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -459,6 +460,15 @@ describe('public shell compile graph', () => {
       "dynamic(() => import('./preview-render')"
     );
     expect(uiDocsComponentPreviewSource).toContain('ssr: false');
+  });
+
+  it('keeps UI docs dev code blocks off the static Shiki import graph', () => {
+    expect(uiDocsShikiSource).not.toContain('import { createHighlighter');
+    expect(uiDocsShikiSource).toContain(
+      "import type { Highlighter } from 'shiki';"
+    );
+    expect(uiDocsShikiSource).toContain("import('shiki')");
+    expect(uiDocsShikiSource).toContain("NODE_ENV === 'development'");
   });
 
   it('keeps the account deletion page off the icon package root', () => {
