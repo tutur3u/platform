@@ -1,31 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  authorizeInventoryWorkspaceMock,
   createAdminClientMock,
-  createClientMock,
-  getPermissionsMock,
-  normalizeWorkspaceIdMock,
   validateInventoryItemWorkspaceRelationsMock,
 } = vi.hoisted(() => ({
+  authorizeInventoryWorkspaceMock: vi.fn(),
   createAdminClientMock: vi.fn(),
-  createClientMock: vi.fn(),
-  getPermissionsMock: vi.fn(),
-  normalizeWorkspaceIdMock: vi.fn(),
   validateInventoryItemWorkspaceRelationsMock: vi.fn(),
-}));
-
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
-  createClient: createClientMock,
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: getPermissionsMock,
-  normalizeWorkspaceId: normalizeWorkspaceIdMock,
+vi.mock('@/lib/inventory/commerce/auth', () => ({
+  authorizeInventoryWorkspace: authorizeInventoryWorkspaceMock,
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -74,13 +64,18 @@ describe('product inventory route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    createClientMock.mockResolvedValue({ id: 'session-client' });
-    getPermissionsMock.mockResolvedValue({
-      containsPermission: vi.fn((permission: string) =>
-        ['update_stock_quantity'].includes(permission)
-      ),
+    authorizeInventoryWorkspaceMock.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: {
+          containsPermission: vi.fn((permission: string) =>
+            ['update_stock_quantity'].includes(permission)
+          ),
+        },
+        userId: 'user-1',
+        wsId: WORKSPACE_ID,
+      },
     });
-    normalizeWorkspaceIdMock.mockResolvedValue(WORKSPACE_ID);
   });
 
   it('rejects inventory rows whose unit or warehouse is outside the workspace before insert', async () => {

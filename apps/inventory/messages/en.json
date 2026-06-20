@@ -1425,6 +1425,7 @@
         "quantity": "Quantity",
         "remove": "Remove",
         "removeSection": "Remove section",
+        "retail": "Retail",
         "save": "Save",
         "saveAsTemplate": "Save as template",
         "saveError": "Could not save changes.",

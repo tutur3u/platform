@@ -1,16 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
@@ -33,18 +26,14 @@ interface Params {
 }
 
 const getWorkspaceUserId = async (
-  supabase: TypedSupabaseClient,
+  platformUserId: string,
   sbAdmin: TypedSupabaseClient,
   wsId: string
 ) => {
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) return null;
-
   const { data: workspaceUser } = await sbAdmin
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
-    .eq('platform_user_id', user.id)
+    .eq('platform_user_id', platformUserId)
     .eq('ws_id', wsId)
     .single();
 
@@ -53,16 +42,15 @@ const getWorkspaceUserId = async (
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId, userId } = auth.value;
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   const { containsPermission } = permissions;
   if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
@@ -146,7 +134,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const workspaceUserId = await getWorkspaceUserId(supabase, sbAdmin, wsId);
+  const workspaceUserId = await getWorkspaceUserId(userId, sbAdmin, wsId);
   if (workspaceUserId) {
     const stockChanges = inventory
       .map((item) => ({
@@ -179,16 +167,15 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function PATCH(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId, userId } = auth.value;
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   const { containsPermission } = permissions;
   if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
@@ -197,10 +184,6 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
   const parsed = BodySchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
@@ -263,7 +246,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const workspaceUserId = await getWorkspaceUserId(supabase, sbAdmin, wsId);
+  const workspaceUserId = await getWorkspaceUserId(userId, sbAdmin, wsId);
 
   // If inventory is empty, clear all existing inventory
   if (inventory.length === 0) {
@@ -500,14 +483,14 @@ export async function PATCH(req: Request, { params }: Params) {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId } = auth.value;
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
-  const wsId = await normalizeWorkspaceId(id, supabase);
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+
   const { containsPermission } = permissions;
   if (!containsPermission('view_stock_quantity')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -543,15 +526,15 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId, userId } = auth.value;
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
-  const wsId = await normalizeWorkspaceId(id, supabase);
+
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   const { containsPermission } = permissions;
   if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
@@ -588,7 +571,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const workspaceUserId = await getWorkspaceUserId(supabase, sbAdmin, wsId);
+  const workspaceUserId = await getWorkspaceUserId(userId, sbAdmin, wsId);
   if (workspaceUserId && existingInventory?.length) {
     const stockChanges = existingInventory
       .map((item) => ({

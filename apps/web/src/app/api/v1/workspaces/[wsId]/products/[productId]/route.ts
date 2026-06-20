@@ -1,16 +1,9 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { RawInventoryProductWithChanges } from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -19,6 +12,7 @@ import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
 } from '@/lib/inventory/audit';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
 import {
   canAdjustInventoryStock,
@@ -108,17 +102,13 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { wsId: id, productId } = parsedParams.data;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId } = auth.value;
   const sbAdmin = await createAdminClient();
 
-  // Resolve workspace ID
-  const wsId = await normalizeWorkspaceId(id, supabase);
-
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   if (!canViewInventoryCatalog(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -238,16 +228,14 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const { wsId: id, productId } = parsedParams.data;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId } = auth.value;
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   if (!canManageInventoryCatalog(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update products' },
@@ -454,14 +442,12 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const { wsId: id, productId } = parsedParams.data;
-  const supabase = await createClient(req);
+  const auth = await authorizeInventoryWorkspace(req, id, {
+    appSessionTargets: ['inventory'],
+  });
+  if (!auth.ok) return auth.response;
+  const { permissions, wsId } = auth.value;
   const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
-
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
 
   if (!canManageInventoryCatalog(permissions)) {
     return NextResponse.json(
