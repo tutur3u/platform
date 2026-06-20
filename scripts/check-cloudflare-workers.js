@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+const GITIGNORE_PATH = path.join(ROOT_DIR, '.gitignore');
 const ROOT_PACKAGE_JSON_PATH = path.join(ROOT_DIR, 'package.json');
 const BACKEND_WRANGLER_PATH = path.join(
   ROOT_DIR,
@@ -69,6 +70,12 @@ const SECRET_VALUE_PATTERNS = [
     label: 'an API key',
     pattern: /\b(?:rk|sk)_(?:live|test)_[A-Za-z0-9_]{16,}\b/iu,
   },
+];
+const REQUIRED_CLOUDFLARE_SECRET_IGNORE_RULES = [
+  '.dev.vars*',
+  '**/.dev.vars*',
+  '.env.preview*',
+  '**/.env.preview*',
 ];
 
 function readJson(filePath, fsImpl = fs) {
@@ -140,6 +147,26 @@ function validateRustBackendWorkflow(workflowContent) {
     if (!workflowContent.includes(snippet)) {
       errors.push(
         `rust-backend.yml must include ${snippet} for Cloudflare Worker validation.`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateCloudflareSecretIgnoreRules(gitignoreContent) {
+  const gitignoreRules = new Set(
+    gitignoreContent
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+  );
+  const errors = [];
+
+  for (const rule of REQUIRED_CLOUDFLARE_SECRET_IGNORE_RULES) {
+    if (!gitignoreRules.has(rule)) {
+      errors.push(
+        `.gitignore must include ${rule} so Cloudflare local Worker secret files are never staged.`
       );
     }
   }
@@ -493,6 +520,10 @@ function checkCloudflareWorkersSetup({
     path.join(rootDir, '.github', 'workflows', 'rust-backend.yml'),
     'utf8'
   ),
+  gitignoreContent = fsImpl.readFileSync(
+    path.join(rootDir, '.gitignore'),
+    'utf8'
+  ),
   tanstackWebViteConfigContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'tanstack-web', 'vite.config.ts'),
     'utf8'
@@ -507,6 +538,7 @@ function checkCloudflareWorkersSetup({
   ),
 } = {}) {
   return [
+    ...validateCloudflareSecretIgnoreRules(gitignoreContent),
     ...validateRootPackageJson(rootPackageJson),
     ...validateRustBackendWorkflow(rustBackendWorkflowContent),
     ...validateBackendWranglerConfig(backendWranglerConfig),
@@ -530,6 +562,7 @@ if (require.main === module) {
 
 module.exports = {
   BACKEND_WRANGLER_PATH,
+  GITIGNORE_PATH,
   ROOT_DIR,
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
@@ -539,6 +572,7 @@ module.exports = {
   TANSTACK_WEB_WRANGLER_PATH,
   checkCloudflareWorkersSetup,
   validateBackendWranglerConfig,
+  validateCloudflareSecretIgnoreRules,
   validateRootPackageJson,
   validateRustBackendWorkflow,
   validateTanstackWebPackageJson,

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 
 const {
   BACKEND_WRANGLER_PATH,
+  GITIGNORE_PATH,
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
   TANSTACK_WEB_PACKAGE_JSON_PATH,
@@ -12,6 +13,7 @@ const {
   TANSTACK_WEB_WRANGLER_PATH,
   checkCloudflareWorkersSetup,
   validateBackendWranglerConfig,
+  validateCloudflareSecretIgnoreRules,
   validateRustBackendWorkflow,
   validateTanstackWebViteConfig,
   validateTanstackWebRouteTree,
@@ -20,6 +22,18 @@ const {
 
 test('Cloudflare Worker deployment config accepts the current repo state', () => {
   assert.deepEqual(checkCloudflareWorkersSetup(), []);
+});
+
+test('Cloudflare local Worker secret files stay ignored', () => {
+  const gitignore = fs.readFileSync(GITIGNORE_PATH, 'utf8');
+
+  assert.deepEqual(validateCloudflareSecretIgnoreRules(gitignore), []);
+  assert.match(
+    validateCloudflareSecretIgnoreRules(
+      gitignore.replace('**/.dev.vars*', '')
+    ).join('\n'),
+    /\.dev\.vars/
+  );
 });
 
 test('Rust backend workflow validates the Cloudflare Worker target', () => {

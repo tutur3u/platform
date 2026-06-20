@@ -41,9 +41,13 @@ yarn-debug.log*
 # local env files
 .env
 .env.local
+.env.preview*
 .env.development.local
 .env.test.local
 .env.production.local
+**/.env.preview*
+**/.dev.vars*
+.dev.vars*
 
 # turbo
 .turbo

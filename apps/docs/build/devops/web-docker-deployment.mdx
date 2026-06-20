@@ -38,30 +38,30 @@ parallel `apps/tanstack-web` migration runtime.
 | `bun serve:web:docker:down`                | Stop the production Docker stack                                                                                                                        |
 | `bun serve:web:docker:bg:down`             | Stop the blue/green stack and clear local runtime state                                                                                                 |
 | `bun test:e2e` / `bun test:e2e:web:docker` | Start local Supabase, reset it, run the production blue/green Docker web stack, then run Playwright                                                     |
-| `bun benchmark:web-setups`                 | Compare reachable Next.js, TanStack Start, and Rust backend routes and write reports under `tmp/benchmarks/web-migration/`                            |
-| `bun migration:tanstack:gates`             | Validate route parity, Docker E2E evidence, and benchmark evidence before TanStack/Rust cutover                                                       |
+| `bun benchmark:web-setups`                 | Compare reachable Next.js, TanStack Start, and Rust backend routes and write reports under `tmp/benchmarks/web-migration/`                              |
+| `bun migration:tanstack:gates`             | Validate route parity, Docker E2E evidence, and benchmark evidence before TanStack/Rust cutover                                                         |
 | `bun check:docker`                         | Validate Dockerfile and compose parity rules                                                                                                            |
 | `bun check:cloudflare`                     | Validate TanStack Start and Rust backend Wrangler deploy configs without contacting Cloudflare                                                          |
 
 ## Flags And Implicit Mappings
 
-| Flag                                            | Meaning                                                                                     |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `--without-redis`                               | Disable the bundled Redis profile and skip Docker-injected Redis env                        |
-| `--with-cloudflared`                            | Enable the bundled Cloudflare Tunnel container profile                                      |
-| `--with-supabase`                               | Start local Supabase before the Docker web flow                                             |
-| `--reset-supabase`                              | Start and reset local Supabase before the Docker web flow                                   |
-| `--env-file tmp/e2e/web.env`                    | Use an explicit Docker web env file for build secrets and runtime env files                 |
-| `--mode prod`                                   | Use the production compose file instead of the dev stack                                    |
-| `--strategy blue-green`                         | Use blue/green production deployment instead of in-place replacement                        |
-| `--profile redis`                               | Explicitly enable the Redis profile when calling the helper directly                        |
-| `--profile cloudflared`                         | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly            |
-| `--build-memory 4g`                             | Run builds through a capped Buildx builder with a memory ceiling                            |
-| `--build-cpus 4`                                | Run builds through a capped Buildx builder with an approximate CPU limit                    |
-| `--build-max-parallelism 2`                     | Limit concurrent BuildKit solve steps for lower build pressure                              |
-| `--build-builder-name tuturuuu`                 | Override the throttled Buildx builder name                                                  |
-| `--resume-if-running`                           | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
-| `--replace-existing`                            | If another watcher PID already holds the lock, stop it and take over                        |
+| Flag                                                | Meaning                                                                                     |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `--without-redis`                                   | Disable the bundled Redis profile and skip Docker-injected Redis env                        |
+| `--with-cloudflared`                                | Enable the bundled Cloudflare Tunnel container profile                                      |
+| `--with-supabase`                                   | Start local Supabase before the Docker web flow                                             |
+| `--reset-supabase`                                  | Start and reset local Supabase before the Docker web flow                                   |
+| `--env-file tmp/e2e/web.env`                        | Use an explicit Docker web env file for build secrets and runtime env files                 |
+| `--mode prod`                                       | Use the production compose file instead of the dev stack                                    |
+| `--strategy blue-green`                             | Use blue/green production deployment instead of in-place replacement                        |
+| `--profile redis`                                   | Explicitly enable the Redis profile when calling the helper directly                        |
+| `--profile cloudflared`                             | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly            |
+| `--build-memory 4g`                                 | Run builds through a capped Buildx builder with a memory ceiling                            |
+| `--build-cpus 4`                                    | Run builds through a capped Buildx builder with an approximate CPU limit                    |
+| `--build-max-parallelism 2`                         | Limit concurrent BuildKit solve steps for lower build pressure                              |
+| `--build-builder-name tuturuuu`                     | Override the throttled Buildx builder name                                                  |
+| `--resume-if-running`                               | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
+| `--replace-existing`                                | If another watcher PID already holds the lock, stop it and take over                        |
 | `--if-locked &lt;fail&#124;resume&#124;replace&gt;` | Explicit lock-conflict policy for the watcher                                               |
 
 | Command                                 | Implicit flags                      |
@@ -184,6 +184,11 @@ incremental preview validation:
    bun check:cloudflare
    ```
 
+   Keep local Worker secret values in `apps/backend/.dev.vars` and
+   `apps/tanstack-web/.dev.vars`; those files are ignored by `.gitignore`.
+   `wrangler.jsonc` may name required secrets, but it must not contain secret
+   values or account-specific private origins.
+
 2. Deploy the Rust backend Worker first:
 
    ```bash
@@ -191,6 +196,15 @@ incremental preview validation:
    cargo install worker-build
    bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
    bun wrangler deploy --config apps/backend/wrangler.jsonc
+   ```
+
+   Use `wrangler secret put` for first preview bootstrap only. It creates and
+   deploys a new active Worker version when the secret changes. For rotations or
+   canary traffic, use:
+
+   ```bash
+   bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+   bun wrangler versions deploy --config apps/backend/wrangler.jsonc
    ```
 
 3. Bind the TanStack Worker to the backend Worker origin by name, not by
@@ -212,12 +226,14 @@ incremental preview validation:
 5. Smoke both returned Worker origins:
 
    ```bash
+   BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
    BACKEND_WORKER_ORIGIN=https://<backend-worker-origin> \
    TANSTACK_WEB_WORKER_ORIGIN=https://<tanstack-worker-origin> \
    bun smoke:cloudflare
    ```
 
-   Set `BACKEND_INTERNAL_TOKEN` in the shell before running the smoke command.
+   Keep `BACKEND_INTERNAL_TOKEN` in the shell, ignored local env, or Wrangler
+   secret storage only.
 
 Security expectations for this path:
 
@@ -237,7 +253,22 @@ Rollback from this preview path is DNS/routing-based: remove the Cloudflare
 route or custom domain that points at the preview Worker, or redeploy the last
 known-good Worker version, while the Docker blue/green `apps/web` production
 stack keeps serving the canonical hostname. Do not delete Worker secrets unless
-the secret value is compromised.
+the secret value is compromised. Use Wrangler to inspect and roll back preview
+Worker versions:
+
+```bash
+bun wrangler deployments list --config apps/backend/wrangler.jsonc
+bun wrangler deployments status --config apps/backend/wrangler.jsonc
+bun wrangler rollback <VERSION_ID> --config apps/backend/wrangler.jsonc
+
+bun wrangler deployments list --config apps/tanstack-web/wrangler.jsonc
+bun wrangler deployments status --config apps/tanstack-web/wrangler.jsonc
+bun wrangler rollback <VERSION_ID> --config apps/tanstack-web/wrangler.jsonc
+```
+
+Worker rollback does not revert external resources, bindings, routes, custom
+domains, or secret values. Re-run `bun smoke:cloudflare` against the remaining
+preview origins before resuming canary traffic.
 
 ## Dockerized E2E
 
@@ -275,6 +306,16 @@ frontend runs complete. Set `E2E_COMPARE_REPORT_PATH` to redirect that evidence
 file under another ignored `tmp/` location.
 
 Before cutover, pair the compare-mode E2E evidence with a full benchmark report:
+
+```bash
+BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+bun benchmark:web-setups -- \
+  --setup compare \
+  --profile smoke \
+  --next-origin https://<legacy-next-origin> \
+  --tanstack-origin https://<tanstack-worker-origin> \
+  --backend-origin https://<backend-worker-origin>
+```
 
 ```bash
 bun migration:tanstack:gates -- \
