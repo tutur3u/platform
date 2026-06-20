@@ -16,6 +16,11 @@ export type BackendMigrationStatus = {
     service: string;
     toolchain: string;
   };
+  contactData: {
+    configured: boolean;
+    missing: string[];
+    supabaseOrigin: string | null;
+  };
   environment: string;
   frontendTargets: ('next' | 'tanstack-start')[];
   ok: boolean;

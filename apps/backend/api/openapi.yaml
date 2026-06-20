@@ -1974,6 +1974,7 @@ components:
       type: object
       required:
         - backend
+        - contactData
         - environment
         - frontendTargets
         - ok
@@ -2004,6 +2005,8 @@ components:
               type: string
               examples:
                 - rustc 1.95.0
+        contactData:
+          $ref: "#/components/schemas/ContactDataLayerStatus"
         environment:
           type: string
           examples:
@@ -2034,3 +2037,27 @@ components:
               type: string
               examples:
                 - migration-foundation
+    ContactDataLayerStatus:
+      type: object
+      required:
+        - configured
+        - missing
+        - supabaseOrigin
+      properties:
+        configured:
+          type: boolean
+          description: True only when the Rust backend has a valid Supabase URL and service-role credential configured for the contact data adapter.
+        missing:
+          type: array
+          items:
+            type: string
+            enum:
+              - SUPABASE_URL
+              - SUPABASE_SERVICE_ROLE_KEY
+          description: Logical settings still required before the Rust contact data adapter can own profile hydration and inquiry persistence.
+        supabaseOrigin:
+          type:
+            - string
+            - "null"
+          examples:
+            - https://project-ref.supabase.co

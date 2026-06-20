@@ -138,6 +138,7 @@ const SUPABASE_REFERENCE_KEYS: [&str; 7] = [
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BackendConfig {
     pub app_coordination_secrets: Vec<String>,
+    pub(crate) contact_data: contact::ContactDataConfig,
     pub deployment_target: String,
     pub environment: String,
     pub internal_token: String,
@@ -152,6 +153,7 @@ impl BackendConfig {
     pub fn new(environment: impl Into<String>, service_name: impl Into<String>) -> Self {
         Self {
             app_coordination_secrets: Vec::new(),
+            contact_data: contact::ContactDataConfig::disabled(),
             deployment_target: default_deployment_target().to_owned(),
             environment: environment.into(),
             internal_token: String::new(),
@@ -169,6 +171,7 @@ impl BackendConfig {
 
         Self {
             app_coordination_secrets: contact::app_coordination_secrets_from_env(&environment),
+            contact_data: contact::contact_data_config_from_env(),
             deployment_target: env("BACKEND_DEPLOYMENT_TARGET", default_deployment_target()),
             environment,
             internal_token: std::env::var("BACKEND_INTERNAL_TOKEN")
@@ -258,6 +261,7 @@ struct UserFieldType {
 #[serde(rename_all = "camelCase")]
 struct MigrationStatus {
     backend: BackendRuntime,
+    contact_data: contact::ContactDataLayerStatus,
     environment: String,
     frontend_targets: [&'static str; 2],
     ok: bool,
@@ -527,6 +531,7 @@ fn migration_status_response(
                 service: config.service_name.clone(),
                 toolchain: config.toolchain(),
             },
+            contact_data: config.contact_data.status(),
             environment: config.environment.clone(),
             frontend_targets: ["next", "tanstack-start"],
             ok: true,
@@ -1850,6 +1855,7 @@ pub mod worker_runtime {
 
         BackendConfig {
             app_coordination_secrets: app_coordination_secrets_from_worker_env(env, &environment),
+            contact_data: contact_data_config_from_worker_env(env),
             deployment_target: "cloudflare-workers".to_owned(),
             environment,
             internal_token: var(env, "BACKEND_INTERNAL_TOKEN", ""),
@@ -1883,6 +1889,20 @@ pub mod worker_runtime {
         }
 
         secrets
+    }
+
+    fn contact_data_config_from_worker_env(env: &Env) -> super::contact::ContactDataConfig {
+        super::contact::ContactDataConfig::new(
+            first_var(env, &super::contact::SUPABASE_URL_KEYS),
+            first_var(env, &super::contact::SUPABASE_SERVICE_ROLE_KEY_KEYS),
+        )
+    }
+
+    fn first_var(env: &Env, keys: &[&str]) -> String {
+        keys.iter()
+            .map(|key| var(env, key, ""))
+            .find(|value| !value.trim().is_empty())
+            .unwrap_or_default()
     }
 
     impl BackendResponse {
@@ -1974,6 +1994,15 @@ mod tests {
         config
             .app_coordination_secrets
             .push("test-app-session-secret".to_owned());
+        config
+    }
+
+    fn backend_config_with_contact_data() -> BackendConfig {
+        let mut config = backend_config_with_internal_token();
+        config.contact_data = contact::ContactDataConfig::new(
+            "https://project-ref.supabase.co/",
+            "test-service-role-secret",
+        );
         config
     }
 
@@ -2218,6 +2247,40 @@ mod tests {
             ),
             Err("Token expired".to_owned())
         );
+    }
+
+    #[test]
+    fn contact_data_status_reports_safe_configuration_state() {
+        let configured =
+            contact::ContactDataConfig::new("https://project-ref.supabase.co/", "secret-value");
+        let configured_status = serde_json::to_value(configured.status()).unwrap();
+
+        assert_eq!(configured_status["configured"], true);
+        assert_eq!(configured_status["missing"], json!([]));
+        assert_eq!(
+            configured_status["supabaseOrigin"],
+            "https://project-ref.supabase.co"
+        );
+        assert!(!format!("{configured:?}").contains("secret-value"));
+        assert!(format!("{configured:?}").contains("<configured>"));
+
+        let missing = contact::ContactDataConfig::disabled();
+        let missing_status = serde_json::to_value(missing.status()).unwrap();
+
+        assert_eq!(missing_status["configured"], false);
+        assert_eq!(
+            missing_status["missing"],
+            json!(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+        );
+        assert_eq!(missing_status["supabaseOrigin"], Value::Null);
+        assert!(format!("{missing:?}").contains("<empty>"));
+
+        let invalid = contact::ContactDataConfig::new("not-a-url", "secret-value");
+        let invalid_status = serde_json::to_value(invalid.status()).unwrap();
+
+        assert_eq!(invalid_status["configured"], false);
+        assert_eq!(invalid_status["missing"], json!(["SUPABASE_URL"]));
+        assert_eq!(invalid_status["supabaseOrigin"], Value::Null);
     }
 
     #[test]
@@ -3361,6 +3424,28 @@ mod tests {
         assert_eq!(
             response.body["routeOwnership"]["manifest"],
             MIGRATION_MANIFEST_PATH
+        );
+    }
+
+    #[test]
+    fn migration_status_reports_contact_data_layer_readiness() {
+        let response = route_request(
+            &backend_config_with_contact_data(),
+            authorized_request("GET", "/api/migration/status"),
+        );
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["contactData"]["configured"], true);
+        assert_eq!(response.body["contactData"]["missing"], json!([]));
+        assert_eq!(
+            response.body["contactData"]["supabaseOrigin"],
+            "https://project-ref.supabase.co"
+        );
+        assert!(
+            !response
+                .body
+                .to_string()
+                .contains("test-service-role-secret")
         );
     }
 

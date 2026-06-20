@@ -20,6 +20,16 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   Non-production local runs fall back to the shared development secret used by
   the TypeScript auth package; production and Cloudflare preview must configure
   an explicit secret.
+- `SUPABASE_URL`: Canonical Supabase origin for the future Rust contact data
+  adapter. The backend also accepts `SUPABASE_SERVER_URL`,
+  `NEXT_PUBLIC_SUPABASE_URL`, and `DOCKER_INTERNAL_SUPABASE_URL` while the
+  migration is in progress.
+- `SUPABASE_SERVICE_ROLE_KEY`: Service-role credential for future server-owned
+  contact profile hydration and `support_inquiries` persistence. The backend
+  also accepts `SUPABASE_SERVICE_KEY` and `SUPABASE_SECRET_KEY` for
+  compatibility. Keep this value in environment variables, ignored local
+  Worker files, or Cloudflare secrets only; never put it in `wrangler.jsonc`
+  `vars` or browser-visible frontend config.
 
 ## Endpoints
 
@@ -98,6 +108,10 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `410 MIGRATION_DISABLED` because the backing table was removed.
 - `GET /api/migration/status`: runtime and route-ownership status consumed by
   `apps/tanstack-web`; requires `Authorization: Bearer <BACKEND_INTERNAL_TOKEN>`.
+  The response includes redacted contact data adapter readiness
+  (`contactData.configured`, missing logical setting names, and the Supabase
+  origin only) so preview deployments can verify configuration without exposing
+  service-role credentials.
 - `GET /api/migration/manifest`: checked TanStack migration route inventory,
   including exported HTTP methods for each legacy `route.ts`; requires
   `Authorization: Bearer <BACKEND_INTERNAL_TOKEN>`.
@@ -152,7 +166,7 @@ tooling:
 ```sh
 cd apps/backend
 rustup target add wasm32-unknown-unknown
-cargo install worker-build
+cargo install worker-build --locked
 worker-build --release -- --no-default-features --features worker
 ```
 
@@ -160,16 +174,17 @@ Deploy the backend Worker for preview traffic:
 
 ```sh
 rustup target add wasm32-unknown-unknown
-cargo install worker-build
+cargo install worker-build --locked
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
-`apps/backend/wrangler.jsonc` declares `BACKEND_INTERNAL_TOKEN` under
-`secrets.required`. Wrangler prompts for the value during `secret put`; do not
-commit the token value in `wrangler.jsonc`, `vars`, docs, or shell history.
-`/readyz` reports not-ready until the secret exists.
+`apps/backend/wrangler.jsonc` declares `BACKEND_INTERNAL_TOKEN` and
+`TUTURUUU_APP_COORDINATION_SECRET` under `secrets.required`. Wrangler prompts
+for values during `secret put`; do not commit those values in `wrangler.jsonc`,
+`vars`, docs, or shell history. `/readyz` reports not-ready until
+`BACKEND_INTERNAL_TOKEN` exists.
 
 After deployment, smoke-test the returned Worker origin. Before the TanStack
 Worker is deployed, the backend-only curl checks are enough:

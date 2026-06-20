@@ -38,6 +38,11 @@ describe('readTanStackMigrationStatus', () => {
         service: 'backend',
         toolchain: 'rustc 1.95.0',
       },
+      contactData: {
+        configured: false,
+        missing: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
+        supabaseOrigin: null,
+      },
       environment: 'test',
       frontendTargets: ['next', 'tanstack-start'],
       ok: true,

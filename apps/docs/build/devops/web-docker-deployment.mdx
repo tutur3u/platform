@@ -193,8 +193,9 @@ incremental preview validation:
 
    ```bash
    rustup target add wasm32-unknown-unknown
-   cargo install worker-build
+   cargo install worker-build --locked
    bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+   bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
    bun wrangler deploy --config apps/backend/wrangler.jsonc
    ```
 
@@ -204,6 +205,7 @@ incremental preview validation:
 
    ```bash
    bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
    bun wrangler versions deploy --config apps/backend/wrangler.jsonc
    ```
 

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::fmt;
 
 use crate::{
     BackendConfig, BackendRequest, BackendResponse, json_response, no_store_response,
@@ -21,6 +22,19 @@ pub(crate) use session::{
 
 pub(crate) const CURRENT_USER_PROFILE_PATH: &str = "/api/v1/users/me/profile";
 pub(crate) const SUPPORT_INQUIRIES_PATH: &str = "/api/v1/inquiries";
+pub(crate) const SUPABASE_URL_KEYS: [&str; 4] = [
+    "SUPABASE_SERVER_URL",
+    "SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "DOCKER_INTERNAL_SUPABASE_URL",
+];
+pub(crate) const SUPABASE_SERVICE_ROLE_KEY_KEYS: [&str; 3] = [
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_SERVICE_KEY",
+    "SUPABASE_SECRET_KEY",
+];
+const CONTACT_DATA_SUPABASE_URL_SETTING: &str = "SUPABASE_URL";
+const CONTACT_DATA_SERVICE_ROLE_KEY_SETTING: &str = "SUPABASE_SERVICE_ROLE_KEY";
 const CURRENT_USER_APP_SESSION_TARGETS: [&str; 17] = [
     "calendar",
     "chat",
@@ -61,6 +75,99 @@ const MAX_SUPPORT_INQUIRY_LENGTH: usize = 5000;
 const MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH: usize = 255;
 pub(crate) const CONTACT_DATA_LAYER_NOT_READY_MESSAGE: &str =
     "Rust contact data persistence is not configured yet";
+
+#[derive(Clone, Eq, PartialEq)]
+pub(crate) struct RedactedSecret(String);
+
+impl RedactedSecret {
+    fn new(value: impl Into<String>) -> Self {
+        Self(value.into().trim().to_owned())
+    }
+
+    fn is_configured(&self) -> bool {
+        !self.0.is_empty()
+    }
+}
+
+impl fmt::Debug for RedactedSecret {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_configured() {
+            formatter.write_str("RedactedSecret(<configured>)")
+        } else {
+            formatter.write_str("RedactedSecret(<empty>)")
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct ContactDataConfig {
+    supabase_url: String,
+    service_role_key: RedactedSecret,
+}
+
+impl ContactDataConfig {
+    pub(crate) fn disabled() -> Self {
+        Self::new("", "")
+    }
+
+    pub(crate) fn new(
+        supabase_url: impl Into<String>,
+        service_role_key: impl Into<String>,
+    ) -> Self {
+        Self {
+            supabase_url: supabase_url.into().trim().trim_end_matches('/').to_owned(),
+            service_role_key: RedactedSecret::new(service_role_key),
+        }
+    }
+
+    pub(crate) fn configured(&self) -> bool {
+        url_origin(&self.supabase_url).is_some() && self.service_role_key.is_configured()
+    }
+
+    pub(crate) fn status(&self) -> ContactDataLayerStatus {
+        let mut missing = Vec::new();
+        let supabase_origin = url_origin(&self.supabase_url);
+
+        if supabase_origin.is_none() {
+            missing.push(CONTACT_DATA_SUPABASE_URL_SETTING);
+        }
+
+        if !self.service_role_key.is_configured() {
+            missing.push(CONTACT_DATA_SERVICE_ROLE_KEY_SETTING);
+        }
+
+        ContactDataLayerStatus {
+            configured: self.configured(),
+            missing,
+            supabase_origin,
+        }
+    }
+}
+
+#[cfg(feature = "native")]
+pub(crate) fn contact_data_config_from_env() -> ContactDataConfig {
+    ContactDataConfig::new(
+        first_env_value(&SUPABASE_URL_KEYS),
+        first_env_value(&SUPABASE_SERVICE_ROLE_KEY_KEYS),
+    )
+}
+
+#[cfg(feature = "native")]
+fn first_env_value(keys: &[&str]) -> String {
+    keys.iter()
+        .filter_map(|key| std::env::var(key).ok())
+        .map(|value| value.trim().to_owned())
+        .find(|value| !value.is_empty())
+        .unwrap_or_default()
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ContactDataLayerStatus {
+    configured: bool,
+    missing: Vec<&'static str>,
+    supabase_origin: Option<String>,
+}
 
 #[cfg(test)]
 pub(crate) fn current_user_app_session_targets() -> &'static [&'static str] {

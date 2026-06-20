@@ -122,6 +122,11 @@ export async function readTanStackMigrationStatus(): Promise<TanStackMigrationSt
       },
       backendReachable: false,
       checkedAt,
+      contactData: {
+        configured: false,
+        missing: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
+        supabaseOrigin: null,
+      },
       cutoverGates: fallbackCutoverGates(),
       environment: 'unavailable',
       errorMessage: getErrorMessage(error),
