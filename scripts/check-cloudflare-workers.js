@@ -51,6 +51,7 @@ const TANSTACK_WEB_REQUIRED_SECRETS = [
   'BACKEND_INTERNAL_URL',
   'BACKEND_INTERNAL_TOKEN',
 ];
+const REQUIRED_OBSERVABILITY_HEAD_SAMPLING_RATE = 0.05;
 const SECRET_VAR_NAME_PATTERN =
   /(^|_)(ACCESS_TOKEN|API_KEY|AUTHORIZATION|CREDENTIAL|INTERNAL_TOKEN|JWT|PASSWORD|PRIVATE_KEY|SECRET|TOKEN)($|_)/i;
 const SECRET_VALUE_PATTERNS = [
@@ -413,6 +414,15 @@ function validateWranglerBaseConfig(config, label, expected) {
 
   if (config.observability?.enabled !== true) {
     errors.push(`${label} must enable observability.`);
+  }
+
+  if (
+    config.observability?.head_sampling_rate !==
+    REQUIRED_OBSERVABILITY_HEAD_SAMPLING_RATE
+  ) {
+    errors.push(
+      `${label} observability.head_sampling_rate must be ${REQUIRED_OBSERVABILITY_HEAD_SAMPLING_RATE}.`
+    );
   }
 
   if (!isPlainObject(config.dev)) {

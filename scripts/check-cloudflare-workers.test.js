@@ -126,6 +126,35 @@ test('Wrangler configs reserve distinct local preview ports', () => {
   );
 });
 
+test('Wrangler configs require explicit observability sampling', () => {
+  const backendConfig = JSON.parse(
+    fs.readFileSync(BACKEND_WRANGLER_PATH, 'utf8')
+  );
+  const tanstackConfig = JSON.parse(
+    fs.readFileSync(TANSTACK_WEB_WRANGLER_PATH, 'utf8')
+  );
+
+  assert.equal(backendConfig.observability.head_sampling_rate, 0.05);
+  assert.equal(tanstackConfig.observability.head_sampling_rate, 0.05);
+  assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      observability: { enabled: true },
+    }).join('\n'),
+    /observability\.head_sampling_rate must be 0\.05/
+  );
+  assert.match(
+    validateTanstackWebWranglerConfig({
+      ...tanstackConfig,
+      observability: {
+        ...tanstackConfig.observability,
+        head_sampling_rate: 1,
+      },
+    }).join('\n'),
+    /observability\.head_sampling_rate must be 0\.05/
+  );
+});
+
 test('Wrangler configs declare required preview secrets by name', () => {
   const backendConfig = JSON.parse(
     fs.readFileSync(BACKEND_WRANGLER_PATH, 'utf8')

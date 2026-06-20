@@ -10,7 +10,8 @@
     "local_protocol": "http"
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "head_sampling_rate": 0.05
   },
   "secrets": {
     "required": [
