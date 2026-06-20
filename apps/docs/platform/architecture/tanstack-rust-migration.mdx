@@ -734,6 +734,11 @@ Use full mode when both frontends are running with representative seeded data:
 bun benchmark:web-setups -- --setup compare --profile full --require-all --insecure
 ```
 
+In compare mode, `--require-all` fails the benchmark command when any required
+metric evidence is missing. That keeps local benchmark rehearsals aligned with
+`bun migration:tanstack:gates` instead of deferring missing dev-ready, build,
+image-size, RSS/CPU, JS-output, E2E, or API latency evidence until cutover.
+
 Pass reviewer-approved non-HTTP metrics and accepted regression notes through
 `--evidence` when the harness cannot measure them directly:
 

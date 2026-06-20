@@ -395,6 +395,39 @@ test('runBenchmark requireAll fails compare reports with unmatched frontend rout
   }
 });
 
+test('runBenchmark requireAll fails compare reports with missing metric evidence', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async () =>
+    new Response('ok', {
+      status: 200,
+    });
+
+  try {
+    const report = await runBenchmark({
+      apiThreshold: 0.1,
+      frontendThreshold: 0.25,
+      origins: {
+        backend: 'http://backend.local',
+        next: 'http://next.local',
+        tanstack: 'http://tanstack.local',
+      },
+      profile: 'smoke',
+      requireAll: true,
+      samples: 1,
+      setup: 'compare',
+    });
+
+    assert.equal(report.gates.passed, false);
+    assert.ok(report.gates.missingOptionalMetrics.length > 0);
+    assert.match(
+      report.gates.failures.join('\n'),
+      /Missing benchmark evidence for api-latency-p50/u
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('runBenchmark rejects compare runs pointed at the same frontend origin', async () => {
   await assert.rejects(
     () =>

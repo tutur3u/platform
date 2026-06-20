@@ -760,6 +760,15 @@ async function runBenchmark(options) {
         }
       }
     }
+
+    if (options.setup === 'compare') {
+      for (const missing of gates.missingOptionalMetrics) {
+        gates.failures.push(
+          `Missing benchmark evidence for ${missing.metric} (${missing.label}) comparing ${missing.baselineSetup} to ${missing.candidateSetup}.`
+        );
+      }
+    }
+
     gates.passed = gates.failures.length === 0;
   }
 
