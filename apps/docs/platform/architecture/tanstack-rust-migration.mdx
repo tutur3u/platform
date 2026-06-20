@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-20"
+updatedAt: "2026-06-21"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -440,6 +440,10 @@ only sanitized session state to client components.
   private Supabase or protected workspace reads directly to browser code.
 - Use TanStack Query for client fetching and mutation. Do not fetch data in
   `useEffect`.
+- `bun check` runs `node scripts/check-tanstack-api-access.js` to enforce that
+  `apps/tanstack-web/src` does not call relative protected `/api`, `/internal`,
+  or `/trpc` paths directly and does not import or create Supabase clients. Run
+  the focused command when reviewing a frontend port before the full repo check.
 
 ## Security And Test Requirements
 
