@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 237,
-        "migrated": 68,
-        "percentComplete": 22.3,
-        "remaining": 237,
-        "terminal": 68,
+        "legacyNext": 232,
+        "migrated": 73,
+        "percentComplete": 23.93,
+        "remaining": 232,
+        "terminal": 73,
         "total": 305,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 269,
-        "migrated": 108,
-        "percentComplete": 28.65,
-        "remaining": 269,
-        "terminal": 108,
+        "legacyNext": 264,
+        "migrated": 113,
+        "percentComplete": 29.97,
+        "remaining": 264,
+        "terminal": 113,
         "total": 377,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 1,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1367,
-      "migrated": 137,
-      "percentComplete": 9.17,
-      "remaining": 1367,
-      "terminal": 138,
+      "legacyNext": 1362,
+      "migrated": 142,
+      "percentComplete": 9.5,
+      "remaining": 1362,
+      "terminal": 143,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -11446,7 +11446,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/diet",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12553,7 +12553,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/metrics",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/metrics/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12670,7 +12670,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/progress",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/progress/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12697,7 +12697,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/readings",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/readings/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13273,7 +13273,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/workouts",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/workouts/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

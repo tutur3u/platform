@@ -364,6 +364,31 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/topic-announcements preserves the legacy 307 redirect to /:wsId/users/topic-announcements/announcements. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/diet:apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/diet ports the legacy static coming-soon placeholder with localized copy and shared UI primitives. This marks only the page artifact migrated; parent dashboard layout/session/permission ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/metrics:apps/web/src/app/[locale]/(dashboard)/[wsId]/metrics/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/metrics ports the legacy static coming-soon placeholder with localized copy and shared UI primitives. This marks only the page artifact migrated; parent dashboard layout/session/permission ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/progress:apps/web/src/app/[locale]/(dashboard)/[wsId]/progress/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/progress ports the legacy static coming-soon placeholder with localized copy and shared UI primitives. This marks only the page artifact migrated; parent dashboard layout/session/permission ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/readings:apps/web/src/app/[locale]/(dashboard)/[wsId]/readings/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/readings ports the legacy static coming-soon placeholder with localized copy and shared UI primitives. This marks only the page artifact migrated; parent dashboard layout/session/permission ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/workouts:apps/web/src/app/[locale]/(dashboard)/[wsId]/workouts/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/workouts ports the legacy static coming-soon placeholder with localized copy and shared UI primitives. This marks only the page artifact migrated; parent dashboard layout/session/permission ownership remains legacy-owned."
+    },
     "page:/:locale/:wsId/polls:apps/web/src/app/[locale]/(dashboard)/[wsId]/polls/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

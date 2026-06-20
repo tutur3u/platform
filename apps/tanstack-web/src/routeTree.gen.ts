@@ -62,13 +62,18 @@ import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products
 import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar'
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai'
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
+import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts'
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce'
 import { Route as LocaleWsIdRolesRouteImport } from './routes/$locale/$wsId/roles'
+import { Route as LocaleWsIdReadingsRouteImport } from './routes/$locale/$wsId/readings'
 import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator'
+import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/progress'
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls'
+import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics'
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects'
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm'
+import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet'
 import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index'
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index'
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId'
@@ -364,6 +369,11 @@ const LocaleCalendarMeetTogetherRoute =
     path: '/$locale/calendar/meet-together',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdWorkoutsRoute = LocaleWsIdWorkoutsRouteImport.update({
+  id: '/$locale/$wsId/workouts',
+  path: '/$locale/$wsId/workouts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdWorkforceRoute = LocaleWsIdWorkforceRouteImport.update({
   id: '/$locale/$wsId/workforce',
   path: '/$locale/$wsId/workforce',
@@ -374,14 +384,29 @@ const LocaleWsIdRolesRoute = LocaleWsIdRolesRouteImport.update({
   path: '/$locale/$wsId/roles',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdReadingsRoute = LocaleWsIdReadingsRouteImport.update({
+  id: '/$locale/$wsId/readings',
+  path: '/$locale/$wsId/readings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
   id: '/$locale/$wsId/qr-generator',
   path: '/$locale/$wsId/qr-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdProgressRoute = LocaleWsIdProgressRouteImport.update({
+  id: '/$locale/$wsId/progress',
+  path: '/$locale/$wsId/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
   id: '/$locale/$wsId/polls',
   path: '/$locale/$wsId/polls',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
+  id: '/$locale/$wsId/metrics',
+  path: '/$locale/$wsId/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
@@ -398,6 +423,11 @@ const LocaleWsIdExternalProjectsRoute =
 const LocaleWsIdEpmRoute = LocaleWsIdEpmRouteImport.update({
   id: '/$locale/$wsId/epm',
   path: '/$locale/$wsId/epm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWsIdDietRoute = LocaleWsIdDietRouteImport.update({
+  id: '/$locale/$wsId/diet',
+  path: '/$locale/$wsId/diet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleUiComponentsIndexRoute = LocaleUiComponentsIndexRouteImport.update({
@@ -524,13 +554,18 @@ export interface FileRoutesByFullPath {
   '/$locale/women-in-tech': typeof LocaleWomenInTechRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
+  '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
+  '/$locale/$wsId/readings': typeof LocaleWsIdReadingsRoute
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
+  '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -603,13 +638,18 @@ export interface FileRoutesByTo {
   '/$locale/women-in-tech': typeof LocaleWomenInTechRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale': typeof LocaleIndexRoute
+  '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
+  '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
+  '/$locale/$wsId/readings': typeof LocaleWsIdReadingsRoute
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
+  '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -683,13 +723,18 @@ export interface FileRoutesById {
   '/$locale/women-in-tech': typeof LocaleWomenInTechRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
+  '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
+  '/$locale/$wsId/readings': typeof LocaleWsIdReadingsRoute
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
+  '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -764,13 +809,18 @@ export interface FileRouteTypes {
     | '/$locale/women-in-tech'
     | '/products/meet-together'
     | '/$locale/'
+    | '/$locale/$wsId/diet'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/polls'
+    | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/readings'
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
+    | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -843,13 +893,18 @@ export interface FileRouteTypes {
     | '/$locale/women-in-tech'
     | '/products/meet-together'
     | '/$locale'
+    | '/$locale/$wsId/diet'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/polls'
+    | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/readings'
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
+    | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -922,13 +977,18 @@ export interface FileRouteTypes {
     | '/$locale/women-in-tech'
     | '/products/meet-together'
     | '/$locale/'
+    | '/$locale/$wsId/diet'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/polls'
+    | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/readings'
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
+    | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -1002,13 +1062,18 @@ export interface RootRouteChildren {
   LocaleWomenInTechRoute: typeof LocaleWomenInTechRoute
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRoute
+  LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
+  LocaleWsIdProgressRoute: typeof LocaleWsIdProgressRoute
   LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute
+  LocaleWsIdReadingsRoute: typeof LocaleWsIdReadingsRoute
   LocaleWsIdRolesRoute: typeof LocaleWsIdRolesRoute
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
+  LocaleWsIdWorkoutsRoute: typeof LocaleWsIdWorkoutsRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
   LocaleProductsAiRoute: typeof LocaleProductsAiRoute
   LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute
@@ -1424,6 +1489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleCalendarMeetTogetherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/workouts': {
+      id: '/$locale/$wsId/workouts'
+      path: '/$locale/$wsId/workouts'
+      fullPath: '/$locale/$wsId/workouts'
+      preLoaderRoute: typeof LocaleWsIdWorkoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/workforce': {
       id: '/$locale/$wsId/workforce'
       path: '/$locale/$wsId/workforce'
@@ -1438,6 +1510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdRolesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/readings': {
+      id: '/$locale/$wsId/readings'
+      path: '/$locale/$wsId/readings'
+      fullPath: '/$locale/$wsId/readings'
+      preLoaderRoute: typeof LocaleWsIdReadingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/qr-generator': {
       id: '/$locale/$wsId/qr-generator'
       path: '/$locale/$wsId/qr-generator'
@@ -1445,11 +1524,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdQrGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/progress': {
+      id: '/$locale/$wsId/progress'
+      path: '/$locale/$wsId/progress'
+      fullPath: '/$locale/$wsId/progress'
+      preLoaderRoute: typeof LocaleWsIdProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/polls': {
       id: '/$locale/$wsId/polls'
       path: '/$locale/$wsId/polls'
       fullPath: '/$locale/$wsId/polls'
       preLoaderRoute: typeof LocaleWsIdPollsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/metrics': {
+      id: '/$locale/$wsId/metrics'
+      path: '/$locale/$wsId/metrics'
+      fullPath: '/$locale/$wsId/metrics'
+      preLoaderRoute: typeof LocaleWsIdMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/$wsId/meet': {
@@ -1471,6 +1564,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/$wsId/epm'
       fullPath: '/$locale/$wsId/epm'
       preLoaderRoute: typeof LocaleWsIdEpmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/diet': {
+      id: '/$locale/$wsId/diet'
+      path: '/$locale/$wsId/diet'
+      fullPath: '/$locale/$wsId/diet'
+      preLoaderRoute: typeof LocaleWsIdDietRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/ui/components/': {
@@ -1664,13 +1764,18 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWomenInTechRoute: LocaleWomenInTechRoute,
   ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
   LocaleIndexRoute: LocaleIndexRoute,
+  LocaleWsIdDietRoute: LocaleWsIdDietRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
   LocaleWsIdMeetRoute: LocaleWsIdMeetRoute,
+  LocaleWsIdMetricsRoute: LocaleWsIdMetricsRoute,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
+  LocaleWsIdProgressRoute: LocaleWsIdProgressRoute,
   LocaleWsIdQrGeneratorRoute: LocaleWsIdQrGeneratorRoute,
+  LocaleWsIdReadingsRoute: LocaleWsIdReadingsRoute,
   LocaleWsIdRolesRoute: LocaleWsIdRolesRoute,
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
+  LocaleWsIdWorkoutsRoute: LocaleWsIdWorkoutsRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
   LocaleProductsAiRoute: LocaleProductsAiRoute,
   LocaleProductsCalendarRoute: LocaleProductsCalendarRoute,
