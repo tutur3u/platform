@@ -65,6 +65,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT user indicator migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
     },
+    "api:/api/workspaces/:wsId/users/indicators/groups/migrate:apps/web/src/app/api/workspaces/[wsId]/users/indicators/groups/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT user indicator group migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private RPC write path is intentionally not preserved for Cloudflare cutover."
+    },
+    "api:/api/workspaces/:wsId/wallets/migrate:apps/web/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private wallet data write is intentionally not preserved for Cloudflare cutover."
+    },
     "api:/api/workspaces/:wsId/wallets/transactions/migrate:apps/web/src/app/api/workspaces/[wsId]/wallets/transactions/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",

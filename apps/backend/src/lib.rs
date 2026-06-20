@@ -649,12 +649,13 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
             method,
             obsolete_infrastructure_migration_allowed_methods(path).unwrap_or("PUT"),
         ),
-        ("PUT", path) if is_obsolete_workspace_migration_path(path) => {
+        (method, path) if is_obsolete_workspace_migration_method(method, path) => {
             obsolete_workspace_migration_response(config)
         }
-        (method, path) if is_obsolete_workspace_migration_path(path) => {
-            method_not_allowed(method, "PUT")
-        }
+        (method, path) if is_obsolete_workspace_migration_path(path) => method_not_allowed(
+            method,
+            obsolete_workspace_migration_allowed_methods(path).unwrap_or("PUT"),
+        ),
         ("GET", USER_FIELD_TYPES_PATH) => user_field_types_response(),
         (method, USER_FIELD_TYPES_PATH) => method_not_allowed(method, "GET"),
         ("GET", contact::CURRENT_USER_PROFILE_PATH) => {
@@ -1712,26 +1713,61 @@ fn is_workspace_slides_collection_path(path: &str) -> bool {
         && !segments[3].is_empty()
 }
 
+fn is_obsolete_workspace_migration_method(method: &str, path: &str) -> bool {
+    obsolete_workspace_migration_allowed_methods(path).is_some_and(|allowed| {
+        allowed
+            .split(", ")
+            .any(|allowed_method| allowed_method == method)
+    })
+}
+
 fn is_obsolete_workspace_migration_path(path: &str) -> bool {
+    obsolete_workspace_migration_allowed_methods(path).is_some()
+}
+
+fn obsolete_workspace_migration_allowed_methods(path: &str) -> Option<&'static str> {
     let segments = path_segments(path);
 
-    if segments.len() != 6
-        || segments[0] != "api"
-        || segments[1] != "workspaces"
-        || segments[2].is_empty()
-        || segments[5] != "migrate"
+    if segments.len() == 5
+        && segments[0] == "api"
+        && segments[1] == "workspaces"
+        && !segments[2].is_empty()
+        && segments[3] == "wallets"
+        && segments[4] == "migrate"
     {
-        return false;
+        return Some("PUT");
     }
 
-    matches!(
-        (segments[3], segments[4]),
-        ("products", "categories")
-            | ("products", "units")
-            | ("transactions", "categories")
-            | ("users", "indicators")
-            | ("wallets", "transactions")
-    )
+    if segments.len() == 6
+        && segments[0] == "api"
+        && segments[1] == "workspaces"
+        && !segments[2].is_empty()
+        && segments[5] == "migrate"
+        && matches!(
+            (segments[3], segments[4]),
+            ("products", "categories")
+                | ("products", "units")
+                | ("transactions", "categories")
+                | ("users", "indicators")
+                | ("wallets", "transactions")
+        )
+    {
+        return Some("PUT");
+    }
+
+    if segments.len() == 7
+        && segments[0] == "api"
+        && segments[1] == "workspaces"
+        && !segments[2].is_empty()
+        && segments[3] == "users"
+        && segments[4] == "indicators"
+        && segments[5] == "groups"
+        && segments[6] == "migrate"
+    {
+        return Some("PUT");
+    }
+
+    None
 }
 
 fn is_obsolete_infrastructure_migration_method(method: &str, path: &str) -> bool {
@@ -4338,19 +4374,27 @@ mod tests {
 
     #[test]
     fn obsolete_workspace_migration_routes_are_disabled_in_dev() {
-        for path in [
-            "/api/workspaces/acme/products/categories/migrate",
-            "/api/workspaces/acme/products/units/migrate",
-            "/api/workspaces/acme/transactions/categories/migrate",
-            "/api/workspaces/acme/users/indicators/migrate",
-            "/api/workspaces/acme/wallets/transactions/migrate",
+        for (method, path) in [
+            ("PUT", "/api/workspaces/acme/products/categories/migrate"),
+            ("PUT", "/api/workspaces/acme/products/units/migrate"),
+            (
+                "PUT",
+                "/api/workspaces/acme/transactions/categories/migrate",
+            ),
+            ("PUT", "/api/workspaces/acme/users/indicators/migrate"),
+            (
+                "PUT",
+                "/api/workspaces/acme/users/indicators/groups/migrate",
+            ),
+            ("PUT", "/api/workspaces/acme/wallets/migrate"),
+            ("PUT", "/api/workspaces/acme/wallets/transactions/migrate"),
         ] {
             let response = route_request(
                 &BackendConfig::new("development", "backend"),
-                request("PUT", path),
+                request(method, path),
             );
 
-            assert_eq!(response.status, 410, "{path}");
+            assert_eq!(response.status, 410, "{method} {path}");
             assert_eq!(response.content_type, Some(APPLICATION_JSON));
             assert_eq!(response.body["error"], "MIGRATION_DISABLED");
             assert_eq!(
@@ -4377,14 +4421,28 @@ mod tests {
 
     #[test]
     fn obsolete_workspace_migration_routes_reject_unsupported_methods() {
-        let response = route_request(
-            &BackendConfig::new("development", "backend"),
-            request("GET", "/api/workspaces/acme/products/categories/migrate"),
-        );
+        for (method, path, allow) in [
+            (
+                "GET",
+                "/api/workspaces/acme/products/categories/migrate",
+                "PUT",
+            ),
+            ("POST", "/api/workspaces/acme/wallets/migrate", "PUT"),
+            (
+                "DELETE",
+                "/api/workspaces/acme/users/indicators/groups/migrate",
+                "PUT",
+            ),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("development", "backend"),
+                request(method, path),
+            );
 
-        assert_eq!(response.status, 405);
-        assert_eq!(response.allow, Some("PUT"));
-        assert_eq!(response.body["error"], "method not allowed");
+            assert_eq!(response.status, 405, "{method} {path}");
+            assert_eq!(response.allow, Some(allow));
+            assert_eq!(response.body["error"], "method not allowed");
+        }
     }
 
     #[test]

@@ -1058,6 +1058,72 @@ paths:
                 type: string
                 examples:
                   - PUT
+  /api/workspaces/{wsId}/users/indicators/groups/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace user indicator group migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/users/indicators/groups/migrate/route.ts. The legacy private RPC write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
+  /api/workspaces/{wsId}/wallets/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace wallet migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts. The legacy private wallet write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
   /api/workspaces/{wsId}/wallets/transactions/migrate:
     put:
       deprecated: true
