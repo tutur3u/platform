@@ -248,6 +248,28 @@ test.describe('Public migrated marketing routes', () => {
     });
   }
 
+  test('renders localized landing route', async ({ page }) => {
+    const response = await page.goto(`/${DEFAULT_LOCALE}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    expect(response?.ok()).toBe(true);
+    await expect(
+      page
+        .getByRole('heading', { name: /Work Smarter\.\s+Live Better\./u })
+        .first()
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(
+      page.getByRole('heading', { name: 'Everything you need' }).first()
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole('heading', { name: 'Simple pricing. No surprises.' })
+        .first()
+    ).toBeVisible();
+    await expectNoPublicRouteRuntimeError(page);
+  });
+
   for (const route of staticMarketingRoutes) {
     test(`renders static marketing route ${route.path}`, async ({ page }) => {
       const response = await page.goto(route.path, {

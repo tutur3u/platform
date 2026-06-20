@@ -52,8 +52,8 @@ describe('readTanStackMigrationStatus', () => {
         backendOwned: 1112,
         backendRouteArtifacts: 1112,
         frontendOwned: 377,
-        legacyNext: 1398,
-        migrated: 90,
+        legacyNext: 1395,
+        migrated: 93,
         total: 1489,
         unknownStatus: 0,
         unmapped: 0,
@@ -95,11 +95,11 @@ describe('readTanStackMigrationStatus', () => {
             acceptedRemoval: 0,
             key: 'tanstack-start',
             label: 'TanStack Start',
-            legacyNext: 299,
-            migrated: 78,
-            percentComplete: 20.69,
-            remaining: 299,
-            terminal: 78,
+            legacyNext: 296,
+            migrated: 81,
+            percentComplete: 21.49,
+            remaining: 296,
+            terminal: 81,
             total: 377,
             unknownStatus: 0,
           },
@@ -109,11 +109,11 @@ describe('readTanStackMigrationStatus', () => {
           acceptedRemoval: 1,
           key: 'total',
           label: 'All route artifacts',
-          legacyNext: 1398,
-          migrated: 90,
-          percentComplete: 6.11,
-          remaining: 1398,
-          terminal: 91,
+          legacyNext: 1395,
+          migrated: 93,
+          percentComplete: 6.31,
+          remaining: 1395,
+          terminal: 94,
           total: 1489,
           unknownStatus: 0,
         },
@@ -132,7 +132,7 @@ describe('readTanStackMigrationStatus', () => {
     const status = await readTanStackMigrationStatus();
 
     expect(status.backendReachable).toBe(true);
-    expect(status.cutoverGates.counts.legacyNext).toBe(1398);
+    expect(status.cutoverGates.counts.legacyNext).toBe(1395);
     expect(status.migrationProgress.progress.byOwner[0]?.key).toBe(
       'rust-backend'
     );
@@ -154,7 +154,7 @@ describe('readTanStackMigrationStatus', () => {
     expect(status.backendReachable).toBe(false);
     expect(status.cutoverGates.summary.total).toBe(1489);
     expect(status.cutoverGates.gates[0]?.id).toBe('backend-reachable');
-    expect(status.migrationProgress.progress.totals.remaining).toBe(1398);
+    expect(status.migrationProgress.progress.totals.remaining).toBe(1395);
     expect(status.errorMessage).toContain('ECONNREFUSED');
   });
 });

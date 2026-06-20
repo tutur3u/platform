@@ -454,6 +454,21 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/ui/components/$componentId ports the public UI component detail pages with local registry/docs data and no auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale:apps/web/src/app/[locale]/(marketing)/(landing)/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ defines the legacy landing metadata with createPageHead instead of a Next.js layout export."
+    },
+    "layout:/:locale:apps/web/src/app/[locale]/(marketing)/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start migrated public marketing routes use local browser-safe page shells instead of the legacy Next.js marketing layout, navbar, footer, next/navigation, and next/dynamic dependencies."
+    },
+    "page:/:locale:apps/web/src/app/[locale]/(marketing)/(landing)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ ports the public landing page with local English and Vietnamese content, local landing primitives, and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
     }
   }
 }

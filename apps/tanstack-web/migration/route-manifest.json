@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 260,
-        "migrated": 45,
-        "percentComplete": 14.75,
-        "remaining": 260,
-        "terminal": 45,
+        "legacyNext": 259,
+        "migrated": 46,
+        "percentComplete": 15.08,
+        "remaining": 259,
+        "terminal": 46,
         "total": 305,
         "unknownStatus": 0
       },
@@ -30,11 +30,11 @@
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 34,
-        "migrated": 33,
-        "percentComplete": 49.25,
-        "remaining": 34,
-        "terminal": 33,
+        "legacyNext": 32,
+        "migrated": 35,
+        "percentComplete": 52.24,
+        "remaining": 32,
+        "terminal": 35,
         "total": 67,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 299,
-        "migrated": 78,
-        "percentComplete": 20.69,
-        "remaining": 299,
-        "terminal": 78,
+        "legacyNext": 296,
+        "migrated": 81,
+        "percentComplete": 21.49,
+        "remaining": 296,
+        "terminal": 81,
         "total": 377,
         "unknownStatus": 0
       }
@@ -303,11 +303,11 @@
       "acceptedRemoval": 1,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1398,
-      "migrated": 90,
-      "percentComplete": 6.11,
-      "remaining": 1398,
-      "terminal": 91,
+      "legacyNext": 1395,
+      "migrated": 93,
+      "percentComplete": 6.31,
+      "remaining": 1395,
+      "terminal": 94,
       "total": 1489,
       "unknownStatus": 0
     }
@@ -10300,7 +10300,7 @@
       "methods": [],
       "routePath": "/:locale",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/(landing)/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10309,7 +10309,7 @@
       "methods": [],
       "routePath": "/:locale",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10939,7 +10939,7 @@
       "methods": [],
       "routePath": "/:locale",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/(landing)/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

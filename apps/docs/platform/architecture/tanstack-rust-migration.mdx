@@ -207,7 +207,7 @@ Current inventory:
 - `1,112` route handlers
 - `19` cron handlers
 - `1,489` total tracked route artifacts
-- `90` migrated artifacts, `91` terminal artifacts, and `1,398` remaining
+- `93` migrated artifacts, `94` terminal artifacts, and `1,395` remaining
   legacy-owned artifacts after the current static public-route batch
 
 Regenerate it after adding or removing legacy routes:
@@ -282,6 +282,7 @@ First TanStack Start migrated ownership:
 
 | Legacy route                                                                                                                    | New owner                                        | Evidence                                                                                                                                                                                                                                                                                                            |
 | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/:locale`                                                                                                                      | `apps/tanstack-web` TanStack Start static route  | `route-overrides.json` marks the landing page, landing metadata layout, and shared marketing layout `migrated`; the Start route preserves the public English and Vietnamese landing content with local primitives and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access.             |
 | `/:locale/docs`                                                                                                                 | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/:locale/docs` throws a TanStack Router `307` redirect to `https://docs.tuturuuu.com`.                                                                                                                                                                           |
 | `/:locale/calendar/meet-together/[[...slug]]`                                                                                   | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/:locale/calendar/meet-together` and nested slug paths redirect to `/meet-together` while preserving trailing slug segments.                                                                                                                                     |
 | `/:locale/pricing`                                                                                                              | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/pricing` and `/:locale/pricing` throw a TanStack Router `307` redirect to `/?hash-nav=1#pricing`.                                                                                                                                                               |
@@ -477,9 +478,9 @@ evidence file elsewhere under `tmp/`.
 `apps/web/e2e/public-marketing-routes.noauth.spec.ts` is the first shared
 public-route parity suite for this migration. It runs under the existing
 `apps/web` Playwright project so `--frontend tanstack` and `--frontend compare`
-reuse the same assertions for migrated product, legal, redirect, offline,
-branding, blog, careers, demo, security, partners, UI docs, visualization, and
-static solution routes.
+reuse the same assertions for migrated landing, product, legal, redirect,
+offline, branding, blog, careers, demo, security, partners, UI docs,
+visualization, and static solution routes.
 
 ## Benchmarks
 

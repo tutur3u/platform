@@ -13,6 +13,7 @@ import { Route as Char126offlineRouteImport } from './routes/~offline'
 import { Route as QrGeneratorRouteImport } from './routes/qr-generator'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together'
 import { Route as LocaleTermsRouteImport } from './routes/$locale/terms'
 import { Route as LocaleSecurityRouteImport } from './routes/$locale/security'
@@ -78,6 +79,11 @@ const PricingRoute = PricingRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleIndexRoute = LocaleIndexRouteImport.update({
+  id: '/$locale/',
+  path: '/$locale/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
+  '/$locale/': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
+  '/$locale': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
+  '/$locale/': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/$locale/security'
     | '/$locale/terms'
     | '/products/meet-together'
+    | '/$locale/'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/$locale/security'
     | '/$locale/terms'
     | '/products/meet-together'
+    | '/$locale'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/$locale/security'
     | '/$locale/terms'
     | '/products/meet-together'
+    | '/$locale/'
     | '/$locale/calendar/meet-together'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -661,6 +673,7 @@ export interface RootRouteChildren {
   LocaleSecurityRoute: typeof LocaleSecurityRouteWithChildren
   LocaleTermsRoute: typeof LocaleTermsRoute
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute
+  LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
   LocaleProductsAiRoute: typeof LocaleProductsAiRoute
   LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute
@@ -719,6 +732,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/': {
+      id: '/$locale/'
+      path: '/$locale'
+      fullPath: '/$locale/'
+      preLoaderRoute: typeof LocaleIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products/meet-together': {
@@ -1094,6 +1114,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleSecurityRoute: LocaleSecurityRouteWithChildren,
   LocaleTermsRoute: LocaleTermsRoute,
   ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
+  LocaleIndexRoute: LocaleIndexRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
   LocaleProductsAiRoute: LocaleProductsAiRoute,
   LocaleProductsCalendarRoute: LocaleProductsCalendarRoute,
