@@ -3,7 +3,9 @@ use serde_json::json;
 use std::fmt;
 
 use crate::{
-    BackendConfig, BackendRequest, BackendResponse, json_response, no_store_response,
+    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, json_response,
+    method_not_allowed, no_store_response,
+    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     parse_json_body, url_origin,
 };
 
@@ -70,11 +72,13 @@ const SUPPORT_INQUIRY_PRODUCTS: [&str; 12] = [
     "other",
 ];
 const MAX_DISPLAY_NAME_LENGTH: usize = 100;
+const MAX_BIO_LENGTH: usize = 1000;
 const MAX_EMAIL_LENGTH: usize = 320;
 const MAX_SUPPORT_INQUIRY_LENGTH: usize = 5000;
 const MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH: usize = 255;
 pub(crate) const CONTACT_DATA_LAYER_NOT_READY_MESSAGE: &str =
     "Rust contact data persistence is not configured yet";
+const CONTACT_DATA_REQUEST_FAILED_MESSAGE: &str = "Rust contact data request failed";
 
 #[derive(Clone, Eq, PartialEq)]
 pub(crate) struct RedactedSecret(String);
@@ -142,6 +146,27 @@ impl ContactDataConfig {
             supabase_origin,
         }
     }
+
+    fn service_role_key(&self) -> Option<&str> {
+        self.service_role_key
+            .is_configured()
+            .then_some(&self.service_role_key.0)
+    }
+
+    fn rest_url(&self, table: &str, params: &[(&str, String)]) -> Option<String> {
+        url_origin(&self.supabase_url)?;
+
+        let mut query = url::form_urlencoded::Serializer::new(String::new());
+        for (key, value) in params {
+            query.append_pair(key, value);
+        }
+
+        Some(format!(
+            "{}/rest/v1/{table}?{}",
+            self.supabase_url,
+            query.finish()
+        ))
+    }
 }
 
 #[cfg(feature = "native")]
@@ -188,6 +213,22 @@ struct CurrentUserProfileResponse {
 }
 
 #[derive(Deserialize)]
+struct SupabaseUserRow {
+    avatar_url: Option<String>,
+    created_at: Option<String>,
+    display_name: Option<String>,
+    id: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct SupabaseUserPrivateDetailsRow {
+    default_workspace_id: Option<String>,
+    email: Option<String>,
+    full_name: Option<String>,
+    new_email: Option<String>,
+}
+
+#[derive(Deserialize)]
 struct SupportInquiryRequest {
     email: String,
     message: String,
@@ -196,6 +237,44 @@ struct SupportInquiryRequest {
     subject: String,
     #[serde(rename = "type")]
     inquiry_type: String,
+}
+
+#[derive(Deserialize)]
+struct SupportInquiryInsertRow {
+    id: String,
+}
+
+#[derive(Serialize)]
+struct SupportInquiryInsert<'a> {
+    creator_id: &'a str,
+    email: &'a str,
+    message: &'a str,
+    name: &'a str,
+    product: &'a str,
+    subject: &'a str,
+    #[serde(rename = "type")]
+    inquiry_type: &'a str,
+}
+
+pub(crate) async fn handle_contact_route(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> Option<BackendResponse> {
+    match (request.method, request.path) {
+        ("GET", CURRENT_USER_PROFILE_PATH) => {
+            Some(current_user_profile_data_response(config, request, outbound).await)
+        }
+        ("PATCH", CURRENT_USER_PROFILE_PATH) => {
+            Some(current_user_profile_patch_data_response(config, request, outbound).await)
+        }
+        (method, CURRENT_USER_PROFILE_PATH) => Some(method_not_allowed(method, "GET, PATCH")),
+        ("POST", SUPPORT_INQUIRIES_PATH) => {
+            Some(support_inquiry_data_post_response(config, request, outbound).await)
+        }
+        (method, SUPPORT_INQUIRIES_PATH) => Some(method_not_allowed(method, "POST")),
+        _ => None,
+    }
 }
 
 pub(crate) fn current_user_profile_response(
@@ -223,6 +302,127 @@ pub(crate) fn current_user_profile_response(
     ))
 }
 
+async fn current_user_profile_data_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let actor =
+        match session::resolve_app_session(config, request, &CURRENT_USER_APP_SESSION_TARGETS) {
+            Ok(actor) => actor,
+            Err(response) => return no_store_response(*response),
+        };
+
+    if !config.contact_data.configured() {
+        return contact_data_layer_not_ready_response(request);
+    }
+
+    let Some(user_url) = config.contact_data.rest_url(
+        "users",
+        &[
+            ("select", "id,display_name,avatar_url,created_at".to_owned()),
+            ("id", format!("eq.{}", actor.claims.sub)),
+            ("limit", "1".to_owned()),
+        ],
+    ) else {
+        return contact_data_layer_not_ready_response(request);
+    };
+    let Some(private_details_url) = config.contact_data.rest_url(
+        "user_private_details",
+        &[
+            (
+                "select",
+                "full_name,new_email,email,default_workspace_id".to_owned(),
+            ),
+            ("user_id", format!("eq.{}", actor.claims.sub)),
+            ("limit", "1".to_owned()),
+        ],
+    ) else {
+        return contact_data_layer_not_ready_response(request);
+    };
+
+    let user_response = match send_contact_data_request(
+        &config.contact_data,
+        outbound,
+        OutboundMethod::Get,
+        &user_url,
+        None,
+        None,
+    )
+    .await
+    {
+        Ok(response) if is_success_status(response.status) => response,
+        Ok(_) | Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Error fetching user profile" }),
+            ));
+        }
+    };
+    let private_details_response = match send_contact_data_request(
+        &config.contact_data,
+        outbound,
+        OutboundMethod::Get,
+        &private_details_url,
+        None,
+        None,
+    )
+    .await
+    {
+        Ok(response) if is_success_status(response.status) => response,
+        Ok(_) | Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Error fetching user profile" }),
+            ));
+        }
+    };
+
+    let user_row = match decode_first_row::<SupabaseUserRow>(&user_response) {
+        Ok(row) => row,
+        Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Error fetching user profile" }),
+            ));
+        }
+    };
+    let private_details_row =
+        match decode_first_row::<SupabaseUserPrivateDetailsRow>(&private_details_response) {
+            Ok(row) => row,
+            Err(_) => {
+                return no_store_response(json_response(
+                    500,
+                    json!({ "message": "Error fetching user profile" }),
+                ));
+            }
+        };
+
+    no_store_response(json_response(
+        200,
+        CurrentUserProfileResponse {
+            avatar_url: user_row.as_ref().and_then(|row| row.avatar_url.clone()),
+            created_at: user_row
+                .as_ref()
+                .and_then(|row| row.created_at.clone())
+                .unwrap_or_else(|| unix_seconds_to_iso8601(actor.claims.iat)),
+            default_workspace_id: private_details_row
+                .as_ref()
+                .and_then(|row| row.default_workspace_id.clone()),
+            display_name: user_row.as_ref().and_then(|row| row.display_name.clone()),
+            email: private_details_row
+                .as_ref()
+                .and_then(|row| row.email.clone())
+                .or(actor.claims.email),
+            full_name: private_details_row
+                .as_ref()
+                .and_then(|row| row.full_name.clone()),
+            id: user_row.and_then(|row| row.id).unwrap_or(actor.claims.sub),
+            new_email: private_details_row.and_then(|row| row.new_email),
+        },
+    ))
+}
+
 pub(crate) fn current_user_profile_patch_response(
     config: &BackendConfig,
     request: BackendRequest<'_>,
@@ -244,6 +444,73 @@ pub(crate) fn current_user_profile_patch_response(
     }
 
     contact_data_layer_not_ready_response(request)
+}
+
+async fn current_user_profile_patch_data_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let actor =
+        match session::resolve_app_session(config, request, &CURRENT_USER_APP_SESSION_TARGETS) {
+            Ok(actor) => actor,
+            Err(response) => return no_store_response(*response),
+        };
+
+    if actor.source == session::AppSessionAuthSource::Cookie && !is_same_origin_api_request(request)
+    {
+        return no_store_response(json_response(
+            403,
+            json!({
+                "message": "Profile updates require same-origin confirmation",
+            }),
+        ));
+    }
+
+    let updates = match profile_patch_updates(request.body_text) {
+        Ok(updates) => updates,
+        Err(response) => return no_store_response(*response),
+    };
+
+    if !config.contact_data.configured() {
+        return contact_data_layer_not_ready_response(request);
+    }
+
+    let Some(profile_url) = config
+        .contact_data
+        .rest_url("users", &[("id", format!("eq.{}", actor.claims.sub))])
+    else {
+        return contact_data_layer_not_ready_response(request);
+    };
+    let body = match serde_json::to_string(&updates) {
+        Ok(body) => body,
+        Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Internal server error" }),
+            ));
+        }
+    };
+
+    match send_contact_data_request(
+        &config.contact_data,
+        outbound,
+        OutboundMethod::Patch,
+        &profile_url,
+        Some(&body),
+        Some("return=minimal"),
+    )
+    .await
+    {
+        Ok(response) if is_success_status(response.status) => no_store_response(json_response(
+            200,
+            json!({ "message": "Profile updated successfully" }),
+        )),
+        Ok(_) | Err(_) => no_store_response(json_response(
+            500,
+            json!({ "message": "Internal server error" }),
+        )),
+    }
 }
 
 pub(crate) fn support_inquiry_post_response(
@@ -286,7 +553,119 @@ pub(crate) fn support_inquiry_post_response(
         return no_store_response(invalid_contact_request_body_response(validation_errors));
     }
 
+    if !config.contact_data.configured() {
+        return contact_data_layer_not_ready_response(request);
+    }
+
     contact_data_layer_not_ready_response(request)
+}
+
+async fn support_inquiry_data_post_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let actor =
+        match session::resolve_app_session(config, request, &CURRENT_USER_APP_SESSION_TARGETS) {
+            Ok(actor) => actor,
+            Err(response) => return no_store_response(*response),
+        };
+
+    if actor.source == session::AppSessionAuthSource::Cookie && !is_same_origin_api_request(request)
+    {
+        return no_store_response(json_response(
+            403,
+            json!({
+                "message": "Support inquiry creation requires same-origin confirmation",
+            }),
+        ));
+    }
+
+    let Some(body) = parse_json_body(request.body_text) else {
+        return no_store_response(invalid_contact_request_body_response(vec![
+            "body must be valid JSON".to_owned(),
+        ]));
+    };
+
+    let payload = match serde_json::from_value::<SupportInquiryRequest>(body) {
+        Ok(payload) => payload,
+        Err(_) => {
+            return no_store_response(invalid_contact_request_body_response(vec![
+                "body must include name, email, type, product, subject, and message".to_owned(),
+            ]));
+        }
+    };
+
+    let validation_errors = validate_support_inquiry_payload(&payload);
+    if !validation_errors.is_empty() {
+        return no_store_response(invalid_contact_request_body_response(validation_errors));
+    }
+
+    if !config.contact_data.configured() {
+        return contact_data_layer_not_ready_response(request);
+    }
+
+    let Some(inquiries_url) = config
+        .contact_data
+        .rest_url("support_inquiries", &[("select", "id".to_owned())])
+    else {
+        return contact_data_layer_not_ready_response(request);
+    };
+    let insert = SupportInquiryInsert {
+        creator_id: &actor.claims.sub,
+        email: &payload.email,
+        message: &payload.message,
+        name: &payload.name,
+        product: &payload.product,
+        subject: &payload.subject,
+        inquiry_type: &payload.inquiry_type,
+    };
+    let body = match serde_json::to_string(&insert) {
+        Ok(body) => body,
+        Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Internal server error" }),
+            ));
+        }
+    };
+
+    let response = match send_contact_data_request(
+        &config.contact_data,
+        outbound,
+        OutboundMethod::Post,
+        &inquiries_url,
+        Some(&body),
+        Some("return=representation"),
+    )
+    .await
+    {
+        Ok(response) if is_success_status(response.status) => response,
+        Ok(_) | Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Failed to create inquiry" }),
+            ));
+        }
+    };
+
+    let inserted = match decode_first_row::<SupportInquiryInsertRow>(&response) {
+        Ok(Some(row)) => row,
+        Ok(None) | Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Failed to create inquiry" }),
+            ));
+        }
+    };
+
+    no_store_response(json_response(
+        201,
+        json!({
+            "success": true,
+            "inquiryId": inserted.id,
+        }),
+    ))
 }
 
 pub(crate) fn should_buffer_request_body(method: &str, path: &str) -> bool {
@@ -298,13 +677,150 @@ pub(crate) fn should_buffer_request_body(method: &str, path: &str) -> bool {
 
 fn contact_data_layer_not_ready_response(request: BackendRequest<'_>) -> BackendResponse {
     no_store_response(json_response(
-        501,
+        503,
         json!({
             "code": "CONTACT_DATA_LAYER_NOT_READY",
             "message": CONTACT_DATA_LAYER_NOT_READY_MESSAGE,
             "requestId": request.request_id.unwrap_or("unknown"),
         }),
     ))
+}
+
+async fn send_contact_data_request(
+    contact_data: &ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    method: OutboundMethod,
+    url: &str,
+    body: Option<&str>,
+    prefer: Option<&'static str>,
+) -> Result<OutboundResponse, BackendResponse> {
+    let Some(service_role_key) = contact_data.service_role_key() else {
+        return Err(contact_data_layer_request_failed_response());
+    };
+
+    let authorization = format!("Bearer {service_role_key}");
+    let mut request = OutboundRequest::new(method, url)
+        .with_header("Accept", APPLICATION_JSON)
+        .with_header("Authorization", &authorization)
+        .with_header("apikey", service_role_key);
+
+    if body.is_some() {
+        request = request.with_header("Content-Type", APPLICATION_JSON);
+    }
+
+    if let Some(prefer) = prefer {
+        request = request.with_header("Prefer", prefer);
+    }
+
+    if let Some(body) = body {
+        request = request.with_body(body);
+    }
+
+    outbound
+        .send(request)
+        .await
+        .map_err(|_| contact_data_layer_request_failed_response())
+}
+
+fn contact_data_layer_request_failed_response() -> BackendResponse {
+    no_store_response(json_response(
+        502,
+        json!({
+            "message": CONTACT_DATA_REQUEST_FAILED_MESSAGE,
+        }),
+    ))
+}
+
+fn decode_first_row<T: for<'de> Deserialize<'de>>(
+    response: &OutboundResponse,
+) -> Result<Option<T>, serde_json::Error> {
+    let rows = serde_json::from_str::<Vec<T>>(&response.body_text)?;
+
+    Ok(rows.into_iter().next())
+}
+
+fn is_success_status(status: u16) -> bool {
+    (200..300).contains(&status)
+}
+
+fn profile_patch_updates(
+    body_text: Option<&str>,
+) -> Result<serde_json::Value, Box<BackendResponse>> {
+    let Some(body) = parse_json_body(body_text) else {
+        return Err(Box::new(invalid_profile_request_body_response(vec![
+            "body must be valid JSON".to_owned(),
+        ])));
+    };
+    let Some(body) = body.as_object() else {
+        return Err(Box::new(invalid_profile_request_body_response(vec![
+            "body must be a JSON object".to_owned(),
+        ])));
+    };
+    let mut updates = serde_json::Map::new();
+    let mut errors = Vec::new();
+
+    if let Some(value) = body.get("display_name") {
+        match value.as_str() {
+            Some(display_name) => {
+                validate_string_length(
+                    &mut errors,
+                    "display_name",
+                    display_name,
+                    1,
+                    MAX_DISPLAY_NAME_LENGTH,
+                );
+                updates.insert("display_name".to_owned(), json!(display_name));
+            }
+            None => errors.push("display_name must be a string".to_owned()),
+        }
+    }
+
+    if let Some(value) = body.get("bio") {
+        if value.is_null() {
+            updates.insert("bio".to_owned(), serde_json::Value::Null);
+        } else if let Some(bio) = value.as_str() {
+            validate_string_length(&mut errors, "bio", bio, 0, MAX_BIO_LENGTH);
+            updates.insert("bio".to_owned(), json!(bio));
+        } else {
+            errors.push("bio must be a string or null".to_owned());
+        }
+    }
+
+    if let Some(value) = body.get("avatar_url") {
+        if value.is_null() {
+            updates.insert("avatar_url".to_owned(), serde_json::Value::Null);
+        } else if let Some(avatar_url) = value.as_str() {
+            if url::Url::parse(avatar_url).is_err() {
+                errors.push("avatar_url must be a valid URL".to_owned());
+            }
+            updates.insert("avatar_url".to_owned(), json!(avatar_url));
+        } else {
+            errors.push("avatar_url must be a URL string or null".to_owned());
+        }
+    }
+
+    if !errors.is_empty() {
+        return Err(Box::new(invalid_profile_request_body_response(errors)));
+    }
+
+    if updates.is_empty() {
+        return Err(Box::new(json_response(
+            400,
+            json!({ "message": "No valid fields to update" }),
+        )));
+    }
+
+    Ok(serde_json::Value::Object(updates))
+}
+
+fn invalid_profile_request_body_response(errors: Vec<String>) -> BackendResponse {
+    json_response(
+        400,
+        json!({
+            "errors": errors,
+            "message": "Invalid request data",
+        }),
+    )
 }
 
 fn invalid_contact_request_body_response(errors: Vec<String>) -> BackendResponse {

@@ -90,6 +90,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/v1/infrastructure/users/fields/types with the deterministic legacy field type payload and no longer opens a Supabase admin client for static metadata."
     },
+    "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request verifies app-session auth, enforces same-origin mutation confirmation for cookie auth, validates the legacy support inquiry payload, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. Adjacent inquiry item and media-url routes remain legacy-owned."
+    },
+    "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
+    },
     "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts": {
       "methods": {
         "OPTIONS": {

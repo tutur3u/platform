@@ -107,14 +107,12 @@ required before the Rust-owned Discord cron proxy routes can call the Discord
 app. Wrangler prompts for values; do not place those values in `wrangler.jsonc`,
 `vars`, docs, or shell history.
 
-`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` can be configured as backend
-Worker secrets now to exercise the redacted contact data readiness signal on
-`GET /api/migration/status`. They are not listed as required bootstrap secrets
-yet because the contact data adapter still returns
-`CONTACT_DATA_LAYER_NOT_READY`. The async native/Worker HTTP boundary exists,
-but profile hydration and support-inquiry persistence still need route wiring,
-Supabase auth revalidation, and persistence tests before those endpoints can be
-terminally migrated.
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required backend Worker
+secrets for the Rust-owned contact/profile APIs. They stay server-only: the
+backend reads `users` and `user_private_details`, updates profile fields, and
+inserts `support_inquiries` through Supabase REST with the service-role key.
+`GET /api/migration/status` exposes only redacted readiness state and the
+Supabase origin, never the credential.
 
 Smoke-test the returned `workers.dev` URL before pointing the frontend at it:
 
@@ -455,7 +453,7 @@ Frontend migration candidates blocked on auth/data ownership:
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/:locale/meet-together`       | The public TanStack preview shell is available, but the legacy route also loads authenticated meeting plans and creates plans through Next-only Supabase/server-action paths.                                                                                                                                                                                                                                                                                                                                                                                                                                            | Add Rust-owned or TanStack server-function-backed plan list/create APIs, route them through `packages/internal-api`, preserve unauthenticated empty/login-required behavior, and add E2E evidence before adding the `page:/:locale/meet-together` override.                              |
 | `/:locale/games/farm`          | The visible game page is client-only, but the legacy layout gates access through Supabase auth and `isValidTuturuuuEmail(user?.email)` before rendering.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Add a TanStack server gate that validates the session and email domain through server-owned auth helpers, then port the game UI without exposing it publicly.                                                                                                                            |
-| `/:locale/contact` page        | A TanStack preview route now preserves the visible contact shell, owns the static metadata layout, hydrates the current-user contact profile through a TanStack Query loader/server function, and submits inquiries through a TanStack server function backed by `@tuturuuu/internal-api` Rust backend facades. The Rust backend can verify Tuturuuu app-session JWTs and expose app-session-only profile/inquiry foundation routes, but Supabase session revalidation, private profile hydration, and `support_inquiries` persistence are not Rust-owned yet; valid writes still return `CONTACT_DATA_LAYER_NOT_READY`. | Add the Rust Supabase auth/data adapter, persist `support_inquiries` server-side, preserve same-origin mutation checks, add contact E2E/benchmark evidence, and keep `page:/:locale/contact`, `/api/v1/users/me/profile`, and `/api/v1/inquiries` `legacy-next` until those checks pass. |
+| `/:locale/contact` page        | A TanStack preview route now preserves the visible contact shell, owns the static metadata layout, hydrates the current-user contact profile through a TanStack Query loader/server function, and submits inquiries through a TanStack server function backed by `@tuturuuu/internal-api` Rust backend facades. The Rust backend owns `/api/v1/users/me/profile` and `/api/v1/inquiries` for the app-session contract, including server-side Supabase profile hydration, profile updates, support-inquiry inserts, same-origin mutation checks, OpenAPI coverage, and mocked native/Worker outbound tests. | Add browser E2E evidence for the TanStack contact route against the Rust backend, then mark `page:/:locale/contact` migrated when route-level profile hydration and inquiry submission pass in the compare flow. |
 | `/:locale/contributors`        | A TanStack preview route is implemented, but it replaces `framer-motion`, `recharts`, and `react-confetti` with dependency-free equivalents.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Either accept that visual equivalence explicitly after review, or port the exact legacy visual widgets and add browser visual/E2E evidence before adding the manifest override.                                                                                                          |
 | `/:locale` app-shell providers | The root route now centralizes locale validation, legacy root head metadata, `html lang`, theme bootstrapping, Query, and tooltip providers, but full legacy layout parity still includes `next-intl`, `NuqsAdapter`, theme-aware toasts, auth-backed version/DB badges, and service-worker runtime behavior.                                                                                                                                                                                                                                                                                                            | Finish the provider/runtime contract in TanStack Start, decide which legacy badges and service-worker behaviors are accepted removals versus ports, then add route-level E2E or screenshot evidence before marking remaining localized layout artifacts terminal.                        |
 | `/:locale/login` and `/logout` | Login/logout own Supabase auth, app-token confirmation, MFA/passkey flows, Turnstile state, and temporary AI auth revocation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Complete the auth/session contract for TanStack Start and Rust, then port these as a dedicated auth milestone with focused E2E coverage.                                                                                                                                                 |
@@ -514,14 +512,14 @@ manifest entry can move out of `legacy-next`:
 - a `packages/internal-api` facade when the TanStack app or shared UI needs to
   call the endpoint
 
-Contact/profile foundation routes are deliberately below that terminal bar:
-`GET /api/v1/users/me/profile`, `PATCH /api/v1/users/me/profile`, and
-`POST /api/v1/inquiries` currently prove app-session JWT verification, request
-body limits, same-origin checks, validation, and Worker-compatible routing, but
-they return `CONTACT_DATA_LAYER_NOT_READY` for writes and do not yet revalidate
-Supabase sessions or read/write private profile and inquiry rows. Keep their
-manifest entries `legacy-next` until the Rust Supabase data adapter and
-TanStack server-function facade are in place.
+Contact/profile backend routes now meet that terminal bar for the app-session
+contract used by TanStack contact: `GET /api/v1/users/me/profile`,
+`PATCH /api/v1/users/me/profile`, and `POST /api/v1/inquiries` verify
+`ttr_app_` app-session JWTs, enforce same-origin mutation checks for cookie
+auth, validate request bodies, call Supabase REST through the server-owned Rust
+outbound adapter, and have mocked native/Worker persistence tests. Broader
+Supabase session revalidation remains part of the dedicated auth migration
+milestone, so route notes must stay explicit about the app-session boundary.
 
 `scripts/backend-openapi-migration-contract.test.js` compares the migrated
 Rust-owned route artifacts in `apps/tanstack-web/migration/route-manifest.json`
@@ -561,14 +559,15 @@ variable names only.
 
 For Cloudflare specifically:
 
-- Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
-  `BACKEND_INTERNAL_URL` with `wrangler secret put`,
+- Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`,
+  `BACKEND_INTERNAL_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+  `CRON_SECRET`, and `DISCORD_APP_DEPLOYMENT_URL` with `wrangler secret put`,
   `wrangler versions secret put`, or Cloudflare dashboard secret bindings. Use
   `secret put` for first preview bootstrap only because it deploys a new active
   version immediately; use the versions command family for rotations and
   canaries.
 - Bind `TUTURUUU_APP_COORDINATION_SECRET` on the backend Worker before testing
-  contact/profile foundation routes. The Rust verifier also accepts existing
+  contact/profile routes. The Rust verifier also accepts existing
   app-coordination fallback secret names for compatibility, but the dedicated
   secret name is the preferred Cloudflare binding.
 - Keep local Worker secret values in ignored `apps/backend/.dev.vars` and
@@ -614,9 +613,9 @@ consumed by the TanStack shell through a Start server function:
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar`                              | Legacy-compatible sidebar collapsed preference cookie route for `sidebar-collapsed`.                                                                                                                                                                        |
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar/sizes`                        | Legacy-compatible sidebar sizing preference cookie route for `sidebar-size` and `main-content-size`.                                                                                                                                                        |
 | `GET /api/v1/infrastructure/users/fields/types`                                 | Legacy-compatible static user field type metadata route returning `TEXT`, `NUMBER`, `BOOLEAN`, `DATE`, and `DATETIME` in the original order.                                                                                                                |
-| `GET /api/v1/users/me/profile`                                                  | App-session-only current-user profile foundation route. It verifies `ttr_app_` JWTs and returns token-derived profile shape with no-store headers, but remains non-terminal until Supabase session revalidation and private profile hydration move to Rust. |
-| `PATCH /api/v1/users/me/profile`                                                | App-session-only mutation foundation route. It enforces same-origin confirmation for cookie auth and returns `501 CONTACT_DATA_LAYER_NOT_READY` until Rust owns profile persistence.                                                                        |
-| `POST /api/v1/inquiries`                                                        | App-session-only support-inquiry foundation route. It enforces same-origin confirmation for cookie auth, validates the legacy payload and field limits, and returns `501 CONTACT_DATA_LAYER_NOT_READY` until Rust owns `support_inquiries` inserts.         |
+| `GET /api/v1/users/me/profile`                                                  | App-session current-user profile route. It verifies `ttr_app_` JWTs, reads `users` and `user_private_details` through the server-owned Supabase REST adapter, and returns the legacy profile shape with no-store headers.                              |
+| `PATCH /api/v1/users/me/profile`                                                | App-session profile mutation route. It enforces same-origin confirmation for cookie auth, validates `display_name`, `bio`, and `avatar_url`, and persists the allowed fields to the `users` row through Supabase REST.                                |
+| `POST /api/v1/inquiries`                                                        | App-session support-inquiry route. It enforces same-origin confirmation for cookie auth, validates the legacy payload and field limits, and inserts `support_inquiries` with `creator_id` from the resolved app-session user.                         |
 | `OPTIONS /api/v1/auth/{password-login,otp/send,otp/verify,otp/settings}`        | Method-level legacy-compatible shared wildcard CORS `204` preflights; paired auth/data methods remain legacy-owned.                                                                                                                                         |
 | `OPTIONS /api/v1/auth/mobile/{password-login,send-otp,verify-otp}`              | Method-level legacy-compatible shared wildcard CORS `204` preflights; paired mobile auth methods remain legacy-owned.                                                                                                                                       |
 | `OPTIONS /api/v1/mobile/version-check`                                          | Method-level legacy-compatible shared wildcard CORS `204` preflight; paired mobile version policy lookup remains legacy-owned.                                                                                                                              |

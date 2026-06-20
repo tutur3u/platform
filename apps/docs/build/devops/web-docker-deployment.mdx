@@ -199,11 +199,17 @@ incremental preview validation:
    cargo install worker-build --locked
    bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
    bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
    bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
    bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
    bun wrangler deploy --config apps/backend/wrangler.jsonc
    ```
 
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for the
+   Rust-owned contact/profile APIs. The backend uses them only server-side to
+   read `users` and `user_private_details` and insert `support_inquiries`
+   through Supabase REST.
    `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are required for Rust-owned
    Discord cron proxy preview readiness; configure them even when the first
    smoke target is only `/healthz`.
@@ -215,6 +221,8 @@ incremental preview validation:
    ```bash
    bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
    bun wrangler versions secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
    bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
    bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
    bun wrangler versions deploy --config apps/backend/wrangler.jsonc

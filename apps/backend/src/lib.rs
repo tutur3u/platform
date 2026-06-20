@@ -250,6 +250,10 @@ pub(crate) async fn handle_backend_request(
     request: BackendRequest<'_>,
     outbound: &impl outbound::OutboundHttpClient,
 ) -> BackendResponse {
+    if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
+        return response;
+    }
+
     if let Some(response) = handle_discord_cron_proxy(config, request, outbound).await {
         return response;
     }
@@ -2144,7 +2148,7 @@ mod tests {
         OutboundResponse,
     };
     use super::*;
-    use std::cell::RefCell;
+    use std::{cell::RefCell, collections::VecDeque};
 
     fn request(method: &'static str, path: &'static str) -> BackendRequest<'static> {
         BackendRequest {
@@ -2194,6 +2198,9 @@ mod tests {
 
     fn backend_config_with_contact_data() -> BackendConfig {
         let mut config = backend_config_with_internal_token();
+        config
+            .app_coordination_secrets
+            .push("test-app-session-secret".to_owned());
         config.contact_data = contact::ContactDataConfig::new(
             "https://project-ref.supabase.co/",
             "test-service-role-secret",
@@ -2218,7 +2225,7 @@ mod tests {
 
     struct RecordingOutboundClient {
         calls: RefCell<Vec<RecordedOutboundRequest>>,
-        response: OutboundResponse,
+        responses: RefCell<VecDeque<OutboundResponse>>,
     }
 
     impl Default for RecordingOutboundClient {
@@ -2229,13 +2236,13 @@ mod tests {
 
     impl RecordingOutboundClient {
         fn with_response(status: u16, body_text: impl Into<String>) -> Self {
+            Self::with_responses(vec![outbound_response(status, body_text)])
+        }
+
+        fn with_responses(responses: Vec<OutboundResponse>) -> Self {
             Self {
                 calls: RefCell::new(Vec::new()),
-                response: OutboundResponse {
-                    body_text: body_text.into(),
-                    headers: vec![("content-type".to_owned(), APPLICATION_JSON.to_owned())],
-                    status,
-                },
+                responses: RefCell::new(VecDeque::from(responses)),
             }
         }
 
@@ -2256,9 +2263,21 @@ mod tests {
                 method: request.method,
                 url: request.url.to_owned(),
             });
-            let response = self.response.clone();
+            let response = self
+                .responses
+                .borrow_mut()
+                .pop_front()
+                .unwrap_or_else(|| outbound_response(200, r#"{"ok":true}"#));
 
             Box::pin(async move { Ok(response) })
+        }
+    }
+
+    fn outbound_response(status: u16, body_text: impl Into<String>) -> OutboundResponse {
+        OutboundResponse {
+            body_text: body_text.into(),
+            headers: vec![("content-type".to_owned(), APPLICATION_JSON.to_owned())],
+            status,
         }
     }
 
@@ -2509,6 +2528,14 @@ mod tests {
             .headers
             .iter()
             .find(|(name, _)| *name == header)
+            .map(|(_, value)| value.as_str())
+    }
+
+    fn recorded_header<'a>(request: &'a RecordedOutboundRequest, header: &str) -> Option<&'a str> {
+        request
+            .headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case(header))
             .map(|(_, value)| value.as_str())
     }
 
@@ -2855,6 +2882,61 @@ mod tests {
         assert_eq!(response.body["default_workspace_id"], Value::Null);
     }
 
+    #[tokio::test]
+    async fn current_user_profile_reads_contact_data_from_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"[{"id":"app-session-user-1","display_name":"Ada","avatar_url":"https://cdn.example.test/avatar.png","created_at":"2026-06-20T00:00:00.000Z"}]"#,
+            ),
+            outbound_response(
+                200,
+                r#"[{"email":"ada@example.com","full_name":"Ada Lovelace","new_email":null,"default_workspace_id":"ws_123"}]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", CURRENT_USER_PROFILE_PATH, valid_app_session_token()),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["id"], "app-session-user-1");
+        assert_eq!(response.body["email"], "ada@example.com");
+        assert_eq!(response.body["display_name"], "Ada");
+        assert_eq!(
+            response.body["avatar_url"],
+            "https://cdn.example.test/avatar.png"
+        );
+        assert_eq!(response.body["full_name"], "Ada Lovelace");
+        assert_eq!(response.body["default_workspace_id"], "ws_123");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/users?select=id%2Cdisplay_name%2Cavatar_url%2Ccreated_at&id=eq.app-session-user-1&limit=1"
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/user_private_details?select=full_name%2Cnew_email%2Cemail%2Cdefault_workspace_id&user_id=eq.app-session-user-1&limit=1"
+        );
+    }
+
     #[test]
     fn current_user_profile_rejects_wrong_app_session_target() {
         let token = app_session_token(&app_session_claims(
@@ -2926,11 +3008,52 @@ mod tests {
             },
         );
 
-        assert_eq!(response.status, 501);
+        assert_eq!(response.status, 503);
         assert_eq!(response.body["code"], "CONTACT_DATA_LAYER_NOT_READY");
         assert_eq!(
             response.body["message"],
             CONTACT_DATA_LAYER_NOT_READY_MESSAGE
+        );
+    }
+
+    #[tokio::test]
+    async fn current_user_profile_patch_persists_to_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(204, "");
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(
+                    r#"{"display_name":"Ada","bio":null,"avatar_url":"https://cdn.example.test/avatar.png","ignored":"value"}"#,
+                ),
+                ..request_with_bearer(
+                    "PATCH",
+                    CURRENT_USER_PROFILE_PATH,
+                    valid_app_session_token(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "Profile updated successfully");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Patch);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/users?id=eq.app-session-user-1"
+        );
+        assert_eq!(recorded_header(&calls[0], "prefer"), Some("return=minimal"));
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[0].body.as_deref().unwrap()).unwrap(),
+            json!({
+                "avatar_url": "https://cdn.example.test/avatar.png",
+                "bio": null,
+                "display_name": "Ada",
+            })
         );
     }
 
@@ -3010,11 +3133,78 @@ mod tests {
             },
         );
 
-        assert_eq!(response.status, 501);
+        assert_eq!(response.status, 503);
         assert_eq!(response.body["code"], "CONTACT_DATA_LAYER_NOT_READY");
         assert_eq!(
             response.body["message"],
             CONTACT_DATA_LAYER_NOT_READY_MESSAGE
+        );
+    }
+
+    #[tokio::test]
+    async fn support_inquiry_async_handler_requires_contact_data_config() {
+        let config = backend_config_with_app_session_secret();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(
+                    r#"{"name":"Jane","email":"jane@example.com","type":"support","product":"web","subject":"Need help","message":"Please help me with this issue."}"#,
+                ),
+                ..request_with_bearer("POST", SUPPORT_INQUIRIES_PATH, valid_app_session_token())
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 503);
+        assert_eq!(response.body["code"], "CONTACT_DATA_LAYER_NOT_READY");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn support_inquiry_persists_to_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound =
+            RecordingOutboundClient::with_response(201, r#"[{"id":"support-inquiry-123"}]"#);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(
+                    r#"{"name":"Jane","email":"jane@example.com","type":"support","product":"web","subject":"Need help","message":"Please help me with this issue."}"#,
+                ),
+                ..request_with_bearer("POST", SUPPORT_INQUIRIES_PATH, valid_app_session_token())
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 201);
+        assert_eq!(response.body["success"], true);
+        assert_eq!(response.body["inquiryId"], "support-inquiry-123");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/support_inquiries?select=id"
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "prefer"),
+            Some("return=representation")
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[0].body.as_deref().unwrap()).unwrap(),
+            json!({
+                "creator_id": "app-session-user-1",
+                "email": "jane@example.com",
+                "message": "Please help me with this issue.",
+                "name": "Jane",
+                "product": "web",
+                "subject": "Need help",
+                "type": "support",
+            })
         );
     }
 

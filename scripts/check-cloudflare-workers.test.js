@@ -197,6 +197,33 @@ test('Wrangler configs declare required preview secrets by name', () => {
         ],
       },
     }).join('\n'),
+    /SUPABASE_URL/
+  );
+  assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      secrets: {
+        required: [
+          'BACKEND_INTERNAL_TOKEN',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+          'SUPABASE_URL',
+        ],
+      },
+    }).join('\n'),
+    /SUPABASE_SERVICE_ROLE_KEY/
+  );
+  assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      secrets: {
+        required: [
+          'BACKEND_INTERNAL_TOKEN',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+          'SUPABASE_URL',
+          'SUPABASE_SERVICE_ROLE_KEY',
+        ],
+      },
+    }).join('\n'),
     /CRON_SECRET/
   );
   assert.match(
@@ -206,6 +233,8 @@ test('Wrangler configs declare required preview secrets by name', () => {
         required: [
           'BACKEND_INTERNAL_TOKEN',
           'TUTURUUU_APP_COORDINATION_SECRET',
+          'SUPABASE_URL',
+          'SUPABASE_SERVICE_ROLE_KEY',
           'CRON_SECRET',
         ],
       },

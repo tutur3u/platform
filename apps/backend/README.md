@@ -13,23 +13,22 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `BACKEND_INTERNAL_TOKEN`: Bearer token required for internal job and migration
   inventory routes.
 - `TUTURUUU_APP_COORDINATION_SECRET`: Preferred secret for verifying
-  Tuturuuu-managed `ttr_app_` app-session JWTs on contact/profile foundation
-  routes. The backend also accepts the existing fallback secret names
+  Tuturuuu-managed `ttr_app_` app-session JWTs on contact/profile routes. The
+  backend also accepts the existing fallback secret names
   `APP_COORDINATION_TOKEN_SECRET`, `SUPABASE_SECRET_KEY`,
   `SUPABASE_SERVICE_ROLE_KEY`, and `SUPABASE_SERVICE_KEY` for compatibility.
   Non-production local runs fall back to the shared development secret used by
   the TypeScript auth package; production and Cloudflare preview must configure
   an explicit secret.
-- `SUPABASE_URL`: Canonical Supabase origin for the future Rust contact data
-  adapter. The backend also accepts `SUPABASE_SERVER_URL`,
-  `NEXT_PUBLIC_SUPABASE_URL`, and `DOCKER_INTERNAL_SUPABASE_URL` while the
-  migration is in progress.
-- `SUPABASE_SERVICE_ROLE_KEY`: Service-role credential for future server-owned
-  contact profile hydration and `support_inquiries` persistence. The backend
-  also accepts `SUPABASE_SERVICE_KEY` and `SUPABASE_SECRET_KEY` for
-  compatibility. Keep this value in environment variables, ignored local
-  Worker files, or Cloudflare secrets only; never put it in `wrangler.jsonc`
-  `vars` or browser-visible frontend config.
+- `SUPABASE_URL`: Canonical Supabase origin for the Rust contact data adapter.
+  The backend also accepts `SUPABASE_SERVER_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  and `DOCKER_INTERNAL_SUPABASE_URL` while the migration is in progress.
+- `SUPABASE_SERVICE_ROLE_KEY`: Service-role credential for server-owned contact
+  profile hydration and `support_inquiries` persistence. The backend also
+  accepts `SUPABASE_SERVICE_KEY` and `SUPABASE_SECRET_KEY` for compatibility.
+  Keep this value in environment variables, ignored local Worker files, or
+  Cloudflare secrets only; never put it in `wrangler.jsonc` `vars` or
+  browser-visible frontend config.
 
 ## Endpoints
 
@@ -57,22 +56,19 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `GET /api/v1/infrastructure/users/fields/types`: legacy-compatible static
   user field type metadata migrated from `apps/web`. The Rust route returns the
   deterministic ordered legacy payload without opening a Supabase admin client.
-- `GET /api/v1/users/me/profile`: contact migration foundation route. It
+- `GET /api/v1/users/me/profile`: contact migration route. It
   verifies Tuturuuu app-session JWTs from `Authorization: Bearer ttr_app_...`,
-  `tuturuuu_web_app_session`, or `tuturuuu_app_session`, then returns the
-  token-derived identity in the legacy profile response shape with no-store
-  cache headers. This is not terminal profile route ownership yet because
-  Supabase session revalidation and private profile-row hydration still need
-  the Rust data adapter.
-- `PATCH /api/v1/users/me/profile`: authenticated mutation foundation route.
+  `tuturuuu_web_app_session`, or `tuturuuu_app_session`, then reads `users` and
+  `user_private_details` through the server-owned Supabase REST adapter and
+  returns the legacy profile response shape with no-store cache headers.
+- `PATCH /api/v1/users/me/profile`: authenticated mutation route.
   Cookie-authenticated requests require same-origin `Origin` or `Referer`
-  confirmation, then return `501 CONTACT_DATA_LAYER_NOT_READY` until Rust owns
-  profile persistence.
-- `POST /api/v1/inquiries`: authenticated support-inquiry foundation route.
-  It verifies app-session JWTs, requires same-origin confirmation for cookie
-  auth, validates the legacy inquiry JSON shape and field limits, then returns
-  `501 CONTACT_DATA_LAYER_NOT_READY` until Rust owns the
-  `support_inquiries` insert with `creator_id` from the resolved user.
+  confirmation, then Rust validates and persists `display_name`, `bio`, and
+  `avatar_url` updates to the `users` row through Supabase REST.
+- `POST /api/v1/inquiries`: authenticated support-inquiry route. It verifies
+  app-session JWTs, requires same-origin confirmation for cookie auth, validates
+  the legacy inquiry JSON shape and field limits, then inserts
+  `support_inquiries` with `creator_id` from the resolved user.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
   /api/v1/auth/mobile/password-login`, `OPTIONS
   /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,

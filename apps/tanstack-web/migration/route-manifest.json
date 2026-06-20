@@ -6,11 +6,11 @@
         "acceptedRemoval": 7,
         "key": "api",
         "label": "api",
-        "legacyNext": 1072,
-        "migrated": 26,
-        "percentComplete": 2.99,
-        "remaining": 1072,
-        "terminal": 33,
+        "legacyNext": 1070,
+        "migrated": 28,
+        "percentComplete": 3.17,
+        "remaining": 1070,
+        "terminal": 35,
         "total": 1105,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 7,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1090,
-        "migrated": 31,
-        "percentComplete": 3.37,
-        "remaining": 1090,
-        "terminal": 38,
+        "legacyNext": 1088,
+        "migrated": 33,
+        "percentComplete": 3.55,
+        "remaining": 1088,
+        "terminal": 40,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 7,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1351,
-      "migrated": 147,
-      "percentComplete": 10.23,
-      "remaining": 1351,
-      "terminal": 154,
+      "legacyNext": 1349,
+      "migrated": 149,
+      "percentComplete": 10.37,
+      "remaining": 1349,
+      "terminal": 156,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -3914,7 +3914,7 @@
       "methods": ["POST"],
       "routePath": "/api/v1/inquiries",
       "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -4728,7 +4728,7 @@
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/users/me/profile",
       "sourceFile": "apps/web/src/app/api/v1/users/me/profile/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

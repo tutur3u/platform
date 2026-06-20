@@ -982,15 +982,12 @@ paths:
                   - GET
   /api/v1/users/me/profile:
     get:
-      summary: Current user profile app-session foundation
+      summary: Current user profile
       description: >
-        Rust backend foundation for apps/web/src/app/api/v1/users/me/profile/route.ts.
-        This operation verifies Tuturuuu app-session JWTs in native and Cloudflare
-        Worker runtimes and returns the token-derived identity preview with the
-        legacy profile response shape. It is not full profile route ownership yet:
-        Supabase session revalidation and private profile row hydration still need
-        the Rust data adapter before the migration manifest can mark the legacy
-        route artifact migrated.
+        Migrated replacement for apps/web/src/app/api/v1/users/me/profile/route.ts.
+        The Rust backend verifies Tuturuuu app-session JWTs in native and
+        Cloudflare Worker runtimes, then reads users and user_private_details
+        through the server-owned Supabase REST adapter with the service-role key.
       security:
         - AppSessionBearer: []
         - AppSessionCookie: []
@@ -1019,11 +1016,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContactUnauthorized"
         "503":
-          description: App coordination secret is missing.
+          description: App coordination secret or contact data adapter configuration is missing.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AppSessionConfigurationError"
+                oneOf:
+                  - $ref: "#/components/schemas/AppSessionConfigurationError"
+                  - $ref: "#/components/schemas/ContactDataLayerNotReady"
+        "500":
+          description: Supabase profile read failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactServerError"
         "405":
           description: Unsupported HTTP method.
           headers:
@@ -1033,24 +1038,42 @@ paths:
                 examples:
                   - GET, PATCH
     patch:
-      summary: Current user profile mutation foundation
+      summary: Update current user profile
       description: >
-        Authenticates the same app-session sources as GET and enforces
-        same-origin confirmation for cookie-authenticated requests before
-        returning CONTACT_DATA_LAYER_NOT_READY. This preserves the protected
-        mutation boundary while Rust profile persistence is still being built.
+        Migrated profile mutation. Authenticates the same app-session sources as
+        GET, enforces same-origin confirmation for cookie-authenticated
+        mutations, validates the legacy display_name/bio/avatar_url JSON shape,
+        and updates the users row through the server-owned Supabase REST adapter.
       security:
         - AppSessionBearer: []
         - AppSessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchCurrentUserProfileRequest"
       responses:
+        "200":
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileUpdateResponse"
+        "400":
+          description: Invalid profile payload or no valid fields to update.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactValidationError"
         "403":
           description: Cookie-authenticated mutation did not include same-origin confirmation.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactSameOriginRequired"
-        "501":
-          description: Rust profile persistence has not been configured yet.
+        "503":
+          description: Contact data adapter configuration is missing.
           content:
             application/json:
               schema:
@@ -1067,20 +1090,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AppSessionConfigurationError"
+        "500":
+          description: Supabase profile update failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactServerError"
         "405":
           description: Unsupported HTTP method.
   /api/v1/inquiries:
     post:
-      summary: Support inquiry app-session foundation
+      summary: Create support inquiry
       description: >
-        Rust backend foundation for apps/web/src/app/api/v1/inquiries/route.ts.
-        The route verifies Tuturuuu app-session JWTs, enforces same-origin
-        confirmation for cookie-authenticated mutations, validates the legacy
-        inquiry JSON shape and field limits, then returns
-        CONTACT_DATA_LAYER_NOT_READY until Supabase service-role persistence is
-        implemented. Do not mark the legacy inquiry route migrated until the
-        persistence adapter inserts support_inquiries with creator_id from the
-        resolved user.
+        Migrated replacement for apps/web/src/app/api/v1/inquiries/route.ts.
+        The Rust backend verifies Tuturuuu app-session JWTs, enforces
+        same-origin confirmation for cookie-authenticated mutations, validates
+        the legacy inquiry JSON shape and field limits, then inserts
+        support_inquiries with creator_id from the resolved app-session user
+        through the server-owned Supabase REST adapter.
       security:
         - AppSessionBearer: []
         - AppSessionCookie: []
@@ -1091,6 +1118,12 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateSupportInquiryRequest"
       responses:
+        "201":
+          description: Support inquiry created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSupportInquiryResponse"
         "400":
           description: Invalid inquiry payload.
           content:
@@ -1103,8 +1136,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactSameOriginRequired"
-        "501":
-          description: Rust support inquiry persistence has not been configured yet.
+        "503":
+          description: Contact data adapter configuration is missing.
           content:
             application/json:
               schema:
@@ -1121,6 +1154,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AppSessionConfigurationError"
+        "500":
+          description: Supabase inquiry insert failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactServerError"
         "405":
           description: Unsupported HTTP method.
           headers:
@@ -1752,6 +1791,33 @@ components:
           type:
             - string
             - "null"
+    PatchCurrentUserProfileRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        bio:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        avatar_url:
+          type:
+            - string
+            - "null"
+          format: uri
+    ProfileUpdateResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum:
+            - Profile updated successfully
     CreateSupportInquiryRequest:
       type: object
       required:
@@ -1800,6 +1866,20 @@ components:
           type: string
           minLength: 10
           maxLength: 5000
+    CreateSupportInquiryResponse:
+      type: object
+      required:
+        - success
+        - inquiryId
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        inquiryId:
+          type: string
+          examples:
+            - support-inquiry-123
     ContactUnauthorized:
       type: object
       required:
@@ -1861,6 +1941,17 @@ components:
           type: string
           examples:
             - rust-abc123
+    ContactServerError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error fetching user profile
+            - Failed to create inquiry
+            - Internal server error
     BrowserStateRecoveryForbidden:
       type: object
       required:
