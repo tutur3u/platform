@@ -185,6 +185,15 @@
         }
       }
     },
+    "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts": {
+      "methods": {
+        "OPTIONS": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend route_request handles the legacy WebGL package upload preflight with origin-dependent credentialed CMS CORS headers. PUT remains legacy-owned until protected upload validation, storage signing, and streaming upload move behind the Rust backend."
+        }
+      }
+    },
     "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email:apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

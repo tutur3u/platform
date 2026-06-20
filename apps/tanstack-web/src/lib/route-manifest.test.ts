@@ -104,6 +104,41 @@ describe('tanstackRouteManifest', () => {
     });
   });
 
+  it('marks the WebGL upload preflight as Rust-migrated without hiding upload PUT', () => {
+    expect(
+      tanstackRouteManifest.routes.find(
+        (route) =>
+          route.id ===
+          'api:OPTIONS:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts'
+      )
+    ).toMatchObject({
+      method: 'OPTIONS',
+      methods: ['OPTIONS'],
+      parentId:
+        'api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts',
+      routePath:
+        '/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload',
+      status: 'migrated',
+      targetOwner: 'rust-backend',
+    });
+    expect(
+      tanstackRouteManifest.routes.find(
+        (route) =>
+          route.id ===
+          'api:PUT:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts'
+      )
+    ).toMatchObject({
+      method: 'PUT',
+      methods: ['PUT'],
+      parentId:
+        'api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts',
+      routePath:
+        '/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload',
+      status: 'legacy-next',
+      targetOwner: 'rust-backend',
+    });
+  });
+
   it('marks the .well-known catch-all route as Rust-migrated', () => {
     expect(
       tanstackRouteManifest.routes.find(

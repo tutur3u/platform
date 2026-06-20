@@ -57,6 +57,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `OPTIONS /api/v1/auth/mfa/mobile/approvals`: method-level
   legacy-compatible bare empty `204` preflights. Their paired challenge
   creation, polling, approval, and listing methods remain legacy-owned.
+- `OPTIONS /api/v1/workspaces/:wsId/external-projects/webgl-packages/upload`:
+  method-level legacy-compatible WebGL upload preflight. Allowed CMS origins
+  receive credentialed `PUT, OPTIONS` CORS headers; missing, malformed, or
+  untrusted origins receive the legacy bare empty `204`. The protected `PUT`
+  upload method remains legacy-owned.
 - `POST /api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email`:
   legacy-compatible removed direct email route that returns `410 Gone`; emails
   are sent by the system queue after approval.

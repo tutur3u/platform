@@ -78,6 +78,10 @@ const AUTH_CORS_PREFLIGHT_PATHS: [&str; 8] = [
 const MOBILE_AUTH_CORS_ALLOW_METHODS: &str = "GET, POST, OPTIONS";
 const MOBILE_AUTH_CORS_ALLOW_HEADERS: &str = "Content-Type, Authorization";
 const MOBILE_AUTH_CORS_MAX_AGE: &str = "86400";
+const WEBGL_PACKAGE_UPLOAD_CORS_STATIC_ORIGINS: [&str; 2] =
+    ["https://cms.tuturuuu.com", "http://localhost:7811"];
+const WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_METHODS: &str = "PUT, OPTIONS";
+const WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_HEADERS: &str = "Authorization, Content-Type";
 const BARE_AUTH_PREFLIGHT_PATHS: [&str; 3] = [
     "/api/v1/auth/qr-login/challenges",
     "/api/v1/auth/mfa/mobile/challenges",
@@ -137,6 +141,8 @@ pub struct BackendConfig {
     pub local_e2e_migration_access: bool,
     pub port: u16,
     pub service_name: String,
+    pub cms_app_url: String,
+    pub next_public_cms_app_url: String,
 }
 
 impl BackendConfig {
@@ -148,6 +154,8 @@ impl BackendConfig {
             local_e2e_migration_access: false,
             port: 7820,
             service_name: service_name.into(),
+            cms_app_url: String::new(),
+            next_public_cms_app_url: String::new(),
         }
     }
 
@@ -163,6 +171,8 @@ impl BackendConfig {
             local_e2e_migration_access: allows_local_e2e_migration_access(),
             port: parse_port(&env("PORT", "7820")),
             service_name: env("BACKEND_SERVICE_NAME", "backend"),
+            cms_app_url: env("CMS_APP_URL", ""),
+            next_public_cms_app_url: env("NEXT_PUBLIC_CMS_APP_URL", ""),
         }
     }
 
@@ -434,6 +444,9 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
             mobile_auth_cors_preflight_response()
         }
         ("OPTIONS", path) if is_bare_auth_preflight_path(path) => empty_response(204),
+        ("OPTIONS", path) if is_webgl_package_upload_path(path) => {
+            webgl_package_upload_options_response(config, request)
+        }
         ("POST", path) if is_group_check_email_path(path) => disabled_group_check_email_response(),
         (method, path) if is_group_check_email_path(path) => method_not_allowed(method, "POST"),
         ("GET", "/healthz") => json_response(
@@ -587,6 +600,54 @@ fn mobile_auth_cors_preflight_response() -> BackendResponse {
         MOBILE_AUTH_CORS_MAX_AGE.to_owned(),
     ));
     response
+}
+
+fn webgl_package_upload_options_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+) -> BackendResponse {
+    let mut response = empty_response(204);
+
+    let Some(origin) = allowed_webgl_package_upload_origin(config, request.origin) else {
+        return response;
+    };
+
+    response
+        .headers
+        .push(("access-control-allow-origin", origin));
+    response
+        .headers
+        .push(("access-control-allow-credentials", "true".to_owned()));
+    response.headers.push((
+        "access-control-allow-methods",
+        WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_METHODS.to_owned(),
+    ));
+    response.headers.push((
+        "access-control-allow-headers",
+        WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_HEADERS.to_owned(),
+    ));
+    response.headers.push(("vary", "Origin".to_owned()));
+    response
+}
+
+fn allowed_webgl_package_upload_origin(
+    config: &BackendConfig,
+    origin: Option<&str>,
+) -> Option<String> {
+    let origin = origin.and_then(url_origin)?;
+
+    if WEBGL_PACKAGE_UPLOAD_CORS_STATIC_ORIGINS.contains(&origin.as_str())
+        || config_origin_matches(&config.cms_app_url, &origin)
+        || config_origin_matches(&config.next_public_cms_app_url, &origin)
+    {
+        return Some(origin);
+    }
+
+    None
+}
+
+fn config_origin_matches(configured_url: &str, request_origin: &str) -> bool {
+    url_origin(configured_url).as_deref() == Some(request_origin)
 }
 
 fn disabled_group_check_email_response() -> BackendResponse {
@@ -1369,6 +1430,19 @@ fn is_workspace_slide_item_path(path: &str) -> bool {
         && !segments[5].is_empty()
 }
 
+fn is_webgl_package_upload_path(path: &str) -> bool {
+    let segments = path_segments(path);
+
+    segments.len() == 7
+        && segments[0] == "api"
+        && segments[1] == "v1"
+        && segments[2] == "workspaces"
+        && segments[4] == "external-projects"
+        && segments[5] == "webgl-packages"
+        && segments[6] == "upload"
+        && !segments[3].is_empty()
+}
+
 fn is_group_check_email_path(path: &str) -> bool {
     let segments = path_segments(path);
 
@@ -1707,6 +1781,8 @@ pub mod worker_runtime {
             local_e2e_migration_access: false,
             port: 7820,
             service_name: var(env, "BACKEND_SERVICE_NAME", "backend"),
+            cms_app_url: var(env, "CMS_APP_URL", ""),
+            next_public_cms_app_url: var(env, "NEXT_PUBLIC_CMS_APP_URL", ""),
         }
     }
 
@@ -1793,6 +1869,17 @@ mod tests {
         let mut config = BackendConfig::new("test", "backend");
         config.internal_token = "secret".to_owned();
         config
+    }
+
+    fn request_with_origin(
+        method: &'static str,
+        path: &'static str,
+        origin: &'static str,
+    ) -> BackendRequest<'static> {
+        BackendRequest {
+            origin: Some(origin),
+            ..request(method, path)
+        }
     }
 
     fn header_value<'a>(response: &'a BackendResponse, header: &str) -> Option<&'a str> {
@@ -2018,6 +2105,146 @@ mod tests {
 
             assert_eq!(response.status, 404, "{method} {path}");
             assert_eq!(response.body["error"], "not found", "{method} {path}");
+        }
+    }
+
+    #[test]
+    fn legacy_webgl_package_upload_options_route_is_bare_without_origin() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request(
+                "OPTIONS",
+                "/api/v1/workspaces/ws-123/external-projects/webgl-packages/upload",
+            ),
+        );
+
+        assert_eq!(response.status, 204);
+        assert!(response.body_empty);
+        assert_eq!(response.content_type, None);
+        assert!(response.headers.is_empty());
+    }
+
+    #[test]
+    fn legacy_webgl_package_upload_options_allows_static_cms_origins() {
+        for origin in ["https://cms.tuturuuu.com", "http://localhost:7811"] {
+            let response = route_request(
+                &BackendConfig::new("test", "backend"),
+                request_with_origin(
+                    "OPTIONS",
+                    "/api/v1/workspaces/ws-123/external-projects/webgl-packages/upload",
+                    origin,
+                ),
+            );
+
+            assert_eq!(response.status, 204, "{origin}");
+            assert!(response.body_empty, "{origin}");
+            assert_eq!(
+                header_value(&response, "access-control-allow-origin"),
+                Some(origin),
+                "{origin}"
+            );
+            assert_eq!(
+                header_value(&response, "access-control-allow-credentials"),
+                Some("true"),
+                "{origin}"
+            );
+            assert_eq!(
+                header_value(&response, "access-control-allow-methods"),
+                Some(WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_METHODS),
+                "{origin}"
+            );
+            assert_eq!(
+                header_value(&response, "access-control-allow-headers"),
+                Some(WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_HEADERS),
+                "{origin}"
+            );
+            assert_eq!(header_value(&response, "vary"), Some("Origin"), "{origin}");
+        }
+    }
+
+    #[test]
+    fn legacy_webgl_package_upload_options_allows_configured_cms_origins() {
+        let mut config = BackendConfig::new("test", "backend");
+        config.cms_app_url = "https://cms-preview.example.com/editor".to_owned();
+        config.next_public_cms_app_url = "https://cms-public.example.com/app".to_owned();
+
+        for origin in [
+            "https://cms-preview.example.com",
+            "https://cms-public.example.com",
+        ] {
+            let response = route_request(
+                &config,
+                request_with_origin(
+                    "OPTIONS",
+                    "/api/v1/workspaces/ws-123/external-projects/webgl-packages/upload",
+                    origin,
+                ),
+            );
+
+            assert_eq!(response.status, 204, "{origin}");
+            assert_eq!(
+                header_value(&response, "access-control-allow-origin"),
+                Some(origin),
+                "{origin}"
+            );
+            assert_eq!(header_value(&response, "vary"), Some("Origin"), "{origin}");
+        }
+    }
+
+    #[test]
+    fn legacy_webgl_package_upload_options_rejects_untrusted_origins() {
+        let mut config = BackendConfig::new("test", "backend");
+        config.cms_app_url = "not a url".to_owned();
+        config.next_public_cms_app_url = "https://cms-public.example.com/app".to_owned();
+
+        for origin in [
+            "https://cms-public.example.net",
+            "https://cms.tuturuuu.com.evil.example",
+            "not a url",
+        ] {
+            let response = route_request(
+                &config,
+                request_with_origin(
+                    "OPTIONS",
+                    "/api/v1/workspaces/ws-123/external-projects/webgl-packages/upload",
+                    origin,
+                ),
+            );
+
+            assert_eq!(response.status, 204, "{origin}");
+            assert!(response.body_empty, "{origin}");
+            assert!(response.headers.is_empty(), "{origin}");
+        }
+    }
+
+    #[test]
+    fn legacy_webgl_package_upload_preflight_does_not_claim_put() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request(
+                "PUT",
+                "/api/v1/workspaces/ws-123/external-projects/webgl-packages/upload",
+            ),
+        );
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["error"], "not found");
+    }
+
+    #[test]
+    fn legacy_webgl_package_upload_preflight_requires_exact_path_shape() {
+        for path in [
+            "/api/v1/workspaces/external-projects/webgl-packages/upload",
+            "/api/v1/workspaces/ws-123/external-projects/webgl-packages/upload/extra",
+            "/api/v1/workspaces/ws-123/external-projects/webgl-package/upload",
+        ] {
+            let response = route_request(
+                &BackendConfig::new("test", "backend"),
+                request_with_origin("OPTIONS", path, "https://cms.tuturuuu.com"),
+            );
+
+            assert_eq!(response.status, 404, "{path}");
+            assert_eq!(response.body["error"], "not found", "{path}");
         }
     }
 

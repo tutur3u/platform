@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 1078,
-        "migrated": 25,
-        "percentComplete": 2.36,
+        "migrated": 26,
+        "percentComplete": 2.44,
         "remaining": 1078,
-        "terminal": 26,
-        "total": 1104,
+        "terminal": 27,
+        "total": 1105,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 1098,
-        "migrated": 28,
-        "percentComplete": 2.57,
+        "migrated": 29,
+        "percentComplete": 2.66,
         "remaining": 1098,
-        "terminal": 29,
-        "total": 1127,
+        "terminal": 30,
+        "total": 1128,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1369,
-      "migrated": 134,
-      "percentComplete": 8.98,
+      "migrated": 135,
+      "percentComplete": 9.04,
       "remaining": 1369,
-      "terminal": 135,
-      "total": 1504,
+      "terminal": 136,
+      "total": 1505,
       "unknownStatus": 0
     }
   },
@@ -6073,13 +6073,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts",
+      "id": "api:PUT:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts",
       "kind": "api",
-      "methods": ["PUT", "OPTIONS"],
+      "methods": ["PUT"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "PUT",
+      "parentId": "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts"
+    },
+    {
+      "id": "api:OPTIONS:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts",
+      "kind": "api",
+      "methods": ["OPTIONS"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "OPTIONS",
+      "parentId": "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts"
     },
     {
       "id": "api:/api/v1/workspaces/:wsId/finance/budgets:apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/route.ts",
@@ -13931,11 +13944,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1104,
+    "apiRoutes": 1105,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 305,
-    "routeHandlers": 1127,
+    "routeHandlers": 1128,
     "methodCounts": {
       "GET": 634,
       "HEAD": 1,
@@ -13945,6 +13958,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1504
+    "total": 1505
   }
 }
