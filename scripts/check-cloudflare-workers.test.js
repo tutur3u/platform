@@ -49,6 +49,18 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
     ).join('\n'),
     /worker-build/
   );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace('node scripts/check-cloudflare-workers.js', '')
+    ).join('\n'),
+    /check-cloudflare-workers/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('apps/tanstack-web/wrangler.jsonc', '')
+    ).join('\n'),
+    /wrangler\.jsonc/
+  );
 });
 
 test('TanStack Wrangler config requires Cloudflare Start Worker fields', () => {

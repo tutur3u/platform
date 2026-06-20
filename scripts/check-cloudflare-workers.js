@@ -138,6 +138,13 @@ function validateRustBackendWorkflow(workflowContent) {
   const requiredSnippets = [
     'permissions:\n  contents: read',
     'apps/tanstack-web/migration/**',
+    'apps/tanstack-web/package.json',
+    'apps/tanstack-web/src/routeTree.gen.ts',
+    'apps/tanstack-web/vite.config.ts',
+    'apps/tanstack-web/wrangler.jsonc',
+    'scripts/check-cloudflare-workers.js',
+    'scripts/check-cloudflare-workers.test.js',
+    'node scripts/check-cloudflare-workers.js',
     'cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker',
     'cargo install worker-build --locked',
     'worker-build --release -- --no-default-features --features worker',

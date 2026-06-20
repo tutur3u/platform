@@ -5,14 +5,28 @@ on:
     paths:
       - "apps/backend/**"
       - "apps/tanstack-web/migration/**"
+      - "apps/tanstack-web/package.json"
+      - "apps/tanstack-web/src/routeTree.gen.ts"
+      - "apps/tanstack-web/vite.config.ts"
+      - "apps/tanstack-web/wrangler.jsonc"
       - ".github/workflows/rust-backend.yml"
+      - "package.json"
+      - "scripts/check-cloudflare-workers.js"
+      - "scripts/check-cloudflare-workers.test.js"
       - "tuturuuu.ts"
   push:
     branches: ["main", "production"]
     paths:
       - "apps/backend/**"
       - "apps/tanstack-web/migration/**"
+      - "apps/tanstack-web/package.json"
+      - "apps/tanstack-web/src/routeTree.gen.ts"
+      - "apps/tanstack-web/vite.config.ts"
+      - "apps/tanstack-web/wrangler.jsonc"
       - ".github/workflows/rust-backend.yml"
+      - "package.json"
+      - "scripts/check-cloudflare-workers.js"
+      - "scripts/check-cloudflare-workers.test.js"
       - "tuturuuu.ts"
   workflow_dispatch:
 
@@ -42,6 +56,10 @@ jobs:
         with:
           components: clippy, rustfmt
           targets: wasm32-unknown-unknown
+
+      - name: Check Cloudflare deployment config
+        working-directory: .
+        run: node scripts/check-cloudflare-workers.js
 
       - name: Check formatting
         run: cargo fmt --check
