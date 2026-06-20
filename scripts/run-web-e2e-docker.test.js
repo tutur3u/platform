@@ -865,6 +865,12 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
 test('writeE2ECompareReport writes ignored cutover evidence under tmp by default', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-report-'));
   const reportPath = path.join(tempDir, 'tmp', 'e2e', 'compare-report.json');
+  const unsafeReportPath = path.join(
+    tempDir,
+    'apps',
+    'web',
+    'compare-report.json'
+  );
   const chunks = [];
 
   try {
@@ -898,6 +904,18 @@ test('writeE2ECompareReport writes ignored cutover evidence under tmp by default
       status: 'passed',
     });
     assert.match(chunks.join(''), /Docker E2E compare report/u);
+    assert.throws(
+      () =>
+        writeE2ECompareReport({
+          output: {
+            write() {},
+          },
+          report: { frontend: 'compare', passed: true, status: 'passed' },
+          reportPath: unsafeReportPath,
+          rootDir: tempDir,
+        }),
+      /Docker E2E compare reports must be written under tmp/u
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

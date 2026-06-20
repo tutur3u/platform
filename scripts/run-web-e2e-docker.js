@@ -276,6 +276,31 @@ function getE2ECompareReportPath(env = process.env) {
     : DEFAULT_E2E_COMPARE_REPORT_PATH;
 }
 
+function isInsideDirectory(candidatePath, parentPath) {
+  const relativePath = path.relative(parentPath, candidatePath);
+
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+  );
+}
+
+function resolveSafeE2ECompareReportPath(reportPath, rootDir = ROOT_DIR) {
+  const resolvedReportPath = path.resolve(reportPath);
+  const tmpDir = path.join(rootDir, 'tmp');
+
+  if (!isInsideDirectory(resolvedReportPath, tmpDir)) {
+    throw new Error(
+      `Docker E2E compare reports must be written under ${path.relative(
+        rootDir,
+        tmpDir
+      )}; got ${path.relative(rootDir, resolvedReportPath)}.`
+    );
+  }
+
+  return resolvedReportPath;
+}
+
 function isPassedE2EResult(result) {
   return (
     result?.passed === true ||
@@ -328,17 +353,25 @@ function writeE2ECompareReport({
   reportPath = getE2ECompareReportPath(),
   rootDir = ROOT_DIR,
 } = {}) {
-  fsImpl.mkdirSync(path.dirname(reportPath), { recursive: true });
-  fsImpl.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  const resolvedReportPath = resolveSafeE2ECompareReportPath(
+    reportPath,
+    rootDir
+  );
+
+  fsImpl.mkdirSync(path.dirname(resolvedReportPath), { recursive: true });
+  fsImpl.writeFileSync(
+    resolvedReportPath,
+    `${JSON.stringify(report, null, 2)}\n`
+  );
   writeDiagnosticLine(
     output,
     `[e2e-diagnostics] Docker E2E compare report: ${path.relative(
       rootDir,
-      reportPath
+      resolvedReportPath
     )}`
   );
 
-  return reportPath;
+  return resolvedReportPath;
 }
 
 async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {

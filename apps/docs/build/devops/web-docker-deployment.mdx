@@ -305,7 +305,8 @@ Compare mode writes `tmp/e2e/web-migration/compare-report.json` after both
 frontend runs complete. Set `E2E_COMPARE_REPORT_PATH` to redirect that evidence
 file under another ignored `tmp/` location.
 
-Before cutover, pair the compare-mode E2E evidence with a full benchmark report:
+Before cutover, pair the compare-mode E2E evidence with a full benchmark report
+and Cloudflare smoke report:
 
 ```bash
 BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
@@ -321,7 +322,8 @@ bun benchmark:web-setups -- \
 ```bash
 bun migration:tanstack:gates -- \
   --e2e-report tmp/e2e/web-migration/compare-report.json \
-  --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json
+  --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json \
+  --cloudflare-smoke-report tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json
 ```
 
 The gate command does not start Docker. It only validates explicit report files
