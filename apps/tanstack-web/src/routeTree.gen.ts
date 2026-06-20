@@ -15,6 +15,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together'
+import { Route as LocaleWomenInTechRouteImport } from './routes/$locale/women-in-tech'
 import { Route as LocaleVerifyTokenRouteImport } from './routes/$locale/verify-token'
 import { Route as LocaleTermsRouteImport } from './routes/$locale/terms'
 import { Route as LocaleSecurityRouteImport } from './routes/$locale/security'
@@ -92,6 +93,11 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
 const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
   id: '/products/meet-together',
   path: '/products/meet-together',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWomenInTechRoute = LocaleWomenInTechRouteImport.update({
+  id: '/$locale/women-in-tech',
+  path: '/$locale/women-in-tech',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleVerifyTokenRoute = LocaleVerifyTokenRouteImport.update({
@@ -371,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify-token': typeof LocaleVerifyTokenRoute
+  '/$locale/women-in-tech': typeof LocaleWomenInTechRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify-token': typeof LocaleVerifyTokenRoute
+  '/$locale/women-in-tech': typeof LocaleWomenInTechRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -484,6 +492,7 @@ export interface FileRoutesById {
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
   '/$locale/verify-token': typeof LocaleVerifyTokenRoute
+  '/$locale/women-in-tech': typeof LocaleWomenInTechRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -542,6 +551,7 @@ export interface FileRouteTypes {
     | '/$locale/security'
     | '/$locale/terms'
     | '/$locale/verify-token'
+    | '/$locale/women-in-tech'
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/calendar/meet-together'
@@ -598,6 +608,7 @@ export interface FileRouteTypes {
     | '/$locale/security'
     | '/$locale/terms'
     | '/$locale/verify-token'
+    | '/$locale/women-in-tech'
     | '/products/meet-together'
     | '/$locale'
     | '/$locale/calendar/meet-together'
@@ -654,6 +665,7 @@ export interface FileRouteTypes {
     | '/$locale/security'
     | '/$locale/terms'
     | '/$locale/verify-token'
+    | '/$locale/women-in-tech'
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/calendar/meet-together'
@@ -711,6 +723,7 @@ export interface RootRouteChildren {
   LocaleSecurityRoute: typeof LocaleSecurityRouteWithChildren
   LocaleTermsRoute: typeof LocaleTermsRoute
   LocaleVerifyTokenRoute: typeof LocaleVerifyTokenRoute
+  LocaleWomenInTechRoute: typeof LocaleWomenInTechRoute
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -785,6 +798,13 @@ declare module '@tanstack/react-router' {
       path: '/products/meet-together'
       fullPath: '/products/meet-together'
       preLoaderRoute: typeof ProductsMeetTogetherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/women-in-tech': {
+      id: '/$locale/women-in-tech'
+      path: '/$locale/women-in-tech'
+      fullPath: '/$locale/women-in-tech'
+      preLoaderRoute: typeof LocaleWomenInTechRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/verify-token': {
@@ -1176,6 +1196,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleSecurityRoute: LocaleSecurityRouteWithChildren,
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyTokenRoute: LocaleVerifyTokenRoute,
+  LocaleWomenInTechRoute: LocaleWomenInTechRoute,
   ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
