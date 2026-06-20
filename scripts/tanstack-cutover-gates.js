@@ -28,10 +28,7 @@ const DEFAULT_OVERRIDES_PATH = path.join(
 const BACKEND_ROUTE_KINDS = new Set(['api', 'cron', 'route-handler', 'trpc']);
 const REQUIRED_BENCHMARK_COMPARISONS = Object.freeze([
   'frontend-route-p95',
-  METRIC_DEFINITIONS.apiLatencyP95Ms.metric,
-  METRIC_DEFINITIONS.devReadyMs.metric,
-  METRIC_DEFINITIONS.firstRouteColdMs.metric,
-  METRIC_DEFINITIONS.productionRssBytes.metric,
+  ...Object.values(METRIC_DEFINITIONS).map((definition) => definition.metric),
 ]);
 const REQUIRED_E2E_REGRESSION_METRICS = Object.freeze([
   { key: 'passRate', label: 'pass rate', threshold: 0, higherIsBetter: true },

@@ -12,6 +12,7 @@ const {
   validateBenchmarkReport,
   validateE2EReport,
 } = require('./tanstack-cutover-gates.js');
+const { METRIC_DEFINITIONS } = require('./benchmark-web-setups.js');
 const { createE2ECompareReport } = require('./run-web-e2e-docker.js');
 const { writeManifest } = require('./tanstack-migration-manifest.js');
 
@@ -29,6 +30,14 @@ function createBenchmarkRoute(routePath, status = 200) {
 }
 
 function createValidBenchmarkReport() {
+  const benchmarkMetricComparisons = Object.values(METRIC_DEFINITIONS).map(
+    ({ metric }) => ({
+      metric,
+      passed: true,
+      threshold: metric.startsWith('api-latency-') ? 0.1 : 0.25,
+    })
+  );
+
   return {
     gates: {
       comparisons: [
@@ -38,26 +47,7 @@ function createValidBenchmarkReport() {
           routePath: '/',
           threshold: 0.25,
         },
-        {
-          metric: 'api-latency-p95',
-          passed: true,
-          threshold: 0.1,
-        },
-        {
-          metric: 'dev-ready-time',
-          passed: true,
-          threshold: 0.25,
-        },
-        {
-          metric: 'first-route-cold-time',
-          passed: true,
-          threshold: 0.25,
-        },
-        {
-          metric: 'production-rss-baseline',
-          passed: true,
-          threshold: 0.25,
-        },
+        ...benchmarkMetricComparisons,
       ],
       failures: [],
       frontendRouteCoverage: {
@@ -374,25 +364,43 @@ test('validateBenchmarkReport requires frontend comparison evidence', () => {
   );
 });
 
-test('validateBenchmarkReport requires API p95 and frontend startup/RSS/cold-navigation evidence', () => {
+test('validateBenchmarkReport requires the full cutover benchmark metric contract', () => {
   const report = createValidBenchmarkReport();
   report.gates.comparisons = report.gates.comparisons.filter(
     (comparison) =>
       ![
+        'api-latency-p50',
         'api-latency-p95',
+        'api-latency-p99',
         'dev-ready-time',
+        'docker-build-time',
+        'e2e-pass-rate',
+        'e2e-wall-time',
         'first-route-cold-time',
+        'image-size',
+        'js-output-size',
+        'production-cpu-baseline',
         'production-rss-baseline',
+        'warm-navigation-time',
       ].includes(comparison.metric)
   );
 
   const validation = validateBenchmarkReport(report);
 
   assert.equal(validation.ok, false);
+  assert.match(validation.failures.join('\n'), /api-latency-p50/u);
   assert.match(validation.failures.join('\n'), /api-latency-p95/u);
+  assert.match(validation.failures.join('\n'), /api-latency-p99/u);
   assert.match(validation.failures.join('\n'), /dev-ready-time/u);
+  assert.match(validation.failures.join('\n'), /docker-build-time/u);
+  assert.match(validation.failures.join('\n'), /e2e-pass-rate/u);
+  assert.match(validation.failures.join('\n'), /e2e-wall-time/u);
   assert.match(validation.failures.join('\n'), /first-route-cold-time/u);
+  assert.match(validation.failures.join('\n'), /image-size/u);
+  assert.match(validation.failures.join('\n'), /js-output-size/u);
+  assert.match(validation.failures.join('\n'), /production-cpu-baseline/u);
   assert.match(validation.failures.join('\n'), /production-rss-baseline/u);
+  assert.match(validation.failures.join('\n'), /warm-navigation-time/u);
 });
 
 test('validateBenchmarkReport rejects API p95 regressions over 10 percent without accepted notes', () => {

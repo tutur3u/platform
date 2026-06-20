@@ -90,7 +90,7 @@ Deploy the Rust backend Worker first:
 
 ```bash
 rustup target add wasm32-unknown-unknown
-cargo install worker-build
+cargo install worker-build --locked
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
@@ -126,6 +126,11 @@ versions command family instead:
 ```bash
 bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler versions deploy --config apps/backend/wrangler.jsonc
+
+bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
+bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+bun wrangler versions deploy --config apps/tanstack-web/wrangler.jsonc
 ```
 
 Both origin values should initially be the backend Worker origin, for example the
@@ -305,7 +310,10 @@ bun migration:tanstack:gates -- \
 
 This command validates route parity, terminal migration statuses, backend-owned
 route mapping, compare-mode Docker E2E evidence, and a full compare benchmark
-report without committing generated artifacts.
+report without committing generated artifacts. The benchmark report must be
+created with `--setup compare --profile full` and include every required metric
+comparison; smoke reports are useful for previews, but they are not cutover
+evidence.
 
 The manifest also includes `progress.byOwner`, `progress.byKind`, and
 `progress.topLegacyRoutes`. Use those fields when splitting the remaining port
@@ -649,15 +657,37 @@ Pass reviewer-approved non-HTTP metrics and accepted regression notes through
 ```json
 {
   "metrics": {
+    "backend": {
+      "apiLatencyP50Ms": 80,
+      "apiLatencyP95Ms": 120,
+      "apiLatencyP99Ms": 180
+    },
     "next": {
+      "apiLatencyP50Ms": 75,
+      "apiLatencyP95Ms": 110,
+      "apiLatencyP99Ms": 170,
+      "devReadyMs": 2200,
       "dockerBuildMs": 240000,
+      "e2ePassRate": 1,
+      "e2eWallMs": 90000,
+      "firstRouteColdMs": 650,
       "imageSizeBytes": 1200000000,
-      "productionRssBytes": 640000000
+      "jsOutputBytes": 850000,
+      "productionCpuPercent": 4,
+      "productionRssBytes": 640000000,
+      "warmNavigationMs": 180
     },
     "tanstack": {
+      "devReadyMs": 1800,
       "dockerBuildMs": 180000,
+      "e2ePassRate": 1,
+      "e2eWallMs": 84000,
+      "firstRouteColdMs": 520,
       "imageSizeBytes": 760000000,
-      "productionRssBytes": 420000000
+      "jsOutputBytes": 620000,
+      "productionCpuPercent": 3,
+      "productionRssBytes": 420000000,
+      "warmNavigationMs": 140
     }
   },
   "acceptedRegressions": [
@@ -684,6 +714,10 @@ benchmark and E2E reports stay under ignored `tmp/` paths.
 Default gates:
 
 - frontend route p95 must not regress more than `25%`
+- cutover reports must include the full metric comparison contract:
+  API p50/p95/p99, dev ready time, first-route cold time, warm navigation time,
+  Docker build time, image size, JS output size, production RSS/CPU baseline,
+  E2E wall time, and E2E pass rate
 - full compare evidence must include complete matching frontend route coverage;
   unmatched Next-only or TanStack-only routes fail `--require-all` and cutover
   gate validation
