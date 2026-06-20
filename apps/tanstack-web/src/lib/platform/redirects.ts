@@ -21,6 +21,14 @@ export function workspaceChatRedirectHref(wsId: string) {
   return `/${wsId}/chat`;
 }
 
+export function workspaceDashboardRedirectHref(wsId: string) {
+  return `/${wsId}`;
+}
+
+export function workspaceHabitsRedirectHref(wsId: string) {
+  return `/${wsId}/habits`;
+}
+
 export function workspaceMeetPlansRedirectHref(wsId: string) {
   return `/${wsId}/meet/plans`;
 }

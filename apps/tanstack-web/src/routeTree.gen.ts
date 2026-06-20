@@ -74,6 +74,7 @@ import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId'
 import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$'
 import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements'
+import { Route as LocaleWsIdTasksHabitsRouteImport } from './routes/$locale/$wsId/tasks/habits'
 import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes/$locale/$wsId/platform/external-projects'
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent'
 import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale/$wsId/education/quizzes'
@@ -427,6 +428,11 @@ const LocaleWsIdUsersTopicAnnouncementsRoute =
     path: '/$locale/$wsId/users/topic-announcements',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdTasksHabitsRoute = LocaleWsIdTasksHabitsRouteImport.update({
+  id: '/$locale/$wsId/tasks/habits',
+  path: '/$locale/$wsId/tasks/habits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdPlatformExternalProjectsRoute =
   LocaleWsIdPlatformExternalProjectsRouteImport.update({
     id: '/$locale/$wsId/platform/external-projects',
@@ -559,6 +565,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
+  '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
@@ -637,6 +644,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
+  '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
@@ -716,6 +724,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
+  '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
@@ -796,6 +805,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/quizzes'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/platform/external-projects'
+    | '/$locale/$wsId/tasks/habits'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
     | '/$locale/ui/components/$componentId'
@@ -874,6 +884,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/quizzes'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/platform/external-projects'
+    | '/$locale/$wsId/tasks/habits'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
     | '/$locale/ui/components/$componentId'
@@ -952,6 +963,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/quizzes'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/platform/external-projects'
+    | '/$locale/$wsId/tasks/habits'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
     | '/$locale/ui/components/$componentId'
@@ -1029,6 +1041,7 @@ export interface RootRouteChildren {
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute
   LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute
+  LocaleWsIdTasksHabitsRoute: typeof LocaleWsIdTasksHabitsRoute
   LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute
@@ -1495,6 +1508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/tasks/habits': {
+      id: '/$locale/$wsId/tasks/habits'
+      path: '/$locale/$wsId/tasks/habits'
+      fullPath: '/$locale/$wsId/tasks/habits'
+      preLoaderRoute: typeof LocaleWsIdTasksHabitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/platform/external-projects': {
       id: '/$locale/$wsId/platform/external-projects'
       path: '/$locale/$wsId/platform/external-projects'
@@ -1684,6 +1704,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,
   LocaleWsIdPlatformExternalProjectsRoute:
     LocaleWsIdPlatformExternalProjectsRoute,
+  LocaleWsIdTasksHabitsRoute: LocaleWsIdTasksHabitsRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
     LocaleWsIdUsersTopicAnnouncementsRoute,
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,

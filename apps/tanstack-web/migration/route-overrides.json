@@ -289,6 +289,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/roles preserves the legacy 307 redirect to /:wsId/members?tab=roles. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/tasks/habits:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/habits/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/habits preserves the legacy ENABLE_HABITS workspace secret gate and 307 redirects to /:wsId/habits when enabled or /:wsId when disabled. This marks only the legacy redirect page artifact migrated; parent dashboard layout/session and canonical habits page ownership remain legacy-owned."
+    },
     "page:/:locale/:wsId/qr-generator:apps/web/src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

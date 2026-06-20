@@ -13,6 +13,8 @@ import {
   meetTogetherProductRedirectHref,
   pricingRedirectHref,
   workspaceChatRedirectHref,
+  workspaceDashboardRedirectHref,
+  workspaceHabitsRedirectHref,
   workspaceInfrastructureAppCoordinationRedirectHref,
   workspaceMeetPlansRedirectHref,
   workspaceRolesRedirectHref,
@@ -42,6 +44,8 @@ describe('public redirect helpers', () => {
       '/ws-1/users/database'
     );
     expect(workspaceChatRedirectHref('ws-1')).toBe('/ws-1/chat');
+    expect(workspaceDashboardRedirectHref('ws-1')).toBe('/ws-1');
+    expect(workspaceHabitsRedirectHref('ws-1')).toBe('/ws-1/habits');
     expect(workspaceMeetPlansRedirectHref('ws-1')).toBe('/ws-1/meet/plans');
     expect(workspaceRolesRedirectHref('ws-1')).toBe('/ws-1/members?tab=roles');
     expect(workspaceTopicAnnouncementsRedirectHref('ws-1')).toBe(
