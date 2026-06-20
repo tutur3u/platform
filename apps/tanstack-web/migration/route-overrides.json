@@ -299,6 +299,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/qr-generator preserves the legacy 307 redirect to the QR app origin while forwarding query parameters. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/finance/transactions/categories:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/categories/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/finance/transactions/categories preserves the legacy 307 redirect to /:wsId/finance/categories and forwards query parameters using the shared redirect helper. This marks only the redirect page artifact migrated; parent dashboard/session and the canonical finance categories data page remain legacy-owned."
+    },
     "page:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

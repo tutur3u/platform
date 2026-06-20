@@ -88,6 +88,7 @@ import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards'
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new'
 import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/settings/infrastructure/app-coordination'
+import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories'
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId'
 import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId'
 import { Route as LocaleWsIdEducationCoursesCourseIdRouteImport } from './routes/$locale/$wsId/education/courses/$courseId'
@@ -510,6 +511,12 @@ const LocaleWsIdSettingsInfrastructureAppCoordinationRoute =
     path: '/$locale/$wsId/settings/infrastructure/app-coordination',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdFinanceTransactionsCategoriesRoute =
+  LocaleWsIdFinanceTransactionsCategoriesRouteImport.update({
+    id: '/$locale/$wsId/finance/transactions/categories',
+    path: '/$locale/$wsId/finance/transactions/categories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleWsIdEpmEntriesEntryIdRoute =
   LocaleWsIdEpmEntriesEntryIdRouteImport.update({
     id: '/entries/$entryId',
@@ -618,6 +625,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
+  '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
 }
 export interface FileRoutesByTo {
@@ -703,6 +711,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
+  '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
 }
 export interface FileRoutesById {
@@ -789,6 +798,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
+  '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
 }
 export interface FileRouteTypes {
@@ -876,6 +886,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/courses/$courseId'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
+    | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -961,6 +972,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/courses/$courseId'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
+    | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
   id:
     | '__root__'
@@ -1046,6 +1058,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/courses/$courseId'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
+    | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
   fileRoutesById: FileRoutesById
 }
@@ -1127,6 +1140,7 @@ export interface RootRouteChildren {
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
   LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute
   LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRoute
+  LocaleWsIdFinanceTransactionsCategoriesRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
 }
 
@@ -1685,6 +1699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/finance/transactions/categories': {
+      id: '/$locale/$wsId/finance/transactions/categories'
+      path: '/$locale/$wsId/finance/transactions/categories'
+      fullPath: '/$locale/$wsId/finance/transactions/categories'
+      preLoaderRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/epm/entries/$entryId': {
       id: '/$locale/$wsId/epm/entries/$entryId'
       path: '/entries/$entryId'
@@ -1840,6 +1861,8 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdAiChatMyChatbotsNewRoute: LocaleWsIdAiChatMyChatbotsNewRoute,
   LocaleWsIdEducationCoursesCourseIdRoute:
     LocaleWsIdEducationCoursesCourseIdRoute,
+  LocaleWsIdFinanceTransactionsCategoriesRoute:
+    LocaleWsIdFinanceTransactionsCategoriesRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:
     LocaleWsIdSettingsInfrastructureAppCoordinationRoute,
 }
