@@ -130,6 +130,15 @@ function validateRootPackageJson(packageJson) {
     );
   }
 
+  if (
+    packageJson.scripts?.['smoke:cloudflare'] !==
+    'node scripts/smoke-cloudflare-workers.js'
+  ) {
+    errors.push(
+      'package.json must expose smoke:cloudflare as node scripts/smoke-cloudflare-workers.js.'
+    );
+  }
+
   return errors;
 }
 

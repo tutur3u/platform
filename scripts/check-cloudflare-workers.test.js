@@ -14,6 +14,7 @@ const {
   checkCloudflareWorkersSetup,
   validateBackendWranglerConfig,
   validateCloudflareSecretIgnoreRules,
+  validateRootPackageJson,
   validateRustBackendWorkflow,
   validateTanstackWebViteConfig,
   validateTanstackWebRouteTree,
@@ -254,6 +255,20 @@ test('Cloudflare check reads package manifests from expected paths', () => {
   assert.equal(
     rootPackageJson.scripts['check:cloudflare'],
     'node scripts/check-cloudflare-workers.js'
+  );
+  assert.equal(
+    rootPackageJson.scripts['smoke:cloudflare'],
+    'node scripts/smoke-cloudflare-workers.js'
+  );
+  assert.match(
+    validateRootPackageJson({
+      ...rootPackageJson,
+      scripts: {
+        ...rootPackageJson.scripts,
+        'smoke:cloudflare': 'node scripts/smoke-cloudflare-workers.js --skip',
+      },
+    }).join('\n'),
+    /smoke:cloudflare/
   );
   assert.equal(
     typeof tanstackPackageJson.scripts['deploy:cloudflare'],
