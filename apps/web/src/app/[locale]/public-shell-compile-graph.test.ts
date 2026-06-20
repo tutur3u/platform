@@ -381,6 +381,8 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the public blog page off Next link', () => {
+    expect(blogPageSource).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+    expect(blogPageSource).toContain('@tuturuuu/icons/lucide');
     expect(blogPageSource).not.toMatch(staticImportPattern('next/link'));
   });
 
