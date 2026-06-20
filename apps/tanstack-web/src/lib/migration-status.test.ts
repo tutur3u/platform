@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/internal-api/backend';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readTanStackMigrationStatus } from './migration-status';
+import { tanstackRouteManifest } from './route-manifest';
 
 vi.mock('@tuturuuu/internal-api/backend', () => ({
   getBackendMigrationCutoverGates: vi.fn(),
@@ -154,7 +155,9 @@ describe('readTanStackMigrationStatus', () => {
     expect(status.backendReachable).toBe(false);
     expect(status.cutoverGates.summary.total).toBe(1489);
     expect(status.cutoverGates.gates[0]?.id).toBe('backend-reachable');
-    expect(status.migrationProgress.progress.totals.remaining).toBe(1395);
+    expect(status.migrationProgress.progress.totals.remaining).toBe(
+      tanstackRouteManifest.progress.totals.remaining
+    );
     expect(status.errorMessage).toContain('ECONNREFUSED');
   });
 });

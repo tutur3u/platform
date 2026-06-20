@@ -18,6 +18,22 @@ const JSON_SECURITY_HEADERS: [(&str, &str); 4] = [
 ];
 const TOP_LEGACY_ROUTE_LIMIT: usize = 20;
 const WELL_KNOWN_CACHE_CONTROL: &str = "public, max-age=300, must-revalidate";
+const SERWIST_SERVICE_WORKER_PATH: &str = "/serwist/sw.js";
+const SERWIST_SOURCE_MAP_PATH: &str = "/serwist/sw.js.map";
+const SERWIST_DECOMMISSION_WORKER: &str = r#"self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim();
+      await self.registration.unregister();
+    })()
+  );
+});
+"#;
+const SERWIST_DECOMMISSION_SOURCE_MAP: &str = r#"{"version":3,"file":"sw.js","sources":["serwist-decommission-worker.js"],"names":[],"mappings":""}"#;
 const BROWSER_STATE_RECOVERY_PATH: &str = "/~recover-browser-state";
 const BROWSER_STATE_RECOVERY_HTML: &str = r#"<!doctype html>
 <html lang="en">
@@ -372,6 +388,8 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
             empty_response_with_cache_control(404, WELL_KNOWN_CACHE_CONTROL)
         }
         (method, path) if is_well_known_path(path) => method_not_allowed(method, "GET, HEAD"),
+        ("GET", path) if is_serwist_route_path(path) => serwist_route_response(path),
+        (method, path) if is_serwist_route_path(path) => method_not_allowed(method, "GET"),
         ("GET", "/api/health") => json_response_with_cache_control(
             200,
             json!({
@@ -530,6 +548,28 @@ fn disabled_group_check_email_response() -> BackendResponse {
             "message": DISABLED_GROUP_CHECK_EMAIL_MESSAGE,
         }),
     )
+}
+
+fn serwist_route_response(path: &str) -> BackendResponse {
+    match path {
+        SERWIST_SERVICE_WORKER_PATH => {
+            let mut response = no_store_response(text_response(
+                200,
+                SERWIST_DECOMMISSION_WORKER,
+                "application/javascript",
+            ));
+            response
+                .headers
+                .push(("service-worker-allowed", "/".to_owned()));
+            response
+        }
+        SERWIST_SOURCE_MAP_PATH => no_store_response(text_response(
+            200,
+            SERWIST_DECOMMISSION_SOURCE_MAP,
+            "application/json; charset=UTF-8",
+        )),
+        _ => empty_response(404),
+    }
 }
 
 fn browser_state_recovery_page_response() -> BackendResponse {
@@ -1212,6 +1252,12 @@ fn method_not_allowed(_method: &str, allow: &'static str) -> BackendResponse {
 
 fn is_well_known_path(path: &str) -> bool {
     path.starts_with("/.well-known/")
+}
+
+fn is_serwist_route_path(path: &str) -> bool {
+    let segments = path_segments(path);
+
+    segments.len() == 2 && segments[0] == "serwist" && !segments[1].is_empty()
 }
 
 fn is_workspace_slides_collection_path(path: &str) -> bool {
@@ -2243,6 +2289,73 @@ mod tests {
     }
 
     #[test]
+    fn legacy_serwist_worker_route_decommissions_old_registration() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("GET", SERWIST_SERVICE_WORKER_PATH),
+        );
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.content_type, Some("application/javascript"));
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert!(response.headers.iter().any(|(name, value)| {
+            *name == "cdn-cache-control" && value == NO_STORE_CDN_CACHE_CONTROL
+        }));
+        assert!(
+            response
+                .headers
+                .iter()
+                .any(|(name, value)| { *name == "service-worker-allowed" && value == "/" })
+        );
+        let body = response.body_text.as_deref().unwrap();
+        assert!(body.contains("self.skipWaiting()"));
+        assert!(body.contains("self.registration.unregister()"));
+    }
+
+    #[test]
+    fn legacy_serwist_route_serves_deterministic_source_map_metadata() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("GET", SERWIST_SOURCE_MAP_PATH),
+        );
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.content_type,
+            Some("application/json; charset=UTF-8")
+        );
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body_text.as_deref(),
+            Some(SERWIST_DECOMMISSION_SOURCE_MAP)
+        );
+    }
+
+    #[test]
+    fn legacy_serwist_route_rejects_unsupported_methods() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("POST", SERWIST_SERVICE_WORKER_PATH),
+        );
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[test]
+    fn legacy_serwist_route_returns_empty_404_for_unknown_artifacts() {
+        let response = route_request(
+            &BackendConfig::new("test", "backend"),
+            request("GET", "/serwist/unknown.js"),
+        );
+
+        assert_eq!(response.status, 404);
+        assert!(response.body_empty);
+        assert_eq!(response.content_type, None);
+    }
+
+    #[test]
     fn json_responses_advertise_security_headers() {
         let expected = [
             (
@@ -2325,7 +2438,8 @@ mod tests {
                 .iter()
                 .any(|route| route["routePath"] == "/serwist/:path"
                     && route["methods"].as_array().unwrap().len() == 1
-                    && route["methods"][0] == "GET")
+                    && route["methods"][0] == "GET"
+                    && route["status"] == "migrated")
         );
         assert!(
             response.body["routes"]

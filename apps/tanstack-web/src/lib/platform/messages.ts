@@ -3,11 +3,17 @@ import viMessages from '../../messages/vi.json';
 import { defaultLocale, isSupportedLocale, type Locale } from './locale';
 
 const messagesByLocale = {
-  en: enMessages,
-  vi: viMessages,
+  en: enMessages as AppMessages,
+  vi: viMessages as AppMessages,
 } as const;
 
-export type AppMessages = typeof enMessages;
+export type CommonMessages = {
+  '404-msg': string;
+  'back-to-home': string;
+};
+export type AppMessages = typeof enMessages & {
+  common: CommonMessages;
+};
 export type AboutMessages = AppMessages['about'];
 
 export function resolveMessagesLocale(locale: unknown): Locale {
@@ -20,4 +26,8 @@ export function getMessages(locale: unknown): AppMessages {
 
 export function getAboutMessages(locale: unknown): AboutMessages {
   return getMessages(locale).about;
+}
+
+export function getCommonMessages(locale: unknown): CommonMessages {
+  return getMessages(locale).common;
 }

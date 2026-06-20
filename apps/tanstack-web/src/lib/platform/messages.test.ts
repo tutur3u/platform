@@ -3,6 +3,7 @@ import legacyEnMessages from '../../../../web/messages/en.json';
 import legacyViMessages from '../../../../web/messages/vi.json';
 import {
   getAboutMessages,
+  getCommonMessages,
   getMessages,
   resolveMessagesLocale,
 } from './messages';
@@ -24,5 +25,14 @@ describe('message adapters', () => {
   it('keeps migrated about messages aligned with the legacy web namespace', () => {
     expect(getAboutMessages('en')).toEqual(legacyEnMessages.about);
     expect(getAboutMessages('vi')).toEqual(legacyViMessages.about);
+  });
+
+  it('keeps localized route-shell copy aligned with the legacy common namespace', () => {
+    expect(getCommonMessages('en')['404-msg']).toBe(
+      legacyEnMessages.common['404-msg']
+    );
+    expect(getCommonMessages('vi')['back-to-home']).toBe(
+      legacyViMessages.common['back-to-home']
+    );
   });
 });

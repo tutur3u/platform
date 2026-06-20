@@ -335,5 +335,9 @@
         "title": "Tầm Nhìn"
       }
     }
+  },
+  "common": {
+    "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
+    "back-to-home": "Quay lại trang chủ"
   }
 }

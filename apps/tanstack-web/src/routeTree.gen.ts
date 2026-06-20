@@ -15,6 +15,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together'
+import { Route as LocaleVerifyTokenRouteImport } from './routes/$locale/verify-token'
 import { Route as LocaleTermsRouteImport } from './routes/$locale/terms'
 import { Route as LocaleSecurityRouteImport } from './routes/$locale/security'
 import { Route as LocaleQrGeneratorRouteImport } from './routes/$locale/qr-generator'
@@ -24,6 +25,7 @@ import { Route as LocalePartnersRouteImport } from './routes/$locale/partners'
 import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together'
 import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup'
 import { Route as LocaleDocsRouteImport } from './routes/$locale/docs'
+import { Route as LocaleContributorsRouteImport } from './routes/$locale/contributors'
 import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines'
 import { Route as LocaleCareersRouteImport } from './routes/$locale/careers'
 import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding'
@@ -92,6 +94,11 @@ const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
   path: '/products/meet-together',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleVerifyTokenRoute = LocaleVerifyTokenRouteImport.update({
+  id: '/$locale/verify-token',
+  path: '/$locale/verify-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleTermsRoute = LocaleTermsRouteImport.update({
   id: '/$locale/terms',
   path: '/$locale/terms',
@@ -135,6 +142,11 @@ const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
 const LocaleDocsRoute = LocaleDocsRouteImport.update({
   id: '/$locale/docs',
   path: '/$locale/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleContributorsRoute = LocaleContributorsRouteImport.update({
+  id: '/$locale/contributors',
+  path: '/$locale/contributors',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleCommunityGuidelinesRoute =
@@ -348,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
+  '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
@@ -357,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/$locale/qr-generator': typeof LocaleQrGeneratorRoute
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
+  '/$locale/verify-token': typeof LocaleVerifyTokenRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -402,6 +416,7 @@ export interface FileRoutesByTo {
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
+  '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
@@ -411,6 +426,7 @@ export interface FileRoutesByTo {
   '/$locale/qr-generator': typeof LocaleQrGeneratorRoute
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
+  '/$locale/verify-token': typeof LocaleVerifyTokenRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -457,6 +473,7 @@ export interface FileRoutesById {
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
+  '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
@@ -466,6 +483,7 @@ export interface FileRoutesById {
   '/$locale/qr-generator': typeof LocaleQrGeneratorRoute
   '/$locale/security': typeof LocaleSecurityRouteWithChildren
   '/$locale/terms': typeof LocaleTermsRoute
+  '/$locale/verify-token': typeof LocaleVerifyTokenRoute
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -513,6 +531,7 @@ export interface FileRouteTypes {
     | '/$locale/branding'
     | '/$locale/careers'
     | '/$locale/community-guidelines'
+    | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
     | '/$locale/meet-together'
@@ -522,6 +541,7 @@ export interface FileRouteTypes {
     | '/$locale/qr-generator'
     | '/$locale/security'
     | '/$locale/terms'
+    | '/$locale/verify-token'
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/calendar/meet-together'
@@ -567,6 +587,7 @@ export interface FileRouteTypes {
     | '/$locale/branding'
     | '/$locale/careers'
     | '/$locale/community-guidelines'
+    | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
     | '/$locale/meet-together'
@@ -576,6 +597,7 @@ export interface FileRouteTypes {
     | '/$locale/qr-generator'
     | '/$locale/security'
     | '/$locale/terms'
+    | '/$locale/verify-token'
     | '/products/meet-together'
     | '/$locale'
     | '/$locale/calendar/meet-together'
@@ -621,6 +643,7 @@ export interface FileRouteTypes {
     | '/$locale/branding'
     | '/$locale/careers'
     | '/$locale/community-guidelines'
+    | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
     | '/$locale/meet-together'
@@ -630,6 +653,7 @@ export interface FileRouteTypes {
     | '/$locale/qr-generator'
     | '/$locale/security'
     | '/$locale/terms'
+    | '/$locale/verify-token'
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/calendar/meet-together'
@@ -676,6 +700,7 @@ export interface RootRouteChildren {
   LocaleBrandingRoute: typeof LocaleBrandingRoute
   LocaleCareersRoute: typeof LocaleCareersRoute
   LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
+  LocaleContributorsRoute: typeof LocaleContributorsRoute
   LocaleDocsRoute: typeof LocaleDocsRoute
   LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
   LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute
@@ -685,6 +710,7 @@ export interface RootRouteChildren {
   LocaleQrGeneratorRoute: typeof LocaleQrGeneratorRoute
   LocaleSecurityRoute: typeof LocaleSecurityRouteWithChildren
   LocaleTermsRoute: typeof LocaleTermsRoute
+  LocaleVerifyTokenRoute: typeof LocaleVerifyTokenRoute
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
@@ -761,6 +787,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsMeetTogetherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/verify-token': {
+      id: '/$locale/verify-token'
+      path: '/$locale/verify-token'
+      fullPath: '/$locale/verify-token'
+      preLoaderRoute: typeof LocaleVerifyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/terms': {
       id: '/$locale/terms'
       path: '/$locale/terms'
@@ -822,6 +855,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/docs'
       fullPath: '/$locale/docs'
       preLoaderRoute: typeof LocaleDocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/contributors': {
+      id: '/$locale/contributors'
+      path: '/$locale/contributors'
+      fullPath: '/$locale/contributors'
+      preLoaderRoute: typeof LocaleContributorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/community-guidelines': {
@@ -1125,6 +1165,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleBrandingRoute: LocaleBrandingRoute,
   LocaleCareersRoute: LocaleCareersRoute,
   LocaleCommunityGuidelinesRoute: LocaleCommunityGuidelinesRoute,
+  LocaleContributorsRoute: LocaleContributorsRoute,
   LocaleDocsRoute: LocaleDocsRoute,
   LocaleFacebookMockupRoute: LocaleFacebookMockupRoute,
   LocaleMeetTogetherRoute: LocaleMeetTogetherRoute,
@@ -1134,6 +1175,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleQrGeneratorRoute: LocaleQrGeneratorRoute,
   LocaleSecurityRoute: LocaleSecurityRouteWithChildren,
   LocaleTermsRoute: LocaleTermsRoute,
+  LocaleVerifyTokenRoute: LocaleVerifyTokenRoute,
   ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,

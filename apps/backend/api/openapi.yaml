@@ -147,6 +147,56 @@ paths:
                 type: string
                 examples:
                   - GET, POST
+  /serwist/{path}:
+    get:
+      summary: Legacy Serwist service-worker decommission route
+      description: Migrated replacement for apps/web/src/app/serwist/[path]/route.ts. The Rust backend owns the Cloudflare cutover route by serving a no-store service worker that unregisters the legacy Serwist registration; sw.js.map returns deterministic source-map metadata and unknown artifacts return an empty 404.
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - sw.js
+              - sw.js.map
+          description: Single Serwist artifact path segment.
+      responses:
+        "200":
+          description: Decommission service worker or source-map metadata.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+            Service-Worker-Allowed:
+              schema:
+                type: string
+                examples:
+                  - /
+          content:
+            application/javascript:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Unknown Serwist artifact.
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/health:
     get:
       summary: Legacy-compatible platform health probe

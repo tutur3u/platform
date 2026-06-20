@@ -10,6 +10,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET/POST browser-state recovery with no-store HTML, same-origin POST protection, Clear-Site-Data, redirect, and Supabase auth cookie clearing behavior."
     },
+    "route-handler:/serwist/:path:apps/web/src/app/serwist/[path]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles /serwist/sw.js with a no-store decommissioning service worker that unregisters the legacy Serwist registration during Cloudflare cutover, plus deterministic source-map metadata for /serwist/sw.js.map."
+    },
     "api:/api/health:apps/web/src/app/api/health/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -60,6 +65,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles PUT/DELETE workspace slide item placeholders with the legacy 501 Not implemented response."
     },
+    "error:/:locale:apps/web/src/app/[locale]/error.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start root route uses LegacyErrorShell as the route error component, preserving the legacy message/reset UI without Next.js client-only boundaries."
+    },
+    "not-found:/:locale:apps/web/src/app/[locale]/not-found.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start root route uses LegacyNotFoundShell as the default not-found component with locale-aware legacy common messages and onboarding link."
+    },
     "layout:/~offline:apps/web/src/app/~offline/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -94,6 +109,11 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start routes /qr-generator and /$locale/qr-generator preserve the legacy redirect to the QR app while forwarding query parameters."
+    },
+    "page:/:locale/verify-token:apps/web/src/app/[locale]/(auth)/verify-token/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/verify-token preserves the legacy nextUrl normalization and /onboarding fallback through the shared auth redirect helper."
     },
     "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
       "status": "accepted-removal",

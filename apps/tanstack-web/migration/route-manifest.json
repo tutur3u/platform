@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 259,
-        "migrated": 46,
-        "percentComplete": 15.08,
-        "remaining": 259,
-        "terminal": 46,
+        "legacyNext": 258,
+        "migrated": 47,
+        "percentComplete": 15.41,
+        "remaining": 258,
+        "terminal": 47,
         "total": 305,
         "unknownStatus": 0
       },
@@ -64,42 +64,6 @@
       },
       {
         "acceptedRemoval": 0,
-        "key": "route-handler",
-        "label": "route-handler",
-        "legacyNext": 1,
-        "migrated": 2,
-        "percentComplete": 66.67,
-        "remaining": 1,
-        "terminal": 2,
-        "total": 3,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "error",
-        "label": "error",
-        "legacyNext": 1,
-        "migrated": 0,
-        "percentComplete": 0,
-        "remaining": 1,
-        "terminal": 0,
-        "total": 1,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "not-found",
-        "label": "not-found",
-        "legacyNext": 1,
-        "migrated": 0,
-        "percentComplete": 0,
-        "remaining": 1,
-        "terminal": 0,
-        "total": 1,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
         "key": "trpc",
         "label": "trpc",
         "legacyNext": 1,
@@ -109,6 +73,42 @@
         "terminal": 0,
         "total": 1,
         "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "route-handler",
+        "label": "route-handler",
+        "legacyNext": 0,
+        "migrated": 3,
+        "percentComplete": 100,
+        "remaining": 0,
+        "terminal": 3,
+        "total": 3,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "error",
+        "label": "error",
+        "legacyNext": 0,
+        "migrated": 1,
+        "percentComplete": 100,
+        "remaining": 0,
+        "terminal": 1,
+        "total": 1,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "not-found",
+        "label": "not-found",
+        "legacyNext": 0,
+        "migrated": 1,
+        "percentComplete": 100,
+        "remaining": 0,
+        "terminal": 1,
+        "total": 1,
+        "unknownStatus": 0
       }
     ],
     "byOwner": [
@@ -116,11 +116,11 @@
         "acceptedRemoval": 1,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1099,
-        "migrated": 12,
-        "percentComplete": 1.17,
-        "remaining": 1099,
-        "terminal": 13,
+        "legacyNext": 1098,
+        "migrated": 13,
+        "percentComplete": 1.26,
+        "remaining": 1098,
+        "terminal": 14,
         "total": 1112,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 296,
-        "migrated": 81,
-        "percentComplete": 21.49,
-        "remaining": 296,
-        "terminal": 81,
+        "legacyNext": 293,
+        "migrated": 84,
+        "percentComplete": 22.28,
+        "remaining": 293,
+        "terminal": 84,
         "total": 377,
         "unknownStatus": 0
       }
@@ -303,11 +303,11 @@
       "acceptedRemoval": 1,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1395,
-      "migrated": 93,
-      "percentComplete": 6.31,
-      "remaining": 1395,
-      "terminal": 94,
+      "legacyNext": 1391,
+      "migrated": 97,
+      "percentComplete": 6.58,
+      "remaining": 1391,
+      "terminal": 98,
       "total": 1489,
       "unknownStatus": 0
     }
@@ -10291,7 +10291,7 @@
       "methods": [],
       "routePath": "/:locale",
       "sourceFile": "apps/web/src/app/[locale]/error.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10930,7 +10930,7 @@
       "methods": [],
       "routePath": "/:locale",
       "sourceFile": "apps/web/src/app/[locale]/not-found.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13648,7 +13648,7 @@
       "methods": [],
       "routePath": "/:locale/verify-token",
       "sourceFile": "apps/web/src/app/[locale]/(auth)/verify-token/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13702,7 +13702,7 @@
       "methods": ["GET"],
       "routePath": "/serwist/:path",
       "sourceFile": "apps/web/src/app/serwist/[path]/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

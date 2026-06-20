@@ -56,7 +56,7 @@ describe('tanstackRouteManifest', () => {
     });
   });
 
-  it('records generated Serwist route methods without marking it migrated', () => {
+  it('marks the Serwist decommission route as Rust-migrated', () => {
     expect(
       tanstackRouteManifest.routes.find(
         (route) =>
@@ -66,7 +66,7 @@ describe('tanstackRouteManifest', () => {
     ).toMatchObject({
       methods: ['GET'],
       routePath: '/serwist/:path',
-      status: 'legacy-next',
+      status: 'migrated',
       targetOwner: 'rust-backend',
     });
   });

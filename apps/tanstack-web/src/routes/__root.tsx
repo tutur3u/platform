@@ -6,6 +6,10 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import {
+  LegacyErrorShell,
+  LegacyNotFoundShell,
+} from '../components/route-shell';
 import { createPageHead } from '../lib/platform/head';
 import { defaultLocale } from '../lib/platform/locale';
 import { createThemeInitScript } from '../lib/platform/theme';
@@ -16,6 +20,7 @@ const themeInitScript = createThemeInitScript();
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
+  errorComponent: LegacyErrorShell,
   head: () =>
     createPageHead(
       {
@@ -29,6 +34,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         stylesheets: [appCss],
       }
     ),
+  notFoundComponent: LegacyNotFoundShell,
   shellComponent: RootDocument,
 });
 

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildQrGeneratorRedirectHref,
+  buildVerifyTokenRedirectHref,
   docsRedirectHref,
   meetTogetherCalendarRedirectHref,
   meetTogetherProductRedirectHref,
@@ -50,6 +51,18 @@ describe('public redirect helpers', () => {
 
     expect(buildQrGeneratorRedirectHref(searchParams)).toBe(
       'https://qr.example.com/?url=https%3A%2F%2Ftuturuuu.com%2Fdocs'
+    );
+  });
+
+  it('normalizes verify-token redirects with the legacy safe fallback', () => {
+    expect(buildVerifyTokenRedirectHref('?nextUrl=%2Fpersonal%2Ftasks')).toBe(
+      '/personal/tasks'
+    );
+    expect(
+      buildVerifyTokenRedirectHref('?nextUrl=https%3A%2F%2Fevil.test')
+    ).toBe('/onboarding');
+    expect(buildVerifyTokenRedirectHref('?nextUrl=%2F%2Fevil.test')).toBe(
+      '/onboarding'
     );
   });
 });
