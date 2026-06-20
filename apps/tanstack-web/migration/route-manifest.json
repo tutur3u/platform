@@ -30,11 +30,11 @@
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 29,
-        "migrated": 38,
-        "percentComplete": 56.72,
-        "remaining": 29,
-        "terminal": 38,
+        "legacyNext": 27,
+        "migrated": 40,
+        "percentComplete": 59.7,
+        "remaining": 27,
+        "terminal": 40,
         "total": 67,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 258,
-        "migrated": 119,
-        "percentComplete": 31.56,
-        "remaining": 258,
-        "terminal": 119,
+        "legacyNext": 256,
+        "migrated": 121,
+        "percentComplete": 32.1,
+        "remaining": 256,
+        "terminal": 121,
         "total": 377,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 73,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1279,
-      "migrated": 153,
-      "percentComplete": 15.02,
-      "remaining": 1279,
-      "terminal": 226,
+      "legacyNext": 1277,
+      "migrated": 155,
+      "percentComplete": 15.15,
+      "remaining": 1277,
+      "terminal": 228,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -10852,7 +10852,7 @@
       "methods": [],
       "routePath": "/:locale/login",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/login/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10861,7 +10861,7 @@
       "methods": [],
       "routePath": "/:locale/logout",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/logout/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

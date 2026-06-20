@@ -24,6 +24,8 @@ import { Route as LocalePrivacyRouteImport } from './routes/$locale/privacy'
 import { Route as LocalePricingRouteImport } from './routes/$locale/pricing'
 import { Route as LocalePartnersRouteImport } from './routes/$locale/partners'
 import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together'
+import { Route as LocaleLogoutRouteImport } from './routes/$locale/logout'
+import { Route as LocaleLoginRouteImport } from './routes/$locale/login'
 import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup'
 import { Route as LocaleDocsRouteImport } from './routes/$locale/docs'
 import { Route as LocaleContributorsRouteImport } from './routes/$locale/contributors'
@@ -171,6 +173,16 @@ const LocalePartnersRoute = LocalePartnersRouteImport.update({
 const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
   id: '/$locale/meet-together',
   path: '/$locale/meet-together',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleLogoutRoute = LocaleLogoutRouteImport.update({
+  id: '/$locale/logout',
+  path: '/$locale/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleLoginRoute = LocaleLoginRouteImport.update({
+  id: '/$locale/login',
+  path: '/$locale/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
@@ -584,6 +596,8 @@ export interface FileRoutesByFullPath {
   '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
+  '/$locale/login': typeof LocaleLoginRoute
+  '/$locale/logout': typeof LocaleLogoutRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
@@ -674,6 +688,8 @@ export interface FileRoutesByTo {
   '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
+  '/$locale/login': typeof LocaleLoginRoute
+  '/$locale/logout': typeof LocaleLogoutRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
@@ -765,6 +781,8 @@ export interface FileRoutesById {
   '/$locale/contributors': typeof LocaleContributorsRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
+  '/$locale/login': typeof LocaleLoginRoute
+  '/$locale/logout': typeof LocaleLogoutRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
@@ -857,6 +875,8 @@ export interface FileRouteTypes {
     | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
+    | '/$locale/login'
+    | '/$locale/logout'
     | '/$locale/meet-together'
     | '/$locale/partners'
     | '/$locale/pricing'
@@ -947,6 +967,8 @@ export interface FileRouteTypes {
     | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
+    | '/$locale/login'
+    | '/$locale/logout'
     | '/$locale/meet-together'
     | '/$locale/partners'
     | '/$locale/pricing'
@@ -1037,6 +1059,8 @@ export interface FileRouteTypes {
     | '/$locale/contributors'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
+    | '/$locale/login'
+    | '/$locale/logout'
     | '/$locale/meet-together'
     | '/$locale/partners'
     | '/$locale/pricing'
@@ -1128,6 +1152,8 @@ export interface RootRouteChildren {
   LocaleContributorsRoute: typeof LocaleContributorsRoute
   LocaleDocsRoute: typeof LocaleDocsRoute
   LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
+  LocaleLoginRoute: typeof LocaleLoginRoute
+  LocaleLogoutRoute: typeof LocaleLogoutRoute
   LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute
   LocalePartnersRoute: typeof LocalePartnersRoute
   LocalePricingRoute: typeof LocalePricingRoute
@@ -1304,6 +1330,20 @@ declare module '@tanstack/react-router' {
       path: '/$locale/meet-together'
       fullPath: '/$locale/meet-together'
       preLoaderRoute: typeof LocaleMeetTogetherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/logout': {
+      id: '/$locale/logout'
+      path: '/$locale/logout'
+      fullPath: '/$locale/logout'
+      preLoaderRoute: typeof LocaleLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/login': {
+      id: '/$locale/login'
+      path: '/$locale/login'
+      fullPath: '/$locale/login'
+      preLoaderRoute: typeof LocaleLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/facebook-mockup': {
@@ -1878,6 +1918,8 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleContributorsRoute: LocaleContributorsRoute,
   LocaleDocsRoute: LocaleDocsRoute,
   LocaleFacebookMockupRoute: LocaleFacebookMockupRoute,
+  LocaleLoginRoute: LocaleLoginRoute,
+  LocaleLogoutRoute: LocaleLogoutRoute,
   LocaleMeetTogetherRoute: LocaleMeetTogetherRoute,
   LocalePartnersRoute: LocalePartnersRoute,
   LocalePricingRoute: LocalePricingRoute,

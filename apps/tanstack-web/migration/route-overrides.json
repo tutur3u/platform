@@ -649,6 +649,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/contact defines the legacy static Contact metadata through createPageHead. This marks only the metadata layout artifact migrated; the contact page remains legacy-owned until current-user profile and support-inquiry endpoints move behind Rust/backend or TanStack server-function ownership."
     },
+    "layout:/:locale/login:apps/web/src/app/[locale]/(marketing)/login/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/login defines the legacy sign-in metadata through createPageHead. This marks only the metadata layout artifact migrated; the login page and auth flow remain legacy-owned until password, OTP, MFA, passkey, QR login, and session hydration behavior move behind TanStack/Rust ownership."
+    },
+    "layout:/:locale/logout:apps/web/src/app/[locale]/(marketing)/logout/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/logout defines the legacy logout metadata through createPageHead. This marks only the metadata layout artifact migrated; the logout page and session-clearing behavior remain legacy-owned until account logout APIs and redirect behavior move behind TanStack/Rust ownership."
+    },
     "layout:/:locale/women-in-tech:apps/web/src/app/[locale]/(marketing)/women-in-tech/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
