@@ -27,7 +27,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
@@ -606,7 +605,8 @@ export default function ContributorsPage() {
                         <div className="mb-4 flex items-center justify-between">
                           <div className="relative">
                             <div className="absolute -inset-0.5 rounded-full bg-linear-to-r from-primary to-dynamic-purple opacity-75 blur-sm group-hover:opacity-100" />
-                            <Image
+                            {/* biome-ignore lint/performance/noImgElement: GitHub avatar URLs are rendered directly to keep this dev route off next/image. */}
+                            <img
                               src={contributor.avatar_url}
                               alt={contributor.login}
                               className="relative h-16 w-16 rounded-full border-2 border-background object-cover"
