@@ -71,6 +71,7 @@ import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/p
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls'
 import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics'
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
+import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations'
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects'
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm'
 import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet'
@@ -416,6 +417,11 @@ const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
   path: '/$locale/$wsId/meet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
+  id: '/$locale/$wsId/integrations',
+  path: '/$locale/$wsId/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdExternalProjectsRoute =
   LocaleWsIdExternalProjectsRouteImport.update({
     id: '/$locale/$wsId/external-projects',
@@ -571,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
+  '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
@@ -657,6 +664,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
+  '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
@@ -744,6 +752,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
+  '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
@@ -832,6 +841,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/diet'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
+    | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/polls'
@@ -918,6 +928,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/diet'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
+    | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/polls'
@@ -1004,6 +1015,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/diet'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
+    | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/polls'
@@ -1091,6 +1103,7 @@ export interface RootRouteChildren {
   LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
+  LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRoute
   LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
@@ -1580,6 +1593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdMeetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/integrations': {
+      id: '/$locale/$wsId/integrations'
+      path: '/$locale/$wsId/integrations'
+      fullPath: '/$locale/$wsId/integrations'
+      preLoaderRoute: typeof LocaleWsIdIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/external-projects': {
       id: '/$locale/$wsId/external-projects'
       path: '/$locale/$wsId/external-projects'
@@ -1809,6 +1829,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
+  LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,
   LocaleWsIdMeetRoute: LocaleWsIdMeetRoute,
   LocaleWsIdMetricsRoute: LocaleWsIdMetricsRoute,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,

@@ -566,5 +566,59 @@
       "pricing": "Pricing",
       "title": "Quick Links"
     }
+  },
+  "integrations-page": {
+    "actions": {
+      "comingSoon": "Coming Soon",
+      "configure": "Configure Integration"
+    },
+    "cards": {
+      "discord": {
+        "description": "Connect your Discord server to enable bot commands and notifications",
+        "features": [
+          "Slash commands",
+          "Link shortening",
+          "Server notifications",
+          "Member management"
+        ],
+        "name": "Discord"
+      },
+      "github": {
+        "description": "Connect GitHub repositories for automated workflows and updates",
+        "features": [
+          "Repository monitoring",
+          "Pull request tracking",
+          "Issue management",
+          "Automated deployments"
+        ],
+        "name": "GitHub"
+      },
+      "slack": {
+        "description": "Integrate with Slack for team communication and notifications",
+        "features": [
+          "Channel notifications",
+          "Message forwarding",
+          "User synchronization",
+          "Custom commands"
+        ],
+        "name": "Slack"
+      }
+    },
+    "description": "Connect external services and platforms to extend your workspace capabilities",
+    "empty": {
+      "description": "Check back later for new integration options.",
+      "title": "No integrations available"
+    },
+    "features": "Features",
+    "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
+    "sepay-connected-title": "SePay connected",
+    "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",
+    "sepay-error-provisioning-description": "SePay connected, but the initial bank-account sync or webhook provisioning did not finish. Retry the setup actions from this workspace.",
+    "sepay-error-title": "SePay setup needs attention",
+    "status": {
+      "available": "Available",
+      "comingSoon": "Coming Soon"
+    },
+    "title": "Integrations"
   }
 }

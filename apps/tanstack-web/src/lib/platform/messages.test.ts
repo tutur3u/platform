@@ -91,4 +91,19 @@ describe('message adapters', () => {
       'Vui lòng nhập email hợp lệ'
     );
   });
+
+  it('keeps migrated integrations alerts aligned with the legacy web namespace', () => {
+    expect(getMessages('en')['integrations-page']).toMatchObject(
+      legacyEnMessages['integrations-page']
+    );
+    expect(getMessages('vi')['integrations-page']).toMatchObject(
+      legacyViMessages['integrations-page']
+    );
+    expect(getMessages('en')['integrations-page'].cards.discord.name).toBe(
+      'Discord'
+    );
+    expect(getMessages('vi')['integrations-page'].status.available).toBe(
+      'Khả dụng'
+    );
+  });
 });

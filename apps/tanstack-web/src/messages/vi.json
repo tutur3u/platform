@@ -566,5 +566,59 @@
       "pricing": "Bảng Giá",
       "title": "Liên Kết Nhanh"
     }
+  },
+  "integrations-page": {
+    "actions": {
+      "comingSoon": "Sắp ra mắt",
+      "configure": "Cấu hình tích hợp"
+    },
+    "cards": {
+      "discord": {
+        "description": "Kết nối máy chủ Discord để bật lệnh bot và thông báo",
+        "features": [
+          "Lệnh slash",
+          "Rút gọn liên kết",
+          "Thông báo máy chủ",
+          "Quản lý thành viên"
+        ],
+        "name": "Discord"
+      },
+      "github": {
+        "description": "Kết nối kho GitHub để tự động hóa quy trình và cập nhật",
+        "features": [
+          "Theo dõi kho mã",
+          "Theo dõi pull request",
+          "Quản lý issue",
+          "Triển khai tự động"
+        ],
+        "name": "GitHub"
+      },
+      "slack": {
+        "description": "Tích hợp Slack cho giao tiếp nhóm và thông báo",
+        "features": [
+          "Thông báo kênh",
+          "Chuyển tiếp tin nhắn",
+          "Đồng bộ người dùng",
+          "Lệnh tùy chỉnh"
+        ],
+        "name": "Slack"
+      }
+    },
+    "description": "Kết nối dịch vụ và nền tảng bên ngoài để mở rộng khả năng của workspace",
+    "empty": {
+      "description": "Hãy quay lại sau để xem các tùy chọn tích hợp mới.",
+      "title": "Chưa có tích hợp nào"
+    },
+    "features": "Tính năng",
+    "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
+    "sepay-connected-title": "SePay đã được kết nối",
+    "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",
+    "sepay-error-provisioning-description": "SePay đã kết nối, nhưng bước đồng bộ tài khoản ngân hàng hoặc cấu hình webhook ban đầu chưa hoàn tất. Hãy thử lại các thao tác thiết lập từ không gian làm việc này.",
+    "sepay-error-title": "Thiết lập SePay cần được xử lý",
+    "status": {
+      "available": "Khả dụng",
+      "comingSoon": "Sắp ra mắt"
+    },
+    "title": "Tích hợp"
   }
 }
