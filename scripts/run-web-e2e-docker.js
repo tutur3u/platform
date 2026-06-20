@@ -276,9 +276,37 @@ function getE2ECompareReportPath(env = process.env) {
     : DEFAULT_E2E_COMPARE_REPORT_PATH;
 }
 
+function isPassedE2EResult(result) {
+  return (
+    result?.passed === true ||
+    ['passed', 'pass', 'ok', 'success'].includes(
+      String(result?.status ?? '').toLowerCase()
+    )
+  );
+}
+
+function normalizeE2ECompareResult(result) {
+  const normalized = { ...result };
+  const durationMs = Number(normalized.durationMs);
+
+  if (normalized.wallMs === undefined && Number.isFinite(durationMs)) {
+    normalized.wallMs = durationMs;
+  }
+
+  if (normalized.passRate === undefined) {
+    normalized.passRate = isPassedE2EResult(normalized) ? 1 : 0;
+  }
+
+  return normalized;
+}
+
 function createE2ECompareReport(frontends, generatedAt = new Date()) {
-  const next = frontends.next ?? { passed: false, status: 'missing' };
-  const tanstack = frontends.tanstack ?? { passed: false, status: 'missing' };
+  const next = normalizeE2ECompareResult(
+    frontends.next ?? { passed: false, status: 'missing' }
+  );
+  const tanstack = normalizeE2ECompareResult(
+    frontends.tanstack ?? { passed: false, status: 'missing' }
+  );
   const passed = next.passed === true && tanstack.passed === true;
 
   return {

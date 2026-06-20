@@ -815,13 +815,44 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
   assert.deepEqual(report, {
     frontend: 'compare',
     frontends: {
-      next: { durationMs: 1000, passed: true, status: 'passed' },
-      tanstack: { durationMs: 1200, passed: true, status: 'passed' },
+      next: {
+        durationMs: 1000,
+        passed: true,
+        passRate: 1,
+        status: 'passed',
+        wallMs: 1000,
+      },
+      tanstack: {
+        durationMs: 1200,
+        passed: true,
+        passRate: 1,
+        status: 'passed',
+        wallMs: 1200,
+      },
     },
     generatedAt: '2026-06-20T00:00:00.000Z',
     passed: true,
     status: 'passed',
   });
+  assert.deepEqual(
+    createE2ECompareReport({
+      next: { durationMs: 1000, passed: true, status: 'passed' },
+      tanstack: {
+        durationMs: 1200,
+        passed: true,
+        passRate: 0.95,
+        status: 'passed',
+        wallMs: 1300,
+      },
+    }).frontends.tanstack,
+    {
+      durationMs: 1200,
+      passed: true,
+      passRate: 0.95,
+      status: 'passed',
+      wallMs: 1300,
+    }
+  );
   assert.equal(
     createE2ECompareReport({
       next: { passed: true, status: 'passed' },

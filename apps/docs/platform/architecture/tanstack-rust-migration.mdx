@@ -554,8 +554,10 @@ bun test:e2e:web:docker -- --frontend compare
 ```
 
 Compare mode writes `tmp/e2e/web-migration/compare-report.json` after running
-both frontends. Set `E2E_COMPARE_REPORT_PATH` when a run needs to write the
-evidence file elsewhere under `tmp/`.
+both frontends. Each frontend result includes `passRate` and `wallMs` so
+`bun migration:tanstack:gates` can evaluate E2E regressions from the same
+evidence file. Set `E2E_COMPARE_REPORT_PATH` when a run needs to write the file
+elsewhere under `tmp/`.
 
 `apps/web/e2e/public-marketing-routes.noauth.spec.ts` is the first shared
 public-route parity suite for this migration. It runs under the existing

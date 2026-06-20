@@ -12,6 +12,7 @@ const {
   validateBenchmarkReport,
   validateE2EReport,
 } = require('./tanstack-cutover-gates.js');
+const { createE2ECompareReport } = require('./run-web-e2e-docker.js');
 const { writeManifest } = require('./tanstack-migration-manifest.js');
 
 function writeJson(filePath, value) {
@@ -405,6 +406,20 @@ test('validateE2EReport requires both frontend results', () => {
 
   assert.equal(validation.ok, false);
   assert.match(validation.failures.join('\n'), /missing tanstack/u);
+});
+
+test('validateE2EReport accepts Docker compare report output', () => {
+  const report = createE2ECompareReport(
+    {
+      next: { durationMs: 10000, passed: true, status: 'passed' },
+      tanstack: { durationMs: 11000, passed: true, status: 'passed' },
+    },
+    new Date('2026-06-20T00:00:00.000Z')
+  );
+
+  const validation = validateE2EReport(report);
+
+  assert.equal(validation.ok, true);
 });
 
 test('validateE2EReport rejects pass-rate and wall-time regressions without accepted notes', () => {
