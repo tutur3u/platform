@@ -792,11 +792,30 @@ fn parse_json_body(body_text: Option<&str>) -> Option<Value> {
     serde_json::from_str(body_text.unwrap_or_default()).ok()
 }
 
+fn should_buffer_request_body(method: &str, path: &str) -> bool {
+    matches!(
+        (method, path),
+        ("POST", "/api/v1/infrastructure/languages")
+            | ("POST", "/api/v1/infrastructure/sidebar")
+            | ("POST", "/api/v1/infrastructure/sidebar/sizes")
+    )
+}
+
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
 fn content_length_exceeds_request_body_limit(content_length: Option<&str>) -> bool {
     content_length
         .and_then(|value| value.trim().parse::<u128>().ok())
         .is_some_and(|value| value > MAX_REQUEST_BODY_BYTES as u128)
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn buffered_request_body_exceeds_limit(
+    method: &str,
+    path: &str,
+    content_length: Option<&str>,
+) -> bool {
+    should_buffer_request_body(method, path)
+        && content_length_exceeds_request_body_limit(content_length)
 }
 
 fn json_value_is_present(value: Option<&Value>) -> bool {
@@ -1611,7 +1630,7 @@ fn default_deployment_target() -> &'static str {
 pub mod native {
     use super::{
         BackendConfig, BackendRequest, BackendResponse, MAX_REQUEST_BODY_BYTES,
-        json_security_headers, route_request,
+        json_security_headers, route_request, should_buffer_request_body,
     };
     use axum::Router;
     use axum::body::{Body, to_bytes};
@@ -1665,10 +1684,14 @@ pub mod native {
             .get(REFERER)
             .and_then(|value| value.to_str().ok())
             .map(str::to_owned);
-        let body_text = to_bytes(body, MAX_REQUEST_BODY_BYTES)
-            .await
-            .ok()
-            .and_then(|bytes| String::from_utf8(bytes.to_vec()).ok());
+        let body_text = if should_buffer_request_body(&method, &path) {
+            to_bytes(body, MAX_REQUEST_BODY_BYTES)
+                .await
+                .ok()
+                .and_then(|bytes| String::from_utf8(bytes.to_vec()).ok())
+        } else {
+            None
+        };
 
         route_request(
             &config,
@@ -1754,8 +1777,9 @@ pub mod native {
 #[cfg(all(feature = "worker", target_arch = "wasm32"))]
 pub mod worker_runtime {
     use super::{
-        BackendConfig, BackendRequest, BackendResponse, content_length_exceeds_request_body_limit,
+        BackendConfig, BackendRequest, BackendResponse, buffered_request_body_exceeds_limit,
         json_security_headers, request_body_too_large_response, route_request,
+        should_buffer_request_body,
     };
     use worker::{Env, Request, Response, Result, event};
 
@@ -1775,11 +1799,17 @@ pub mod worker_runtime {
             .or(headers.get("X-Request-ID")?);
         let content_length = headers.get("Content-Length")?;
 
-        if content_length_exceeds_request_body_limit(content_length.as_deref()) {
+        let should_buffer_body = should_buffer_request_body(&method, &path);
+
+        if buffered_request_body_exceeds_limit(&method, &path, content_length.as_deref()) {
             return request_body_too_large_response().into_worker_response();
         }
 
-        let body_text = request.text().await.ok();
+        let body_text = if should_buffer_body {
+            request.text().await.ok()
+        } else {
+            None
+        };
 
         route_request(
             &config,
@@ -1943,6 +1973,51 @@ mod tests {
         assert!(!content_length_exceeds_request_body_limit(Some("65536")));
         assert!(!content_length_exceeds_request_body_limit(Some(" 65536 ")));
         assert!(content_length_exceeds_request_body_limit(Some("65537")));
+    }
+
+    #[test]
+    fn body_buffering_is_limited_to_routes_that_parse_json_payloads() {
+        for path in [
+            "/api/v1/infrastructure/languages",
+            "/api/v1/infrastructure/sidebar",
+            "/api/v1/infrastructure/sidebar/sizes",
+        ] {
+            assert!(should_buffer_request_body("POST", path), "{path}");
+            assert!(!should_buffer_request_body("GET", path), "{path}");
+            assert!(!should_buffer_request_body("DELETE", path), "{path}");
+        }
+
+        for (method, path) in [
+            ("GET", "/healthz"),
+            ("GET", "/readyz"),
+            ("GET", "/api/migration/manifest"),
+            ("POST", "/~recover-browser-state"),
+            ("POST", "/internal/jobs/noop"),
+        ] {
+            assert!(!should_buffer_request_body(method, path), "{method} {path}");
+        }
+    }
+
+    #[test]
+    fn oversized_body_guard_only_applies_to_buffered_routes() {
+        assert!(buffered_request_body_exceeds_limit(
+            "POST",
+            "/api/v1/infrastructure/languages",
+            Some("65537")
+        ));
+
+        for (method, path) in [
+            ("GET", "/healthz"),
+            ("GET", "/readyz"),
+            ("GET", "/api/migration/manifest"),
+            ("POST", "/~recover-browser-state"),
+            ("POST", "/internal/jobs/noop"),
+        ] {
+            assert!(
+                !buffered_request_body_exceeds_limit(method, path, Some("65537")),
+                "{method} {path}"
+            );
+        }
     }
 
     #[test]
