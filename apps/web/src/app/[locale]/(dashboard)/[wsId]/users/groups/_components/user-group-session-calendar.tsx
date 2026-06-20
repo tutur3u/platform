@@ -6,7 +6,14 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { ArrowRight, CalendarDays, Clock, Edit, Repeat } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  CalendarDays,
+  Clock,
+  Edit,
+  MoveRight,
+  Repeat,
+} from '@tuturuuu/icons';
 import type {
   CreateWorkspaceUserGroupSessionPayload,
   ListWorkspaceUserGroupSessionsResponse,
@@ -47,7 +54,12 @@ import dayjs from 'dayjs';
 import { useLocale, useMessages, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import '@/lib/dayjs-setup';
-import { GroupedSessionTimeblockDialog } from './grouped-session-timeblock-dialog';
+import {
+  GroupedSessionTimeblockDialog,
+  type GroupedTimeblockMoveRequest,
+  type GroupedTimeblockMoveResult,
+  type GroupedTimeblockMoveTarget,
+} from './grouped-session-timeblock-dialog';
 import { SessionCalendarToolbar } from './session-calendar-toolbar';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { SessionScopeDialog } from './session-scope-dialog';
@@ -184,6 +196,48 @@ function withSessionRelations(
   };
 }
 
+function buildGroupedTimeblockMovePayload(
+  session: WorkspaceUserGroupSession,
+  request: Pick<
+    GroupedTimeblockMoveRequest,
+    'date' | 'scope' | 'time' | 'timezone'
+  >
+): UpdateWorkspaceUserGroupSessionPayload {
+  const startsAt = dayjs.tz(
+    `${request.date} ${request.time}`,
+    'YYYY-MM-DD HH:mm',
+    request.timezone
+  );
+  const durationMinutes = Math.max(
+    dayjs(session.endsAt).diff(dayjs(session.startsAt), 'minute'),
+    15
+  );
+
+  return withSessionRelations(session, {
+    endTimezone: request.timezone,
+    endsAt: startsAt.add(durationMinutes, 'minute').toISOString(),
+    scope: request.scope,
+    startTimezone: request.timezone,
+    startsAt: startsAt.toISOString(),
+  });
+}
+
+async function runInBatches<T, R>(
+  items: T[],
+  batchSize: number,
+  handler: (item: T) => Promise<R>
+) {
+  const results: PromiseSettledResult<R>[] = [];
+  for (let index = 0; index < items.length; index += batchSize) {
+    results.push(
+      ...(await Promise.allSettled(
+        items.slice(index, index + batchSize).map(handler)
+      ))
+    );
+  }
+  return results;
+}
+
 const scheduleMessageFallbacks = {
   confirm_fix_recurring_link: 'Attach to recurring schedule',
   confirm_fix_recurring_link_convert_weekly: 'Create weekly series',
@@ -314,6 +368,8 @@ export function UserGroupSessionCalendar({
   const [selectedTimeblockId, setSelectedTimeblockId] = useState<string | null>(
     null
   );
+  const [selectedTimeblockMoveTarget, setSelectedTimeblockMoveTarget] =
+    useState<GroupedTimeblockMoveTarget | null>(null);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(
     null
   );
@@ -477,6 +533,92 @@ export function UserGroupSessionCalendar({
     },
   });
 
+  const bulkMoveMutation = useMutation({
+    mutationFn: async (
+      request: GroupedTimeblockMoveRequest
+    ): Promise<
+      GroupedTimeblockMoveResult & {
+        groupIds: string[];
+        updated: WorkspaceUserGroupSession[];
+      }
+    > => {
+      const settled = await runInBatches(
+        request.sessions,
+        4,
+        async (session) => {
+          const response = await updateWorkspaceUserGroupSession(
+            wsId,
+            session.id,
+            buildGroupedTimeblockMovePayload(session, request)
+          );
+          if (!response.data) {
+            throw new Error('Missing updated session response');
+          }
+          return response.data;
+        }
+      );
+
+      const updated: WorkspaceUserGroupSession[] = [];
+      let failedCount = 0;
+      let movedCount = 0;
+
+      for (const result of settled) {
+        if (result.status === 'fulfilled') {
+          movedCount += 1;
+          updated.push(
+            ...(Array.isArray(result.value) ? result.value : [result.value])
+          );
+        } else {
+          failedCount += 1;
+        }
+      }
+
+      return {
+        failedCount,
+        groupIds: Array.from(
+          new Set(request.sessions.map((session) => session.groupId))
+        ),
+        movedCount,
+        updated,
+      };
+    },
+    onError: () => {
+      toast.error(t('bulk_move_sessions_failed', { count: 1 }));
+    },
+    onSuccess: (result) => {
+      if (result.updated.length > 0) {
+        queryClient.setQueryData<ListWorkspaceUserGroupSessionsResponse>(
+          queryKey,
+          (current) => upsertSessions(current, result.updated)
+        );
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: ['workspace-user-group-sessions', wsId],
+      });
+      for (const groupId of result.groupIds) {
+        void queryClient.invalidateQueries({
+          queryKey: ['group-schedule', groupId],
+        });
+      }
+
+      if (result.movedCount > 0) {
+        toast.success(
+          t('bulk_move_sessions_success', { count: result.movedCount })
+        );
+      }
+      if (result.failedCount > 0) {
+        toast.error(
+          t('bulk_move_sessions_failed', { count: result.failedCount })
+        );
+      }
+      if (result.failedCount === 0) {
+        setSelectedTimeblockId(null);
+        setSelectedTimeblockMoveTarget(null);
+      }
+    },
+  });
+
   const previewReconcileMutation = useMutation({
     mutationFn: (session: WorkspaceUserGroupSession) =>
       previewWorkspaceUserGroupSessionReconciliation(wsId, session.id),
@@ -558,6 +700,18 @@ export function UserGroupSessionCalendar({
     [updateMutation]
   );
 
+  const openGroupedTimeblock = useCallback(
+    (
+      eventId: string,
+      initialMoveTarget: GroupedTimeblockMoveTarget | null = null
+    ) => {
+      if (!calendarDensity.timeblocksByEventId.has(eventId)) return;
+      setSelectedTimeblockMoveTarget(initialMoveTarget);
+      setSelectedTimeblockId(eventId);
+    },
+    [calendarDensity.timeblocksByEventId]
+  );
+
   const eventAdapter = useMemo<CalendarEventAdapter>(
     () => ({
       disableBuiltInEventUi: true,
@@ -579,11 +733,19 @@ export function UserGroupSessionCalendar({
 
           return (
             <ContextMenuContent className="w-52">
-              <ContextMenuItem
-                onSelect={() => setSelectedTimeblockId(event.id)}
-              >
+              <ContextMenuItem onSelect={() => openGroupedTimeblock(event.id)}>
                 <CalendarDays className="h-4 w-4" />
                 {t('view_grouped_timeblock')}
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                disabled={!canUpdateSchedule}
+                onSelect={() => {
+                  if (canUpdateSchedule) openGroupedTimeblock(event.id, 'all');
+                }}
+              >
+                <MoveRight className="h-4 w-4" />
+                {t('move_all_timeblock')}
               </ContextMenuItem>
             </ContextMenuContent>
           );
@@ -632,9 +794,7 @@ export function UserGroupSessionCalendar({
         }
 
         if (isGroupedSessionEventId(eventId)) {
-          if (calendarDensity.timeblocksByEventId.has(eventId)) {
-            setSelectedTimeblockId(eventId);
-          }
+          openGroupedTimeblock(eventId);
           return;
         }
 
@@ -670,6 +830,7 @@ export function UserGroupSessionCalendar({
     [
       canUpdateSchedule,
       calendarDensity.timeblocksByEventId,
+      openGroupedTimeblock,
       sessionsById,
       t,
       requestUpdate,
@@ -758,17 +919,26 @@ export function UserGroupSessionCalendar({
 
       <GroupedSessionTimeblockDialog
         canChooseGroup={canChooseGroup}
+        canUpdateSchedule={canUpdateSchedule}
+        initialMoveTarget={selectedTimeblockMoveTarget}
+        isMoving={bulkMoveMutation.isPending}
         onEditSession={(session) => {
           setSelectedTimeblockId(null);
+          setSelectedTimeblockMoveTarget(null);
           setEditingSession(session);
         }}
         onFilterGroup={(nextGroupId) => {
           if (!canChooseGroup) return;
           setGroupFilter(nextGroupId);
           setSelectedTimeblockId(null);
+          setSelectedTimeblockMoveTarget(null);
         }}
+        onMoveSessions={(request) => bulkMoveMutation.mutateAsync(request)}
         onOpenChange={(open) => {
-          if (!open) setSelectedTimeblockId(null);
+          if (!open) {
+            setSelectedTimeblockId(null);
+            setSelectedTimeblockMoveTarget(null);
+          }
         }}
         open={!!selectedTimeblock}
         timeblock={selectedTimeblock}

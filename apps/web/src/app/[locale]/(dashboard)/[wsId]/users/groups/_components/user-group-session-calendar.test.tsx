@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import {
   InternalApiError,
   type WorkspaceUserGroupSession,
@@ -63,21 +69,39 @@ vi.mock('next-intl', () => {
       confirm_fix_recurring_link_convert_weekly: 'Create weekly series',
       confirm_fix_recurring_link_snap: 'Move back and attach',
       confirm_fix_recurring_link_weekly: 'Add weekday and attach',
+      bulk_move_date: 'Move date',
+      bulk_move_sessions_failed: 'Failed to move {count} sessions',
+      bulk_move_sessions_success: 'Moved {count} sessions',
+      bulk_move_time: 'Start time',
+      cancel_move_mode: 'Cancel move mode',
+      clear_visible_sessions: 'Clear visible',
+      confirm_move_sessions: 'Move {count} sessions',
       detached_session: 'Detached session',
+      edit_scope: 'Edit scope',
+      edit_scope_future: 'This and future sessions',
+      edit_scope_once: 'This session only',
       edit_session: 'Edit session',
+      edit_session_named: 'Edit {name}',
       failed_to_fix_recurring_link: 'Failed to fix recurring link',
       filter_group: 'Filter group',
+      filter_group_named: 'Filter to {name}',
+      filtered_sessions_count: '{count} of {total} shown',
       files_attached_count: '{count} files',
       fix_recurring_preview_description:
         'Review the matching recurring occurrence before attaching this session.',
       grouped_timeblock_description: '{count} sessions: {groups}',
       grouped_timeblock_dialog_title: '{count} sessions in this timeblock',
+      grouped_timeblock_no_search_results: 'No sessions match this search.',
+      grouped_timeblock_search_placeholder: 'Search groups, titles, or tags...',
       grouped_timeblock_title: '{count} sessions',
       fix_recurring_preview_title: 'Fix recurring link',
       matching_recurring_occurrence: 'Matching recurring occurrence',
       more_sessions: '+{count} more',
+      move_all_timeblock: 'Move all',
+      move_selected_sessions: 'Move selected',
       new_weekly_recurring_schedule: 'New weekly recurring schedule',
       no_matching_recurring_schedule: 'No matching recurring schedule found',
+      no_timezones_found: 'No timezones found',
       recurring_repair_exact_session:
         'This session already matches the recurring timeblock.',
       recurring_repair_adds_weekday:
@@ -87,6 +111,14 @@ vi.mock('next-intl', () => {
       recurring_repair_moves_session:
         'This will move the detached session back to the recurring timeblock and attach it to the series.',
       recurring_link_fixed: 'Recurring link fixed',
+      search_timezone: 'Search timezone...',
+      select_session_named: 'Select {name}',
+      select_visible_sessions: 'Select visible',
+      selected_sessions_count: '{count} selected',
+      timezone: 'Timezone',
+      timezone_group_all: 'All timezones',
+      timezone_group_current: 'Current',
+      timezone_group_suggested: 'Suggested',
       untitled_session: 'Session',
       view_grouped_timeblock: 'View sessions',
     },
@@ -292,21 +324,60 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
 
     const events = await screen.findByTestId('calendar-events');
     await waitFor(() =>
-      expect(events).toHaveAttribute('data-event-count', '1')
+      expect(events.getAttribute('data-event-count')).toBe('1')
     );
-    expect(screen.getByTestId('schedule-toolbar')).toHaveAttribute(
-      'data-grouped-count',
-      '1'
-    );
+    expect(
+      screen.getByTestId('schedule-toolbar').getAttribute('data-grouped-count')
+    ).toBe('1');
 
     fireEvent.click(screen.getByRole('button', { name: '3 sessions' }));
 
     expect(
       await screen.findByText('3 sessions in this timeblock')
-    ).toBeInTheDocument();
-    expect(screen.getByText('Group A')).toBeInTheDocument();
-    expect(screen.getByText('Group B')).toBeInTheDocument();
-    expect(screen.getByText('Group C')).toBeInTheDocument();
+    ).toBeTruthy();
+    expect(screen.getByText('Group A')).toBeTruthy();
+    expect(screen.getByText('Group B')).toBeTruthy();
+    expect(screen.getByText('Group C')).toBeTruthy();
+  });
+
+  it('opens grouped sessions in a bounded searchable manager', async () => {
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: [
+        session({
+          groupId: 'group-1',
+          groupName: 'Group A',
+          id: 'session-1',
+        }),
+        session({
+          groupId: 'group-2',
+          groupName: 'Group B',
+          id: 'session-2',
+          tags: [{ color: null, id: 'tag-b', name: 'Speaking' }],
+        }),
+      ],
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    expect(screen.getByTestId('grouped-timeblock-list').className).toContain(
+      'overflow-y-auto'
+    );
+
+    fireEvent.change(
+      within(manager).getByPlaceholderText('Search groups, titles, or tags...'),
+      { target: { value: 'Speaking' } }
+    );
+
+    expect(within(manager).queryByText('Group A')).toBeNull();
+    expect(within(manager).getByText('Group B')).toBeTruthy();
   });
 
   it('opens the existing editor from a grouped timeblock row', async () => {
@@ -334,10 +405,209 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
     fireEvent.click(
-      (await screen.findAllByRole('button', { name: 'Edit session' }))[0]!
+      await screen.findByRole('button', { name: 'Edit Group A' })
     );
 
-    expect(await screen.findByText('Editing Group A')).toBeInTheDocument();
+    expect(await screen.findByText('Editing Group A')).toBeTruthy();
+  });
+
+  it('bulk moves visible selected sessions with the recurring scope defaulting once', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+        seriesId: 'series-1',
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+      }),
+    ];
+
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: allSessions,
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+    updateWorkspaceUserGroupSessionMock.mockImplementation(
+      (_wsId: string, sessionId: string, payload: Record<string, string>) =>
+        Promise.resolve({
+          data: {
+            ...allSessions.find((item) => item.id === sessionId)!,
+            endTimezone: payload.endTimezone,
+            endsAt: payload.endsAt,
+            startTimezone: payload.startTimezone,
+            startsAt: payload.startsAt,
+          },
+          message: 'success',
+        })
+    );
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Select visible' })
+    );
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Move selected' })
+    );
+    fireEvent.change(screen.getByLabelText('Move date'), {
+      target: { value: '2026-06-27' },
+    });
+    fireEvent.change(screen.getByLabelText('Start time'), {
+      target: { value: '08:00' },
+    });
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Move 2 sessions' })
+    );
+
+    await waitFor(() =>
+      expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledTimes(2)
+    );
+    expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledWith(
+      'workspace-1',
+      'session-1',
+      expect.objectContaining({
+        endTimezone: 'Asia/Ho_Chi_Minh',
+        endsAt: '2026-06-27T03:00:00.000Z',
+        files: [],
+        scope: 'once',
+        startTimezone: 'Asia/Ho_Chi_Minh',
+        startsAt: '2026-06-27T01:00:00.000Z',
+        tagNames: [],
+      })
+    );
+    expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledWith(
+      'workspace-1',
+      'session-2',
+      expect.objectContaining({
+        endsAt: '2026-06-27T03:00:00.000Z',
+        scope: 'once',
+        startsAt: '2026-06-27T01:00:00.000Z',
+      })
+    );
+  });
+
+  it('bulk moves only checked sessions', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+      }),
+    ];
+
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: allSessions,
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+    updateWorkspaceUserGroupSessionMock.mockImplementation(
+      (_wsId: string, sessionId: string, payload: Record<string, string>) =>
+        Promise.resolve({
+          data: {
+            ...allSessions.find((item) => item.id === sessionId)!,
+            endsAt: payload.endsAt,
+            startsAt: payload.startsAt,
+          },
+          message: 'success',
+        })
+    );
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    fireEvent.click(
+      within(manager).getByRole('checkbox', { name: 'Select Group B' })
+    );
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Move selected' })
+    );
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Move 1 sessions' })
+    );
+
+    await waitFor(() =>
+      expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledTimes(1)
+    );
+    expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledWith(
+      'workspace-1',
+      'session-2',
+      expect.any(Object)
+    );
+  });
+
+  it('sends future scope only when chosen for grouped bulk moves', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+        seriesId: 'series-1',
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+      }),
+    ];
+
+    listWorkspaceUserGroupSessionsMock.mockResolvedValue({
+      data: allSessions,
+      groups: [
+        { id: 'group-1', name: 'Group A' },
+        { id: 'group-2', name: 'Group B' },
+      ],
+      tags: [],
+    });
+    updateWorkspaceUserGroupSessionMock.mockImplementation(
+      (_wsId: string, sessionId: string, payload: Record<string, string>) =>
+        Promise.resolve({
+          data: {
+            ...allSessions.find((item) => item.id === sessionId)!,
+            endsAt: payload.endsAt,
+            startsAt: payload.startsAt,
+          },
+          message: 'success',
+        })
+    );
+
+    renderCalendar({ canChooseGroup: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: '2 sessions' }));
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    fireEvent.click(within(manager).getByRole('button', { name: 'Move all' }));
+    fireEvent.click(
+      within(manager).getByRole('button', {
+        name: 'This and future sessions',
+      })
+    );
+    fireEvent.click(
+      within(manager).getByRole('button', { name: 'Move 2 sessions' })
+    );
+
+    await waitFor(() =>
+      expect(updateWorkspaceUserGroupSessionMock).toHaveBeenCalledTimes(2)
+    );
+    for (const call of updateWorkspaceUserGroupSessionMock.mock.calls) {
+      expect(call[2]).toEqual(expect.objectContaining({ scope: 'future' }));
+    }
   });
 
   it('renders individual events again after filtering to one group', async () => {
@@ -372,15 +642,13 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
 
     expect(
       await screen.findByRole('button', { name: '2 sessions' })
-    ).toBeInTheDocument();
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter first group' }));
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: '2 sessions' })).toBeNull();
-      expect(
-        screen.getByRole('button', { name: 'Group A' })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Group A' })).toBeTruthy();
     });
   });
 
@@ -414,15 +682,13 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
 
     expect(
       await screen.findByRole('button', { name: '2 sessions' })
-    ).toBeInTheDocument();
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter tag A' }));
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: '2 sessions' })).toBeNull();
-      expect(
-        screen.getByRole('button', { name: 'Group A' })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Group A' })).toBeTruthy();
     });
   });
 });
@@ -468,7 +734,9 @@ describe('UserGroupSessionCalendar recurring repair preview', () => {
     renderCalendar();
 
     const openButton = await screen.findByText('Open detached session');
-    await waitFor(() => expect(openButton).not.toBeDisabled());
+    await waitFor(() =>
+      expect((openButton as HTMLButtonElement).disabled).toBe(false)
+    );
     fireEvent.click(openButton);
     fireEvent.click(await screen.findByText('Fix from editor'));
 
@@ -476,7 +744,7 @@ describe('UserGroupSessionCalendar recurring repair preview', () => {
       await screen.findByText(
         'This will move the detached session back to the recurring timeblock and attach it to the series.'
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByText('Move back and attach'));
 
@@ -530,7 +798,9 @@ describe('UserGroupSessionCalendar recurring repair preview', () => {
     renderCalendar();
 
     const openButton = await screen.findByText('Open detached session');
-    await waitFor(() => expect(openButton).not.toBeDisabled());
+    await waitFor(() =>
+      expect((openButton as HTMLButtonElement).disabled).toBe(false)
+    );
     fireEvent.click(openButton);
     fireEvent.click(await screen.findByText('Fix from editor'));
 
@@ -538,7 +808,7 @@ describe('UserGroupSessionCalendar recurring repair preview', () => {
       await screen.findByText(
         'This will add this weekday back to the recurring weekly schedule and attach the session.'
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByText('Add weekday and attach'));
 
@@ -573,18 +843,20 @@ describe('UserGroupSessionCalendar recurring repair preview', () => {
     renderCalendar();
 
     const openButton = await screen.findByText('Open detached session');
-    await waitFor(() => expect(openButton).not.toBeDisabled());
+    await waitFor(() =>
+      expect((openButton as HTMLButtonElement).disabled).toBe(false)
+    );
     fireEvent.click(openButton);
     fireEvent.click(await screen.findByText('Fix from editor'));
 
     expect(
       await screen.findByText('New weekly recurring schedule')
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       await screen.findByText(
         'No matching recurring schedule was found. This will create a weekly recurring schedule from this session and use this session as the first occurrence.'
       )
-    ).toBeInTheDocument();
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByText('Create weekly series'));
 
