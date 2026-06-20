@@ -161,7 +161,8 @@ bun smoke:cloudflare
 ```
 
 The smoke script reports status codes and timings only; it does not print the
-bearer token.
+bearer token. Remote Worker origins must use HTTPS; plaintext `http://` origins
+are accepted only for `localhost` or `127.0.0.1` Wrangler dev smoke checks.
 
 Use `bun check:cloudflare` from the repo root to verify the backend and
 TanStack Wrangler configs before a preview deploy. Keep `BACKEND_INTERNAL_TOKEN`

@@ -12,6 +12,12 @@ const DEFAULT_OUTPUT_DIR = path.join(
   'web-migration'
 );
 const DEFAULT_TIMEOUT_MS = 10_000;
+const LOCAL_HTTP_HOSTNAMES = new Set([
+  '127.0.0.1',
+  '::1',
+  '[::1]',
+  'localhost',
+]);
 
 function parsePositiveInteger(value, fallback) {
   const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -29,11 +35,32 @@ function normalizeOrigin(value, name) {
     ? trimmed
     : `https://${trimmed}`;
 
+  let parsedUrl;
+
   try {
-    return new URL(normalized).origin;
+    parsedUrl = new URL(normalized);
   } catch {
     throw new Error(`${name} must be a valid HTTP(S) origin.`);
   }
+
+  if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+    throw new Error(`${name} must be an HTTP(S) origin.`);
+  }
+
+  if (parsedUrl.username || parsedUrl.password) {
+    throw new Error(`${name} must not include credentials.`);
+  }
+
+  if (
+    parsedUrl.protocol === 'http:' &&
+    !LOCAL_HTTP_HOSTNAMES.has(parsedUrl.hostname.toLowerCase())
+  ) {
+    throw new Error(
+      `${name} must use HTTPS unless it targets localhost Wrangler dev.`
+    );
+  }
+
+  return parsedUrl.origin;
 }
 
 function parseArgs(argv = process.argv.slice(2), env = process.env) {

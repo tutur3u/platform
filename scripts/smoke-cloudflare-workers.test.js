@@ -23,6 +23,47 @@ test('parseArgs reads Cloudflare smoke inputs from env', () => {
   assert.equal(args.token, 'token');
 });
 
+test('parseArgs allows plaintext only for local Wrangler dev origins', () => {
+  const args = parseArgs([], {
+    BACKEND_INTERNAL_TOKEN: 'token',
+    BACKEND_WORKER_ORIGIN: 'http://localhost:8780',
+    TANSTACK_WEB_WORKER_ORIGIN: 'http://127.0.0.1:8784/path',
+  });
+
+  assert.equal(args.backendOrigin, 'http://localhost:8780');
+  assert.equal(args.tanstackOrigin, 'http://127.0.0.1:8784');
+  assert.throws(
+    () =>
+      parseArgs([], {
+        BACKEND_INTERNAL_TOKEN: 'token',
+        BACKEND_WORKER_ORIGIN: 'http://backend.example.workers.dev',
+        TANSTACK_WEB_WORKER_ORIGIN: 'https://tanstack.example.workers.dev',
+      }),
+    /must use HTTPS unless it targets localhost Wrangler dev/u
+  );
+});
+
+test('parseArgs rejects non-HTTP and credentialed Worker origins', () => {
+  assert.throws(
+    () =>
+      parseArgs([], {
+        BACKEND_INTERNAL_TOKEN: 'token',
+        BACKEND_WORKER_ORIGIN: 'ftp://backend.example.workers.dev',
+        TANSTACK_WEB_WORKER_ORIGIN: 'https://tanstack.example.workers.dev',
+      }),
+    /must be an HTTP\(S\) origin/u
+  );
+  assert.throws(
+    () =>
+      parseArgs([], {
+        BACKEND_INTERNAL_TOKEN: 'token',
+        BACKEND_WORKER_ORIGIN: 'https://user:pass@backend.example.workers.dev',
+        TANSTACK_WEB_WORKER_ORIGIN: 'https://tanstack.example.workers.dev',
+      }),
+    /must not include credentials/u
+  );
+});
+
 test('parseArgs accepts Cloudflare smoke report output paths', () => {
   const args = parseArgs(
     ['--output', 'tmp/benchmarks/web-migration/smoke/report.json'],
