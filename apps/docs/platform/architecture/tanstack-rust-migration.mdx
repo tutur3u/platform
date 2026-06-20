@@ -222,6 +222,16 @@ Regenerate it after adding or removing legacy routes:
 bun migration:tanstack:manifest
 ```
 
+Regenerate the TanStack Router route tree after adding or removing
+`apps/tanstack-web/src/routes/**` files:
+
+```bash
+bun migration:tanstack:routes
+```
+
+This command preserves the TanStack Start `Register` augmentation footer that
+`bun check:cloudflare` validates for the Cloudflare-compatible Start runtime.
+
 Route ownership status is preserved through
 `apps/tanstack-web/migration/route-overrides.json`. Add an override when a
 route becomes `migrated` or receives an accepted removal decision; do not edit
