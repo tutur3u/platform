@@ -45,6 +45,31 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles the disabled PUT migration endpoint with the legacy dev-mode guard and 410 MIGRATION_DISABLED response."
     },
+    "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/app/api/workspaces/[wsId]/products/categories/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
+    },
+    "api:/api/workspaces/:wsId/products/units/migrate:apps/web/src/app/api/workspaces/[wsId]/products/units/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product unit migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private inventory data write is intentionally not preserved for Cloudflare cutover."
+    },
+    "api:/api/workspaces/:wsId/transactions/categories/migrate:apps/web/src/app/api/workspaces/[wsId]/transactions/categories/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT transaction category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
+    },
+    "api:/api/workspaces/:wsId/users/indicators/migrate:apps/web/src/app/api/workspaces/[wsId]/users/indicators/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT user indicator migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
+    },
+    "api:/api/workspaces/:wsId/wallets/transactions/migrate:apps/web/src/app/api/workspaces/[wsId]/wallets/transactions/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet transaction migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy finance data write is intentionally not preserved for Cloudflare cutover."
+    },
     "api:/api/v1/infrastructure/languages:apps/web/src/app/api/v1/infrastructure/languages/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

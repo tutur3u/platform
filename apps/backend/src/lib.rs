@@ -68,6 +68,7 @@ const COOKIE_DELETE_VALUE: &str = "; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970
 const GROUPED_SCORE_NAMES_MIGRATION_PATH: &str =
     "/api/v1/infrastructure/migrate/grouped-score-names";
 const GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE: &str = "Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.";
+const OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE: &str = "This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.";
 const USER_FIELD_TYPES_PATH: &str = "/api/v1/infrastructure/users/fields/types";
 const AUTH_CORS_PREFLIGHT_PATHS: [&str; 8] = [
     "/api/v1/auth/password-login",
@@ -557,6 +558,12 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
             grouped_score_names_migration_response(config)
         }
         (method, GROUPED_SCORE_NAMES_MIGRATION_PATH) => method_not_allowed(method, "PUT"),
+        ("PUT", path) if is_obsolete_workspace_migration_path(path) => {
+            obsolete_workspace_migration_response(config)
+        }
+        (method, path) if is_obsolete_workspace_migration_path(path) => {
+            method_not_allowed(method, "PUT")
+        }
         ("GET", USER_FIELD_TYPES_PATH) => user_field_types_response(),
         (method, USER_FIELD_TYPES_PATH) => method_not_allowed(method, "GET"),
         ("GET", contact::CURRENT_USER_PROFILE_PATH) => {
@@ -1061,6 +1068,20 @@ fn grouped_score_names_migration_response(config: &BackendConfig) -> BackendResp
         410,
         json!({
             "message": GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE,
+            "error": "MIGRATION_DISABLED",
+        }),
+    )
+}
+
+fn obsolete_workspace_migration_response(config: &BackendConfig) -> BackendResponse {
+    if let Some(response) = require_infrastructure_migration_dev_mode(config) {
+        return response;
+    }
+
+    json_response(
+        410,
+        json!({
+            "message": OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE,
             "error": "MIGRATION_DISABLED",
         }),
     )
@@ -1584,6 +1605,28 @@ fn is_workspace_slides_collection_path(path: &str) -> bool {
         && segments[2] == "workspaces"
         && segments[4] == "slides"
         && !segments[3].is_empty()
+}
+
+fn is_obsolete_workspace_migration_path(path: &str) -> bool {
+    let segments = path_segments(path);
+
+    if segments.len() != 6
+        || segments[0] != "api"
+        || segments[1] != "workspaces"
+        || segments[2].is_empty()
+        || segments[5] != "migrate"
+    {
+        return false;
+    }
+
+    matches!(
+        (segments[3], segments[4]),
+        ("products", "categories")
+            | ("products", "units")
+            | ("transactions", "categories")
+            | ("users", "indicators")
+            | ("wallets", "transactions")
+    )
 }
 
 fn is_workspace_slide_item_path(path: &str) -> bool {
@@ -3653,6 +3696,57 @@ mod tests {
         let response = route_request(
             &BackendConfig::new("development", "backend"),
             request("GET", GROUPED_SCORE_NAMES_MIGRATION_PATH),
+        );
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("PUT"));
+        assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[test]
+    fn obsolete_workspace_migration_routes_are_disabled_in_dev() {
+        for path in [
+            "/api/workspaces/acme/products/categories/migrate",
+            "/api/workspaces/acme/products/units/migrate",
+            "/api/workspaces/acme/transactions/categories/migrate",
+            "/api/workspaces/acme/users/indicators/migrate",
+            "/api/workspaces/acme/wallets/transactions/migrate",
+        ] {
+            let response = route_request(
+                &BackendConfig::new("development", "backend"),
+                request("PUT", path),
+            );
+
+            assert_eq!(response.status, 410, "{path}");
+            assert_eq!(response.content_type, Some(APPLICATION_JSON));
+            assert_eq!(response.body["error"], "MIGRATION_DISABLED");
+            assert_eq!(
+                response.body["message"],
+                OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE
+            );
+        }
+    }
+
+    #[test]
+    fn obsolete_workspace_migration_routes_require_dev_mode() {
+        let response = route_request(
+            &BackendConfig::new("production", "backend"),
+            request("PUT", "/api/workspaces/acme/products/categories/migrate"),
+        );
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["error"], "Forbidden");
+        assert_eq!(
+            response.body["message"],
+            "Infrastructure migration routes are only accessible in development mode"
+        );
+    }
+
+    #[test]
+    fn obsolete_workspace_migration_routes_reject_unsupported_methods() {
+        let response = route_request(
+            &BackendConfig::new("development", "backend"),
+            request("GET", "/api/workspaces/acme/products/categories/migrate"),
         );
 
         assert_eq!(response.status, 405);

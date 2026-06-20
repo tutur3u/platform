@@ -775,6 +775,171 @@ paths:
                 type: string
                 examples:
                   - PUT
+  /api/workspaces/{wsId}/products/categories/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace product category migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/products/categories/migrate/route.ts. The legacy Supabase write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
+  /api/workspaces/{wsId}/products/units/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace product unit migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/products/units/migrate/route.ts. The legacy private inventory write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
+  /api/workspaces/{wsId}/transactions/categories/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace transaction category migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/transactions/categories/migrate/route.ts. The legacy Supabase write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
+  /api/workspaces/{wsId}/users/indicators/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace user indicator migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/users/indicators/migrate/route.ts. The legacy Supabase write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
+  /api/workspaces/{wsId}/wallets/transactions/migrate:
+    put:
+      deprecated: true
+      summary: Disabled workspace wallet transaction migration
+      description: Terminal decommission replacement for apps/web/src/app/api/workspaces/[wsId]/wallets/transactions/migrate/route.ts. The legacy finance write migration is intentionally unavailable in the Rust backend and returns 410 in development/local E2E only.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier or alias.
+      responses:
+        "410":
+          description: Workspace migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObsoleteWorkspaceMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
   /api/v1/infrastructure/users/fields/types:
     get:
       summary: Legacy-compatible user field type list
@@ -1719,6 +1884,20 @@ components:
           type: string
           examples:
             - Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.
+    ObsoleteWorkspaceMigrationDisabled:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - MIGRATION_DISABLED
+        message:
+          type: string
+          examples:
+            - This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.
     InfrastructureMigrationForbidden:
       type: object
       required:
