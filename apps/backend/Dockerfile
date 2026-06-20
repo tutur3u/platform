@@ -1,19 +1,19 @@
 # syntax=docker/dockerfile:1.7
 
-FROM golang:1.26.3-alpine AS builder
+FROM rust:1-alpine AS builder
 
 WORKDIR /src
 
-COPY apps/backend/go.mod ./apps/backend/go.mod
+RUN apk add --no-cache musl-dev
 
-WORKDIR /src/apps/backend
-RUN go mod download
+COPY apps/backend/Cargo.toml apps/backend/Cargo.lock apps/backend/build.rs ./apps/backend/
+COPY apps/backend/src ./apps/backend/src
+COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migration/route-manifest.json
 
-WORKDIR /src
-COPY apps/backend ./apps/backend
-
-WORKDIR /src/apps/backend
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/backend ./cmd/backend
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/src/apps/backend/target \
+    cd apps/backend && cargo build --release --locked --features native --bin backend && \
+    cp target/release/backend /out/backend
 
 FROM gcr.io/distroless/static-debian12:nonroot AS runner
 
@@ -22,6 +22,7 @@ WORKDIR /app
 COPY --from=builder /out/backend /app/backend
 
 ENV BACKEND_ENV=production
+ENV BACKEND_DEPLOYMENT_TARGET=container
 ENV PORT=7820
 
 EXPOSE 7820

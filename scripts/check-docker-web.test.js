@@ -34,6 +34,7 @@ const {
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   ROOT_DIR,
   SUPERMEMORY_DOCKERFILE_PATH,
+  TANSTACK_WEB_DOCKERFILE_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -58,6 +59,7 @@ const {
   validateMeetRealtimeDockerfile,
   validateNativeWebRunnerDockerfile,
   validateSupermemoryDockerfile,
+  validateTanstackWebDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -134,6 +136,24 @@ test('validateBackendDockerfile accepts the current backend Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(BACKEND_DOCKERFILE_PATH, 'utf8');
 
   assert.deepEqual(validateBackendDockerfile(dockerfileContent), []);
+});
+
+test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(
+    TANSTACK_WEB_DOCKERFILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateTanstackWebDockerfile(dockerfileContent), []);
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web',
+        'bun install --frozen-lockfile'
+      )
+    ).join('\n'),
+    /@tuturuuu\/tanstack-web/u
+  );
 });
 
 test('validateDockerignore reports generated app artifacts in the context', () => {
@@ -589,7 +609,7 @@ test('validateDockerCompose reports public local Redis port mappings', () => {
 test('validateDockerCompose reports missing bind mounts', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
-    .replace('      - .:/workspace\n', '');
+    .replaceAll('      - .:/workspace\n', '');
 
   const errors = validateDockerCompose(composeContent);
 
@@ -599,7 +619,7 @@ test('validateDockerCompose reports missing bind mounts', () => {
 test('validateDockerCompose reports missing package-local artifact isolation', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
-    .replace(
+    .replaceAll(
       '      - platform-web-ui-node_modules:/workspace/packages/ui/node_modules\n',
       ''
     );
@@ -1078,6 +1098,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'supermemory'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -1140,6 +1163,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'supermemory', 'Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'tanstack-web', 'Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

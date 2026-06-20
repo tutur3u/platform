@@ -14,6 +14,12 @@ const BACKEND_DOCKERFILE_PATH = path.join(
   'Dockerfile'
 );
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
+const TANSTACK_WEB_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'Dockerfile'
+);
 const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
 const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -659,6 +665,17 @@ function validateDockerCompose(
       '}',
     '      - PORT=7820',
     '      test: ["CMD", "/app/backend", "healthcheck"]',
+    '  tanstack-web:',
+    '      dockerfile: apps/tanstack-web/Dockerfile\n      target: dev',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - BACKEND_PUBLIC_ORIGIN=${' +
+      'BACKEND_PUBLIC_ORIGIN:-http://backend:7820' +
+      '}',
+    '      - PORT=7824',
+    '      - platform-tanstack-web-node_modules:/workspace/apps/tanstack-web/node_modules',
+    '  platform-tanstack-web-node_modules:',
     '  chat-realtime:',
     '      dockerfile: apps/chat-realtime/Dockerfile',
     'http://127.0.0.1:7817/health',
@@ -734,6 +751,10 @@ function validateDockerProdCompose(composeContent) {
     '  web:',
     '  web-blue:',
     '  web-green:',
+    'x-tanstack-web-service: &tanstack-web-service',
+    '  tanstack-web:',
+    '  tanstack-web-blue:',
+    '  tanstack-web-green:',
     '  buildkit:',
     '  web-blue-green-watcher:',
     '  web-cron-runner:',
@@ -757,10 +778,14 @@ function validateDockerProdCompose(composeContent) {
     '      dockerfile: Dockerfile.markitdown',
     '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
     '      dockerfile: apps/backend/Dockerfile',
+    '    dockerfile: apps/tanstack-web/Dockerfile',
     '      dockerfile: apps/chat-realtime/Dockerfile',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/meet-realtime/Dockerfile',
     '      dockerfile: apps/supermemory/Dockerfile',
+    '    - BACKEND_PUBLIC_ORIGIN=$' +
+      '{BACKEND_PUBLIC_ORIGIN:-http://backend:7820}',
+    '    - PORT=7824',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
     '    container_name: ' +
@@ -877,6 +902,10 @@ function validateDockerProdCompose(composeContent) {
     '      required: false',
     '    - BACKEND_INTERNAL_TOKEN',
     '    - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
+    'x-tanstack-web-service: &tanstack-web-service\n  build:',
+    '  environment:\n    - BACKEND_INTERNAL_TOKEN\n    - BACKEND_INTERNAL_URL=${' +
       'BACKEND_INTERNAL_URL:-http://backend:7820' +
       '}',
     '    - DISCORD_APP_DEPLOYMENT_URL',
@@ -1094,7 +1123,10 @@ function validateDockerBakeFile(bakeContent) {
   const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
+    'group "blue-green-tanstack-web" {\n  targets = ["tanstack-web-blue", "tanstack-web-green"]\n}',
     'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-cron-runner"]\n}',
+    `target "tanstack-web-blue" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-tanstack-web-blue"]\n}`,
+    `target "tanstack-web-green" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-tanstack-web-green"]\n}`,
     `target "backend" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-backend"]\n}`,
     `target "chat-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-chat-realtime"]\n}`,
     `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
@@ -1115,11 +1147,14 @@ function validateDockerBakeFile(bakeContent) {
 function validateBackendDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM golang:1.26.3-alpine AS builder',
-    'COPY apps/backend/go.mod ./apps/backend/go.mod',
-    'RUN go mod download',
-    'RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/backend ./cmd/backend',
+    'FROM rust:1-alpine AS builder',
+    'RUN apk add --no-cache musl-dev',
+    'COPY apps/backend/Cargo.toml apps/backend/Cargo.lock apps/backend/build.rs ./apps/backend/',
+    'COPY apps/backend/src ./apps/backend/src',
+    'COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migration/route-manifest.json',
+    'cargo build --release --locked --features native --bin backend',
     'FROM gcr.io/distroless/static-debian12:nonroot AS runner',
+    'ENV BACKEND_DEPLOYMENT_TARGET=container',
     'HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/app/backend", "healthcheck"]',
     'USER nonroot:nonroot',
     'CMD ["/app/backend"]',
@@ -1129,6 +1164,36 @@ function validateBackendDockerfile(dockerfileContent) {
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/backend/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateTanstackWebDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'FROM oven/bun:1.3.14 AS deps',
+    'FROM oven/bun:1.3.14 AS dev',
+    'FROM oven/bun:1.3.14 AS builder',
+    'FROM oven/bun:1.3.14-alpine AS runner',
+    'COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json',
+    'COPY packages/internal-api/package.json ./packages/internal-api/package.json',
+    'COPY packages/ui/package.json ./packages/ui/package.json',
+    'COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
+    ),
+    'bun run --filter @tuturuuu/tanstack-web build',
+    'ENV PORT=7824',
+    'CMD ["bun", ".output/server/index.mjs"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/tanstack-web/Dockerfile is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -1535,6 +1600,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'backend', 'Dockerfile'),
     'utf8'
   ),
+  tanstackWebDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'tanstack-web', 'Dockerfile'),
+    'utf8'
+  ),
   composeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-compose.web.yml'),
     'utf8'
@@ -1614,6 +1683,7 @@ function checkDockerWebSetup({
       workspacePackageJsonPaths,
     }),
     ...validateBackendDockerfile(backendDockerfileContent),
+    ...validateTanstackWebDockerfile(tanstackWebDockerfileContent),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateDockerProdCompose(prodComposeContent),
     ...validateDockerBakeFile(dockerBakeContent),
@@ -1671,6 +1741,7 @@ if (require.main === module) {
 module.exports = {
   ROOT_DIR,
   BACKEND_DOCKERFILE_PATH,
+  TANSTACK_WEB_DOCKERFILE_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
@@ -1694,6 +1765,7 @@ module.exports = {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateBackendDockerfile,
+  validateTanstackWebDockerfile,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
   validateDockerBakeFile,

@@ -65,6 +65,10 @@ const DEV_TARGETS = Object.freeze({
     apps: ['storefront', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
   },
+  'tanstack-web': {
+    apps: ['tanstack-web'],
+    shared: ['@tuturuuu/types', '@tuturuuu/internal-api', '@tuturuuu/ui'],
+  },
   learn: {
     apps: ['learn', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
@@ -146,7 +150,9 @@ function parseDefaultPort(devAppScript) {
 
   const match =
     devAppScript.match(/(?:^|\s)-p\s+\$\{PORT:-(\d+)\}/u) ??
-    devAppScript.match(/(?:^|\s)-p\s+(\d+)/u);
+    devAppScript.match(/(?:^|\s)-p\s+(\d+)/u) ??
+    devAppScript.match(/(?:^|\s)--port\s+\$\{PORT:-(\d+)\}/u) ??
+    devAppScript.match(/(?:^|\s)--port\s+(\d+)/u);
   const parsed = match?.[1] ? Number.parseInt(match[1], 10) : null;
 
   return parsed && Number.isFinite(parsed) ? parsed : null;

@@ -1,0 +1,1302 @@
+openapi: 3.1.0
+info:
+  title: Tuturuuu Rust Backend API
+  version: 0.1.0
+  description: >
+    API contract for the dedicated Rust backend used by the TanStack Start
+    migration and future Cloudflare Workers deployment. JSON responses include
+    Content-Security-Policy, Referrer-Policy, X-Content-Type-Options, and
+    X-Frame-Options security headers in both native and Worker runtimes.
+servers:
+  - url: http://localhost:7820
+    description: Local backend runtime
+paths:
+  /.well-known/{slug}:
+    get:
+      summary: Blocked well-known probe path
+      description: Migrated replacement for apps/web/src/app/.well-known/[...slug]/route.ts. Returns the same cacheable empty 404 response used to suppress unsupported browser/tooling probes.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Well-known path segment or catch-all slug.
+      responses:
+        "404":
+          description: Empty cacheable not-found response.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - public, max-age=300, must-revalidate
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, HEAD
+    head:
+      summary: Blocked well-known probe path headers
+      description: Header-only variant of the migrated cacheable empty 404 well-known response.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Well-known path segment or catch-all slug.
+      responses:
+        "404":
+          description: Empty cacheable not-found response.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - public, max-age=300, must-revalidate
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, HEAD
+  /~recover-browser-state:
+    get:
+      summary: Legacy browser-state recovery confirmation page
+      description: Migrated replacement for apps/web/src/app/~recover-browser-state/route.ts. Returns the same no-store HTML form used to clear cached browser state and recover from broken client sessions.
+      responses:
+        "200":
+          description: Browser-state recovery confirmation HTML.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      summary: Legacy browser-state recovery reset action
+      description: Requires same-origin confirmation through Origin or Referer, clears browser/site data and Supabase auth cookies, then redirects to login with browserStateReset=1.
+      responses:
+        "307":
+          description: Same-origin recovery request accepted and redirected to login.
+          headers:
+            Location:
+              schema:
+                type: string
+                examples:
+                  - https://tuturuuu.localhost/login?browserStateReset=1
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+            Clear-Site-Data:
+              schema:
+                type: string
+                examples:
+                  - '"cache", "cookies", "storage", "executionContexts"'
+            Set-Cookie:
+              schema:
+                type: array
+                items:
+                  type: string
+                examples:
+                  - sb-project-ref-auth-token=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+        "403":
+          description: Request did not include same-origin confirmation.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrowserStateRecoveryForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
+  /api/health:
+    get:
+      summary: Legacy-compatible platform health probe
+      description: Migrated replacement for apps/web/src/app/api/health/route.ts. Returns the same body and no-store cache behavior through the Rust backend.
+      responses:
+        "200":
+          description: Legacy-compatible health response.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+            X-Content-Type-Options:
+              schema:
+                type: string
+                examples:
+                  - nosniff
+            Content-Security-Policy:
+              schema:
+                type: string
+                examples:
+                  - default-src 'none'; frame-ancestors 'none'; base-uri 'none'
+            Referrer-Policy:
+              schema:
+                type: string
+                examples:
+                  - no-referrer
+            X-Frame-Options:
+              schema:
+                type: string
+                examples:
+                  - DENY
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegacyHealth"
+        "405":
+          description: Unsupported HTTP method.
+  /api/v1/calendar/mock:
+    get:
+      summary: Legacy-compatible mock calendar events
+      description: Migrated replacement for apps/web/src/app/api/v1/calendar/mock/route.ts. Returns the same deterministic mock calendar payload through the Rust backend.
+      responses:
+        "200":
+          description: Deterministic mock calendar events.
+          headers:
+            X-Content-Type-Options:
+              schema:
+                type: string
+                examples:
+                  - nosniff
+            Content-Security-Policy:
+              schema:
+                type: string
+                examples:
+                  - default-src 'none'; frame-ancestors 'none'; base-uri 'none'
+            Referrer-Policy:
+              schema:
+                type: string
+                examples:
+                  - no-referrer
+            X-Frame-Options:
+              schema:
+                type: string
+                examples:
+                  - DENY
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarMockResponse"
+        "405":
+          description: Unsupported HTTP method.
+  /api/v1/infrastructure/migrate/grouped-score-names:
+    put:
+      summary: Disabled grouped score names infrastructure migration
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts. The legacy migration is no longer available because the backing user_group_indicators table was removed; the Rust route preserves the development-only guard and disabled 410 response.
+      responses:
+        "410":
+          description: Migration endpoint is intentionally disabled.
+          headers:
+            X-Content-Type-Options:
+              schema:
+                type: string
+                examples:
+                  - nosniff
+            Content-Security-Policy:
+              schema:
+                type: string
+                examples:
+                  - default-src 'none'; frame-ancestors 'none'; base-uri 'none'
+            Referrer-Policy:
+              schema:
+                type: string
+                examples:
+                  - no-referrer
+            X-Frame-Options:
+              schema:
+                type: string
+                examples:
+                  - DENY
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupedScoreNamesMigrationDisabled"
+        "403":
+          description: Infrastructure migration routes are unavailable outside development mode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureMigrationForbidden"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT
+  /api/v1/infrastructure/users/fields/types:
+    get:
+      summary: Legacy-compatible user field type list
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/users/fields/types/route.ts. The effective legacy behavior is a deterministic static list, so the Rust route returns the same ordered payload without opening a Supabase admin client.
+      responses:
+        "200":
+          description: Ordered user field type identifiers.
+          headers:
+            X-Content-Type-Options:
+              schema:
+                type: string
+                examples:
+                  - nosniff
+            Content-Security-Policy:
+              schema:
+                type: string
+                examples:
+                  - default-src 'none'; frame-ancestors 'none'; base-uri 'none'
+            Referrer-Policy:
+              schema:
+                type: string
+                examples:
+                  - no-referrer
+            X-Frame-Options:
+              schema:
+                type: string
+                examples:
+                  - DENY
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserFieldTypes"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/infrastructure/languages:
+    post:
+      summary: Set locale preference cookie
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/languages/route.ts. Preserves legacy validation responses and sets NEXT_LOCALE for supported locales.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - locale
+              properties:
+                locale:
+                  type: string
+                  enum:
+                    - en
+                    - vi
+      responses:
+        "200":
+          description: Locale cookie was set.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                examples:
+                  - NEXT_LOCALE=en; Path=/
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceSuccess"
+        "500":
+          description: Legacy validation error for missing or unsupported locale.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceValidationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST, DELETE
+    delete:
+      summary: Clear locale preference cookie
+      responses:
+        "200":
+          description: Locale cookie was cleared.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                examples:
+                  - NEXT_LOCALE=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceSuccess"
+        "405":
+          description: Unsupported HTTP method.
+  /api/v1/infrastructure/sidebar:
+    post:
+      summary: Set sidebar collapsed preference cookie
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/sidebar/route.ts. Preserves the legacy permissive JSON value behavior for sidebar-collapsed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - collapsed
+              properties:
+                collapsed:
+                  description: Raw JSON value stored as the sidebar-collapsed cookie value.
+      responses:
+        "200":
+          description: Sidebar collapsed cookie was set.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                examples:
+                  - sidebar-collapsed=false; Path=/
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceSuccess"
+        "500":
+          description: Legacy validation error when collapsed is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceValidationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST, DELETE
+    delete:
+      summary: Clear sidebar collapsed preference cookie
+      responses:
+        "200":
+          description: Sidebar collapsed cookie was cleared.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                examples:
+                  - sidebar-collapsed=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceSuccess"
+        "405":
+          description: Unsupported HTTP method.
+  /api/v1/infrastructure/sidebar/sizes:
+    post:
+      summary: Set sidebar size preference cookies
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/sidebar/sizes/route.ts. Preserves legacy validation and writes sidebar-size plus main-content-size cookies.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sidebar
+                - main
+              properties:
+                sidebar:
+                  description: Raw JSON value stored as the sidebar-size cookie value.
+                main:
+                  description: Raw JSON value stored as the main-content-size cookie value.
+      responses:
+        "200":
+          description: Sidebar size cookies were set.
+          headers:
+            Set-Cookie:
+              schema:
+                type: array
+                items:
+                  type: string
+                examples:
+                  - sidebar-size=28; Path=/
+                  - main-content-size=72; Path=/
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceSuccess"
+        "500":
+          description: Legacy validation error when either size is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceValidationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST, DELETE
+    delete:
+      summary: Clear sidebar size preference cookie
+      description: Preserves the legacy DELETE behavior, which clears sidebar-size only.
+      responses:
+        "200":
+          description: Sidebar size cookie was cleared.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                examples:
+                  - sidebar-size=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreferenceSuccess"
+        "405":
+          description: Unsupported HTTP method.
+  /api/v1/workspaces/{wsId}/user-groups/{groupId}/group-checks/{postId}/email:
+    post:
+      summary: Removed direct group-check email sender
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts. Direct post email sending was removed; emails are sent by the system queue after approval.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "410":
+          description: Direct email sending endpoint is intentionally removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisabledGroupCheckEmail"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST
+  /api/v1/workspaces/{wsId}/slides:
+    get:
+      summary: Workspace slides collection placeholder
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/slides/route.ts. Preserves the current placeholder contract while protected slide data access remains unimplemented.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Slides collection API is not implemented.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotImplemented"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
+    post:
+      summary: Workspace slides create placeholder
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Slides create API is not implemented.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotImplemented"
+        "405":
+          description: Unsupported HTTP method.
+  /api/v1/workspaces/{wsId}/slides/{slideId}:
+    put:
+      summary: Workspace slide update placeholder
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/slides/[slideId]/route.ts. Preserves the current placeholder contract while protected slide data access remains unimplemented.
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: slideId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Slide update API is not implemented.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotImplemented"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PUT, DELETE
+    delete:
+      summary: Workspace slide delete placeholder
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: slideId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Slide delete API is not implemented.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotImplemented"
+        "405":
+          description: Unsupported HTTP method.
+  /healthz:
+    get:
+      summary: Backend liveness probe
+      responses:
+        "200":
+          description: Backend is running.
+  /readyz:
+    get:
+      summary: Backend readiness probe
+      responses:
+        "200":
+          description: Backend is ready to accept protected internal work.
+        "503":
+          description: Backend is missing required internal configuration.
+  /api/migration/status:
+    get:
+      summary: TanStack migration backend status
+      description: Returns the Rust-owned status contract consumed by apps/tanstack-web. Requires the internal backend bearer token because the response discloses deployment and route-ownership metadata.
+      security:
+        - BackendInternalToken: []
+      responses:
+        "200":
+          description: Migration backend status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationStatus"
+        "401":
+          description: Missing or invalid backend internal bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalAuthorizationError"
+        "503":
+          description: Backend internal token is not configured.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalConfigurationError"
+        "405":
+          description: Unsupported HTTP method.
+  /api/migration/manifest:
+    get:
+      summary: Checked TanStack route migration manifest
+      description: Returns the checked route inventory from apps/tanstack-web/migration/route-manifest.json. Requires the internal backend bearer token because entries include legacy source file paths.
+      security:
+        - BackendInternalToken: []
+      responses:
+        "200":
+          description: Route migration manifest.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteMigrationManifest"
+        "401":
+          description: Missing or invalid backend internal bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalAuthorizationError"
+        "503":
+          description: Backend internal token is not configured.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalConfigurationError"
+        "405":
+          description: Unsupported HTTP method.
+  /api/migration/cutover-gates:
+    get:
+      summary: TanStack and Rust cutover gates
+      description: Returns backend-owned cutover gates derived from the route migration manifest plus required external evidence placeholders. Requires the internal backend bearer token.
+      security:
+        - BackendInternalToken: []
+      responses:
+        "200":
+          description: Cutover gate status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationCutoverGates"
+        "401":
+          description: Missing or invalid backend internal bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalAuthorizationError"
+        "503":
+          description: Backend internal token is not configured.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalConfigurationError"
+        "405":
+          description: Unsupported HTTP method.
+  /api/migration/progress:
+    get:
+      summary: TanStack and Rust route ownership progress
+      description: Returns migration progress grouped by target owner and route kind, with representative remaining legacy artifacts. Requires the internal backend bearer token because entries include legacy source file paths.
+      security:
+        - BackendInternalToken: []
+      responses:
+        "200":
+          description: Route ownership migration progress.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationProgress"
+        "401":
+          description: Missing or invalid backend internal bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalAuthorizationError"
+        "503":
+          description: Backend internal token is not configured.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalConfigurationError"
+        "405":
+          description: Unsupported HTTP method.
+components:
+  securitySchemes:
+    BackendInternalToken:
+      type: http
+      scheme: bearer
+      description: Server-only BACKEND_INTERNAL_TOKEN configured through Cloudflare secrets or local environment variables.
+  schemas:
+    LegacyHealth:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+    CalendarMockEvent:
+      type: object
+      required:
+        - id
+        - title
+        - start_at
+        - end_at
+      properties:
+        id:
+          type: integer
+          examples:
+            - 1
+        title:
+          type: string
+          examples:
+            - Event 1
+        start_at:
+          type: string
+          format: date-time
+          examples:
+            - "2023-10-01T10:00:00Z"
+        end_at:
+          type: string
+          format: date-time
+          examples:
+            - "2023-10-01T11:00:00Z"
+    CalendarMockResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarMockEvent"
+    UserFieldType:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          enum:
+            - TEXT
+            - NUMBER
+            - BOOLEAN
+            - DATE
+            - DATETIME
+    UserFieldTypes:
+      type: array
+      minItems: 5
+      maxItems: 5
+      items:
+        $ref: "#/components/schemas/UserFieldType"
+    BrowserStateRecoveryForbidden:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Browser state reset requires same-origin confirmation
+    GroupedScoreNamesMigrationDisabled:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - MIGRATION_DISABLED
+        message:
+          type: string
+          examples:
+            - Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.
+    InfrastructureMigrationForbidden:
+      type: object
+      required:
+        - error
+        - hint
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - Forbidden
+        hint:
+          type: string
+          examples:
+            - These routes are intended for internal data migration and should not be used in production.
+        message:
+          type: string
+          examples:
+            - Infrastructure migration routes are only accessible in development mode
+    InternalAuthorizationError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - unauthorized
+    InternalConfigurationError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - backend internal token is not configured
+    PreferenceSuccess:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum:
+            - Success
+    PreferenceValidationError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Locale is required
+            - Locale is not supported
+            - Collapse is required
+            - Sizes is required
+    NotImplemented:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum:
+            - Not implemented
+    DisabledGroupCheckEmail:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          enum:
+            - Direct post email sending has been removed. Emails are now sent by the system queue after approval.
+    RouteManifestSummary:
+      type: object
+      required:
+        - apiRoutes
+        - cronRoutes
+        - layouts
+        - methodCounts
+        - pages
+        - routeHandlers
+        - total
+      properties:
+        apiRoutes:
+          type: integer
+          minimum: 0
+        cronRoutes:
+          type: integer
+          minimum: 0
+        layouts:
+          type: integer
+          minimum: 0
+        methodCounts:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          properties:
+            GET:
+              type: integer
+              minimum: 0
+            HEAD:
+              type: integer
+              minimum: 0
+            POST:
+              type: integer
+              minimum: 0
+            PUT:
+              type: integer
+              minimum: 0
+            PATCH:
+              type: integer
+              minimum: 0
+            DELETE:
+              type: integer
+              minimum: 0
+            OPTIONS:
+              type: integer
+              minimum: 0
+        pages:
+          type: integer
+          minimum: 0
+        routeHandlers:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 0
+    RouteMigrationManifest:
+      type: object
+      required:
+        - generatedBy
+        - progress
+        - routes
+        - summary
+      properties:
+        generatedBy:
+          type: string
+        progress:
+          $ref: "#/components/schemas/RouteManifestProgress"
+        routes:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - kind
+              - methods
+              - routePath
+              - sourceFile
+              - status
+              - targetOwner
+            properties:
+              id:
+                type: string
+              kind:
+                type: string
+              methods:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    - GET
+                    - HEAD
+                    - POST
+                    - PUT
+                    - PATCH
+                    - DELETE
+                    - OPTIONS
+              routePath:
+                type: string
+              sourceFile:
+                type: string
+              status:
+                type: string
+                enum:
+                  - legacy-next
+                  - migrated
+                  - accepted-removal
+              targetOwner:
+                type: string
+                enum:
+                  - rust-backend
+                  - tanstack-start
+        summary:
+          $ref: "#/components/schemas/RouteManifestSummary"
+    RouteManifestProgressBucket:
+      type: object
+      required:
+        - acceptedRemoval
+        - key
+        - label
+        - legacyNext
+        - migrated
+        - percentComplete
+        - remaining
+        - terminal
+        - total
+        - unknownStatus
+      properties:
+        acceptedRemoval:
+          type: integer
+          minimum: 0
+        key:
+          type: string
+        label:
+          type: string
+        legacyNext:
+          type: integer
+          minimum: 0
+        migrated:
+          type: integer
+          minimum: 0
+        percentComplete:
+          type: number
+          minimum: 0
+          maximum: 100
+        remaining:
+          type: integer
+          minimum: 0
+        terminal:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 0
+        unknownStatus:
+          type: integer
+          minimum: 0
+    RouteManifestProgressRoute:
+      type: object
+      required:
+        - kind
+        - methods
+        - routePath
+        - sourceFile
+        - status
+        - targetOwner
+      properties:
+        kind:
+          type: string
+        methods:
+          type: array
+          items:
+            type: string
+            enum:
+              - GET
+              - HEAD
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+        routePath:
+          type: string
+        sourceFile:
+          type: string
+        status:
+          type: string
+          enum:
+            - legacy-next
+            - migrated
+            - accepted-removal
+        targetOwner:
+          type: string
+          enum:
+            - rust-backend
+            - tanstack-start
+    RouteManifestProgress:
+      type: object
+      required:
+        - byKind
+        - byOwner
+        - topLegacyRoutes
+        - totals
+      properties:
+        byKind:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteManifestProgressBucket"
+        byOwner:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteManifestProgressBucket"
+        topLegacyRoutes:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteManifestProgressRoute"
+        totals:
+          $ref: "#/components/schemas/RouteManifestProgressBucket"
+    MigrationProgress:
+      type: object
+      required:
+        - generatedBy
+        - manifest
+        - ok
+        - progress
+        - summary
+      properties:
+        generatedBy:
+          type: string
+        manifest:
+          type: string
+          examples:
+            - apps/tanstack-web/migration/route-manifest.json
+        ok:
+          type: boolean
+        progress:
+          $ref: "#/components/schemas/RouteManifestProgress"
+        summary:
+          $ref: "#/components/schemas/RouteManifestSummary"
+    MigrationCutoverGates:
+      type: object
+      required:
+        - counts
+        - gates
+        - generatedBy
+        - manifest
+        - ok
+        - summary
+      properties:
+        counts:
+          type: object
+          required:
+            - acceptedRemoval
+            - backendOwned
+            - backendRouteArtifacts
+            - frontendOwned
+            - legacyNext
+            - migrated
+            - total
+            - unknownStatus
+            - unmapped
+          properties:
+            acceptedRemoval:
+              type: integer
+              minimum: 0
+            backendOwned:
+              type: integer
+              minimum: 0
+            backendRouteArtifacts:
+              type: integer
+              minimum: 0
+            frontendOwned:
+              type: integer
+              minimum: 0
+            legacyNext:
+              type: integer
+              minimum: 0
+            migrated:
+              type: integer
+              minimum: 0
+            total:
+              type: integer
+              minimum: 0
+            unknownStatus:
+              type: integer
+              minimum: 0
+            unmapped:
+              type: integer
+              minimum: 0
+        gates:
+          type: array
+          items:
+            type: object
+            required:
+              - detail
+              - id
+              - label
+              - ok
+              - status
+            properties:
+              detail:
+                type: string
+              id:
+                type: string
+              label:
+                type: string
+              ok:
+                type: boolean
+              status:
+                type: string
+                enum:
+                  - pass
+                  - blocked
+        generatedBy:
+          type: string
+        manifest:
+          type: string
+          examples:
+            - apps/tanstack-web/migration/route-manifest.json
+        ok:
+          type: boolean
+        summary:
+          $ref: "#/components/schemas/RouteManifestSummary"
+    MigrationStatus:
+      type: object
+      required:
+        - backend
+        - environment
+        - frontendTargets
+        - ok
+        - routeOwnership
+      properties:
+        backend:
+          type: object
+          required:
+            - deploymentTarget
+            - runtime
+            - service
+            - toolchain
+          properties:
+            deploymentTarget:
+              type: string
+              examples:
+                - container
+                - cloudflare-workers
+            runtime:
+              type: string
+              examples:
+                - rust
+            service:
+              type: string
+              examples:
+                - backend
+            toolchain:
+              type: string
+              examples:
+                - rustc 1.95.0
+        environment:
+          type: string
+          examples:
+            - development
+        frontendTargets:
+          type: array
+          items:
+            type: string
+            enum:
+              - next
+              - tanstack-start
+        ok:
+          type: boolean
+        routeOwnership:
+          type: object
+          required:
+            - legacyAllowed
+            - manifest
+            - status
+          properties:
+            legacyAllowed:
+              type: boolean
+            manifest:
+              type: string
+              examples:
+                - apps/tanstack-web/migration/route-manifest.json
+            status:
+              type: string
+              examples:
+                - migration-foundation

@@ -29,6 +29,8 @@ Our monorepo structure makes it easy to share code across different applications
 platform/
 ├── apps/
 │   ├── web/      # Main web application
+│   ├── tanstack-web/ # TanStack Start migration frontend
+│   ├── backend/  # Rust API runtime for migrated web APIs
 │   ├── cms/      # Dedicated Tuturuuu CMS satellite app
 │   ├── docs/     # Documentation site (Mintlify)
 │   ├── rewise/   # Rewise application
@@ -143,12 +145,28 @@ Contains all deployable applications. Each application is a standalone project t
 ```
 apps/
 ├── web/      # Main web application and central API host
+├── tanstack-web/ # TanStack Start frontend replacing apps/web
+├── backend/  # Dedicated Rust API runtime for migrated web APIs
 ├── cms/      # Dedicated Tuturuuu CMS frontend
 ├── docs/     # Documentation site (Mintlify)
 ├── rewise/   # Rewise application
 ├── nova/     # Nova application
 └── database/ # Database migrations and scripts
 ```
+
+`apps/tanstack-web` and `apps/backend` are the migration pair for replacing the
+legacy `apps/web` runtime. The TanStack app owns migrated frontend routes and
+Start server functions; the Rust backend owns migrated API, job, cron, and
+private/admin call paths. Both apps can run in Docker for local and blue/green
+rehearsals, and both have Cloudflare Worker preview entrypoints:
+`apps/tanstack-web/wrangler.jsonc` and `apps/backend/wrangler.jsonc`.
+
+Cloudflare preview is incremental, not the production cutover. Bind
+`BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
+`BACKEND_INTERNAL_URL` through Wrangler or Cloudflare secrets, run
+`bun check:cloudflare` before preview deployment, and keep `apps/web` serving
+production until the TanStack/Rust route manifest, Docker E2E compare report,
+benchmark report, and migration gates pass.
 
 ### packages/
 

@@ -73,6 +73,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://storefront.tuturuuu.com',
   },
   {
+    name: 'tanstack-web',
+    url: 'https://tanstack.tuturuuu.com',
+  },
+  {
     name: 'track',
     url: 'https://track.tuturuuu.com',
   },
@@ -160,6 +164,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('storefront'),
   },
   {
+    name: 'tanstack-web',
+    url: getTuturuuuPortlessAppOrigin('tanstack-web'),
+  },
+  {
     name: 'track',
     url: getTuturuuuPortlessAppOrigin('track'),
   },
@@ -245,6 +253,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'storefront',
     url: 'http://localhost:7822',
+  },
+  {
+    name: 'tanstack-web',
+    url: 'http://localhost:7824',
   },
   {
     name: 'track',

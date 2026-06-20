@@ -1,0 +1,339 @@
+{
+  "about": {
+    "community": {
+      "contributions": {
+        "description": "Git commits from 30+ contributors since 2022",
+        "title": "Code Contributions",
+        "value": "10,000+"
+      },
+      "culture": {
+        "builders": {
+          "description": "Each teammate acts like a founder within their domain",
+          "title": "Builders, Not Employees"
+        },
+        "innovation": {
+          "description": "Technology can originate from anywhere",
+          "title": "Innovation First"
+        },
+        "optimism": {
+          "description": "Bold ambition paired with rigorous execution",
+          "title": "Pragmatic Optimism"
+        },
+        "ownership": {
+          "description": "Decisions come with accountability for outcomes",
+          "title": "Relentless Ownership"
+        },
+        "subtitle": "Values that define how we work and innovate together",
+        "title": "Our Culture",
+        "transparency": {
+          "description": "Internal operations mirror our open-source ethos",
+          "title": "Transparency by Default"
+        },
+        "vietnam": {
+          "description": "Global ambitions, Southeast Asian excellence",
+          "title": "Vietnam-Rooted"
+        }
+      },
+      "milestones": {
+        "description": "Features and integrations shipped",
+        "title": "Innovation Milestones",
+        "value": "50+"
+      },
+      "openSource": {
+        "description": "Contributors and users building together on GitHub",
+        "title": "Open Source Community",
+        "value": "10K+"
+      },
+      "subtitle": "Join thousands of builders, dreamers, and innovators shaping the future",
+      "title": {
+        "highlight": "Global Community",
+        "part1": "Building a"
+      }
+    },
+    "companyInfo": {
+      "details": {
+        "ceo": "Founder & CEO",
+        "ceoValue": "Võ Hoàng Phúc",
+        "founded": "Founded",
+        "foundedValue": "April 2, 2025",
+        "taxCode": "Tax Code",
+        "taxCodeValue": "0318898402",
+        "title": "Company Details"
+      },
+      "links": {
+        "contact": "Contact",
+        "github": "GitHub",
+        "website": "Website"
+      },
+      "location": {
+        "address1": "Tầng 14, Tòa Nhà HM Town",
+        "address2": "412 Nguyễn Thị Minh Khai",
+        "address3": "Phường 05, Quận 3",
+        "address4": "Thành phố Hồ Chí Minh, Việt Nam",
+        "title": "Location"
+      },
+      "subtitle": "Building the intelligent OS for modern work",
+      "title": "TUTURUUU JOINT STOCK COMPANY"
+    },
+    "coreBeliefs": {
+      "focus": {
+        "description": "In a world engineered for distraction, the ability to sustain deep work is the defining competitive advantage.",
+        "title": "Focus is the New Superpower"
+      },
+      "impact": {
+        "description": "Productivity is not about doing more; it is about creating more value. We give people mental space for breakthroughs.",
+        "title": "Impact Over Activity"
+      },
+      "potential": {
+        "description": "Brilliant ideas can emerge from any street, village, or classroom. Access to world-class tools should be universal.",
+        "title": "Potential Has No Postcode"
+      },
+      "subtitle": "The fundamental principles that guide everything we build",
+      "technology": {
+        "description": "Technology must be an extension of human will, not a cage for our attention. We build software to reverse the trend.",
+        "title": "Technology as Human Will"
+      },
+      "thirdEra": {
+        "description": "We are entering the Age of Partners, where AI acts as an intelligent partner to amplify human potential.",
+        "title": "The Third Era"
+      },
+      "title": {
+        "highlight": "Core Beliefs",
+        "part1": "Our"
+      },
+      "transparency": {
+        "description": "Foundational technology should never be a black box. Our open-source philosophy creates trust and accelerates innovation.",
+        "title": "Radical Transparency"
+      }
+    },
+    "cta": {
+      "contribute": "Contribute on GitHub",
+      "description": "We're assembling a team of builders who believe technology should unlock human potential. If you share our vision, let's create something extraordinary together.",
+      "getInTouch": "Get in Touch",
+      "title": "Join Us in Building the Future"
+    },
+    "ecosystem": {
+      "aiCore": {
+        "aurora": {
+          "name": "Aurora",
+          "role": "Nervous System"
+        },
+        "crystal": {
+          "name": "Crystal",
+          "role": "Bridge to Humanity"
+        },
+        "mira": {
+          "name": "Mira",
+          "role": "Soul & Voice"
+        },
+        "nova": {
+          "name": "Nova",
+          "role": "Conscience & Forge"
+        },
+        "rewise": {
+          "name": "Rewise",
+          "role": "Collective Mind"
+        },
+        "subtitle": "The Architecture of Intelligence",
+        "title": "AI Core"
+      },
+      "subtitle": "A cohesive suite of applications that behave like a single organism",
+      "title": {
+        "highlight": "Tuturuuu Ecosystem",
+        "part1": "The"
+      },
+      "tuchat": {
+        "description": "Unified communications",
+        "name": "TuChat"
+      },
+      "tudo": {
+        "description": "Smart task management",
+        "name": "Tuturuuu Tasks"
+      },
+      "tumeet": {
+        "description": "Intelligent meetings",
+        "name": "Tuturuuu Meet"
+      },
+      "tuplan": {
+        "description": "AI-powered auto-scheduling",
+        "name": "Tuturuuu Calendar"
+      }
+    },
+    "features": {
+      "analytics": {
+        "description": "Visualize your productivity patterns, track goals, and make data-driven decisions.",
+        "feature1": "Real-time metrics",
+        "feature2": "Custom reports",
+        "feature3": "Insights",
+        "title": "Analytics Dashboard"
+      },
+      "finance": {
+        "description": "Track expenses, manage budgets, and gain insights into your financial health with AI-powered analytics.",
+        "feature1": "Expense tracking",
+        "feature2": "Budget planning",
+        "feature3": "Financial insights",
+        "title": "Finance Management"
+      },
+      "inventory": {
+        "description": "Manage products, track stock levels, and optimize your supply chain with intelligent automation.",
+        "feature1": "Stock management",
+        "feature2": "Auto-reordering",
+        "feature3": "Analytics",
+        "title": "Inventory System"
+      },
+      "learning": {
+        "description": "Access educational content, practice with AI challenges, and level up your skills through Nova.",
+        "feature1": "AI challenges",
+        "feature2": "Skill tracking",
+        "feature3": "Leaderboards",
+        "title": "Learning Platform"
+      },
+      "openSource": {
+        "description": "Full transparency with public source code, community contributions, and self-hosting options.",
+        "feature1": "Public GitHub",
+        "feature2": "Community-driven",
+        "feature3": "Self-hostable",
+        "title": "Open Source"
+      },
+      "security": {
+        "description": "Bank-grade encryption, granular permissions, and comprehensive audit logs keep your data safe.",
+        "feature1": "Row-level security",
+        "feature2": "RBAC",
+        "feature3": "Audit trails",
+        "title": "Enterprise Security"
+      },
+      "subtitle": "A comprehensive suite of tools to manage every aspect of your work and life",
+      "title": {
+        "highlight": "Productivity",
+        "part1": "More Than Just"
+      }
+    },
+    "hero": {
+      "badge": "The Age of Partners",
+      "cta": {
+        "openSource": "Open Source",
+        "vision": "Explore Our Vision"
+      },
+      "description": "We're building the world's first intelligent, open-source operating system for modern work and life. Our mission is to wage war on digital noise by creating a unified platform that automates administrative work and eliminates context-switching friction.",
+      "title": {
+        "highlight": "Human Potential",
+        "part1": "Unlocking",
+        "part2": "Through Intelligent Technology"
+      }
+    },
+    "problem": {
+      "badge": "The Great Betrayal of Modern Work",
+      "cognitive": {
+        "description": "Context-switching slashes productive output and fuels burnout",
+        "stat": "40% reduction",
+        "title": "Cognitive Cost"
+      },
+      "financial": {
+        "description": "Lost to \"work about work\"—a trillion-dollar drag on global productivity",
+        "stat": "21 hours/week",
+        "title": "Financial Cost"
+      },
+      "innovation": {
+        "description": "The next breakthrough suffocated by inboxes, meetings, and spreadsheets",
+        "stat": "Immeasurable",
+        "title": "Innovation Cost"
+      },
+      "title": {
+        "highlight": "Digital Friction",
+        "part1": "The Costs of"
+      }
+    },
+    "techStack": {
+      "ai": {
+        "category": "AI & Analytics",
+        "tech1": "OpenAI",
+        "tech2": "Anthropic",
+        "tech3": "Gemini",
+        "tech4": "Vertex AI"
+      },
+      "backend": {
+        "category": "Backend",
+        "tech1": "Supabase",
+        "tech2": "PostgreSQL",
+        "tech3": "tRPC",
+        "tech4": "Vercel AI SDK"
+      },
+      "frontend": {
+        "category": "Frontend",
+        "tech1": "Next.js 15",
+        "tech2": "React",
+        "tech3": "TypeScript",
+        "tech4": "Tailwind CSS"
+      },
+      "infrastructure": {
+        "category": "Infrastructure",
+        "tech1": "Turborepo",
+        "tech2": "Bun",
+        "tech3": "Docker",
+        "tech4": "Vercel"
+      },
+      "subtitle": "We leverage the latest technologies to build a platform that is fast, reliable, and scalable",
+      "title": {
+        "highlight": "Cutting-Edge Tech",
+        "part1": "Built with"
+      }
+    },
+    "timeline": {
+      "building": {
+        "achievement1": "Tuturuuu Tasks task management",
+        "achievement2": "Calendar sync",
+        "achievement3": "Finance tracking",
+        "achievement4": "Nova platform",
+        "description": "Built the foundation with 377+ database migrations, comprehensive authentication, and AI integration.",
+        "period": "2024 - Present",
+        "phase": "Building",
+        "title": "Rapid Development"
+      },
+      "evolution": {
+        "achievement1": "Multi-agent intelligence",
+        "achievement2": "Global accessibility",
+        "achievement3": "Continuous learning",
+        "description": "Expanding Mira's capabilities, building Aurora's context graph, and making the impossible possible for everyone.",
+        "period": "2025 - Future",
+        "phase": "Evolution",
+        "title": "The Age of Partners"
+      },
+      "foundation": {
+        "achievement1": "Platform architecture",
+        "achievement2": "Core team assembled",
+        "description": "Recognized the Great Betrayal of Modern Work and envisioned a better future where AI serves humanity.",
+        "period": "2024 - Early Days",
+        "phase": "Foundation",
+        "title": "The Spark"
+      },
+      "launch": {
+        "achievement1": "Legal entity established",
+        "achievement2": "Open source release",
+        "description": "TUTURUUU JSC officially founded, marking our commitment to building the intelligent OS for modern work.",
+        "period": "April 2, 2025",
+        "phase": "Launch",
+        "title": "Official Incorporation"
+      },
+      "subtitle": "From ambitious vision to transformative reality",
+      "title": {
+        "highlight": "Innovation Journey",
+        "part1": "Our"
+      }
+    },
+    "vision": {
+      "mission": {
+        "description": "Wage war on digital noise by building an intelligent, unified, and open platform that automates administrative work and eliminates context-switching friction.",
+        "title": "Mission"
+      },
+      "subtitle": "What drives us every day to push boundaries and innovate",
+      "title": {
+        "highlight": "North Star",
+        "part1": "Our"
+      },
+      "vision": {
+        "description": "Create a future where technology unlocks humanity's potential—liberating our collective focus so we can solve the world's most important challenges while making world-class innovation accessible to everyone, everywhere.",
+        "title": "Vision"
+      }
+    }
+  }
+}

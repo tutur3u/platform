@@ -28,7 +28,7 @@ function getBasePortlessUrl(app) {
   return `https://${getPortlessHost(app.routeName)}`;
 }
 
-test('parseDefaultPort extracts Next.js fallback ports from dev:app scripts', () => {
+test('parseDefaultPort extracts app fallback ports from dev:app scripts', () => {
   assert.equal(
     parseDefaultPort(
       'node ../../scripts/portless-dev-banner.js -- next dev -p $' +
@@ -37,6 +37,11 @@ test('parseDefaultPort extracts Next.js fallback ports from dev:app scripts', ()
     7821
   );
   assert.equal(parseDefaultPort('next dev -p 3000'), 3000);
+  assert.equal(
+    parseDefaultPort('vite dev --host 0.0.0.0 --port $' + '{PORT:-7824}'),
+    7824
+  );
+  assert.equal(parseDefaultPort('vite dev --port 5173'), 5173);
   assert.equal(parseDefaultPort('bun --watch src/index.ts'), null);
 });
 
@@ -54,6 +59,12 @@ test('loadAppCatalog reads package names, Portless route names, and fallback por
     packageName: '@tuturuuu/chat',
     path: 'apps/chat',
     routeName: 'chat.tuturuuu',
+  });
+  assert.deepEqual(catalog['tanstack-web'], {
+    defaultPort: 7824,
+    packageName: '@tuturuuu/tanstack-web',
+    path: 'apps/tanstack-web',
+    routeName: 'tanstack.tuturuuu',
   });
   assert.equal(catalog['hive-realtime'].defaultPort, null);
 });

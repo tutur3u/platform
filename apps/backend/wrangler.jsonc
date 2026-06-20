@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-backend",
+  "main": "build/worker/shim.mjs",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "build": {
+    "command": "worker-build --release -- --no-default-features --features worker"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "secrets": {
+    "required": ["BACKEND_INTERNAL_TOKEN"]
+  },
+  "vars": {
+    "BACKEND_ENV": "preview",
+    "BACKEND_SERVICE_NAME": "backend"
+  }
+}

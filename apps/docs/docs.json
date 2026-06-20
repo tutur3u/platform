@@ -49,6 +49,7 @@
                 "group": "Architecture",
                 "pages": [
                   "platform/architecture/routing",
+                  "platform/architecture/tanstack-rust-migration",
                   "platform/architecture/data-fetching",
                   "platform/architecture/effect",
                   "platform/architecture/api-routes",

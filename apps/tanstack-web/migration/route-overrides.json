@@ -1,0 +1,389 @@
+{
+  "routes": {
+    "route-handler:/.well-known/*slug:apps/web/src/app/.well-known/[...slug]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles .well-known catch-all GET/HEAD requests with the legacy cacheable empty 404 response."
+    },
+    "route-handler:/~recover-browser-state:apps/web/src/app/~recover-browser-state/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles GET/POST browser-state recovery with no-store HTML, same-origin POST protection, Clear-Site-Data, redirect, and Supabase auth cookie clearing behavior."
+    },
+    "api:/api/health:apps/web/src/app/api/health/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles GET /api/health with the legacy response body."
+    },
+    "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles GET /api/v1/calendar/mock with the deterministic legacy mock event payload."
+    },
+    "api:/api/v1/infrastructure/migrate/grouped-score-names:apps/web/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles the disabled PUT migration endpoint with the legacy dev-mode guard and 410 MIGRATION_DISABLED response."
+    },
+    "api:/api/v1/infrastructure/languages:apps/web/src/app/api/v1/infrastructure/languages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles POST/DELETE locale preference cookie updates with the legacy validation messages and NEXT_LOCALE cookie behavior."
+    },
+    "api:/api/v1/infrastructure/sidebar:apps/web/src/app/api/v1/infrastructure/sidebar/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles POST/DELETE sidebar collapsed preference cookie updates with the legacy validation message and sidebar-collapsed cookie behavior."
+    },
+    "api:/api/v1/infrastructure/sidebar/sizes:apps/web/src/app/api/v1/infrastructure/sidebar/sizes/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles POST/DELETE sidebar sizing preference cookies, including the legacy DELETE behavior that clears only sidebar-size."
+    },
+    "api:/api/v1/infrastructure/users/fields/types:apps/web/src/app/api/v1/infrastructure/users/fields/types/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles GET /api/v1/infrastructure/users/fields/types with the deterministic legacy field type payload and no longer opens a Supabase admin client for static metadata."
+    },
+    "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email:apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles the removed POST direct group-check email endpoint with the legacy 410 response; emails are sent by the system queue after approval."
+    },
+    "api:/api/v1/workspaces/:wsId/slides:apps/web/src/app/api/v1/workspaces/[wsId]/slides/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles GET/POST workspace slides collection placeholders with the legacy 501 Not implemented response."
+    },
+    "api:/api/v1/workspaces/:wsId/slides/:slideId:apps/web/src/app/api/v1/workspaces/[wsId]/slides/[slideId]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request handles PUT/DELETE workspace slide item placeholders with the legacy 501 Not implemented response."
+    },
+    "layout:/~offline:apps/web/src/app/~offline/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start root document imports the shared UI globals and applies the legacy offline shell body classes for the /~offline fallback."
+    },
+    "page:/~offline:apps/web/src/app/~offline/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /~offline renders the shared OfflinePage with the legacy title, message, and foreground/background classes."
+    },
+    "page:/:locale/docs:apps/web/src/app/[locale]/(marketing)/docs/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/docs preserves the legacy 307 external redirect to https://docs.tuturuuu.com."
+    },
+    "page:/:locale/calendar/meet-together/*slug?:apps/web/src/app/[locale]/(marketing)/calendar/meet-together/[[...slug]]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start routes /$locale/calendar/meet-together and /$locale/calendar/meet-together/$ preserve the legacy redirect to /meet-together with optional trailing slug segments."
+    },
+    "page:/:locale/pricing:apps/web/src/app/[locale]/(marketing)/pricing/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start routes /pricing and /$locale/pricing preserve the legacy 307 redirect to /?hash-nav=1#pricing."
+    },
+    "page:/:locale/products/meet-together:apps/web/src/app/[locale]/(marketing)/products/meet-together/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start routes /products/meet-together and /$locale/products/meet-together preserve the legacy 307 redirect to /meet-together."
+    },
+    "page:/:locale/qr-generator:apps/web/src/app/[locale]/(marketing)/qr-generator/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start routes /qr-generator and /$locale/qr-generator preserve the legacy redirect to the QR app while forwarding query parameters."
+    },
+    "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: the legacy route.ts file is empty and exports no HTTP methods, so there is no runtime behavior to port."
+    },
+    "layout:/:locale/products/ai:apps/web/src/app/[locale]/(marketing)/products/ai/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/ai defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/ai:apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/ai ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/calendar:apps/web/src/app/[locale]/(marketing)/products/calendar/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/calendar defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/calendar:apps/web/src/app/[locale]/(marketing)/products/calendar/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/calendar ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/crm:apps/web/src/app/[locale]/(marketing)/products/crm/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/crm defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/crm:apps/web/src/app/[locale]/(marketing)/products/crm/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/crm ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/documents:apps/web/src/app/[locale]/(marketing)/products/documents/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/documents defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/documents:apps/web/src/app/[locale]/(marketing)/products/documents/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/documents ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/drive:apps/web/src/app/[locale]/(marketing)/products/drive/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/drive defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/drive:apps/web/src/app/[locale]/(marketing)/products/drive/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/drive ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/finance:apps/web/src/app/[locale]/(marketing)/products/finance/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/finance defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/finance:apps/web/src/app/[locale]/(marketing)/products/finance/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/finance ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/inventory:apps/web/src/app/[locale]/(marketing)/products/inventory/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/inventory defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/inventory:apps/web/src/app/[locale]/(marketing)/products/inventory/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/inventory ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/lms:apps/web/src/app/[locale]/(marketing)/products/lms/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/lms defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/lms:apps/web/src/app/[locale]/(marketing)/products/lms/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/lms ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/mail:apps/web/src/app/[locale]/(marketing)/products/mail/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/mail defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/mail:apps/web/src/app/[locale]/(marketing)/products/mail/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/mail ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/tasks:apps/web/src/app/[locale]/(marketing)/products/tasks/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/tasks defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/tasks:apps/web/src/app/[locale]/(marketing)/products/tasks/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/tasks ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/products/workflows:apps/web/src/app/[locale]/(marketing)/products/workflows/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/workflows defines the legacy product metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/products/workflows:apps/web/src/app/[locale]/(marketing)/products/workflows/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/products/workflows ports the static legacy product marketing page and shared product primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/acceptable-use:apps/web/src/app/[locale]/(marketing)/acceptable-use/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/acceptable-use defines the legacy Acceptable Use Policy metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/acceptable-use:apps/web/src/app/[locale]/(marketing)/acceptable-use/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/acceptable-use ports the static legacy legal page and local legal primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/community-guidelines:apps/web/src/app/[locale]/(marketing)/community-guidelines/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/community-guidelines defines the legacy Community Guidelines metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/community-guidelines:apps/web/src/app/[locale]/(marketing)/community-guidelines/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/community-guidelines ports the static legacy legal page and local legal primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/privacy:apps/web/src/app/[locale]/(marketing)/privacy/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/privacy defines the legacy Privacy Policy metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/privacy:apps/web/src/app/[locale]/(marketing)/privacy/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/privacy ports the static legacy legal page and local legal primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/terms:apps/web/src/app/[locale]/(marketing)/terms/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/terms defines the legacy Terms of Service metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/terms:apps/web/src/app/[locale]/(marketing)/terms/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/terms ports the static legacy legal page and local legal primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/about:apps/web/src/app/[locale]/(marketing)/about/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/about defines the legacy About metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/about:apps/web/src/app/[locale]/(marketing)/about/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/about ports the legacy about page with local English and Vietnamese message bundles, local about primitives, and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/partners:apps/web/src/app/[locale]/(marketing)/partners/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/partners defines the legacy Partners metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/partners:apps/web/src/app/[locale]/(marketing)/partners/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/partners ports the static legacy partners page, local partner primitives, and partner logo assets without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/security:apps/web/src/app/[locale]/(marketing)/security/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/security defines the legacy Security metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/security:apps/web/src/app/[locale]/(marketing)/security/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/security ports the static legacy security landing page without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/security/bug-bounty:apps/web/src/app/[locale]/(marketing)/security/bug-bounty/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/security/bug-bounty defines the legacy Security Hall of Fame metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/security/bug-bounty:apps/web/src/app/[locale]/(marketing)/security/bug-bounty/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/security/bug-bounty ports the static legacy Security Hall of Fame page and local security subpage primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/security/policy:apps/web/src/app/[locale]/(marketing)/security/policy/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/security/policy ports the static legacy security policy page and local security subpage primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/education:apps/web/src/app/[locale]/(marketing)/solutions/education/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/education defines the legacy Education Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/education:apps/web/src/app/[locale]/(marketing)/solutions/education/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/education ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/healthcare:apps/web/src/app/[locale]/(marketing)/solutions/healthcare/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/healthcare defines the legacy Healthcare Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/healthcare:apps/web/src/app/[locale]/(marketing)/solutions/healthcare/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/healthcare ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/retail:apps/web/src/app/[locale]/(marketing)/solutions/retail/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/retail defines the legacy Retail Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/retail:apps/web/src/app/[locale]/(marketing)/solutions/retail/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/retail ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/construction:apps/web/src/app/[locale]/(marketing)/solutions/construction/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/construction defines the legacy Construction Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/construction:apps/web/src/app/[locale]/(marketing)/solutions/construction/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/construction ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/hospitality:apps/web/src/app/[locale]/(marketing)/solutions/hospitality/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/hospitality defines the legacy Hospitality Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/hospitality:apps/web/src/app/[locale]/(marketing)/solutions/hospitality/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/hospitality ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/manufacturing:apps/web/src/app/[locale]/(marketing)/solutions/manufacturing/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/manufacturing defines the legacy Manufacturing Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/manufacturing:apps/web/src/app/[locale]/(marketing)/solutions/manufacturing/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/manufacturing ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/pharmacies:apps/web/src/app/[locale]/(marketing)/solutions/pharmacies/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/pharmacies defines the legacy Pharmacies Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/pharmacies:apps/web/src/app/[locale]/(marketing)/solutions/pharmacies/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/pharmacies ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/realestate:apps/web/src/app/[locale]/(marketing)/solutions/realestate/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/realestate defines the legacy Real Estate Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/realestate:apps/web/src/app/[locale]/(marketing)/solutions/realestate/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/realestate ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/solutions/restaurants:apps/web/src/app/[locale]/(marketing)/solutions/restaurants/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/restaurants defines the legacy Restaurant Solution metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/solutions/restaurants:apps/web/src/app/[locale]/(marketing)/solutions/restaurants/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/solutions/restaurants ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    }
+  }
+}

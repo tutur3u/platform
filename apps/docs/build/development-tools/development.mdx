@@ -132,6 +132,31 @@ cross-app auth can still use the `*.tuturuuu.localhost` URL. Pass `--force` or
 app workspaces. Force mode starts the package `dev --force` path so Portless can
 take over the matching route instead of leaving a stale static alias in place.
 
+`bun dev:tanstack-web` starts the TanStack Start migration frontend at
+`https://tanstack.tuturuuu.localhost`, with fallback port `7824`. It is the
+dedicated frontend for the Next.js-to-TanStack migration and should call
+Rust-owned APIs through `packages/internal-api` helpers instead of direct
+browser access to protected `apps/web` routes. See
+`platform/architecture/tanstack-rust-migration` for the route manifest, Docker,
+E2E, benchmark gates, and Cloudflare Workers preparation.
+
+For the Cloudflare-compatible preview shape, start the Worker entrypoints
+instead of the normal Portless dev wrapper:
+
+```bash
+bun wrangler dev --config apps/backend/wrangler.jsonc
+bun --cwd apps/tanstack-web run preview:cloudflare
+```
+
+Use the same environment variable names as deployment:
+`BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
+`BACKEND_INTERNAL_URL`. Keep values in your shell or ignored local env files;
+do not add literal tokens or account-specific origins to docs, Wrangler config,
+package manifests, or source. After deploying preview Workers, run
+`bun smoke:cloudflare` with `BACKEND_WORKER_ORIGIN`,
+`TANSTACK_WEB_WORKER_ORIGIN`, and `BACKEND_INTERNAL_TOKEN` to verify backend
+health/readiness, protected migration status, and the TanStack root shell.
+
 `bun dev:web` is intentionally lean: by default it starts only `apps/web` and
 does not start the `@tuturuuu/types` or `@tuturuuu/supabase` package watch
 builds. Use this default for app-route and UI work so the local process tree

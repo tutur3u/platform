@@ -1,0 +1,339 @@
+{
+  "about": {
+    "community": {
+      "contributions": {
+        "description": "Git commits từ hơn 30 người đóng góp kể từ 2022",
+        "title": "Đóng Góp Code",
+        "value": "10,000+"
+      },
+      "culture": {
+        "builders": {
+          "description": "Mỗi thành viên hành động như người sáng lập trong lĩnh vực của mình",
+          "title": "Người Xây Dựng, Không Phải Nhân Viên"
+        },
+        "innovation": {
+          "description": "Công nghệ có thể bắt nguồn từ bất kỳ đâu",
+          "title": "Đổi Mới Là Ưu Tiên"
+        },
+        "optimism": {
+          "description": "Tham vọng táo bạo kết hợp với thực thi nghiêm ngặt",
+          "title": "Lạc Quan Thực Dụng"
+        },
+        "ownership": {
+          "description": "Quyết định đi kèm trách nhiệm với kết quả",
+          "title": "Tinh Thần Sở Hữu Không Ngừng"
+        },
+        "subtitle": "Giá trị định nghĩa cách chúng tôi làm việc và đổi mới cùng nhau",
+        "title": "Văn Hóa Của Chúng Tôi",
+        "transparency": {
+          "description": "Hoạt động nội bộ phản ánh triết lý mã nguồn mở của chúng tôi",
+          "title": "Minh Bạch Theo Mặc Định"
+        },
+        "vietnam": {
+          "description": "Tham vọng toàn cầu, sự xuất sắc Đông Nam Á",
+          "title": "Gốc Rễ Việt Nam"
+        }
+      },
+      "milestones": {
+        "description": "Tính năng và tích hợp đã ra mắt",
+        "title": "Cột Mốc Đổi Mới",
+        "value": "50+"
+      },
+      "openSource": {
+        "description": "Người đóng góp và người dùng cùng xây dựng trên GitHub",
+        "title": "Cộng Đồng Mã Nguồn Mở",
+        "value": "10K+"
+      },
+      "subtitle": "Tham gia cùng hàng nghìn nhà xây dựng, người mơ mộng và nhà đổi mới định hình tương lai",
+      "title": {
+        "highlight": "Toàn Cầu",
+        "part1": "Xây Dựng Cộng Đồng"
+      }
+    },
+    "companyInfo": {
+      "details": {
+        "ceo": "Người Sáng Lập & CEO",
+        "ceoValue": "Võ Hoàng Phúc",
+        "founded": "Thành Lập",
+        "foundedValue": "2 tháng 4, 2025",
+        "taxCode": "Mã Số Thuế",
+        "taxCodeValue": "0318898402",
+        "title": "Thông Tin Công Ty"
+      },
+      "links": {
+        "contact": "Liên Hệ",
+        "github": "GitHub",
+        "website": "Website"
+      },
+      "location": {
+        "address1": "Tầng 14, Tòa Nhà HM Town",
+        "address2": "412 Nguyễn Thị Minh Khai",
+        "address3": "Phường 05, Quận 3",
+        "address4": "Thành phố Hồ Chí Minh, Việt Nam",
+        "title": "Địa Chỉ"
+      },
+      "subtitle": "Xây dựng hệ điều hành thông minh cho công việc hiện đại",
+      "title": "CÔNG TY CỔ PHẦN TUTURUUU"
+    },
+    "coreBeliefs": {
+      "focus": {
+        "description": "Trong một thế giới được thiết kế để gây xao nhãng, khả năng duy trì công việc chuyên sâu chính là lợi thế cạnh tranh quyết định.",
+        "title": "Tập Trung Là Siêu Năng Lực Mới"
+      },
+      "impact": {
+        "description": "Năng suất không phải là làm nhiều hơn; đó là tạo ra nhiều giá trị hơn. Chúng tôi mang đến không gian tinh thần cho những đột phá.",
+        "title": "Tác Động Hơn Hoạt Động"
+      },
+      "potential": {
+        "description": "Ý tưởng xuất sắc có thể xuất hiện từ bất kỳ con phố, ngôi làng hay lớp học nào. Việc tiếp cận các công cụ đẳng cấp thế giới phải là phổ quát.",
+        "title": "Tiềm Năng Không Có Mã Bưu Chính"
+      },
+      "subtitle": "Những nguyên tắc cơ bản định hướng mọi thứ chúng tôi xây dựng",
+      "technology": {
+        "description": "Công nghệ phải là sự mở rộng của ý chí con người, không phải lồng nhốt sự chú ý. Chúng tôi xây dựng phần mềm để đảo ngược xu hướng này.",
+        "title": "Công Nghệ Là Ý Chí Con Người"
+      },
+      "thirdEra": {
+        "description": "Chúng ta đang bước vào Kỷ Nguyên Đối Tác, nơi AI hoạt động như một đối tác thông minh để khuếch đại tiềm năng con người.",
+        "title": "Kỷ Nguyên Thứ Ba"
+      },
+      "title": {
+        "highlight": "Cốt Lõi",
+        "part1": "Giá Trị"
+      },
+      "transparency": {
+        "description": "Công nghệ nền tảng không bao giờ nên là hộp đen. Triết lý mã nguồn mở tạo ra lòng tin và thúc đẩy đổi mới.",
+        "title": "Minh Bạch Triệt Để"
+      }
+    },
+    "cta": {
+      "contribute": "Đóng Góp Trên GitHub",
+      "description": "Chúng tôi đang tập hợp một đội ngũ những người xây dựng tin rằng công nghệ nên giải phóng tiềm năng con người. Nếu bạn chia sẻ tầm nhìn của chúng tôi, hãy cùng tạo ra điều phi thường.",
+      "getInTouch": "Liên Hệ",
+      "title": "Tham Gia Xây Dựng Tương Lai"
+    },
+    "ecosystem": {
+      "aiCore": {
+        "aurora": {
+          "name": "Aurora",
+          "role": "Hệ Thần Kinh"
+        },
+        "crystal": {
+          "name": "Crystal",
+          "role": "Cầu Nối Với Con Người"
+        },
+        "mira": {
+          "name": "Mira",
+          "role": "Linh Hồn & Giọng Nói"
+        },
+        "nova": {
+          "name": "Nova",
+          "role": "Lương Tâm & Xưởng Rèn"
+        },
+        "rewise": {
+          "name": "Rewise",
+          "role": "Tâm Trí Tập Thể"
+        },
+        "subtitle": "Kiến Trúc Của Trí Tuệ",
+        "title": "Lõi AI"
+      },
+      "subtitle": "Một bộ ứng dụng gắn kết hoạt động như một sinh vật duy nhất",
+      "title": {
+        "highlight": "Tuturuuu",
+        "part1": "Hệ Sinh Thái"
+      },
+      "tuchat": {
+        "description": "Giao tiếp thống nhất",
+        "name": "TuChat"
+      },
+      "tudo": {
+        "description": "Quản lý công việc thông minh",
+        "name": "Tuturuuu Tasks"
+      },
+      "tumeet": {
+        "description": "Cuộc họp thông minh",
+        "name": "Tuturuuu Meet"
+      },
+      "tuplan": {
+        "description": "Tự động lập lịch bằng AI",
+        "name": "Tuturuuu Calendar"
+      }
+    },
+    "features": {
+      "analytics": {
+        "description": "Trực quan hóa mô hình năng suất, theo dõi mục tiêu và đưa ra quyết định dựa trên dữ liệu.",
+        "feature1": "Số liệu thời gian thực",
+        "feature2": "Báo cáo tùy chỉnh",
+        "feature3": "Thông tin chi tiết",
+        "title": "Bảng Điều Khiển Phân Tích"
+      },
+      "finance": {
+        "description": "Theo dõi chi tiêu, quản lý ngân sách và có được cái nhìn sâu sắc về tình hình tài chính với phân tích AI.",
+        "feature1": "Theo dõi chi tiêu",
+        "feature2": "Lập kế hoạch ngân sách",
+        "feature3": "Phân tích tài chính",
+        "title": "Quản Lý Tài Chính"
+      },
+      "inventory": {
+        "description": "Quản lý sản phẩm, theo dõi mức tồn kho và tối ưu hóa chuỗi cung ứng với tự động hóa thông minh.",
+        "feature1": "Quản lý kho",
+        "feature2": "Tự động đặt hàng",
+        "feature3": "Phân tích",
+        "title": "Hệ Thống Kho Hàng"
+      },
+      "learning": {
+        "description": "Truy cập nội dung giáo dục, thực hành với thử thách AI và nâng cao kỹ năng qua Nova.",
+        "feature1": "Thử thách AI",
+        "feature2": "Theo dõi kỹ năng",
+        "feature3": "Bảng xếp hạng",
+        "title": "Nền Tảng Học Tập"
+      },
+      "openSource": {
+        "description": "Minh bạch hoàn toàn với mã nguồn công khai, đóng góp cộng đồng và tùy chọn tự triển khai.",
+        "feature1": "GitHub công khai",
+        "feature2": "Cộng đồng phát triển",
+        "feature3": "Tự triển khai được",
+        "title": "Mã Nguồn Mở"
+      },
+      "security": {
+        "description": "Mã hóa cấp ngân hàng, phân quyền chi tiết và nhật ký kiểm toán toàn diện bảo vệ dữ liệu của bạn.",
+        "feature1": "Bảo mật cấp hàng",
+        "feature2": "RBAC",
+        "feature3": "Nhật ký kiểm toán",
+        "title": "Bảo Mật Doanh Nghiệp"
+      },
+      "subtitle": "Một bộ công cụ toàn diện để quản lý mọi khía cạnh công việc và cuộc sống của bạn",
+      "title": {
+        "highlight": "Năng Suất",
+        "part1": "Không Chỉ Là"
+      }
+    },
+    "hero": {
+      "badge": "Kỷ Nguyên Đối Tác",
+      "cta": {
+        "openSource": "Mã Nguồn Mở",
+        "vision": "Khám Phá Tầm Nhìn"
+      },
+      "description": "Chúng tôi đang xây dựng hệ điều hành mã nguồn mở thông minh đầu tiên trên thế giới cho công việc và cuộc sống hiện đại. Sứ mệnh của chúng tôi là chiến đấu chống lại tiếng ồn công nghệ bằng cách tạo ra một nền tảng thống nhất tự động hóa công việc hành chính và loại bỏ ma sát chuyển đổi ngữ cảnh.",
+      "title": {
+        "highlight": "Tiềm Năng Con Người",
+        "part1": "Giải Phóng",
+        "part2": "Thông Qua Công Nghệ Thông Minh"
+      }
+    },
+    "problem": {
+      "badge": "Sự Phản Bội Lớn Của Công Việc Hiện Đại",
+      "cognitive": {
+        "description": "Chuyển đổi ngữ cảnh làm giảm năng suất và gây kiệt sức",
+        "stat": "Giảm 40%",
+        "title": "Chi Phí Nhận Thức"
+      },
+      "financial": {
+        "description": "Lãng phí vào \"công việc quản lý công việc\"—gánh nặng hàng nghìn tỷ đô la cho năng suất toàn cầu",
+        "stat": "21 giờ/tuần",
+        "title": "Chi Phí Tài Chính"
+      },
+      "innovation": {
+        "description": "Những đột phá tiếp theo bị ngộp thở bởi hộp thư, cuộc họp và bảng tính",
+        "stat": "Không Thể Đo Lường",
+        "title": "Chi Phí Đổi Mới"
+      },
+      "title": {
+        "highlight": "Ma Sát Kỹ Thuật Số",
+        "part1": "Cái Giá Của"
+      }
+    },
+    "techStack": {
+      "ai": {
+        "category": "AI & Phân Tích",
+        "tech1": "OpenAI",
+        "tech2": "Anthropic",
+        "tech3": "Gemini",
+        "tech4": "Vertex AI"
+      },
+      "backend": {
+        "category": "Backend",
+        "tech1": "Supabase",
+        "tech2": "PostgreSQL",
+        "tech3": "tRPC",
+        "tech4": "Vercel AI SDK"
+      },
+      "frontend": {
+        "category": "Frontend",
+        "tech1": "Next.js 15",
+        "tech2": "React",
+        "tech3": "TypeScript",
+        "tech4": "Tailwind CSS"
+      },
+      "infrastructure": {
+        "category": "Hạ Tầng",
+        "tech1": "Turborepo",
+        "tech2": "Bun",
+        "tech3": "Docker",
+        "tech4": "Vercel"
+      },
+      "subtitle": "Chúng tôi tận dụng các công nghệ mới nhất để xây dựng nền tảng nhanh, đáng tin cậy và có khả năng mở rộng",
+      "title": {
+        "highlight": "Công Nghệ Tiên Tiến",
+        "part1": "Được Xây Dựng Với"
+      }
+    },
+    "timeline": {
+      "building": {
+        "achievement1": "Quản lý công việc Tuturuuu Tasks",
+        "achievement2": "Đồng bộ lịch",
+        "achievement3": "Theo dõi tài chính",
+        "achievement4": "Nền tảng Nova",
+        "description": "Xây dựng nền tảng với hơn 377 migration cơ sở dữ liệu, xác thực toàn diện và tích hợp AI.",
+        "period": "2024 - Hiện Tại",
+        "phase": "Xây Dựng",
+        "title": "Phát Triển Nhanh"
+      },
+      "evolution": {
+        "achievement1": "Trí tuệ đa tác nhân",
+        "achievement2": "Khả năng tiếp cận toàn cầu",
+        "achievement3": "Học tập liên tục",
+        "description": "Mở rộng khả năng của Mira, xây dựng biểu đồ ngữ cảnh của Aurora và biến điều không thể thành có thể cho mọi người.",
+        "period": "2025 - Tương Lai",
+        "phase": "Tiến Hóa",
+        "title": "Kỷ Nguyên Đối Tác"
+      },
+      "foundation": {
+        "achievement1": "Kiến trúc nền tảng",
+        "achievement2": "Đội ngũ cốt lõi tập hợp",
+        "description": "Nhận ra Sự Phản Bội Lớn Của Công Việc Hiện Đại và hình dung một tương lai tốt đẹp hơn nơi AI phục vụ nhân loại.",
+        "period": "2024 - Những Ngày Đầu",
+        "phase": "Nền Tảng",
+        "title": "Tia Lửa"
+      },
+      "launch": {
+        "achievement1": "Thực thể pháp lý được thành lập",
+        "achievement2": "Phát hành mã nguồn mở",
+        "description": "TUTURUUU JSC chính thức được thành lập, đánh dấu cam kết xây dựng hệ điều hành thông minh cho công việc hiện đại.",
+        "period": "2 tháng 4, 2025",
+        "phase": "Ra Mắt",
+        "title": "Thành Lập Chính Thức"
+      },
+      "subtitle": "Từ tầm nhìn đầy tham vọng đến hiện thực chuyển đổi",
+      "title": {
+        "highlight": "Đổi Mới",
+        "part1": "Hành Trình"
+      }
+    },
+    "vision": {
+      "mission": {
+        "description": "Chiến đấu chống lại tiếng ồn công nghệ bằng cách xây dựng một nền tảng thông minh, thống nhất và mở, tự động hóa công việc hành chính và loại bỏ ma sát chuyển đổi ngữ cảnh.",
+        "title": "Sứ Mệnh"
+      },
+      "subtitle": "Điều thúc đẩy chúng tôi mỗi ngày để vượt qua ranh giới và đổi mới",
+      "title": {
+        "highlight": "Phương Bắc",
+        "part1": "Ngôi Sao"
+      },
+      "vision": {
+        "description": "Tạo ra tương lai nơi công nghệ giải phóng tiềm năng nhân loại—giải phóng sự tập trung tập thể để giải quyết những thách thức quan trọng nhất của thế giới, đồng thời làm cho sự đổi mới đẳng cấp thế giới trở nên dễ tiếp cận với mọi người, mọi nơi.",
+        "title": "Tầm Nhìn"
+      }
+    }
+  }
+}

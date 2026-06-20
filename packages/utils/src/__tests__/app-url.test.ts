@@ -277,6 +277,7 @@ describe('Portless app origin registry', () => {
       'https://rewise.tuturuuu.localhost',
       'https://shortener.tuturuuu.localhost',
       'https://storefront.tuturuuu.localhost',
+      'https://tanstack.tuturuuu.localhost',
       'https://tasks.tuturuuu.localhost',
       'https://teach.tuturuuu.localhost',
       'https://track.tuturuuu.localhost',

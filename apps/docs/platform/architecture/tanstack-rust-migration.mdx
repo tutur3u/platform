@@ -1,0 +1,535 @@
+---
+title: "TanStack Start And Rust Migration"
+description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
+updatedAt: "2026-06-20"
+---
+
+`apps/tanstack-web` is the replacement frontend for the legacy Next.js
+`apps/web` runtime. It uses TanStack Start, TanStack Router, TanStack Query,
+Vite, React 19, Tailwind 4, and the existing Tuturuuu shared packages.
+
+`apps/backend` is the dedicated Rust API runtime. Do not create another backend
+service for this migration; extend `apps/backend` route groups and keep API
+contracts documented in `apps/backend/api/openapi.yaml`. The backend runs as a
+native container now and keeps a Cloudflare Workers Rust entrypoint ready in
+`apps/backend/wrangler.jsonc` for edge preview deployment.
+
+## Runtime Shape
+
+| Runtime      | Local URL                             | Fallback port | Owner               |
+| ------------ | ------------------------------------- | ------------: | ------------------- |
+| Legacy web   | `https://tuturuuu.localhost`          |        `7803` | `apps/web`          |
+| TanStack web | `https://tanstack.tuturuuu.localhost` |        `7824` | `apps/tanstack-web` |
+| Rust backend | `http://localhost:7820`               |        `7820` | `apps/backend`      |
+
+Use `bun dev:tanstack-web` for local TanStack work. Docker dev also exposes the
+`tanstack-web` service on port `7824` and injects `BACKEND_PUBLIC_ORIGIN`,
+`BACKEND_INTERNAL_URL`, and `BACKEND_INTERNAL_TOKEN` for Rust backend calls.
+
+## Cloudflare Preview Deployment
+
+Cloudflare preview deployments are supported before cutover so the team can
+validate the Worker runtime, smoke endpoints, and benchmark numbers without
+moving production traffic. The preview path uses:
+
+- `apps/backend/wrangler.jsonc` for the Rust Worker bundle.
+- `apps/tanstack-web/wrangler.jsonc` for the TanStack Start Worker.
+- `@cloudflare/vite-plugin` in `apps/tanstack-web/vite.config.ts`, registered
+  before `tanstackStart()`.
+- root `wrangler` tooling plus `bun check:cloudflare` to validate both Worker
+  configs without contacting Cloudflare.
+
+Validate the checked Cloudflare contract locally:
+
+```bash
+bun check:cloudflare
+```
+
+Current compatibility contract:
+
+| Runtime                 | Cloudflare entrypoint              | Deploy command                                             | Compatibility status                                                                                                                                                |
+| ----------------------- | ---------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Preview-ready for the migrated pure dispatcher routes, health/readiness, protected migration inventory, and static/cookie endpoints that do not need outbound HTTP. |
+| TanStack Start frontend | `apps/tanstack-web/wrangler.jsonc` | `bun --cwd apps/tanstack-web run deploy:cloudflare`        | Preview-ready for migrated public routes, redirects, the root migration shell, and Start server-function calls to the Rust backend.                                 |
+
+`apps/tanstack-web` deployment runs `bun run build` internally through the
+app-local `deploy:cloudflare` script. Do not run it during docs-only or
+inspection work unless the task explicitly allows build commands. For a
+configuration-only preflight, use `bun check:cloudflare`.
+
+Both Wrangler configs declare required secret names with the schema-supported
+`secrets.required` property. The validator requires these names and rejects
+secret-looking values under `vars`:
+
+| Worker                             | Required preview secrets                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`                                                  |
+| `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_URL`, `BACKEND_INTERNAL_TOKEN` |
+
+The backend Worker uses `BACKEND_ENV=preview` in `wrangler.jsonc`. Do not set
+Cloudflare preview traffic to `development`; development-only migration routes
+remain limited to local development and the explicit local E2E bypass.
+
+Deploy the Rust backend Worker first:
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install worker-build
+bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+bun wrangler deploy --config apps/backend/wrangler.jsonc
+```
+
+`BACKEND_INTERNAL_TOKEN` is required before backend preview deploys are useful:
+`/readyz` reports not-ready when the token is missing. Wrangler prompts for the
+secret value; do not place the value in `wrangler.jsonc`, `vars`, docs, or
+shell history.
+
+Smoke-test the returned `workers.dev` URL before pointing the frontend at it:
+
+```bash
+curl -fsS https://<backend-worker-origin>/healthz
+curl -fsS https://<backend-worker-origin>/readyz
+curl -fsS \
+  -H "Authorization: Bearer ${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+  https://<backend-worker-origin>/api/migration/status
+```
+
+Then configure the TanStack Worker with the deployed backend origin. Store the
+origin as Cloudflare secrets for preview runs so account-specific hostnames and
+future internal-only origins do not become source defaults:
+
+```bash
+bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+bun wrangler secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
+bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+```
+
+Both origin values should initially be the backend Worker origin, for example the
+`https://<backend-worker>.<subdomain>.workers.dev` URL returned by the backend
+deploy. `BACKEND_PUBLIC_ORIGIN` is the public browser-safe origin used for
+public probes and non-protected traffic. `BACKEND_INTERNAL_URL` is the
+server-side backend URL used by the TanStack Worker until a private binding
+replaces public-origin HTTP. The TanStack Worker also needs the same
+`BACKEND_INTERNAL_TOKEN` value so Start server functions can call the protected
+Rust migration inventory endpoints. Local `wrangler dev` can omit the origin
+bindings because `packages/internal-api` falls back to `http://localhost:7820`;
+local migration dashboard calls will fall back to the checked manifest when the
+backend token is not configured.
+
+Deploy the TanStack Start Worker after the backend origin secrets are present:
+
+```bash
+bun --cwd apps/tanstack-web run cf-typegen
+bun --cwd apps/tanstack-web run deploy:cloudflare
+```
+
+For a local Worker-shape smoke before deployment, use Wrangler preview servers
+in separate terminals and then point the smoke command at those origins:
+
+```bash
+bun wrangler dev --config apps/backend/wrangler.jsonc
+bun --cwd apps/tanstack-web run preview:cloudflare
+```
+
+Set the same env variable names that the deployed Workers use. Keep values in
+the shell, local ignored env files, or Wrangler secret storage only:
+`BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
+`BACKEND_INTERNAL_URL`. When the TanStack local Worker needs to call a local
+backend Worker, set both origin values to the local backend Wrangler origin.
+
+Then run the preview smoke command against the returned Worker origins:
+
+```bash
+BACKEND_WORKER_ORIGIN=https://<backend-worker-origin> \
+TANSTACK_WEB_WORKER_ORIGIN=https://<tanstack-worker-origin> \
+bun smoke:cloudflare
+```
+
+Set `BACKEND_INTERNAL_TOKEN` in the shell before running the smoke command. The
+smoke command probes `/healthz`, `/readyz`, authenticated
+`/api/migration/status`, and the TanStack root shell. It fails on `4xx` and
+`5xx` responses and redacts the bearer token from output. For deployed E2E
+smoke runs, set `TANSTACK_EXPECT_BACKEND_REACHABLE=1` and
+`TANSTACK_EXPECT_BACKEND_TARGET=cloudflare-workers` so the migration shell must
+prove the frontend can reach the Rust Worker.
+
+This is still a preview/canary path. Keep `apps/web` as the production source of
+truth until the manifest, Docker E2E, benchmark, and cutover gates below pass.
+Do not map production hostnames to the preview Worker while `workers_dev`
+canary traffic and route parity are still in progress.
+
+Rollback is currently DNS/routing only: remove or roll back any Cloudflare route
+or custom-domain mapping that sends traffic to the preview Worker, and leave the
+Docker blue/green `apps/web` production stack serving the canonical host. Do
+not delete Wrangler secrets during rollback unless the secret itself is
+compromised; keeping them bound makes redeploying the previous Worker version or
+re-running smoke checks deterministic. If a preview deploy regresses, redeploy
+the last known-good Worker version through Wrangler or remove the preview route,
+then run `bun smoke:cloudflare` against the remaining preview origins before
+resuming canary traffic.
+
+The desired protected-traffic cutover is a Cloudflare service binding from the
+TanStack Worker to the backend Worker, for example a future
+`services` entry with binding name `BACKEND` and service `tuturuuu-backend`.
+That cutover must update the server-only backend client path and
+`bun check:cloudflare` before removing `BACKEND_INTERNAL_URL`. Until then,
+protected workspace and admin APIs must not move to production Worker traffic:
+browser code must never receive service tokens, and server-owned protected data
+must stay behind server-owned calls.
+
+Current Cloudflare limitations:
+
+- Service bindings are pending. `BACKEND_INTERNAL_URL` still points at an HTTP
+  origin, usually the backend Worker preview URL.
+- Outbound HTTP proxy parity for the Discord cron routes is pending an async
+  Rust abstraction that works in both native Axum and Cloudflare Workers.
+- Production host routing is pending full route manifest completion, Docker
+  compare-mode E2E evidence, benchmark evidence, and
+  `bun migration:tanstack:gates`.
+- Preview Workers should not become the owner for private workspace/admin APIs
+  until each route has backend tests, OpenAPI coverage, an internal-api facade,
+  and migration gate evidence.
+
+## Route Ownership Manifest
+
+The current migration manifest is checked in at
+`apps/tanstack-web/migration/route-manifest.json`. It records the current
+`apps/web/src/app` route inventory, intended target owner for each route, and a
+progress summary grouped by target owner and route kind. API and route-handler
+entries also include a `methods` array derived from exported Next route methods;
+`summary.methodCounts` tracks total exported `GET`, `POST`, `PUT`, `PATCH`,
+`DELETE`, `HEAD`, and `OPTIONS` handlers.
+
+Current inventory:
+
+- `305` pages
+- `67` layouts
+- `1,112` route handlers
+- `19` cron handlers
+- `1,489` total tracked route artifacts
+- `76` migrated artifacts, `77` terminal artifacts, and `1,412` remaining
+  legacy-owned artifacts after the current static public-route batch
+
+Regenerate it after adding or removing legacy routes:
+
+```bash
+bun migration:tanstack:manifest
+```
+
+Route ownership status is preserved through
+`apps/tanstack-web/migration/route-overrides.json`. Add an override when a
+route becomes `migrated` or receives an accepted removal decision; do not edit
+the generated manifest by hand.
+
+Check that the manifest still matches the legacy route tree while migration is
+in progress:
+
+```bash
+bun migration:tanstack:check
+```
+
+Cutover mode is intentionally stricter. It fails while any route remains marked
+as `legacy-next`:
+
+```bash
+bun migration:tanstack:cutover-check
+```
+
+The full cutover gate also requires explicit Docker E2E and benchmark evidence:
+
+```bash
+bun migration:tanstack:gates -- \
+  --e2e-report tmp/e2e/web-migration/compare-report.json \
+  --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json
+```
+
+This command validates route parity, terminal migration statuses, backend-owned
+route mapping, compare-mode Docker E2E evidence, and a full compare benchmark
+report without committing generated artifacts.
+
+The manifest also includes `progress.byOwner`, `progress.byKind`, and
+`progress.topLegacyRoutes`. Use those fields when splitting the remaining port
+work across frontend and backend owners. Use each route's `methods` list when
+checking API parity so a `GET` port does not accidentally hide an unmigrated
+`POST`, `OPTIONS`, or mutation handler on the same route artifact. The Rust
+backend exposes the same derived progress at:
+
+```text
+GET /api/migration/progress
+```
+
+`apps/tanstack-web` reads that endpoint through `packages/internal-api` and
+falls back to the checked manifest when the backend is offline.
+
+First migrated ownership:
+
+| Legacy route                                                                    | New owner                            | Evidence                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /.well-known/*` / `HEAD /.well-known/*`                                    | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route handler `migrated`; Rust returns a cacheable empty `404` with `Cache-Control: public, max-age=300, must-revalidate`.                                                                                    |
+| `GET /~recover-browser-state` / `POST /~recover-browser-state`                  | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route handler `migrated`; Rust returns the no-store reset HTML, enforces same-origin POST confirmation, emits `Clear-Site-Data`, clears Supabase auth cookies, and redirects to `/login?browserStateReset=1`. |
+| `GET /api/health`                                                               | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; `GET /api/health` returns `{ "status": "ok" }` with `Cache-Control: no-store` and JSON security headers.                                                                                    |
+| `GET /api/v1/calendar/mock`                                                     | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust returns the deterministic legacy mock calendar event payload with JSON security headers.                                                                                               |
+| `POST` / `DELETE` `/api/v1/infrastructure/languages`                            | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy locale validation bodies and `NEXT_LOCALE` set/delete cookie behavior.                                                                                            |
+| `POST` / `DELETE` `/api/v1/infrastructure/sidebar`                              | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy collapsed-sidebar validation body and `sidebar-collapsed` set/delete cookie behavior.                                                                             |
+| `POST` / `DELETE` `/api/v1/infrastructure/sidebar/sizes`                        | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy size validation body, two-cookie write behavior, and DELETE behavior that clears only `sidebar-size`.                                                             |
+| `GET /api/v1/infrastructure/users/fields/types`                                 | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust returns the deterministic ordered legacy field type payload without opening a Supabase admin client for static metadata.                                                               |
+| `POST /api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email` | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy `410 Gone` response for removed direct post email sending.                                                                                                        |
+| `GET` / `POST` `/api/v1/workspaces/:wsId/slides`                                | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the current `501 Not implemented` placeholder contract without adding protected workspace slide data access.                                                                 |
+| `PUT` / `DELETE` `/api/v1/workspaces/:wsId/slides/:slideId`                     | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the current `501 Not implemented` placeholder contract without adding protected workspace slide data access.                                                                 |
+| `PUT /api/v1/infrastructure/migrate/grouped-score-names`                        | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves the legacy development-only guard and the disabled `410 MIGRATION_DISABLED` response for the removed `user_group_indicators` table.                                          |
+
+First TanStack Start migrated ownership:
+
+| Legacy route                                                                                                                | New owner                                        | Evidence                                                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/:locale/docs`                                                                                                             | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/:locale/docs` throws a TanStack Router `307` redirect to `https://docs.tuturuuu.com`.                                                                                                                                                                           |
+| `/:locale/calendar/meet-together/[[...slug]]`                                                                               | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/:locale/calendar/meet-together` and nested slug paths redirect to `/meet-together` while preserving trailing slug segments.                                                                                                                                     |
+| `/:locale/pricing`                                                                                                          | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/pricing` and `/:locale/pricing` throw a TanStack Router `307` redirect to `/?hash-nav=1#pricing`.                                                                                                                                                               |
+| `/:locale/about`                                                                                                            | `apps/tanstack-web` TanStack Start static route  | `route-overrides.json` marks the about page and metadata-only layout `migrated`; the Start route preserves the legacy English and Vietnamese `about.*` message namespace through TanStack-local message files and renders without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access.  |
+| `/:locale/{acceptable-use,community-guidelines,privacy,terms}`                                                              | `apps/tanstack-web` TanStack Start static routes | `route-overrides.json` marks each legal page and metadata-only layout `migrated`; the Start routes preserve the legacy static legal content, local legal primitives, and metadata without auth, Supabase, or protected workspace data access.                                                                       |
+| `/:locale/partners`                                                                                                         | `apps/tanstack-web` TanStack Start static route  | `route-overrides.json` marks the partners page and metadata-only layout `migrated`; the Start route preserves the legacy partner content, CTAs, outbound links, local partner primitives, and copied public logo assets without auth, Supabase, or protected workspace data access.                                 |
+| `/:locale/products/{ai,calendar,crm,documents,drive,finance,inventory,lms,mail,tasks,workflows}`                            | `apps/tanstack-web` TanStack Start static routes | `route-overrides.json` marks each static product page and layout `migrated`; the Start routes preserve the legacy product copy, metadata, and shared page primitives without adding auth, Supabase, or protected workspace data access.                                                                             |
+| `/:locale/products/meet-together`                                                                                           | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/products/meet-together` and `/:locale/products/meet-together` throw a TanStack Router `307` redirect to `/meet-together`.                                                                                                                                       |
+| `/:locale/qr-generator`                                                                                                     | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/qr-generator` and `/:locale/qr-generator` redirect to the QR app origin and forward the raw query string so duplicate query keys are preserved.                                                                                                                 |
+| `/:locale/security`                                                                                                         | `apps/tanstack-web` TanStack Start static route  | `route-overrides.json` marks the security landing page and metadata-only layout `migrated`; the Start route preserves the legacy static security copy, vulnerability-reporting CTAs, trust sections, and local primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access.  |
+| `/:locale/security/{policy,bug-bounty}`                                                                                     | `apps/tanstack-web` TanStack Start static routes | `route-overrides.json` marks the security policy page, Security Hall of Fame page, and bug-bounty metadata-only layout `migrated`; the Start routes preserve the legacy responsible-disclosure and researcher-credit copy with local security primitives and no auth, Supabase, or protected workspace data access. |
+| `/:locale/solutions/{construction,education,healthcare,hospitality,manufacturing,pharmacies,realestate,restaurants,retail}` | `apps/tanstack-web` TanStack Start static routes | `route-overrides.json` marks every static solution page and layout `migrated`; the Start routes preserve legacy copy, metadata, FAQ content, CTAs, success metrics, and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access.                          |
+| `/~offline` page                                                                                                            | `apps/tanstack-web` TanStack Start route         | `route-overrides.json` marks the page `migrated`; the Start route renders the shared `OfflinePage` with the legacy title, message, and foreground/background classes.                                                                                                                                               |
+| `/~offline` layout                                                                                                          | `apps/tanstack-web` root document                | `route-overrides.json` marks the layout `migrated`; the Start root document imports shared UI globals and applies the legacy scroll/background body classes without relying on Next.js font helpers.                                                                                                                |
+
+Accepted removals:
+
+| Legacy artifact                                              | Decision           | Evidence                                                                                                                                                                                              |
+| ------------------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/app/api/workspaces/[wsId]/categories/route.ts` | `accepted-removal` | The file is zero bytes and exports no HTTP methods, so there is no runtime behavior to port. The override keeps the artifact visible and terminal instead of silently dropping it from the inventory. |
+
+Backend migration candidates blocked on runtime design:
+
+| Legacy route                             | Blocker                                                                                                                                                                                                | Required design                                                                                                                                                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/cron/discord/daily-report`     | Exact parity proxies a POST to `DISCORD_APP_DEPLOYMENT_URL/daily-report`, but the Rust backend dispatcher is currently a synchronous pure route function shared by native Axum and Cloudflare Workers. | Add an async outbound HTTP abstraction with native and Worker implementations, cron bearer config for `CRON_SECRET` / `VERCEL_CRON_SECRET`, upstream JSON/status passthrough, and invalid-JSON fallback parity before marking this route migrated. |
+| `GET /api/cron/discord/wol/daily/remind` | Same Discord proxy behavior and runtime split as the daily report route.                                                                                                                               | Reuse the async cron proxy abstraction for the `wol-reminder` upstream path and document both routes in `apps/backend/api/openapi.yaml`.                                                                                                           |
+
+## Frontend Runtime Adapters
+
+TanStack route ports should use the adapter modules under
+`apps/tanstack-web/src/lib/platform/` instead of rebuilding Next.js behavior in
+each route:
+
+| Adapter         | Owns                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| `locale.ts`     | `en` / `vi` locale detection, `NEXT_LOCALE`, as-needed prefixes, and `Accept-Language` fallback.                |
+| `head.ts`       | TanStack-compatible metadata, canonical links, alternates, and stylesheet descriptors.                          |
+| `theme.ts`      | The class-based `system` / `light` / `dark` theme boot script used by the root shell.                           |
+| `navigation.ts` | Typed redirect and not-found errors that can be converted to `Response` objects in loaders or server functions. |
+| `session.ts`    | Sanitized auth/session hydration snapshots from request cookies without exposing token values to the browser.   |
+| `query.ts`      | Shared TanStack Query defaults and dehydration behavior for loader-prefetched data.                             |
+
+The root TanStack shell already uses the head, locale, theme, and Query
+adapters. New route ports should add route-specific metadata through
+`createPageHead`, prefetch loader data through the shared QueryClient, and pass
+only sanitized session state to client components.
+
+## Data And API Rules
+
+- TanStack loaders and server functions may act as a BFF layer for SSR,
+  cookies, headers, and query hydration.
+- Product data reads/writes move to Rust-owned endpoints in `apps/backend`.
+- Browser/shared UI code calls `packages/internal-api` helpers, not scattered
+  raw API paths.
+- Protected data stays behind server-owned private/admin access. Do not expose
+  private Supabase or protected workspace reads directly to browser code.
+- Use TanStack Query for client fetching and mutation. Do not fetch data in
+  `useEffect`.
+
+## Security And Test Requirements
+
+Every migrated Rust endpoint needs the same ownership evidence before its
+manifest entry can move out of `legacy-next`:
+
+- a `route-overrides.json` entry that marks the legacy artifact as `migrated`
+  or `accepted-removal`
+- an OpenAPI path or schema update in `apps/backend/api/openapi.yaml`
+- a Rust route dispatcher test covering the success case and unsupported method
+  behavior
+- a `packages/internal-api` facade when the TanStack app or shared UI needs to
+  call the endpoint
+
+The manifest check compares both aggregate method counts and each route's method
+list against the current `apps/web/src/app` tree, including generated export
+patterns such as `export const { GET } = createSerwistRoute(...)`. Regenerate
+the manifest after adding, removing, or changing exported methods in a legacy
+`route.ts`. Non-terminal routes with `methods: []` are still artifacts in the
+ownership inventory; port, restore an exported method, or mark them
+`accepted-removal` with an explicit reason before cutover.
+
+Rust JSON responses must keep the shared response security defaults:
+`Content-Type: application/json`, `Content-Security-Policy: default-src 'none';
+frame-ancestors 'none'; base-uri 'none'`, `Referrer-Policy: no-referrer`,
+`X-Content-Type-Options: nosniff`, and `X-Frame-Options: DENY`. Route ports that
+replace legacy public probes or API handlers must preserve explicit cache
+behavior, including `Cache-Control: no-store` for `/api/health` and
+`Cache-Control: public, max-age=300, must-revalidate` for `/.well-known/*`.
+Non-JSON routes should use the empty-response path instead of serializing JSON
+`null` when the legacy handler returned no body.
+
+Protected workspace, cron, job, and admin endpoints stay server-owned. Browser
+code cannot call protected Rust routes directly, cannot receive service tokens,
+and cannot bypass `packages/internal-api` / TanStack server functions for
+session-aware data access. Worker-bound secrets belong in Cloudflare secret
+bindings; keep local, Docker, and Wrangler configuration to environment
+variable names only.
+
+For Cloudflare specifically:
+
+- Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
+  `BACKEND_INTERNAL_URL` with `wrangler secret put` or Cloudflare dashboard
+  secret bindings. Do not commit literal origins that are account-specific
+  private targets, tokens, API keys, cookies, or session material.
+- Keep private/admin data ownership server-side. If a migrated endpoint needs a
+  Supabase service role or private schema access, the Rust backend owns that
+  call path; the browser receives only the authorized response shape.
+- Review CORS, cookie domain, `SameSite`, secure-cookie, and session-origin
+  behavior before mapping a custom hostname. Preview `workers.dev` origins are
+  different sites from `tuturuuu.localhost` and production `tuturuuu.com`, so
+  cookie/session behavior must be proven with smoke or E2E evidence rather than
+  assumed from Docker.
+- Keep `BACKEND_ENV=preview` for Cloudflare preview. Development-only
+  migration routes and local E2E bypasses must not be enabled by Worker deploys.
+- Do not bypass the migration gate because a Worker smoke passed. Worker smoke
+  proves deploy compatibility; cutover still requires manifest, Docker E2E, and
+  benchmark evidence.
+
+Migration inventory endpoints are also protected because they expose checked
+legacy route source paths and route ownership state. `GET /api/migration/status`,
+`GET /api/migration/manifest`, `GET /api/migration/progress`, and
+`GET /api/migration/cutover-gates` require
+`Authorization: Bearer <BACKEND_INTERNAL_TOKEN>`. The TanStack migration
+dashboard calls them from a Start server function through
+`packages/internal-api`, which adds the bearer token only on the server.
+
+The first Rust-owned migration contracts are exposed from `apps/backend` and
+consumed by the TanStack shell through a Start server function:
+
+| Endpoint                                                                        | Purpose                                                                                                                                              |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /.well-known/*` / `HEAD /.well-known/*`                                    | Legacy-compatible cacheable empty `404` for unsupported well-known probes.                                                                           |
+| `GET /~recover-browser-state` / `POST /~recover-browser-state`                  | Legacy-compatible browser recovery route with no-store HTML, same-origin POST protection, Clear-Site-Data, auth cookie clearing, and login redirect. |
+| `GET /api/health`                                                               | Legacy-compatible health route migrated from `apps/web` to Rust.                                                                                     |
+| `GET /api/v1/calendar/mock`                                                     | Legacy-compatible deterministic mock calendar events migrated from `apps/web` to Rust.                                                               |
+| `POST` / `DELETE` `/api/v1/infrastructure/languages`                            | Legacy-compatible locale preference cookie route for `NEXT_LOCALE`.                                                                                  |
+| `POST` / `DELETE` `/api/v1/infrastructure/sidebar`                              | Legacy-compatible sidebar collapsed preference cookie route for `sidebar-collapsed`.                                                                 |
+| `POST` / `DELETE` `/api/v1/infrastructure/sidebar/sizes`                        | Legacy-compatible sidebar sizing preference cookie route for `sidebar-size` and `main-content-size`.                                                 |
+| `GET /api/v1/infrastructure/users/fields/types`                                 | Legacy-compatible static user field type metadata route returning `TEXT`, `NUMBER`, `BOOLEAN`, `DATE`, and `DATETIME` in the original order.         |
+| `POST /api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email` | Legacy-compatible removed direct post email route returning `410 Gone`; queue-based sending owns approved emails.                                    |
+| `GET` / `POST` `/api/v1/workspaces/:wsId/slides`                                | Legacy-compatible workspace slides collection placeholder returning `501 Not implemented`.                                                           |
+| `PUT` / `DELETE` `/api/v1/workspaces/:wsId/slides/:slideId`                     | Legacy-compatible workspace slide item placeholder returning `501 Not implemented`.                                                                  |
+| `PUT /api/v1/infrastructure/migrate/grouped-score-names`                        | Disabled infrastructure migration route migrated from `apps/web` to Rust with the same development-only guard and `410 MIGRATION_DISABLED` body.     |
+| `GET /api/migration/status`                                                     | Runtime, environment, deployment target, and manifest pointer.                                                                                       |
+| `GET /api/migration/manifest`                                                   | The checked route manifest JSON.                                                                                                                     |
+| `GET /api/migration/progress`                                                   | Owner/kind progress buckets and representative remaining legacy route artifacts.                                                                     |
+| `GET /api/migration/cutover-gates`                                              | Backend-derived manifest gates plus required E2E and benchmark evidence placeholders.                                                                |
+
+`/api/migration/cutover-gates` is the dashboard authority for cutover state. It
+must stay blocked while any manifest route remains `legacy-next`, any backend
+route artifact is not mapped to `rust-backend`, or required Docker E2E and
+benchmark evidence is missing.
+
+## Docker And E2E
+
+The production compose stack defines `tanstack-web`, `tanstack-web-blue`, and
+`tanstack-web-green` services. The Docker Bake file includes matching
+`blue-green-tanstack-web*` targets so benchmark and cutover work can build
+candidate TanStack images beside the legacy web images.
+
+`apps/backend/Dockerfile` copies
+`apps/tanstack-web/migration/route-manifest.json` into the Rust build context
+because the backend includes the manifest at compile time for the migration
+contract endpoints. Run `bun check:docker` after manifest path or Dockerfile
+changes.
+
+Legacy E2E remains the default:
+
+```bash
+bun test:e2e:web:docker -- --frontend next
+```
+
+TanStack E2E uses the same Playwright suite and points at the TanStack route:
+
+```bash
+bun test:e2e:web:docker -- --frontend tanstack
+```
+
+Run both modes sequentially before cutover:
+
+```bash
+bun test:e2e:web:docker -- --frontend compare
+```
+
+Compare mode writes `tmp/e2e/web-migration/compare-report.json` after running
+both frontends. Set `E2E_COMPARE_REPORT_PATH` when a run needs to write the
+evidence file elsewhere under `tmp/`.
+
+`apps/web/e2e/public-marketing-routes.noauth.spec.ts` is the first shared
+public-route parity suite for this migration. It runs under the existing
+`apps/web` Playwright project so `--frontend tanstack` and `--frontend compare`
+reuse the same assertions for migrated product, legal, redirect, offline,
+security, partners, and static solution routes.
+
+## Benchmarks
+
+Use the benchmark harness to compare reachable Next and TanStack frontend
+routes, plus independent Rust backend smoke routes. It does not yet compare
+legacy Next.js API route timing against equivalent Rust endpoints. Reports are
+written under ignored
+`tmp/benchmarks/web-migration/<timestamp>/report.json`.
+
+```bash
+bun benchmark:web-setups -- --setup compare --profile smoke --insecure
+```
+
+Backend benchmark samples include protected migration endpoints. Set
+`BACKEND_INTERNAL_TOKEN` when running the benchmark against local Docker,
+preview Workers, or any backend that requires internal authorization; otherwise
+the protected samples correctly fail as unreachable `4xx` responses.
+
+Use full mode when both frontends are running with representative seeded data:
+
+```bash
+bun benchmark:web-setups -- --setup compare --profile full --require-all --insecure
+```
+
+After the full benchmark writes a report, pass that report to
+`bun migration:tanstack:gates` with the Docker E2E compare report. Generated
+benchmark and E2E reports stay under ignored `tmp/` paths.
+
+Default gates:
+
+- frontend route p95 must not regress more than `25%`
+- full compare evidence must include complete matching frontend route coverage;
+  unmatched Next-only or TanStack-only routes fail `--require-all` and cutover
+  gate validation
+- representative backend smoke routes must stay below the smoke ceiling
+- strict runs fail when any required route is unreachable
+
+Route samples include aggregate `p50Ms`, `p95Ms`, and `p99Ms`, plus `coldMs`
+for the first successful request and `warmP50Ms` / `warmP95Ms` / `warmP99Ms`
+for later samples. Use those fields for first-route cold time, warm navigation
+time, and representative API latency notes. Add Docker build time, image size,
+process RSS/CPU, JS output size, and E2E wall-time evidence to the same
+benchmark directory when running full cutover rehearsals.
+
+Record approved exceptions in the migration PR. Do not silently widen thresholds
+to make a run pass.
+
+## Cutover Checklist
+
+1. Every manifest route is `migrated` or `accepted-removal`.
+2. `bun migration:tanstack:cutover-check` passes.
+3. `bun test:e2e:web:docker -- --frontend compare` passes and has a compare
+   evidence report.
+4. `bun benchmark:web-setups -- --setup compare --profile full --require-all --insecure` passes or has approved exceptions.
+5. `bun migration:tanstack:gates -- --e2e-report <path> --benchmark-report <path>` passes.
+6. `bun check:docker` and `bun check` pass.
+7. Legacy `apps/web` remains available as the rollback fixture until production
+   monitoring shows the TanStack/Rust path is stable.

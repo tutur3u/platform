@@ -16,15 +16,22 @@ const {
   DNS_IPV4_FIRST_NODE_OPTION,
   DEFAULT_PORTLESS_HEALTH_URL,
   DEFAULT_PORTLESS_PROXY_TLS_MARKER,
+  DEFAULT_E2E_COMPARE_REPORT_PATH,
+  DEFAULT_TANSTACK_PORTLESS_BASE_URL,
+  DEFAULT_TANSTACK_DIRECT_HOST_PORT,
   DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
   DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
   DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
   DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
   DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
+  createE2ECompareReport,
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
   getPortlessCommandEnv,
+  getE2ECompareReportPath,
+  getE2EPortlessRouteName,
+  getE2EPortlessTargetPort,
   getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
@@ -33,6 +40,8 @@ const {
   getDockerWebUpArgs,
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
+  getTanStackDirectHostPort,
+  getFrontendE2EEnv,
   getReadinessFetchOptions,
   getDockerImageRefCandidates,
   getReusableLocalRedisRuntime,
@@ -53,6 +62,7 @@ const {
   isReusableLocalRedisResponse,
   isReusingLocalRedis,
   parseE2EProjectImageTags,
+  parseE2EFrontendArgs,
   probeReusableLocalRedis,
   prepareReusableWebImage,
   prepareReusableSupportImages,
@@ -65,6 +75,7 @@ const {
   routeListHasPortlessAlias,
   shouldKeepStack,
   waitForUrl,
+  writeE2ECompareReport,
 } = require('./run-web-e2e-docker.js');
 
 test('getDockerWebUpArgs starts production blue-green Docker with reset local Supabase', () => {
@@ -766,6 +777,147 @@ test('getPortlessHealthUrl targets the browser-facing local E2E login route', ()
     }),
     'https://tuturuuu.localhost/login'
   );
+  assert.equal(
+    getPortlessHealthUrl({
+      BASE_URL: DEFAULT_TANSTACK_PORTLESS_BASE_URL,
+      E2E_PORTLESS_HEALTH_PATH: '/',
+    }),
+    `${DEFAULT_TANSTACK_PORTLESS_BASE_URL}/`
+  );
+});
+
+test('parseE2EFrontendArgs strips frontend flags before Playwright runs', () => {
+  assert.deepEqual(
+    parseE2EFrontendArgs(['--frontend', 'tanstack', '--project', 'chromium']),
+    {
+      frontend: 'tanstack',
+      playwrightArgs: ['--project', 'chromium'],
+    }
+  );
+  assert.deepEqual(
+    parseE2EFrontendArgs(['--frontend=compare', 'auth.spec.ts']),
+    {
+      frontend: 'compare',
+      playwrightArgs: ['auth.spec.ts'],
+    }
+  );
+});
+
+test('createE2ECompareReport summarizes next and TanStack results', () => {
+  const report = createE2ECompareReport(
+    {
+      next: { durationMs: 1000, passed: true, status: 'passed' },
+      tanstack: { durationMs: 1200, passed: true, status: 'passed' },
+    },
+    new Date('2026-06-20T00:00:00.000Z')
+  );
+
+  assert.deepEqual(report, {
+    frontend: 'compare',
+    frontends: {
+      next: { durationMs: 1000, passed: true, status: 'passed' },
+      tanstack: { durationMs: 1200, passed: true, status: 'passed' },
+    },
+    generatedAt: '2026-06-20T00:00:00.000Z',
+    passed: true,
+    status: 'passed',
+  });
+  assert.equal(
+    createE2ECompareReport({
+      next: { passed: true, status: 'passed' },
+      tanstack: { error: 'failed', passed: false, status: 'failed' },
+    }).status,
+    'failed'
+  );
+});
+
+test('writeE2ECompareReport writes ignored cutover evidence under tmp by default', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-report-'));
+  const reportPath = path.join(tempDir, 'tmp', 'e2e', 'compare-report.json');
+  const chunks = [];
+
+  try {
+    assert.equal(
+      getE2ECompareReportPath({
+        E2E_COMPARE_REPORT_PATH: reportPath,
+      }),
+      reportPath
+    );
+    assert.equal(
+      DEFAULT_E2E_COMPARE_REPORT_PATH.endsWith(
+        path.join('tmp', 'e2e', 'web-migration', 'compare-report.json')
+      ),
+      true
+    );
+
+    writeE2ECompareReport({
+      output: {
+        write(chunk) {
+          chunks.push(String(chunk));
+        },
+      },
+      report: { frontend: 'compare', passed: true, status: 'passed' },
+      reportPath,
+      rootDir: tempDir,
+    });
+
+    assert.deepEqual(JSON.parse(fs.readFileSync(reportPath, 'utf8')), {
+      frontend: 'compare',
+      passed: true,
+      status: 'passed',
+    });
+    assert.match(chunks.join(''), /Docker E2E compare report/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getFrontendE2EEnv points TanStack runs at the TanStack route', () => {
+  const env = getFrontendE2EEnv('tanstack', {});
+
+  assert.equal(env.BASE_URL, DEFAULT_TANSTACK_PORTLESS_BASE_URL);
+  assert.equal(env.DOCKER_WEB_FRONTEND, 'tanstack');
+  assert.equal(env.E2E_PORTLESS_HEALTH_PATH, '/');
+  assert.equal(getE2EPortlessRouteName(env), 'tanstack.tuturuuu');
+  assert.equal(
+    getE2EPortlessTargetPort(env),
+    DEFAULT_TANSTACK_DIRECT_HOST_PORT
+  );
+  assert.equal(getFrontendE2EEnv('next', {}).DOCKER_WEB_FRONTEND, 'next');
+});
+
+test('getE2EPortlessTargetPort guards TanStack against the Next proxy port', () => {
+  assert.equal(getE2EPortlessTargetPort({}), '7803');
+  assert.equal(
+    getTanStackDirectHostPort({}),
+    DEFAULT_TANSTACK_DIRECT_HOST_PORT
+  );
+  assert.equal(
+    getE2EPortlessTargetPort({
+      DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '17824',
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+    }),
+    '17824'
+  );
+  assert.throws(
+    () =>
+      getE2EPortlessTargetPort({
+        DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '7803',
+        DOCKER_WEB_FRONTEND: 'tanstack',
+        PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+      }),
+    /Refusing to alias the TanStack Portless route to the Next web proxy port 7803/u
+  );
+  assert.equal(
+    getE2EPortlessTargetPort({
+      DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '7803',
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      E2E_ALLOW_TANSTACK_WEB_PROXY_PORT: '1',
+      PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+    }),
+    '7803'
+  );
 });
 
 test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () => {
@@ -947,6 +1099,20 @@ test('routeListHasPortlessAlias requires the expected alias and proxy port', () 
     ),
     true
   );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tanstack.tuturuuu.localhost -> localhost:7824 (alias)\n',
+      getFrontendE2EEnv('tanstack', {})
+    ),
+    true
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tanstack.tuturuuu.localhost -> localhost:7803 (alias)\n',
+      getFrontendE2EEnv('tanstack', {})
+    ),
+    false
+  );
 });
 
 test('isPortlessNotReadyBody detects Portless placeholder responses', () => {
@@ -1069,6 +1235,11 @@ test('getReadinessFetchOptions refuses insecure TLS for non-local HTTPS origins'
       .rejectUnauthorized,
     false
   );
+  assert.equal(
+    getReadinessFetchOptions('https://tanstack.tuturuuu.localhost:1355/')
+      .rejectUnauthorized,
+    false
+  );
 });
 
 test('waitForUrl timeout keeps nested fetch failure causes visible', async () => {
@@ -1132,6 +1303,43 @@ test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', as
     )
   );
   assert.match(chunks.join(''), /https:\/\/tuturuuu\.localhost/u);
+});
+
+test('ensurePortlessRoute points the TanStack host at the TanStack direct port', async () => {
+  const calls = [];
+
+  await ensurePortlessRoute({
+    env: getFrontendE2EEnv('tanstack', { PATH: 'test-path' }),
+    output: {
+      write() {},
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      if (args.includes('--remove')) {
+        throw new Error('route not registered yet');
+      }
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tanstack.tuturuuu.localhost  ->  localhost:7824  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+      ['bunx', ['portless', 'alias', '--remove', 'tanstack.tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tanstack.tuturuuu', '7824', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
 });
 
 test('ensurePortlessRoute honors the configured proxy host and Portless ports', async () => {

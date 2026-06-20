@@ -15,8 +15,11 @@ const {
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
+  LOCAL_E2E_TANSTACK_BASE_URL,
+  LOCAL_E2E_TANSTACK_DIRECT_URL,
   LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN,
   LOCAL_E2E_UPSTASH_REDIS_REST_URL,
+  SAFE_LOCAL_WEB_ORIGINS,
   assertSafeE2EEnvironment,
   createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
@@ -95,6 +98,47 @@ test('local E2E app URL uses Tuturuuu localhost for shared-cookie coverage', () 
       NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
     })
   );
+});
+
+test('local E2E safety allowlist accepts TanStack localhost origins', () => {
+  const helperPath = path.join(
+    __dirname,
+    '..',
+    'apps',
+    'web',
+    'e2e',
+    'helpers',
+    'environment.ts'
+  );
+  const helperSource = fs.readFileSync(helperPath, 'utf8');
+
+  assert.equal(
+    LOCAL_E2E_TANSTACK_BASE_URL,
+    'https://tanstack.tuturuuu.localhost:1355'
+  );
+  assert.equal(LOCAL_E2E_TANSTACK_DIRECT_URL, 'http://127.0.0.1:7824');
+  assert.equal(SAFE_LOCAL_WEB_ORIGINS.has(LOCAL_E2E_TANSTACK_DIRECT_URL), true);
+  assert.equal(
+    SAFE_LOCAL_WEB_ORIGINS.has('https://tanstack.tuturuuu.localhost'),
+    true
+  );
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+      NEXT_PUBLIC_APP_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+      PORTLESS_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+      WEB_APP_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+    })
+  );
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: LOCAL_E2E_TANSTACK_DIRECT_URL,
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+    })
+  );
+  assert.match(helperSource, /https:\/\/tanstack\.tuturuuu\.localhost/u);
+  assert.match(helperSource, /http:\/\/127\.0\.0\.1:7824/u);
 });
 
 test('assertSafeE2EEnvironment rejects cloud Supabase URLs', () => {

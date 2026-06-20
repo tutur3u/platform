@@ -1,0 +1,33 @@
+[package]
+name = "tuturuuu-backend"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "backend"
+path = "src/main.rs"
+required-features = ["native"]
+
+[features]
+default = ["native"]
+native = ["dep:axum", "dep:tokio"]
+worker = ["dep:worker"]
+
+[dependencies]
+axum = { version = "0.8.7", optional = true }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+tokio = { version = "1.48.0", features = ["macros", "net", "rt-multi-thread", "signal"], optional = true }
+url = "2.5.8"
+worker = { version = "0.7.0", optional = true }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+strip = true

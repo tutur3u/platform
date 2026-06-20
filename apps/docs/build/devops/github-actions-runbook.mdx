@@ -153,12 +153,12 @@ exponential backoff.
 ### Docker automation
 
 - `docker-setup-check.yaml`
-- `go-backend.yml`
+- `rust-backend.yml`
 
 `docker-setup-check.yaml` is the workflow to watch whenever Docker files,
-compose files, or Docker helper scripts change. `go-backend.yml` owns the
-`apps/backend` Go service checks: formatting, module download, `go vet`, tests,
-binary build, and Docker image build.
+compose files, or Docker helper scripts change. `rust-backend.yml` owns the
+`apps/backend` Rust service checks: formatting, locked dependency fetch,
+Clippy, tests, native binary build, and Docker image build.
 
 ### Quality and security
 

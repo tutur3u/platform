@@ -95,6 +95,41 @@ x-web-service: &web-service
     log-drain-postgres:
       condition: service_healthy
 
+x-tanstack-web-service: &tanstack-web-service
+  build:
+    context: ..
+    dockerfile: apps/tanstack-web/Dockerfile
+    target: runner
+  env_file:
+    - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
+      required: false
+    - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
+      required: false
+  environment:
+    - BACKEND_INTERNAL_TOKEN
+    - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
+    - BACKEND_PUBLIC_ORIGIN=${BACKEND_PUBLIC_ORIGIN:-http://backend:7820}
+    - HOST=0.0.0.0
+    - NODE_ENV=production
+    - PLATFORM_BLUE_GREEN_COLOR
+    - PLATFORM_DEPLOYMENT_STAMP
+    - PORT=7824
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  expose:
+    - "7824"
+  healthcheck:
+    test:
+      [
+        "CMD-SHELL",
+        'bun -e "fetch(''http://127.0.0.1:'' + (process.env.PORT || 7824) + ''/'').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))"',
+      ]
+    interval: 30s
+    timeout: 5s
+    start_period: 10s
+    retries: 3
+  init: true
+
 services:
   web:
     <<: *web-service
@@ -106,3 +141,14 @@ services:
 
   web-green:
     <<: *web-service
+
+  tanstack-web:
+    <<: *tanstack-web-service
+    ports:
+      - "127.0.0.1:${DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT:-7824}:7824"
+
+  tanstack-web-blue:
+    <<: *tanstack-web-service
+
+  tanstack-web-green:
+    <<: *tanstack-web-service

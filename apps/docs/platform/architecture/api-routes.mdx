@@ -6,6 +6,11 @@ updatedAt: "2026-04-19"
 
 The Tuturuuu platform uses Next.js App Router API routes with consistent patterns for versioning, authentication, error handling, and workspace isolation.
 
+During the TanStack Start migration, new backend API ownership should move to
+`apps/backend` instead of adding more long-lived `apps/web` route handlers. See
+`platform/architecture/tanstack-rust-migration` for the route manifest, OpenAPI,
+Docker, E2E, and benchmark gates.
+
 ## Route Organization
 
 ### Directory Structure

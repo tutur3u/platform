@@ -81,6 +81,24 @@ export {
   type WebAccountsResponse,
 } from './auth';
 export {
+  type BackendLegacyHealth,
+  type BackendMigrationCutoverGates,
+  type BackendMigrationManifest,
+  type BackendMigrationProgress,
+  type BackendMigrationStatus,
+  type BackendRouteManifestProgress,
+  type BackendRouteManifestProgressBucket,
+  type BackendRouteManifestRoute,
+  type BackendRouteManifestSummary,
+  createBackendApiClient,
+  getBackendLegacyHealth,
+  getBackendMigrationCutoverGates,
+  getBackendMigrationManifest,
+  getBackendMigrationProgress,
+  getBackendMigrationStatus,
+  getConfiguredBackendApiBaseUrl,
+} from './backend';
+export {
   applyWorkspaceCalendarSchedule,
   type CalendarAccount,
   type CalendarAccountDisconnectResponse,

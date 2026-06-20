@@ -5,6 +5,11 @@ description: "When and how to fetch data using RSC, Server Actions, React Query,
 
 The Tuturuuu platform uses a layered approach to data fetching, choosing the right strategy based on use case, caching requirements, and user experience needs.
 
+For the dedicated TanStack Start frontend plus Rust backend migration, use
+`platform/architecture/tanstack-rust-migration`. TanStack loaders and server
+functions are allowed as a BFF layer, while product data ownership moves behind
+Rust endpoints and `packages/internal-api` facades.
+
 ## Heavy Dashboards
 
 For queue-heavy dashboards that run expensive row + summary RPCs (for example posts review):
