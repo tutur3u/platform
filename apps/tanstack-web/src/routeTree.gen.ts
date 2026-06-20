@@ -81,6 +81,7 @@ import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } f
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId'
 import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId'
 import { Route as LocaleWsIdEducationCoursesCourseIdRouteImport } from './routes/$locale/$wsId/education/courses/$courseId'
+import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new'
 
 const Char126offlineRoute = Char126offlineRouteImport.update({
   id: '/~offline',
@@ -466,6 +467,12 @@ const LocaleWsIdEducationCoursesCourseIdRoute =
     path: '/$locale/$wsId/education/courses/$courseId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdAiChatMyChatbotsNewRoute =
+  LocaleWsIdAiChatMyChatbotsNewRouteImport.update({
+    id: '/$locale/$wsId/ai-chat/my-chatbots/new',
+    path: '/$locale/$wsId/ai-chat/my-chatbots/new',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -536,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute
+  '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
@@ -610,6 +618,7 @@ export interface FileRoutesByTo {
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail': typeof LocaleWsIdMailIndexRoute
   '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute
+  '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
@@ -685,6 +694,7 @@ export interface FileRoutesById {
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute
+  '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
@@ -761,6 +771,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail/'
     | '/$locale/ui/components/'
+    | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
@@ -835,6 +846,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail'
     | '/$locale/ui/components'
+    | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
@@ -909,6 +921,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail/'
     | '/$locale/ui/components/'
+    | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
@@ -981,6 +994,7 @@ export interface RootRouteChildren {
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
+  LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute
   LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRoute
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
 }
@@ -1491,6 +1505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/ai-chat/my-chatbots/new': {
+      id: '/$locale/$wsId/ai-chat/my-chatbots/new'
+      path: '/$locale/$wsId/ai-chat/my-chatbots/new'
+      fullPath: '/$locale/$wsId/ai-chat/my-chatbots/new'
+      preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1605,6 +1626,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
   LocaleWsIdMailIndexRoute: LocaleWsIdMailIndexRoute,
   LocaleUiComponentsIndexRoute: LocaleUiComponentsIndexRoute,
+  LocaleWsIdAiChatMyChatbotsNewRoute: LocaleWsIdAiChatMyChatbotsNewRoute,
   LocaleWsIdEducationCoursesCourseIdRoute:
     LocaleWsIdEducationCoursesCourseIdRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:
