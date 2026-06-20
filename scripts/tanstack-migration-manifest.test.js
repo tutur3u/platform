@@ -13,6 +13,8 @@ const {
   writeManifest,
 } = require('./tanstack-migration-manifest.js');
 const {
+  formatProgressReport,
+  parseArgs: parseProgressArgs,
   summarizeMigrationProgress,
 } = require('./tanstack-migration-progress.js');
 
@@ -386,4 +388,47 @@ test('summarizeMigrationProgress groups remaining work by owner and kind', () =>
       targetOwner: 'rust-backend',
     },
   ]);
+});
+
+test('tanstack migration progress CLI args support manifest and JSON output', () => {
+  const args = parseProgressArgs([
+    '--manifest',
+    'apps/tanstack-web/migration/route-manifest.json',
+    '--json',
+  ]);
+
+  assert.equal(args.format, 'json');
+  assert.match(
+    args.manifestPath,
+    /apps\/tanstack-web\/migration\/route-manifest\.json$/u
+  );
+});
+
+test('tanstack migration progress report prints owner buckets and blockers', () => {
+  const progress = summarizeMigrationProgress([
+    {
+      kind: 'page',
+      methods: [],
+      routePath: '/en/about',
+      sourceFile: 'apps/web/src/app/[locale]/about/page.tsx',
+      status: 'migrated',
+      targetOwner: 'tanstack-start',
+    },
+    {
+      kind: 'api',
+      methods: ['GET'],
+      routePath: '/api/users/search',
+      sourceFile: 'apps/web/src/app/api/users/search/route.ts',
+      status: 'legacy-next',
+      targetOwner: 'rust-backend',
+    },
+  ]);
+  const report = formatProgressReport(
+    progress,
+    '/repo/apps/tanstack-web/migration/route-manifest.json'
+  );
+
+  assert.match(report, /All route artifacts: 1\/2 terminal \(50%\)/u);
+  assert.match(report, /Rust backend: 0\/1 terminal \(0%\), 1 remaining/u);
+  assert.match(report, /\/api\/users\/search \[api; rust-backend; GET\]/u);
 });

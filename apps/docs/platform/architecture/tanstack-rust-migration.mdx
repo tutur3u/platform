@@ -131,6 +131,11 @@ bun wrangler dev --config apps/backend/wrangler.jsonc
 bun --cwd apps/tanstack-web run preview:cloudflare
 ```
 
+The checked Wrangler configs reserve distinct local preview ports so both
+Workers can run at the same time: `http://localhost:8780` for the Rust backend
+and `http://localhost:8784` for TanStack Start. Keep those ports stable because
+`bun check:cloudflare` validates them and the smoke examples below assume them.
+
 Set the same env variable names that the deployed Workers use. Keep values in
 the shell, local ignored env files, or Wrangler secret storage only:
 `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
@@ -140,16 +145,17 @@ backend Worker, set both origin values to the local backend Wrangler origin.
 Then run the preview smoke command against the returned Worker origins:
 
 ```bash
-BACKEND_WORKER_ORIGIN=https://<backend-worker-origin> \
-TANSTACK_WEB_WORKER_ORIGIN=https://<tanstack-worker-origin> \
+BACKEND_WORKER_ORIGIN=http://localhost:8780 \
+TANSTACK_WEB_WORKER_ORIGIN=http://localhost:8784 \
 bun smoke:cloudflare
 ```
 
-Set `BACKEND_INTERNAL_TOKEN` in the shell before running the smoke command. The
-smoke command probes `/healthz`, `/readyz`, authenticated
-`/api/migration/status`, and the TanStack root shell. It fails on `4xx` and
-`5xx` responses and redacts the bearer token from output. For deployed E2E
-smoke runs, set `TANSTACK_EXPECT_BACKEND_REACHABLE=1` and
+For deployed previews, replace those local origins with the `workers.dev` or
+custom preview origins returned by Wrangler. Set `BACKEND_INTERNAL_TOKEN` in the
+shell before running the smoke command. The smoke command probes `/healthz`,
+`/readyz`, authenticated `/api/migration/status`, and the TanStack root shell.
+It fails on `4xx` and `5xx` responses and redacts the bearer token from output.
+For deployed E2E smoke runs, set `TANSTACK_EXPECT_BACKEND_REACHABLE=1` and
 `TANSTACK_EXPECT_BACKEND_TARGET=cloudflare-workers` so the migration shell must
 prove the frontend can reach the Rust Worker.
 
@@ -314,6 +320,16 @@ Backend migration candidates blocked on runtime design:
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /api/cron/discord/daily-report`     | Exact parity proxies a POST to `DISCORD_APP_DEPLOYMENT_URL/daily-report`, but the Rust backend dispatcher is currently a synchronous pure route function shared by native Axum and Cloudflare Workers. | Add an async outbound HTTP abstraction with native and Worker implementations, cron bearer config for `CRON_SECRET` / `VERCEL_CRON_SECRET`, upstream JSON/status passthrough, and invalid-JSON fallback parity before marking this route migrated. |
 | `GET /api/cron/discord/wol/daily/remind` | Same Discord proxy behavior and runtime split as the daily report route.                                                                                                                               | Reuse the async cron proxy abstraction for the `wol-reminder` upstream path and document both routes in `apps/backend/api/openapi.yaml`.                                                                                                           |
+
+Frontend migration candidates blocked on auth/data ownership:
+
+| Legacy route                    | Blocker                                                                                                                                                               | Required design                                                                                                                                                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/:locale/meet-together`        | The public TanStack preview shell is available, but the legacy route also loads authenticated meeting plans and creates plans through Next-only Supabase/server-action paths. | Add Rust-owned or TanStack server-function-backed plan list/create APIs, route them through `packages/internal-api`, preserve unauthenticated empty/login-required behavior, and add E2E evidence before adding the `page:/:locale/meet-together` override. |
+| `/:locale/games/farm`           | The visible game page is client-only, but the legacy layout gates access through Supabase auth and `isValidTuturuuuEmail(user?.email)` before rendering.                 | Add a TanStack server gate that validates the session and email domain through server-owned auth helpers, then port the game UI without exposing it publicly.                                                                                              |
+| `/:locale/contact`              | The legacy contact form depends on current-user hydration and a protected support-inquiry mutation path.                                                               | Move inquiry creation behind a Rust/backend or TanStack server-function facade with CSRF/session handling and shared internal-api coverage before route ownership changes.                                                                                 |
+| `/:locale/login` and `/logout`  | Login/logout own Supabase auth, app-token confirmation, MFA/passkey flows, Turnstile state, and temporary AI auth revocation.                                         | Complete the auth/session contract for TanStack Start and Rust, then port these as a dedicated auth milestone with focused E2E coverage.                                                                                                                  |
+| `/:locale/women-in-tech`        | The page is public but still uses Next navigation/image behavior and posts language preference through the legacy app API.                                             | Replace Next-only primitives, keep language preference behind the migrated Rust cookie endpoint, and port assets/copy with public-route E2E coverage.                                                                                                      |
 
 ## Frontend Runtime Adapters
 

@@ -7,6 +7,10 @@
   "build": {
     "command": "worker-build --release -- --no-default-features --features worker"
   },
+  "dev": {
+    "port": 8780,
+    "local_protocol": "http"
+  },
   "observability": {
     "enabled": true
   },

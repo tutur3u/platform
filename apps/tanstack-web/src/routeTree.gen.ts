@@ -21,6 +21,7 @@ import { Route as LocaleQrGeneratorRouteImport } from './routes/$locale/qr-gener
 import { Route as LocalePrivacyRouteImport } from './routes/$locale/privacy'
 import { Route as LocalePricingRouteImport } from './routes/$locale/pricing'
 import { Route as LocalePartnersRouteImport } from './routes/$locale/partners'
+import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together'
 import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup'
 import { Route as LocaleDocsRouteImport } from './routes/$locale/docs'
 import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines'
@@ -119,6 +120,11 @@ const LocalePricingRoute = LocalePricingRouteImport.update({
 const LocalePartnersRoute = LocalePartnersRouteImport.update({
   id: '/$locale/partners',
   path: '/$locale/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
+  id: '/$locale/meet-together',
+  path: '/$locale/meet-together',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
+  '/$locale/meet-together': typeof LocaleMeetTogetherRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
+  '/$locale/meet-together': typeof LocaleMeetTogetherRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -451,6 +459,7 @@ export interface FileRoutesById {
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/docs': typeof LocaleDocsRoute
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
+  '/$locale/meet-together': typeof LocaleMeetTogetherRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -506,6 +515,7 @@ export interface FileRouteTypes {
     | '/$locale/community-guidelines'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
+    | '/$locale/meet-together'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -559,6 +569,7 @@ export interface FileRouteTypes {
     | '/$locale/community-guidelines'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
+    | '/$locale/meet-together'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -612,6 +623,7 @@ export interface FileRouteTypes {
     | '/$locale/community-guidelines'
     | '/$locale/docs'
     | '/$locale/facebook-mockup'
+    | '/$locale/meet-together'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -666,6 +678,7 @@ export interface RootRouteChildren {
   LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
   LocaleDocsRoute: typeof LocaleDocsRoute
   LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
+  LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute
   LocalePartnersRoute: typeof LocalePartnersRoute
   LocalePricingRoute: typeof LocalePricingRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
@@ -788,6 +801,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/partners'
       fullPath: '/$locale/partners'
       preLoaderRoute: typeof LocalePartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/meet-together': {
+      id: '/$locale/meet-together'
+      path: '/$locale/meet-together'
+      fullPath: '/$locale/meet-together'
+      preLoaderRoute: typeof LocaleMeetTogetherRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/facebook-mockup': {
@@ -1107,6 +1127,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleCommunityGuidelinesRoute: LocaleCommunityGuidelinesRoute,
   LocaleDocsRoute: LocaleDocsRoute,
   LocaleFacebookMockupRoute: LocaleFacebookMockupRoute,
+  LocaleMeetTogetherRoute: LocaleMeetTogetherRoute,
   LocalePartnersRoute: LocalePartnersRoute,
   LocalePricingRoute: LocalePricingRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,

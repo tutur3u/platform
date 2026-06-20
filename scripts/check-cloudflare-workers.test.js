@@ -7,12 +7,14 @@ const {
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
   TANSTACK_WEB_PACKAGE_JSON_PATH,
+  TANSTACK_WEB_ROUTE_TREE_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
   checkCloudflareWorkersSetup,
   validateBackendWranglerConfig,
   validateRustBackendWorkflow,
   validateTanstackWebViteConfig,
+  validateTanstackWebRouteTree,
   validateTanstackWebWranglerConfig,
 } = require('./check-cloudflare-workers.js');
 
@@ -68,6 +70,32 @@ test('Backend Wrangler config keeps Rust Worker build and secret guardrails', ()
       },
     }).join('\n'),
     /worker-build --release/
+  );
+});
+
+test('Wrangler configs reserve distinct local preview ports', () => {
+  const backendConfig = JSON.parse(
+    fs.readFileSync(BACKEND_WRANGLER_PATH, 'utf8')
+  );
+  const tanstackConfig = JSON.parse(
+    fs.readFileSync(TANSTACK_WEB_WRANGLER_PATH, 'utf8')
+  );
+
+  assert.equal(backendConfig.dev.port, 8780);
+  assert.equal(tanstackConfig.dev.port, 8784);
+  assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      dev: { ...backendConfig.dev, port: 8784 },
+    }).join('\n'),
+    /dev\.port must be 8780/
+  );
+  assert.match(
+    validateTanstackWebWranglerConfig({
+      ...tanstackConfig,
+      dev: { ...tanstackConfig.dev, local_protocol: 'https' },
+    }).join('\n'),
+    /dev\.local_protocol must be http/
   );
 });
 
@@ -171,6 +199,21 @@ test('TanStack Vite config keeps Cloudflare plugin before TanStack Start', () =>
       viteConfig.replace("mode === 'test' ? []", 'false ? []')
     ).join('\n'),
     /Vitest mode/
+  );
+});
+
+test('TanStack route tree preserves Start registration after generator runs', () => {
+  const routeTree = fs.readFileSync(TANSTACK_WEB_ROUTE_TREE_PATH, 'utf8');
+
+  assert.deepEqual(validateTanstackWebRouteTree(routeTree), []);
+  assert.match(
+    validateTanstackWebRouteTree(
+      routeTree.replace(
+        "import type { createStart } from '@tanstack/react-start'",
+        ''
+      )
+    ).join('\n'),
+    /TanStack Start Register augmentation/
   );
 });
 

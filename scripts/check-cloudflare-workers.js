@@ -29,6 +29,13 @@ const TANSTACK_WEB_VITE_CONFIG_PATH = path.join(
   'tanstack-web',
   'vite.config.ts'
 );
+const TANSTACK_WEB_ROUTE_TREE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'src',
+  'routeTree.gen.ts'
+);
 const TANSTACK_WEB_WRANGLER_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -309,10 +316,34 @@ function validateTanstackWebViteConfig(viteConfigContent) {
   return errors;
 }
 
+function validateTanstackWebRouteTree(routeTreeContent) {
+  const errors = [];
+  const requiredSnippets = [
+    "import type { getRouter } from './router.tsx'",
+    "import type { createStart } from '@tanstack/react-start'",
+    "declare module '@tanstack/react-start'",
+    'router: Awaited<ReturnType<typeof getRouter>>',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!routeTreeContent.includes(snippet)) {
+      errors.push(
+        `apps/tanstack-web/src/routeTree.gen.ts must preserve the TanStack Start Register augmentation snippet ${snippet}.`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateWranglerBaseConfig(config, label, expected) {
   const errors = [];
 
   for (const [fieldName, expectedValue] of Object.entries(expected)) {
+    if (fieldName === 'devPort') {
+      continue;
+    }
+
     if (config[fieldName] !== expectedValue) {
       errors.push(`${label} must set ${fieldName} to ${expectedValue}.`);
     }
@@ -341,6 +372,18 @@ function validateWranglerBaseConfig(config, label, expected) {
     errors.push(`${label} must enable observability.`);
   }
 
+  if (!isPlainObject(config.dev)) {
+    errors.push(`${label} must define a dev object for local preview ports.`);
+  } else {
+    if (config.dev.local_protocol !== 'http') {
+      errors.push(`${label} dev.local_protocol must be http.`);
+    }
+
+    if (config.dev.port !== expected.devPort) {
+      errors.push(`${label} dev.port must be ${expected.devPort}.`);
+    }
+  }
+
   return errors;
 }
 
@@ -349,6 +392,7 @@ function validateBackendWranglerConfig(config) {
     config,
     'apps/backend/wrangler.jsonc',
     {
+      devPort: 8780,
       main: 'build/worker/shim.mjs',
       name: 'tuturuuu-backend',
     }
@@ -396,6 +440,7 @@ function validateTanstackWebWranglerConfig(config) {
     config,
     'apps/tanstack-web/wrangler.jsonc',
     {
+      devPort: 8784,
       main: '@tanstack/react-start/server-entry',
       name: 'tuturuuu-tanstack-web',
     }
@@ -452,6 +497,10 @@ function checkCloudflareWorkersSetup({
     path.join(rootDir, 'apps', 'tanstack-web', 'vite.config.ts'),
     'utf8'
   ),
+  tanstackWebRouteTreeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'tanstack-web', 'src', 'routeTree.gen.ts'),
+    'utf8'
+  ),
   tanstackWebWranglerConfig = readJson(
     path.join(rootDir, 'apps', 'tanstack-web', 'wrangler.jsonc'),
     fsImpl
@@ -463,6 +512,7 @@ function checkCloudflareWorkersSetup({
     ...validateBackendWranglerConfig(backendWranglerConfig),
     ...validateTanstackWebPackageJson(tanstackWebPackageJson),
     ...validateTanstackWebViteConfig(tanstackWebViteConfigContent),
+    ...validateTanstackWebRouteTree(tanstackWebRouteTreeContent),
     ...validateTanstackWebWranglerConfig(tanstackWebWranglerConfig),
   ];
 }
@@ -484,6 +534,7 @@ module.exports = {
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
   TANSTACK_WEB_PACKAGE_JSON_PATH,
+  TANSTACK_WEB_ROUTE_TREE_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
   checkCloudflareWorkersSetup,
@@ -491,6 +542,7 @@ module.exports = {
   validateRootPackageJson,
   validateRustBackendWorkflow,
   validateTanstackWebPackageJson,
+  validateTanstackWebRouteTree,
   validateTanstackWebViteConfig,
   validateTanstackWebWranglerConfig,
 };

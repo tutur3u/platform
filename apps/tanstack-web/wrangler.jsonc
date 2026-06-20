@@ -5,6 +5,10 @@
   "compatibility_date": "2026-06-20",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "dev": {
+    "port": 8784,
+    "local_protocol": "http"
+  },
   "observability": {
     "enabled": true
   },
