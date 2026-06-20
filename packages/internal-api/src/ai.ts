@@ -362,6 +362,7 @@ export interface GenerateQuizFromLessonPayload {
     | 'true_false'
     | 'matching'
     | 'ordering'
+    | 'paragraph'
     | 'mix';
   count?: number;
 }

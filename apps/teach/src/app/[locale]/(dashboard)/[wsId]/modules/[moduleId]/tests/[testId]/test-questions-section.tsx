@@ -1,6 +1,11 @@
 'use client';
 
-import { ListTodo, Loader2, Plus, Sparkles } from '@tuturuuu/icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BookOpenCheck, Loader2, Plus, Sparkles } from '@tuturuuu/icons';
+import {
+  generateQuizFromLesson,
+  getWorkspaceQuizzes,
+} from '@tuturuuu/internal-api';
 import {
   Dialog,
   DialogContent,
@@ -19,17 +24,12 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import ClientQuizzes from './client-quizzes';
-import DynamicQuizForm from './dynamic-form';
-import { useQuizzes } from './use-quizzes';
-
-interface Props {
-  wsId: string;
-  lessonId: string; // The course module ID
-}
+import ClientQuizzes from '../../[lessonId]/client-quizzes';
+import DynamicQuizForm from '../../[lessonId]/dynamic-form';
 
 type QuestionType =
   | 'multiple_choice'
@@ -39,57 +39,95 @@ type QuestionType =
   | 'paragraph'
   | 'mix';
 
-export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
+interface ModuleQuestionsManagerProps {
+  wsId: string;
+  moduleId: string;
+  moduleName: string;
+}
+
+function ModuleQuestionsManager({
+  wsId,
+  moduleId,
+  moduleName,
+}: ModuleQuestionsManagerProps) {
   const t = useTranslations();
+  const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [showAiDialog, setShowAiDialog] = useState(false);
 
-  // Dialog configuration states
+  // AI configuration states
   const [questionType, setQuestionType] = useState<QuestionType>('mix');
   const [count, setCount] = useState<number>(5);
   const [teacherContext, setTeacherContext] = useState<string>('');
 
-  const { quizzes, isLoading, isError, refetch, generateQuiz, isGenerating } =
-    useQuizzes(wsId, lessonId);
+  const queryKey = ['module-quizzes', wsId, moduleId];
+
+  // Fetch quizzes for this module
+  const { data: quizzesData, isLoading, isError, refetch } = useQuery({
+    queryKey,
+    queryFn: () => getWorkspaceQuizzes(wsId, { moduleId }),
+    enabled: Boolean(wsId) && Boolean(moduleId),
+  });
+
+  const quizzes = quizzesData?.data ?? [];
+
+  // Mutation for AI generation
+  const generateMutation = useMutation({
+    mutationFn: (
+      payload: {
+        questionType?: QuestionType;
+        count?: number;
+        context?: string;
+      } = {}
+    ) => generateQuizFromLesson(wsId, { lessonId: moduleId, ...payload }),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success(t('ws-quizzes.generation_success'));
+        qc.invalidateQueries({ queryKey });
+        setShowAiDialog(false);
+        // Reset states
+        setQuestionType('mix');
+        setCount(5);
+        setTeacherContext('');
+      } else {
+        toast.error(t('ws-quizzes.generation_error'));
+      }
+    },
+    onError: () => {
+      toast.error(t('ws-quizzes.generation_error'));
+    },
+  });
 
   const handleGenerate = () => {
-    generateQuiz(
-      {
-        questionType,
-        count,
-        context: teacherContext,
-      },
-      {
-        onSuccess: (res: any) => {
-          if (!res?.success) return;
-          setShowAiDialog(false);
-          // Reset dialog states
-          setQuestionType('mix');
-          setCount(5);
-          setTeacherContext('');
-        },
-      }
-    );
+    generateMutation.mutate({
+      questionType,
+      count,
+      context: teacherContext,
+    });
   };
 
   return (
-    <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
-      <div className="flex items-center justify-between gap-4">
+    <div className="border-2 border-border bg-background p-6 shadow-[6px_6px_0_var(--border)]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <ListTodo className="h-5 w-5 text-dynamic-purple" />
-          <h2 className="font-black text-lg">
-            {t('ws-quizzes.plural')} ({quizzes.length})
-          </h2>
+          <BookOpenCheck className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="font-black text-base">{moduleName}</h3>
+            <p className="text-muted-foreground text-xs">
+              {quizzes.length} {t('ws-quizzes.plural').toLowerCase()}
+            </p>
+          </div>
         </div>
+
         {!creating && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50 whitespace-nowrap"
               onClick={() => setShowAiDialog(true)}
-              disabled={isGenerating}
+              disabled={generateMutation.isPending}
               type="button"
             >
-              {isGenerating ? (
+              {generateMutation.isPending ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   {t('ws-quizzes.generating_with_ai')}
@@ -103,9 +141,9 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
             </button>
 
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50 whitespace-nowrap"
               onClick={() => setCreating(true)}
-              disabled={isGenerating}
+              disabled={generateMutation.isPending}
               type="button"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -115,16 +153,16 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
         )}
       </div>
 
-      <Separator className="border-border border-b-2" />
+      <Separator className="my-4 border-border border-b-2" />
 
       {creating && (
-        <div className="border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]">
-          <h3 className="mb-4 font-black text-md">
+        <div className="mb-6 border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]">
+          <h4 className="mb-4 font-black text-sm">
             {t('ws-quizzes.manual_create')}
-          </h3>
+          </h4>
           <DynamicQuizForm
             wsId={wsId}
-            moduleId={lessonId}
+            moduleId={moduleId}
             onFinish={() => {
               setCreating(false);
               refetch();
@@ -135,7 +173,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
 
       {isLoading ? (
         <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
-      ) : isError && quizzes.length === 0 ? (
+      ) : isError ? (
         <p className="text-muted-foreground text-sm">
           {t('ws-quizzes.load_error')}
         </p>
@@ -146,22 +184,15 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
           </p>
         )
       ) : (
-        <>
-          {isError && (
-            <p className="text-muted-foreground text-sm">
-              {t('ws-quizzes.load_error')}
-            </p>
-          )}
-          <div className="grid gap-4 md:grid-cols-2">
-            <ClientQuizzes wsId={wsId} moduleId={lessonId} quizzes={quizzes} />
-          </div>
-        </>
+        <div className="grid gap-4 md:grid-cols-2">
+          <ClientQuizzes wsId={wsId} moduleId={moduleId} quizzes={quizzes} />
+        </div>
       )}
 
-      {/* AI Quiz Generation configuration Dialog */}
+      {/* AI Quiz Generation Dialog */}
       <Dialog
         open={showAiDialog}
-        onOpenChange={(open) => !isGenerating && setShowAiDialog(open)}
+        onOpenChange={(open) => !generateMutation.isPending && setShowAiDialog(open)}
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -183,7 +214,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
               <Select
                 value={questionType}
                 onValueChange={(val: QuestionType) => setQuestionType(val)}
-                disabled={isGenerating}
+                disabled={generateMutation.isPending}
               >
                 <SelectTrigger id="ai-question-type">
                   <SelectValue />
@@ -225,7 +256,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                     Math.min(20, Math.max(1, parseInt(e.target.value, 10) || 1))
                   )
                 }
-                disabled={isGenerating}
+                disabled={generateMutation.isPending}
               />
             </div>
 
@@ -239,7 +270,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                 placeholder="e.g. Focus on coding examples, make it hard, etc."
                 value={teacherContext}
                 onChange={(e) => setTeacherContext(e.target.value)}
-                disabled={isGenerating}
+                disabled={generateMutation.isPending}
                 rows={3}
               />
             </div>
@@ -249,7 +280,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
             <button
               className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
               onClick={() => setShowAiDialog(false)}
-              disabled={isGenerating}
+              disabled={generateMutation.isPending}
               type="button"
             >
               {t('common.cancel')}
@@ -257,10 +288,10 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
             <button
               className="inline-flex items-center gap-1.5 border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
               onClick={handleGenerate}
-              disabled={isGenerating}
+              disabled={generateMutation.isPending}
               type="button"
             >
-              {isGenerating ? (
+              {generateMutation.isPending ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   {t('ws-quizzes.generating_with_ai')}
@@ -275,6 +306,48 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
+  );
+}
+
+interface TestQuestionsSectionProps {
+  wsId: string;
+  testModules: Array<{ id: string; name: string }>;
+}
+
+export function TestQuestionsSection({
+  wsId,
+  testModules,
+}: TestQuestionsSectionProps) {
+  return (
+    <div className="space-y-6">
+      <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
+        <h2 className="font-black text-lg uppercase tracking-wider">
+          Test Questions Manager
+        </h2>
+        <p className="mt-1 text-muted-foreground text-sm">
+          Prepare and configure assessment questions manually or using AI for each linked course module.
+        </p>
+      </div>
+
+      {testModules.length === 0 ? (
+        <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+          <p className="text-muted-foreground text-sm">
+            Please link modules to this test first to add questions.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {testModules.map((module) => (
+            <ModuleQuestionsManager
+              key={module.id}
+              wsId={wsId}
+              moduleId={module.id}
+              moduleName={module.name}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

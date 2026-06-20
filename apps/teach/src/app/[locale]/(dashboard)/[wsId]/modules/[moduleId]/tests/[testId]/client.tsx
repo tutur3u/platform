@@ -21,6 +21,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { TestQuestionsSection } from './test-questions-section';
 
 interface TestDetailClientProps {
   courseId: string;
@@ -278,6 +279,9 @@ export function TestDetailClient({
             </div>
           )}
         </div>
+
+        {/* Test Questions Section */}
+        <TestQuestionsSection wsId={wsId} testModules={testModules} />
       </div>
     </main>
   );

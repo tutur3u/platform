@@ -27,6 +27,7 @@ export function useQuizzes(wsId: string, lessonId: string) {
           | 'true_false'
           | 'matching'
           | 'ordering'
+          | 'paragraph'
           | 'mix';
         count?: number;
         context?: string;

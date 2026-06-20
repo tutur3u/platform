@@ -286,6 +286,12 @@ export default function ClientQuizzes({
                     ))}
                   </div>
                 )}
+                {/* Paragraph Rendering */}
+                {quiz?.type === 'paragraph' && (
+                  <div className="mt-4 border-2 border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic shadow-[2px_2px_0_var(--border)]">
+                    Paragraph Response Area (Students will type their answer here)
+                  </div>
+                )}
               </div>
 
               {previewMode || (

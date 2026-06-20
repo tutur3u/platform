@@ -49,7 +49,7 @@ export default function DynamicQuizForm({
   // Form State
   const [question, setQuestion] = useState(data?.question || '');
   const [type, setType] = useState<
-    'multiple_choice' | 'true_false' | 'matching' | 'ordering'
+    'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'paragraph'
   >((data?.type as any) || 'multiple_choice');
 
   // True / False State
@@ -111,6 +111,9 @@ export default function DynamicQuizForm({
         const filteredItems = orderingItems.filter((i) => i.trim() !== '');
         payloadContent = { items: filteredItems };
         payloadAnswer = { order: filteredItems };
+      } else if (type === 'paragraph') {
+        payloadContent = {};
+        payloadAnswer = {};
       }
 
       if (data?.id) {
@@ -234,6 +237,9 @@ export default function DynamicQuizForm({
               <SelectItem value="ordering">
                 {t('ws-quizzes.ordering')}
               </SelectItem>
+              <SelectItem value="paragraph">
+                {t('ws-quizzes.paragraph') || 'Paragraph'}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -256,6 +262,15 @@ export default function DynamicQuizForm({
 
       {/* Conditionally Render Content Input based on Type */}
       <div className="space-y-4">
+        {type === 'paragraph' && (
+          <div className="space-y-3">
+            <Label>{t('ws-quizzes.correct_answer')}</Label>
+            <div className="border-2 border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic shadow-[2px_2px_0_var(--border)]">
+              Paragraph Response Area (Students will type their answer here. No predefined correct answer is required.)
+            </div>
+          </div>
+        )}
+
         {type === 'true_false' && (
           <div className="space-y-3">
             <Label>{t('ws-quizzes.correct_answer')}</Label>
