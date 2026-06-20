@@ -92,6 +92,14 @@ const BARE_AUTH_PREFLIGHT_PATHS: [&str; 3] = [
     "/api/v1/auth/mfa/mobile/approvals",
 ];
 const DISABLED_GROUP_CHECK_EMAIL_MESSAGE: &str = "Direct post email sending has been removed. Emails are now sent by the system queue after approval.";
+const DISCORD_DAILY_REPORT_CRON_PATH: &str = "/api/cron/discord/daily-report";
+const DISCORD_DAILY_REPORT_UPSTREAM_PATH: &str = "/daily-report";
+const DISCORD_WOL_DAILY_REMIND_CRON_PATH: &str = "/api/cron/discord/wol/daily/remind";
+const DISCORD_WOL_DAILY_REMIND_UPSTREAM_PATH: &str = "/wol-reminder";
+const MISSING_CRON_SECRET_MESSAGE: &str = "CRON_SECRET or VERCEL_CRON_SECRET is not set";
+const MISSING_DISCORD_APP_DEPLOYMENT_URL_MESSAGE: &str = "DISCORD_APP_DEPLOYMENT_URL is not set";
+const INVALID_DISCORD_JSON_MESSAGE: &str = "Invalid JSON from Discord app";
+const DISCORD_APP_REQUEST_FAILED_MESSAGE: &str = "Discord app request failed";
 #[cfg(feature = "native")]
 const TRUTHY_ENV_VALUES: [&str; 4] = ["1", "true", "yes", "on"];
 #[cfg(feature = "native")]
@@ -140,7 +148,9 @@ const SUPABASE_REFERENCE_KEYS: [&str; 7] = [
 pub struct BackendConfig {
     pub app_coordination_secrets: Vec<String>,
     pub(crate) contact_data: contact::ContactDataConfig,
+    pub cron_secret: String,
     pub deployment_target: String,
+    pub discord_app_deployment_url: String,
     pub environment: String,
     pub internal_token: String,
     pub local_e2e_migration_access: bool,
@@ -155,7 +165,9 @@ impl BackendConfig {
         Self {
             app_coordination_secrets: Vec::new(),
             contact_data: contact::ContactDataConfig::disabled(),
+            cron_secret: String::new(),
             deployment_target: default_deployment_target().to_owned(),
+            discord_app_deployment_url: String::new(),
             environment: environment.into(),
             internal_token: String::new(),
             local_e2e_migration_access: false,
@@ -173,7 +185,12 @@ impl BackendConfig {
         Self {
             app_coordination_secrets: contact::app_coordination_secrets_from_env(&environment),
             contact_data: contact::contact_data_config_from_env(),
+            cron_secret: cron_secret_from_env(),
             deployment_target: env("BACKEND_DEPLOYMENT_TARGET", default_deployment_target()),
+            discord_app_deployment_url: env("DISCORD_APP_DEPLOYMENT_URL", "")
+                .trim()
+                .trim_end_matches('/')
+                .to_owned(),
             environment,
             internal_token: std::env::var("BACKEND_INTERNAL_TOKEN")
                 .unwrap_or_default()
@@ -230,9 +247,91 @@ pub fn json_security_headers() -> &'static [(&'static str, &'static str)] {
 pub(crate) async fn handle_backend_request(
     config: &BackendConfig,
     request: BackendRequest<'_>,
-    _outbound: &impl outbound::OutboundHttpClient,
+    outbound: &impl outbound::OutboundHttpClient,
 ) -> BackendResponse {
+    if let Some(response) = handle_discord_cron_proxy(config, request, outbound).await {
+        return response;
+    }
+
     route_request(config, request)
+}
+
+async fn handle_discord_cron_proxy(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    let upstream_path = match request.path {
+        DISCORD_DAILY_REPORT_CRON_PATH => DISCORD_DAILY_REPORT_UPSTREAM_PATH,
+        DISCORD_WOL_DAILY_REMIND_CRON_PATH => DISCORD_WOL_DAILY_REMIND_UPSTREAM_PATH,
+        _ => return None,
+    };
+
+    if request.method != "GET" {
+        return Some(method_not_allowed(request.method, "GET"));
+    }
+
+    if config.cron_secret.is_empty() {
+        return Some(no_store_response(json_response(
+            500,
+            json!({
+                "ok": false,
+                "error": MISSING_CRON_SECRET_MESSAGE,
+            }),
+        )));
+    }
+
+    let expected_authorization = format!("Bearer {}", config.cron_secret);
+
+    if !constant_time_eq(
+        request.authorization.unwrap_or_default().as_bytes(),
+        expected_authorization.as_bytes(),
+    ) {
+        return Some(no_store_response(json_response(
+            401,
+            json!({
+                "ok": false,
+            }),
+        )));
+    }
+
+    if config.discord_app_deployment_url.is_empty() {
+        return Some(no_store_response(json_response(
+            500,
+            json!({
+                "ok": false,
+                "error": MISSING_DISCORD_APP_DEPLOYMENT_URL_MESSAGE,
+            }),
+        )));
+    }
+
+    let upstream_url = format!("{}{}", config.discord_app_deployment_url, upstream_path);
+    let upstream_request =
+        outbound::OutboundRequest::new(outbound::OutboundMethod::Post, &upstream_url)
+            .with_header("Content-Type", APPLICATION_JSON)
+            .with_header("Authorization", &expected_authorization);
+
+    let upstream_response = match outbound.send(upstream_request).await {
+        Ok(response) => response,
+        Err(_) => {
+            return Some(no_store_response(json_response(
+                502,
+                json!({
+                    "ok": false,
+                    "error": DISCORD_APP_REQUEST_FAILED_MESSAGE,
+                }),
+            )));
+        }
+    };
+    let status = upstream_response.status;
+    let body = upstream_response.json::<Value>().unwrap_or_else(|_| {
+        json!({
+            "ok": false,
+            "error": INVALID_DISCORD_JSON_MESSAGE,
+        })
+    });
+
+    Some(no_store_response(json_response(status, body)))
 }
 
 #[derive(Serialize)]
@@ -1573,6 +1672,16 @@ fn env(name: &str, fallback: &str) -> String {
 }
 
 #[cfg(feature = "native")]
+fn cron_secret_from_env() -> String {
+    ["CRON_SECRET", "VERCEL_CRON_SECRET"]
+        .iter()
+        .filter_map(|key| std::env::var(key).ok())
+        .map(|value| value.trim().to_owned())
+        .find(|value| !value.is_empty())
+        .unwrap_or_default()
+}
+
+#[cfg(feature = "native")]
 fn parse_port(value: &str) -> u16 {
     value
         .trim()
@@ -1880,7 +1989,12 @@ pub mod worker_runtime {
         BackendConfig {
             app_coordination_secrets: app_coordination_secrets_from_worker_env(env, &environment),
             contact_data: contact_data_config_from_worker_env(env),
+            cron_secret: cron_secret_from_worker_env(env),
             deployment_target: "cloudflare-workers".to_owned(),
+            discord_app_deployment_url: var(env, "DISCORD_APP_DEPLOYMENT_URL", "")
+                .trim()
+                .trim_end_matches('/')
+                .to_owned(),
             environment,
             internal_token: var(env, "BACKEND_INTERNAL_TOKEN", ""),
             local_e2e_migration_access: false,
@@ -1895,6 +2009,15 @@ pub mod worker_runtime {
         env.var(name)
             .map(|value| value.to_string())
             .unwrap_or_else(|_| fallback.to_owned())
+    }
+
+    fn cron_secret_from_worker_env(env: &Env) -> String {
+        ["CRON_SECRET", "VERCEL_CRON_SECRET"]
+            .iter()
+            .map(|key| var(env, key, ""))
+            .map(|value| value.trim().to_owned())
+            .find(|value| !value.is_empty())
+            .unwrap_or_default()
     }
 
     fn app_coordination_secrets_from_worker_env(env: &Env, environment: &str) -> Vec<String> {
@@ -1978,7 +2101,7 @@ mod tests {
         OutboundResponse,
     };
     use super::*;
-    use std::cell::Cell;
+    use std::cell::RefCell;
 
     fn request(method: &'static str, path: &'static str) -> BackendRequest<'static> {
         BackendRequest {
@@ -2035,26 +2158,64 @@ mod tests {
         config
     }
 
-    #[derive(Default)]
+    fn backend_config_with_discord_cron() -> BackendConfig {
+        let mut config = backend_config_with_internal_token();
+        config.cron_secret = "cron-secret".to_owned();
+        config.discord_app_deployment_url = "https://discord.example.test".to_owned();
+        config
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    struct RecordedOutboundRequest {
+        body: Option<String>,
+        headers: Vec<(String, String)>,
+        method: OutboundMethod,
+        url: String,
+    }
+
     struct RecordingOutboundClient {
-        calls: Cell<usize>,
+        calls: RefCell<Vec<RecordedOutboundRequest>>,
+        response: OutboundResponse,
+    }
+
+    impl Default for RecordingOutboundClient {
+        fn default() -> Self {
+            Self::with_response(200, r#"{"ok":true}"#)
+        }
+    }
+
+    impl RecordingOutboundClient {
+        fn with_response(status: u16, body_text: impl Into<String>) -> Self {
+            Self {
+                calls: RefCell::new(Vec::new()),
+                response: OutboundResponse {
+                    body_text: body_text.into(),
+                    headers: vec![("content-type".to_owned(), APPLICATION_JSON.to_owned())],
+                    status,
+                },
+            }
+        }
+
+        fn calls(&self) -> Vec<RecordedOutboundRequest> {
+            self.calls.borrow().clone()
+        }
     }
 
     impl OutboundHttpClient for RecordingOutboundClient {
         fn send<'a>(&'a self, request: OutboundRequest<'a>) -> OutboundFuture<'a> {
-            self.calls.set(self.calls.get() + 1);
+            self.calls.borrow_mut().push(RecordedOutboundRequest {
+                body: request.body.map(str::to_owned),
+                headers: request
+                    .headers
+                    .iter()
+                    .map(|header| (header.name.to_owned(), header.value.to_owned()))
+                    .collect(),
+                method: request.method,
+                url: request.url.to_owned(),
+            });
+            let response = self.response.clone();
 
-            Box::pin(async move {
-                Ok(OutboundResponse {
-                    body_text: format!(
-                        r#"{{"method":"{}","url":"{}"}}"#,
-                        request.method.as_str(),
-                        request.url
-                    ),
-                    headers: vec![("content-type".to_owned(), "application/json".to_owned())],
-                    status: 200,
-                })
-            })
+            Box::pin(async move { Ok(response) })
         }
     }
 
@@ -2069,7 +2230,7 @@ mod tests {
 
         assert_eq!(response.status, 200);
         assert_eq!(response.body["status"], "ok");
-        assert_eq!(outbound.calls.get(), 0);
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]
@@ -2084,13 +2245,134 @@ mod tests {
             .await
             .expect("mock outbound response");
 
-        assert_eq!(outbound.calls.get(), 1);
+        assert_eq!(
+            outbound.calls(),
+            vec![RecordedOutboundRequest {
+                body: Some(r#"{"hello":"world"}"#.to_owned()),
+                headers: vec![("Content-Type".to_owned(), APPLICATION_JSON.to_owned())],
+                method: OutboundMethod::Post,
+                url: "https://api.example.test/rpc".to_owned(),
+            }]
+        );
         assert_eq!(response.status, 200);
         assert_eq!(response.header("Content-Type"), Some(APPLICATION_JSON));
 
         let payload: serde_json::Value = response.json().expect("json payload");
-        assert_eq!(payload["method"], "POST");
-        assert_eq!(payload["url"], "https://api.example.test/rpc");
+        assert_eq!(payload["ok"], true);
+    }
+
+    #[tokio::test]
+    async fn discord_cron_proxy_requires_configured_cron_secret() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", DISCORD_DAILY_REPORT_CRON_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["ok"], false);
+        assert_eq!(response.body["error"], MISSING_CRON_SECRET_MESSAGE);
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn discord_cron_proxy_rejects_wrong_bearer() {
+        let config = backend_config_with_discord_cron();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            authorized_request("GET", DISCORD_DAILY_REPORT_CRON_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body, json!({ "ok": false }));
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn discord_daily_report_cron_proxy_passes_upstream_status_body_and_auth() {
+        let config = backend_config_with_discord_cron();
+        let outbound =
+            RecordingOutboundClient::with_response(202, r#"{"ok":true,"route":"daily-report"}"#);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer cron-secret"),
+                ..request("GET", DISCORD_DAILY_REPORT_CRON_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 202);
+        assert_eq!(response.body["ok"], true);
+        assert_eq!(response.body["route"], "daily-report");
+        assert_eq!(
+            outbound.calls(),
+            vec![RecordedOutboundRequest {
+                body: None,
+                headers: vec![
+                    ("Content-Type".to_owned(), APPLICATION_JSON.to_owned()),
+                    ("Authorization".to_owned(), "Bearer cron-secret".to_owned()),
+                ],
+                method: OutboundMethod::Post,
+                url: "https://discord.example.test/daily-report".to_owned(),
+            }]
+        );
+    }
+
+    #[tokio::test]
+    async fn discord_wol_cron_proxy_uses_invalid_json_fallback() {
+        let config = backend_config_with_discord_cron();
+        let outbound = RecordingOutboundClient::with_response(503, "not json");
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer cron-secret"),
+                ..request("GET", DISCORD_WOL_DAILY_REMIND_CRON_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 503);
+        assert_eq!(response.body["ok"], false);
+        assert_eq!(response.body["error"], INVALID_DISCORD_JSON_MESSAGE);
+        assert_eq!(
+            outbound.calls(),
+            vec![RecordedOutboundRequest {
+                body: None,
+                headers: vec![
+                    ("Content-Type".to_owned(), APPLICATION_JSON.to_owned()),
+                    ("Authorization".to_owned(), "Bearer cron-secret".to_owned()),
+                ],
+                method: OutboundMethod::Post,
+                url: "https://discord.example.test/wol-reminder".to_owned(),
+            }]
+        );
+    }
+
+    #[tokio::test]
+    async fn discord_cron_proxy_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_discord_cron();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request("POST", DISCORD_DAILY_REPORT_CRON_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[test]

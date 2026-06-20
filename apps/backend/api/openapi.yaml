@@ -236,6 +236,124 @@ paths:
                 $ref: "#/components/schemas/LegacyHealth"
         "405":
           description: Unsupported HTTP method.
+  /api/cron/discord/daily-report:
+    get:
+      summary: Discord daily report cron proxy
+      description: >
+        Migrated replacement for apps/web/src/app/api/cron/discord/daily-report/route.ts.
+        Requires the cron bearer token, then proxies a POST request to
+        DISCORD_APP_DEPLOYMENT_URL/daily-report with Content-Type application/json
+        and the same bearer token. The Rust backend preserves upstream JSON body
+        and status passthrough, and returns the legacy invalid-JSON fallback when
+        the Discord app response is not JSON.
+      security:
+        - CronBearer: []
+      responses:
+        "200":
+          description: Discord app JSON response passthrough.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          description: Missing or invalid cron bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CronUnauthorized"
+        "500":
+          description: Cron secret or Discord deployment URL is not configured, or upstream returned status 500.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/CronConfigurationError"
+                  - $ref: "#/components/schemas/DiscordCronInvalidJson"
+                  - type: object
+                    additionalProperties: true
+        "502":
+          description: Rust backend could not reach the Discord app.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordCronRequestFailed"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+        default:
+          description: Discord app JSON response or invalid-JSON fallback with the upstream status code.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties: true
+                  - $ref: "#/components/schemas/DiscordCronInvalidJson"
+  /api/cron/discord/wol/daily/remind:
+    get:
+      summary: Discord WOL daily reminder cron proxy
+      description: >
+        Migrated replacement for apps/web/src/app/api/cron/discord/wol/daily/remind/route.ts.
+        Requires the cron bearer token, then proxies a POST request to
+        DISCORD_APP_DEPLOYMENT_URL/wol-reminder with Content-Type application/json
+        and the same bearer token. The Rust backend preserves upstream JSON body
+        and status passthrough, and returns the legacy invalid-JSON fallback when
+        the Discord app response is not JSON.
+      security:
+        - CronBearer: []
+      responses:
+        "200":
+          description: Discord app JSON response passthrough.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          description: Missing or invalid cron bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CronUnauthorized"
+        "500":
+          description: Cron secret or Discord deployment URL is not configured, or upstream returned status 500.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/CronConfigurationError"
+                  - $ref: "#/components/schemas/DiscordCronInvalidJson"
+                  - type: object
+                    additionalProperties: true
+        "502":
+          description: Rust backend could not reach the Discord app.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscordCronRequestFailed"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+        default:
+          description: Discord app JSON response or invalid-JSON fallback with the upstream status code.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties: true
+                  - $ref: "#/components/schemas/DiscordCronInvalidJson"
   /api/v1/calendar/mock:
     get:
       summary: Legacy-compatible mock calendar events
@@ -1299,6 +1417,10 @@ components:
       type: http
       scheme: bearer
       description: Server-only BACKEND_INTERNAL_TOKEN configured through Cloudflare secrets or local environment variables.
+    CronBearer:
+      type: http
+      scheme: bearer
+      description: CRON_SECRET or VERCEL_CRON_SECRET configured through Cloudflare secrets or local environment variables.
   schemas:
     LegacyHealth:
       type: object
@@ -1344,6 +1466,58 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CalendarMockEvent"
+    CronUnauthorized:
+      type: object
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - false
+    CronConfigurationError:
+      type: object
+      required:
+        - ok
+        - error
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: string
+          enum:
+            - CRON_SECRET or VERCEL_CRON_SECRET is not set
+            - DISCORD_APP_DEPLOYMENT_URL is not set
+    DiscordCronInvalidJson:
+      type: object
+      required:
+        - ok
+        - error
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: string
+          enum:
+            - Invalid JSON from Discord app
+    DiscordCronRequestFailed:
+      type: object
+      required:
+        - ok
+        - error
+      properties:
+        ok:
+          type: boolean
+          enum:
+            - false
+        error:
+          type: string
+          enum:
+            - Discord app request failed
     UserFieldType:
       type: object
       required:

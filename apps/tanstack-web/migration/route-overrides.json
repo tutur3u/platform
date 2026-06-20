@@ -30,6 +30,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/v1/calendar/mock with the deterministic legacy mock event payload."
     },
+    "cron:/api/cron/discord/daily-report:apps/web/src/app/api/cron/discord/daily-report/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request proxies GET /api/cron/discord/daily-report to DISCORD_APP_DEPLOYMENT_URL/daily-report with cron bearer auth, upstream JSON/status passthrough, and the legacy invalid-JSON fallback."
+    },
+    "cron:/api/cron/discord/wol/daily/remind:apps/web/src/app/api/cron/discord/wol/daily/remind/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request proxies GET /api/cron/discord/wol/daily/remind to DISCORD_APP_DEPLOYMENT_URL/wol-reminder with cron bearer auth, upstream JSON/status passthrough, and the legacy invalid-JSON fallback."
+    },
     "api:/api/v1/infrastructure/migrate/grouped-score-names:apps/web/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

@@ -171,6 +171,31 @@ test('Wrangler configs declare required preview secrets by name', () => {
     /BACKEND_INTERNAL_TOKEN/
   );
   assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      secrets: {
+        required: [
+          'BACKEND_INTERNAL_TOKEN',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+        ],
+      },
+    }).join('\n'),
+    /CRON_SECRET/
+  );
+  assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      secrets: {
+        required: [
+          'BACKEND_INTERNAL_TOKEN',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+          'CRON_SECRET',
+        ],
+      },
+    }).join('\n'),
+    /DISCORD_APP_DEPLOYMENT_URL/
+  );
+  assert.match(
     validateTanstackWebWranglerConfig({
       ...tanstackConfig,
       secrets: { required: ['BACKEND_PUBLIC_ORIGIN'] },

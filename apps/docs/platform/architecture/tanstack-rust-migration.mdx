@@ -49,7 +49,7 @@ Current compatibility contract:
 
 | Runtime                 | Cloudflare entrypoint              | Deploy command                                             | Compatibility status                                                                                                                                                |
 | ----------------------- | ---------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Preview-ready for migrated pure dispatcher routes, health/readiness, protected migration inventory, static/cookie endpoints, and the native/Worker outbound boundary. |
+| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Preview-ready for migrated pure dispatcher routes, health/readiness, protected migration inventory, static/cookie endpoints, Discord cron proxies, and the native/Worker outbound boundary. |
 | TanStack Start frontend | `apps/tanstack-web/wrangler.jsonc` | `bun --cwd apps/tanstack-web run deploy:cloudflare`        | Preview-ready for migrated public routes, redirects, the root migration shell, and Start server-function calls to the Rust backend.                                 |
 
 `apps/tanstack-web` deployment runs `bun run build` internally through the
@@ -63,7 +63,7 @@ secret-looking values under `vars`:
 
 | Worker                             | Required preview secrets                                                  |
 | ---------------------------------- | ------------------------------------------------------------------------- |
-| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`              |
+| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL` |
 | `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_URL`, `BACKEND_INTERNAL_TOKEN` |
 
 For local Worker previews, put secret values next to the owning Wrangler config
@@ -93,6 +93,8 @@ rustup target add wasm32-unknown-unknown
 cargo install worker-build --locked
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
@@ -100,8 +102,10 @@ bun wrangler deploy --config apps/backend/wrangler.jsonc
 `/readyz` reports not-ready when the token is missing.
 `TUTURUUU_APP_COORDINATION_SECRET` is required before contact/profile preview
 routes can verify Tuturuuu `ttr_app_` app-session tokens in production-like
-Cloudflare environments. Wrangler prompts for secret values; do not place those
-values in `wrangler.jsonc`, `vars`, docs, or shell history.
+Cloudflare environments. `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are
+required before the Rust-owned Discord cron proxy routes can call the Discord
+app. Wrangler prompts for values; do not place those values in `wrangler.jsonc`,
+`vars`, docs, or shell history.
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` can be configured as backend
 Worker secrets now to exercise the redacted contact data readiness signal on
@@ -138,6 +142,8 @@ versions command family instead:
 ```bash
 bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler versions deploy --config apps/backend/wrangler.jsonc
 
 bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
@@ -266,9 +272,6 @@ Current Cloudflare limitations:
 
 - Service bindings are pending. `BACKEND_INTERNAL_URL` still points at an HTTP
   origin, usually the backend Worker preview URL.
-- Outbound HTTP proxy parity for the Discord cron routes is pending route
-  wiring and tests that use the async outbound abstraction in both native Axum
-  and Cloudflare Workers.
 - Production host routing is pending full route manifest completion, Docker
   compare-mode E2E evidence, benchmark evidence, and
   `bun migration:tanstack:gates`.
@@ -438,12 +441,12 @@ Accepted removals:
 | `apps/web/src/app/api/auth/me/session/route.ts`              | `accepted-removal` | The debug-style route returns raw `sb-*` auth cookie values plus the full Supabase session payload. No in-repo caller references `/api/auth/me/session`, and the TanStack/Rust cutover must not preserve raw session export behavior. |
 | `apps/web/src/app/api/workspaces/[wsId]/categories/route.ts` | `accepted-removal` | The file is zero bytes and exports no HTTP methods, so there is no runtime behavior to port. The override keeps the artifact visible and terminal instead of silently dropping it from the inventory.                                 |
 
-Backend migration candidates blocked on runtime design:
+Recently migrated backend runtime candidates:
 
-| Legacy route                             | Blocker                                                                                                                                                                                                | Required design                                                                                                                                                                                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/cron/discord/daily-report`     | Exact parity proxies a POST to `DISCORD_APP_DEPLOYMENT_URL/daily-report`; the shared native/Worker outbound boundary exists, but the route-specific cron proxy behavior is not wired yet.             | Use the outbound abstraction, add cron bearer config for `CRON_SECRET` / `VERCEL_CRON_SECRET`, upstream JSON/status passthrough, invalid-JSON fallback parity, OpenAPI coverage, and route tests before marking this route migrated.              |
-| `GET /api/cron/discord/wol/daily/remind` | Same Discord proxy behavior and runtime split as the daily report route.                                                                                                                               | Reuse the async cron proxy abstraction for the `wol-reminder` upstream path and document both routes in `apps/backend/api/openapi.yaml`.                                                                                                           |
+| Legacy route                             | Decision   | Evidence                                                                                                                                                                                                                   |
+| ---------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/cron/discord/daily-report`     | `migrated` | Rust `handle_backend_request` proxies to `DISCORD_APP_DEPLOYMENT_URL/daily-report` with cron bearer auth, upstream status/body passthrough, invalid-JSON fallback, OpenAPI coverage, and native/Worker outbound support.  |
+| `GET /api/cron/discord/wol/daily/remind` | `migrated` | Rust `handle_backend_request` reuses the same proxy contract for `DISCORD_APP_DEPLOYMENT_URL/wol-reminder` with route tests and Cloudflare Worker config requirements for the cron secret and Discord app deployment URL. |
 
 Frontend migration candidates blocked on auth/data ownership:
 

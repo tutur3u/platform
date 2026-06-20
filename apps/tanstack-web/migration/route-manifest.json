@@ -42,11 +42,11 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 19,
-        "migrated": 0,
-        "percentComplete": 0,
-        "remaining": 19,
-        "terminal": 0,
+        "legacyNext": 17,
+        "migrated": 2,
+        "percentComplete": 10.53,
+        "remaining": 17,
+        "terminal": 2,
         "total": 19,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 2,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1097,
-        "migrated": 29,
-        "percentComplete": 2.75,
-        "remaining": 1097,
-        "terminal": 31,
+        "legacyNext": 1095,
+        "migrated": 31,
+        "percentComplete": 2.93,
+        "remaining": 1095,
+        "terminal": 33,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 2,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1358,
-      "migrated": 145,
-      "percentComplete": 9.77,
-      "remaining": 1358,
-      "terminal": 147,
+      "legacyNext": 1356,
+      "migrated": 147,
+      "percentComplete": 9.9,
+      "remaining": 1356,
+      "terminal": 149,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -10375,7 +10375,7 @@
       "methods": ["GET"],
       "routePath": "/api/cron/discord/daily-report",
       "sourceFile": "apps/web/src/app/api/cron/discord/daily-report/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -10384,7 +10384,7 @@
       "methods": ["GET"],
       "routePath": "/api/cron/discord/wol/daily/remind",
       "sourceFile": "apps/web/src/app/api/cron/discord/wol/daily/remind/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
