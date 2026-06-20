@@ -626,6 +626,12 @@ reuse the same assertions for migrated landing, product, legal, redirect,
 offline, branding, blog, careers, demo, security, partners, UI docs,
 visualization, and static solution routes.
 
+`scripts/public-marketing-e2e-coverage.test.js` compares the migrated public
+page entries in `apps/tanstack-web/migration/route-manifest.json` with that
+no-auth Playwright spec. When a public marketing, UI docs, redirect, or offline
+page is marked `migrated`, the route needs a concrete default-locale E2E
+example in the shared spec before `bun check` can pass.
+
 ## Benchmarks
 
 Use the benchmark harness to compare reachable Next and TanStack frontend
