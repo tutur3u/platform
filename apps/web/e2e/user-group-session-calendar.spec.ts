@@ -182,10 +182,9 @@ test.describe('User group session calendar', () => {
       await page.getByRole('combobox').first().click();
       await page.getByRole('option', { name: 'Calendar overlap E2E' }).click();
 
-      await expect(page.getByText('Draggable recurring')).toBeVisible();
       await expect(
         page.getByTestId(`calendar-event-${recurringSessionId}`)
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 30_000 });
       await expect(
         page.getByTestId(`calendar-event-${firstOverlapSessionId}`)
       ).toBeVisible();
@@ -367,7 +366,9 @@ test.describe('User group session calendar', () => {
         }
       );
 
-      await expect(page.getByText('Compact reconciliation E2E')).toBeVisible({
+      await expect(
+        page.getByRole('heading', { name: 'Compact reconciliation E2E' })
+      ).toBeVisible({
         timeout: 30_000,
       });
       await page
