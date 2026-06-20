@@ -19,12 +19,14 @@ export type PageHeadInput = {
   description?: string;
   imageUrl?: string;
   locale?: Locale;
+  openGraphDescription?: string;
+  openGraphLocale?: string;
   robots?: string;
   title: string;
 };
 
 export type PageHeadOptions = {
-  alternates?: Partial<Record<Locale, string>>;
+  alternates?: Record<string, string>;
   links?: HeadLinkDescriptor[];
   meta?: HeadMetaDescriptor[];
   stylesheets?: string[];
@@ -47,7 +49,10 @@ export function createPageHead(
   if (input.description) {
     meta.push(
       { content: input.description, name: 'description' },
-      { content: input.description, property: 'og:description' }
+      {
+        content: input.openGraphDescription ?? input.description,
+        property: 'og:description',
+      }
     );
   }
 
@@ -56,7 +61,10 @@ export function createPageHead(
   }
 
   if (input.locale) {
-    meta.push({ content: input.locale, property: 'og:locale' });
+    meta.push({
+      content: input.openGraphLocale ?? input.locale,
+      property: 'og:locale',
+    });
   }
 
   if (input.robots) {

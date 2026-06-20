@@ -385,6 +385,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/contact defines the legacy static Contact metadata through createPageHead. This marks only the metadata layout artifact migrated; the contact page remains legacy-owned until current-user profile and support-inquiry endpoints move behind Rust/backend or TanStack server-function ownership."
     },
+    "layout:/:locale/women-in-tech:apps/web/src/app/[locale]/(marketing)/women-in-tech/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/women-in-tech defines the legacy localized metadata, Open Graph, Twitter, canonical, alternate-language, keyword, and image tags through createPageHead. This marks only the metadata layout artifact migrated; the page remains legacy-owned until visual/runtime differences have acceptance or E2E evidence."
+    },
     "layout:/:locale/partners:apps/web/src/app/[locale]/(marketing)/partners/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

@@ -44,4 +44,40 @@ describe('createPageHead', () => {
       rel: 'alternate',
     });
   });
+
+  it('allows route-specific Open Graph overrides', () => {
+    const head = createPageHead(
+      {
+        description: 'Long page description',
+        locale: 'vi',
+        openGraphDescription: 'Short social description',
+        openGraphLocale: 'vi_VN',
+        title: 'Women in Tech',
+      },
+      {
+        alternates: {
+          'en-US': 'https://tuturuuu.com/en/women-in-tech',
+          'vi-VN': 'https://tuturuuu.com/vi/women-in-tech',
+        },
+      }
+    );
+
+    expect(head.meta).toContainEqual({
+      content: 'Long page description',
+      name: 'description',
+    });
+    expect(head.meta).toContainEqual({
+      content: 'Short social description',
+      property: 'og:description',
+    });
+    expect(head.meta).toContainEqual({
+      content: 'vi_VN',
+      property: 'og:locale',
+    });
+    expect(head.links).toContainEqual({
+      href: 'https://tuturuuu.com/en/women-in-tech',
+      hrefLang: 'en-US',
+      rel: 'alternate',
+    });
+  });
 });

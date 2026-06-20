@@ -20,23 +20,26 @@ export const Route = createFileRoute('/$locale/women-in-tech')({
         canonicalUrl: `https://tuturuuu.com/${locale}/women-in-tech`,
         description: metadata.description,
         imageUrl: ogImageUrl,
+        openGraphDescription: metadata.ogDescription,
+        openGraphLocale: metadata.ogLocale,
         title: metadata.title,
       },
       {
         alternates: {
-          en: 'https://tuturuuu.com/en/women-in-tech',
-          vi: 'https://tuturuuu.com/vi/women-in-tech',
+          'en-US': 'https://tuturuuu.com/en/women-in-tech',
+          'vi-VN': 'https://tuturuuu.com/vi/women-in-tech',
         },
         meta: [
           { content: womenInTechKeywords.join(', '), name: 'keywords' },
           { content: 'website', property: 'og:type' },
-          { content: metadata.ogLocale, property: 'og:locale' },
           {
             content: metadata.alternateLocale,
             property: 'og:locale:alternate',
           },
           { content: 'Tuturuuu', property: 'og:site_name' },
-          { content: metadata.ogDescription, property: 'og:description' },
+          { content: '1200', property: 'og:image:width' },
+          { content: '630', property: 'og:image:height' },
+          { content: metadata.title, property: 'og:image:alt' },
           { content: 'summary_large_image', name: 'twitter:card' },
           { content: metadata.title, name: 'twitter:title' },
           {
