@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildCmsCollectionRedirectHref,
+  buildCmsEntryRedirectHref,
   buildCmsRedirectHref,
   buildMailRedirectHref,
   buildQrGeneratorRedirectHref,
@@ -11,7 +13,9 @@ import {
   meetTogetherProductRedirectHref,
   pricingRedirectHref,
   workspaceChatRedirectHref,
+  workspaceInfrastructureAppCoordinationRedirectHref,
   workspaceMeetPlansRedirectHref,
+  workspaceTopicAnnouncementsRedirectHref,
   workspaceUserDatabaseRedirectHref,
 } from './redirects';
 
@@ -38,6 +42,12 @@ describe('public redirect helpers', () => {
     );
     expect(workspaceChatRedirectHref('ws-1')).toBe('/ws-1/chat');
     expect(workspaceMeetPlansRedirectHref('ws-1')).toBe('/ws-1/meet/plans');
+    expect(workspaceTopicAnnouncementsRedirectHref('ws-1')).toBe(
+      '/ws-1/users/topic-announcements/announcements'
+    );
+    expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
+      '/ws-1/infrastructure/app-coordination'
+    );
   });
 
   it('preserves legacy education permanent redirect targets', () => {
@@ -99,6 +109,12 @@ describe('public redirect helpers', () => {
     expect(buildCmsRedirectHref('/ws-1')).toBe('https://cms.example.com/ws-1');
     expect(buildCmsRedirectHref('/ws-1/content')).toBe(
       'https://cms.example.com/ws-1/content'
+    );
+    expect(buildCmsCollectionRedirectHref('ws-1', 'collection-1')).toBe(
+      'https://cms.example.com/ws-1/content/collections/collection-1'
+    );
+    expect(buildCmsEntryRedirectHref('ws-1', 'entry-1')).toBe(
+      'https://cms.example.com/ws-1/content/entries/entry-1'
     );
   });
 

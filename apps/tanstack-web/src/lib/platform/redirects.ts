@@ -25,6 +25,16 @@ export function workspaceMeetPlansRedirectHref(wsId: string) {
   return `/${wsId}/meet/plans`;
 }
 
+export function workspaceTopicAnnouncementsRedirectHref(wsId: string) {
+  return `/${wsId}/users/topic-announcements/announcements`;
+}
+
+export function workspaceInfrastructureAppCoordinationRedirectHref(
+  wsId: string
+) {
+  return `/${wsId}/infrastructure/app-coordination`;
+}
+
 export function educationLibraryRedirectHref(
   wsId: string,
   resource: 'flashcards' | 'quiz-sets' | 'quizzes'
@@ -113,6 +123,17 @@ export function buildMailRedirectHref(
 export function buildCmsRedirectHref(pathname: string) {
   const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
   return new URL(normalizedPath, `${getCmsAppOrigin()}/`).toString();
+}
+
+export function buildCmsCollectionRedirectHref(
+  wsId: string,
+  collectionId: string
+) {
+  return buildCmsRedirectHref(`/${wsId}/content/collections/${collectionId}`);
+}
+
+export function buildCmsEntryRedirectHref(wsId: string, entryId: string) {
+  return buildCmsRedirectHref(`/${wsId}/content/entries/${entryId}`);
 }
 
 export function buildVerifyTokenRedirectHref(search: string | URLSearchParams) {

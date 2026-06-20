@@ -175,6 +175,31 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/external-projects preserves the legacy 307 redirect to the CMS workspace route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/epm/collections/:collectionId:apps/web/src/app/[locale]/(dashboard)/[wsId]/epm/collections/[collectionId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/epm/collections/$collectionId preserves the legacy 307 redirect to the CMS collection route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/epm/entries/:entryId:apps/web/src/app/[locale]/(dashboard)/[wsId]/epm/entries/[entryId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/epm/entries/$entryId preserves the legacy 307 redirect to the CMS entry route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/platform/external-projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/external-projects/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/platform/external-projects preserves the legacy 307 redirect to the CMS internal admin route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/settings/infrastructure/app-coordination:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/infrastructure/app-coordination/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/users/topic-announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/topic-announcements preserves the legacy 307 redirect to /:wsId/users/topic-announcements/announcements. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
     "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",

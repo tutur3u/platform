@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 246,
-        "migrated": 59,
-        "percentComplete": 19.34,
-        "remaining": 246,
-        "terminal": 59,
+        "legacyNext": 241,
+        "migrated": 64,
+        "percentComplete": 20.98,
+        "remaining": 241,
+        "terminal": 64,
         "total": 305,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 281,
-        "migrated": 96,
-        "percentComplete": 25.46,
-        "remaining": 281,
-        "terminal": 96,
+        "legacyNext": 276,
+        "migrated": 101,
+        "percentComplete": 26.79,
+        "remaining": 276,
+        "terminal": 101,
         "total": 377,
         "unknownStatus": 0
       }
@@ -303,11 +303,11 @@
       "acceptedRemoval": 1,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1379,
-      "migrated": 109,
-      "percentComplete": 7.39,
-      "remaining": 1379,
-      "terminal": 110,
+      "legacyNext": 1374,
+      "migrated": 114,
+      "percentComplete": 7.72,
+      "remaining": 1374,
+      "terminal": 115,
       "total": 1489,
       "unknownStatus": 0
     }
@@ -11488,7 +11488,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/epm/collections/:collectionId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/epm/collections/[collectionId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11497,7 +11497,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/epm/entries/:entryId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/epm/entries/[entryId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12406,7 +12406,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/platform/external-projects",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/external-projects/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12505,7 +12505,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/settings/infrastructure/app-coordination",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/infrastructure/app-coordination/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12955,7 +12955,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/topic-announcements",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

@@ -213,8 +213,8 @@ Current inventory:
 - `1,112` route handlers
 - `19` cron handlers
 - `1,489` total tracked route artifacts
-- `109` migrated artifacts, `110` terminal artifacts, and `1,379` remaining
-  legacy-owned artifacts after the current dashboard redirect batch
+- `114` migrated artifacts, `115` terminal artifacts, and `1,374` remaining
+  legacy-owned artifacts after the current dashboard redirect and alias batches
 
 Regenerate it after adding or removing legacy routes:
 
@@ -308,6 +308,7 @@ First TanStack Start migrated ownership:
 | `/:locale/visualizations/horse-racing`                                                                                          | `apps/tanstack-web` TanStack Start client route  | `route-overrides.json` marks the page `migrated`; the Start route preserves the public horse-racing algorithm visualization with local TanStack-safe visualization components and no auth, Supabase, or protected workspace data access.                                                                            |
 | `/:locale/verify-token`                                                                                                          | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; the Start route preserves the legacy `nextUrl` redirect sanitizer and `/onboarding` fallback without importing Next auth/session runtime into the Cloudflare-compatible frontend.                                                                                  |
 | `/:locale/:wsId/{workforce,ai-chat/new,meet,qr-generator,mail,mail/sent,education/flashcards,education/quiz-sets,education/quizzes,education/courses/:courseId,epm,external-projects}` | `apps/tanstack-web` TanStack Start route loaders | `route-overrides.json` marks these page artifacts `migrated`; the Start routes preserve the legacy 307/308 redirects to workspace user database, chat, meet plans, QR app with query forwarding, Mail app, education library/builder, and CMS app destinations. Parent dashboard layout/session ownership remains legacy-owned until workspace provider parity is complete. |
+| `/:locale/:wsId/{epm/collections/:collectionId,epm/entries/:entryId,platform/external-projects,settings/infrastructure/app-coordination,users/topic-announcements}` | `apps/tanstack-web` TanStack Start route loaders | `route-overrides.json` marks these page artifacts `migrated`; the Start routes preserve the legacy 307 redirects to CMS collection/entry/admin destinations and legacy dashboard aliases. Parent dashboard layout/session ownership remains legacy-owned until workspace provider parity is complete. |
 | `/:locale` error and not-found shells                                                                                            | `apps/tanstack-web` root route                  | `route-overrides.json` marks both artifacts `migrated`; the Start root route owns the legacy reset button, localized `404` copy, and onboarding link through route error/not-found components.                                                                                                                        |
 | `/~offline` page                                                                                                                | `apps/tanstack-web` TanStack Start route         | `route-overrides.json` marks the page `migrated`; the Start route renders the shared `OfflinePage` with the legacy title, message, and foreground/background classes.                                                                                                                                               |
 | `/~offline` layout                                                                                                              | `apps/tanstack-web` root document                | `route-overrides.json` marks the layout `migrated`; the Start root document imports shared UI globals and applies the legacy scroll/background body classes without relying on Next.js font helpers.                                                                                                                |
@@ -353,7 +354,7 @@ each route:
 | `session.ts`    | Sanitized auth/session hydration snapshots from request cookies without exposing token values to the browser.   |
 | `query.ts`      | Shared TanStack Query defaults and dehydration behavior for loader-prefetched data.                             |
 | `app-shell.ts`  | Root locale validation, localized document language derivation, and legacy-compatible head descriptors.         |
-| `redirects.ts`  | Legacy-compatible redirect destinations for public, auth, dashboard alias, QR, Mail, CMS, and education routes. |
+| `redirects.ts`  | Legacy-compatible redirect destinations for public, auth, dashboard alias, QR, Mail, CMS, CMS deep-link, and education routes. |
 
 The root TanStack shell already uses the head, locale, theme, and Query
 adapters. New route ports should add route-specific metadata through
