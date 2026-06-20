@@ -311,7 +311,8 @@ Before cutover, pair the compare-mode E2E evidence with a full benchmark report:
 BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
 bun benchmark:web-setups -- \
   --setup compare \
-  --profile smoke \
+  --profile full \
+  --require-all \
   --next-origin https://<legacy-next-origin> \
   --tanstack-origin https://<tanstack-worker-origin> \
   --backend-origin https://<backend-worker-origin>

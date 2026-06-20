@@ -126,7 +126,7 @@ function createSmokePlan({ backendOrigin, tanstackOrigin, token }) {
       path: '/api/migration/status',
     },
     {
-      bodyIncludes: 'TanStack Start + Rust readiness',
+      bodyIncludes: ['TanStack Start + Rust readiness', 'Backend reachable'],
       id: 'tanstack-root',
       label: 'TanStack Start root',
       origin: tanstackOrigin,
@@ -139,9 +139,21 @@ function isSuccessfulStatus(status) {
   return status >= 200 && status < 400;
 }
 
+function getExpectedBodySnippets(bodyIncludes) {
+  if (!bodyIncludes) {
+    return [];
+  }
+
+  return Array.isArray(bodyIncludes) ? bodyIncludes : [bodyIncludes];
+}
+
 function getFailureDetail({ bodyIncludes, jsonCheck, payload, responseText }) {
-  if (bodyIncludes && !responseText.includes(bodyIncludes)) {
-    return `response body did not include ${JSON.stringify(bodyIncludes)}`;
+  const missingSnippet = getExpectedBodySnippets(bodyIncludes).find(
+    (expectedSnippet) => !responseText.includes(expectedSnippet)
+  );
+
+  if (missingSnippet) {
+    return `response body did not include ${JSON.stringify(missingSnippet)}`;
   }
 
   if (jsonCheck && !jsonCheck(payload)) {

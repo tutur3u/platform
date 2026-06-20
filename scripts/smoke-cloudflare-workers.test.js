@@ -79,7 +79,7 @@ test('runSmoke fails unauthorized protected migration status responses', async (
   assert.equal(report.results[2].status, 401);
 });
 
-test('runSmoke validates migration JSON shape and TanStack shell body', async () => {
+test('runSmoke validates migration JSON shape and TanStack backend-connected shell body', async () => {
   const fetchImpl = async (url) => {
     if (url.endsWith('/api/migration/status')) {
       return Response.json({
@@ -90,7 +90,9 @@ test('runSmoke validates migration JSON shape and TanStack shell body', async ()
       });
     }
 
-    return new Response('TanStack Start + Rust readiness', { status: 200 });
+    return new Response('TanStack Start + Rust readiness Backend reachable', {
+      status: 200,
+    });
   };
 
   const report = await runSmoke(
@@ -104,6 +106,39 @@ test('runSmoke validates migration JSON shape and TanStack shell body', async ()
   );
 
   assert.equal(report.ok, true);
+});
+
+test('runSmoke fails when the TanStack shell cannot reach the Rust backend', async () => {
+  const fetchImpl = async (url) => {
+    if (url.endsWith('/api/migration/status')) {
+      return Response.json({
+        backend: {
+          deploymentTarget: 'cloudflare-workers',
+          runtime: 'rust',
+        },
+      });
+    }
+
+    return new Response('TanStack Start + Rust readiness Backend offline', {
+      status: 200,
+    });
+  };
+
+  const report = await runSmoke(
+    {
+      backendOrigin: 'https://backend.example.workers.dev',
+      tanstackOrigin: 'https://tanstack.example.workers.dev',
+      timeoutMs: 1000,
+      token: 'secret-token',
+    },
+    fetchImpl
+  );
+
+  assert.equal(report.ok, false);
+  assert.equal(
+    report.results[3].detail,
+    'response body did not include "Backend reachable"'
+  );
 });
 
 test('status helper and formatted output do not expose bearer tokens', () => {
