@@ -6,6 +6,7 @@ const VALID_ROUTE_STATUSES = new Set([
   'migrated',
 ]);
 const VALID_TARGET_OWNERS = new Set(['rust-backend', 'tanstack-start']);
+const TERMINAL_ROUTE_STATUSES = new Set(['accepted-removal', 'migrated']);
 
 function readRouteOverrides(overridesPath, fsImpl = fs) {
   if (!overridesPath || !fsImpl.existsSync(overridesPath)) {
@@ -16,6 +17,10 @@ function readRouteOverrides(overridesPath, fsImpl = fs) {
   const routes = parsed.routes ?? {};
 
   return new Map(Object.entries(routes));
+}
+
+function hasEvidenceNote(override) {
+  return typeof override?.note === 'string' && override.note.trim().length > 0;
 }
 
 function applyRouteOverrides(routes, overrides = new Map()) {
@@ -37,6 +42,15 @@ function applyRouteOverrides(routes, overrides = new Map()) {
     if (override.status && !VALID_ROUTE_STATUSES.has(override.status)) {
       errors.push(
         `Route override ${routeId} has unsupported status: ${override.status}`
+      );
+    }
+
+    if (
+      TERMINAL_ROUTE_STATUSES.has(override.status) &&
+      !hasEvidenceNote(override)
+    ) {
+      errors.push(
+        `Route override ${routeId} with status ${override.status} must include a non-empty note.`
       );
     }
 
@@ -79,6 +93,19 @@ function applyRouteOverrides(routes, overrides = new Map()) {
         ) {
           errors.push(
             `Route override ${routeId} method ${method} has unsupported status: ${methodOverride.status}`
+          );
+        }
+
+        const methodStatus =
+          methodOverride.status ?? override.status ?? route.status;
+
+        if (
+          TERMINAL_ROUTE_STATUSES.has(methodStatus) &&
+          !hasEvidenceNote(methodOverride) &&
+          !hasEvidenceNote(override)
+        ) {
+          errors.push(
+            `Route override ${routeId} method ${method} with status ${methodStatus} must include a non-empty note.`
           );
         }
 

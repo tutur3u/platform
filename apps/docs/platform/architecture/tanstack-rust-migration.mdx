@@ -319,9 +319,9 @@ This command preserves the TanStack Start `Register` augmentation footer that
 `bun check:cloudflare` validates for the Cloudflare-compatible Start runtime.
 
 Route ownership status is preserved through
-`apps/tanstack-web/migration/route-overrides.json`. Add an override when a
-route becomes `migrated` or receives an accepted removal decision; do not edit
-the generated manifest by hand.
+`apps/tanstack-web/migration/route-overrides.json`. Add an override with a
+non-empty evidence note when a route becomes `migrated` or receives an accepted
+removal decision; do not edit the generated manifest by hand.
 
 Check that the manifest still matches the legacy route tree while migration is
 in progress:
@@ -504,8 +504,8 @@ only sanitized session state to client components.
 Every migrated Rust endpoint needs the same ownership evidence before its
 manifest entry can move out of `legacy-next`:
 
-- a `route-overrides.json` entry that marks the legacy artifact as `migrated`
-  or `accepted-removal`
+- a `route-overrides.json` entry with a non-empty evidence note that marks the
+  legacy artifact as `migrated` or `accepted-removal`
 - an OpenAPI path or schema update in `apps/backend/api/openapi.yaml`
 - a Rust route dispatcher test covering the success case; full-route ownership
   also needs unsupported method behavior, while method-level ownership needs an

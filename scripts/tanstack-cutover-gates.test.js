@@ -245,10 +245,12 @@ function createCutoverFixture(generatedAt = new Date().toISOString()) {
   writeJson(overridesPath, {
     routes: {
       'api:/api/health:apps/web/src/app/api/health/route.ts': {
+        note: 'Fixture Rust health endpoint ownership evidence.',
         status: 'migrated',
         targetOwner: 'rust-backend',
       },
       'page:/:locale:apps/web/src/app/[locale]/page.tsx': {
+        note: 'Fixture TanStack landing page ownership evidence.',
         status: 'migrated',
         targetOwner: 'tanstack-start',
       },
@@ -500,6 +502,7 @@ test('checkManifestGates keeps method-split legacy siblings blocking cutover', (
         [routeId]: {
           methods: {
             OPTIONS: {
+              note: 'Fixture Rust preflight ownership evidence.',
               status: 'migrated',
               targetOwner: 'rust-backend',
             },

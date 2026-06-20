@@ -365,6 +365,7 @@ test('checkManifest reports stale method-level ownership metadata', () => {
       [routeId]: {
         methods: {
           OPTIONS: {
+            note: 'Rust owns preflight only.',
             status: 'migrated',
             targetOwner: 'rust-backend',
           },
@@ -393,6 +394,53 @@ test('checkManifest reports stale method-level ownership metadata', () => {
   });
 
   assert.match(errors.join('\n'), /parentId=/u);
+});
+
+test('route overrides require evidence notes for terminal ownership', () => {
+  const { appDir, rootDir } = makeTempFixture();
+  const healthRouteId = 'api:/api/health:apps/web/src/app/api/health/route.ts';
+  const cronRouteId =
+    'cron:/api/cron/sync:apps/web/src/app/api/cron/sync/route.ts';
+
+  assert.throws(
+    () =>
+      inventoryNextAppRoutes({
+        appDir,
+        rootDir,
+        routeOverrides: new Map([
+          [
+            healthRouteId,
+            {
+              status: 'migrated',
+              targetOwner: 'rust-backend',
+            },
+          ],
+        ]),
+      }),
+    /Route override api:\/api\/health:apps\/web\/src\/app\/api\/health\/route\.ts with status migrated must include a non-empty note\./u
+  );
+
+  assert.throws(
+    () =>
+      inventoryNextAppRoutes({
+        appDir,
+        rootDir,
+        routeOverrides: new Map([
+          [
+            cronRouteId,
+            {
+              methods: {
+                POST: {
+                  status: 'accepted-removal',
+                  targetOwner: 'rust-backend',
+                },
+              },
+            },
+          ],
+        ]),
+      }),
+    /Route override cron:\/api\/cron\/sync:apps\/web\/src\/app\/api\/cron\/sync\/route\.ts method POST with status accepted-removal must include a non-empty note\./u
+  );
 });
 
 test('route overrides reject unsupported ownership values', () => {
@@ -433,6 +481,7 @@ test('route overrides reject unknown method ownership', () => {
             {
               methods: {
                 PATCH: {
+                  note: 'Rust owns unsupported method metadata in this fixture.',
                   status: 'migrated',
                   targetOwner: 'rust-backend',
                 },
@@ -460,6 +509,7 @@ test('checkManifest reports stale route ownership when overrides change', () => 
   writeJson(overridesPath, {
     routes: {
       [routeId]: {
+        note: 'Covered by Rust backend.',
         status: 'migrated',
         targetOwner: 'rust-backend',
       },
