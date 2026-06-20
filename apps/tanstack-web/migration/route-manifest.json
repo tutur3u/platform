@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 258,
-        "migrated": 47,
-        "percentComplete": 15.41,
-        "remaining": 258,
-        "terminal": 47,
+        "legacyNext": 246,
+        "migrated": 59,
+        "percentComplete": 19.34,
+        "remaining": 246,
+        "terminal": 59,
         "total": 305,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 293,
-        "migrated": 84,
-        "percentComplete": 22.28,
-        "remaining": 293,
-        "terminal": 84,
+        "legacyNext": 281,
+        "migrated": 96,
+        "percentComplete": 25.46,
+        "remaining": 281,
+        "terminal": 96,
         "total": 377,
         "unknownStatus": 0
       }
@@ -303,11 +303,11 @@
       "acceptedRemoval": 1,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1391,
-      "migrated": 97,
-      "percentComplete": 6.58,
-      "remaining": 1391,
-      "terminal": 98,
+      "legacyNext": 1379,
+      "migrated": 109,
+      "percentComplete": 7.39,
+      "remaining": 1379,
+      "terminal": 110,
       "total": 1489,
       "unknownStatus": 0
     }
@@ -11002,7 +11002,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/ai-chat/new",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/new/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11290,7 +11290,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/courses/:courseId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11389,7 +11389,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/flashcards",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/flashcards/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11434,7 +11434,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/quiz-sets",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11461,7 +11461,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/quizzes",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quizzes/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11479,7 +11479,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/epm",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/epm/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11506,7 +11506,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/external-projects",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/external-projects/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12253,7 +12253,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/mail",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12262,7 +12262,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/mail/sent",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/sent/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12271,7 +12271,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/meet",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12451,7 +12451,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/qr-generator",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13036,7 +13036,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/workforce",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/workforce/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

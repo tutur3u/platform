@@ -13,6 +13,29 @@ export function meetTogetherProductRedirectHref() {
   return '/meet-together';
 }
 
+export function workspaceUserDatabaseRedirectHref(wsId: string) {
+  return `/${wsId}/users/database`;
+}
+
+export function workspaceChatRedirectHref(wsId: string) {
+  return `/${wsId}/chat`;
+}
+
+export function workspaceMeetPlansRedirectHref(wsId: string) {
+  return `/${wsId}/meet/plans`;
+}
+
+export function educationLibraryRedirectHref(
+  wsId: string,
+  resource: 'flashcards' | 'quiz-sets' | 'quizzes'
+) {
+  return `/${wsId}/education/library/${resource}`;
+}
+
+export function courseBuilderRedirectHref(wsId: string, courseId: string) {
+  return `/${wsId}/education/courses/${courseId}/builder`;
+}
+
 export function meetTogetherCalendarRedirectHref(splat?: string) {
   const normalizedSplat = splat?.replace(/^\/+|\/+$/g, '');
 
@@ -32,6 +55,31 @@ export function getQrAppOrigin() {
   });
 }
 
+export function getMailAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'mail',
+    candidates: [
+      process.env.MAIL_APP_URL,
+      process.env.NEXT_PUBLIC_MAIL_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://mail.tuturuuu.com'
+        : getLocalInternalAppUrl('mail', 'http://localhost:7820'),
+  });
+}
+
+export function getCmsAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'cms',
+    candidates: [process.env.CMS_APP_URL, process.env.NEXT_PUBLIC_CMS_APP_URL],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://cms.tuturuuu.com'
+        : getLocalInternalAppUrl('cms', 'http://localhost:7811'),
+  });
+}
+
 function normalizeSearchParams(search: string | URLSearchParams) {
   if (typeof search !== 'string') return search;
 
@@ -47,6 +95,24 @@ export function buildQrGeneratorRedirectHref(search: string | URLSearchParams) {
   }
 
   return url.toString();
+}
+
+export function buildMailRedirectHref(
+  wsId: string,
+  options: { folder?: string } = {}
+) {
+  const url = new URL(`/${wsId}`, `${getMailAppOrigin()}/`);
+
+  if (options.folder) {
+    url.searchParams.set('folder', options.folder);
+  }
+
+  return url.toString();
+}
+
+export function buildCmsRedirectHref(pathname: string) {
+  const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return new URL(normalizedPath, `${getCmsAppOrigin()}/`).toString();
 }
 
 export function buildVerifyTokenRedirectHref(search: string | URLSearchParams) {

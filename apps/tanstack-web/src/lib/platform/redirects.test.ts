@@ -1,11 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildCmsRedirectHref,
+  buildMailRedirectHref,
   buildQrGeneratorRedirectHref,
   buildVerifyTokenRedirectHref,
+  courseBuilderRedirectHref,
   docsRedirectHref,
+  educationLibraryRedirectHref,
   meetTogetherCalendarRedirectHref,
   meetTogetherProductRedirectHref,
   pricingRedirectHref,
+  workspaceChatRedirectHref,
+  workspaceMeetPlansRedirectHref,
+  workspaceUserDatabaseRedirectHref,
 } from './redirects';
 
 describe('public redirect helpers', () => {
@@ -23,6 +30,29 @@ describe('public redirect helpers', () => {
 
   it('preserves the legacy meet-together product redirect target', () => {
     expect(meetTogetherProductRedirectHref()).toBe('/meet-together');
+  });
+
+  it('preserves legacy workspace dashboard redirect targets', () => {
+    expect(workspaceUserDatabaseRedirectHref('ws-1')).toBe(
+      '/ws-1/users/database'
+    );
+    expect(workspaceChatRedirectHref('ws-1')).toBe('/ws-1/chat');
+    expect(workspaceMeetPlansRedirectHref('ws-1')).toBe('/ws-1/meet/plans');
+  });
+
+  it('preserves legacy education permanent redirect targets', () => {
+    expect(educationLibraryRedirectHref('ws-1', 'flashcards')).toBe(
+      '/ws-1/education/library/flashcards'
+    );
+    expect(educationLibraryRedirectHref('ws-1', 'quiz-sets')).toBe(
+      '/ws-1/education/library/quiz-sets'
+    );
+    expect(educationLibraryRedirectHref('ws-1', 'quizzes')).toBe(
+      '/ws-1/education/library/quizzes'
+    );
+    expect(courseBuilderRedirectHref('ws-1', 'course-1')).toBe(
+      '/ws-1/education/courses/course-1/builder'
+    );
   });
 
   it('preserves the legacy meet-together calendar redirect target', () => {
@@ -51,6 +81,24 @@ describe('public redirect helpers', () => {
 
     expect(buildQrGeneratorRedirectHref(searchParams)).toBe(
       'https://qr.example.com/?url=https%3A%2F%2Ftuturuuu.com%2Fdocs'
+    );
+  });
+
+  it('preserves legacy mail app redirect targets', () => {
+    vi.stubEnv('MAIL_APP_URL', 'https://mail.example.com/base/');
+
+    expect(buildMailRedirectHref('ws-1')).toBe('https://mail.example.com/ws-1');
+    expect(buildMailRedirectHref('ws-1', { folder: 'sent' })).toBe(
+      'https://mail.example.com/ws-1?folder=sent'
+    );
+  });
+
+  it('preserves legacy CMS app redirect targets', () => {
+    vi.stubEnv('CMS_APP_URL', 'https://cms.example.com/base/');
+
+    expect(buildCmsRedirectHref('/ws-1')).toBe('https://cms.example.com/ws-1');
+    expect(buildCmsRedirectHref('/ws-1/content')).toBe(
+      'https://cms.example.com/ws-1/content'
     );
   });
 
