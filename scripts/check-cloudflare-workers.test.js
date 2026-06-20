@@ -58,6 +58,21 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
+      workflow.replaceAll('scripts/smoke-cloudflare-workers.test.js', '')
+    ).join('\n'),
+    /smoke-cloudflare-workers/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace(
+        'node --test scripts/smoke-cloudflare-workers.test.js',
+        ''
+      )
+    ).join('\n'),
+    /smoke-cloudflare-workers/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
       workflow.replaceAll('apps/tanstack-web/wrangler.jsonc', '')
     ).join('\n'),
     /wrangler\.jsonc/

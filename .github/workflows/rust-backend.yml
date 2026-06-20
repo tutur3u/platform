@@ -13,6 +13,8 @@ on:
       - "package.json"
       - "scripts/check-cloudflare-workers.js"
       - "scripts/check-cloudflare-workers.test.js"
+      - "scripts/smoke-cloudflare-workers.js"
+      - "scripts/smoke-cloudflare-workers.test.js"
       - "tuturuuu.ts"
   push:
     branches: ["main", "production"]
@@ -27,6 +29,8 @@ on:
       - "package.json"
       - "scripts/check-cloudflare-workers.js"
       - "scripts/check-cloudflare-workers.test.js"
+      - "scripts/smoke-cloudflare-workers.js"
+      - "scripts/smoke-cloudflare-workers.test.js"
       - "tuturuuu.ts"
   workflow_dispatch:
 
@@ -60,6 +64,10 @@ jobs:
       - name: Check Cloudflare deployment config
         working-directory: .
         run: node scripts/check-cloudflare-workers.js
+
+      - name: Check Cloudflare smoke reporter
+        working-directory: .
+        run: node --test scripts/smoke-cloudflare-workers.test.js
 
       - name: Check formatting
         run: cargo fmt --check
