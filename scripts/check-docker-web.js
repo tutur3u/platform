@@ -1034,6 +1034,16 @@ function validateDockerProdCompose(composeContent) {
     }
   }
 
+  if (
+    !composeContent.includes(
+      '  depends_on:\n    backend:\n      condition: service_healthy'
+    )
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml x-tanstack-web-service must depend on backend: service_healthy.'
+    );
+  }
+
   const forbiddenSecuritySnippets = [
     {
       message:

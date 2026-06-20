@@ -718,6 +718,24 @@ test('validateDockerProdCompose reports missing version badge metadata env wirin
   assert.match(errors, /PLATFORM_BUILD_COMMIT_HASH/);
 });
 
+test('validateDockerProdCompose reports missing TanStack backend health dependency', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    [
+      '  depends_on:',
+      '    backend:',
+      '      condition: service_healthy',
+      '',
+    ].join('\n'),
+    ''
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /x-tanstack-web-service/);
+  assert.match(errors, /backend/);
+  assert.match(errors, /service_healthy/);
+});
+
 test('validateDockerProdCompose rejects public production port mappings and fallback token', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
     .replace(

@@ -140,9 +140,12 @@ parallel `apps/tanstack-web` migration runtime.
   `DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT` (default `7824`), not the Next
   `web-proxy` port `7803`; setting
   `E2E_ALLOW_TANSTACK_WEB_PROXY_PORT=1` is required for an intentional
-  proxy-routing experiment. Use `DOCKER_WEB_FRONTEND=next|tanstack` to select
-  the default web frontend in migration-aware scripts. Cloudflare preview
-  deploys use `apps/tanstack-web/wrangler.jsonc` plus the app-local
+  proxy-routing experiment. Production TanStack services wait on the Rust
+  backend `service_healthy` check before starting, because the Start runtime
+  uses `BACKEND_INTERNAL_URL=http://backend:7820` for server-owned API calls.
+  Use `DOCKER_WEB_FRONTEND=next|tanstack` to select the default web frontend in
+  migration-aware scripts. Cloudflare preview deploys use
+  `apps/tanstack-web/wrangler.jsonc` plus the app-local
   `deploy:cloudflare`, `deploy:cloudflare:dry-run`, `preview:cloudflare`, and
   `cf-typegen` scripts, so incremental TanStack route ports can be validated on
   Workers before the full cutover gate passes.

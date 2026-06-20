@@ -129,6 +129,9 @@ x-tanstack-web-service: &tanstack-web-service
     start_period: 10s
     retries: 3
   init: true
+  depends_on:
+    backend:
+      condition: service_healthy
 
 services:
   web:
