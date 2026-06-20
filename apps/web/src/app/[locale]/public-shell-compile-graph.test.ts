@@ -136,6 +136,13 @@ const pharmaciesSolutionPageSource = source(
 const realEstateSolutionPageSource = source(
   'src/app/[locale]/(marketing)/solutions/realestate/page.tsx'
 );
+const uiDocsOverviewIconBoundarySources = [
+  source('src/app/[locale]/ui/page.tsx'),
+  source('src/app/[locale]/ui/docs-primitives.tsx'),
+  source('src/app/[locale]/ui/copy-button.tsx'),
+  source('src/app/[locale]/ui/ui-docs-sidebar.tsx'),
+  source('src/app/[locale]/ui/ui-docs-mobile-nav.tsx'),
+] as const;
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
 const timeTrackerLayoutSource = source(
   'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
@@ -417,6 +424,16 @@ describe('public shell compile graph', () => {
     expect(womenInTechPageSource).toMatch(
       staticImportPattern('@tuturuuu/ui/button')
     );
+  });
+
+  it('keeps the UI docs overview shell off the icon package root', () => {
+    for (const sourceText of uiDocsOverviewIconBoundarySources) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).not.toMatch(
+        staticImportPattern('@tuturuuu/icons/lucide')
+      );
+      expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
+    }
   });
 
   it('keeps the account deletion page off the icon package root', () => {

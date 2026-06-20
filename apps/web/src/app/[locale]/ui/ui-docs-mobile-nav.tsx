@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu } from '@tuturuuu/icons';
+import { Menu } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Sheet,

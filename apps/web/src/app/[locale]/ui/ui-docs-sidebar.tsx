@@ -9,7 +9,7 @@ import {
   Package,
   Search,
   SquareTerminal,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide-static';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Input } from '@tuturuuu/ui/input';
 import { Kbd } from '@tuturuuu/ui/kbd';
