@@ -627,9 +627,10 @@ export async function resolveInventoryPolarContext({
 /**
  * Polar checkouts charge a single product and have no line-item/quantity
  * concept, so we can only attribute an order to a real synced product when the
- * cart is exactly one unit of one listing whose synced product price still
- * equals the reserved total. Returns that product id, or null to fall back to
- * the generic custom-amount product (which charges the exact reserved total).
+ * cart is a single listing (of any quantity, e.g. 4x of product X). The amount
+ * is locked separately by an ad-hoc fixed price equal to the reserved total, so
+ * the product's catalog price does not need to match. Returns that product id,
+ * or null to fall back to the generic checkout product.
  */
 async function resolveSingleListingPolarProduct({
   checkout,
@@ -643,7 +644,7 @@ async function resolveSingleListingPolarProduct({
   if (checkout.lines.length !== 1) return null;
   const line = checkout.lines[0];
   if (!line) return null;
-  if (line.quantity !== 1 || !line.listingId) return null;
+  if (!line.listingId) return null;
 
   const privateAdmin = await getPrivateAdmin();
   const { data } = (await privateAdmin
@@ -667,23 +668,13 @@ async function resolveSingleListingPolarProduct({
     return null;
   }
 
-  // Defend against drift: only attribute to the real product if Polar still
-  // prices it exactly at the reserved total AND in the checkout's currency
-  // (Polar rejects a checkout whose currency the product can't honor).
+  // The ad-hoc fixed price locks the amount, but Polar still rejects a checkout
+  // whose currency the product can't honor, so confirm the product carries the
+  // checkout's currency before attributing the order to it.
   try {
     const wantCurrency = toPolarCurrency(checkout.currency);
     const product = await polar.products.get({ id: data.polar_product_id });
-    // Products carry one fixed price per currency; pick the one matching the
-    // checkout currency and confirm it still equals the reserved total.
-    const fixedPrice = (product.prices ?? []).find(
-      (price) =>
-        (price as { amountType?: string }).amountType === 'fixed' &&
-        typeof (price as { priceAmount?: number }).priceAmount === 'number' &&
-        (
-          price as { priceCurrency?: string | null }
-        ).priceCurrency?.toLowerCase() === wantCurrency
-    ) as { priceAmount?: number } | undefined;
-    if (fixedPrice?.priceAmount === checkout.totalAmount) {
+    if (productHasCurrency(product, wantCurrency)) {
       return data.polar_product_id;
     }
   } catch (error) {
@@ -723,9 +714,9 @@ export async function createInventoryPolarCheckout({
   const accessToken = await decryptIntegrationToken(integration);
   const polar = createPolarClient({ accessToken, environment });
 
-  // Use the real synced product for single-unit single-listing carts (so the
-  // order is attributed to the actual product in Polar); otherwise the generic
-  // custom-amount product backs the exact reserved total.
+  // Attribute the order to the real synced product when the cart is a single
+  // listing of any quantity (e.g. 4x of product X); otherwise the generic
+  // checkout product carries the exact reserved total.
   const singleListingProductId = await resolveSingleListingPolarProduct({
     checkout,
     environment,
@@ -738,14 +729,11 @@ export async function createInventoryPolarCheckout({
       environment,
       wsId: checkout.wsId,
     }));
-  const usesGenericProduct = !singleListingProductId;
 
+  const wantCurrency = toPolarCurrency(checkout.currency);
   const normalizedStorefrontUrl = storefrontUrl.replace(/\/$/u, '');
   const checkoutSession = await polar.checkouts.create({
-    // `amount` only applies to the generic custom-amount product; a fixed-price
-    // synced product is priced by Polar itself.
-    ...(usesGenericProduct ? { amount: checkout.totalAmount } : {}),
-    currency: toPolarCurrency(checkout.currency) as never,
+    currency: wantCurrency as never,
     customerEmail: checkout.customerEmail,
     customerName: checkout.customerName,
     metadata: {
@@ -755,6 +743,19 @@ export async function createInventoryPolarCheckout({
       publicToken: checkout.publicToken,
       storefrontSlug,
       wsId: checkout.wsId,
+    },
+    // Lock the amount: an ad-hoc FIXED price renders non-editable on Polar's
+    // hosted page (a custom/"pay what you want" price does not). It is always the
+    // exact reserved total (line totals + fees), so the buyer cannot change what
+    // they pay, regardless of whether a real or generic product is used.
+    prices: {
+      [productId]: [
+        {
+          amountType: 'fixed' as const,
+          priceAmount: checkout.totalAmount,
+          priceCurrency: wantCurrency as never,
+        },
+      ],
     },
     products: [productId],
     returnUrl: `${normalizedStorefrontUrl}/${storefrontSlug}/cart`,
