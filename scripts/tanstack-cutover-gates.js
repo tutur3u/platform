@@ -683,13 +683,47 @@ function checkCloudflareSmokeGate({
   };
 }
 
+function getDiagnosticEvidenceSkips({
+  requireBenchmark = true,
+  requireCloudflareSmoke = true,
+  requireE2E = true,
+} = {}) {
+  return [
+    requireBenchmark ? null : '--skip-benchmark',
+    requireE2E ? null : '--skip-e2e',
+    requireCloudflareSmoke ? null : '--skip-cloudflare-smoke',
+  ].filter(Boolean);
+}
+
+function checkDiagnosticSkipGate(options = {}) {
+  const skips = getDiagnosticEvidenceSkips(options);
+  const ok = !options.requireMigrated || skips.length === 0;
+
+  return gate(
+    'diagnostic-evidence-skips',
+    'Diagnostic evidence skips',
+    ok,
+    skips.length === 0
+      ? 'No diagnostic evidence skips requested.'
+      : ok
+        ? `Diagnostic evidence skips are allowed with --allow-legacy: ${skips.join(
+            ', '
+          )}.`
+        : `Diagnostic evidence skips are not allowed for terminal cutover; rerun without ${skips.join(
+            ', '
+          )} or pass --allow-legacy for a non-terminal diagnostic run.`
+  );
+}
+
 function runCutoverGates(options = {}) {
   const manifest = checkManifestGates(options);
   const benchmark = checkBenchmarkGate(options);
   const e2e = checkE2EGate(options);
   const cloudflareSmoke = checkCloudflareSmokeGate(options);
+  const diagnosticSkips = checkDiagnosticSkipGate(options);
   const gates = [
     ...manifest.gates,
+    diagnosticSkips,
     benchmark.gate,
     e2e.gate,
     cloudflareSmoke.gate,

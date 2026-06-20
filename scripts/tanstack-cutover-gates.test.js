@@ -280,6 +280,61 @@ test('runCutoverGates fails when required E2E, benchmark, or Cloudflare smoke ev
   }
 });
 
+test('runCutoverGates rejects diagnostic skip flags when terminal cutover is required', () => {
+  const fixture = createCutoverFixture();
+
+  try {
+    const result = runCutoverGates({
+      appDir: fixture.appDir,
+      manifestPath: fixture.manifestPath,
+      overridesPath: fixture.overridesPath,
+      requireBenchmark: false,
+      requireCloudflareSmoke: false,
+      requireE2E: false,
+      requireMigrated: true,
+      rootDir: fixture.rootDir,
+    });
+    const skipGate = result.gates.find(
+      (gate) => gate.id === 'diagnostic-evidence-skips'
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(skipGate.ok, false);
+    assert.match(skipGate.detail, /not allowed for terminal cutover/u);
+    assert.match(skipGate.detail, /--skip-benchmark/u);
+    assert.match(skipGate.detail, /--skip-e2e/u);
+    assert.match(skipGate.detail, /--skip-cloudflare-smoke/u);
+  } finally {
+    fs.rmSync(fixture.rootDir, { force: true, recursive: true });
+  }
+});
+
+test('runCutoverGates allows diagnostic skip flags with allow-legacy mode', () => {
+  const fixture = createCutoverFixture();
+
+  try {
+    const result = runCutoverGates({
+      appDir: fixture.appDir,
+      manifestPath: fixture.manifestPath,
+      overridesPath: fixture.overridesPath,
+      requireBenchmark: false,
+      requireCloudflareSmoke: false,
+      requireE2E: false,
+      requireMigrated: false,
+      rootDir: fixture.rootDir,
+    });
+    const skipGate = result.gates.find(
+      (gate) => gate.id === 'diagnostic-evidence-skips'
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(skipGate.ok, true);
+    assert.match(skipGate.detail, /allowed with --allow-legacy/u);
+  } finally {
+    fs.rmSync(fixture.rootDir, { force: true, recursive: true });
+  }
+});
+
 test('checkManifestGates keeps method-split legacy siblings blocking cutover', () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanstack-gates-'));
   const appDir = path.join(rootDir, 'apps', 'web', 'src', 'app');
