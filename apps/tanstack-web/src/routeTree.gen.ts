@@ -20,10 +20,18 @@ import { Route as LocaleQrGeneratorRouteImport } from './routes/$locale/qr-gener
 import { Route as LocalePrivacyRouteImport } from './routes/$locale/privacy'
 import { Route as LocalePricingRouteImport } from './routes/$locale/pricing'
 import { Route as LocalePartnersRouteImport } from './routes/$locale/partners'
+import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup'
 import { Route as LocaleDocsRouteImport } from './routes/$locale/docs'
 import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines'
+import { Route as LocaleCareersRouteImport } from './routes/$locale/careers'
+import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding'
+import { Route as LocaleBlogRouteImport } from './routes/$locale/blog'
 import { Route as LocaleAcceptableUseRouteImport } from './routes/$locale/acceptable-use'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
+import { Route as LocaleUiIndexRouteImport } from './routes/$locale/ui/index'
+import { Route as LocaleVisualizationsHorseRacingRouteImport } from './routes/$locale/visualizations/horse-racing'
+import { Route as LocaleUiSetupRouteImport } from './routes/$locale/ui/setup'
+import { Route as LocaleUiContributingRouteImport } from './routes/$locale/ui/contributing'
 import { Route as LocaleSolutionsRetailRouteImport } from './routes/$locale/solutions/retail'
 import { Route as LocaleSolutionsRestaurantsRouteImport } from './routes/$locale/solutions/restaurants'
 import { Route as LocaleSolutionsRealestateRouteImport } from './routes/$locale/solutions/realestate'
@@ -48,6 +56,8 @@ import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products
 import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar'
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai'
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
+import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index'
+import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId'
 import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$'
 
 const Char126offlineRoute = Char126offlineRouteImport.update({
@@ -105,6 +115,11 @@ const LocalePartnersRoute = LocalePartnersRouteImport.update({
   path: '/$locale/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
+  id: '/$locale/facebook-mockup',
+  path: '/$locale/facebook-mockup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleDocsRoute = LocaleDocsRouteImport.update({
   id: '/$locale/docs',
   path: '/$locale/docs',
@@ -116,6 +131,21 @@ const LocaleCommunityGuidelinesRoute =
     path: '/$locale/community-guidelines',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleCareersRoute = LocaleCareersRouteImport.update({
+  id: '/$locale/careers',
+  path: '/$locale/careers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleBrandingRoute = LocaleBrandingRouteImport.update({
+  id: '/$locale/branding',
+  path: '/$locale/branding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleBlogRoute = LocaleBlogRouteImport.update({
+  id: '/$locale/blog',
+  path: '/$locale/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleAcceptableUseRoute = LocaleAcceptableUseRouteImport.update({
   id: '/$locale/acceptable-use',
   path: '/$locale/acceptable-use',
@@ -124,6 +154,27 @@ const LocaleAcceptableUseRoute = LocaleAcceptableUseRouteImport.update({
 const LocaleAboutRoute = LocaleAboutRouteImport.update({
   id: '/$locale/about',
   path: '/$locale/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleUiIndexRoute = LocaleUiIndexRouteImport.update({
+  id: '/$locale/ui/',
+  path: '/$locale/ui/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleVisualizationsHorseRacingRoute =
+  LocaleVisualizationsHorseRacingRouteImport.update({
+    id: '/$locale/visualizations/horse-racing',
+    path: '/$locale/visualizations/horse-racing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleUiSetupRoute = LocaleUiSetupRouteImport.update({
+  id: '/$locale/ui/setup',
+  path: '/$locale/ui/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleUiContributingRoute = LocaleUiContributingRouteImport.update({
+  id: '/$locale/ui/contributing',
+  path: '/$locale/ui/contributing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleSolutionsRetailRoute = LocaleSolutionsRetailRouteImport.update({
@@ -256,6 +307,17 @@ const LocaleCalendarMeetTogetherRoute =
     path: '/$locale/calendar/meet-together',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleUiComponentsIndexRoute = LocaleUiComponentsIndexRouteImport.update({
+  id: '/$locale/ui/components/',
+  path: '/$locale/ui/components/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleUiComponentsComponentIdRoute =
+  LocaleUiComponentsComponentIdRouteImport.update({
+    id: '/$locale/ui/components/$componentId',
+    path: '/$locale/ui/components/$componentId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleCalendarMeetTogetherSplatRoute =
   LocaleCalendarMeetTogetherSplatRouteImport.update({
     id: '/$',
@@ -270,8 +332,12 @@ export interface FileRoutesByFullPath {
   '/~offline': typeof Char126offlineRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/acceptable-use': typeof LocaleAcceptableUseRoute
+  '/$locale/blog': typeof LocaleBlogRoute
+  '/$locale/branding': typeof LocaleBrandingRoute
+  '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/docs': typeof LocaleDocsRoute
+  '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -303,7 +369,13 @@ export interface FileRoutesByFullPath {
   '/$locale/solutions/realestate': typeof LocaleSolutionsRealestateRoute
   '/$locale/solutions/restaurants': typeof LocaleSolutionsRestaurantsRoute
   '/$locale/solutions/retail': typeof LocaleSolutionsRetailRoute
+  '/$locale/ui/contributing': typeof LocaleUiContributingRoute
+  '/$locale/ui/setup': typeof LocaleUiSetupRoute
+  '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute
+  '/$locale/ui/': typeof LocaleUiIndexRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
+  '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -312,8 +384,12 @@ export interface FileRoutesByTo {
   '/~offline': typeof Char126offlineRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/acceptable-use': typeof LocaleAcceptableUseRoute
+  '/$locale/blog': typeof LocaleBlogRoute
+  '/$locale/branding': typeof LocaleBrandingRoute
+  '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/docs': typeof LocaleDocsRoute
+  '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -345,7 +421,13 @@ export interface FileRoutesByTo {
   '/$locale/solutions/realestate': typeof LocaleSolutionsRealestateRoute
   '/$locale/solutions/restaurants': typeof LocaleSolutionsRestaurantsRoute
   '/$locale/solutions/retail': typeof LocaleSolutionsRetailRoute
+  '/$locale/ui/contributing': typeof LocaleUiContributingRoute
+  '/$locale/ui/setup': typeof LocaleUiSetupRoute
+  '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute
+  '/$locale/ui': typeof LocaleUiIndexRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
+  '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -355,8 +437,12 @@ export interface FileRoutesById {
   '/~offline': typeof Char126offlineRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/acceptable-use': typeof LocaleAcceptableUseRoute
+  '/$locale/blog': typeof LocaleBlogRoute
+  '/$locale/branding': typeof LocaleBrandingRoute
+  '/$locale/careers': typeof LocaleCareersRoute
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/docs': typeof LocaleDocsRoute
+  '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -388,7 +474,13 @@ export interface FileRoutesById {
   '/$locale/solutions/realestate': typeof LocaleSolutionsRealestateRoute
   '/$locale/solutions/restaurants': typeof LocaleSolutionsRestaurantsRoute
   '/$locale/solutions/retail': typeof LocaleSolutionsRetailRoute
+  '/$locale/ui/contributing': typeof LocaleUiContributingRoute
+  '/$locale/ui/setup': typeof LocaleUiSetupRoute
+  '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute
+  '/$locale/ui/': typeof LocaleUiIndexRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
+  '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -399,8 +491,12 @@ export interface FileRouteTypes {
     | '/~offline'
     | '/$locale/about'
     | '/$locale/acceptable-use'
+    | '/$locale/blog'
+    | '/$locale/branding'
+    | '/$locale/careers'
     | '/$locale/community-guidelines'
     | '/$locale/docs'
+    | '/$locale/facebook-mockup'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -432,7 +528,13 @@ export interface FileRouteTypes {
     | '/$locale/solutions/realestate'
     | '/$locale/solutions/restaurants'
     | '/$locale/solutions/retail'
+    | '/$locale/ui/contributing'
+    | '/$locale/ui/setup'
+    | '/$locale/visualizations/horse-racing'
+    | '/$locale/ui/'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/ui/components/$componentId'
+    | '/$locale/ui/components/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -441,8 +543,12 @@ export interface FileRouteTypes {
     | '/~offline'
     | '/$locale/about'
     | '/$locale/acceptable-use'
+    | '/$locale/blog'
+    | '/$locale/branding'
+    | '/$locale/careers'
     | '/$locale/community-guidelines'
     | '/$locale/docs'
+    | '/$locale/facebook-mockup'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -474,7 +580,13 @@ export interface FileRouteTypes {
     | '/$locale/solutions/realestate'
     | '/$locale/solutions/restaurants'
     | '/$locale/solutions/retail'
+    | '/$locale/ui/contributing'
+    | '/$locale/ui/setup'
+    | '/$locale/visualizations/horse-racing'
+    | '/$locale/ui'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/ui/components/$componentId'
+    | '/$locale/ui/components'
   id:
     | '__root__'
     | '/'
@@ -483,8 +595,12 @@ export interface FileRouteTypes {
     | '/~offline'
     | '/$locale/about'
     | '/$locale/acceptable-use'
+    | '/$locale/blog'
+    | '/$locale/branding'
+    | '/$locale/careers'
     | '/$locale/community-guidelines'
     | '/$locale/docs'
+    | '/$locale/facebook-mockup'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -516,7 +632,13 @@ export interface FileRouteTypes {
     | '/$locale/solutions/realestate'
     | '/$locale/solutions/restaurants'
     | '/$locale/solutions/retail'
+    | '/$locale/ui/contributing'
+    | '/$locale/ui/setup'
+    | '/$locale/visualizations/horse-racing'
+    | '/$locale/ui/'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/ui/components/$componentId'
+    | '/$locale/ui/components/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -526,8 +648,12 @@ export interface RootRouteChildren {
   Char126offlineRoute: typeof Char126offlineRoute
   LocaleAboutRoute: typeof LocaleAboutRoute
   LocaleAcceptableUseRoute: typeof LocaleAcceptableUseRoute
+  LocaleBlogRoute: typeof LocaleBlogRoute
+  LocaleBrandingRoute: typeof LocaleBrandingRoute
+  LocaleCareersRoute: typeof LocaleCareersRoute
   LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
   LocaleDocsRoute: typeof LocaleDocsRoute
+  LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
   LocalePartnersRoute: typeof LocalePartnersRoute
   LocalePricingRoute: typeof LocalePricingRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
@@ -557,6 +683,12 @@ export interface RootRouteChildren {
   LocaleSolutionsRealestateRoute: typeof LocaleSolutionsRealestateRoute
   LocaleSolutionsRestaurantsRoute: typeof LocaleSolutionsRestaurantsRoute
   LocaleSolutionsRetailRoute: typeof LocaleSolutionsRetailRoute
+  LocaleUiContributingRoute: typeof LocaleUiContributingRoute
+  LocaleUiSetupRoute: typeof LocaleUiSetupRoute
+  LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute
+  LocaleUiIndexRoute: typeof LocaleUiIndexRoute
+  LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
+  LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -638,6 +770,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalePartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/facebook-mockup': {
+      id: '/$locale/facebook-mockup'
+      path: '/$locale/facebook-mockup'
+      fullPath: '/$locale/facebook-mockup'
+      preLoaderRoute: typeof LocaleFacebookMockupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/docs': {
       id: '/$locale/docs'
       path: '/$locale/docs'
@@ -652,6 +791,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleCommunityGuidelinesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/careers': {
+      id: '/$locale/careers'
+      path: '/$locale/careers'
+      fullPath: '/$locale/careers'
+      preLoaderRoute: typeof LocaleCareersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/branding': {
+      id: '/$locale/branding'
+      path: '/$locale/branding'
+      fullPath: '/$locale/branding'
+      preLoaderRoute: typeof LocaleBrandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/blog': {
+      id: '/$locale/blog'
+      path: '/$locale/blog'
+      fullPath: '/$locale/blog'
+      preLoaderRoute: typeof LocaleBlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/acceptable-use': {
       id: '/$locale/acceptable-use'
       path: '/$locale/acceptable-use'
@@ -664,6 +824,34 @@ declare module '@tanstack/react-router' {
       path: '/$locale/about'
       fullPath: '/$locale/about'
       preLoaderRoute: typeof LocaleAboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/ui/': {
+      id: '/$locale/ui/'
+      path: '/$locale/ui'
+      fullPath: '/$locale/ui/'
+      preLoaderRoute: typeof LocaleUiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/visualizations/horse-racing': {
+      id: '/$locale/visualizations/horse-racing'
+      path: '/$locale/visualizations/horse-racing'
+      fullPath: '/$locale/visualizations/horse-racing'
+      preLoaderRoute: typeof LocaleVisualizationsHorseRacingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/ui/setup': {
+      id: '/$locale/ui/setup'
+      path: '/$locale/ui/setup'
+      fullPath: '/$locale/ui/setup'
+      preLoaderRoute: typeof LocaleUiSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/ui/contributing': {
+      id: '/$locale/ui/contributing'
+      path: '/$locale/ui/contributing'
+      fullPath: '/$locale/ui/contributing'
+      preLoaderRoute: typeof LocaleUiContributingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/solutions/retail': {
@@ -834,6 +1022,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleCalendarMeetTogetherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/ui/components/': {
+      id: '/$locale/ui/components/'
+      path: '/$locale/ui/components'
+      fullPath: '/$locale/ui/components/'
+      preLoaderRoute: typeof LocaleUiComponentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/ui/components/$componentId': {
+      id: '/$locale/ui/components/$componentId'
+      path: '/$locale/ui/components/$componentId'
+      fullPath: '/$locale/ui/components/$componentId'
+      preLoaderRoute: typeof LocaleUiComponentsComponentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/calendar/meet-together/$': {
       id: '/$locale/calendar/meet-together/$'
       path: '/$'
@@ -879,8 +1081,12 @@ const rootRouteChildren: RootRouteChildren = {
   Char126offlineRoute: Char126offlineRoute,
   LocaleAboutRoute: LocaleAboutRoute,
   LocaleAcceptableUseRoute: LocaleAcceptableUseRoute,
+  LocaleBlogRoute: LocaleBlogRoute,
+  LocaleBrandingRoute: LocaleBrandingRoute,
+  LocaleCareersRoute: LocaleCareersRoute,
   LocaleCommunityGuidelinesRoute: LocaleCommunityGuidelinesRoute,
   LocaleDocsRoute: LocaleDocsRoute,
+  LocaleFacebookMockupRoute: LocaleFacebookMockupRoute,
   LocalePartnersRoute: LocalePartnersRoute,
   LocalePricingRoute: LocalePricingRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,
@@ -910,6 +1116,12 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleSolutionsRealestateRoute: LocaleSolutionsRealestateRoute,
   LocaleSolutionsRestaurantsRoute: LocaleSolutionsRestaurantsRoute,
   LocaleSolutionsRetailRoute: LocaleSolutionsRetailRoute,
+  LocaleUiContributingRoute: LocaleUiContributingRoute,
+  LocaleUiSetupRoute: LocaleUiSetupRoute,
+  LocaleVisualizationsHorseRacingRoute: LocaleVisualizationsHorseRacingRoute,
+  LocaleUiIndexRoute: LocaleUiIndexRoute,
+  LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
+  LocaleUiComponentsIndexRoute: LocaleUiComponentsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

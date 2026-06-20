@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 270,
-        "migrated": 35,
-        "percentComplete": 11.48,
-        "remaining": 270,
-        "terminal": 35,
+        "legacyNext": 260,
+        "migrated": 45,
+        "percentComplete": 14.75,
+        "remaining": 260,
+        "terminal": 45,
         "total": 305,
         "unknownStatus": 0
       },
@@ -30,11 +30,11 @@
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 38,
-        "migrated": 29,
-        "percentComplete": 43.28,
-        "remaining": 38,
-        "terminal": 29,
+        "legacyNext": 34,
+        "migrated": 33,
+        "percentComplete": 49.25,
+        "remaining": 34,
+        "terminal": 33,
         "total": 67,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 313,
-        "migrated": 64,
-        "percentComplete": 16.98,
-        "remaining": 313,
-        "terminal": 64,
+        "legacyNext": 299,
+        "migrated": 78,
+        "percentComplete": 20.69,
+        "remaining": 299,
+        "terminal": 78,
         "total": 377,
         "unknownStatus": 0
       }
@@ -303,11 +303,11 @@
       "acceptedRemoval": 1,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1412,
-      "migrated": 76,
-      "percentComplete": 5.17,
-      "remaining": 1412,
-      "terminal": 77,
+      "legacyNext": 1398,
+      "migrated": 90,
+      "percentComplete": 6.11,
+      "remaining": 1398,
+      "terminal": 91,
       "total": 1489,
       "unknownStatus": 0
     }
@@ -10561,7 +10561,7 @@
       "methods": [],
       "routePath": "/:locale/blog",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/blog/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10570,7 +10570,7 @@
       "methods": [],
       "routePath": "/:locale/branding",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/branding/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10579,7 +10579,7 @@
       "methods": [],
       "routePath": "/:locale/careers",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/careers/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10876,7 +10876,7 @@
       "methods": [],
       "routePath": "/:locale/ui",
       "sourceFile": "apps/web/src/app/[locale]/ui/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13099,7 +13099,7 @@
       "methods": [],
       "routePath": "/:locale/blog",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/blog/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13108,7 +13108,7 @@
       "methods": [],
       "routePath": "/:locale/branding",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/branding/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13126,7 +13126,7 @@
       "methods": [],
       "routePath": "/:locale/careers",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/careers/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13198,7 +13198,7 @@
       "methods": [],
       "routePath": "/:locale/facebook-mockup",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/facebook-mockup/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13594,7 +13594,7 @@
       "methods": [],
       "routePath": "/:locale/ui",
       "sourceFile": "apps/web/src/app/[locale]/ui/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13603,7 +13603,7 @@
       "methods": [],
       "routePath": "/:locale/ui/components",
       "sourceFile": "apps/web/src/app/[locale]/ui/components/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13612,7 +13612,7 @@
       "methods": [],
       "routePath": "/:locale/ui/components/:componentId",
       "sourceFile": "apps/web/src/app/[locale]/ui/components/[componentId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13621,7 +13621,7 @@
       "methods": [],
       "routePath": "/:locale/ui/contributing",
       "sourceFile": "apps/web/src/app/[locale]/ui/contributing/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13630,7 +13630,7 @@
       "methods": [],
       "routePath": "/:locale/ui/setup",
       "sourceFile": "apps/web/src/app/[locale]/ui/setup/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13657,7 +13657,7 @@
       "methods": [],
       "routePath": "/:locale/visualizations/horse-racing",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/visualizations/horse-racing/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

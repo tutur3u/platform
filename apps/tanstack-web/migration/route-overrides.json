@@ -384,6 +384,76 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/solutions/restaurants ports the static legacy solution page and local solution primitives without framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/branding:apps/web/src/app/[locale]/(marketing)/branding/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/branding defines the legacy Branding metadata with createPageHead instead of a Next.js layout export; generated Open Graph and Twitter image artifacts remain legacy-owned until image generation is migrated."
+    },
+    "page:/:locale/branding:apps/web/src/app/[locale]/(marketing)/branding/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/branding ports the visible static legacy brand guidelines page and local branding primitives without auth, Supabase, protected workspace data access, or generated metadata image routes."
+    },
+    "layout:/:locale/blog:apps/web/src/app/[locale]/(marketing)/blog/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/blog defines the legacy Blog metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/blog:apps/web/src/app/[locale]/(marketing)/blog/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/blog ports the static legacy blog placeholder page and local blog primitives without auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/careers:apps/web/src/app/[locale]/(marketing)/careers/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/careers defines the legacy Careers metadata with createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/careers:apps/web/src/app/[locale]/(marketing)/careers/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/careers ports the static legacy careers page and local careers primitives without auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/facebook-mockup:apps/web/src/app/[locale]/(marketing)/facebook-mockup/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/facebook-mockup ports the public client-side Facebook mockup demo with local browser-safe components and no auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/visualizations/horse-racing:apps/web/src/app/[locale]/(marketing)/visualizations/horse-racing/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/visualizations/horse-racing ports the public horse-racing algorithm visualization with local TanStack-safe visualization components and no auth, Supabase, or protected workspace data access."
+    },
+    "layout:/:locale/ui:apps/web/src/app/[locale]/ui/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ui and children use local UI docs shell/navigation primitives instead of the legacy Next.js layout export."
+    },
+    "page:/:locale/ui:apps/web/src/app/[locale]/ui/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ui ports the public UI showcase landing page with local docs primitives and no auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/ui/setup:apps/web/src/app/[locale]/ui/setup/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ui/setup ports the public UI setup documentation page with local docs primitives and no auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/ui/contributing:apps/web/src/app/[locale]/ui/contributing/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ui/contributing ports the public UI contribution documentation page with local docs primitives and no auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/ui/components:apps/web/src/app/[locale]/ui/components/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ui/components ports the public UI component index with local component registry data and no auth, Supabase, or protected workspace data access."
+    },
+    "page:/:locale/ui/components/:componentId:apps/web/src/app/[locale]/ui/components/[componentId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ui/components/$componentId ports the public UI component detail pages with local registry/docs data and no auth, Supabase, or protected workspace data access."
     }
   }
 }

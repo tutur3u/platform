@@ -85,6 +85,22 @@ const staticMarketingRoutes = [
     heading: 'Our Partners',
   },
   {
+    path: `/${DEFAULT_LOCALE}/branding`,
+    heading: 'Brand guidelines and assets',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/blog`,
+    heading: 'Insights & Innovation',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/careers`,
+    heading: 'Join us in building the future',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/facebook-mockup`,
+    heading: 'Facebook Mockup',
+  },
+  {
     path: `/${DEFAULT_LOCALE}/security`,
     heading: 'Your Security is Our Top Priority',
   },
@@ -131,6 +147,30 @@ const staticMarketingRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/solutions/retail`,
     heading: 'Transform Your Retail Business',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/ui`,
+    heading: 'Tuturuuu UI',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/ui/components`,
+    heading: 'Components',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/ui/components/button`,
+    heading: 'Button',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/ui/contributing`,
+    heading: 'Contributing',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/ui/setup`,
+    heading: 'Setup',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/visualizations/horse-racing`,
+    heading: 'Horse Racing Algorithm Visualization',
   },
 ];
 
