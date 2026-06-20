@@ -16,6 +16,7 @@ const JSON_SECURITY_HEADERS: [(&str, &str); 4] = [
     ("x-content-type-options", "nosniff"),
     ("x-frame-options", "DENY"),
 ];
+const MAX_REQUEST_BODY_BYTES: usize = 64 * 1024;
 const TOP_LEGACY_ROUTE_LIMIT: usize = 20;
 const WELL_KNOWN_CACHE_CONTROL: &str = "public, max-age=300, must-revalidate";
 const SERWIST_SERVICE_WORKER_PATH: &str = "/serwist/sw.js";
@@ -791,6 +792,13 @@ fn parse_json_body(body_text: Option<&str>) -> Option<Value> {
     serde_json::from_str(body_text.unwrap_or_default()).ok()
 }
 
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn content_length_exceeds_request_body_limit(content_length: Option<&str>) -> bool {
+    content_length
+        .and_then(|value| value.trim().parse::<u128>().ok())
+        .is_some_and(|value| value > MAX_REQUEST_BODY_BYTES as u128)
+}
+
 fn json_value_is_present(value: Option<&Value>) -> bool {
     value.is_some_and(|value| !value.is_null())
 }
@@ -1322,6 +1330,17 @@ fn text_response(
     }
 }
 
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn request_body_too_large_response() -> BackendResponse {
+    json_response(
+        413,
+        json!({
+            "error": "request body too large",
+            "maxBytes": MAX_REQUEST_BODY_BYTES,
+        }),
+    )
+}
+
 fn empty_response(status: u16) -> BackendResponse {
     BackendResponse {
         allow: None,
@@ -1591,7 +1610,8 @@ fn default_deployment_target() -> &'static str {
 #[cfg(feature = "native")]
 pub mod native {
     use super::{
-        BackendConfig, BackendRequest, BackendResponse, json_security_headers, route_request,
+        BackendConfig, BackendRequest, BackendResponse, MAX_REQUEST_BODY_BYTES,
+        json_security_headers, route_request,
     };
     use axum::Router;
     use axum::body::{Body, to_bytes};
@@ -1613,8 +1633,6 @@ pub mod native {
     pub fn healthcheck_addr(config: &BackendConfig) -> SocketAddr {
         SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), config.port)
     }
-
-    const MAX_REQUEST_BODY_BYTES: usize = 64 * 1024;
 
     async fn handle(State(config): State<BackendConfig>, request: Request<Body>) -> Response<Body> {
         let (parts, body) = request.into_parts();
@@ -1736,7 +1754,8 @@ pub mod native {
 #[cfg(all(feature = "worker", target_arch = "wasm32"))]
 pub mod worker_runtime {
     use super::{
-        BackendConfig, BackendRequest, BackendResponse, json_security_headers, route_request,
+        BackendConfig, BackendRequest, BackendResponse, content_length_exceeds_request_body_limit,
+        json_security_headers, request_body_too_large_response, route_request,
     };
     use worker::{Env, Request, Response, Result, event};
 
@@ -1754,6 +1773,12 @@ pub mod worker_runtime {
         let request_id = headers
             .get("X-Request-Id")?
             .or(headers.get("X-Request-ID")?);
+        let content_length = headers.get("Content-Length")?;
+
+        if content_length_exceeds_request_body_limit(content_length.as_deref()) {
+            return request_body_too_large_response().into_worker_response();
+        }
+
         let body_text = request.text().await.ok();
 
         route_request(
@@ -1906,6 +1931,31 @@ mod tests {
             request_id: None,
             url: Some("https://tuturuuu.localhost/~recover-browser-state"),
         }
+    }
+
+    #[test]
+    fn content_length_guard_matches_request_body_limit() {
+        assert!(!content_length_exceeds_request_body_limit(None));
+        assert!(!content_length_exceeds_request_body_limit(Some("")));
+        assert!(!content_length_exceeds_request_body_limit(Some(
+            "not-a-number"
+        )));
+        assert!(!content_length_exceeds_request_body_limit(Some("65536")));
+        assert!(!content_length_exceeds_request_body_limit(Some(" 65536 ")));
+        assert!(content_length_exceeds_request_body_limit(Some("65537")));
+    }
+
+    #[test]
+    fn request_body_too_large_response_reports_limit() {
+        let response = request_body_too_large_response();
+
+        assert_eq!(response.status, 413);
+        assert_eq!(response.content_type, Some(APPLICATION_JSON));
+        assert_eq!(response.body["error"], "request body too large");
+        assert_eq!(
+            response.body["maxBytes"].as_u64(),
+            Some(MAX_REQUEST_BODY_BYTES as u64)
+        );
     }
 
     #[test]
