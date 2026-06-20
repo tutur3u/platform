@@ -321,6 +321,12 @@ bun benchmark:web-setups -- \
   --backend-origin https://<backend-worker-origin>
 ```
 
+The benchmark report is cutover evidence, so the origins are part of the gate.
+The benchmark command rejects same-origin Next/TanStack compare runs, and the
+cutover gate rejects reports with missing origins or route/sample URLs that do
+not match the recorded setup origin. This catches accidental proxy reuse before
+the report can satisfy migration gates.
+
 ```bash
 bun migration:tanstack:gates -- \
   --e2e-report tmp/e2e/web-migration/compare-report.json \

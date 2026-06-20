@@ -653,6 +653,13 @@ bun benchmark:web-setups -- \
   --backend-origin https://<backend-worker-origin>
 ```
 
+Compare reports must prove that the legacy Next.js and TanStack Start samples
+came from distinct normalized frontend origins. `bun benchmark:web-setups`
+rejects same-origin compare runs before writing a report, and
+`bun migration:tanstack:gates` rejects benchmark evidence with missing origins,
+identical Next/TanStack origins, or route/sample URLs that do not match the
+recorded setup origin.
+
 Use full mode when both frontends are running with representative seeded data:
 
 ```bash

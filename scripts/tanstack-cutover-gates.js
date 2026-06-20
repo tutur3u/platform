@@ -368,6 +368,124 @@ function hasPositiveNumber(value) {
   return Number.isFinite(numericValue) && numericValue > 0;
 }
 
+function normalizeBenchmarkEvidenceOrigin(value, label) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return {
+      failure: `${label} is missing benchmark origin evidence.`,
+      origin: null,
+    };
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return {
+        failure: `${label} benchmark origin must use http or https.`,
+        origin: null,
+      };
+    }
+
+    return {
+      failure: null,
+      origin: url.origin,
+    };
+  } catch {
+    return {
+      failure: `${label} has invalid benchmark origin evidence.`,
+      origin: null,
+    };
+  }
+}
+
+function validateUrlMatchesOrigin(value, expectedOrigin, label) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return `${label} is missing URL origin evidence.`;
+  }
+
+  try {
+    const actualOrigin = new URL(value).origin;
+
+    if (actualOrigin !== expectedOrigin) {
+      return `${label} origin ${actualOrigin} does not match setup origin ${expectedOrigin}.`;
+    }
+
+    return null;
+  } catch {
+    return `${label} has invalid URL evidence.`;
+  }
+}
+
+function validateBenchmarkOriginEvidence(report, expectedSetup) {
+  const failures = [];
+  const origins = {};
+  const setups =
+    expectedSetup === 'compare'
+      ? ['next', 'tanstack', 'backend']
+      : [expectedSetup];
+
+  for (const setup of setups) {
+    const setupMetrics = report.setups?.[setup];
+
+    if (!setupMetrics) {
+      continue;
+    }
+
+    const normalized = normalizeBenchmarkEvidenceOrigin(
+      setupMetrics.origin,
+      setup
+    );
+
+    if (normalized.failure) {
+      failures.push(normalized.failure);
+      continue;
+    }
+
+    origins[setup] = normalized.origin;
+
+    for (const route of setupMetrics.routes ?? []) {
+      const routeLabel = `${setup} ${route?.routePath ?? 'unknown route'}`;
+      const routeFailure = validateUrlMatchesOrigin(
+        route?.url,
+        normalized.origin,
+        `${routeLabel} route`
+      );
+
+      if (routeFailure) {
+        failures.push(routeFailure);
+      }
+
+      for (const [index, sample] of (route?.samples ?? []).entries()) {
+        const sampleFailure = validateUrlMatchesOrigin(
+          sample?.url,
+          normalized.origin,
+          `${routeLabel} sample ${index + 1}`
+        );
+
+        if (sampleFailure) {
+          failures.push(sampleFailure);
+        }
+      }
+    }
+  }
+
+  if (
+    expectedSetup === 'compare' &&
+    origins.next &&
+    origins.tanstack &&
+    origins.next === origins.tanstack
+  ) {
+    failures.push(
+      `Benchmark report must use distinct Next and TanStack origins; both normalized to ${origins.next}.`
+    );
+  }
+
+  return {
+    failures,
+    origins,
+  };
+}
+
 function validateRequiredBenchmarkComparison(comparison) {
   const failures = [];
 
@@ -415,6 +533,11 @@ function validateBenchmarkReport(report, options = {}) {
   const failures = [];
   const expectedSetup = options.benchmarkSetup ?? 'compare';
   const expectedProfile = options.benchmarkProfile ?? 'full';
+  const originValidation = validateBenchmarkOriginEvidence(
+    report,
+    expectedSetup
+  );
+  failures.push(...originValidation.failures);
 
   if (report.setup !== expectedSetup) {
     failures.push(
@@ -557,6 +680,7 @@ function validateBenchmarkReport(report, options = {}) {
   return {
     failures,
     ok: failures.length === 0,
+    origins: originValidation.origins,
   };
 }
 
@@ -607,6 +731,7 @@ function checkBenchmarkGate({
     ),
     report: {
       generatedAt: report.generatedAt,
+      origins: validation.origins,
       profile: report.profile,
       setup: report.setup,
     },

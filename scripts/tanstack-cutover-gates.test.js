@@ -22,15 +22,34 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function createBenchmarkRoute(routePath, status = 200) {
+function createBenchmarkRoute(
+  routePath,
+  status = 200,
+  origin = 'https://next.example.com'
+) {
+  const url = new URL(routePath, origin).toString();
+
   return {
     routePath,
-    samples: [{ durationMs: 100, ok: status >= 200 && status < 400, status }],
+    samples: [
+      {
+        durationMs: 100,
+        ok: status >= 200 && status < 400,
+        status,
+        url,
+      },
+    ],
     summary: { failed: status >= 200 && status < 400 ? 0 : 1, p95Ms: 100 },
+    url,
   };
 }
 
 function createValidBenchmarkReport(generatedAt = new Date().toISOString()) {
+  const origins = {
+    backend: 'https://backend.example.com',
+    next: 'https://next.example.com',
+    tanstack: 'https://tanstack.example.com',
+  };
   const benchmarkMetricComparisons = Object.values(METRIC_DEFINITIONS).map(
     ({ metric, thresholdType }) => ({
       baselineSetup: 'next',
@@ -75,13 +94,16 @@ function createValidBenchmarkReport(generatedAt = new Date().toISOString()) {
     setup: 'compare',
     setups: {
       backend: {
-        routes: [createBenchmarkRoute('/healthz')],
+        origin: origins.backend,
+        routes: [createBenchmarkRoute('/healthz', 200, origins.backend)],
       },
       next: {
-        routes: [createBenchmarkRoute('/')],
+        origin: origins.next,
+        routes: [createBenchmarkRoute('/', 200, origins.next)],
       },
       tanstack: {
-        routes: [createBenchmarkRoute('/')],
+        origin: origins.tanstack,
+        routes: [createBenchmarkRoute('/', 200, origins.tanstack)],
       },
     },
   };
@@ -559,7 +581,9 @@ test('validateCloudflareSmokeReport rejects negative auth probes that unexpected
 
 test('validateBenchmarkReport rejects frontend 404 benchmark samples', () => {
   const report = createValidBenchmarkReport();
-  report.setups.next.routes = [createBenchmarkRoute('/', 404)];
+  report.setups.next.routes = [
+    createBenchmarkRoute('/', 404, report.setups.next.origin),
+  ];
   report.gates.passed = true;
 
   const validation = validateBenchmarkReport(report);
@@ -569,6 +593,49 @@ test('validateBenchmarkReport rejects frontend 404 benchmark samples', () => {
   assert.match(
     validation.failures.join('\n'),
     /next \/ returned benchmark status 404/u
+  );
+});
+
+test('validateBenchmarkReport requires distinct frontend origin evidence', () => {
+  const missing = createValidBenchmarkReport();
+  delete missing.setups.next.origin;
+
+  const missingValidation = validateBenchmarkReport(missing);
+
+  assert.equal(missingValidation.ok, false);
+  assert.match(
+    missingValidation.failures.join('\n'),
+    /next is missing benchmark origin evidence/u
+  );
+
+  const sameOrigin = createValidBenchmarkReport();
+  sameOrigin.setups.tanstack.origin = sameOrigin.setups.next.origin;
+
+  const sameOriginValidation = validateBenchmarkReport(sameOrigin);
+
+  assert.equal(sameOriginValidation.ok, false);
+  assert.match(
+    sameOriginValidation.failures.join('\n'),
+    /distinct Next and TanStack origins/u
+  );
+});
+
+test('validateBenchmarkReport rejects route and sample URLs that do not match setup origins', () => {
+  const report = createValidBenchmarkReport();
+  report.setups.next.routes[0].url = 'https://wrong.example.com/';
+  report.setups.tanstack.routes[0].samples[0].url =
+    'https://wrong.example.com/';
+
+  const validation = validateBenchmarkReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(
+    validation.failures.join('\n'),
+    /next \/ route origin https:\/\/wrong\.example\.com does not match setup origin https:\/\/next\.example\.com/u
+  );
+  assert.match(
+    validation.failures.join('\n'),
+    /tanstack \/ sample 1 origin https:\/\/wrong\.example\.com does not match setup origin https:\/\/tanstack\.example\.com/u
   );
 });
 

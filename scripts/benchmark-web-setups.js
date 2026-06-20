@@ -106,6 +106,66 @@ function parsePositiveInteger(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function normalizeBenchmarkOrigin(value, label) {
+  const rawValue = String(value ?? '').trim();
+
+  if (!rawValue) {
+    throw new Error(`${label} benchmark origin is required.`);
+  }
+
+  const normalizedValue = /^[a-z][a-z0-9+.-]*:\/\//iu.test(rawValue)
+    ? rawValue
+    : `https://${rawValue}`;
+
+  let url;
+  try {
+    url = new URL(normalizedValue);
+  } catch {
+    throw new Error(`Invalid ${label} benchmark origin: ${rawValue}`);
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(
+      `${label} benchmark origin must use http or https; got ${url.protocol}`
+    );
+  }
+
+  if (url.username || url.password) {
+    throw new Error(`${label} benchmark origin must not include credentials.`);
+  }
+
+  return url.origin;
+}
+
+function getSelectedSetups(setup) {
+  return setup === 'compare' ? [...SETUPS] : [setup];
+}
+
+function normalizeBenchmarkOrigins(origins, setup) {
+  const selectedSetups = getSelectedSetups(setup);
+  const normalized = { ...origins };
+
+  for (const selectedSetup of selectedSetups) {
+    normalized[selectedSetup] = normalizeBenchmarkOrigin(
+      origins[selectedSetup],
+      selectedSetup
+    );
+  }
+
+  if (
+    setup === 'compare' &&
+    normalized.next &&
+    normalized.tanstack &&
+    normalized.next === normalized.tanstack
+  ) {
+    throw new Error(
+      `Benchmark compare requires distinct Next and TanStack origins; both normalized to ${normalized.next}.`
+    );
+  }
+
+  return normalized;
+}
+
 function parseArgs(argv = process.argv.slice(2), env = process.env) {
   const args = {
     apiThreshold: DEFAULT_API_THRESHOLD,
@@ -212,6 +272,8 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
   if (!ROUTES_BY_PROFILE[args.profile]) {
     throw new Error(`Unsupported profile: ${args.profile}`);
   }
+
+  args.origins = normalizeBenchmarkOrigins(args.origins, args.setup);
 
   return args;
 }
@@ -652,13 +714,10 @@ function compareSetupMetrics({
   };
 }
 
-function getSelectedSetups(setup) {
-  return setup === 'compare' ? [...SETUPS] : [setup];
-}
-
 async function runBenchmark(options) {
   const profileRoutes = ROUTES_BY_PROFILE[options.profile];
   const selectedSetups = getSelectedSetups(options.setup);
+  const origins = normalizeBenchmarkOrigins(options.origins, options.setup);
   const setups = {};
   const evidence = readEvidence(options.evidencePath);
   const acceptedRegressions = normalizeAcceptedRegressions(evidence);
@@ -667,7 +726,7 @@ async function runBenchmark(options) {
   for (const setup of selectedSetups) {
     setups[setup] = await collectSetupMetrics({
       backendToken: options.backendToken,
-      origin: options.origins[setup],
+      origin: origins[setup],
       routes: profileRoutes[setup],
       samples: options.samples,
       setup,
@@ -795,6 +854,8 @@ module.exports = {
   compareAdditionalMetrics,
   METRIC_DEFINITIONS,
   getRouteHeaders,
+  normalizeBenchmarkOrigin,
+  normalizeBenchmarkOrigins,
   normalizeAcceptedRegressions,
   normalizeEvidenceMetrics,
   parseArgs,

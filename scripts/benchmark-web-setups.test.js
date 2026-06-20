@@ -42,6 +42,34 @@ test('parseArgs accepts compare benchmark options', () => {
   assert.equal(args.requireAll, true);
 });
 
+test('parseArgs rejects compare benchmark origins that normalize to the same URL origin', () => {
+  assert.throws(
+    () =>
+      parseArgs([
+        '--setup',
+        'compare',
+        '--next-origin',
+        'http://localhost:7803/next',
+        '--tanstack-origin',
+        'http://localhost:7803/tanstack',
+      ]),
+    /distinct Next and TanStack origins/u
+  );
+
+  assert.throws(
+    () =>
+      parseArgs([
+        '--setup',
+        'compare',
+        '--next-origin',
+        'http://user:pass@localhost:7803',
+        '--tanstack-origin',
+        'http://localhost:7824',
+      ]),
+    /must not include credentials/u
+  );
+});
+
 test('parseArgs reads the backend benchmark token from env without requiring it', () => {
   const args = parseArgs([], {
     BACKEND_INTERNAL_TOKEN: 'server-token',
@@ -365,6 +393,26 @@ test('runBenchmark requireAll fails compare reports with unmatched frontend rout
   } finally {
     global.fetch = originalFetch;
   }
+});
+
+test('runBenchmark rejects compare runs pointed at the same frontend origin', async () => {
+  await assert.rejects(
+    () =>
+      runBenchmark({
+        apiThreshold: 0.1,
+        frontendThreshold: 0.25,
+        origins: {
+          backend: 'http://backend.local',
+          next: 'https://frontend.local/next',
+          tanstack: 'https://frontend.local/tanstack',
+        },
+        profile: 'smoke',
+        requireAll: false,
+        samples: 1,
+        setup: 'compare',
+      }),
+    /distinct Next and TanStack origins/u
+  );
 });
 
 test('writeReport keeps generated reports under ignored tmp benchmark output', () => {
