@@ -100,6 +100,21 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
     },
+    "loading:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/loading.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/boards/$boardId renders the shared KanbanSkeleton from @tuturuuu/ui for the legacy route-level loading artifact. This marks only loading.tsx migrated; the task board page/data/auth route remains legacy-owned."
+    },
+    "loading:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/groups/$groupId renders a copied local equivalent of the legacy GroupOverviewSkeleton using shared Skeleton primitives. This marks only loading.tsx migrated; the group detail page/data/auth route remains legacy-owned."
+    },
+    "loading:/:locale/:wsId/users/reports/:reportId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/loading.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/reports/$reportId renders the legacy dashed loading panel with Loader2 and localized common.loading text from the TanStack message bundle. This marks only loading.tsx migrated; the report detail page/data/auth route remains legacy-owned."
+    },
     "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts": {
       "methods": {
         "OPTIONS": {

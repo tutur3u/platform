@@ -10,6 +10,7 @@ const messagesByLocale = {
 export type CommonMessages = {
   '404-msg': string;
   'back-to-home': string;
+  loading: string;
 };
 export type AppMessages = typeof enMessages & {
   common: CommonMessages;

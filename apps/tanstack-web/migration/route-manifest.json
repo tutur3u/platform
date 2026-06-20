@@ -52,18 +52,6 @@
       },
       {
         "acceptedRemoval": 0,
-        "key": "loading",
-        "label": "loading",
-        "legacyNext": 3,
-        "migrated": 0,
-        "percentComplete": 0,
-        "remaining": 3,
-        "terminal": 0,
-        "total": 3,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
         "key": "trpc",
         "label": "trpc",
         "legacyNext": 1,
@@ -72,6 +60,18 @@
         "remaining": 1,
         "terminal": 0,
         "total": 1,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "loading",
+        "label": "loading",
+        "legacyNext": 0,
+        "migrated": 3,
+        "percentComplete": 100,
+        "remaining": 0,
+        "terminal": 3,
+        "total": 3,
         "unknownStatus": 0
       },
       {
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 261,
-        "migrated": 116,
-        "percentComplete": 30.77,
-        "remaining": 261,
-        "terminal": 116,
+        "legacyNext": 258,
+        "migrated": 119,
+        "percentComplete": 31.56,
+        "remaining": 258,
+        "terminal": 119,
         "total": 377,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 7,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1349,
-      "migrated": 149,
-      "percentComplete": 10.37,
-      "remaining": 1349,
-      "terminal": 156,
+      "legacyNext": 1346,
+      "migrated": 152,
+      "percentComplete": 10.56,
+      "remaining": 1346,
+      "terminal": 159,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -11131,7 +11131,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/boards/:boardId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/loading.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11140,7 +11140,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/groups/:groupId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11149,7 +11149,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/reports/:reportId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/loading.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

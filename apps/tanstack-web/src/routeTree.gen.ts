@@ -88,6 +88,9 @@ import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$local
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library'
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards'
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new'
+import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId'
+import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId'
+import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$locale/$wsId/tasks/boards/$boardId'
 import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/settings/infrastructure/app-coordination'
 import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories'
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId'
@@ -511,6 +514,24 @@ const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
   path: '/$locale/$wsId/ai-chat/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdUsersReportsReportIdRoute =
+  LocaleWsIdUsersReportsReportIdRouteImport.update({
+    id: '/$locale/$wsId/users/reports/$reportId',
+    path: '/$locale/$wsId/users/reports/$reportId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleWsIdUsersGroupsGroupIdRoute =
+  LocaleWsIdUsersGroupsGroupIdRouteImport.update({
+    id: '/$locale/$wsId/users/groups/$groupId',
+    path: '/$locale/$wsId/users/groups/$groupId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleWsIdTasksBoardsBoardIdRoute =
+  LocaleWsIdTasksBoardsBoardIdRouteImport.update({
+    id: '/$locale/$wsId/tasks/boards/$boardId',
+    path: '/$locale/$wsId/tasks/boards/$boardId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleWsIdSettingsInfrastructureAppCoordinationRoute =
   LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport.update({
     id: '/$locale/$wsId/settings/infrastructure/app-coordination',
@@ -634,6 +655,9 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
+  '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute
+  '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute
+  '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -721,6 +745,9 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
+  '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute
+  '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute
+  '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -809,6 +836,9 @@ export interface FileRoutesById {
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
+  '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute
+  '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute
+  '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -898,6 +928,9 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
+    | '/$locale/$wsId/tasks/boards/$boardId'
+    | '/$locale/$wsId/users/groups/$groupId'
+    | '/$locale/$wsId/users/reports/$reportId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -985,6 +1018,9 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
+    | '/$locale/$wsId/tasks/boards/$boardId'
+    | '/$locale/$wsId/users/groups/$groupId'
+    | '/$locale/$wsId/users/reports/$reportId'
   id:
     | '__root__'
     | '/'
@@ -1072,6 +1108,9 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
+    | '/$locale/$wsId/tasks/boards/$boardId'
+    | '/$locale/$wsId/users/groups/$groupId'
+    | '/$locale/$wsId/users/reports/$reportId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1155,6 +1194,9 @@ export interface RootRouteChildren {
   LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRoute
   LocaleWsIdFinanceTransactionsCategoriesRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
+  LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute
+  LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute
+  LocaleWsIdUsersReportsReportIdRoute: typeof LocaleWsIdUsersReportsReportIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1712,6 +1754,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdAiChatNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/users/reports/$reportId': {
+      id: '/$locale/$wsId/users/reports/$reportId'
+      path: '/$locale/$wsId/users/reports/$reportId'
+      fullPath: '/$locale/$wsId/users/reports/$reportId'
+      preLoaderRoute: typeof LocaleWsIdUsersReportsReportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/users/groups/$groupId': {
+      id: '/$locale/$wsId/users/groups/$groupId'
+      path: '/$locale/$wsId/users/groups/$groupId'
+      fullPath: '/$locale/$wsId/users/groups/$groupId'
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/tasks/boards/$boardId': {
+      id: '/$locale/$wsId/tasks/boards/$boardId'
+      path: '/$locale/$wsId/tasks/boards/$boardId'
+      fullPath: '/$locale/$wsId/tasks/boards/$boardId'
+      preLoaderRoute: typeof LocaleWsIdTasksBoardsBoardIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/settings/infrastructure/app-coordination': {
       id: '/$locale/$wsId/settings/infrastructure/app-coordination'
       path: '/$locale/$wsId/settings/infrastructure/app-coordination'
@@ -1886,6 +1949,9 @@ const rootRouteChildren: RootRouteChildren = {
     LocaleWsIdFinanceTransactionsCategoriesRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:
     LocaleWsIdSettingsInfrastructureAppCoordinationRoute,
+  LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,
+  LocaleWsIdUsersGroupsGroupIdRoute: LocaleWsIdUsersGroupsGroupIdRoute,
+  LocaleWsIdUsersReportsReportIdRoute: LocaleWsIdUsersReportsReportIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

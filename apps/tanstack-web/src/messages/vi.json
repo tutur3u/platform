@@ -339,7 +339,8 @@
   "common": {
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
     "back-to-home": "Quay lại trang chủ",
-    "coming_soon": "Sắp ra mắt"
+    "coming_soon": "Sắp ra mắt",
+    "loading": "Đang tải..."
   },
   "sidebar_tabs": {
     "polls": "Bỏ phiếu"
