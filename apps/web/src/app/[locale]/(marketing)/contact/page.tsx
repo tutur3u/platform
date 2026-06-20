@@ -15,7 +15,7 @@ import {
   Sparkles,
   Star,
   Zap,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { createSupportInquiry } from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
