@@ -199,8 +199,14 @@ incremental preview validation:
    cargo install worker-build --locked
    bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
    bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
    bun wrangler deploy --config apps/backend/wrangler.jsonc
    ```
+
+   `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are required for Rust-owned
+   Discord cron proxy preview readiness; configure them even when the first
+   smoke target is only `/healthz`.
 
    Use `wrangler secret put` for first preview bootstrap only. It creates and
    deploys a new active Worker version when the secret changes. For rotations or
@@ -209,6 +215,8 @@ incremental preview validation:
    ```bash
    bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
    bun wrangler versions secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
    bun wrangler versions deploy --config apps/backend/wrangler.jsonc
    ```
 
@@ -219,6 +227,15 @@ incremental preview validation:
    bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
    bun wrangler secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
    bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+   ```
+
+   Use the versions flow for TanStack Worker secret rotations too:
+
+   ```bash
+   bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler versions deploy --config apps/tanstack-web/wrangler.jsonc
    ```
 
 4. Deploy the TanStack Start Worker:

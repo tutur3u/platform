@@ -18,6 +18,14 @@ const RUST_BACKEND_WORKFLOW_PATH = path.join(
   'workflows',
   'rust-backend.yml'
 );
+const WEB_DOCKER_DEPLOYMENT_DOC_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'docs',
+  'build',
+  'devops',
+  'web-docker-deployment.mdx'
+);
 const TANSTACK_WEB_PACKAGE_JSON_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -538,6 +546,43 @@ function validateTanstackWebWranglerConfig(config) {
   return errors;
 }
 
+function validateCloudflarePreviewRunbook(runbookContent) {
+  const errors = [];
+  const commandGroups = [
+    {
+      configPath: 'apps/backend/wrangler.jsonc',
+      label: 'Rust backend Worker',
+      requiredSecrets: BACKEND_REQUIRED_SECRETS,
+    },
+    {
+      configPath: 'apps/tanstack-web/wrangler.jsonc',
+      label: 'TanStack Start Worker',
+      requiredSecrets: TANSTACK_WEB_REQUIRED_SECRETS,
+    },
+  ];
+
+  for (const { configPath, label, requiredSecrets } of commandGroups) {
+    for (const secretName of requiredSecrets) {
+      const bootstrapCommand = `bun wrangler secret put ${secretName} --config ${configPath}`;
+      const versionCommand = `bun wrangler versions secret put ${secretName} --config ${configPath}`;
+
+      if (!runbookContent.includes(bootstrapCommand)) {
+        errors.push(
+          `apps/docs/build/devops/web-docker-deployment.mdx must document ${label} bootstrap command: ${bootstrapCommand}`
+        );
+      }
+
+      if (!runbookContent.includes(versionCommand)) {
+        errors.push(
+          `apps/docs/build/devops/web-docker-deployment.mdx must document ${label} version-rotation command: ${versionCommand}`
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
 function checkCloudflareWorkersSetup({
   fsImpl = fs,
   rootDir = ROOT_DIR,
@@ -552,6 +597,17 @@ function checkCloudflareWorkersSetup({
   ),
   rustBackendWorkflowContent = fsImpl.readFileSync(
     path.join(rootDir, '.github', 'workflows', 'rust-backend.yml'),
+    'utf8'
+  ),
+  webDockerDeploymentDocContent = fsImpl.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'docs',
+      'build',
+      'devops',
+      'web-docker-deployment.mdx'
+    ),
     'utf8'
   ),
   gitignoreContent = fsImpl.readFileSync(
@@ -580,6 +636,7 @@ function checkCloudflareWorkersSetup({
     ...validateTanstackWebViteConfig(tanstackWebViteConfigContent),
     ...validateTanstackWebRouteTree(tanstackWebRouteTreeContent),
     ...validateTanstackWebWranglerConfig(tanstackWebWranglerConfig),
+    ...validateCloudflarePreviewRunbook(webDockerDeploymentDocContent),
   ];
 }
 
@@ -604,8 +661,10 @@ module.exports = {
   TANSTACK_WEB_ROUTE_TREE_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
+  WEB_DOCKER_DEPLOYMENT_DOC_PATH,
   checkCloudflareWorkersSetup,
   validateBackendWranglerConfig,
+  validateCloudflarePreviewRunbook,
   validateCloudflareSecretIgnoreRules,
   validateRootPackageJson,
   validateRustBackendWorkflow,

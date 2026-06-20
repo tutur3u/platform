@@ -11,8 +11,10 @@ const {
   TANSTACK_WEB_ROUTE_TREE_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
+  WEB_DOCKER_DEPLOYMENT_DOC_PATH,
   checkCloudflareWorkersSetup,
   validateBackendWranglerConfig,
+  validateCloudflarePreviewRunbook,
   validateCloudflareSecretIgnoreRules,
   validateRootPackageJson,
   validateRustBackendWorkflow,
@@ -225,6 +227,30 @@ test('Wrangler configs declare required preview secrets by name', () => {
       },
     }).join('\n'),
     /BACKEND_INTERNAL_TOKEN/
+  );
+});
+
+test('Cloudflare preview runbook documents required Worker secrets', () => {
+  const runbook = fs.readFileSync(WEB_DOCKER_DEPLOYMENT_DOC_PATH, 'utf8');
+
+  assert.deepEqual(validateCloudflarePreviewRunbook(runbook), []);
+  assert.match(
+    validateCloudflarePreviewRunbook(
+      runbook.replace(
+        'bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc',
+        ''
+      )
+    ).join('\n'),
+    /DISCORD_APP_DEPLOYMENT_URL/
+  );
+  assert.match(
+    validateCloudflarePreviewRunbook(
+      runbook.replace(
+        'bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc',
+        ''
+      )
+    ).join('\n'),
+    /BACKEND_INTERNAL_URL/
   );
 });
 
