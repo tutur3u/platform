@@ -376,7 +376,9 @@ test.describe('User group session calendar', () => {
         .click();
 
       await expect(page.getByText('Testing')).toBeVisible();
-      await expect(page.getByText('14:00-16:00')).toBeVisible();
+      await expect(
+        page.getByText('14:00-16:00 Asia/Ho_Chi_Minh')
+      ).toBeVisible();
       await expect(
         page.getByRole('button', { name: 'Add missing session' })
       ).toHaveCount(0);
