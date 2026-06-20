@@ -243,10 +243,15 @@
     },
     "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
       "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns the public mobile version-check GET route with strict platform/version validation, fixed root workspace mobile policy config reads through the server-owned Supabase REST adapter, legacy update-status evaluation, and wildcard CORS JSON responses."
+        },
         "OPTIONS": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend route_request handles the legacy mobile version-check CORS preflight with the shared wildcard 204 response. GET remains legacy-owned until mobile version policy lookup moves behind the Rust backend."
+          "note": "Rust backend route_request handles the legacy mobile version-check CORS preflight with the shared wildcard 204 response; GET is also Rust-owned by the mobile version-check migration."
         }
       }
     },

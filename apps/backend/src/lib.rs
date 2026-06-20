@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contact;
+mod mobile_version;
 mod outbound;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
@@ -153,9 +154,9 @@ const AUTH_CORS_PREFLIGHT_PATHS: [&str; 8] = [
     "/api/v1/auth/otp/settings",
     "/api/v1/mobile/version-check",
 ];
-const MOBILE_AUTH_CORS_ALLOW_METHODS: &str = "GET, POST, OPTIONS";
-const MOBILE_AUTH_CORS_ALLOW_HEADERS: &str = "Content-Type, Authorization";
-const MOBILE_AUTH_CORS_MAX_AGE: &str = "86400";
+pub(crate) const MOBILE_AUTH_CORS_ALLOW_METHODS: &str = "GET, POST, OPTIONS";
+pub(crate) const MOBILE_AUTH_CORS_ALLOW_HEADERS: &str = "Content-Type, Authorization";
+pub(crate) const MOBILE_AUTH_CORS_MAX_AGE: &str = "86400";
 const WEBGL_PACKAGE_UPLOAD_CORS_STATIC_ORIGINS: [&str; 2] =
     ["https://cms.tuturuuu.com", "http://localhost:7811"];
 const WEBGL_PACKAGE_UPLOAD_CORS_ALLOW_METHODS: &str = "PUT, OPTIONS";
@@ -323,6 +324,12 @@ pub(crate) async fn handle_backend_request(
     request: BackendRequest<'_>,
     outbound: &impl outbound::OutboundHttpClient,
 ) -> BackendResponse {
+    if let Some(response) =
+        mobile_version::handle_mobile_version_route(config, request, outbound).await
+    {
+        return response;
+    }
+
     if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
         return response;
     }
@@ -2567,6 +2574,234 @@ mod tests {
 
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn mobile_version_check_reads_policy_and_returns_update_recommendation() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {"id":"MOBILE_ANDROID_EFFECTIVE_VERSION","value":"1.3.0"},
+                {"id":"MOBILE_ANDROID_MINIMUM_VERSION","value":"1.1.0"},
+                {"id":"MOBILE_ANDROID_OTP_ENABLED","value":"yes"},
+                {"id":"MOBILE_ANDROID_STORE_URL","value":"https://play.google.com/store/apps/details?id=example.app"}
+            ]"#,
+        );
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/mobile/version-check?platform=android&version=1.2.0"),
+                ..request("GET", mobile_version::MOBILE_VERSION_CHECK_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["platform"], "android");
+        assert_eq!(response.body["currentVersion"], "1.2.0");
+        assert_eq!(response.body["effectiveVersion"], "1.3.0");
+        assert_eq!(response.body["minimumVersion"], "1.1.0");
+        assert_eq!(response.body["otpEnabled"], true);
+        assert_eq!(
+            response.body["storeUrl"],
+            "https://play.google.com/store/apps/details?id=example.app"
+        );
+        assert_eq!(response.body["status"], "update-recommended");
+        assert_eq!(response.body["shouldUpdate"], true);
+        assert_eq!(response.body["requiresUpdate"], false);
+        assert_eq!(
+            header_value(&response, "access-control-allow-origin"),
+            Some("*")
+        );
+        assert_eq!(
+            header_value(&response, "access-control-allow-methods"),
+            Some(MOBILE_AUTH_CORS_ALLOW_METHODS)
+        );
+        assert_eq!(
+            header_value(&response, "access-control-allow-headers"),
+            Some(MOBILE_AUTH_CORS_ALLOW_HEADERS)
+        );
+        assert_eq!(
+            header_value(&response, "access-control-max-age"),
+            Some(MOBILE_AUTH_CORS_MAX_AGE)
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        let call = &calls[0];
+        assert_eq!(call.method, OutboundMethod::Get);
+        assert!(
+            call.url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_configs?")
+        );
+        assert!(call.url.contains("select=id%2Cvalue"));
+        assert!(
+            call.url
+                .contains("ws_id=eq.00000000-0000-0000-0000-000000000000")
+        );
+        assert!(call.url.contains("MOBILE_ANDROID_EFFECTIVE_VERSION"));
+        assert_eq!(
+            recorded_header(call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(call, "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn mobile_version_check_returns_update_required_and_supported_states() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"[
+                    {"id":"MOBILE_IOS_EFFECTIVE_VERSION","value":"2.0.0"},
+                    {"id":"MOBILE_IOS_MINIMUM_VERSION","value":"1.5.0"},
+                    {"id":"MOBILE_IOS_STORE_URL","value":"https://apps.apple.com/app/id1"}
+                ]"#,
+            ),
+            outbound_response(200, r#"[]"#),
+        ]);
+        let required = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/mobile/version-check?platform=ios&version=1.4.9"),
+                ..request("GET", mobile_version::MOBILE_VERSION_CHECK_PATH)
+            },
+            &outbound,
+        )
+        .await;
+        let supported = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/mobile/version-check?platform=ios&version=1.0.0"),
+                ..request("GET", mobile_version::MOBILE_VERSION_CHECK_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(required.status, 200);
+        assert_eq!(required.body["status"], "update-required");
+        assert_eq!(required.body["shouldUpdate"], true);
+        assert_eq!(required.body["requiresUpdate"], true);
+        assert_eq!(supported.status, 200);
+        assert_eq!(supported.body["status"], "supported");
+        assert_eq!(supported.body["shouldUpdate"], false);
+        assert_eq!(supported.body["requiresUpdate"], false);
+    }
+
+    #[tokio::test]
+    async fn mobile_version_check_validates_query_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        for (url, message) in [
+            (
+                "https://tuturuuu.localhost/api/v1/mobile/version-check?version=1.2.3",
+                r#"Invalid option: expected one of "ios"|"android""#,
+            ),
+            (
+                "https://tuturuuu.localhost/api/v1/mobile/version-check?platform=ios",
+                "Invalid input: expected string, received null",
+            ),
+            (
+                "https://tuturuuu.localhost/api/v1/mobile/version-check?platform=ios&version=1.2",
+                "Version must use x.y.z format",
+            ),
+        ] {
+            let response = handle_backend_request(
+                &config,
+                BackendRequest {
+                    url: Some(url),
+                    ..request("GET", mobile_version::MOBILE_VERSION_CHECK_PATH)
+                },
+                &outbound,
+            )
+            .await;
+
+            assert_eq!(response.status, 400, "{url}");
+            assert_eq!(response.body["error"], message);
+            assert_eq!(
+                header_value(&response, "access-control-allow-origin"),
+                Some("*")
+            );
+        }
+
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn mobile_version_check_fails_closed_when_policy_data_is_unavailable_or_invalid() {
+        let outbound = RecordingOutboundClient::with_response(200, r#"[]"#);
+        let unavailable = handle_backend_request(
+            &BackendConfig::new("test", "backend"),
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/mobile/version-check?platform=ios&version=1.2.3"),
+                ..request("GET", mobile_version::MOBILE_VERSION_CHECK_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(unavailable.status, 500);
+        assert_eq!(
+            unavailable.body["error"],
+            mobile_version::mobile_version_policy_error()
+        );
+        assert_eq!(outbound.calls().len(), 0);
+
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[{"id":"MOBILE_IOS_EFFECTIVE_VERSION","value":"1.2.0"}]"#,
+        );
+        let invalid_policy = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/mobile/version-check?platform=ios&version=1.2.3"),
+                ..request("GET", mobile_version::MOBILE_VERSION_CHECK_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(invalid_policy.status, 500);
+        assert_eq!(
+            invalid_policy.body["error"],
+            mobile_version::mobile_version_policy_error()
+        );
+    }
+
+    #[tokio::test]
+    async fn mobile_version_check_rejects_unsupported_methods_but_leaves_options_route_owned() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let rejected = handle_backend_request(
+            &config,
+            request("POST", mobile_version::MOBILE_VERSION_CHECK_PATH),
+            &outbound,
+        )
+        .await;
+        let options = handle_backend_request(
+            &config,
+            request("OPTIONS", mobile_version::MOBILE_VERSION_CHECK_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(rejected.status, 405);
+        assert_eq!(rejected.allow, Some("GET, OPTIONS"));
+        assert_eq!(options.status, 204);
+        assert_eq!(
+            header_value(&options, "access-control-allow-methods"),
+            Some(MOBILE_AUTH_CORS_ALLOW_METHODS)
+        );
         assert_eq!(outbound.calls().len(), 0);
     }
 

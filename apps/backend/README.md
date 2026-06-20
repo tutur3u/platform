@@ -69,6 +69,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   app-session JWTs, requires same-origin confirmation for cookie auth, validates
   the legacy inquiry JSON shape and field limits, then inserts
   `support_inquiries` with `creator_id` from the resolved user.
+- `GET /api/v1/mobile/version-check`: public mobile update-policy route. Rust
+  validates `platform=ios|android` and strict `version=x.y.z`, reads the fixed
+  root workspace mobile policy config IDs through the server-owned Supabase REST
+  adapter, and returns the legacy `supported` / `update-recommended` /
+  `update-required` payload with wildcard CORS headers.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
   /api/v1/auth/mobile/password-login`, `OPTIONS
   /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,
@@ -76,8 +81,7 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `OPTIONS /api/v1/auth/otp/settings`, and
   `OPTIONS /api/v1/mobile/version-check`: method-level legacy-compatible CORS
   preflights that return the shared wildcard empty `204` response. Their
-  paired auth `POST`, settings `GET`, or version-check `GET` methods remain
-  legacy-owned.
+  paired auth `POST` and settings `GET` methods remain legacy-owned.
 - `OPTIONS /api/v1/auth/qr-login/challenges`, `OPTIONS
   /api/v1/auth/qr-login/challenges/:challengeId`, `OPTIONS
   /api/v1/auth/qr-login/challenges/:challengeId/approve`, `OPTIONS

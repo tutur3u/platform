@@ -147,13 +147,13 @@ impl ContactDataConfig {
         }
     }
 
-    fn service_role_key(&self) -> Option<&str> {
+    pub(crate) fn service_role_key(&self) -> Option<&str> {
         self.service_role_key
             .is_configured()
             .then_some(&self.service_role_key.0)
     }
 
-    fn rest_url(&self, table: &str, params: &[(&str, String)]) -> Option<String> {
+    pub(crate) fn rest_url(&self, table: &str, params: &[(&str, String)]) -> Option<String> {
         url_origin(&self.supabase_url)?;
 
         let mut query = url::form_urlencoded::Serializer::new(String::new());
