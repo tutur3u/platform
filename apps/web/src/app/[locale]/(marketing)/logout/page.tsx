@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, LogOut } from '@tuturuuu/icons';
+import { ArrowRight, LogOut } from '@tuturuuu/icons/lucide';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

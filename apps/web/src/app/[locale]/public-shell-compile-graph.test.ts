@@ -23,6 +23,7 @@ const loginContentSource = source(
 );
 const loginFormSource = source('src/app/[locale]/(marketing)/login/form.tsx');
 const loginPageSource = source('src/app/[locale]/(marketing)/login/page.tsx');
+const logoutPageSource = source('src/app/[locale]/(marketing)/logout/page.tsx');
 const loginConfirmationPartsSource = source(
   'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
 );
@@ -634,6 +635,13 @@ describe('public shell compile graph', () => {
     expect(loginContentSource).not.toMatch(staticImportPattern('next/link'));
     expect(loginContentSource).not.toMatch(staticImportPattern('next/image'));
     expect(loginFormSource).not.toMatch(staticImportPattern('next/image'));
+  });
+
+  it('keeps the logout page off the icon package root', () => {
+    expect(logoutPageSource).not.toMatch(
+      staticImportPattern('@tuturuuu/icons')
+    );
+    expect(logoutPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps the landing hero off shared UI and Next primitives', () => {
