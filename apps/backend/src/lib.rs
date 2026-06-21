@@ -186,6 +186,7 @@ const RETIRED_SHARE_COURSE_MESSAGE: &str =
 const RETIRED_SYNC_LOGS_MESSAGE: &str = "This legacy all-workspace sync logs API has been removed. Use workspace-scoped calendar sync monitoring instead.";
 const RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE: &str = "This legacy monolithic subscription cross-check API has been removed. Use the phase-specific cross-check endpoints instead.";
 const RETIRED_USER_SEARCH_MESSAGE: &str = "This legacy user search API has been removed. Use a maintained server-owned people search API instead.";
+const RETIRED_TUTURUUU_PROXY_MESSAGE: &str = "This legacy development Tuturuuu API proxy has been removed. Use maintained internal API clients or direct backend routes instead.";
 #[cfg(feature = "native")]
 const TRUTHY_ENV_VALUES: [&str; 4] = ["1", "true", "yes", "on"];
 #[cfg(feature = "native")]
@@ -671,6 +672,10 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         }
         ("GET", "/api/users/search") => retired_legacy_api_response(RETIRED_USER_SEARCH_MESSAGE),
         (method, "/api/users/search") => method_not_allowed(method, "GET"),
+        ("GET", "/api/v1/proxy/tuturuuu") => {
+            retired_legacy_api_response(RETIRED_TUTURUUU_PROXY_MESSAGE)
+        }
+        (method, "/api/v1/proxy/tuturuuu") => method_not_allowed(method, "GET"),
         ("PUT", GROUPED_SCORE_NAMES_MIGRATION_PATH) => {
             grouped_score_names_migration_response(config)
         }
@@ -4224,6 +4229,11 @@ mod tests {
                 RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE,
             ),
             ("GET", "/api/users/search", RETIRED_USER_SEARCH_MESSAGE),
+            (
+                "GET",
+                "/api/v1/proxy/tuturuuu",
+                RETIRED_TUTURUUU_PROXY_MESSAGE,
+            ),
         ] {
             let response = route_request(
                 &BackendConfig::new("production", "backend"),
@@ -4248,6 +4258,7 @@ mod tests {
                 "POST",
             ),
             ("DELETE", "/api/users/search", "GET"),
+            ("POST", "/api/v1/proxy/tuturuuu", "GET"),
         ] {
             let response = route_request(
                 &BackendConfig::new("production", "backend"),

@@ -98,6 +98,26 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/proxy/tuturuuu:
+    get:
+      deprecated: true
+      summary: Retired development Tuturuuu API proxy
+      description: Terminal decommission replacement for apps/web/src/app/api/v1/proxy/tuturuuu/route.ts. The legacy route was a development-only Next.js/Undici proxy for arbitrary allowlisted Tuturuuu API paths; the Cloudflare cutover uses maintained internal API clients or direct backend routes instead of preserving the SSRF-sensitive proxy surface.
+      responses:
+        "410":
+          description: Legacy development proxy was intentionally removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredLegacyApiRoute"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/{wsId}/crawlers/domains:
     parameters:
       - name: wsId

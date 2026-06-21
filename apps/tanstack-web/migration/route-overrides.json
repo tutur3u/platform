@@ -64,6 +64,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the unused legacy unauthenticated user-search RPC wrapper and returns 410 ENDPOINT_REMOVED. Future people search must use a maintained server-owned API instead of preserving this broad public wrapper."
     },
+    "api:/api/v1/proxy/tuturuuu:apps/web/src/app/api/v1/proxy/tuturuuu/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: the legacy development-only Tuturuuu API proxy used Next.js and Undici to forward arbitrary allowlisted API paths and carried SSRF-sensitive outbound proxy behavior. No in-repo callers reference /api/v1/proxy/tuturuuu, and the Cloudflare cutover should use maintained internal API clients or direct backend routes instead. Rust returns terminal 410 ENDPOINT_REMOVED with the legacy GET allow list."
+    },
     "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

@@ -309,7 +309,7 @@ Current inventory:
 - `1,129` route handler artifacts
 - `19` cron handlers
 - `1,506` total tracked route artifacts
-- `164` migrated artifacts, `246` terminal artifacts, and `1,260` remaining
+- `164` migrated artifacts, `247` terminal artifacts, and `1,259` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -419,7 +419,7 @@ First migrated ownership:
 | `GET` / `PUT` / `PATCH` / `POST` `/api/v1/infrastructure/migrate/:migration`                                                               | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the legacy one-off batch migration helpers `accepted-removal`; Rust preserves the development/local-E2E guard and legacy method allow lists, but returns terminal `410 MIGRATION_DISABLED` instead of exposing broad admin batch reads or writes through the Cloudflare-compatible backend.                                                                      |
 | `PUT /api/workspaces/:wsId/{products/categories,products/units,transactions/categories,users/indicators,wallets/transactions}/migrate`     | `apps/backend` Rust route dispatcher | `route-overrides.json` marks these obsolete workspace migration writes `accepted-removal`; Rust preserves the development-only guard and returns the terminal `410 MIGRATION_DISABLED` decommission body instead of preserving legacy Supabase data writes.                                                                                                                                   |
 | `GET` / `POST` `/api/v1/workspaces/:wsId/encryption/migrate`, `POST /api/v1/workspaces/:wsId/storage/migrate`, `GET /api/v2/workspaces/:wsId/migrate/:module` | `apps/backend` Rust route dispatcher | `route-overrides.json` marks these production auth/API-key migration helpers `accepted-removal`; Rust preserves each legacy method allow list but returns terminal `410 MIGRATION_DISABLED` in every environment instead of preserving broad admin calendar encryption, storage migration, or migration export data paths. |
-| `GET /api/share/course/:courseId`, `GET /api/sync-logs`, `POST /api/payment/migrations/subscriptions/cross-check`, `GET /api/users/search` | `apps/backend` Rust route dispatcher | `route-overrides.json` marks these retired legacy API aliases and broad maintenance/search routes `accepted-removal`; Rust returns terminal `410 ENDPOINT_REMOVED` with legacy `Allow` headers while maintained replacements, workspace-scoped readers, or phase-specific routes remain separate migration work.                                                                              |
+| `GET /api/share/course/:courseId`, `GET /api/sync-logs`, `POST /api/payment/migrations/subscriptions/cross-check`, `GET /api/users/search`, `GET /api/v1/proxy/tuturuuu` | `apps/backend` Rust route dispatcher | `route-overrides.json` marks these retired legacy API aliases, broad maintenance/search routes, and the development-only Tuturuuu API proxy `accepted-removal`; Rust returns terminal `410 ENDPOINT_REMOVED` with legacy `Allow` headers while maintained replacements, workspace-scoped readers, phase-specific routes, or direct backend/internal API clients remain separate migration work. |
 
 First TanStack Start migrated ownership:
 
