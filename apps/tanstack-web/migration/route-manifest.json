@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 215,
-        "migrated": 92,
-        "percentComplete": 29.97,
-        "remaining": 215,
-        "terminal": 92,
+        "legacyNext": 209,
+        "migrated": 98,
+        "percentComplete": 31.92,
+        "remaining": 209,
+        "terminal": 98,
         "total": 307,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 241,
-        "migrated": 138,
-        "percentComplete": 36.41,
-        "remaining": 241,
-        "terminal": 138,
+        "legacyNext": 235,
+        "migrated": 144,
+        "percentComplete": 37.99,
+        "remaining": 235,
+        "terminal": 144,
         "total": 379,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1234,
-      "migrated": 201,
-      "percentComplete": 18.71,
-      "remaining": 1234,
-      "terminal": 284,
+      "legacyNext": 1228,
+      "migrated": 207,
+      "percentComplete": 19.1,
+      "remaining": 1228,
+      "terminal": 290,
       "total": 1518,
       "unknownStatus": 0
     }
@@ -11877,7 +11877,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/analytics",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/analytics/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11886,7 +11886,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/budgets",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/budgets/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11895,7 +11895,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/categories",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/categories/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11958,7 +11958,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/tags",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/tags/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11967,7 +11967,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/transactions",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11994,7 +11994,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/wallets",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/wallets/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

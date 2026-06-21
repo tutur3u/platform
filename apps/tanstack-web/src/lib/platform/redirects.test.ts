@@ -5,6 +5,7 @@ import {
   buildCmsEntryRedirectHref,
   buildCmsRedirectHref,
   buildDriveRedirectHref,
+  buildFinanceRedirectHref,
   buildFinanceTransactionCategoriesRedirectHref,
   buildHiveDashboardRedirectHref,
   buildHiveNotWhitelistedRedirectHref,
@@ -102,6 +103,29 @@ describe('public redirect helpers', () => {
         searchParams,
       })
     ).toBe('/ws-1/finance/categories?wallet=wallet+1&wallet=wallet%2F2&empty=');
+  });
+
+  it('preserves legacy Finance page redirect paths and query forwarding', () => {
+    expect(buildFinanceRedirectHref('ws-1', 'analytics')).toBe(
+      '/ws-1/finance/analytics'
+    );
+    expect(buildFinanceRedirectHref('ws-1', '/budgets/')).toBe(
+      '/ws-1/finance/budgets'
+    );
+    expect(
+      buildFinanceRedirectHref('ws-1', 'transactions', {
+        searchParams: '?create=transfer&mode=transfer',
+      })
+    ).toBe('/ws-1/finance/transactions?create=transfer&mode=transfer');
+    expect(
+      buildFinanceRedirectHref('ws-1', 'wallets', {
+        searchParams: {
+          create: 'credit-card',
+          q: 'cash box',
+          tool: 'import',
+        },
+      })
+    ).toBe('/ws-1/finance/wallets?create=credit-card&q=cash+box&tool=import');
   });
 
   it('preserves legacy education permanent redirect targets', () => {

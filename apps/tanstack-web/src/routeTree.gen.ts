@@ -101,6 +101,12 @@ import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/
 import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings'
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent'
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted'
+import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets'
+import { Route as LocaleWsIdFinanceTransactionsRouteImport } from './routes/$locale/$wsId/finance/transactions'
+import { Route as LocaleWsIdFinanceTagsRouteImport } from './routes/$locale/$wsId/finance/tags'
+import { Route as LocaleWsIdFinanceCategoriesRouteImport } from './routes/$locale/$wsId/finance/categories'
+import { Route as LocaleWsIdFinanceBudgetsRouteImport } from './routes/$locale/$wsId/finance/budgets'
+import { Route as LocaleWsIdFinanceAnalyticsRouteImport } from './routes/$locale/$wsId/finance/analytics'
 import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale/$wsId/education/quizzes'
 import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$locale/$wsId/education/quiz-sets'
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library'
@@ -602,6 +608,41 @@ const LocaleWsIdHiveNotWhitelistedRoute =
     path: '/not-whitelisted',
     getParentRoute: () => LocaleWsIdHiveRoute,
   } as any)
+const LocaleWsIdFinanceWalletsRoute =
+  LocaleWsIdFinanceWalletsRouteImport.update({
+    id: '/$locale/$wsId/finance/wallets',
+    path: '/$locale/$wsId/finance/wallets',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleWsIdFinanceTransactionsRoute =
+  LocaleWsIdFinanceTransactionsRouteImport.update({
+    id: '/$locale/$wsId/finance/transactions',
+    path: '/$locale/$wsId/finance/transactions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleWsIdFinanceTagsRoute = LocaleWsIdFinanceTagsRouteImport.update({
+  id: '/$locale/$wsId/finance/tags',
+  path: '/$locale/$wsId/finance/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWsIdFinanceCategoriesRoute =
+  LocaleWsIdFinanceCategoriesRouteImport.update({
+    id: '/$locale/$wsId/finance/categories',
+    path: '/$locale/$wsId/finance/categories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleWsIdFinanceBudgetsRoute =
+  LocaleWsIdFinanceBudgetsRouteImport.update({
+    id: '/$locale/$wsId/finance/budgets',
+    path: '/$locale/$wsId/finance/budgets',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleWsIdFinanceAnalyticsRoute =
+  LocaleWsIdFinanceAnalyticsRouteImport.update({
+    id: '/$locale/$wsId/finance/analytics',
+    path: '/$locale/$wsId/finance/analytics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleWsIdEducationQuizzesRoute =
   LocaleWsIdEducationQuizzesRouteImport.update({
     id: '/$locale/$wsId/education/quizzes',
@@ -669,9 +710,9 @@ const LocaleWsIdMeetMeetingsMeetingIdRoute =
   } as any)
 const LocaleWsIdFinanceTransactionsCategoriesRoute =
   LocaleWsIdFinanceTransactionsCategoriesRouteImport.update({
-    id: '/$locale/$wsId/finance/transactions/categories',
-    path: '/$locale/$wsId/finance/transactions/categories',
-    getParentRoute: () => rootRouteImport,
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => LocaleWsIdFinanceTransactionsRoute,
   } as any)
 const LocaleWsIdEpmEntriesEntryIdRoute =
   LocaleWsIdEpmEntriesEntryIdRouteImport.update({
@@ -789,6 +830,12 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
+  '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute
+  '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute
+  '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute
+  '/$locale/$wsId/finance/tags': typeof LocaleWsIdFinanceTagsRoute
+  '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren
+  '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRoute
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren
@@ -900,6 +947,12 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
+  '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute
+  '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute
+  '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute
+  '/$locale/$wsId/finance/tags': typeof LocaleWsIdFinanceTagsRoute
+  '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren
+  '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRoute
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren
@@ -1012,6 +1065,12 @@ export interface FileRoutesById {
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
+  '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute
+  '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute
+  '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute
+  '/$locale/$wsId/finance/tags': typeof LocaleWsIdFinanceTagsRoute
+  '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren
+  '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRoute
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren
@@ -1125,6 +1184,12 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/finance/analytics'
+    | '/$locale/$wsId/finance/budgets'
+    | '/$locale/$wsId/finance/categories'
+    | '/$locale/$wsId/finance/tags'
+    | '/$locale/$wsId/finance/transactions'
+    | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
@@ -1236,6 +1301,12 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/finance/analytics'
+    | '/$locale/$wsId/finance/budgets'
+    | '/$locale/$wsId/finance/categories'
+    | '/$locale/$wsId/finance/tags'
+    | '/$locale/$wsId/finance/transactions'
+    | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
@@ -1347,6 +1418,12 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/finance/analytics'
+    | '/$locale/$wsId/finance/budgets'
+    | '/$locale/$wsId/finance/categories'
+    | '/$locale/$wsId/finance/tags'
+    | '/$locale/$wsId/finance/transactions'
+    | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
@@ -1456,6 +1533,12 @@ export interface RootRouteChildren {
   LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute
+  LocaleWsIdFinanceAnalyticsRoute: typeof LocaleWsIdFinanceAnalyticsRoute
+  LocaleWsIdFinanceBudgetsRoute: typeof LocaleWsIdFinanceBudgetsRoute
+  LocaleWsIdFinanceCategoriesRoute: typeof LocaleWsIdFinanceCategoriesRoute
+  LocaleWsIdFinanceTagsRoute: typeof LocaleWsIdFinanceTagsRoute
+  LocaleWsIdFinanceTransactionsRoute: typeof LocaleWsIdFinanceTransactionsRouteWithChildren
+  LocaleWsIdFinanceWalletsRoute: typeof LocaleWsIdFinanceWalletsRoute
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute
   LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute
   LocaleWsIdTasksHabitsRoute: typeof LocaleWsIdTasksHabitsRoute
@@ -1469,7 +1552,6 @@ export interface RootRouteChildren {
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
   LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute
   LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
-  LocaleWsIdFinanceTransactionsCategoriesRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
   LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute
   LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute
@@ -2122,6 +2204,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdHiveNotWhitelistedRouteImport
       parentRoute: typeof LocaleWsIdHiveRoute
     }
+    '/$locale/$wsId/finance/wallets': {
+      id: '/$locale/$wsId/finance/wallets'
+      path: '/$locale/$wsId/finance/wallets'
+      fullPath: '/$locale/$wsId/finance/wallets'
+      preLoaderRoute: typeof LocaleWsIdFinanceWalletsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/finance/transactions': {
+      id: '/$locale/$wsId/finance/transactions'
+      path: '/$locale/$wsId/finance/transactions'
+      fullPath: '/$locale/$wsId/finance/transactions'
+      preLoaderRoute: typeof LocaleWsIdFinanceTransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/finance/tags': {
+      id: '/$locale/$wsId/finance/tags'
+      path: '/$locale/$wsId/finance/tags'
+      fullPath: '/$locale/$wsId/finance/tags'
+      preLoaderRoute: typeof LocaleWsIdFinanceTagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/finance/categories': {
+      id: '/$locale/$wsId/finance/categories'
+      path: '/$locale/$wsId/finance/categories'
+      fullPath: '/$locale/$wsId/finance/categories'
+      preLoaderRoute: typeof LocaleWsIdFinanceCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/finance/budgets': {
+      id: '/$locale/$wsId/finance/budgets'
+      path: '/$locale/$wsId/finance/budgets'
+      fullPath: '/$locale/$wsId/finance/budgets'
+      preLoaderRoute: typeof LocaleWsIdFinanceBudgetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/finance/analytics': {
+      id: '/$locale/$wsId/finance/analytics'
+      path: '/$locale/$wsId/finance/analytics'
+      fullPath: '/$locale/$wsId/finance/analytics'
+      preLoaderRoute: typeof LocaleWsIdFinanceAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/education/quizzes': {
       id: '/$locale/$wsId/education/quizzes'
       path: '/$locale/$wsId/education/quizzes'
@@ -2201,10 +2325,10 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/$wsId/finance/transactions/categories': {
       id: '/$locale/$wsId/finance/transactions/categories'
-      path: '/$locale/$wsId/finance/transactions/categories'
+      path: '/categories'
       fullPath: '/$locale/$wsId/finance/transactions/categories'
       preLoaderRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleWsIdFinanceTransactionsRoute
     }
     '/$locale/$wsId/epm/entries/$entryId': {
       id: '/$locale/$wsId/epm/entries/$entryId'
@@ -2351,6 +2475,21 @@ const LocaleCalendarMeetTogetherRouteWithChildren =
     LocaleCalendarMeetTogetherRouteChildren,
   )
 
+interface LocaleWsIdFinanceTransactionsRouteChildren {
+  LocaleWsIdFinanceTransactionsCategoriesRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRoute
+}
+
+const LocaleWsIdFinanceTransactionsRouteChildren: LocaleWsIdFinanceTransactionsRouteChildren =
+  {
+    LocaleWsIdFinanceTransactionsCategoriesRoute:
+      LocaleWsIdFinanceTransactionsCategoriesRoute,
+  }
+
+const LocaleWsIdFinanceTransactionsRouteWithChildren =
+  LocaleWsIdFinanceTransactionsRoute._addFileChildren(
+    LocaleWsIdFinanceTransactionsRouteChildren,
+  )
+
 interface LocaleWsIdEducationCoursesCourseIdRouteChildren {
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute
 }
@@ -2446,6 +2585,13 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRoute,
   LocaleWsIdEducationQuizSetsRoute: LocaleWsIdEducationQuizSetsRoute,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
+  LocaleWsIdFinanceAnalyticsRoute: LocaleWsIdFinanceAnalyticsRoute,
+  LocaleWsIdFinanceBudgetsRoute: LocaleWsIdFinanceBudgetsRoute,
+  LocaleWsIdFinanceCategoriesRoute: LocaleWsIdFinanceCategoriesRoute,
+  LocaleWsIdFinanceTagsRoute: LocaleWsIdFinanceTagsRoute,
+  LocaleWsIdFinanceTransactionsRoute:
+    LocaleWsIdFinanceTransactionsRouteWithChildren,
+  LocaleWsIdFinanceWalletsRoute: LocaleWsIdFinanceWalletsRoute,
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,
   LocaleWsIdPlatformExternalProjectsRoute:
     LocaleWsIdPlatformExternalProjectsRoute,
@@ -2462,8 +2608,6 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdAiChatMyChatbotsNewRoute: LocaleWsIdAiChatMyChatbotsNewRoute,
   LocaleWsIdEducationCoursesCourseIdRoute:
     LocaleWsIdEducationCoursesCourseIdRouteWithChildren,
-  LocaleWsIdFinanceTransactionsCategoriesRoute:
-    LocaleWsIdFinanceTransactionsCategoriesRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:
     LocaleWsIdSettingsInfrastructureAppCoordinationRoute,
   LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,

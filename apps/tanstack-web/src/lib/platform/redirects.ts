@@ -50,8 +50,9 @@ export function workspaceInfrastructureAppCoordinationRedirectHref(
   return `/${wsId}/infrastructure/app-coordination`;
 }
 
-export function buildFinanceTransactionCategoriesRedirectHref(
+export function buildFinanceRedirectHref(
   workspaceId: string,
+  financePath: string,
   options: {
     personal?: boolean;
     searchParams?: LegacySearchParams | string | URLSearchParams;
@@ -60,14 +61,25 @@ export function buildFinanceTransactionCategoriesRedirectHref(
   const workspaceSlug = toWorkspaceSlug(workspaceId, {
     personal: options.personal,
   });
+  const normalizedFinancePath = financePath.replace(/^\/+|\/+$/g, '');
   const url = new URL(
-    `/${workspaceSlug}/finance/categories`,
+    `/${workspaceSlug}/finance/${normalizedFinancePath}`,
     'https://finance.local'
   );
 
   appendSearchParams(url, options.searchParams);
 
   return `${url.pathname}${url.search}`;
+}
+
+export function buildFinanceTransactionCategoriesRedirectHref(
+  workspaceId: string,
+  options: {
+    personal?: boolean;
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  return buildFinanceRedirectHref(workspaceId, 'categories', options);
 }
 
 export function educationLibraryRedirectHref(
