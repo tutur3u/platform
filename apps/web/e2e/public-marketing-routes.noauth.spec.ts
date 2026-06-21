@@ -77,6 +77,10 @@ const staticMarketingRoutes = [
     heading: 'Unlocking Human Potential Through Intelligent Technology',
   },
   {
+    path: `/${DEFAULT_LOCALE}/contact`,
+    heading: "Let's Build Together",
+  },
+  {
     path: '/vi/about',
     heading: 'Giải Phóng Tiềm Năng Con Người Thông Qua Công Nghệ Thông Minh',
   },

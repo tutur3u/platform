@@ -677,7 +677,12 @@
     "layout:/:locale/contact:apps/web/src/app/[locale]/(marketing)/contact/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/contact defines the legacy static Contact metadata through createPageHead. This marks only the metadata layout artifact migrated; the contact page remains legacy-owned until current-user profile and support-inquiry endpoints move behind Rust/backend or TanStack server-function ownership."
+      "note": "TanStack Start route /$locale/contact defines the legacy static Contact metadata through createPageHead instead of a Next.js layout export."
+    },
+    "page:/:locale/contact:apps/web/src/app/[locale]/(marketing)/contact/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/contact ports the localized contact page with TanStack Query hydration, Start server functions, and @tuturuuu/internal-api calls to the Rust-owned current-user profile and support-inquiry endpoints. No browser code receives protected backend tokens or calls Supabase directly."
     },
     "layout:/:locale/login:apps/web/src/app/[locale]/(marketing)/login/layout.tsx": {
       "status": "migrated",
