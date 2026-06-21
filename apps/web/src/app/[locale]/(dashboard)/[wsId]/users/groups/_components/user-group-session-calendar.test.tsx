@@ -13,7 +13,9 @@ import {
   type WorkspaceUserGroupSession,
 } from '@tuturuuu/internal-api';
 import type { ComponentProps, ReactNode } from 'react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GroupedSessionTimeblockDialog } from './grouped-session-timeblock-dialog';
 import { UserGroupSessionCalendar } from './user-group-session-calendar';
 
 const createWorkspaceUserGroupSessionMock = vi.fn();
@@ -418,6 +420,87 @@ describe('UserGroupSessionCalendar dense all-groups rendering', () => {
       { target: { value: 'Speaking' } }
     );
 
+    expect(within(manager).queryByText('Group A')).toBeNull();
+    expect(within(manager).getByText('Group B')).toBeTruthy();
+  });
+
+  it('keeps grouped dialog search while parent rerenders rebuild the timeblock object', async () => {
+    const allSessions = [
+      session({
+        groupId: 'group-1',
+        groupName: 'Group A',
+        id: 'session-1',
+      }),
+      session({
+        groupId: 'group-2',
+        groupName: 'Group B',
+        id: 'session-2',
+        tags: [{ color: null, id: 'tag-b', name: 'Speaking' }],
+      }),
+    ];
+
+    function DialogHarness() {
+      const [renderCount, setRenderCount] = useState(0);
+
+      return (
+        <>
+          <button
+            data-testid="dialog-rerender"
+            type="button"
+            onClick={() => setRenderCount((count) => count + 1)}
+          >
+            Rerender dialog {renderCount}
+          </button>
+          <GroupedSessionTimeblockDialog
+            canChooseGroup
+            canUpdateSchedule
+            open
+            timeblock={{
+              endAt: '2026-06-26T10:30:00.000Z',
+              eventId: 'user-group-timeblock:2026-06-26_15_30',
+              sessions: allSessions,
+              startAt: '2026-06-26T08:30:00.000Z',
+              timezone: 'Asia/Ho_Chi_Minh',
+            }}
+            wsId="workspace-1"
+            onEditSession={vi.fn()}
+            onFilterGroup={vi.fn()}
+            onInlineUpdate={vi.fn().mockResolvedValue(undefined)}
+            onMoveSessions={vi.fn().mockResolvedValue({
+              failedCount: 0,
+              movedCount: 0,
+            })}
+            onOpenChange={vi.fn()}
+          />
+        </>
+      );
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        mutations: { retry: false },
+        queries: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DialogHarness />
+      </QueryClientProvider>
+    );
+
+    const manager = await screen.findByTestId('grouped-timeblock-manager');
+    const search = within(manager).getByPlaceholderText(
+      'Search groups, titles, tags, members, or schedule...'
+    ) as HTMLInputElement;
+
+    fireEvent.change(search, { target: { value: 'Speaking' } });
+    fireEvent.click(screen.getByTestId('dialog-rerender'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('dialog-rerender').textContent).toContain('1')
+    );
+    expect(search.value).toBe('Speaking');
     expect(within(manager).queryByText('Group A')).toBeNull();
     expect(within(manager).getByText('Group B')).toBeTruthy();
   });

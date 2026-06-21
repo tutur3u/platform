@@ -98,20 +98,36 @@ export function GroupedSessionTimeblockDialog({
   const [rosterSearchByGroupId, setRosterSearchByGroupId] = useState(
     () => new Map<string, string>()
   );
+  const activeTimeblockId = timeblock?.eventId ?? null;
+  const activeTimeblockStartAt = timeblock?.startAt ?? null;
+  const activeTimeblockTimezone =
+    timeblock?.timezone || DEFAULT_SCHEDULE_TIMEZONE;
+  const activeTimeblockResetKey =
+    activeTimeblockId && activeTimeblockStartAt
+      ? `${activeTimeblockId}|${activeTimeblockStartAt}|${activeTimeblockTimezone}`
+      : null;
 
   useEffect(() => {
-    if (!open || !timeblock) return;
-    const timezone = timeblock.timezone || DEFAULT_SCHEDULE_TIMEZONE;
-    const parts = localDateTimeParts(timeblock.startAt, timezone);
+    if (!open || !activeTimeblockResetKey || !activeTimeblockStartAt) return;
+    const parts = localDateTimeParts(
+      activeTimeblockStartAt,
+      activeTimeblockTimezone
+    );
     setSearchValue('');
     setSelectedIds(new Set());
     setMoveTarget(initialMoveTarget ?? null);
     setMoveDate(parts.date);
     setMoveTime(parts.time);
-    setMoveTimezone(timezone);
+    setMoveTimezone(activeTimeblockTimezone);
     setMoveScope('once');
     setRosterSearchByGroupId(new Map());
-  }, [initialMoveTarget, open, timeblock]);
+  }, [
+    activeTimeblockResetKey,
+    activeTimeblockStartAt,
+    activeTimeblockTimezone,
+    initialMoveTarget,
+    open,
+  ]);
 
   const summaryGroupIds = useMemo(
     () =>
