@@ -1052,9 +1052,24 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
 fn content_length_exceeds_request_body_limit(content_length: Option<&str>) -> bool {
-    content_length
-        .and_then(|value| value.trim().parse::<u128>().ok())
-        .is_some_and(|value| value > MAX_REQUEST_BODY_BYTES as u128)
+    parse_content_length(content_length).is_some_and(|value| value > MAX_REQUEST_BODY_BYTES as u128)
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn parse_content_length(content_length: Option<&str>) -> Option<u128> {
+    content_length.and_then(|value| {
+        let value = value.trim();
+        if value.is_empty() {
+            None
+        } else {
+            value.parse::<u128>().ok()
+        }
+    })
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn content_length_is_missing_or_invalid(content_length: Option<&str>) -> bool {
+    parse_content_length(content_length).is_none()
 }
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
@@ -1085,6 +1100,7 @@ struct RuntimeRequestParts<'a> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RuntimeRequestBodyPlan {
     Buffer,
+    RejectLengthRequired,
     RejectTooLarge,
     Skip,
 }
@@ -1098,12 +1114,14 @@ enum RuntimeResponseHeaderOperation {
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
 fn runtime_request_body_plan(parts: &RuntimeRequestParts<'_>) -> RuntimeRequestBodyPlan {
-    if buffered_request_body_exceeds_limit(parts.method, parts.path, parts.content_length) {
-        RuntimeRequestBodyPlan::RejectTooLarge
-    } else if should_buffer_request_body(parts.method, parts.path) {
-        RuntimeRequestBodyPlan::Buffer
-    } else {
+    if !should_buffer_request_body(parts.method, parts.path) {
         RuntimeRequestBodyPlan::Skip
+    } else if content_length_is_missing_or_invalid(parts.content_length) {
+        RuntimeRequestBodyPlan::RejectLengthRequired
+    } else if buffered_request_body_exceeds_limit(parts.method, parts.path, parts.content_length) {
+        RuntimeRequestBodyPlan::RejectTooLarge
+    } else {
+        RuntimeRequestBodyPlan::Buffer
     }
 }
 
@@ -1745,6 +1763,17 @@ fn request_body_too_large_response() -> BackendResponse {
     )
 }
 
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn request_body_length_required_response() -> BackendResponse {
+    json_response(
+        411,
+        json!({
+            "error": "request body content length required",
+            "maxBytes": MAX_REQUEST_BODY_BYTES,
+        }),
+    )
+}
+
 fn empty_response(status: u16) -> BackendResponse {
     BackendResponse {
         allow: None,
@@ -2291,8 +2320,8 @@ pub mod worker_runtime {
     use super::{
         BackendConfig, BackendResponse, RuntimeRequestBodyPlan, RuntimeRequestParts,
         RuntimeResponseHeaderOperation, backend_request_from_runtime_parts, handle_backend_request,
-        outbound, request_body_too_large_response, runtime_request_body_plan,
-        runtime_response_header_operations,
+        outbound, request_body_length_required_response, request_body_too_large_response,
+        runtime_request_body_plan, runtime_response_header_operations,
     };
     use worker::{Env, Request, Response, Result, event};
 
@@ -2324,6 +2353,9 @@ pub mod worker_runtime {
         };
 
         let body_text = match runtime_request_body_plan(&request_parts) {
+            RuntimeRequestBodyPlan::RejectLengthRequired => {
+                return request_body_length_required_response().into_worker_response();
+            }
             RuntimeRequestBodyPlan::RejectTooLarge => {
                 return request_body_too_large_response().into_worker_response();
             }
@@ -3156,12 +3188,71 @@ mod tests {
     }
 
     #[test]
+    fn runtime_request_body_plan_requires_known_length_for_buffered_worker_requests() {
+        for content_length in [None, Some(""), Some(" "), Some("not-a-number")] {
+            let parts = RuntimeRequestParts {
+                authorization: None,
+                content_length,
+                cookie: None,
+                method: "POST",
+                origin: None,
+                path: "/api/v1/infrastructure/sidebar",
+                referer: None,
+                request_id: None,
+                url: Some("https://tanstack.tuturuuu.localhost/api/v1/infrastructure/sidebar"),
+            };
+
+            assert_eq!(
+                runtime_request_body_plan(&parts),
+                RuntimeRequestBodyPlan::RejectLengthRequired,
+                "{content_length:?}"
+            );
+        }
+
+        for content_length in [Some("0"), Some("65536"), Some(" 65536 ")] {
+            let parts = RuntimeRequestParts {
+                authorization: None,
+                content_length,
+                cookie: None,
+                method: "POST",
+                origin: None,
+                path: "/api/v1/infrastructure/sidebar",
+                referer: None,
+                request_id: None,
+                url: Some("https://tanstack.tuturuuu.localhost/api/v1/infrastructure/sidebar"),
+            };
+
+            assert_eq!(
+                runtime_request_body_plan(&parts),
+                RuntimeRequestBodyPlan::Buffer,
+                "{content_length:?}"
+            );
+        }
+    }
+
+    #[test]
     fn request_body_too_large_response_reports_limit() {
         let response = request_body_too_large_response();
 
         assert_eq!(response.status, 413);
         assert_eq!(response.content_type, Some(APPLICATION_JSON));
         assert_eq!(response.body["error"], "request body too large");
+        assert_eq!(
+            response.body["maxBytes"].as_u64(),
+            Some(MAX_REQUEST_BODY_BYTES as u64)
+        );
+    }
+
+    #[test]
+    fn request_body_length_required_response_reports_limit() {
+        let response = request_body_length_required_response();
+
+        assert_eq!(response.status, 411);
+        assert_eq!(response.content_type, Some(APPLICATION_JSON));
+        assert_eq!(
+            response.body["error"],
+            "request body content length required"
+        );
         assert_eq!(
             response.body["maxBytes"].as_u64(),
             Some(MAX_REQUEST_BODY_BYTES as u64)
