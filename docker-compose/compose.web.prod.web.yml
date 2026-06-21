@@ -93,7 +93,8 @@ x-web-service: &web-service
     - ../tmp/docker-web:/app/runtime/docker-web:ro
   depends_on:
     log-drain-postgres:
-      condition: service_healthy
+      condition: service_started
+      required: false
 
 x-tanstack-web-service: &tanstack-web-service
   build:

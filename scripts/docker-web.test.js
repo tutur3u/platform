@@ -132,7 +132,7 @@ function healthyLogDrainPostgresResult(command, args) {
 test('ensureLogDrainPostgresReady skips startup when log-drain Postgres is healthy', async () => {
   const calls = [];
 
-  await ensureLogDrainPostgresReady({
+  const result = await ensureLogDrainPostgresReady({
     composeFile: PROD_COMPOSE_FILE,
     composeGlobalArgs: ['--profile', 'redis'],
     env: { PATH: 'test-path' },
@@ -155,13 +155,15 @@ test('ensureLogDrainPostgresReady skips startup when log-drain Postgres is healt
     calls.some(([, args]) => args.includes('up')),
     false
   );
+  assert.equal(result.ready, true);
+  assert.equal(result.env.PATH, 'test-path');
 });
 
 test('ensureLogDrainPostgresReady recreates an exited log-drain Postgres container once', async () => {
   const calls = [];
   let upAttempts = 0;
 
-  await ensureLogDrainPostgresReady({
+  const result = await ensureLogDrainPostgresReady({
     composeFile: PROD_COMPOSE_FILE,
     composeGlobalArgs: ['--profile', 'redis'],
     env: { PATH: 'test-path' },
@@ -204,6 +206,8 @@ test('ensureLogDrainPostgresReady recreates an exited log-drain Postgres contain
   });
 
   assert.equal(upAttempts, 2);
+  assert.equal(result.ready, true);
+  assert.equal(result.env.PATH, 'test-path');
   assert.equal(
     calls.some(
       ([command, args]) =>
@@ -222,6 +226,192 @@ test('ensureLogDrainPostgresReady recreates an exited log-drain Postgres contain
     ),
     false
   );
+});
+
+test('ensureLogDrainPostgresReady degrades log-drain after an unhealthy retry without removing volumes', async () => {
+  const calls = [];
+  const stderr = [];
+  let upAttempts = 0;
+
+  const result = await ensureLogDrainPostgresReady({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { PATH: 'test-path' },
+    healthPollMs: 1,
+    healthTimeoutMs: 1,
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('up') &&
+        args.at(-1) === 'log-drain-postgres'
+      ) {
+        upAttempts += 1;
+        return createCommandResult('');
+      }
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('rm') &&
+        args.at(-1) === 'log-drain-postgres'
+      ) {
+        return createCommandResult('');
+      }
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('logs') &&
+        args.at(-1) === 'log-drain-postgres'
+      ) {
+        return createCommandResult(
+          'FATAL: database files are incompatible with server\n'
+        );
+      }
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('ps') &&
+        args.includes('--all')
+      ) {
+        return createCommandResult(
+          'NAME STATUS\ntuturuuu-log-drain-postgres-1 unhealthy\n'
+        );
+      }
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('ps') &&
+        args.at(-1) === 'log-drain-postgres'
+      ) {
+        return createCommandResult('log-drain-unhealthy\n');
+      }
+
+      if (command === 'docker' && args[0] === 'inspect') {
+        if (args.includes('{{json .State}}')) {
+          return createCommandResult(
+            '{"Status":"running","Health":{"Status":"unhealthy"}}\n'
+          );
+        }
+
+        return createCommandResult('unhealthy\n');
+      }
+
+      if (command === 'docker' && args[0] === 'volume') {
+        return createCommandResult('tuturuuu_platform-log-drain-postgres\n');
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+    stderr: {
+      write(message) {
+        stderr.push(message);
+      },
+    },
+  });
+
+  assert.equal(upAttempts, 2);
+  assert.equal(result.ready, false);
+  assert.equal(result.env.PLATFORM_LOG_DRAIN_ENABLED, 'false');
+  assert.match(result.diagnostics, /database files are incompatible/u);
+  assert.match(stderr.join(''), /Continuing this deploy/u);
+  assert.equal(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' && args[0] === 'volume' && args.includes('rm')
+    ),
+    false
+  );
+});
+
+test('ensureLogDrainPostgresReady keeps log-drain as a hard gate when required', async () => {
+  let upAttempts = 0;
+
+  await assert.rejects(
+    ensureLogDrainPostgresReady({
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs: ['--profile', 'redis'],
+      env: {
+        DOCKER_WEB_LOG_DRAIN_REQUIRED: '1',
+        PATH: 'test-path',
+      },
+      healthPollMs: 1,
+      healthTimeoutMs: 1,
+      runCommand: async (command, args) => {
+        if (
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('up') &&
+          args.at(-1) === 'log-drain-postgres'
+        ) {
+          upAttempts += 1;
+          return createCommandResult('');
+        }
+
+        if (
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('rm') &&
+          args.at(-1) === 'log-drain-postgres'
+        ) {
+          return createCommandResult('');
+        }
+
+        if (
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('logs') &&
+          args.at(-1) === 'log-drain-postgres'
+        ) {
+          return createCommandResult('FATAL: could not open file\n');
+        }
+
+        if (
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('ps') &&
+          args.includes('--all')
+        ) {
+          return createCommandResult(
+            'NAME STATUS\ntuturuuu-log-drain-postgres-1 unhealthy\n'
+          );
+        }
+
+        if (
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('ps') &&
+          args.at(-1) === 'log-drain-postgres'
+        ) {
+          return createCommandResult('log-drain-unhealthy\n');
+        }
+
+        if (command === 'docker' && args[0] === 'inspect') {
+          if (args.includes('{{json .State}}')) {
+            return createCommandResult(
+              '{"Status":"running","Health":{"Status":"unhealthy"}}\n'
+            );
+          }
+
+          return createCommandResult('unhealthy\n');
+        }
+
+        if (command === 'docker' && args[0] === 'volume') {
+          return createCommandResult('tuturuuu_platform-log-drain-postgres\n');
+        }
+
+        throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+      },
+    }),
+    /DOCKER_WEB_LOG_DRAIN_REQUIRED=1 is set/u
+  );
+
+  assert.equal(upAttempts, 2);
 });
 
 function getMigrationCleanupService(command, args) {

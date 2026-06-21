@@ -1035,6 +1035,26 @@ function validateDockerProdCompose(composeContent) {
     }
   }
 
+  const logDrainDependencyCount = [
+    ...composeContent.matchAll(
+      /log-drain-postgres:\n\s+condition: service_started\n\s+required: false/giu
+    ),
+  ].length;
+
+  if (logDrainDependencyCount < 2) {
+    errors.push(
+      'docker-compose.web.prod.yml web and watcher services must depend on log-drain-postgres with condition: service_started and required: false so unhealthy telemetry Postgres does not block blue/green promotion.'
+    );
+  }
+
+  if (
+    /log-drain-postgres:\n\s+condition: service_healthy/iu.test(composeContent)
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml must not use log-drain-postgres service_healthy as a promotion gate.'
+    );
+  }
+
   if (
     !composeContent.includes(
       '  depends_on:\n    backend:\n      condition: service_healthy'

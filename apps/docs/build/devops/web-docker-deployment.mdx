@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-06-20"
+updatedAt: "2026-06-21"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime and the
@@ -105,6 +105,17 @@ parallel `apps/tanstack-web` migration runtime.
 - Production Docker serving commands (`bun serve:web:docker`, `bun serve:web:docker:bg`, and `bun serve:web:docker:bg:watch`) prefer root `.env.local` when it exists, even if the shell inherited stale `DOCKER_WEB_ENV_FILE` or `DOCKER_WEB_COMPOSE_*ENV_FILE` values. Passing `--env-file <path>` is the explicit way to use another deployment env file.
 - `ttr box setup` intentionally writes local Supabase values into app-local env files such as `apps/web/.env.local`. Those files are valid for devbox/local work but must not be the effective production watcher env. Keep root `.env.local` or the explicit deployment env file pointed at the cloud Supabase project.
 - Production Docker serving refuses local Supabase origins (`localhost`, `127.0.0.1`, `::1`, `host.docker.internal`, and local Supabase ports) unless `DOCKER_WEB_ALLOW_LOCAL_SUPABASE=1` is set for a local production-image rehearsal.
+- `log-drain-postgres` stores deployment telemetry only. Blue/green startup
+  still starts it and retries once after removing only the service container,
+  but an unhealthy log-drain database no longer blocks web promotion by
+  default. The helper continues with `PLATFORM_LOG_DRAIN_ENABLED=false`, prints
+  the recent service state/log diagnostics, and leaves the
+  `platform-log-drain-postgres` volume intact. Set
+  `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` only when telemetry storage must be a hard
+  promotion gate. If diagnostics mention incompatible database files or data
+  directory corruption, back up or migrate the Compose volume first; do not run
+  `docker compose down --volumes` or remove the volume without explicit
+  operator approval.
 - Non-production Docker helpers still rewrite an explicitly local server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
 - Dockerized web services set `__NEXT_PRIVATE_ORIGIN` from
   `DOCKER_WEB_NEXT_PRIVATE_ORIGIN`, defaulting to
@@ -1949,6 +1960,32 @@ Dashboard details:
   `DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS`, and
   `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`; non-transient Compose errors still
   fail immediately.
+- If `log-drain-postgres` starts but remains unhealthy before blue/green
+  promotion, the helper removes and recreates only that service container once,
+  collects `docker compose ps`, container inspect state, recent service logs,
+  and matching Compose volume names, then continues the rollout with
+  `PLATFORM_LOG_DRAIN_ENABLED=false` for that run. The production `web` and
+  `web-blue-green-watcher` services keep start-order dependencies on
+  `log-drain-postgres`, but the dependency is `required: false` and does not
+  wait for `service_healthy`; platform traffic can promote while telemetry and
+  Infrastructure project automation are degraded.
+- Set `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` when an operator wants
+  `log-drain-postgres` to remain a hard deployment gate. Use that only when the
+  log-drain database is part of the deployment objective and a blocked rollout
+  is preferable to serving without persisted request/server logs.
+- To inspect a degraded log-drain startup without changing data, run:
+
+  ```bash
+  docker compose -f docker-compose.web.prod.yml --profile redis ps --all log-drain-postgres
+  docker compose -f docker-compose.web.prod.yml --profile redis logs --tail 200 log-drain-postgres
+  docker volume ls --filter label=com.docker.compose.volume=platform-log-drain-postgres
+  ```
+
+  If those logs mention incompatible database files, data-directory corruption,
+  or an invalid checkpoint, back up or migrate the matching Compose volume
+  before retrying. Do not run `docker compose down --volumes`,
+  `docker volume rm`, or any other volume-clearing command for log-drain data
+  unless an operator has explicitly approved a backed-up reset.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
   status snapshot and active PID before the watcher service is force-recreated,
   but preserves any complete branch/upstream target metadata. A stale lock from
