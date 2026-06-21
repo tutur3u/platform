@@ -207,6 +207,12 @@ describe('external project adapter fixtures', () => {
         'image-library',
         [
           'pageSection',
+          'placement',
+          'brand',
+          'category',
+          'productName',
+          'feature',
+          'shelfWeight',
           'usageTags',
           'objectPosition',
           'ratio',

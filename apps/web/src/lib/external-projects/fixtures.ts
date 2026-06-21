@@ -561,7 +561,7 @@ const richfieldSchema = {
     {
       assetTypes: ['image'],
       collection_type: 'image-library',
-      description: 'Reusable Richfield images grouped by page section.',
+      description: 'Reusable Richfield images grouped by page and placement.',
       profileFields: [
         {
           key: 'pageSection',
@@ -579,6 +579,22 @@ const richfieldSchema = {
           ],
           type: 'string',
         },
+        { key: 'placement', label: 'Placement', type: 'string' },
+        { key: 'brand', label: 'Brand', type: 'string' },
+        {
+          key: 'category',
+          label: 'Category',
+          options: ['Food', 'Beverages', 'Non-Food'],
+          type: 'string',
+        },
+        { key: 'productName', label: 'Product name', type: 'string' },
+        { key: 'feature', label: 'Featured tile', type: 'boolean' },
+        {
+          key: 'shelfWeight',
+          label: 'Shelf banner size',
+          options: ['hero', 'wide', 'feature'],
+          type: 'string',
+        },
         { key: 'usageTags', label: 'Usage tags', type: 'string-array' },
         { key: 'objectPosition', label: 'Object position', type: 'string' },
         { key: 'ratio', label: 'Ratio', type: 'number' },
@@ -586,7 +602,7 @@ const richfieldSchema = {
         { key: 'sortOrder', label: 'Sort order', type: 'number' },
       ],
       slug: 'image-library',
-      title: 'Images',
+      title: 'Gallery',
     },
   ],
 } satisfies ExternalProjectSyncSchema;
@@ -1849,10 +1865,10 @@ export const externalProjectAdapterFixtures: Record<
       },
       {
         collectionType: 'image-library',
-        description: 'Reusable Richfield images grouped by page section.',
+        description: 'Reusable Richfield images grouped by page and placement.',
         slug: 'image-library',
         sourceId: 'richfield:collection:image-library',
-        title: 'Images',
+        title: 'Gallery',
         entries: [
           {
             assets: [
@@ -1867,6 +1883,7 @@ export const externalProjectAdapterFixtures: Record<
             profileData: {
               objectPosition: 'center',
               pageSection: 'careers',
+              placement: 'gallery-image',
               ratio: 1.333,
               sortOrder: 10,
               usageTags: ['gallery'],

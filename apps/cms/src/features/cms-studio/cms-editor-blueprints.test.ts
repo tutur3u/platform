@@ -34,7 +34,7 @@ describe('CMS editor Richfield adapter registration', () => {
       'timeline',
       'contacts',
       'careers',
-      'images',
+      'gallery',
     ]);
     expect(views.map((view) => view.collectionSlugs)).toEqual([
       ['brands'],
