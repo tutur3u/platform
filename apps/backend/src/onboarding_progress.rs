@@ -32,6 +32,12 @@ const NO_VALID_FIELDS_MESSAGE: &str = "No valid fields to update";
 const FETCH_FAILED_MESSAGE: &str = "Failed to fetch onboarding progress";
 const UPDATE_FAILED_MESSAGE: &str = "Failed to update onboarding progress";
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OnboardingProgressUpdatesError {
+    InvalidBody,
+    NoValidFields,
+}
+
 pub(crate) async fn handle_onboarding_progress_route(
     config: &BackendConfig,
     request: BackendRequest<'_>,
@@ -81,7 +87,7 @@ async fn onboarding_progress_patch_response(
     };
     let updates = match onboarding_progress_updates(request.body_text) {
         Ok(updates) => updates,
-        Err(response) => return response,
+        Err(error) => return onboarding_progress_updates_error_response(error),
     };
 
     let progress = match upsert_onboarding_progress(contact_data, &user_id, updates, outbound).await
@@ -205,12 +211,12 @@ async fn send_onboarding_progress_request(
 
 fn onboarding_progress_updates(
     body_text: Option<&str>,
-) -> Result<Map<String, Value>, BackendResponse> {
+) -> Result<Map<String, Value>, OnboardingProgressUpdatesError> {
     let Some(body) = parse_json_body(body_text) else {
-        return Err(invalid_body_response());
+        return Err(OnboardingProgressUpdatesError::InvalidBody);
     };
     let Some(body) = body.as_object() else {
-        return Err(invalid_body_response());
+        return Err(OnboardingProgressUpdatesError::InvalidBody);
     };
     let mut updates = Map::new();
 
@@ -221,10 +227,19 @@ fn onboarding_progress_updates(
     }
 
     if updates.is_empty() {
-        return Err(no_valid_fields_response());
+        return Err(OnboardingProgressUpdatesError::NoValidFields);
     }
 
     Ok(updates)
+}
+
+fn onboarding_progress_updates_error_response(
+    error: OnboardingProgressUpdatesError,
+) -> BackendResponse {
+    match error {
+        OnboardingProgressUpdatesError::InvalidBody => invalid_body_response(),
+        OnboardingProgressUpdatesError::NoValidFields => no_valid_fields_response(),
+    }
 }
 
 fn first_row_or_value(response: &OutboundResponse) -> Result<Option<Value>, ()> {

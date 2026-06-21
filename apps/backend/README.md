@@ -71,6 +71,10 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise
   reads only an exact count of non-deleted workspaces created by the
   authenticated user, and returns the derived legacy limit payload.
+- `GET /api/auth/me`: legacy-compatible current browser session route. Rust
+  revalidates the Supabase browser cookie or non-app-session Bearer token with
+  Supabase Auth and returns the raw legacy `{ user }` payload, or the legacy
+  unauthorized message.
 - `GET` / `PATCH` `/api/v1/user/onboarding-progress`: legacy-compatible
   onboarding progress route. Rust validates browser Supabase auth cookies with
   Supabase Auth, reads the authenticated user's `onboarding_progress` row

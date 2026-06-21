@@ -11,6 +11,45 @@ servers:
   - url: http://localhost:7820
     description: Local backend runtime
 paths:
+  /api/auth/me:
+    get:
+      summary: Legacy-compatible current Supabase user
+      description: Migrated replacement for apps/web/src/app/api/auth/me/route.ts GET. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, then returns the raw legacy `{ user }` payload. Tuturuuu app-session tokens are intentionally ignored for this Supabase browser-session route.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Current Supabase Auth user wrapped in the legacy response shape.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMeResponse"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMeUnauthorized"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/admin/tasks/embeddings/stats:
     get:
       summary: Legacy-compatible admin task embedding statistics
@@ -3521,6 +3560,41 @@ components:
           schema:
             $ref: "#/components/schemas/RequestBodyTooLargeError"
   schemas:
+    AuthMeResponse:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/SupabaseAuthUser"
+    SupabaseAuthUser:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        email:
+          type:
+            - string
+            - "null"
+          format: email
+        aud:
+          type: string
+        app_metadata:
+          type: object
+          additionalProperties: true
+        user_metadata:
+          type: object
+          additionalProperties: true
+    AuthMeUnauthorized:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
     AdminTaskEmbeddingStats:
       type: object
       required:

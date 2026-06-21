@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod ai_models;
 mod ai_whitelist;
 mod aurora;
+mod auth_me;
 mod changelog;
 mod contact;
 mod crawlers;
@@ -364,6 +365,10 @@ pub(crate) async fn handle_backend_request(
     if let Some(response) =
         mobile_version::handle_mobile_version_route(config, request, outbound).await
     {
+        return response;
+    }
+
+    if let Some(response) = auth_me::handle_auth_me_route(config, request, outbound).await {
         return response;
     }
 
