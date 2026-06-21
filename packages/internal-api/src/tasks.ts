@@ -545,6 +545,20 @@ export interface WorkspaceTaskBoardSharesResponse {
   shares: WorkspaceTaskBoardShare[];
 }
 
+export interface WorkspaceTaskBoardPublicLink {
+  board_id: string;
+  code: string;
+  created_at: string | null;
+  disabled_at: string | null;
+  enabled: boolean;
+  id: string;
+  updated_at: string | null;
+}
+
+export interface WorkspaceTaskBoardPublicLinkResponse {
+  publicLink: WorkspaceTaskBoardPublicLink | null;
+}
+
 export interface CreateWorkspaceTaskListPayload {
   name: string;
   status?: string;
@@ -990,6 +1004,50 @@ export async function deleteWorkspaceTaskBoardShare(
     {
       method: 'DELETE',
       query: { shareId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTaskBoardPublicLink(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardPublicLinkResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function enableWorkspaceTaskBoardPublicLink(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardPublicLinkResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function disableWorkspaceTaskBoardPublicLink(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
     }
   );

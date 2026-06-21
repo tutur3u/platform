@@ -19926,6 +19926,44 @@
     "name": "Board Name",
     "no_boards_found": "No boards found",
     "plural": "Task Boards",
+    "public": {
+      "assignee": "Assignee",
+      "clear_search": "Clear search",
+      "empty_list": "No visible tasks in this list.",
+      "empty_results": "No tasks match the current filters.",
+      "kanban": "Kanban",
+      "list": "List",
+      "metadata_description": "Read-only public task board.",
+      "points": "{count} pts",
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "normal": "Normal"
+      },
+      "read_only": "Read-only public board",
+      "search_placeholder": "Search visible tasks...",
+      "sort": {
+        "board": "Board order",
+        "created_desc": "Newest first",
+        "due_asc": "Due soonest",
+        "due_desc": "Due latest"
+      },
+      "status": {
+        "active": "Active",
+        "all": "All",
+        "done": "Done",
+        "not_started": "Backlog",
+        "review": "Review"
+      },
+      "summary": "{lists} columns · {tasks} tasks",
+      "task_count": "{count} tasks",
+      "truncated": "This public view is showing the first 1,000 visible tasks.",
+      "unavailable_description": "This public board link is disabled, expired, or no longer available.",
+      "unavailable_title": "Public board unavailable",
+      "untitled_board": "Untitled board",
+      "untitled_list": "Untitled list"
+    },
     "quick_create": {
       "default_name": "Task"
     },
@@ -19992,6 +20030,21 @@
       "permission": {
         "edit": "Can edit",
         "view": "Can view"
+      },
+      "public": {
+        "active": "Public",
+        "copy": "Copy link",
+        "copy_failed": "Could not copy public link",
+        "copy_success": "Public board link copied",
+        "description": "Anyone with this link can view a sanitized read-only board without signing in.",
+        "disable": "Disable",
+        "disable_failed": "Could not disable public board link",
+        "disabled": "Public board link disabled",
+        "enable": "Enable public link",
+        "enable_failed": "Could not enable public board link",
+        "enabled": "Public board link enabled",
+        "open": "Open",
+        "title": "Public link"
       },
       "removed": "Board share removed",
       "saved": "Board share saved",

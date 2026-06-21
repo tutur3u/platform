@@ -34,6 +34,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { BoardPublicLinkSection } from './board-public-link-section';
 
 interface BoardShareDialogProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'name'>;
@@ -145,6 +146,8 @@ export function BoardShareDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          <BoardPublicLinkSection boardId={board.id} open={open} wsId={wsId} />
+
           <div className="rounded-md border bg-muted/30 p-3 text-muted-foreground text-sm">
             {t('ws-task-boards.share.guest_scope')}
           </div>

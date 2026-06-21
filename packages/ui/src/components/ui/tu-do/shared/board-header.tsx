@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Search,
   Settings,
+  Share2,
   Trash2,
   X,
   Zap,
@@ -81,6 +82,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { BoardShareDialog } from '../boards/board-share-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { CopyBoardDialog } from '../boards/copy-board-dialog';
 import { TaskBoardForm } from '../boards/form';
@@ -151,6 +153,7 @@ export function BoardHeader({
   const [editBoardOpen, setEditBoardOpen] = useState(false);
   const [duplicateBoardOpen, setDuplicateBoardOpen] = useState(false);
   const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
+  const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -391,7 +394,7 @@ export function BoardHeader({
         </div>
 
         {/* Search Bar */}
-        <div className="relative max-w-md flex-1">
+        <div className="relative min-w-0 flex-1 basis-72">
           {isSearching ? (
             <Loader2 className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
           ) : (
@@ -417,7 +420,7 @@ export function BoardHeader({
         </div>
 
         {/* Controls - Compact Row */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Online Users */}
           {!isPersonalWorkspace && (
             <BoardUserPresenceAvatarsComponent
@@ -857,6 +860,22 @@ export function BoardHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {!hideActions && (
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => setShareBoardOpen(true)}
+              title={t('ws-task-boards.share.action')}
+              aria-label={t('ws-task-boards.share.action')}
+            >
+              <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="hidden text-[10px] sm:text-xs md:inline">
+                {t('common.share')}
+              </span>
+            </Button>
+          )}
+
           {/* Board Actions Menu */}
           {!hideActions && (
             <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
@@ -1047,6 +1066,12 @@ export function BoardHeader({
         board={{ id: board.id, ws_id: workspaceId, name: board.name }}
         open={saveAsTemplateOpen}
         onOpenChange={setSaveAsTemplateOpen}
+      />
+      <BoardShareDialog
+        board={{ id: board.id, name: board.name }}
+        open={shareBoardOpen}
+        onOpenChange={setShareBoardOpen}
+        wsId={workspaceId}
       />
       {/* Board Layout Settings */}
       {onUpdate && (

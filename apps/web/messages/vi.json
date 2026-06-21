@@ -19926,6 +19926,44 @@
     "name": "Tên bảng",
     "no_boards_found": "Chưa có bảng nào. Tạo bảng đầu tiên để bắt đầu.",
     "plural": "Bảng nhiệm vụ",
+    "public": {
+      "assignee": "Người được giao",
+      "clear_search": "Xóa tìm kiếm",
+      "empty_list": "Không có nhiệm vụ hiển thị trong danh sách này.",
+      "empty_results": "Không có nhiệm vụ nào khớp với bộ lọc hiện tại.",
+      "kanban": "Kanban",
+      "list": "Danh sách",
+      "metadata_description": "Bảng nhiệm vụ công khai chỉ đọc.",
+      "points": "{count} điểm",
+      "priority": {
+        "critical": "Nghiêm trọng",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "read_only": "Bảng công khai chỉ đọc",
+      "search_placeholder": "Tìm nhiệm vụ hiển thị...",
+      "sort": {
+        "board": "Thứ tự bảng",
+        "created_desc": "Mới nhất trước",
+        "due_asc": "Hạn gần nhất",
+        "due_desc": "Hạn xa nhất"
+      },
+      "status": {
+        "active": "Đang làm",
+        "all": "Tất cả",
+        "done": "Hoàn tất",
+        "not_started": "Tồn đọng",
+        "review": "Đang xem xét"
+      },
+      "summary": "{lists} cột · {tasks} nhiệm vụ",
+      "task_count": "{count} nhiệm vụ",
+      "truncated": "Chế độ xem công khai này đang hiển thị 1.000 nhiệm vụ hiển thị đầu tiên.",
+      "unavailable_description": "Liên kết bảng công khai này đã bị tắt, hết hạn hoặc không còn khả dụng.",
+      "unavailable_title": "Bảng công khai không khả dụng",
+      "untitled_board": "Bảng chưa đặt tên",
+      "untitled_list": "Danh sách chưa đặt tên"
+    },
     "quick_create": {
       "default_name": "Công việc"
     },
@@ -19992,6 +20030,21 @@
       "permission": {
         "edit": "Có thể sửa",
         "view": "Có thể xem"
+      },
+      "public": {
+        "active": "Công khai",
+        "copy": "Sao chép liên kết",
+        "copy_failed": "Không thể sao chép liên kết công khai",
+        "copy_success": "Đã sao chép liên kết bảng công khai",
+        "description": "Bất kỳ ai có liên kết này đều có thể xem bảng chỉ đọc đã được lược bỏ dữ liệu riêng tư mà không cần đăng nhập.",
+        "disable": "Tắt",
+        "disable_failed": "Không thể tắt liên kết bảng công khai",
+        "disabled": "Đã tắt liên kết bảng công khai",
+        "enable": "Bật liên kết công khai",
+        "enable_failed": "Không thể bật liên kết bảng công khai",
+        "enabled": "Đã bật liên kết bảng công khai",
+        "open": "Mở",
+        "title": "Liên kết công khai"
       },
       "removed": "Đã xóa chia sẻ bảng",
       "saved": "Đã lưu chia sẻ bảng",
