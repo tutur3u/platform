@@ -1083,6 +1083,11 @@ fn buffered_request_body_exceeds_limit(
 }
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn buffered_body_text_exceeds_request_body_limit(body_text: &str) -> bool {
+    body_text.len() > MAX_REQUEST_BODY_BYTES
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct RuntimeRequestParts<'a> {
     authorization: Option<&'a str>,
@@ -1752,7 +1757,11 @@ fn text_response(
     }
 }
 
-#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+#[cfg(any(
+    test,
+    feature = "native",
+    all(feature = "worker", target_arch = "wasm32")
+))]
 fn request_body_too_large_response() -> BackendResponse {
     json_response(
         413,
@@ -2160,7 +2169,8 @@ fn default_deployment_target() -> &'static str {
 pub mod native {
     use super::{
         BackendConfig, BackendRequest, BackendResponse, MAX_REQUEST_BODY_BYTES,
-        handle_backend_request, json_security_headers, outbound, should_buffer_request_body,
+        handle_backend_request, json_security_headers, outbound, request_body_too_large_response,
+        should_buffer_request_body,
     };
     use axum::Router;
     use axum::body::{Body, to_bytes};
@@ -2224,10 +2234,10 @@ pub mod native {
             .and_then(|value| value.to_str().ok())
             .map(str::to_owned);
         let body_text = if should_buffer_request_body(&method, &path) {
-            to_bytes(body, MAX_REQUEST_BODY_BYTES)
-                .await
-                .ok()
-                .and_then(|bytes| String::from_utf8(bytes.to_vec()).ok())
+            match buffer_native_request_body(body).await {
+                Ok(body_text) => body_text,
+                Err(response) => return response.into_response(),
+            }
         } else {
             None
         };
@@ -2249,6 +2259,16 @@ pub mod native {
         )
         .await
         .into_response()
+    }
+
+    pub(super) async fn buffer_native_request_body(
+        body: Body,
+    ) -> Result<Option<String>, BackendResponse> {
+        let bytes = to_bytes(body, MAX_REQUEST_BODY_BYTES)
+            .await
+            .map_err(|_| request_body_too_large_response())?;
+
+        Ok(String::from_utf8(bytes.to_vec()).ok())
     }
 
     fn native_request_url(uri: &axum::http::Uri, headers: &axum::http::HeaderMap) -> String {
@@ -2319,8 +2339,9 @@ pub mod native {
 pub mod worker_runtime {
     use super::{
         BackendConfig, BackendResponse, RuntimeRequestBodyPlan, RuntimeRequestParts,
-        RuntimeResponseHeaderOperation, backend_request_from_runtime_parts, handle_backend_request,
-        outbound, request_body_length_required_response, request_body_too_large_response,
+        RuntimeResponseHeaderOperation, backend_request_from_runtime_parts,
+        buffered_body_text_exceeds_request_body_limit, handle_backend_request, outbound,
+        request_body_length_required_response, request_body_too_large_response,
         runtime_request_body_plan, runtime_response_header_operations,
     };
     use worker::{Env, Request, Response, Result, event};
@@ -2359,7 +2380,12 @@ pub mod worker_runtime {
             RuntimeRequestBodyPlan::RejectTooLarge => {
                 return request_body_too_large_response().into_worker_response();
             }
-            RuntimeRequestBodyPlan::Buffer => request.text().await.ok(),
+            RuntimeRequestBodyPlan::Buffer => match request.text().await.ok() {
+                Some(body_text) if buffered_body_text_exceeds_request_body_limit(&body_text) => {
+                    return request_body_too_large_response().into_worker_response();
+                }
+                body_text => body_text,
+            },
             RuntimeRequestBodyPlan::Skip => None,
         };
 
@@ -3185,6 +3211,46 @@ mod tests {
                 "{method} {path}"
             );
         }
+    }
+
+    #[test]
+    fn buffered_body_text_guard_matches_request_body_limit() {
+        assert!(!buffered_body_text_exceeds_request_body_limit(
+            &"a".repeat(MAX_REQUEST_BODY_BYTES)
+        ));
+        assert!(buffered_body_text_exceeds_request_body_limit(
+            &"a".repeat(MAX_REQUEST_BODY_BYTES + 1)
+        ));
+    }
+
+    #[cfg(feature = "native")]
+    #[tokio::test]
+    async fn native_buffered_request_body_rejects_oversized_payloads() {
+        use axum::body::Body;
+
+        let response =
+            native::buffer_native_request_body(Body::from(vec![b'a'; MAX_REQUEST_BODY_BYTES + 1]))
+                .await
+                .unwrap_err();
+
+        assert_eq!(response.status, 413);
+        assert_eq!(response.body["error"], "request body too large");
+        assert_eq!(
+            response.body["maxBytes"].as_u64(),
+            Some(MAX_REQUEST_BODY_BYTES as u64)
+        );
+    }
+
+    #[cfg(feature = "native")]
+    #[tokio::test]
+    async fn native_buffered_request_body_preserves_valid_payloads() {
+        use axum::body::Body;
+
+        let body_text = native::buffer_native_request_body(Body::from(r#"{"locale":"vi"}"#))
+            .await
+            .expect("body should buffer");
+
+        assert_eq!(body_text.as_deref(), Some(r#"{"locale":"vi"}"#));
     }
 
     #[test]
