@@ -11,6 +11,8 @@ mod auth_mfa;
 mod changelog;
 mod contact;
 mod crawlers;
+#[cfg(test)]
+mod cron_monitoring_test;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;

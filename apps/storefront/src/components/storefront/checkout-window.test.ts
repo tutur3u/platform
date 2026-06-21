@@ -31,8 +31,9 @@ describe('openHostedPolarCheckout', () => {
 
   it('falls back to same-tab checkout when the new tab is blocked', () => {
     const checkoutUrl = 'https://checkout.polar.sh/session/test';
-    const open =
-      vi.fn<(url: string, target: string, features: string) => null>(() => null);
+    const open = vi.fn<(url: string, target: string, features: string) => null>(
+      () => null
+    );
     const assign = vi.fn();
 
     const result = openHostedPolarCheckout(checkoutUrl, { assign, open });
