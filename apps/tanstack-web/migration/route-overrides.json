@@ -593,6 +593,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/topic-announcements preserves the legacy 307 redirect to /:wsId/users/topic-announcements/announcements. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/users/structure:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/structure/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/structure ports the legacy local-state organizational-structure mock page, metadata, localized messages, canvas interactions, and dialogs without adding Supabase or app API access. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
     "page:/:locale/:wsId/diet:apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
