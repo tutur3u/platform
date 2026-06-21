@@ -668,3 +668,51 @@ test('TanStack Rust migration docs keep current manifest counts in sync', () => 
     );
   }
 });
+
+test('TanStack contact route stays terminal across Rust APIs and Start page', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        rootDir,
+        'apps',
+        'tanstack-web',
+        'migration',
+        'route-manifest.json'
+      ),
+      'utf8'
+    )
+  );
+  const routes = new Map(manifest.routes.map((route) => [route.id, route]));
+  const terminalContactRoutes = [
+    {
+      id: 'api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts',
+      methods: ['POST'],
+      targetOwner: 'rust-backend',
+    },
+    {
+      id: 'api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts',
+      methods: ['GET', 'PATCH'],
+      targetOwner: 'rust-backend',
+    },
+    {
+      id: 'layout:/:locale/contact:apps/web/src/app/[locale]/(marketing)/contact/layout.tsx',
+      methods: [],
+      targetOwner: 'tanstack-start',
+    },
+    {
+      id: 'page:/:locale/contact:apps/web/src/app/[locale]/(marketing)/contact/page.tsx',
+      methods: [],
+      targetOwner: 'tanstack-start',
+    },
+  ];
+
+  for (const expected of terminalContactRoutes) {
+    const route = routes.get(expected.id);
+
+    assert.ok(route, `missing contact migration route: ${expected.id}`);
+    assert.equal(route.status, 'migrated');
+    assert.equal(route.targetOwner, expected.targetOwner);
+    assert.deepEqual(route.methods, expected.methods);
+  }
+});
