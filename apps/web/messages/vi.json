@@ -4396,6 +4396,8 @@
     "question": "Câu hỏi",
     "quick_filters": "Bộ lọc nhanh",
     "quick_settings": "Cài đặt nhanh",
+    "random_generator": "Trình tạo ngẫu nhiên",
+    "random_generator-description": "Tạo ID, token, khóa API và mật khẩu bảo mật ngay trong trình duyệt.",
     "randomize_color": "Chọn màu ngẫu nhiên",
     "rate_limited_copied": "Đã sao chép chi tiết giới hạn",
     "rate_limited_copy_details": "Sao chép chi tiết",
@@ -10883,6 +10885,71 @@
     "is_published": "Đã xuất bản",
     "linked_modules": "Mô đun liên kết",
     "name": "Tên"
+  },
+  "random_generator": {
+    "actions": {
+      "copied": "Đã sao chép {label}",
+      "copy": "Sao chép",
+      "copy_all": "Sao chép tất cả",
+      "regenerate": "Tạo lại"
+    },
+    "description": "Tạo UUID, ID kiểu NanoID, token, giá trị kiểu khóa API và mật khẩu bằng Web Crypto. Các giá trị chỉ ở trong trình duyệt của bạn.",
+    "errors": {
+      "clipboard_failed": "Không thể sao chép vào clipboard.",
+      "no_secure_crypto": "Trình duyệt này không hỗ trợ tạo ngẫu nhiên bảo mật.",
+      "select_password_class": "Chọn ít nhất một nhóm ký tự cho mật khẩu."
+    },
+    "eyebrow": "Web Crypto trong trình duyệt",
+    "fields": {
+      "batch_count": "Số lượng",
+      "byte_length": "Số byte",
+      "character_sets": "Nhóm ký tự",
+      "exclude_ambiguous": "Loại ký tự dễ nhầm",
+      "id_format": "Định dạng ID",
+      "length": "Độ dài",
+      "lowercase": "Chữ thường",
+      "numbers": "Chữ số",
+      "password_length": "Độ dài mật khẩu",
+      "prefix": "Tiền tố",
+      "symbols": "Ký hiệu",
+      "token_format": "Định dạng token",
+      "uppercase": "Chữ hoa"
+    },
+    "formats": {
+      "api_key": "Kiểu khóa API",
+      "base64url": "Token base64url",
+      "hex": "Token hex",
+      "nanoid": "ID kiểu NanoID",
+      "uuid": "UUID v4"
+    },
+    "helpers": {
+      "exclude_ambiguous": "Tránh các ký tự như 0, O, 1, I, l, dấu nháy và dấu gạch đứng."
+    },
+    "kinds": {
+      "id": "ID",
+      "password": "Mật khẩu",
+      "token": "Token",
+      "uuid": "UUID"
+    },
+    "meta": {
+      "description": "Tạo ID, token, giá trị kiểu khóa API và mật khẩu bảo mật ngay trong trình duyệt.",
+      "title": "Trình tạo ngẫu nhiên bảo mật"
+    },
+    "outputs": {
+      "copy_value": "Sao chép giá trị {index}",
+      "description": "Mỗi giá trị được tạo mới từ Web Crypto.",
+      "empty": "Chưa có giá trị nào.",
+      "entropy_bits": "{bits} bit",
+      "generated_value": "Giá trị đã tạo {index}",
+      "title": "Giá trị đã tạo"
+    },
+    "privacy_note": "Các giá trị đã tạo không rời khỏi trang này trừ khi bạn sao chép chúng sang nơi khác.",
+    "tabs": {
+      "ids": "ID",
+      "passwords": "Mật khẩu",
+      "tokens": "Token"
+    },
+    "title": "Trình tạo ngẫu nhiên bảo mật"
   },
   "rate-limits": {
     "actions": {

@@ -3,6 +3,7 @@
 import {
   BookText,
   FileText,
+  Fingerprint,
   HeartHandshake,
   History,
   Paintbrush,
@@ -82,6 +83,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.security'),
       description: t('common.security-description'),
       icon: <Shield className="h-4 w-4" />,
+    },
+    {
+      href: '/tools/random',
+      label: t('common.random_generator'),
+      description: t('common.random_generator-description'),
+      icon: <Fingerprint className="h-4 w-4" />,
     },
     {
       href: '/branding',

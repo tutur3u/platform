@@ -4396,6 +4396,8 @@
     "question": "Question",
     "quick_filters": "Quick Filters",
     "quick_settings": "Quick Settings",
+    "random_generator": "Random Generator",
+    "random_generator-description": "Generate secure IDs, tokens, API keys, and passwords locally in your browser.",
     "randomize_color": "Randomize color",
     "rate_limited_copied": "Rate-limit details copied",
     "rate_limited_copy_details": "Copy details",
@@ -10883,6 +10885,71 @@
     "is_published": "Published",
     "linked_modules": "Linked Modules",
     "name": "Name"
+  },
+  "random_generator": {
+    "actions": {
+      "copied": "Copied {label}",
+      "copy": "Copy",
+      "copy_all": "Copy all",
+      "regenerate": "Regenerate"
+    },
+    "description": "Create UUIDs, NanoID-style IDs, tokens, API-key-style values, and passwords with Web Crypto. Values stay in your browser.",
+    "errors": {
+      "clipboard_failed": "Could not copy to the clipboard.",
+      "no_secure_crypto": "Secure random generation is unavailable in this browser.",
+      "select_password_class": "Select at least one password character set."
+    },
+    "eyebrow": "Browser-local Web Crypto",
+    "fields": {
+      "batch_count": "Batch count",
+      "byte_length": "Byte length",
+      "character_sets": "Character sets",
+      "exclude_ambiguous": "Exclude ambiguous characters",
+      "id_format": "ID format",
+      "length": "Length",
+      "lowercase": "Lowercase",
+      "numbers": "Numbers",
+      "password_length": "Password length",
+      "prefix": "Prefix",
+      "symbols": "Symbols",
+      "token_format": "Token format",
+      "uppercase": "Uppercase"
+    },
+    "formats": {
+      "api_key": "API-key style",
+      "base64url": "Base64url token",
+      "hex": "Hex token",
+      "nanoid": "NanoID-style ID",
+      "uuid": "UUID v4"
+    },
+    "helpers": {
+      "exclude_ambiguous": "Avoid characters such as 0, O, 1, I, l, quotes, and pipes."
+    },
+    "kinds": {
+      "id": "ID",
+      "password": "Password",
+      "token": "Token",
+      "uuid": "UUID"
+    },
+    "meta": {
+      "description": "Generate secure random IDs, tokens, API-key-style values, and passwords locally in your browser.",
+      "title": "Secure Random Generator"
+    },
+    "outputs": {
+      "copy_value": "Copy value {index}",
+      "description": "Each value is freshly generated from Web Crypto.",
+      "empty": "No values generated yet.",
+      "entropy_bits": "{bits} bits",
+      "generated_value": "Generated value {index}",
+      "title": "Generated values"
+    },
+    "privacy_note": "Generated values never leave this page unless you copy them somewhere else.",
+    "tabs": {
+      "ids": "IDs",
+      "passwords": "Passwords",
+      "tokens": "Tokens"
+    },
+    "title": "Secure random generator"
   },
   "rate-limits": {
     "actions": {
