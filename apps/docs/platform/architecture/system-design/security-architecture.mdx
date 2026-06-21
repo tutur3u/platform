@@ -1,10 +1,10 @@
 ---
 title: "Security Architecture"
 description: "Comprehensive security justification and architectural security patterns in Tuturuuu"
-updatedAt: "2025-11-17"
+updatedAt: "2026-06-21"
 ---
 
-Security is a foundational architectural concern in Tuturuuu, embedded at every level of the system design. This document explains the five core architectural decisions that provide comprehensive security coverage.
+Security is a foundational architectural concern in Tuturuuu, embedded at every level of the system design. This document explains the core architectural patterns that provide comprehensive security coverage.
 
 <Note>
 This document focuses on **architecture-level security patterns**. For implementation details, see:
@@ -13,74 +13,69 @@ This document focuses on **architecture-level security patterns**. For implement
 - [RLS Policies](/reference/database/rls-policies) - Row-level security implementation
 </Note>
 
-## 1. API Gateway as a Central Security Enforcement Point
+<Warning>
+**What is real vs. illustrative.** Tuturuuu's web tier (`apps/web`) is a conventional Next.js App Router app, not a network of independently keyed microservices. Several patterns below (a single API gateway, service-to-service token exchange, an immutable event-sourced audit log) are presented as **conceptual / target patterns** to explain the reasoning — they are explicitly labeled where they are not implemented as written. The concrete code examples (the `withApiAuth` wrapper, Supabase Row-Level Security, the Rust backend's Supabase auth) reflect the real codebase.
+
+The platform is also mid-migration: `apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for how security responsibilities move into the Rust backend.
+</Note>
+
+## 1. Consistent Security Enforcement at the API Boundary
 
 ### Architectural Choice
 
-The API Gateway serves as the single, unified entry point for all external client traffic into the system, acting as a security facade that sits in front of all backend microservices.
+Rather than a literal standalone API gateway, Tuturuuu enforces security **consistently at the API route boundary** through a shared higher-order wrapper. Every public SDK route under `apps/web/src/app/api/v1/*` is wrapped with `withApiAuth`, which centralizes the security logic (API-key authentication, rate limiting, permission checks) in one tested implementation instead of re-deriving it per route.
+
+<Note>
+**Conceptual vs. real.** "API gateway" describes the *pattern* — a single, uniform enforcement point — not a literal gateway process in front of microservices. In `apps/web` there is no separate gateway tier; security is enforced per route. The uniformity comes from sharing the `withApiAuth` wrapper (`apps/web/src/lib/api-middleware.ts`), Next.js `middleware.ts`, and Vercel's edge. In the [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration), the Rust backend (`apps/backend`) becomes the primary boundary that validates Supabase sessions.
+</Note>
 
 ### Impact and Justification
 
-By funneling all incoming requests through a single gateway, we create a **centralized security control plane** where critical security policies can be consistently enforced before any request reaches the backend services. This includes authentication verification, authorization checks, rate limiting, request validation, and protection against common attacks (SQL injection, XSS, CSRF).
+By funneling authentication and authorization through one shared wrapper, we create a **single security control plane in code**: policies are defined once and applied consistently before any business logic runs. Routes do not re-implement token parsing, key validation, or rate-limiting individually, which removes the drift and duplication that cause inconsistent security postures.
 
-Without this centralized approach, each microservice would need to independently implement these security controls, leading to inconsistent security postures, duplicated effort, and increased risk of vulnerabilities due to implementation variations.
-
-**In Tuturuuu:**
+**Conceptual enforcement flow (illustrative, not a literal gateway process):**
 ```typescript
-// API Gateway security middleware (conceptual)
-export async function securityMiddleware(request: Request) {
-  // 1. Authentication - Verify JWT token
-  const token = extractToken(request);
-  const user = await verifyToken(token);
-  if (!user) return new Response('Unauthorized', { status: 401 });
-
-  // 2. Authorization - Check permissions
-  const hasPermission = await checkPermissions(user, request);
-  if (!hasPermission) return new Response('Forbidden', { status: 403 });
-
-  // 3. Rate limiting - Prevent abuse
-  const rateLimitOk = await checkRateLimit(user.id, request);
-  if (!rateLimitOk) return new Response('Too Many Requests', { status: 429 });
-
-  // 4. Input validation - Prevent injection attacks
-  const isValid = await validateRequest(request);
-  if (!isValid) return new Response('Bad Request', { status: 400 });
-
-  // Forward to backend service
-  return forwardToBackend(request, user);
-}
+// The shared concerns withApiAuth applies before your handler runs:
+// 1. IP-based pre-auth rate limiting (cheap flood rejection)
+// 2. API-key authentication against the database
+// 3. Adaptive, key- and workspace-scoped rate limiting
+// 4. Declarative permission checks
+// 5. Workspace-scoped data access via an admin Supabase client
 ```
 
-**Example from Tuturuuu's SDK API:**
+**Real example from Tuturuuu's SDK API** (`apps/web/src/app/api/v1/storage/list/route.ts`):
 ```typescript
-// apps/web/src/app/api/v1/storage/upload/route.ts
-export const POST = withApiAuth(
+export const GET = withApiAuth(
   async (request, { context }) => {
-    // Security already enforced by withApiAuth wrapper
-    // - Authentication verified
-    // - API key validated
-    // - Rate limiting applied
-    // - Workspace permissions checked
+    // Security is already enforced by the withApiAuth wrapper:
+    // - API key authenticated
+    // - Rate limiting applied (IP pre-auth + key/workspace-scoped)
+    // - 'manage_drive' permission verified for this workspace
+    const { wsId } = context;
 
-    const { workspaceId, userId } = context;
+    // Use the admin client for SDK routes (no user session cookies).
+    // createDynamicAdminClient is async — await it.
+    const supabase = await createDynamicAdminClient();
 
-    // Business logic can safely assume security is enforced
-    return uploadFile(workspaceId, userId, request);
+    return supabase.storage.from('workspaces').list(wsId /* ... */);
   },
   {
     permissions: ['manage_drive'], // Declarative authorization
-    rateLimit: { windowMs: 60000, maxRequests: 20 } // Custom rate limit
+    // Custom limits are also supported, e.g.:
+    // rateLimit: { windowMs: 60000, maxRequests: 20 }
   }
 );
 ```
 
+Note that `rateLimit` is optional: by default `withApiAuth` leaves `GET`/`HEAD` reads open and applies a per-key mutation limit (about 100 requests/minute), with workspace-specific overrides read from `workspace_secrets`. Pass a `rateLimit` object only to tighten or relax those defaults.
+
 ### Clarifying Additions
 
-**Centralized enforcement ensures uniform security behavior across the system.** Instead of each microservice implementing authentication differently, the gateway provides a single, tested implementation that all services benefit from.
+**Shared enforcement ensures uniform security behavior across routes.** Instead of each route implementing authentication differently, `withApiAuth` provides a single, tested implementation every endpoint benefits from.
 
-**Policies update consistently without touching each service.** When a new security requirement emerges (e.g., enforcing MFA for sensitive operations), it can be implemented once at the gateway and immediately applies to all backend services.
+**Policies update consistently without touching each route.** When a new requirement emerges (e.g., a stricter default rate limit), it is implemented once in the wrapper and immediately applies everywhere it is used.
 
-**This strengthens protection by eliminating inconsistent security implementations.** Human error in implementing security controls is reduced because developers don't repeatedly implement the same security logic across multiple services.
+**This strengthens protection by eliminating inconsistent security implementations.** Human error is reduced because developers do not re-implement the same security logic across many routes.
 
 ---
 
@@ -94,49 +89,27 @@ The architecture implements Zero Trust security principles, where no service or 
 
 Traditional "castle-and-moat" security assumes that anything inside the network perimeter is trusted. This is a dangerous assumption because once an attacker breaches the perimeter, they have unrestricted access to internal systems.
 
-Zero Trust architecture **eliminates implicit trust**. Every microservice validates the identity and permissions of every request it receives, even from other internal services. This dramatically reduces the blast radius of a security breach because a compromised service cannot freely access other services without proper credentials and authorization.
+Zero Trust architecture **eliminates implicit trust**. Every request is re-validated for identity and permissions at the boundary it crosses, and the database independently enforces access rules regardless of which app issued the query.
 
-**In Tuturuuu:**
-```typescript
-// Service-to-service authentication
-// Even internal services must authenticate
+<Warning>
+**No inter-service token system exists.** Tuturuuu does **not** implement service-to-service token exchange (`generateServiceToken`, `X-Service-Id` headers, per-service token verification). The apps share a single Supabase Postgres database, and Zero Trust is realized through **(a) request authentication at each API boundary** and **(b) Row-Level Security in the database** — not a mesh of mutually authenticating services. The example below shows how the apps actually establish identity, not a fictional token broker.
+</Warning>
 
-// Finance service calling workspace service
-async function getWorkspaceDetails(workspaceId: string) {
-  const serviceToken = await generateServiceToken({
-    service: 'finance',
-    permissions: ['read_workspace']
-  });
+**How identity is established in practice.** Every request that reaches data must carry a verifiable identity, and that identity is re-checked at the boundary:
 
-  const response = await fetch(`/api/workspaces/${workspaceId}`, {
-    headers: {
-      'Authorization': `Bearer ${serviceToken}`,
-      'X-Service-Id': 'finance'
-    }
-  });
+- **User requests** carry a Supabase session (cookie or `Authorization: Bearer` access token). The Rust backend validates these in `apps/backend/src/supabase_auth.rs`, which extracts the access token from the `sb-*-auth-token` cookie (including base64-prefixed, chunked cookies) or a non-app Bearer token, then calls the Supabase Auth `/user` endpoint with the service-role key to resolve the user.
+- **SDK / machine requests** carry a workspace-scoped API key, authenticated and rate-limited by `withApiAuth` in `apps/web` before any handler runs.
 
-  return response.json();
-}
-
-// Workspace service validates even internal requests
-export async function validateServiceRequest(request: Request) {
-  const serviceId = request.headers.get('X-Service-Id');
-  const token = extractToken(request);
-
-  // Verify service identity and permissions
-  const service = await verifyServiceToken(token);
-  if (service.id !== serviceId) {
-    throw new Error('Service identity mismatch');
-  }
-
-  // Check if this service has permission for this operation
-  if (!service.permissions.includes('read_workspace')) {
-    throw new Error('Insufficient service permissions');
-  }
-
-  return service;
-}
+```rust
+// apps/backend/src/supabase_auth.rs — real backend auth (simplified)
+// 1. Pull the access token from a Bearer header or the Supabase auth cookie.
+// 2. Verify it against Supabase Auth's /user endpoint using the service-role key.
+// 3. Only a verified user proceeds; nothing is trusted by network location.
+let access_token = request_access_token(request)?;            // bearer or cookie
+let user = fetch_supabase_auth_user(contact_data, &access_token, outbound).await?;
 ```
+
+There is no per-service shared secret to leak: trust derives from a Supabase-issued token (validated against Supabase) or a workspace API key (validated against the database), and the database enforces the final word via RLS.
 
 **Database-level Zero Trust (Row-Level Security):**
 ```sql
@@ -158,53 +131,31 @@ USING (
 
 ### Clarifying Additions
 
-**Services authenticate each other based on explicit rules rather than assumed trust.** No service can simply call another service's API without proper credentials, even if both services are running in the same data center.
+**Identity is established from verifiable tokens, not network location.** A request is trusted because it carries a valid Supabase session or workspace API key that is re-validated at the boundary — not because it originated inside the deployment.
 
-**Every interaction is governed by intentional access design.** Security is not an afterthought but is designed into the architecture from the beginning, with explicit decisions about who can access what.
+**The database has the final say.** Even if an API layer were bypassed or compromised, RLS policies independently enforce that a user can only read or write rows for workspaces they belong to. Application bugs cannot silently defeat data-access rules.
 
-**This reduces risks associated with implicit trust inside the system.** Lateral movement attacks (where an attacker compromises one service and uses it to attack others) are significantly harder because each service independently enforces security.
+**This reduces risks associated with implicit trust.** Because authorization is enforced both at the boundary and in the database, a single compromised layer does not grant unrestricted data access.
 
 ---
 
-## 3. Decentralized Security Boundaries Per Service
+## 3. Security Boundaries Through RLS and Permission Scoping
 
 ### Architectural Choice
 
-Each microservice acts as an independent security domain with its own authentication, authorization, and data protection mechanisms. Services do not share security contexts or trust boundaries.
+Isolation between domains (finance, AI chat, drive, tasks) is enforced primarily by **per-table Row-Level Security policies and scoped permissions**, not by giving each app its own Supabase project or key. The apps share one Supabase database; the boundary lives in the policies and in the permission set each API key or user role is granted.
+
+<Warning>
+**Per-app anon keys are not how this works.** Earlier revisions of this page implied distinct `WEB_ANON_KEY`, `FINANCE_ANON_KEY`, and `REWISE_ANON_KEY` values backing separate "services". That is **not accurate** — Tuturuuu's apps share a single Supabase project and the same anon/service-role keys. Domain isolation comes from RLS policies and permission scoping on shared tables, described below.
+</Warning>
 
 ### Impact and Justification
 
-In a monolithic application, a security vulnerability in one module can expose the entire application's data and functionality. By establishing **independent security boundaries** at the service level, we contain security failures within a single service.
+In a single shared database, a vulnerability that bypasses one route must still defeat the per-table RLS policy to reach data. By scoping each domain's tables with **dedicated policies and permission requirements**, we contain the blast radius: a bug in a drive route cannot read finance rows, because the finance policy requires finance-specific roles and the request's identity does not satisfy them.
 
-If the `ReportingService` is compromised, the attacker gains access only to the reporting data and functionality. They cannot use this foothold to access the `PaymentService` or `IdentityService` because each service maintains its own security perimeter and validates all requests independently.
+Concretely, SDK routes declare the permissions they need (`permissions: ['manage_drive']`), and the database enforces an orthogonal check at query time. An attacker who somehow reaches a query path is still bounded by both the granted permission scope and the row-level policy.
 
-**In Tuturuuu:**
-```typescript
-// Each app has independent security configuration
-
-// apps/web - Main platform
-const webAuth = createServerClient({
-  supabase: SUPABASE_URL,
-  anonKey: WEB_ANON_KEY, // Specific to web app
-  // RLS policies restrict data access
-});
-
-// apps/finance - Finance module
-const financeAuth = createServerClient({
-  supabase: SUPABASE_URL,
-  anonKey: FINANCE_ANON_KEY, // Different key, different policies
-  // Separate RLS policies for finance data
-});
-
-// apps/rewise - AI chatbot
-const rewiseAuth = createServerClient({
-  supabase: SUPABASE_URL,
-  anonKey: REWISE_ANON_KEY, // AI service has limited permissions
-  // Can only access AI chat history, not financial data
-});
-```
-
-**Data isolation through schema design:**
+**Data isolation through RLS policy design:**
 ```sql
 -- Finance-specific tables with dedicated RLS policies
 CREATE TABLE finance_transactions (
@@ -251,11 +202,11 @@ USING (
 
 ### Clarifying Additions
 
-**A compromise in one service does not expose others.** Security failures are contained within service boundaries, preventing attackers from pivoting to other parts of the system.
+**A bug in one domain's routes does not expose another domain's data.** RLS policies and permission scoping bound each domain independently, so reaching a finance table requires finance-grade identity even from an unrelated route.
 
-**Each service acts as an independent barrier.** Defense in depth is achieved naturally through the microservices architecture, with multiple independent security checks instead of a single point of failure.
+**Policies act as an independent barrier alongside application checks.** Defense in depth is achieved because the database re-validates access regardless of what the application layer believed.
 
-**This segmentation limits the damage scope in security incidents.** Incident response becomes more manageable because the affected area is clearly bounded, and other services continue operating securely.
+**This scoping limits the damage in security incidents.** Incident response is more manageable because the data an attacker could reach is bounded by the policies and permissions that gate each table.
 
 ---
 
@@ -269,22 +220,20 @@ The architecture implements multiple layers of security controls, from the netwo
 
 Relying on a single security layer is fragile. If that layer is bypassed or fails, the entire system is exposed. The **defense-in-depth** approach ensures that even if an attacker successfully bypasses one security control, they encounter additional independent security barriers at deeper layers.
 
-For example, even if an attacker somehow bypasses the API Gateway's authentication (highly unlikely but theoretically possible), they would still encounter:
-1. **Service-level authorization** checks in the application code
+For example, even if an attacker bypassed the API boundary's authentication (highly unlikely but theoretically possible), they would still encounter:
+1. **Route-level authorization** checks (declared permissions) in the application code
 2. **Database Row-Level Security** policies that enforce data access rules
-3. **Network segmentation** that limits service-to-service communication
+3. **Workspace scoping** that bounds every query to the caller's workspace
 
 **In Tuturuuu - Multiple Security Layers:**
 
-**Layer 1: API Gateway / Edge Security**
+**Layer 1: Edge / Boundary Security**
 ```typescript
-// First line of defense - Gateway level
-export async function gatewaySecurityCheck(request: Request) {
-  // JWT validation
-  // Rate limiting
-  // DDoS protection
-  // Request sanitization
-}
+// First line of defense — applied by withApiAuth + Next.js middleware + Vercel edge:
+// - API-key / session authentication
+// - IP-based and key/workspace-scoped rate limiting
+// - Request validation (e.g. zod query schemas)
+// Note: there is no separate gateway process; these run at the route boundary.
 ```
 
 **Layer 2: Application-Level Security**
@@ -346,51 +295,53 @@ async function storeSensitiveData(data: SensitiveData) {
 
 ---
 
-## 5. Auditability Through Event-Driven Design
+## 5. Auditability and Background Security Workflows
 
 ### Architectural Choice
 
-The event-driven architecture produces a comprehensive, immutable audit trail of all significant system actions. Every important state change is captured as an event in the event stream.
+Security-relevant actions should be traceable, and heavier security workflows (anomaly scans, notifications, periodic reviews) should run as durable background jobs. Tuturuuu uses **Trigger.dev v4 `task()`** for background work and the internal **log-drain logger** for server-side observability.
+
+<Warning>
+**Aspirational, not implemented as written.** A comprehensive, cryptographically signed, immutable, event-sourced audit log is a **target pattern**, not a shipped subsystem. Tuturuuu does not have an event store or event-sourcing layer, and there is no global `audit_events` table that captures every state change. Treat the audit-log code below as an illustration of the goal. What exists today: Supabase keeps row history where tables are designed for it, the log-drain logger records server-side events, and Trigger.dev runs durable background tasks. Do not add raw `console.*` calls in `apps/web` API/cron/infra runtime code — route server logging through the internal log-drain logger.
+</Warning>
 
 ### Impact and Justification
 
-Security is not just about prevention; it's also about **detection and accountability**. An immutable event log provides crucial capabilities:
+Security is not just about prevention; it's also about **detection and accountability**. A durable, append-only audit trail would provide:
 
-1. **Forensic Analysis**: After a security incident, the complete event history allows investigators to reconstruct exactly what happened, when, and by whom
-2. **Compliance**: Many regulations (GDPR, SOX, HIPAA) require detailed audit trails of data access and modifications
-3. **Anomaly Detection**: Event patterns can be analyzed to detect suspicious behavior (e.g., unusual data access patterns, privilege escalation attempts)
-4. **Non-Repudiation**: Events are cryptographically signed and immutable, providing legal proof of actions
+1. **Forensic Analysis**: After an incident, history lets investigators reconstruct what happened, when, and by whom
+2. **Compliance**: Regulations (GDPR, SOX, HIPAA) require audit trails of data access and modifications
+3. **Anomaly Detection**: Patterns can be analyzed to detect suspicious behavior (e.g., unusual access patterns, privilege escalation)
+4. **Non-Repudiation**: Append-only, tamper-evident records provide strong proof of actions
 
-**In Tuturuuu - Comprehensive Audit Trail:**
+**Target audit-write pattern (aspirational — illustrates intent):**
 
 ```typescript
-// All critical operations emit audit events
+// Illustrative: how a critical operation could record an audit entry.
+// There is no global event store today; persist via your table's history
+// mechanism and emit server-side logs through the log-drain logger.
 export async function updateWorkspaceSettings(
   workspaceId: string,
   settings: WorkspaceSettings,
   userId: string
 ) {
-  // Emit event BEFORE making changes
-  await trigger.event({
-    name: 'workspace.settings.updated',
-    payload: {
-      workspaceId,
-      userId,
-      timestamp: new Date().toISOString(),
-      previousSettings: await getSettings(workspaceId),
-      newSettings: settings,
-      ipAddress: request.ip,
-      userAgent: request.userAgent,
-    }
+  const previousSettings = await getSettings(workspaceId);
+
+  // Apply the change.
+  await updateSettings(workspaceId, settings);
+
+  // Record an audit entry (target: append-only audit table or log-drain).
+  await recordAuditEntry({
+    event: 'workspace.settings.updated',
+    workspaceId,
+    userId,
+    previousSettings,
+    newSettings: settings,
+    occurredAt: new Date().toISOString(),
   });
-
-  // Make the change
-  await database.update(settings);
-
-  // Event is permanently recorded for audit
 }
 
-// Security-sensitive events
+// Security-sensitive event names worth auditing (illustrative set)
 export const AUDIT_EVENTS = {
   'user.login': 'User authentication',
   'user.logout': 'User session end',
@@ -407,71 +358,60 @@ export const AUDIT_EVENTS = {
 } as const;
 ```
 
-**Audit Log Query Interface:**
+**Audit Log Query Interface (target shape):**
 ```typescript
-// Security team can query audit trail
+// Illustrative: querying an append-only audit table once one exists.
 export async function getAuditLog(filters: AuditFilters) {
-  return await database.query(`
-    SELECT
-      event_type,
-      user_id,
-      workspace_id,
-      timestamp,
-      payload,
-      ip_address
-    FROM audit_events
-    WHERE workspace_id = $1
-      AND timestamp BETWEEN $2 AND $3
-      AND event_type IN ($4)
-    ORDER BY timestamp DESC
-  `, [filters.workspaceId, filters.startDate, filters.endDate, filters.events]);
+  const supabase = await createDynamicAdminClient(); // async — await it
+  return supabase
+    .from('audit_events')
+    .select('event_type, user_id, workspace_id, created_at, payload')
+    .eq('workspace_id', filters.workspaceId)
+    .gte('created_at', filters.startDate)
+    .lte('created_at', filters.endDate)
+    .in('event_type', filters.events)
+    .order('created_at', { ascending: false });
 }
-
-// Example: Find all permission changes in last 24 hours
-const permissionChanges = await getAuditLog({
-  workspaceId: 'ws-123',
-  startDate: Date.now() - 86400000,
-  endDate: Date.now(),
-  events: ['workspace.member.added', 'workspace.member.removed', 'workspace.role.changed']
-});
 ```
 
-**Real-time Security Monitoring:**
+**Background security workflow (real Trigger.dev v4 `task()` API):**
+
+Trigger.dev v4 uses the `task()` builder (`@trigger.dev/sdk` `^4.4.5`). The v2 API (`client.defineJob`, `eventTrigger`, `io.*`) does **not** exist in this repo. A security-scan task looks like the calendar/schedule tasks under `packages/trigger/src`:
+
 ```typescript
-// Monitor for suspicious patterns
-client.defineJob({
-  id: 'security-monitor',
-  name: 'Real-time security monitoring',
-  version: '1.0.0',
-  trigger: eventTrigger({
-    name: ['user.login.failed', 'api.key.invalid', 'permission.denied']
-  }),
-  run: async (payload, io) => {
-    // Detect brute force attempts
-    const recentFailures = await countRecentEvents(
-      'user.login.failed',
+import { task } from '@trigger.dev/sdk/v3';
+
+// A task you trigger (e.g. from an API route) when repeated auth failures
+// are observed, to evaluate and respond to a possible brute-force attempt.
+export const securityScanTask = task({
+  id: 'security-scan',
+  queue: { concurrencyLimit: 5 },
+  run: async (payload: { userId: string; windowSeconds?: number }) => {
+    const recentFailures = await countRecentLoginFailures(
       payload.userId,
-      300 // 5 minutes
+      payload.windowSeconds ?? 300 // 5 minutes
     );
 
     if (recentFailures > 5) {
-      await io.sendAlert({
-        severity: 'high',
-        message: `Possible brute force attack on user ${payload.userId}`,
-        action: 'account.lock.temporary'
-      });
+      // Respond (e.g. temporary lock + notify) and return a structured result.
+      await applyTemporaryLock(payload.userId);
+      return { userId: payload.userId, action: 'account.lock.temporary' };
     }
-  }
+
+    return { userId: payload.userId, action: 'none' };
+  },
 });
 ```
 
+Trigger it from server code with `securityScanTask.trigger({ userId })` (or `batchTrigger` for many). See the [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) page for how Tuturuuu actually uses Trigger.dev v4 and the log-drain logger.
+
 ### Clarifying Additions
 
-**Architectural event flows produce detailed records without extra instrumentation.** The event-driven architecture naturally captures a complete audit trail as a byproduct of normal system operation, without requiring separate auditing code.
+**Durable background tasks keep heavy security work off the request path.** Anomaly scans and notifications run as Trigger.dev v4 tasks rather than blocking the user's request.
 
-**These records help trace issues and support accountability.** When security incidents occur, the event log provides a complete, tamper-proof record of what happened, enabling effective incident response.
+**An append-only audit trail would support accountability and forensics.** This is the target; today, rely on the log-drain logger and table-level history for traceability.
 
-**They also help maintain compliance through transparent visibility.** Regulatory requirements for audit trails are satisfied architecturally, ensuring the system can always demonstrate compliance with data protection and access control regulations.
+**Compliance benefits from consistent, centralized logging.** Routing server-side events through the log-drain logger (never raw `console.*` in `apps/web` runtime code) keeps audit signals consistent.
 
 ---
 
@@ -479,11 +419,11 @@ client.defineJob({
 
 | Security Layer | Mechanism | Protection Provided | Implementation in Tuturuuu |
 |---------------|-----------|---------------------|---------------------------|
-| **Edge Security** | API Gateway | Centralized authentication, rate limiting, input validation | `withApiAuth` middleware, Vercel edge functions |
-| **Zero Trust** | Service-to-service auth | No implicit trust between services | Service tokens, mutual TLS (future) |
-| **Service Isolation** | Decentralized boundaries | Blast radius containment | Independent Supabase clients, separate RLS policies |
-| **Defense-in-Depth** | Layered controls | Multiple independent security checks | Gateway + App + Database + Encryption |
-| **Auditability** | Event-driven logging | Forensics, compliance, anomaly detection | Trigger.dev events, immutable audit log |
+| **Boundary Security** | Shared auth wrapper | Consistent authentication, rate limiting, validation | `withApiAuth` + Next.js `middleware.ts` + Vercel edge; Rust backend validates Supabase sessions (`apps/backend/src/supabase_auth.rs`) |
+| **Zero Trust** | Token re-validation | Identity from verifiable tokens, not network location | Supabase session / workspace API-key validation at each boundary |
+| **Domain Isolation** | RLS + permission scoping | Blast-radius containment on a shared database | Per-table RLS policies + declared route permissions (shared Supabase project) |
+| **Defense-in-Depth** | Layered controls | Multiple independent security checks | Boundary + App + Database RLS + Supabase encryption at rest |
+| **Auditability** | Logging + background tasks | Traceability, anomaly response | Log-drain logger + Trigger.dev v4 tasks (append-only audit table is *aspirational*) |
 
 ## Security Best Practices in Tuturuuu
 
@@ -512,10 +452,21 @@ client.defineJob({
 - Immutable audit trail
 - Regular security audits and reviews
 
+## Security Under the TanStack + Rust Migration
+
+`apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). Several security responsibilities move accordingly:
+
+- **Boundary authentication** shifts into the Rust backend (`apps/backend/src/supabase_auth.rs`), which validates Supabase access tokens from cookies or Bearer headers against Supabase Auth using the service-role key.
+- **TanStack web** must not call `/trpc` or raw app APIs directly (a guard, `check-tanstack-api-access`, enforces this); product data flows through `packages/internal-api` helpers and REST `/api/v1` routes.
+- **RLS remains the durable backstop** across both stacks because both share the same Supabase project.
+
+See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for the full migration contract.
+
 ## Related Documentation
 
 - [Authentication](/platform/architecture/authentication) - User authentication implementation
 - [Authorization](/platform/architecture/authorization) - Permission system and role-based access
 - [RLS Policies](/reference/database/rls-policies) - Database-level security
+- [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) - How the boundary moves into the Rust backend
 - [Encapsulation Patterns](/platform/architecture/system-design/encapsulation-patterns) - Service boundary enforcement
-- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Event streaming and audit trails
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Trigger.dev v4 tasks and background workflows

@@ -362,7 +362,10 @@
               },
               {
                 "group": "API Reference",
-                "pages": ["reference/api-reference/endpoint/generate"]
+                "pages": [
+                  "reference/api-reference/introduction",
+                  "reference/api-reference/endpoint/generate"
+                ]
               }
             ]
           }

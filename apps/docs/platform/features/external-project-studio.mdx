@@ -1,14 +1,14 @@
 ---
 title: 'Tuturuuu CMS'
 description: 'Site editing, publishing, preview, team access, and internal site-template operations for Tuturuuu CMS.'
-updatedAt: '2026-05-31'
+updatedAt: '2026-06-21'
 ---
 
 ## TL;DR
 
 Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
 
-- `apps/cms` owns the CMS authoring UI, workspace picker, overview/library/preview/members routes, and the root `/{wsId}/projects` linking console.
+- `apps/cms` owns the CMS authoring UI, workspace picker, overview/content/preview/members routes, and the root `/{wsId}/projects` linking console (reached as `/internal/projects` for the root workspace).
 - `apps/web` remains the only backend/API owner for CMS and external-project traffic.
 - `apps/cms` rewrites `/api/*` to `apps/web`, so proxy behavior and bot protection stay centralized.
 
@@ -28,28 +28,43 @@ existing `external-project*` contracts.
 
 ## Route Model
 
+The route tree below mirrors `apps/cms/src/app/[locale]/(dashboard)/[wsId]`.
+Workspace navigation is defined in
+`apps/cms/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`. Every route is
+workspace-scoped under `/{wsId}`; the root workspace uses the `internal` slug
+(it resolves to `ROOT_WORKSPACE_ID` via `normalizeWorkspaceId`).
+
 ### Root workspace
 
-- `/internal/projects`: internal site-template registry, workspace-indexed connection list, and connection audit history
+- `/{wsId}/projects` (reached as `/internal/projects`): internal site-template
+  registry, workspace-indexed connection list, and connection audit history.
+  The internal workspace is not a bindable content workspace, so its overview,
+  content, and `/settings` routes redirect into `/{wsId}/projects`.
 
 ### Bound workspaces
 
-- `/{wsId}`: overview
-- `/{wsId}/landing`: page-builder surface for landing-only sections
-- `/{wsId}/library`: content operations surface for non-landing, non-game sections and content
-- `/{wsId}/games`: game content surface when CMS Games is enabled
-- `/{wsId}/library/collections/{collectionId}`: section detail
-- `/{wsId}/library/entries/{entryId}`: content detail
-- `/{wsId}/members`: workspace member search, invite, removal, role assignment, and role/default-permission management
-- `/{wsId}/preview`: site preview
-- `/{wsId}/settings`: legacy compatibility redirect to `/{wsId}/members`
-
-The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/admin`) is removed instead of redirected.
-The internal/root workspace is not a bindable content workspace, so `/internal` and other root-workspace CMS route variants should redirect to `/internal/projects`.
+- `/{wsId}`: overview / continue-editing home.
+- `/{wsId}/content`: primary content operations surface (search, status
+  filtering, publishing, reusable content).
+- `/{wsId}/content/collections/{collectionId}`: collection (section) detail.
+- `/{wsId}/content/entries/{entryId}`: entry (content) detail.
+- `/{wsId}/pages`: page-builder surface for landing-style sections.
+- `/{wsId}/media`: media library.
+- `/{wsId}/products`: product catalog content.
+- `/{wsId}/storefront`: storefront configuration.
+- `/{wsId}/taxonomy`: taxonomy (terms, categories, tags).
+- `/{wsId}/games`: game content surface, shown only when CMS Games is enabled
+  for the workspace (`getCmsGamesEnabled`).
+- `/{wsId}/preview`: site preview.
+- `/{wsId}/members`: workspace member search, invite, removal, role assignment,
+  and role/default-permission management.
+- `/{wsId}/settings`: redirect-only route. It sends the internal workspace to
+  `/{wsId}/projects` and every other workspace to `/{wsId}/members`; CMS has no
+  standalone settings screen.
 
 ## Root Linking Console
 
-- Treat `/internal/projects` as a workspace-first control room.
+- Treat `/{wsId}/projects` (the root workspace's `/internal/projects`) as a workspace-first control room.
 - The main left panel is the searchable workspace list.
 - Each row shows the current connection state, site type, site template, and most recent change signal.
 - The selected workspace panel owns connect and disconnect actions.
@@ -59,12 +74,14 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 ## Workspace CMS
 
 - Use `/{wsId}` as the concise starting point for continue-editing tasks, launch readiness, attention queues, recent activity, and connected-site context.
-- Use `/{wsId}/landing` for focused landing-page edits, page readiness, and preview-first section work.
-- Use `/{wsId}/library` for broader content operations: search, status filtering, publishing queues, collection health, and reusable non-landing/non-game content.
+- Use `/{wsId}/content` for broader content operations: search, status filtering, publishing queues, collection health, and reusable content.
+- Use `/{wsId}/pages` for focused landing-style page edits, page readiness, and preview-first section work.
+- Use `/{wsId}/media`, `/{wsId}/products`, `/{wsId}/storefront`, and `/{wsId}/taxonomy` for the corresponding media, catalog, storefront, and taxonomy surfaces.
+- Use `/{wsId}/games` for game content when CMS Games is enabled for the workspace.
 - Use `/{wsId}/members` for routine collaborator management without leaving CMS.
-- Keep collection configuration on collection detail pages and entry authoring on entry detail pages.
+- Keep collection configuration on `/{wsId}/content/collections/{collectionId}` and entry authoring on `/{wsId}/content/entries/{entryId}`.
 - Use `/{wsId}/preview` as the delivered-content surface backed by the existing preview delivery route.
-- The old settings screen is removed because it duplicated overview, library, and members content. Keep `/settings` only as a compatibility redirect to `/{wsId}/members`.
+- CMS has no standalone settings screen; `/{wsId}/settings` is a redirect-only route to `/{wsId}/members` (or `/{wsId}/projects` on the internal workspace).
 
 ## Member Management In CMS
 
@@ -94,6 +111,6 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 ## Team Guidance
 
 - Link into the CMS-native route map directly.
-- Prefer the root `/internal/projects` console for site-template and workspace-link operations.
-- Keep bound-workspace collaborator management on the dedicated `/{wsId}/members` route, and do not surface `/internal/projects` shortcuts inside non-root workspace sidebars.
+- Prefer the root `/internal/projects` console (the root workspace's `/{wsId}/projects`) for site-template and workspace-link operations.
+- Keep bound-workspace collaborator management on the dedicated `/{wsId}/members` route, and do not surface the root projects console inside non-root workspace sidebars.
 - Update both `apps/cms/messages/en.json` and `apps/cms/messages/vi.json`, then run `bun i18n:sort` whenever CMS copy changes.

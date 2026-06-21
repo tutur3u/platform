@@ -1,7 +1,7 @@
 ---
 title: "WorkspaceWrapper Component"
 description: "A standardized component for handling workspace ID resolution and validation across the application"
-updatedAt: "2025-09-27"
+updatedAt: "2026-06-21"
 ---
 
 The `WorkspaceWrapper` component provides a centralized way to handle workspace ID resolution and validation across the application. It automatically converts legacy workspace identifiers to validated UUIDs and provides the full workspace object to child components.
@@ -14,7 +14,11 @@ Currently, workspace ID resolution is handled inconsistently across components:
 - `'internal'` → resolves to `ROOT_WORKSPACE_ID`
 - UUID strings → validates and uses as-is
 
-The `WorkspaceWrapper` centralizes this logic and ensures that child components always receive a validated workspace UUID.
+The `WorkspaceWrapper` centralizes this logic and ensures that child components always receive a validated workspace UUID. After resolution, the `isPersonal` flag is derived from the resolved `workspace.personal` field (not from the original `'personal'` URL string), and `isRoot` is derived by comparing `workspace.id` to `ROOT_WORKSPACE_ID`.
+
+<Note>
+  This component is specific to the **Next.js App Router** server-component model in `apps/web` (port `7803`). It relies on async `params`, React Suspense, and server-side `getWorkspace`. The platform is actively migrating `apps/web` to `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust); see [/platform/architecture/tanstack-rust-migration](/platform/architecture/tanstack-rust-migration). This wrapper pattern does not carry over verbatim to the TanStack Start app, but the `apps/web` documentation below remains valid for the current platform.
+</Note>
 
 ## URL Context
 
@@ -34,11 +38,25 @@ The component automatically passes through any additional parameters beyond `wsI
 
 ## Installation
 
-The `WorkspaceWrapper` is available in the web app at `@/components/workspace-wrapper`.
+The canonical source lives in the shared UI package at `@tuturuuu/ui/custom/workspace-wrapper` (file: `packages/ui/src/components/ui/custom/workspace-wrapper.tsx`).
 
 ```tsx
+// Canonical import (shared package — works in any consumer)
+import WorkspaceWrapper, {
+  withWorkspace,
+  type BaseParams,
+  type WorkspaceWrapperProps,
+} from '@tuturuuu/ui/custom/workspace-wrapper';
+```
+
+Within `apps/web` you may also see the legacy path `@/components/workspace-wrapper`. That module is a thin backward-compatible re-export of the canonical package and exposes the same `default`, `withWorkspace`, `BaseParams`, and `WorkspaceWrapperProps` symbols:
+
+```tsx
+// Backward-compatible re-export inside apps/web
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 ```
+
+Prefer the `@tuturuuu/ui/custom/workspace-wrapper` import for new code, especially in shared packages and other apps.
 
 ## Basic Usage
 
@@ -124,7 +142,7 @@ The `WorkspaceWrapper` automatically passes through `datasetId` (and any other a
 For client components that need workspace context, use the `withWorkspace` helper:
 
 ```tsx
-import { withWorkspace } from '@/components/workspace-wrapper';
+import { withWorkspace } from '@tuturuuu/ui/custom/workspace-wrapper';
 import MyClientComponent from './my-client-component';
 
 export default async function MyPage({
@@ -151,8 +169,13 @@ export default async function MyPage({
 ```tsx
 'use client';
 
+import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
+
 interface MyClientComponentProps {
-  workspace: Workspace & { joined: boolean };
+  workspace: Workspace & {
+    joined: boolean;
+    tier: WorkspaceProductTier | null;
+  };
   wsId: string; // Validated UUID
   isPersonal: boolean;
   isRoot: boolean;
@@ -205,7 +228,7 @@ export function MyClientComponent({
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `workspace` | `Workspace & { joined: boolean }` | Full workspace object with joined status |
+| `workspace` | `Workspace & { joined: boolean; tier: WorkspaceProductTier \| null }` | Full workspace object, including `joined` status and the resolved product `tier` (`null` when the workspace has no active tier) |
 | `wsId` | `string` | Validated UUID from `workspace.id` |
 | `isPersonal` | `boolean` | Whether the workspace is a personal workspace |
 | `isRoot` | `boolean` | Whether the workspace is the root/internal workspace |
@@ -293,7 +316,7 @@ export default async function DashboardPage({
 
 ```tsx
 // Example 2: Settings Page with Loading State
-// File: apps/web/src/app/[locale]/(workspace-settings)/[wsId]/settings/page.tsx
+// File: apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/page.tsx
 // URL: /personal/settings, /550e8400-e29b-41d4-a716-446655440000/settings
 export default async function SettingsPage({
   params

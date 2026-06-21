@@ -1,506 +1,429 @@
 ---
 title: "Event-Driven Architecture"
-description: "Comprehensive guide to event-driven architecture in Tuturuuu: advantages, drawbacks, and implementation patterns"
-updatedAt: "2025-11-16"
+description: "Asynchronous, event-driven patterns in Tuturuuu: advantages, drawbacks, and how background work actually runs on Trigger.dev v4"
+updatedAt: "2026-06-21"
 ---
 
-Event-Driven Architecture (EDA) is the backbone of Tuturuuu's inter-service communication strategy. This document explores the advantages, drawbacks, and practical implementation patterns using Trigger.dev.
+Event-Driven Architecture (EDA) is a useful lens for the asynchronous,
+fire-and-forget work in Tuturuuu — calendar syncs, auto-scheduling, and other
+background jobs that should not block a user request. This document explains the
+general advantages and drawbacks of EDA, then grounds each idea in how Tuturuuu
+**actually** runs background work today: [Trigger.dev](https://trigger.dev) v4
+tasks.
+
+<Note>
+  **Read this as patterns, not literal architecture.** Tuturuuu is not built on a
+  Kafka-style event bus with an immutable event log, replayable streams, or
+  dead-letter queues. It runs conventional Next.js apps that enqueue
+  background **tasks** on Trigger.dev (a managed jobs platform) and persist state
+  in a shared Supabase Postgres database. Sections below are labelled
+  **Concept** (general EDA theory) or **In Tuturuuu** (verified against real
+  code). Treat any capability not shown in real code as illustrative.
+</Note>
+
+<Info>
+  **Active migration.** `apps/web` (Next.js, port `7803`) is being replaced by
+  `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
+  Background-job ownership may shift during this transition — some asynchronous
+  work that runs as a Trigger.dev task today may move into the Rust backend. See
+  [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration).
+  Nothing in this page is a permanent architectural commitment.
+</Info>
 
 ## Overview
 
-In an event-driven system, services communicate asynchronously through events published to a central event broker. Services are **producers** (publishing events) and **consumers** (subscribing to and processing events), with the broker handling delivery, persistence, and reliability.
+**Concept.** In a fully event-driven system, services communicate asynchronously
+through events published to a central broker. Services are **producers**
+(publishing events) and **consumers** (subscribing to and processing events),
+with the broker handling delivery, persistence, and reliability.
 
 ```mermaid
 graph LR
-    A[Service A<br/>Producer] -->|Publishes Event| B[Event Broker<br/>Trigger.dev]
-    B -->|Delivers Event| C[Service B<br/>Consumer 1]
-    B -->|Delivers Event| D[Service C<br/>Consumer 2]
-    B -->|Delivers Event| E[Service D<br/>Consumer 3]
+    A[Producer<br/>API route] -->|enqueue task| B[Trigger.dev<br/>managed jobs]
+    B -->|run| C[Task: calendar sync]
+    B -->|run| D[Task: auto-schedule]
+    B -->|fan out via task.trigger| E[Per-workspace tasks]
 
     style B fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
+**In Tuturuuu.** There is no central event bus. Instead:
+
+- A request handler (an `apps/web` API route or a cron entrypoint) does its
+  synchronous work and then **enqueues a Trigger.dev task** for follow-up work.
+- Trigger.dev runs that task on its managed infrastructure, with retries,
+  concurrency control, and queues.
+- An "orchestrator" task can **fan out** by triggering one child task per
+  workspace via `task.trigger(...)`.
+
+The Trigger.dev tasks live in `packages/trigger/src` — for example
+`google-calendar-sync.ts`, `google-calendar-full-sync.ts`,
+`unified-schedule.ts`, and `schedule-tasks.ts`. They are defined with the
+Trigger.dev v4 `task()` API (`@trigger.dev/sdk` `^4.4.5`), imported from the
+`@trigger.dev/sdk/v3` entrypoint.
+
 ## Advantages of Event-Driven Design
 
-### 1. True Service Decoupling and Autonomy
+### 1. Decoupling work from the request path
 
-**Architectural Principle:** Services are not aware of each other. A service publishes an event (e.g., `OrderPlaced`) to a central stream and its job is done. It does not know, nor care, which other services consume that event.
+**Concept.** A producer publishes an event and is done; it does not know which
+consumers react. This is the loosest possible coupling and lets you add or
+remove downstream behavior without touching the producer.
 
-**Impact:** This provides the ultimate form of loose coupling. We can add, remove, or modify downstream consumer services (like `InventoryService` or `NotificationService`) without ever changing the upstream producer service. This enables unparalleled flexibility and independent team workflows.
-
-**Example in Tuturuuu:**
+**In Tuturuuu.** We get a pragmatic version of this: an API route finishes its
+synchronous work, then **enqueues a task** instead of doing the slow work
+inline. The route does not care how the task is implemented, and the task can
+evolve independently.
 
 ```typescript
-// apps/web/src/app/api/workspaces/create/route.ts
+// Conceptual: an API route enqueues background work instead of blocking.
+// Real task definitions live in packages/trigger/src.
+import { googleCalendarFullSync } from '@tuturuuu/trigger/google-calendar-full-sync';
+
 export async function POST(request: Request) {
   const workspace = await createWorkspace(data);
 
-  // Fire event - producer doesn't know who consumes it
-  await trigger.event({
-    name: "workspace.created",
-    payload: {
-      workspaceId: workspace.id,
-      ownerId: userId,
-      createdAt: new Date(),
-    }
+  // Hand off slow work to Trigger.dev; the response returns immediately.
+  await googleCalendarFullSync.trigger({
+    ws_id: workspace.id,
+    access_token,
+    refresh_token,
   });
 
   return Response.json({ workspace });
 }
-
-// Multiple independent consumers:
-// 1. OnboardingService - sends welcome emails
-// 2. AnalyticsService - tracks workspace creation metrics
-// 3. ProvisioningService - creates default resources
-// 4. BillingService - initializes billing account
-// ALL without the producer knowing they exist
 ```
 
 **Benefits:**
-- Add new features (e.g., compliance auditing) by deploying new consumers
-- Remove features by undeploying consumers
-- Modify consumer logic without touching producers
-- Teams work independently on their services
+
+- Keep user-facing requests fast by moving slow work off the request path.
+- Change a task's internals without changing its callers.
+- Add new background behavior by adding a new task, not by editing the producer.
+
+<Note>
+  Tuturuuu does **not** broadcast a single event to many anonymous subscribers.
+  Callers explicitly enqueue named tasks. There is no event-name pub/sub fan-in
+  layer between producer and consumer.
+</Note>
 
 ---
 
-### 2. Inherent Resilience and Fault Tolerance
+### 2. Resilience through retries
 
-**Architectural Principle:** The event broker acts as a durable, persistent intermediary. If a consuming service fails, the events are not lost; they remain safely in the event log.
+**Concept.** A durable broker keeps events until a consumer processes them, so a
+consumer outage does not lose work — it just delays it.
 
-**Impact:** This design creates a highly resilient system. If the `NotificationService` is down for maintenance, users can still place orders. Once the service comes back online, it processes the backlog of events, ensuring no data is lost and system availability is not compromised by a single service failure.
-
-**Example in Tuturuuu:**
+**In Tuturuuu.** Trigger.dev persists each enqueued task run and retries failed
+runs on its managed infrastructure, so a transient failure (an expired Google
+token, a flaky network call) does not silently drop the work. Tasks are written
+to return a structured `{ success, error }` result and to log failures rather
+than crash the caller.
 
 ```typescript
-// Trigger.dev job with automatic retry logic
-client.defineJob({
-  id: "send-workspace-invitation",
-  name: "Send workspace invitation email",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "workspace.member.invited" }),
-  run: async (payload, io) => {
-    // If this fails, Trigger.dev automatically retries
-    await io.sendEmail("send-invitation", {
-      to: payload.email,
-      template: "workspace-invitation",
-      data: { workspaceId: payload.workspaceId }
-    });
-  }
-});
+// packages/trigger/src/schedule-tasks.ts (real task)
+import { task } from '@trigger.dev/sdk/v3';
+import { schedulableTasksHelper } from './schedule-tasks-helper';
 
-// Key resilience features:
-// - Automatic retries with exponential backoff
-// - Event persisted until successfully processed
-// - Dead-letter queue for permanently failed events
-// - Producer service unaffected by consumer failures
+export const scheduleTask = task({
+  id: 'schedule-task',
+  queue: {
+    concurrencyLimit: 10,
+  },
+  run: async (payload: { ws_id: string }) => {
+    try {
+      const result = await schedulableTasksHelper(payload.ws_id);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Schedule tasks failed');
+      }
+
+      return { ws_id: payload.ws_id, ...result, success: true };
+    } catch (error) {
+      console.error(`[${payload.ws_id}] Error in schedule task:`, error);
+      return {
+        ws_id: payload.ws_id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+});
 ```
 
 **Benefits:**
-- **No cascading failures**: Producer continues working even if consumers are down
-- **Automatic recovery**: Consumers process backlogs when they come back online
-- **Data durability**: Events are persisted and never lost
-- **Graceful degradation**: System partially functional even with some services down
+
+- **No cascading failures**: the API route that enqueued the task is unaffected
+  if the task fails.
+- **Automatic retries**: Trigger.dev re-runs failed task runs.
+- **Durability**: enqueued runs survive a worker restart.
+
+<Note>
+  **Concept, not implemented in Tuturuuu:** an immutable event log you can
+  re-read from the beginning, plus dead-letter queues for permanently failed
+  events. Trigger.dev retries and surfaces failed runs in its dashboard; our
+  tasks additionally swallow errors into a structured result so an orchestrator
+  can continue with the next workspace. There is no `*.dlq` wildcard trigger or
+  DLQ topic in this repo.
+</Note>
 
 ---
 
-### 3. Superior Scalability and Elasticity
+### 3. Scalability through concurrency control
 
-**Architectural Principle:** The architecture naturally supports parallel processing. Multiple instances of a consuming service can read from the same event stream, with the broker automatically distributing the workload among them.
+**Concept.** Multiple consumer instances can process the same stream in
+parallel, and the broker levels load by buffering spikes.
 
-**Impact:** If a surge of `UserActivity` events occurs during a peak traffic event, we can horizontally scale the number of consumer instances to handle the load. The event broker acts as a load-leveling buffer, absorbing spikes and feeding events to consumers at a sustainable pace.
-
-**Example in Tuturuuu:**
+**In Tuturuuu.** Trigger.dev runs many task runs concurrently, and we cap that
+concurrency per task with a `queue` so a burst of work cannot overwhelm shared
+resources (Postgres, the Google Calendar API). An orchestrator fans out one
+child run per workspace and gives each its own `concurrencyKey`.
 
 ```typescript
-// Single job definition scales horizontally
-client.defineJob({
-  id: "process-user-analytics",
-  name: "Process user analytics events",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "user.activity" }),
-  run: async (payload, io) => {
-    await io.runTask("aggregate-metrics", async () => {
-      // Complex analytics processing
-      return await aggregateUserMetrics(payload);
-    });
-  }
-});
+// packages/trigger/src/google-calendar-full-sync.ts (real orchestrator, abridged)
+export const googleCalendarFullSyncOrchestrator = task({
+  id: 'google-calendar-full-sync-orchestrator',
+  run: async () => {
+    const workspaces = await getWorkspacesForSync();
+    const results: SyncOrchestratorResult[] = [];
 
-// Scaling scenarios:
-// Normal traffic: 2 worker instances process ~100 events/min
-// Traffic spike: Trigger.dev auto-scales to 20 workers, process 1000 events/min
-// After spike: Auto-scales down to 2 workers
-// No code changes required for scaling
+    for (const workspace of workspaces) {
+      try {
+        // Fan out: one child run per workspace, isolated by concurrencyKey.
+        const handle = await googleCalendarFullSync.trigger(workspace, {
+          concurrencyKey: `google-calendar-full-sync-${workspace.ws_id}`,
+        });
+        results.push({ ws_id: workspace.ws_id, handle, status: 'triggered' });
+      } catch (error) {
+        results.push({
+          ws_id: workspace.ws_id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          status: 'failed',
+        });
+      }
+    }
+
+    return results;
+  },
+});
 ```
 
 **Benefits:**
-- **Horizontal scaling**: Add more consumer instances to increase throughput
-- **Load leveling**: Broker buffers spikes, consumers process at sustainable rate
-- **Independent scaling**: Scale each consumer service based on its specific needs
-- **Cost efficiency**: Auto-scaling means you only pay for what you use
+
+- **Bounded throughput**: `queue.concurrencyLimit` (e.g. `10` for
+  `scheduleTask`, `5` for `unifiedScheduleTask`) protects shared dependencies.
+- **Per-key isolation**: `concurrencyKey` keeps each workspace's runs from
+  stepping on each other.
+- **Spike absorption**: Trigger.dev queues work it cannot run immediately.
 
 ---
 
-### 4. Temporal Decoupling and Data-as-a-Stream
+### 4. Temporal decoupling
 
-**Architectural Principle:** By using a persistent event log, events are stored and can be re-read. This decouples services in time.
+**Concept.** With a persistent, replayable event log, a brand-new consumer can
+read the entire history of events to bootstrap itself — useful for rebuilding
+read models, training models, or running new analyses on past data.
 
-**Impact:** This is a powerful capability. We can deploy a completely new `BusinessIntelligenceService` months after launch, and it can consume the entire history of events from the beginning to generate new insights. It allows the system's data to be repurposed for future use cases that are unknown today.
+<Warning>
+  **This is the part Tuturuuu does not have.** There is no event-sourcing store
+  and no "replay all events from launch" capability. Trigger.dev tasks are
+  fire-and-run jobs, not an append-only event log. State of record lives in the
+  shared Supabase Postgres database; to re-derive something, you query Postgres,
+  you do not replay an event stream. Treat this section as EDA theory only.
+</Warning>
 
-**Example in Tuturuuu:**
-
-```typescript
-// Events stored permanently in Trigger.dev
-// New service deployed 6 months after launch
-client.defineJob({
-  id: "ml-user-behavior-analysis",
-  name: "ML model for user behavior prediction",
-  version: "1.0.0",
-  // Replay ALL historical events to train model
-  trigger: eventTrigger({
-    name: ["user.registered", "user.activity", "workspace.created"],
-    replay: { fromDate: "2024-01-01" } // Replay from launch date
-  }),
-  run: async (payload, io) => {
-    await io.runTask("update-ml-model", async () => {
-      // Train ML model on historical data
-      return await updateUserBehaviorModel(payload);
-    });
-  }
-});
-
-// Use cases:
-// - Train ML models on historical data
-// - Rebuild read models from scratch
-// - Audit trail and compliance reporting
-// - Time-travel debugging (replay to specific point in time)
-// - A/B testing new algorithms on historical data
-```
-
-**Benefits:**
-- **Event sourcing**: Complete audit trail of all system changes
-- **Replayability**: Rebuild state by replaying events
-- **Future-proofing**: New use cases consume historical data
-- **Debugging**: Replay events to reproduce bugs
-- **Analytics**: Run new analyses on past data
+If you genuinely need history-as-a-stream in the future, you would build it
+explicitly (e.g. an append-only Postgres table plus a job that reads it) — it is
+not a free property of the current stack.
 
 ---
 
 ## Drawbacks of Event-Driven Design
 
-### 1. Complexity in Reasoning and Debugging
+### 1. Harder to reason about and debug
 
-**Architectural Principle:** Business processes are not executed in a single, linear call stack. They are a series of asynchronous, choreographed events.
+**Concept.** Asynchronous, choreographed work has no single linear call stack, so
+tracing "why did this fail?" spans multiple independent runs.
 
-**Impact:** Tracing a single request (e.g., "why did this user's order fail?") becomes significantly more complex. It requires sophisticated distributed tracing tools to correlate events across multiple independent services, making debugging more challenging than in a synchronous system.
+**In Tuturuuu.** The same trade-off applies the moment work moves off the request
+path. A failing calendar sync does not show up in the API route's stack trace;
+you find it in the Trigger.dev run logs. We lean on:
 
-**Example in Tuturuuu:**
+- The Trigger.dev dashboard for per-run logs, retries, and status.
+- Structured `console.log`/`console.error` inside tasks, keyed by `ws_id`, so
+  runs are correlatable.
+- Returning a structured `{ ws_id, success, error }` result from each task so an
+  orchestrator can report per-workspace outcomes.
 
-```typescript
-// Synchronous flow (easy to debug):
-function createWorkspace(data) {
-  const workspace = db.createWorkspace(data);
-  sendWelcomeEmail(workspace.owner);
-  createDefaultResources(workspace.id);
-  return workspace;
-}
-// Single stack trace, clear error location
-
-// Event-driven flow (harder to debug):
-async function createWorkspace(data) {
-  const workspace = await db.createWorkspace(data);
-
-  // Event 1: Triggers email service (separate process)
-  await trigger.event({ name: "workspace.created", payload: { ... } });
-  // Event 2: Triggers resource service (separate process)
-  await trigger.event({ name: "workspace.resources.provision", payload: { ... } });
-
-  return workspace;
-}
-// Error in email service doesn't show in this stack trace
-// Need distributed tracing to see full flow
-```
-
-**Mitigation strategies:**
-- Use **correlation IDs** to link related events
-- Implement comprehensive **logging** with structured data
-- Use **distributed tracing tools** (e.g., OpenTelemetry, Sentry)
-- Build **observability dashboards** to visualize event flows
-- Include **context** in events (userId, workspaceId, sessionId)
+<Note>
+  There is no `@tuturuuu/logging` or `@tuturuuu/observability` package and no
+  cross-service distributed-tracing system wired into these tasks today.
+  Inside `apps/web` runtime code, use the internal log-drain logger rather than
+  raw `console.*`; the Trigger.dev tasks in `packages/trigger` log via
+  `console.*` to the Trigger.dev run logs.
+</Note>
 
 ---
 
-### 2. Eventual Consistency is a Prerequisite
+### 2. Eventual consistency
 
-**Architectural Principle:** Due to the asynchronous nature of event processing, there is an inherent delay between when an event is published and when it is processed by all consumers.
+**Concept.** Because processing is asynchronous, there is a delay between when
+work is enqueued and when its effects are visible. The system is "eventually
+consistent," and the UX must accommodate that.
 
-**Impact:** The system is "eventually consistent." For a brief period, a newly registered user may not yet appear in search results. The entire business logic and user experience must be designed to accommodate this non-instantaneous state.
+**In Tuturuuu.** A calendar sync or auto-schedule run completes some time after
+it is enqueued, so freshly triggered changes are not instantly reflected. Handle
+this the way the rest of the platform does:
 
-**Example in Tuturuuu:**
+- **Optimistic UI** and **loading states** via TanStack Query while background
+  work settles.
+- Design flows so the user is not blocked waiting on a background task.
 
 ```typescript
-// User registers (Event 1)
-const user = await createUser(data);
-await trigger.event({ name: "user.registered", payload: { userId: user.id } });
-
-// Search index service (Event Consumer)
-client.defineJob({
-  id: "update-user-search-index",
-  trigger: eventTrigger({ name: "user.registered" }),
-  run: async (payload, io) => {
-    // This runs AFTER the user creation completes
-    // There's a time gap (eventual consistency)
-    await io.runTask("index-user", async () => {
-      await searchIndex.addUser(payload.userId);
-    });
-  }
-});
-
-// Problem: User just registered but doesn't appear in search for 1-2 seconds
-// Solution: UI shows "Indexing your profile..." message
-// Or: Optimistic UI updates (show in UI immediately, sync in background)
+// Conceptual: enqueue, then let the UI reconcile when the task lands.
+await unifiedScheduleManualTrigger.trigger({ ws_id, forceReschedule: true });
+// The schedule updates in Postgres once the task finishes; the client
+// re-fetches (TanStack Query) rather than blocking on the task result.
 ```
 
 **Mitigation strategies:**
-- **Optimistic UI**: Show changes immediately in UI, sync in background
-- **Loading states**: Communicate to users that processing is happening
-- **Read-your-own-writes**: Critical data available immediately via different path
-- **Acceptable delay**: Design UX to accommodate 1-5 second delays
-- **Conflict resolution**: Handle rare cases where events arrive out of order
+
+- Optimistic UI updates with background reconciliation.
+- Clear loading/processing states.
+- Read-your-own-writes via a direct query path when a value must be immediate.
 
 ---
 
-### 3. Data Management and Schema Governance
+### 3. Payload/schema governance
 
-**Architectural Principle:** The structure of the events themselves becomes the public API contract between services.
+**Concept.** Event payloads become a contract between producer and consumer, so
+schema evolution must be backward compatible or versioned.
 
-**Impact:** Evolving these event schemas over time is a critical challenge. A change to the `UserUpdated` event could break downstream consumers if not managed carefully. This necessitates a formal schema governance strategy (often using a Schema Registry) to ensure compatibility.
-
-**Example in Tuturuuu:**
+**In Tuturuuu.** Each task's `payload` type is its contract. Because callers and
+tasks live in the same monorepo and TypeScript checks both sides, breaking a
+payload shape surfaces at type-check time rather than silently at runtime. Keep
+payload changes additive (new optional fields) and validate untrusted input with
+`zod` where a payload crosses a trust boundary.
 
 ```typescript
-// Version 1: Original event schema
-interface UserRegisteredV1 {
-  userId: string;
-  email: string;
-}
-
-// Version 2: Added optional fields (backward compatible)
-interface UserRegisteredV2 {
-  userId: string;
-  email: string;
-  firstName?: string;  // NEW: optional field (safe)
-  lastName?: string;   // NEW: optional field (safe)
-}
-
-// Version 3: BREAKING CHANGE (breaks old consumers)
-interface UserRegisteredV3 {
-  userId: string;
-  email: string;
-  fullName: string;  // BREAKING: now required, old consumers will fail
-}
-
-// Solution: Version events and support multiple versions
-await trigger.event({
-  name: "user.registered.v2",  // Explicit versioning
-  payload: { ... }
-});
-
-// Or use Zod schemas for validation
-const UserRegisteredSchema = z.object({
-  userId: z.string(),
-  email: z.email(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional()
-});
+// Real task payloads are plain typed objects, e.g.:
+//   { ws_id: string }                                  // scheduleTask
+//   { ws_id: string; windowDays?: number; forceReschedule?: boolean } // unifiedScheduleTask
+//   { ws_id: string; access_token: string; refresh_token: string }    // full sync
+//
+// Prefer additive changes (new optional fields) so existing callers keep working.
 ```
 
 **Mitigation strategies:**
-- **Schema versioning**: Use explicit version numbers in event names
-- **Additive changes only**: Add optional fields, never remove or change existing ones
-- **Schema registry**: Centralize schema definitions (packages/types/src/events/)
-- **Validation**: Use Zod to validate event payloads
-- **Deprecation strategy**: Support old versions for 6-12 months before removal
-- **Consumer testing**: Test consumers against schema changes before deployment
+
+- Additive payload changes only; avoid removing or retyping existing fields.
+- Let the monorepo's shared types and `bun check` catch mismatches.
+- Validate external/untrusted payloads with `zod`.
 
 ---
 
-### 4. High Operational Overhead of the Event Broker
+### 4. Operational dependency on the jobs platform
 
-**Architectural Principle:** The event broker is not just a library; it is a complex, distributed system that becomes the backbone of the entire architecture.
+**Concept.** A central broker is critical infrastructure that must be operated,
+tuned, and monitored.
 
-**Impact:** It requires significant operational expertise to manage, tune, and monitor. Its availability is critical to the entire system's health, adding a substantial piece of infrastructure that must be maintained.
+**In Tuturuuu.** Using **managed Trigger.dev** removes most of that operational
+burden — there is no broker to run. What remains is application-level care:
 
-**In Tuturuuu:**
-
-Trigger.dev (managed event platform) reduces this overhead significantly, but considerations remain:
-
-```typescript
-// Monitoring and observability required
-client.defineJob({
-  id: "critical-payment-processing",
-  name: "Process payment events",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "payment.initiated" }),
-  run: async (payload, io) => {
-    // Must monitor:
-    // - Event processing latency
-    // - Error rates
-    // - Queue depth
-    // - Consumer lag
-    // - Retry counts
-
-    await io.runTask("process-payment", async () => {
-      // Instrumentation for observability
-      const startTime = Date.now();
-      try {
-        await processPayment(payload);
-        await metrics.recordSuccess(Date.now() - startTime);
-      } catch (error) {
-        await metrics.recordFailure(error);
-        throw error;
-      }
-    });
-  }
-});
-```
-
-**Operational concerns:**
-- **Monitoring**: Track event throughput, latency, error rates
-- **Alerting**: Set up alerts for queue backlog, high error rates
-- **Capacity planning**: Ensure broker can handle peak load
-- **Cost management**: Event processing costs scale with volume
-- **Vendor lock-in**: Dependency on Trigger.dev (mitigated by standard patterns)
+- Make task work **idempotent** where possible, since runs can retry.
+- Set sane `queue.concurrencyLimit` values to protect Postgres and external APIs.
+- Watch the Trigger.dev dashboard for failure rates and run latency.
+- Keep secrets (e.g. `INTERNAL_TRIGGER_SECRET_KEY`,
+  `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`) in environment variables, never in
+  code.
 
 **Mitigation strategies:**
-- Use **managed service** (Trigger.dev) to reduce operational burden
-- Implement comprehensive **monitoring and alerting**
-- Design **idempotent consumers** to safely retry failed events
-- Set up **dead-letter queues** for permanently failed events
-- Regular **capacity reviews** and load testing
-- Document **runbooks** for common operational issues
+
+- Managed platform (Trigger.dev) instead of self-hosting a broker.
+- Idempotent, retry-safe task bodies.
+- Concurrency limits and per-workspace `concurrencyKey`s.
 
 ---
 
-## Implementation Patterns in Tuturuuu
+## How Background Work Actually Runs in Tuturuuu
 
-### Event Publishing
+### Defining a task (Trigger.dev v4)
 
-```typescript
-// packages/trigger/src/events.ts
-import { client } from "./client";
-
-export async function publishEvent<T>(
-  name: string,
-  payload: T,
-  options?: { deduplicationKey?: string }
-) {
-  return await client.sendEvent({
-    name,
-    payload,
-    id: options?.deduplicationKey // Prevents duplicate processing
-  });
-}
-
-// Usage in application code
-await publishEvent("workspace.member.added", {
-  workspaceId,
-  userId,
-  role,
-  addedBy
-});
-```
-
-### Event Consumption
+Tasks are defined with `task()` and exported from `packages/trigger/src`. The SDK
+is `@trigger.dev/sdk` `^4.4.5`; tasks import `task` from `@trigger.dev/sdk/v3`.
 
 ```typescript
-// packages/trigger/src/jobs/workspace-events.ts
-import { client } from "../client";
-import { eventTrigger } from "@trigger.dev/sdk";
+// packages/trigger/src/unified-schedule.ts (real task, abridged)
+import { task } from '@trigger.dev/sdk/v3';
+import { unifiedScheduleHelper } from './unified-schedule-helper';
 
-client.defineJob({
-  id: "workspace-member-added",
-  name: "Handle workspace member addition",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "workspace.member.added" }),
-  run: async (payload, io) => {
-    const { workspaceId, userId, role } = payload;
-
-    // Idempotent operations (safe to retry)
-    await io.runTask("send-welcome-email", async () => {
-      return await sendWelcomeEmail(userId, workspaceId);
+export const unifiedScheduleTask = task({
+  id: 'unified-schedule-task',
+  queue: {
+    concurrencyLimit: 5, // Limit concurrent workspace scheduling
+  },
+  run: async (payload: {
+    ws_id: string;
+    windowDays?: number;
+    forceReschedule?: boolean;
+  }) => {
+    const result = await unifiedScheduleHelper(payload.ws_id, {
+      windowDays: payload.windowDays,
+      forceReschedule: payload.forceReschedule,
     });
 
-    await io.runTask("grant-permissions", async () => {
-      return await grantWorkspacePermissions(userId, workspaceId, role);
-    });
-
-    await io.runTask("log-audit-event", async () => {
-      return await auditLog.record({
-        action: "member-added",
-        workspaceId,
-        userId,
-        timestamp: new Date()
-      });
-    });
-  }
-});
-```
-
-### Error Handling and Retries
-
-```typescript
-client.defineJob({
-  id: "critical-data-sync",
-  name: "Sync critical data",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "data.changed" }),
-  run: async (payload, io) => {
-    try {
-      await io.runTask("sync-data", async () => {
-        return await syncData(payload);
-      }, {
-        retry: {
-          maxAttempts: 3,
-          factor: 2,
-          minTimeoutInMs: 1000,
-          maxTimeoutInMs: 10000
-        }
-      });
-    } catch (error) {
-      // After all retries failed, send to dead-letter queue
-      await io.sendEvent("send-to-dlq", {
-        name: "data.sync.failed",
-        payload: {
-          originalEvent: payload,
-          error: error.message,
-          timestamp: new Date()
-        }
-      });
+    if (!result.success) {
+      throw new Error(result.error || 'Unified schedule failed');
     }
-  }
+
+    return { ws_id: payload.ws_id, success: true, ...result.data };
+  },
 });
 ```
 
-## When to Use Event-Driven Architecture
+### Enqueuing and fanning out
 
-**Use EDA when:**
-- ✅ Services should be decoupled and independently deployable
-- ✅ Background processing is acceptable (non-critical path)
-- ✅ Eventual consistency is acceptable for the use case
-- ✅ You need high resilience and fault tolerance
-- ✅ Future extensibility is important
+Other code triggers a task by calling `.trigger(payload, options?)` on the
+exported task. An orchestrator triggers one child run per workspace, isolating
+each with a `concurrencyKey` (see `googleCalendarFullSyncOrchestrator` above).
 
-**Don't use EDA when:**
-- ❌ Immediate consistency is required (use synchronous calls)
-- ❌ User is waiting for the result in real-time
-- ❌ Simple CRUD operations without complex workflows
-- ❌ Debugging complexity outweighs benefits (very simple apps)
+```typescript
+const handle = await unifiedScheduleTask.trigger({ ws_id, forceReschedule: true });
+```
+
+### Scheduling
+
+<Warning>
+  Recurring **Calendar** scheduling does **not** live in `packages/trigger` as a
+  `schedules.task` cron job. As documented in
+  [the Trigger.dev package reference](/reference/packages/trigger), production
+  Calendar scheduling runs through `apps/web` cron, which calls the internal
+  `/api/<wsId>/calendar/auto-schedule` route (authenticated with
+  `INTERNAL_TRIGGER_SECRET_KEY`). The `scheduleTask` /
+  `unifiedScheduleTask` definitions here are wrappers kept for manual
+  Trigger.dev runs and tests.
+</Warning>
+
+## When to Reach for Asynchronous (Event-Driven) Work
+
+**Enqueue a background task when:**
+
+- The work is slow and should not block the HTTP response (calendar sync, bulk
+  processing, external-API fan-out).
+- Eventual consistency is acceptable for the use case.
+- Retries and bounded concurrency add real value.
+- The work fans out across many workspaces or items.
+
+**Do it synchronously instead when:**
+
+- The caller needs the result immediately to return a response.
+- The user is waiting in real time and cannot tolerate a delay.
+- It is a simple CRUD operation with no slow side effects.
+- The added indirection would only make debugging harder.
 
 ## Related Documentation
 
-- [Architectural Decisions](/platform/architecture/system-design/architectural-decisions) - Why we chose EDA
-- [Extensibility, Resilience & Scalability](/platform/architecture/system-design/extensibility-resilience-scalability) - Benefits in detail
-- [Trigger.dev Package](/reference/packages/trigger) - Implementation reference
-- [Background Jobs](/build/development-tools/index#background-jobs) - How to create jobs
+- [Architectural Decisions](/platform/architecture/system-design/architectural-decisions) — system-design trade-offs
+- [Extensibility, Resilience & Scalability](/platform/architecture/system-design/extensibility-resilience-scalability) — these benefits in detail
+- [Trigger.dev Package](/reference/packages/trigger) — the real task implementations and conventions
+- [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration) — where background work is heading
+- [Development Tools](/build/development-tools/overview) — local development and verification workflow

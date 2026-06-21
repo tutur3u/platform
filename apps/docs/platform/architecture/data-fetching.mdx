@@ -1,9 +1,19 @@
 ---
 title: "Data Fetching Strategies"
-description: "When and how to fetch data using RSC, Server Actions, React Query, and tRPC"
+description: "When and how to fetch data using RSC, Server Actions, TanStack Query, and Internal API helpers"
+updatedAt: "2026-06-21"
 ---
 
 The Tuturuuu platform uses a layered approach to data fetching, choosing the right strategy based on use case, caching requirements, and user experience needs.
+
+<Note>
+  The client-side fetch boundary is **TanStack Query (React Query v5) hooks backed
+  by `@tuturuuu/internal-api` helpers**, which call the REST `/api/v1/...`
+  endpoints. tRPC in `apps/web/src/trpc` is an **intentional stub** during the
+  TanStack + Rust migration (it exposes only a `healthCheck` procedure), so this
+  page does not use `trpc.*` routers for product data. See
+  [tRPC Implementation](/platform/architecture/trpc) for the scaffold details.
+</Note>
 
 For the dedicated TanStack Start frontend plus Rust backend migration, use
 `platform/architecture/tanstack-rust-migration`. TanStack loaders and server
@@ -105,15 +115,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 export default async function TasksPage({
   params,
 }: {
-  params: { wsId: string };
+  params: Promise<{ wsId: string }>;
 }) {
-  const supabase = createClient();
+  const { wsId } = await params;
+  // createClient() from @tuturuuu/supabase/next/server is async — always await it.
+  const supabase = await createClient();
 
   // Direct database query in Server Component
   const { data: tasks } = await supabase
     .from('workspace_tasks')
     .select('*')
-    .eq('ws_id', params.wsId)
+    .eq('ws_id', wsId)
     .order('created_at', { ascending: false })
     .limit(20);
 
@@ -136,7 +148,7 @@ export const revalidate = 3600;
 
 // OR generate static params
 export async function generateStaticParams() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: workspaces } = await supabase.from('workspaces').select('id');
 
   return workspaces?.map((ws) => ({ wsId: ws.id })) || [];
@@ -208,7 +220,7 @@ const createTaskSchema = z.object({
 });
 
 export async function createTask(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check authentication
   const {
@@ -252,7 +264,7 @@ export async function createTask(formData: FormData) {
 }
 
 export async function deleteTask(taskId: string, wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('workspace_tasks')
@@ -317,6 +329,11 @@ export function CreateTaskForm({ listId }: { listId: string }) {
 
 ### Implementation
 
+The server renders initial data and passes it as `initialData` to a TanStack
+Query hook. Background refresh is handled by Query's `refetchInterval` — **not**
+a `useEffect` + `setInterval` loop. AGENTS.md forbids `useEffect` for data
+fetching.
+
 ```typescript
 // app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -325,16 +342,18 @@ import { TaskListClient } from './TaskListClient';
 export default async function TasksPage({
   params,
 }: {
-  params: { wsId: string };
+  params: Promise<{ wsId: string }>;
 }) {
-  const supabase = createClient();
+  const { wsId } = await params;
+  // Async server client — await it.
+  const supabase = await createClient();
 
   const { data: initialTasks } = await supabase
     .from('workspace_tasks')
     .select('*')
-    .eq('ws_id', params.wsId);
+    .eq('ws_id', wsId);
 
-  return <TaskListClient initialTasks={initialTasks || []} wsId={params.wsId} />;
+  return <TaskListClient initialTasks={initialTasks || []} wsId={wsId} />;
 }
 ```
 
@@ -342,8 +361,8 @@ export default async function TasksPage({
 // app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Database } from '@tuturuuu/types';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];
@@ -355,23 +374,15 @@ export function TaskListClient({
   initialTasks: Task[];
   wsId: string;
 }) {
-  const [tasks, setTasks] = useState(initialTasks);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    // Background refresh every 30 seconds
-    const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('workspace_tasks')
-        .select('*')
-        .eq('ws_id', wsId);
-
-      if (data) setTasks(data);
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [wsId]);
+  // Server-rendered rows seed the cache via initialData; Query owns refreshes.
+  const { data: tasks = initialTasks } = useQuery({
+    queryKey: ['workspaces', wsId, 'tasks'],
+    queryFn: () => listWorkspaceTasks(wsId),
+    initialData: initialTasks,
+    staleTime: 30 * 1000,
+    // Background refresh without a manual setInterval.
+    refetchInterval: 30_000,
+  });
 
   return (
     <div>
@@ -383,7 +394,12 @@ export function TaskListClient({
 }
 ```
 
-## 4. React Query (Client-Side)
+The client hook fetches through an `@tuturuuu/internal-api` helper (which calls
+the REST `/api/v1` endpoint) rather than re-running Supabase queries from the
+browser. This keeps authorization on the server and gives Query a single,
+cacheable fetch boundary.
+
+## 4. TanStack Query (Client-Side)
 
 ### When to Use
 
@@ -398,24 +414,33 @@ export function TaskListClient({
 - SEO-critical content
 - Initial page load (prefer RSC)
 
-### Implementation with tRPC
+### Implementation with Internal API helpers
+
+Client queries call `@tuturuuu/internal-api` helpers, which hit the REST
+`/api/v1/...` endpoints where authorization lives. This is the actual fetch
+boundary in `apps/web` — there are no `trpc.tasks.*` / `trpc.boards.*` routers
+(tRPC is a [stub](/platform/architecture/trpc)).
 
 ```tsx
 'use client';
 
-import { trpc } from '@/trpc/client';
+import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 
 export function TaskList({ wsId }: { wsId: string }) {
-  const { data: tasks, isLoading, error } = trpc.tasks.list.useQuery(
-    { wsId },
-    {
-      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-      refetchOnWindowFocus: true,
-      refetchInterval: 30000, // Refetch every 30 seconds
-    }
-  );
+  const {
+    data: tasks,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ['workspaces', wsId, 'tasks'],
+    queryFn: () => listWorkspaceTasks(wsId),
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000, // Refetch every 30 seconds
+  });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isPending) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
@@ -454,40 +479,49 @@ This pattern is now the default for file-explorer style dashboard pages such as 
 
 ### Optimistic Updates
 
+Use `useMutation` with the `queryClient` cache helpers. Drive the mutation
+through an `@tuturuuu/internal-api` helper so the write goes through the same
+authorized REST boundary as reads.
+
 ```tsx
 'use client';
 
-import { trpc } from '@/trpc/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 
-export function TaskCheckbox({ task }: { task: Task }) {
-  const utils = trpc.useContext();
+export function TaskCheckbox({ task, wsId }: { task: Task; wsId: string }) {
+  const queryClient = useQueryClient();
+  const taskKey = ['workspaces', wsId, 'tasks', task.id];
+  const listKey = ['workspaces', wsId, 'tasks'];
 
-  const toggleComplete = trpc.tasks.update.useMutation({
-    // Optimistically update before server responds
-    onMutate: async (newData) => {
-      await utils.tasks.get.cancel({ taskId: task.id });
+  const toggleComplete = useMutation({
+    mutationFn: (input: { completed: boolean }) =>
+      updateWorkspaceTask(wsId, task.id, input),
 
-      const previous = utils.tasks.get.getData({ taskId: task.id });
+    // Optimistically update before the server responds
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: taskKey });
 
-      utils.tasks.get.setData({ taskId: task.id }, (old) => ({
-        ...old!,
-        completed: !old!.completed,
-      }));
+      const previous = queryClient.getQueryData<Task>(taskKey);
+
+      queryClient.setQueryData<Task>(taskKey, (old) =>
+        old ? { ...old, completed: input.completed } : old
+      );
 
       return { previous };
     },
 
     // Rollback on error
-    onError: (err, newData, context) => {
+    onError: (_err, _input, context) => {
       if (context?.previous) {
-        utils.tasks.get.setData({ taskId: task.id }, context.previous);
+        queryClient.setQueryData(taskKey, context.previous);
       }
     },
 
     // Refetch after success or error
     onSettled: () => {
-      utils.tasks.get.invalidate({ taskId: task.id });
-      utils.tasks.list.invalidate();
+      queryClient.invalidateQueries({ queryKey: taskKey });
+      queryClient.invalidateQueries({ queryKey: listKey });
     },
   });
 
@@ -495,12 +529,7 @@ export function TaskCheckbox({ task }: { task: Task }) {
     <input
       type="checkbox"
       checked={task.completed}
-      onChange={() =>
-        toggleComplete.mutate({
-          taskId: task.id,
-          completed: !task.completed,
-        })
-      }
+      onChange={() => toggleComplete.mutate({ completed: !task.completed })}
     />
   );
 }
@@ -509,23 +538,27 @@ export function TaskCheckbox({ task }: { task: Task }) {
 ### Cache Invalidation
 
 ```typescript
-const utils = trpc.useContext();
+const queryClient = useQueryClient();
 
-// Invalidate specific query
-utils.tasks.get.invalidate({ taskId: '123' });
+// Invalidate a specific task
+queryClient.invalidateQueries({ queryKey: ['workspaces', wsId, 'tasks', '123'] });
 
-// Invalidate all tasks.list queries
-utils.tasks.list.invalidate();
+// Invalidate the workspace task list
+queryClient.invalidateQueries({ queryKey: ['workspaces', wsId, 'tasks'] });
 
-// Invalidate all tasks queries
-utils.tasks.invalidate();
-
-// Reset to initial state
-utils.tasks.list.reset({ wsId });
+// Reset a query to its initial state
+queryClient.resetQueries({ queryKey: ['workspaces', wsId, 'tasks'] });
 
 // Refetch immediately
-utils.tasks.list.refetch({ wsId });
+queryClient.refetchQueries({ queryKey: ['workspaces', wsId, 'tasks'] });
 ```
+
+<Note>
+  Query keys are prefix-matched by default, so invalidating
+  `['workspaces', wsId, 'tasks']` also invalidates every more specific key under
+  it (e.g. `['workspaces', wsId, 'tasks', taskId]`). Keep keys ordered
+  broad → narrow so partial invalidation stays predictable.
+</Note>
 
 ## 5. Realtime Subscriptions
 
@@ -545,28 +578,36 @@ utils.tasks.list.refetch({ wsId });
 
 ### Implementation
 
+The **initial fetch is a TanStack Query hook** (through an `@tuturuuu/internal-api`
+helper), never a `useEffect` fetch. A `useEffect` is used only for the
+subscription **lifecycle** (a genuine side effect), and the realtime payloads
+mutate the **query cache** so the live data and the cached data stay in sync.
+
 ```tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Database } from '@tuturuuu/types';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];
 
 export function RealtimeTaskList({ wsId }: { wsId: string }) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const supabase = createClient();
+  const queryClient = useQueryClient();
+  const queryKey = ['workspaces', wsId, 'tasks'];
+
+  // Initial + cached data comes from Query, not a useEffect fetch.
+  const { data: tasks = [] } = useQuery({
+    queryKey,
+    queryFn: () => listWorkspaceTasks(wsId),
+  });
 
   useEffect(() => {
-    // Initial fetch
-    supabase
-      .from('workspace_tasks')
-      .select('*')
-      .eq('ws_id', wsId)
-      .then(({ data }) => setTasks(data || []));
+    const supabase = createClient();
 
-    // Subscribe to changes
+    // Subscription lifecycle is a side effect — payloads update the cache.
     const channel = supabase
       .channel(`workspace-tasks-${wsId}`)
       .on(
@@ -578,17 +619,20 @@ export function RealtimeTaskList({ wsId }: { wsId: string }) {
           filter: `ws_id=eq.${wsId}`,
         },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setTasks((prev) => [...prev, payload.new as Task]);
-          } else if (payload.eventType === 'UPDATE') {
-            setTasks((prev) =>
-              prev.map((task) =>
+          queryClient.setQueryData<Task[]>(queryKey, (prev = []) => {
+            if (payload.eventType === 'INSERT') {
+              return [...prev, payload.new as Task];
+            }
+            if (payload.eventType === 'UPDATE') {
+              return prev.map((task) =>
                 task.id === payload.new.id ? (payload.new as Task) : task
-              )
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setTasks((prev) => prev.filter((task) => task.id !== payload.old.id));
-          }
+              );
+            }
+            if (payload.eventType === 'DELETE') {
+              return prev.filter((task) => task.id !== payload.old.id);
+            }
+            return prev;
+          });
         }
       )
       .subscribe();
@@ -596,7 +640,7 @@ export function RealtimeTaskList({ wsId }: { wsId: string }) {
     return () => {
       channel.unsubscribe();
     };
-  }, [wsId]);
+  }, [wsId, queryClient]);
 
   return (
     <div>
@@ -608,45 +652,53 @@ export function RealtimeTaskList({ wsId }: { wsId: string }) {
 }
 ```
 
-## React Query Guidelines
+## TanStack Query Guidelines
+
+The shared `QueryClient` lives in `apps/web/src/trpc/query.ts` (`makeQueryClient`)
+and ships a default `staleTime` of 30s plus rate-limit-aware retry handling.
+Override per-query options only when a surface needs different freshness.
 
 ### Query Configuration
 
 ```typescript
-const { data } = trpc.tasks.list.useQuery(
-  { wsId },
-  {
-    // How long data is considered fresh
-    staleTime: 5 * 60 * 1000, // 5 minutes
+const { data } = useQuery({
+  queryKey: ['workspaces', wsId, 'tasks'],
+  queryFn: () => listWorkspaceTasks(wsId),
 
-    // Cache time after component unmounts
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+  // How long data is considered fresh
+  staleTime: 5 * 60 * 1000, // 5 minutes
 
-    // Refetch on window focus
-    refetchOnWindowFocus: true,
+  // Garbage-collection time after the query has no observers.
+  // (React Query v5 renamed `cacheTime` to `gcTime`.)
+  gcTime: 10 * 60 * 1000, // 10 minutes
 
-    // Refetch on network reconnect
-    refetchOnReconnect: true,
+  // Refetch on window focus
+  refetchOnWindowFocus: true,
 
-    // Background refetch interval
-    refetchInterval: false, // or number in ms
+  // Refetch on network reconnect
+  refetchOnReconnect: true,
 
-    // Retry failed requests
-    retry: 3,
+  // Background refetch interval
+  refetchInterval: false, // or number in ms
 
-    // Only run if condition is true
-    enabled: !!wsId,
-  }
-);
+  // Retry failed requests
+  retry: 3,
+
+  // Only run if condition is true
+  enabled: !!wsId,
+});
 ```
 
 ### Prefetching
 
 ```typescript
-// In parent component or on hover
-const utils = trpc.useContext();
+// In a parent component or on hover
+const queryClient = useQueryClient();
 
-await utils.tasks.get.prefetch({ taskId: '123' });
+await queryClient.prefetchQuery({
+  queryKey: ['workspaces', wsId, 'tasks', taskId],
+  queryFn: () => getWorkspaceTask(wsId, taskId),
+});
 ```
 
 ### Parallel Queries
@@ -654,42 +706,65 @@ await utils.tasks.get.prefetch({ taskId: '123' });
 ```typescript
 'use client';
 
-import { trpc } from '@/trpc/client';
+import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTasks, listWorkspaceTaskBoards } from '@tuturuuu/internal-api/tasks';
+import { getWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 
 export function Dashboard({ wsId }: { wsId: string }) {
-  const tasks = trpc.tasks.list.useQuery({ wsId });
-  const boards = trpc.boards.list.useQuery({ wsId });
-  const members = trpc.workspace.members.useQuery({ wsId });
+  const tasks = useQuery({
+    queryKey: ['workspaces', wsId, 'tasks'],
+    queryFn: () => listWorkspaceTasks(wsId),
+  });
+  const boards = useQuery({
+    queryKey: ['workspaces', wsId, 'task-boards'],
+    queryFn: () => listWorkspaceTaskBoards(wsId),
+  });
+  const members = useQuery({
+    queryKey: ['workspaces', wsId, 'members'],
+    queryFn: () => getWorkspaceMembers(wsId),
+  });
 
   // All three queries run in parallel
-  const isLoading = tasks.isLoading || boards.isLoading || members.isLoading;
+  const isPending = tasks.isPending || boards.isPending || members.isPending;
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isPending) return <div>Loading...</div>;
 
   return <div>{/* Render dashboard */}</div>;
 }
 ```
+
+For many dynamic queries, prefer `useQueries` over hand-listing hooks.
 
 ### Dependent Queries
 
 ```typescript
 'use client';
 
-import { trpc } from '@/trpc/client';
+import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceTask, listWorkspaceTaskAssignees } from '@tuturuuu/internal-api/tasks';
 
-export function TaskDetails({ taskId }: { taskId: string }) {
-  const { data: task } = trpc.tasks.get.useQuery({ taskId });
+export function TaskDetails({ wsId, taskId }: { wsId: string; taskId: string }) {
+  const { data: task } = useQuery({
+    queryKey: ['workspaces', wsId, 'tasks', taskId],
+    queryFn: () => getWorkspaceTask(wsId, taskId),
+  });
 
-  const { data: assignees } = trpc.tasks.assignees.useQuery(
-    { taskId },
-    {
-      enabled: !!task, // Only run after task is fetched
-    }
-  );
+  const { data: assignees } = useQuery({
+    queryKey: ['workspaces', wsId, 'tasks', taskId, 'assignees'],
+    queryFn: () => listWorkspaceTaskAssignees(wsId, taskId),
+    enabled: !!task, // Only run after the task is fetched
+  });
 
   return <div>{/* Render task details */}</div>;
 }
 ```
+
+<Note>
+  The exact helper names above (`getWorkspaceTask`, `listWorkspaceTaskAssignees`,
+  `getWorkspaceMembers`) are illustrative — browse `packages/internal-api/src`
+  for the real exports before wiring a hook. `listWorkspaceTasks` and
+  `listWorkspaceTaskBoards` exist today.
+</Note>
 
 ## Decision Matrix
 
@@ -698,9 +773,9 @@ export function TaskDetails({ taskId }: { taskId: string }) {
 | Blog posts | RSC | SEO, rarely changes |
 | Task list (initial load) | RSC | Fast initial render |
 | Create task form | Server Action | Mutation, redirect |
-| Dashboard metrics | React Query | Frequent updates |
+| Dashboard metrics | TanStack Query | Frequent updates |
 | Real-time chat | Realtime Subscription | Collaboration |
-| Task toggle | React Query (optimistic) | Interactive, instant feedback |
+| Task toggle | TanStack Query (optimistic) | Interactive, instant feedback |
 | User profile (view) | RSC | Rarely changes |
 | User profile (edit) | Server Action | Mutation with validation |
 | Workspace members | RSC + hydration | SEO + background refresh |
@@ -733,7 +808,17 @@ export function TaskDetails({ taskId }: { taskId: string }) {
 
 5. **Invalidate narrowly**
    ```typescript
-   utils.tasks.get.invalidate({ taskId }); // Not utils.tasks.invalidate()
+   // Target the specific task, not the whole workspace tasks tree
+   queryClient.invalidateQueries({
+     queryKey: ['workspaces', wsId, 'tasks', taskId],
+   });
+   ```
+
+6. **Fetch through Internal API helpers**
+   ```typescript
+   // Route client reads/writes through @tuturuuu/internal-api, not raw
+   // fetch('/api/...') or trpc.* routers.
+   queryFn: () => listWorkspaceTasks(wsId);
    ```
 
 ### ❌ DON'T
@@ -764,7 +849,9 @@ export function TaskDetails({ taskId }: { taskId: string }) {
 
 ## Related Documentation
 
-- [tRPC Implementation](/platform/architecture/trpc)
+- [tRPC Implementation](/platform/architecture/trpc) — the minimal `healthCheck`
+  stub kept alive during the migration (not a product fetch path)
+- [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration)
 - [Supabase Client](/reference/packages/supabase)
 - [Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components)
-- [React Query](https://tanstack.com/query/latest)
+- [TanStack Query](https://tanstack.com/query/latest)

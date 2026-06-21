@@ -143,7 +143,7 @@ export async function createInitiative(data: {
   startDate?: Date;
   endDate?: Date;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: initiative, error } = await supabase
     .from('task_initiatives')
@@ -202,7 +202,7 @@ export async function createProject(data: {
   description?: string;
   initiativeIds?: string[];
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Create project
   const { data: project, error } = await supabase
@@ -231,7 +231,7 @@ export async function createProject(data: {
 }
 
 export async function addTaskToProject(projectId: string, taskId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('task_project_tasks')
@@ -453,7 +453,7 @@ CREATE TABLE workspace_boards (
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createBoard(wsId: string, name: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: board, error } = await supabase
     .from('workspace_boards')
@@ -507,7 +507,7 @@ export async function reorderLists(
   boardId: string,
   listIds: string[]
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Update positions based on array order
   const updates = listIds.map((listId, index) => ({
@@ -576,7 +576,7 @@ export async function convertNoteToTask(data: {
   listId: string;
   priority?: number;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get note
   const { data: note } = await supabase
@@ -621,7 +621,7 @@ export async function convertNoteToProject(data: {
   noteId: string;
   initiativeId?: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: note } = await supabase
     .from('notes')
@@ -688,7 +688,7 @@ export async function createCycle(data: {
   startDate: Date;
   endDate: Date;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: cycle, error } = await supabase
     .from('task_cycles')
@@ -706,7 +706,7 @@ export async function createCycle(data: {
 }
 
 export async function getActiveCycle(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
 
   const { data: cycle } = await supabase
@@ -748,7 +748,7 @@ export async function estimateTask(
   estimationType: 'fibonacci' | 'exponential' | 'linear' | 'tshirt',
   value: number
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from('task_estimates').upsert({
     task_id: taskId,
@@ -786,7 +786,7 @@ CREATE TABLE task_label_assignments (
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createLabel(wsId: string, name: string, color: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: label, error } = await supabase
     .from('task_labels')
@@ -799,7 +799,7 @@ export async function createLabel(wsId: string, name: string, color: string) {
 }
 
 export async function assignLabel(taskId: string, labelId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('task_label_assignments')
@@ -837,7 +837,7 @@ export async function createBoardWithStatuses(
   wsId: string,
   boardName: string
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Create board
   const { data: board } = await supabase
@@ -888,7 +888,7 @@ CREATE TABLE task_dependencies (
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function addDependency(taskId: string, dependsOnTaskId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from('task_dependencies').insert({
     task_id: taskId,
@@ -899,7 +899,7 @@ export async function addDependency(taskId: string, dependsOnTaskId: string) {
 }
 
 export async function getBlockedTasks(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: tasks } = await supabase
     .from('workspace_tasks')

@@ -1,14 +1,39 @@
 ---
 title: "Core Architectural Decisions"
 description: "Deep dive into the four fundamental architectural choices that define Tuturuuu's system design"
-updatedAt: "2025-11-16"
+updatedAt: "2026-06-21"
 ---
 
-This document explains the four foundational architectural decisions that define Tuturuuu's system design. Each section explores the **rationale**, **detailed justification**, and the **alternatives considered**.
+This document explains four foundational architectural decisions that inform Tuturuuu's system design. Each section explores the **rationale**, **detailed justification**, and the **alternatives considered**.
 
-## 1. The Choice of a Microservices Architecture
+<Warning>
+**Conceptual vs. implemented.** This page teaches the reasoning behind several
+classic patterns (microservices, event-driven, hexagonal, modular monolith).
+Tuturuuu adopts some of these in pragmatic, partial form and deliberately does
+**not** adopt others. Each "In Tuturuuu" callout below states what is actually
+true of the codebase today; clearly labelled examples are illustrative and may
+not map to a real file path. Trust the code over any architectural prose.
+</Warning>
 
-The system is designed as a collection of distributed microservices rather than a single monolithic application.
+<Info>
+**Active migration.** The legacy `apps/web` Next.js runtime (port `7803`) is
+being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (a
+Rust API runtime on port `7820`). The "React Modular Monolith" and
+"tRPC API Gateway" framing on this page describes the legacy `apps/web` stack
+that is being superseded. See
+[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
+for the migration contract.
+</Info>
+
+## 1. Decomposition Into Independently Deployable Apps
+
+Tuturuuu is organized as a Turborepo monorepo containing many independently
+deployable applications under `apps/*` plus shared `packages/*`. This is **not**
+a textbook distributed-microservices system with per-service data stores and an
+inter-service event bus; rather, each app is a conventional deployment unit, and
+the apps share one Supabase project for auth and data. The microservices
+*reasoning* below explains why we split along app boundaries, with each "In
+Tuturuuu" callout grounded in what is actually true today.
 
 ### Core Rationale
 
@@ -22,26 +47,32 @@ A monolithic architecture forces all developers to work on a single, large codeb
 
 The microservices approach aligns with **Conway's Law**, allowing us to structure autonomous teams around specific business capabilities (e.g., an "Identity Team," a "Payments Team"). Each team can develop, test, and deploy their services independently, drastically increasing agility.
 
-**In Tuturuuu:**
-- Web team owns `apps/web` (main platform)
-- AI team owns `apps/rewise` (chatbot) and `apps/nova` (prompt engineering)
-- Productivity team owns `apps/calendar`, `apps/tasks` (tasks), `apps/meet` (meetings)
-- Finance team owns `apps/finance`
-- Infrastructure team owns `apps/database` and shared `packages/*`
+**In Tuturuuu:** the repo splits responsibility along app boundaries under
+`apps/*`:
+- `apps/web` (legacy main platform) and `apps/tanstack-web` (its replacement)
+- AI surfaces such as `apps/rewise` (chatbot) and `apps/nova` (prompt engineering)
+- Productivity surfaces such as `apps/calendar`, `apps/tasks`, and `apps/meet`
+- `apps/finance` for finance workflows
+- `apps/backend` (Rust API runtime) plus `apps/database` (Supabase migrations) and shared `packages/*`
+
+These are deployment and ownership boundaries within a single monorepo, not
+fully isolated services with private databases.
 
 #### Independent Scalability
 
 In a monolith, if one feature (e.g., a real-time data processing endpoint) experiences high load, the entire application must be scaled. This is inefficient and costly.
 
-Microservices allow for **granular scaling**. We can scale the high-load `DataIngestionService` to 50 instances while keeping the low-traffic `AdminDashboardService` at only 2 instances, optimizing resource utilization.
+Separate deployment units allow for **granular scaling**. A high-load app can be
+scaled independently of a low-traffic one, optimizing resource utilization
+instead of scaling one monolith as a whole.
 
-**Example from Tuturuuu:**
-```typescript
-// In Vercel deployment configuration
-// apps/web can scale independently from apps/rewise
+**Illustrative only (not a real config in the repo):**
+```jsonc
+// Conceptual per-app scaling targets. Each Tuturuuu app deploys independently,
+// so it can scale on its own rather than as part of one bundle.
 {
-  "web": { "min": 2, "max": 100 }, // Main app needs high availability
-  "rewise": { "min": 1, "max": 20 }, // AI chat less critical
+  "web": { "min": 2, "max": 100 },   // Main app needs high availability
+  "rewise": { "min": 1, "max": 20 }, // AI chat can scale separately
   "finance": { "min": 1, "max": 10 } // Finance moderate scaling
 }
 ```
@@ -53,22 +84,29 @@ A critical bug or memory leak in a non-essential module of a monolith can bring 
 In a microservices architecture, a failure is **contained within the boundary of that service**. A crash in the `ReportingService` will not affect critical user-facing services like `AuthenticationService` or `OrderService`, leading to a much more resilient and available system.
 
 **In Tuturuuu:**
-- If `apps/finance` crashes, users can still access `apps/web`, `apps/calendar`, and `apps/tasks`
-- Supabase Auth isolation means authentication remains available even if application services fail
-- Event-driven background jobs (Trigger.dev) fail independently from user-facing requests
+- Because apps deploy independently, a failure in one app's deployment does not take the others down with it
+- Supabase Auth runs as a managed service, so authentication stays available even if an individual app deployment fails
+- Background jobs (Trigger.dev) run out-of-band and fail independently from user-facing requests
+
+Note that the apps share one Supabase project, so database-level failures are a
+shared dependency, not fully isolated per app.
 
 #### Technology Flexibility (Polyglot Architecture)
 
 Microservices communicate over standard protocols (like events or APIs). This allows each service to be built with the technology best suited for its purpose.
 
-While the core services may use **TypeScript and Next.js**, a future machine-learning service could be written in **Python**, and a high-performance edge service could be written in **Go** or **Rust**. This flexibility is impossible in a traditional monolith and future-proofs the system.
+While most apps use **TypeScript and Next.js/React**, the new `apps/backend`
+runtime is written in **Rust** for the performance-critical API tier, and a
+future machine-learning service could be written in **Python**. This flexibility
+is hard to achieve in a single-language monolith and keeps the system adaptable.
 
 **Current polyglot examples in Tuturuuu:**
-- Most apps: TypeScript + Next.js 16 + React
+- Most apps: TypeScript + Next.js + React (`apps/web`) and TanStack Start + React (`apps/tanstack-web`)
+- `apps/backend`: Rust (dedicated API runtime, port `7820`; see [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration))
 - `apps/discord`: Python (Discord bot utilities)
 - Database: PostgreSQL (via Supabase)
-- Background jobs: TypeScript (Trigger.dev)
-- Future: Python ML services, Go performance-critical services
+- Background jobs: TypeScript on Trigger.dev v4 (`packages/trigger`)
+- Possible future: Python ML services
 
 ### Why Not a Monolith?
 
@@ -86,79 +124,112 @@ A monolith is unsuitable for a complex, long-lived enterprise system designed fo
 
 ---
 
-## 2. The Choice of an Event-Driven Architecture (EDA)
+## 2. Asynchronous Background Work (Event-Driven Patterns)
 
-The primary communication pattern between core microservices is asynchronous and event-driven, using a message broker like Trigger.dev.
+Long-running and side-effecting work is pushed off the request path and into
+**Trigger.dev v4** background tasks (`packages/trigger`, `@trigger.dev/sdk`
+`^4.4.5`). Tuturuuu does **not** run a general-purpose inter-service event bus
+where every app publishes and subscribes to a shared broker; instead, it uses
+Trigger.dev `task()` definitions that are invoked explicitly (or on a schedule)
+to do durable, retryable async work. The event-driven *reasoning* below explains
+why async, decoupled background work is valuable, and the examples use the real
+v4 `task()` API.
 
 ### Core Rationale
 
-To achieve **true service decoupling**, which is the foundation for building a system that is inherently resilient, scalable, and extensible.
+To achieve **decoupling between request handling and durable background work**,
+which is the foundation for a system that stays resilient, scalable, and
+extensible under load.
 
 ### Detailed Justification
 
 #### Ultimate Decoupling
 
-In a synchronous, request-response (REST/gRPC) architecture, the calling service must have direct knowledge of the downstream service's location and API. This creates tight coupling.
+If a request handler does its slow work inline, it must know about and wait on
+every downstream side effect (email, indexing, analytics). That tightly couples
+the user-facing path to all of them.
 
-In an event-driven model, a service produces an event (e.g., `CustomerRegistered`) and is **completely unaware** of which services, if any, are listening. This allows consumers to be added or removed without ever changing the producer, providing unparalleled flexibility.
+By offloading that work to a background task, the request handler only needs to
+**enqueue the work and return**. The task owns the side effects and can be
+changed, retried, or extended without touching the request handler.
 
-**Example from Tuturuuu:**
+**Real v4 task definition (`packages/trigger/src/schedule-tasks.ts`):**
 ```typescript
-// Producer: User registration in apps/web
-await trigger.event({
-  name: "user.registered",
-  payload: { userId, email, workspaceId }
+import { task } from '@trigger.dev/sdk/v3';
+import { schedulableTasksHelper } from './schedule-tasks-helper';
+
+// A durable, retryable background task with its own queue/concurrency limit.
+export const scheduleTask = task({
+  id: 'schedule-task',
+  queue: { concurrencyLimit: 10 },
+  run: async (payload: { ws_id: string }) => {
+    const result = await schedulableTasksHelper(payload.ws_id);
+    if (!result.success) {
+      throw new Error(result.error || 'Schedule tasks failed');
+    }
+    return { ws_id: payload.ws_id, ...result, success: true };
+  },
 });
-// Producer doesn't know that NotificationService, AnalyticsService,
-// and OnboardingService are all consuming this event
 ```
+
+The request handler enqueues this with `scheduleTask.trigger({ ws_id })` and
+returns immediately; the task runs out-of-band.
 
 #### Inherent Resilience and Asynchronicity
 
 Synchronous API calls create "chains of failure." If a downstream service is slow or unavailable, the upstream caller is blocked, and the failure can cascade, bringing down the entire user request.
 
-With EDA, the **message broker acts as a durable buffer**. If a consumer service is down, the events are safely persisted, and the producer remains unaffected. The system "heals" itself once the consumer recovers.
+With background tasks, **Trigger.dev acts as a durable buffer**. If a downstream
+dependency is slow or temporarily down, the task can retry without blocking the
+original request, and the user-facing response is unaffected.
 
 **In Tuturuuu:**
-- User can complete registration even if email service is down
-- Events are retried automatically (Trigger.dev handles retries)
-- Failed events go to dead-letter queue for investigation
-- No cascading failures between apps
+- A request can complete even if a downstream side effect (e.g. an email send) is temporarily failing
+- Tasks are retried automatically (Trigger.dev manages retries and backoff)
+- Failed runs are visible in the Trigger.dev dashboard for investigation
+- A failing background task does not cascade into the user-facing request path
 
 #### Natural Scalability and Load Leveling
 
 A synchronous API can be overwhelmed by sudden traffic spikes.
 
-An event-driven architecture naturally handles this by acting as a **shock absorber**. The broker can ingest massive bursts of events, which are then processed by a pool of consumers at a sustainable rate. Scaling is as simple as adding more consumer instances to process the stream in parallel.
+Background tasks act as a **shock absorber**. Trigger.dev queues bursts of task
+runs and processes them at a sustainable rate, governed by per-task
+`queue.concurrencyLimit`. Scaling is a matter of letting more runs execute in
+parallel rather than overwhelming a synchronous endpoint.
 
-**Example from Tuturuuu:**
+**Illustrative v4 task (patterned on `packages/trigger/src`):**
 ```typescript
-// During a viral event, thousands of users register
-// Trigger.dev queues all events and processes them at sustainable rate
-client.defineJob({
-  id: "user-onboarding",
-  name: "Process user onboarding",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "user.registered" }),
-  run: async (payload, io) => {
-    // This scales horizontally with Trigger.dev infrastructure
-    await io.sendEmail(/* ... */);
-    await io.createResources(/* ... */);
-  }
+import { task } from '@trigger.dev/sdk/v3';
+
+// During a burst, many onboarding runs are enqueued; the concurrency limit
+// keeps execution at a sustainable rate.
+export const onboardUserTask = task({
+  id: 'onboard-user',
+  queue: { concurrencyLimit: 25 },
+  run: async (payload: { userId: string; email: string; wsId: string }) => {
+    await sendWelcomeEmail(payload.email);
+    await provisionDefaultResources(payload.userId, payload.wsId);
+    return { userId: payload.userId, success: true };
+  },
 });
+
+// Enqueue from a request handler without blocking the response:
+// await onboardUserTask.trigger({ userId, email, wsId });
 ```
 
 #### Extensibility and Future-Proofing
 
 This is a **key strategic advantage**. EDA allows for new business capabilities to be added by simply deploying new services that listen to existing event streams.
 
-For example, a new `AuditService` can be deployed to listen to all user-related events to build an audit trail, requiring **zero modifications** to the services that originally produced those events.
+For example, a new background task can be added to perform extra work after an
+existing flow, often by triggering it from the same place that already enqueues
+related work, without rewriting the core request handler.
 
 **In Tuturuuu:**
-- New analytics features: Just add new Trigger.dev job listening to existing events
-- New compliance requirements: Deploy audit service without touching production apps
-- A/B testing: New experimental service consumes events alongside production service
-- ML models: Train on historical event data, deploy as new event consumer
+- New async features: add a new Trigger.dev v4 `task()` in `packages/trigger` and enqueue it where needed
+- Scheduled work: use Trigger.dev scheduling (see `unifiedScheduleTask` / `scheduleTask` in `packages/trigger/src`) without changing request handlers
+- Heavier processing: move slow work into a task so the user-facing path stays fast
 
 ### Why Not a Purely Synchronous/REST Architecture?
 
@@ -169,20 +240,36 @@ While synchronous APIs are excellent for user-facing queries and commands that r
 | **Tight Coupling** | Services must know each other's APIs | Services only know event schemas |
 | **Cascading Failures** | One slow service blocks entire chain | Failures are isolated by broker |
 | **Difficult Evolution** | API changes break all consumers | New consumers added without changes |
-| **Poor Load Handling** | Traffic spikes overwhelm services | Broker buffers and load-levels |
-| **Testing Complexity** | Must mock all downstream services | Events can be replayed for testing |
+| **Poor Load Handling** | Traffic spikes overwhelm services | Background queue buffers and load-levels |
+| **Testing Complexity** | Must mock all downstream side effects | Task `run` functions can be unit-tested in isolation |
 
-**Our approach is hybrid:** Event-driven for core business workflows and synchronous APIs (tRPC, Next.js API routes) for edge queries and user-facing operations.
+**Our approach is hybrid:** synchronous APIs (Next.js API routes under
+`/api/v1`, the `apps/backend` Rust API, and `packages/internal-api` helpers)
+handle user-facing queries and commands, while durable Trigger.dev v4 tasks
+handle slow or side-effecting background work. (Note: `apps/web/src/trpc` is a
+minimal stub today, not the product API gateway — see Section 4.)
 
 ---
 
-## 3. The Choice of Hexagonal Architecture (Ports and Adapters)
+## 3. Ports-and-Adapters Thinking (Partial Hexagonal)
 
-Within each microservice, the internal structure is organized using the **Hexagonal Architecture** pattern.
+<Warning>
+Tuturuuu does **not** implement full hexagonal layering. There is no
+`packages/types/src/domain` directory and no
+`apps/web/src/infrastructure/repositories` layer. `apps/web` uses a conventional
+Next.js App Router structure (`app`, `components`, `lib`, `utils`, `hooks`,
+`features`). The code samples in this section are **illustrative pseudo-code** to
+teach the ports/adapters idea, not real file locations. Where Tuturuuu applies
+the *spirit* of this pattern, it does so through shared helper packages
+(`packages/internal-api`, `packages/supabase`) rather than formal domain/port
+interfaces.
+</Warning>
 
 ### Core Rationale
 
-To **protect the core business logic** from technology dependencies, thereby maximizing maintainability and testability.
+To **keep business logic separable from technology dependencies** where it pays
+off, improving maintainability and testability — applied pragmatically rather
+than as a strict architectural mandate.
 
 ### Detailed Justification
 
@@ -192,9 +279,9 @@ In traditional N-Tier architecture, business logic often becomes dependent on in
 
 The Hexagonal Architecture **inverts this dependency**. The core business logic is pure and has **zero knowledge of any external technology**. It defines "Ports" (interfaces) for the functionality it needs, such as `OrderRepository`.
 
-**Example from Tuturuuu:**
+**Illustrative pseudo-code (no such path exists in the repo):**
 ```typescript
-// Domain layer (packages/types/src/domain/workspace.ts)
+// Conceptual domain port (not a real file)
 export interface WorkspaceRepository {
   findById(id: string): Promise<Workspace | null>;
   save(workspace: Workspace): Promise<void>;
@@ -218,9 +305,9 @@ External technologies are implemented as "Adapters" that plug into the core's po
 
 If we decide to migrate from PostgreSQL to MongoDB, we only need to write a new `MongoOrderRepositoryAdapter` and plug it in. The core business logic remains **completely unchanged**, making technology migrations low-risk and straightforward.
 
-**Example from Tuturuuu:**
+**Illustrative pseudo-code (no such path exists in the repo):**
 ```typescript
-// Infrastructure layer (apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts)
+// Conceptual infrastructure adapter (not a real file)
 export class SupabaseWorkspaceRepository implements WorkspaceRepository {
   constructor(private client: SupabaseClient) {}
 
@@ -250,9 +337,8 @@ Because the domain core is isolated from the outside world, it can be tested **c
 
 We can use simple, in-memory mock adapters to test complex business rules. This results in tests that are **extremely fast**, **reliable**, and **easy to write**, leading to higher code quality.
 
-**Example from Tuturuuu:**
+**Illustrative pseudo-code (conceptual test, not a real file):**
 ```typescript
-// tests/workspace.test.ts
 class InMemoryWorkspaceRepository implements WorkspaceRepository {
   private workspaces = new Map<string, Workspace>();
 
@@ -295,9 +381,18 @@ Business logic often becomes intertwined with persistence logic, making the syst
 
 ---
 
-## 4. The Choice of a React Modular Monolith & Headless UI
+## 4. A React Modular Monolith & Headless UI
 
-The frontend is architected as a "Modular Monolith" using React, with components designed using a "Headless UI" approach.
+The `apps/web` frontend is architected as a "Modular Monolith" using React, with reusable logic factored into hooks following a "Headless UI" mindset.
+
+<Info>
+This decision describes the **legacy `apps/web`** stack. It is being superseded
+by `apps/tanstack-web` (TanStack Start + TanStack Router/Query) for the frontend
+and `apps/backend` (Rust) for the API tier. The modular-monolith and headless-UI
+*principles* below still inform the new frontend, but treat `apps/web`-specific
+references as legacy. See
+[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration).
+</Info>
 
 ### Core Rationale
 
@@ -415,12 +510,22 @@ These architectures tightly couple the frontend presentation to the backend logi
 
 | Server-Rendered Limitation | Impact | React Modular Monolith Solution |
 |---------------------------|--------|--------------------------------|
-| **Tight Backend Coupling** | Frontend changes require backend deploys | Clean API separation via tRPC |
+| **Tight Backend Coupling** | Frontend changes require backend deploys | Clean API separation via `/api/v1` routes and `packages/internal-api` |
 | **Limited Interactivity** | Complex UIs are difficult | Full React capabilities |
-| **Poor Multi-Client Support** | Can't easily support mobile | Headless hooks reusable |
+| **Poor Multi-Client Support** | Can't easily support mobile | Reusable hooks and shared `packages/*` |
 | **Slow Iteration** | Full page reloads, slower development | Fast HMR, component-level updates |
 
 They do not provide a clean API separation and are not flexible enough to support multiple client types (e.g., web and mobile) from a single backend.
+
+<Note>
+**On the API gateway.** Earlier system-design pages referred to a tRPC API
+gateway. In the current codebase, `apps/web/src/trpc` is only a minimal stub:
+its router exports a single `healthCheck` procedure and its context is a
+hardcoded placeholder. There are **no** workspace/user/tasks/AI routers and no
+auth middleware there. Product data actually flows through `packages/internal-api`
+helpers and REST `/api/v1` routes (and, increasingly, the `apps/backend` Rust
+API). A repo guard also forbids `/trpc` calls from `apps/tanstack-web/src`.
+</Note>
 
 ---
 
@@ -504,12 +609,12 @@ For a comprehensive comparison of all architectural patterns (N-Tier, Hexagonal,
 
 ## Decision Summary
 
-| Decision | Problem Solved | Key Benefit | Trade-off Accepted |
-|----------|---------------|-------------|-------------------|
-| **Microservices** | Monolith scaling limits | Independent deployment & scaling | Increased operational complexity |
-| **Event-Driven** | Tight synchronous coupling | Ultimate decoupling & resilience | Eventual consistency |
-| **Hexagonal** | Technology lock-in | Testability & flexibility | Additional abstraction layers |
-| **React Modular Monolith** | Frontend chaos at scale | Maintainability & reusability | Discipline required for boundaries |
+| Decision | Adoption in Tuturuuu | Problem Solved | Trade-off Accepted |
+|----------|----------------------|----------------|-------------------|
+| **Independently deployable apps** | Adopted (Turborepo `apps/*`, shared Supabase) | Monolith scaling/ownership limits | Increased operational complexity |
+| **Async background work** | Adopted (Trigger.dev v4 `task()`) | Tight synchronous coupling | More moving parts to observe |
+| **Ports-and-adapters thinking** | Partial (shared helper packages, not formal layers) | Technology lock-in | N/A — applied pragmatically |
+| **React modular monolith** | Adopted in legacy `apps/web`; principles carry to `apps/tanstack-web` | Frontend chaos at scale | Discipline required for boundaries |
 
 ## Next Steps
 

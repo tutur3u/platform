@@ -26,7 +26,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 | **AI Endpoints** | Add handlers under `app/api/...` using Vercel AI SDK | Enforce auth + feature flags, validate payloads | Expose provider keys or skip validation |
 | **Tooling** | Adjust configs (`biome.json`, `turbo.json`, etc.) | Document the rationale | Remove caching or security settings silently |
 | **Docs** | Update `.md`/`.mdx` for accuracy | Cross-link neighbouring guides | Invent behaviour that is not implemented |
-| **Dependencies** | `bun add --workspace` / remove deps | Prefer `workspace:*` for internal packages | Add duplicate versions already satisfied |
+| **Dependencies** | `cd <app-or-package> && bun add <pkg>` / remove deps | Prefer `workspace:*` for internal packages | Add duplicate versions already satisfied |
 
 ## Mandatory Guardrails
 
@@ -46,7 +46,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 
 ## Canonical Workflows (Cheat Sheet)
 
-- **Add/Update dependency** – scope → `bun add --workspace` → ensure types/docs → run targeted build.
+- **Add/Update dependency** – scope → `cd <app-or-package> && bun add <pkg>` → ensure types/docs → run targeted build.
 - **New shared package** – scaffold under `packages/`, add `package.json` + `tsconfig`, export via `src/index.ts`, add tests & README, then build/test.
 - **Next.js API route** – implement under `app/api/.../route.ts`, enforce auth, validate with Zod, add tests or docs.
 - **AI structured endpoint** – define schema in `packages/ai`, use `generateObject`/`streamObject`, guard feature flags, redact secrets, handle errors gracefully.

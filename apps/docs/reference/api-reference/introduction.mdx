@@ -1,33 +1,59 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'API Reference'
+description: 'Overview of the public Tuturuuu HTTP API, authentication, and where the canonical OpenAPI contract lives.'
+updatedAt: '2026-06-21'
 ---
 
+# API Reference
+
+This section documents the public Tuturuuu HTTP API. It is reference material for
+integrators calling Tuturuuu endpoints from outside the platform.
+
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  Tuturuuu is mid-migration from the legacy `apps/web` Next.js platform
+  (port `7803`) to a TanStack Start frontend plus a dedicated Rust backend
+  (port `7820`). Endpoint hosts and paths may shift as routes move behind the
+  Rust backend. See
+  [Tanstack + Rust migration](/platform/architecture/tanstack-rust-migration)
+  for the current state.
 </Note>
 
-## Welcome
+## What this API covers
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+Today this section documents the public **AI generate** endpoint, which lets you
+run text completions against supported models using a workspace API key. See
+[Generate AI Completion](/reference/api-reference/endpoint/generate). More public
+endpoints will be documented here over time.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+The full surface of internal and migrated platform routes is defined by the
+backend OpenAPI contract rather than enumerated here.
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+Authentication depends on the endpoint:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+- **Workspace API keys.** The public AI generate endpoint authenticates with a
+  workspace-scoped API key, supplied in the request body as an `accessKey`
+  object containing an `id` and a `value`. Keys are validated against the
+  `workspace_api_keys` table and must carry the scope for the model you request.
+- **Bearer tokens / session cookies.** Migrated platform routes behind the Rust
+  backend authenticate the caller's Supabase session — either a browser session
+  cookie or a `Bearer` token — and some accept app-session tokens. These routes
+  are not general-purpose public endpoints; they back first-party Tuturuuu apps.
+
+Never commit API keys or tokens. Reference credentials by environment variable
+name and supply them at request time.
+
+## Canonical OpenAPI specification
+
+The authoritative machine-readable contract for the Rust backend lives in the
+repository at:
+
 ```
+apps/backend/api/openapi.yaml
+```
+
+This `Tuturuuu Rust Backend API` spec is the source of truth for migrated routes,
+their request/response schemas, security requirements, and status codes. The
+legacy public API also lives under `apps/web/src/app/api/v1` until the
+corresponding routes finish moving behind the Rust backend.
