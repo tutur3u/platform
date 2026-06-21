@@ -4031,12 +4031,153 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn crawler_list_requires_tuturuuu_session_before_admin_read() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/personal/crawlers/list"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn crawler_list_rejects_non_tuturuuu_session_before_admin_read() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("external-access-token");
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-1","email":"member@example.com"}"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/personal/crawlers/list")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn crawler_list_reads_raw_rows_with_filters_and_count() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("internal-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"operator@tuturuuu.com"}"#),
+            outbound_response_with_headers(
+                200,
+                r#"[
+                    {
+                        "id":"crawl-1",
+                        "url":"https://example.com/docs",
+                        "markdown":"hello",
+                        "html":"<main>hello</main>",
+                        "created_at":"2026-01-02T00:00:00Z"
+                    }
+                ]"#,
+                vec![("content-range".to_owned(), "50-99/123".to_owned())],
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                url: Some(
+                    "https://tuturuuu.localhost/api/personal/crawlers/list?page=2&pageSize=50&domain=example.com/docs&search=hello",
+                ),
+                ..request("GET", "/api/personal/crawlers/list")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["count"], 123);
+        assert_eq!(
+            response.body["data"],
+            json!([
+                {
+                    "id": "crawl-1",
+                    "url": "https://example.com/docs",
+                    "markdown": "hello",
+                    "html": "<main>hello</main>",
+                    "created_at": "2026-01-02T00:00:00Z",
+                }
+            ])
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer internal-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert!(
+            calls[1]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/crawled_urls?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "select").as_deref(),
+            Some("*")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "order").as_deref(),
+            Some("created_at.desc")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "url").as_deref(),
+            Some("ilike.%example.com%")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "or").as_deref(),
+            Some("(url.ilike.%hello%,markdown.ilike.%hello%,html.ilike.%hello%)")
+        );
+        assert_eq!(recorded_header(&calls[1], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[1], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(recorded_header(&calls[1], "Range-Unit"), Some("items"));
+        assert_eq!(recorded_header(&calls[1], "Range"), Some("50-99"));
+        assert_eq!(recorded_header(&calls[1], "Prefer"), Some("count=exact"));
+    }
+
+    #[tokio::test]
     async fn crawler_routes_reject_unsupported_methods_without_outbound_call() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::default();
 
         for path in [
             "/api/personal/crawlers/domains",
+            "/api/personal/crawlers/list",
             "/api/personal/crawlers/uncrawled",
         ] {
             let response = handle_backend_request(&config, request("POST", path), &outbound).await;
@@ -4055,6 +4196,7 @@ mod tests {
 
         for path in [
             "/api/personal/crawlers/domains",
+            "/api/personal/crawlers/list",
             "/api/personal/crawlers/uncrawled",
         ] {
             let response = handle_backend_request(&config, request("GET", path), &outbound).await;

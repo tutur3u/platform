@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 984,
-        "migrated": 45,
-        "percentComplete": 11.51,
-        "remaining": 984,
-        "terminal": 128,
+        "legacyNext": 983,
+        "migrated": 46,
+        "percentComplete": 11.6,
+        "remaining": 983,
+        "terminal": 129,
         "total": 1112,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1002,
-        "migrated": 50,
-        "percentComplete": 11.72,
-        "remaining": 1002,
-        "terminal": 133,
+        "legacyNext": 1001,
+        "migrated": 51,
+        "percentComplete": 11.81,
+        "remaining": 1001,
+        "terminal": 134,
         "total": 1135,
         "unknownStatus": 0
       },
@@ -146,15 +146,6 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/:wsId/calendar/auto-schedule:apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET"],
-        "routePath": "/api/:wsId/crawlers/list",
-        "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/list/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/:wsId/crawlers/list:apps/web/src/app/api/[wsId]/crawlers/list/route.ts"
       },
       {
         "kind": "api",
@@ -317,17 +308,26 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/generate:apps/web/src/app/api/ai/generate/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/meetings/summary",
+        "sourceFile": "apps/web/src/app/api/ai/meetings/summary/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/meetings/summary:apps/web/src/app/api/ai/meetings/summary/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1252,
-      "migrated": 177,
-      "percentComplete": 17.2,
-      "remaining": 1252,
-      "terminal": 260,
+      "legacyNext": 1251,
+      "migrated": 178,
+      "percentComplete": 17.26,
+      "remaining": 1251,
+      "terminal": 261,
       "total": 1512,
       "unknownStatus": 0
     }
@@ -357,7 +357,7 @@
       "methods": ["GET"],
       "routePath": "/api/:wsId/crawlers/list",
       "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/list/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

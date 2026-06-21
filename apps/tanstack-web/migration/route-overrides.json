@@ -34,6 +34,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/domains by reading crawled_urls and non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, extracting valid URL hostnames, deduplicating them, and returning the sorted legacy domain list with cached false. The legacy route ignored wsId; this migration preserves that behavior until crawler workspace ownership is redesigned."
     },
+    "api:/api/:wsId/crawlers/list:apps/web/src/app/api/[wsId]/crawlers/list/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/list by revalidating the browser Supabase session, requiring a @tuturuuu.com user email before server-owned admin reads, preserving the legacy raw crawled_urls row payload, domain/search filters, created_at.desc ordering, exact-count pagination, and data/count response shape. Unauthorized callers now receive an explicit 401 instead of the legacy catch-all 500."
+    },
     "api:/api/:wsId/crawlers/uncrawled:apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

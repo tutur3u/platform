@@ -759,6 +759,97 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/{wsId}/crawlers/list:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy workspace path segment. The legacy Next.js route ignored this value, and the Rust migration preserves that behavior until crawler workspace ownership is redesigned.
+    get:
+      summary: List crawled URLs
+      description: Migrated replacement for apps/web/src/app/api/[wsId]/crawlers/list/route.ts. Revalidates the browser Supabase session, requires a `@tuturuuu.com` user email before server-owned admin reads, queries raw `crawled_urls` rows with the legacy domain/search filters, `created_at.desc` ordering, exact-count pagination, and returns the legacy `{ data, count }` shape without exposing service-role access to the browser. Unauthorized callers now receive an explicit 401 instead of the legacy catch-all 500.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 50
+        - name: domain
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional crawler URL domain filter. The `all` sentinel disables this filter.
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional search applied to crawler URL, markdown, and HTML fields.
+      responses:
+        "200":
+          description: Paginated crawled URL rows and exact total count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - count
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  count:
+                    type: integer
+                    minimum: 0
+        "401":
+          description: Caller is missing a valid Tuturuuu browser session.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "500":
+          description: Supabase crawler data access is not configured or failed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Internal Server Error
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/{wsId}/crawlers/uncrawled:
     parameters:
       - name: wsId
