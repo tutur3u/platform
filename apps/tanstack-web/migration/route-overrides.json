@@ -87,6 +87,11 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/changelog/slug/:slug:apps/web/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/slug/:slug through the server-owned Supabase REST adapter, preserving the public published-only changelog lookup by slug, non-null published_at filter, PostgREST single-row response, and legacy 404/500 JSON error body."
+    },
     "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

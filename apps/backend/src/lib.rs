@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod aurora;
+mod changelog;
 mod contact;
 mod crawlers;
 mod holidays;
@@ -348,6 +349,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = aurora::handle_aurora_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = changelog::handle_changelog_route(config, request, outbound).await {
         return response;
     }
 
@@ -3334,6 +3339,131 @@ mod tests {
 
         assert_eq!(response.status, 500);
         assert_eq!(response.body["message"], "Error fetching holidays");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn changelog_slug_get_reads_published_entry_from_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{
+                "id":"entry-1",
+                "title":"Platform release",
+                "slug":"platform-release",
+                "content":{"type":"doc"},
+                "summary":"A shipped platform update",
+                "category":"feature",
+                "version":"2026.6",
+                "cover_image_url":null,
+                "is_published":true,
+                "published_at":"2026-06-01T00:00:00Z",
+                "created_at":"2026-05-31T00:00:00Z",
+                "updated_at":"2026-06-01T00:00:00Z"
+            }"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request(
+                "GET",
+                "/api/v1/infrastructure/changelog/slug/platform-release",
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["slug"], "platform-release");
+        assert_eq!(response.body["is_published"], true);
+        assert_eq!(response.body["published_at"], "2026-06-01T00:00:00Z");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/changelog_entries?select=*&slug=eq.platform-release&is_published=eq.true&published_at=not.is.null"
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn changelog_slug_get_maps_postgrest_single_error_to_not_found() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            406,
+            r#"{
+                "code":"PGRST116",
+                "details":"The result contains 0 rows",
+                "hint":null,
+                "message":"JSON object requested, multiple (or no) rows returned"
+            }"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/infrastructure/changelog/slug/missing"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Changelog entry not found");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn changelog_slug_get_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request(
+                "POST",
+                "/api/v1/infrastructure/changelog/slug/platform-release",
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn changelog_slug_get_fails_closed_when_contact_data_is_not_configured() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request(
+                "GET",
+                "/api/v1/infrastructure/changelog/slug/platform-release",
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Changelog entry not found");
         assert_eq!(outbound.calls().len(), 0);
     }
 
