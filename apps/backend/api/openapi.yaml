@@ -243,6 +243,67 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/topic-announcement-verifications/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+        description: URL-encoded public email verification token generated for a Topic Announcements contact.
+    get:
+      summary: Verify a Topic Announcements contact email
+      description: Migrated replacement for apps/web/src/app/api/v1/topic-announcement-verifications/[token]/route.ts GET. The Rust backend decodes the path token, hashes it with SHA-256, reads and updates `private.topic_announcement_contact_verifications` through the server-owned Supabase REST adapter, preserves the legacy public HTML response texts/statuses, and keeps the service-role/private-schema access on the server side for Cloudflare Workers deployment.
+      responses:
+        "200":
+          description: Email address verified.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            text/html:
+              schema:
+                type: string
+        "400":
+          description: Verification token was missing.
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Verification link was invalid or already used.
+          content:
+            text/html:
+              schema:
+                type: string
+        "410":
+          description: Verification link expired.
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          description: Verification could not be completed.
+          content:
+            text/html:
+              schema:
+                type: string
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/{wsId}/crawlers/domains:
     parameters:
       - name: wsId

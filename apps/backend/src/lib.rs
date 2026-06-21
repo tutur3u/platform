@@ -10,6 +10,7 @@ mod crawlers;
 mod holidays;
 mod mobile_version;
 mod outbound;
+mod topic_announcements;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -361,6 +362,12 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = holidays::handle_holidays_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        topic_announcements::handle_topic_announcement_route(config, request, outbound).await
+    {
         return response;
     }
 
@@ -3468,6 +3475,228 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn topic_announcement_verification_get_verifies_pending_contact() {
+        let config = backend_config_with_contact_data();
+        let token_hash = sha256_hex_for_test("token value");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{
+                    "id":"verification-1",
+                    "expires_at":"9999-01-01T00:00:00.000Z",
+                    "status":"pending"
+                }"#,
+            ),
+            outbound_response(204, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request(
+                "GET",
+                "/api/v1/topic-announcement-verifications/token%20value",
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.content_type, Some("text/html; charset=utf-8"));
+        assert!(
+            response
+                .body_text
+                .as_deref()
+                .unwrap_or_default()
+                .contains("Email verified")
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            format!(
+                "https://project-ref.supabase.co/rest/v1/topic_announcement_contact_verifications?select=id%2Cexpires_at%2Cstatus&token_hash=eq.{token_hash}"
+            )
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+
+        assert_eq!(calls[1].method, OutboundMethod::Patch);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/topic_announcement_contact_verifications?id=eq.verification-1"
+        );
+        assert_eq!(recorded_header(&calls[1], "Prefer"), Some("return=minimal"));
+        let patch_body = calls[1].body.as_deref().unwrap_or_default();
+        assert!(patch_body.contains(r#""status":"verified""#));
+        assert!(patch_body.contains(r#""verified_at":"#));
+    }
+
+    #[tokio::test]
+    async fn topic_announcement_verification_get_maps_missing_token_to_legacy_html_404() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            406,
+            r#"{
+                "code":"PGRST116",
+                "details":"The result contains 0 rows",
+                "hint":null,
+                "message":"JSON object requested, multiple (or no) rows returned"
+            }"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/topic-announcement-verifications/missing"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 404);
+        assert!(
+            response
+                .body_text
+                .as_deref()
+                .unwrap_or_default()
+                .contains("Verification link unavailable")
+        );
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn topic_announcement_verification_get_marks_expired_token_but_ignores_update_error() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{
+                    "id":"verification-expired",
+                    "expires_at":"2000-01-01T00:00:00.000Z",
+                    "status":"pending"
+                }"#,
+            ),
+            outbound_response(500, r#"{"message":"update failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/topic-announcement-verifications/expired"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 410);
+        assert!(
+            response
+                .body_text
+                .as_deref()
+                .unwrap_or_default()
+                .contains("Verification link expired")
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[1].method, OutboundMethod::Patch);
+        assert_eq!(calls[1].body.as_deref(), Some(r#"{"status":"expired"}"#));
+    }
+
+    #[tokio::test]
+    async fn topic_announcement_verification_get_reports_verified_update_failure() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{
+                    "id":"verification-1",
+                    "expires_at":"9999-01-01T00:00:00.000Z",
+                    "status":"pending"
+                }"#,
+            ),
+            outbound_response(500, r#"{"message":"update failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/topic-announcement-verifications/token"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert!(
+            response
+                .body_text
+                .as_deref()
+                .unwrap_or_default()
+                .contains("Verification failed")
+        );
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn topic_announcement_verification_route_rejects_unsupported_methods_without_outbound_call()
+     {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/topic-announcement-verifications/token"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn topic_announcement_verification_get_fails_closed_when_contact_data_is_not_configured()
+    {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/topic-announcement-verifications/token"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert!(
+            response
+                .body_text
+                .as_deref()
+                .unwrap_or_default()
+                .contains("Verification failed")
+        );
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
     async fn mobile_version_check_reads_policy_and_returns_update_recommendation() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::with_response(
@@ -3970,6 +4199,15 @@ mod tests {
             .iter()
             .find(|(name, _)| name.eq_ignore_ascii_case(header))
             .map(|(_, value)| value.as_str())
+    }
+
+    fn sha256_hex_for_test(value: &str) -> String {
+        let digest = <sha2::Sha256 as sha2::Digest>::digest(value.as_bytes());
+        let mut encoded = String::with_capacity(64);
+        for byte in digest {
+            let _ = std::fmt::Write::write_fmt(&mut encoded, format_args!("{byte:02x}"));
+        }
+        encoded
     }
 
     fn browser_recovery_request(

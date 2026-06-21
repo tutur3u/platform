@@ -74,6 +74,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   root workspace mobile policy config IDs through the server-owned Supabase REST
   adapter, and returns the legacy `supported` / `update-recommended` /
   `update-required` payload with wildcard CORS headers.
+- `GET /api/v1/topic-announcement-verifications/:token`: public Topic
+  Announcements email verification route. Rust decodes the token path segment,
+  hashes it with SHA-256, reads and updates
+  `private.topic_announcement_contact_verifications` through the server-owned
+  Supabase REST adapter, and returns the legacy HTML success, invalid,
+  already-used, expired, and failure pages.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
 /api/v1/auth/mobile/password-login`, `OPTIONS
 /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,
