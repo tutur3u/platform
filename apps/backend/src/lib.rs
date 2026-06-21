@@ -1067,6 +1067,104 @@ fn buffered_request_body_exceeds_limit(
         && content_length_exceeds_request_body_limit(content_length)
 }
 
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct RuntimeRequestParts<'a> {
+    authorization: Option<&'a str>,
+    content_length: Option<&'a str>,
+    cookie: Option<&'a str>,
+    method: &'a str,
+    origin: Option<&'a str>,
+    path: &'a str,
+    referer: Option<&'a str>,
+    request_id: Option<&'a str>,
+    url: Option<&'a str>,
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RuntimeRequestBodyPlan {
+    Buffer,
+    RejectTooLarge,
+    Skip,
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum RuntimeResponseHeaderOperation {
+    Append(&'static str, String),
+    Set(&'static str, String),
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn runtime_request_body_plan(parts: &RuntimeRequestParts<'_>) -> RuntimeRequestBodyPlan {
+    if buffered_request_body_exceeds_limit(parts.method, parts.path, parts.content_length) {
+        RuntimeRequestBodyPlan::RejectTooLarge
+    } else if should_buffer_request_body(parts.method, parts.path) {
+        RuntimeRequestBodyPlan::Buffer
+    } else {
+        RuntimeRequestBodyPlan::Skip
+    }
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn backend_request_from_runtime_parts<'a>(
+    parts: RuntimeRequestParts<'a>,
+    body_text: Option<&'a str>,
+) -> BackendRequest<'a> {
+    BackendRequest {
+        authorization: parts.authorization,
+        body_text,
+        cookie: parts.cookie,
+        method: parts.method,
+        origin: parts.origin,
+        path: parts.path,
+        referer: parts.referer,
+        request_id: parts.request_id,
+        url: parts.url,
+    }
+}
+
+#[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
+fn runtime_response_header_operations(
+    response: &BackendResponse,
+) -> Vec<RuntimeResponseHeaderOperation> {
+    let mut operations = Vec::new();
+
+    if let Some(content_type) = response.content_type {
+        operations.push(RuntimeResponseHeaderOperation::Set(
+            "Content-Type",
+            content_type.to_owned(),
+        ));
+    }
+
+    if let Some(allow) = response.allow {
+        operations.push(RuntimeResponseHeaderOperation::Set(
+            "Allow",
+            allow.to_owned(),
+        ));
+    }
+
+    if let Some(cache_control) = response.cache_control {
+        operations.push(RuntimeResponseHeaderOperation::Set(
+            "Cache-Control",
+            cache_control.to_owned(),
+        ));
+    }
+
+    if response.content_type == Some(APPLICATION_JSON) {
+        for &(name, value) in json_security_headers() {
+            operations.push(RuntimeResponseHeaderOperation::Set(name, value.to_owned()));
+        }
+    }
+
+    for (name, value) in &response.headers {
+        operations.push(RuntimeResponseHeaderOperation::Append(name, value.clone()));
+    }
+
+    operations
+}
+
 fn json_value_is_present(value: Option<&Value>) -> bool {
     value.is_some_and(|value| !value.is_null())
 }
@@ -2191,9 +2289,10 @@ pub mod native {
 #[cfg(all(feature = "worker", target_arch = "wasm32"))]
 pub mod worker_runtime {
     use super::{
-        BackendConfig, BackendRequest, BackendResponse, buffered_request_body_exceeds_limit,
-        handle_backend_request, json_security_headers, outbound, request_body_too_large_response,
-        should_buffer_request_body,
+        BackendConfig, BackendResponse, RuntimeRequestBodyPlan, RuntimeRequestParts,
+        RuntimeResponseHeaderOperation, backend_request_from_runtime_parts, handle_backend_request,
+        outbound, request_body_too_large_response, runtime_request_body_plan,
+        runtime_response_header_operations,
     };
     use worker::{Env, Request, Response, Result, event};
 
@@ -2212,34 +2311,31 @@ pub mod worker_runtime {
             .get("X-Request-Id")?
             .or(headers.get("X-Request-ID")?);
         let content_length = headers.get("Content-Length")?;
+        let request_parts = RuntimeRequestParts {
+            authorization: authorization.as_deref(),
+            content_length: content_length.as_deref(),
+            cookie: cookie.as_deref(),
+            method: &method,
+            origin: origin.as_deref(),
+            path: &path,
+            referer: referer.as_deref(),
+            request_id: request_id.as_deref(),
+            url: Some(url.as_str()),
+        };
 
-        let should_buffer_body = should_buffer_request_body(&method, &path);
-
-        if buffered_request_body_exceeds_limit(&method, &path, content_length.as_deref()) {
-            return request_body_too_large_response().into_worker_response();
-        }
-
-        let body_text = if should_buffer_body {
-            request.text().await.ok()
-        } else {
-            None
+        let body_text = match runtime_request_body_plan(&request_parts) {
+            RuntimeRequestBodyPlan::RejectTooLarge => {
+                return request_body_too_large_response().into_worker_response();
+            }
+            RuntimeRequestBodyPlan::Buffer => request.text().await.ok(),
+            RuntimeRequestBodyPlan::Skip => None,
         };
 
         let outbound = outbound::WorkerFetchOutboundHttpClient;
 
         handle_backend_request(
             &config,
-            BackendRequest {
-                authorization: authorization.as_deref(),
-                body_text: body_text.as_deref(),
-                cookie: cookie.as_deref(),
-                method: &method,
-                origin: origin.as_deref(),
-                path: &path,
-                referer: referer.as_deref(),
-                request_id: request_id.as_deref(),
-                url: Some(url.as_str()),
-            },
+            backend_request_from_runtime_parts(request_parts, body_text.as_deref()),
             &outbound,
         )
         .await
@@ -2317,6 +2413,7 @@ pub mod worker_runtime {
 
     impl BackendResponse {
         fn into_worker_response(self) -> Result<Response> {
+            let header_operations = runtime_response_header_operations(&self);
             let mut response = if let Some(body_text) = self.body_text {
                 Response::ok(body_text)?.with_status(self.status)
             } else if self.body_empty {
@@ -2325,26 +2422,15 @@ pub mod worker_runtime {
                 Response::from_json(&self.body)?.with_status(self.status)
             };
 
-            if let Some(content_type) = self.content_type {
-                response.headers_mut().set("Content-Type", content_type)?;
-            }
-
-            if let Some(allow) = self.allow {
-                response.headers_mut().set("Allow", allow)?;
-            }
-
-            if let Some(cache_control) = self.cache_control {
-                response.headers_mut().set("Cache-Control", cache_control)?;
-            }
-
-            if self.content_type == Some(super::APPLICATION_JSON) {
-                for &(name, value) in json_security_headers() {
-                    response.headers_mut().set(name, value)?;
+            for operation in header_operations {
+                match operation {
+                    RuntimeResponseHeaderOperation::Append(name, value) => {
+                        response.headers_mut().append(name, value.as_str())?;
+                    }
+                    RuntimeResponseHeaderOperation::Set(name, value) => {
+                        response.headers_mut().set(name, value.as_str())?;
+                    }
                 }
-            }
-
-            for (name, value) in self.headers {
-                response.headers_mut().append(name, value.as_str())?;
             }
 
             Ok(response)
@@ -3079,6 +3165,138 @@ mod tests {
         assert_eq!(
             response.body["maxBytes"].as_u64(),
             Some(MAX_REQUEST_BODY_BYTES as u64)
+        );
+    }
+
+    #[test]
+    fn runtime_request_parts_map_to_backend_request_with_body_plan() {
+        let parts = RuntimeRequestParts {
+            authorization: Some("Bearer secret"),
+            content_length: Some("31"),
+            cookie: Some("a=1; b=2"),
+            method: "POST",
+            origin: Some("https://tanstack.tuturuuu.localhost"),
+            path: "/api/v1/infrastructure/languages",
+            referer: Some("https://tanstack.tuturuuu.localhost/settings"),
+            request_id: Some("request-worker-1"),
+            url: Some("https://tanstack.tuturuuu.localhost/api/v1/infrastructure/languages"),
+        };
+
+        assert_eq!(
+            runtime_request_body_plan(&parts),
+            RuntimeRequestBodyPlan::Buffer
+        );
+
+        let request =
+            backend_request_from_runtime_parts(parts, Some(r#"{"locale":"vi","enabled":true}"#));
+
+        assert_eq!(
+            request,
+            BackendRequest {
+                authorization: Some("Bearer secret"),
+                body_text: Some(r#"{"locale":"vi","enabled":true}"#),
+                cookie: Some("a=1; b=2"),
+                method: "POST",
+                origin: Some("https://tanstack.tuturuuu.localhost"),
+                path: "/api/v1/infrastructure/languages",
+                referer: Some("https://tanstack.tuturuuu.localhost/settings"),
+                request_id: Some("request-worker-1"),
+                url: Some("https://tanstack.tuturuuu.localhost/api/v1/infrastructure/languages"),
+            }
+        );
+    }
+
+    #[test]
+    fn runtime_request_body_plan_rejects_oversized_buffered_worker_requests() {
+        let oversized = RuntimeRequestParts {
+            authorization: None,
+            content_length: Some("65537"),
+            cookie: None,
+            method: "POST",
+            origin: None,
+            path: "/api/v1/infrastructure/sidebar",
+            referer: None,
+            request_id: None,
+            url: Some("https://tanstack.tuturuuu.localhost/api/v1/infrastructure/sidebar"),
+        };
+
+        assert_eq!(
+            runtime_request_body_plan(&oversized),
+            RuntimeRequestBodyPlan::RejectTooLarge
+        );
+
+        let unbuffered = RuntimeRequestParts {
+            method: "POST",
+            path: "/internal/jobs/noop",
+            ..oversized
+        };
+
+        assert_eq!(
+            runtime_request_body_plan(&unbuffered),
+            RuntimeRequestBodyPlan::Skip
+        );
+    }
+
+    #[test]
+    fn runtime_response_header_operations_set_standard_headers_and_append_custom_headers() {
+        let mut response =
+            json_response_with_cache_control(202, json!({ "ok": true }), NO_STORE_CACHE_CONTROL);
+        response.allow = Some("GET");
+        response.headers.push(("set-cookie", "a=1".to_owned()));
+        response.headers.push(("set-cookie", "b=2".to_owned()));
+
+        let operations = runtime_response_header_operations(&response);
+
+        assert_eq!(
+            operations[0],
+            RuntimeResponseHeaderOperation::Set("Content-Type", APPLICATION_JSON.to_owned())
+        );
+        assert_eq!(
+            operations[1],
+            RuntimeResponseHeaderOperation::Set("Allow", "GET".to_owned())
+        );
+        assert_eq!(
+            operations[2],
+            RuntimeResponseHeaderOperation::Set("Cache-Control", NO_STORE_CACHE_CONTROL.to_owned())
+        );
+
+        for &(name, value) in json_security_headers() {
+            assert!(
+                operations.contains(&RuntimeResponseHeaderOperation::Set(name, value.to_owned())),
+                "{name}"
+            );
+        }
+
+        assert_eq!(
+            operations
+                .iter()
+                .filter(|operation| matches!(
+                    operation,
+                    RuntimeResponseHeaderOperation::Append("set-cookie", _)
+                ))
+                .count(),
+            2
+        );
+        assert!(operations.contains(&RuntimeResponseHeaderOperation::Append(
+            "set-cookie",
+            "a=1".to_owned()
+        )));
+        assert!(operations.contains(&RuntimeResponseHeaderOperation::Append(
+            "set-cookie",
+            "b=2".to_owned()
+        )));
+    }
+
+    #[test]
+    fn runtime_response_header_operations_skip_json_security_headers_for_text() {
+        let response = text_response(200, "ok", "text/plain");
+
+        assert_eq!(
+            runtime_response_header_operations(&response),
+            vec![RuntimeResponseHeaderOperation::Set(
+                "Content-Type",
+                "text/plain".to_owned()
+            )]
         );
     }
 
