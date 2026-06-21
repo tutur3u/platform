@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const {
+  BACKEND_README_PATH,
   BACKEND_WRANGLER_PATH,
   GITIGNORE_PATH,
   ROOT_PACKAGE_JSON_PATH,
@@ -14,6 +15,7 @@ const {
   TANSTACK_WEB_WRANGLER_PATH,
   WEB_DOCKER_DEPLOYMENT_DOC_PATH,
   checkCloudflareWorkersSetup,
+  validateBackendReadmeCloudflareSecrets,
   validateBackendWranglerConfig,
   validateCloudflarePreviewRunbook,
   validateCloudflareSecretIgnoreRules,
@@ -79,6 +81,42 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
       workflow.replaceAll('apps/tanstack-web/wrangler.jsonc', '')
     ).join('\n'),
     /wrangler\.jsonc/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll(
+        'apps/docs/platform/architecture/tanstack-rust-migration.mdx',
+        ''
+      )
+    ).join('\n'),
+    /tanstack-rust-migration/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('apps/backend/README.md', '')
+    ).join('\n'),
+    /README/
+  );
+});
+
+test('Backend README documents every required Cloudflare Worker secret', () => {
+  const readme = fs.readFileSync(BACKEND_README_PATH, 'utf8');
+
+  assert.deepEqual(validateBackendReadmeCloudflareSecrets(readme), []);
+  assert.match(
+    validateBackendReadmeCloudflareSecrets(
+      readme.replace(
+        'bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc',
+        ''
+      )
+    ).join('\n'),
+    /DISCORD_APP_DEPLOYMENT_URL/
+  );
+  assert.match(
+    validateBackendReadmeCloudflareSecrets(
+      readme.replace('secrets.required', 'secret names')
+    ).join('\n'),
+    /secrets\.required/
   );
 });
 

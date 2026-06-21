@@ -625,3 +625,46 @@ test('tanstack migration progress report prints owner buckets and blockers', () 
   assert.match(report, /Rust backend: 0\/1 terminal \(0%\), 1 remaining/u);
   assert.match(report, /\/api\/users\/search \[api; rust-backend; GET\]/u);
 });
+
+test('TanStack Rust migration docs keep current manifest counts in sync', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        rootDir,
+        'apps',
+        'tanstack-web',
+        'migration',
+        'route-manifest.json'
+      ),
+      'utf8'
+    )
+  );
+  const docs = fs.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'docs',
+      'platform',
+      'architecture',
+      'tanstack-rust-migration.mdx'
+    ),
+    'utf8'
+  );
+
+  const expectedSnippets = [
+    `- \`${manifest.summary.pages.toLocaleString('en-US')}\` pages`,
+    `- \`${manifest.summary.layouts.toLocaleString('en-US')}\` layouts`,
+    `- \`${manifest.summary.routeHandlers.toLocaleString('en-US')}\` route handler artifacts`,
+    `- \`${manifest.summary.cronRoutes.toLocaleString('en-US')}\` cron handlers`,
+    `- \`${manifest.summary.total.toLocaleString('en-US')}\` total tracked route artifacts`,
+    `- \`${manifest.progress.totals.migrated.toLocaleString('en-US')}\` migrated artifacts, \`${manifest.progress.totals.terminal.toLocaleString('en-US')}\` terminal artifacts, and \`${manifest.progress.totals.remaining.toLocaleString('en-US')}\` remaining`,
+  ];
+
+  for (const expectedSnippet of expectedSnippets) {
+    assert.ok(
+      docs.includes(expectedSnippet),
+      `missing current migration inventory snippet: ${expectedSnippet}`
+    );
+  }
+});

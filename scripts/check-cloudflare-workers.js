@@ -12,6 +12,7 @@ const BACKEND_WRANGLER_PATH = path.join(
   'backend',
   'wrangler.jsonc'
 );
+const BACKEND_README_PATH = path.join(ROOT_DIR, 'apps', 'backend', 'README.md');
 const RUST_BACKEND_WORKFLOW_PATH = path.join(
   ROOT_DIR,
   '.github',
@@ -175,6 +176,9 @@ function validateRustBackendWorkflow(workflowContent) {
     'apps/tanstack-web/src/routeTree.gen.ts',
     'apps/tanstack-web/vite.config.ts',
     'apps/tanstack-web/wrangler.jsonc',
+    'apps/backend/README.md',
+    'apps/docs/build/devops/web-docker-deployment.mdx',
+    'apps/docs/platform/architecture/tanstack-rust-migration.mdx',
     'scripts/check-cloudflare-workers.js',
     'scripts/check-cloudflare-workers.test.js',
     'scripts/smoke-cloudflare-workers.js',
@@ -596,6 +600,31 @@ function validateCloudflarePreviewRunbook(
   return errors;
 }
 
+function validateBackendReadmeCloudflareSecrets(
+  readmeContent,
+  readmePath = 'apps/backend/README.md'
+) {
+  const errors = [];
+
+  for (const secretName of BACKEND_REQUIRED_SECRETS) {
+    const bootstrapCommand = `bun wrangler secret put ${secretName} --config apps/backend/wrangler.jsonc`;
+
+    if (!readmeContent.includes(bootstrapCommand)) {
+      errors.push(
+        `${readmePath} must document backend Worker secret bootstrap command: ${bootstrapCommand}`
+      );
+    }
+  }
+
+  if (!readmeContent.includes('secrets.required')) {
+    errors.push(
+      `${readmePath} must explain that apps/backend/wrangler.jsonc declares required Worker secrets under secrets.required.`
+    );
+  }
+
+  return errors;
+}
+
 function checkCloudflareWorkersSetup({
   fsImpl = fs,
   rootDir = ROOT_DIR,
@@ -610,6 +639,10 @@ function checkCloudflareWorkersSetup({
   ),
   rustBackendWorkflowContent = fsImpl.readFileSync(
     path.join(rootDir, '.github', 'workflows', 'rust-backend.yml'),
+    'utf8'
+  ),
+  backendReadmeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'backend', 'README.md'),
     'utf8'
   ),
   tanstackRustMigrationDocContent = fsImpl.readFileSync(
@@ -660,6 +693,7 @@ function checkCloudflareWorkersSetup({
     ...validateTanstackWebViteConfig(tanstackWebViteConfigContent),
     ...validateTanstackWebRouteTree(tanstackWebRouteTreeContent),
     ...validateTanstackWebWranglerConfig(tanstackWebWranglerConfig),
+    ...validateBackendReadmeCloudflareSecrets(backendReadmeContent),
     ...validateCloudflarePreviewRunbook(
       webDockerDeploymentDocContent,
       'apps/docs/build/devops/web-docker-deployment.mdx'
@@ -683,6 +717,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  BACKEND_README_PATH,
   BACKEND_WRANGLER_PATH,
   GITIGNORE_PATH,
   ROOT_DIR,
@@ -695,6 +730,7 @@ module.exports = {
   TANSTACK_WEB_WRANGLER_PATH,
   WEB_DOCKER_DEPLOYMENT_DOC_PATH,
   checkCloudflareWorkersSetup,
+  validateBackendReadmeCloudflareSecrets,
   validateBackendWranglerConfig,
   validateCloudflarePreviewRunbook,
   validateCloudflareSecretIgnoreRules,

@@ -188,14 +188,22 @@ rustup target add wasm32-unknown-unknown
 cargo install worker-build --locked
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
+bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
-`apps/backend/wrangler.jsonc` declares `BACKEND_INTERNAL_TOKEN` and
-`TUTURUUU_APP_COORDINATION_SECRET` under `secrets.required`. Wrangler prompts
-for values during `secret put`; do not commit those values in `wrangler.jsonc`,
+`apps/backend/wrangler.jsonc` declares `BACKEND_INTERNAL_TOKEN`,
+`TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and
+`DISCORD_APP_DEPLOYMENT_URL` under `secrets.required`. Wrangler prompts for
+values during `secret put`; do not commit those values in `wrangler.jsonc`,
 `vars`, docs, or shell history. `/readyz` reports not-ready until
-`BACKEND_INTERNAL_TOKEN` exists.
+`BACKEND_INTERNAL_TOKEN` exists. Contact/profile preview APIs also require the
+Supabase secrets, and the Rust-owned Discord cron proxy requires `CRON_SECRET`
+plus `DISCORD_APP_DEPLOYMENT_URL`.
 
 After deployment, smoke-test the returned Worker origin. Before the TanStack
 Worker is deployed, the backend-only curl checks are enough:
