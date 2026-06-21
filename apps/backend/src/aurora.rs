@@ -4,9 +4,11 @@ use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
     method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
+    supabase_auth,
 };
 
 const FORECAST_PATH: &str = "/api/v1/aurora/forecast";
+const HEALTH_PATH: &str = "/api/v1/aurora/health";
 const ML_FORECAST_TABLE: &str = "aurora_ml_forecast";
 const ML_METRICS_PATH: &str = "/api/v1/aurora/ml-metrics";
 const ML_METRICS_TABLE: &str = "aurora_ml_metrics";
@@ -14,10 +16,12 @@ const STATISTICAL_FORECAST_TABLE: &str = "aurora_statistical_forecast";
 const STATISTICAL_METRICS_PATH: &str = "/api/v1/aurora/statistical-metrics";
 const STATISTICAL_METRICS_TABLE: &str = "aurora_statistical_metrics";
 const FORECAST_ERROR_MESSAGE: &str = "Error fetching forecast data";
+const HEALTH_ERROR_MESSAGE: &str = "Error fetching health";
 
 #[derive(Clone, Copy)]
 enum AuroraRoute {
     Forecast,
+    Health,
     Metrics { table: &'static str },
 }
 
@@ -28,6 +32,7 @@ pub(crate) async fn handle_aurora_route(
 ) -> Option<BackendResponse> {
     let route = match request.path {
         FORECAST_PATH => AuroraRoute::Forecast,
+        HEALTH_PATH => AuroraRoute::Health,
         ML_METRICS_PATH => AuroraRoute::Metrics {
             table: ML_METRICS_TABLE,
         },
@@ -37,15 +42,84 @@ pub(crate) async fn handle_aurora_route(
         _ => return None,
     };
 
-    Some(match request.method {
-        "GET" => match route {
-            AuroraRoute::Forecast => forecast_response(&config.contact_data, outbound).await,
-            AuroraRoute::Metrics { table } => {
-                metrics_response(&config.contact_data, table, outbound).await
-            }
-        },
-        method => method_not_allowed(method, "GET"),
+    Some(match (request.method, route) {
+        ("GET", AuroraRoute::Forecast) => forecast_response(&config.contact_data, outbound).await,
+        ("GET", AuroraRoute::Metrics { table }) => {
+            metrics_response(&config.contact_data, table, outbound).await
+        }
+        ("POST", AuroraRoute::Health) => aurora_health_response(config, request, outbound).await,
+        (method, AuroraRoute::Health) => method_not_allowed(method, "POST"),
+        (method, AuroraRoute::Forecast | AuroraRoute::Metrics { .. }) => {
+            method_not_allowed(method, "GET")
+        }
     })
+}
+
+async fn aurora_health_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let Some(user) =
+        authenticated_aurora_health_user(&config.contact_data, request, outbound).await
+    else {
+        return no_store_response(json_response(
+            401,
+            json!({
+                "message": "Not authenticated",
+            }),
+        ));
+    };
+
+    if !is_legacy_tuturuuu_email(user.email.as_deref()) {
+        return no_store_response(json_response(
+            403,
+            json!({
+                "message": "Unauthorized email domain",
+            }),
+        ));
+    }
+
+    let Some(url) = aurora_health_url(&config.aurora_external_url) else {
+        return aurora_health_error_response();
+    };
+    let Ok(response) = outbound
+        .send(OutboundRequest::new(OutboundMethod::Get, &url))
+        .await
+    else {
+        return aurora_health_error_response();
+    };
+
+    if !(200..300).contains(&response.status) {
+        return aurora_health_error_response();
+    }
+
+    no_store_response(json_response(
+        200,
+        json!({
+            "message": "Success",
+        }),
+    ))
+}
+
+async fn authenticated_aurora_health_user(
+    contact_data: &contact::ContactDataConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> Option<supabase_auth::SupabaseAuthUser> {
+    let access_token = supabase_auth::request_access_token(request)?;
+
+    supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
+}
+
+fn is_legacy_tuturuuu_email(email: Option<&str>) -> bool {
+    email.is_some_and(|email| email.ends_with("@tuturuuu.com"))
+}
+
+fn aurora_health_url(aurora_external_url: &str) -> Option<String> {
+    let base_url = aurora_external_url.trim().trim_end_matches('/');
+
+    (!base_url.is_empty()).then(|| format!("{base_url}/health"))
 }
 
 async fn metrics_response(
@@ -191,6 +265,15 @@ fn forecast_error_response() -> BackendResponse {
         500,
         json!({
             "message": FORECAST_ERROR_MESSAGE,
+        }),
+    ))
+}
+
+fn aurora_health_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({
+            "message": HEALTH_ERROR_MESSAGE,
         }),
     ))
 }

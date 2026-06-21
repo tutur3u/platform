@@ -92,7 +92,7 @@ secret-looking values under `vars`:
 
 | Worker                             | Required preview secrets                                                                                                                               |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL` |
+| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL` |
 | `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`; `BACKEND` service binding to `tuturuuu-backend`                                                     |
 
 For local Worker previews, put secret values next to the owning Wrangler config
@@ -126,6 +126,7 @@ bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
 bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
 bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
@@ -135,8 +136,9 @@ bun wrangler deploy --config apps/backend/wrangler.jsonc
 routes can verify Tuturuuu `ttr_app_` app-session tokens in production-like
 Cloudflare environments. `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are
 required before the Rust-owned Discord cron proxy routes can call the Discord
-app. Wrangler prompts for values; do not place those values in `wrangler.jsonc`,
-`vars`, docs, or shell history.
+app. `AURORA_EXTERNAL_URL` is required before the Rust-owned Aurora health probe
+can call the Aurora service. Wrangler prompts for values; do not place those
+values in `wrangler.jsonc`, `vars`, docs, or shell history.
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required backend Worker
 secrets for the Rust-owned contact/profile APIs. They stay server-only: the
@@ -175,6 +177,7 @@ bun wrangler versions secret put SUPABASE_URL --config apps/backend/wrangler.jso
 bun wrangler versions secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+bun wrangler versions secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
 bun wrangler versions deploy --config apps/backend/wrangler.jsonc
 
 bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
@@ -335,7 +338,7 @@ Current inventory:
 - `1,138` route handler artifacts
 - `19` cron handlers
 - `1,517` total tracked route artifacts
-- `186` migrated artifacts, `269` terminal artifacts, and `1,248` remaining
+- `188` migrated artifacts, `271` terminal artifacts, and `1,246` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -436,6 +439,8 @@ First migrated ownership:
 | `GET /api/v1/nova/me/team`                                                                                                                                               | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves Nova-only app-session auth and browser Supabase cookie fallback, reads only `team_id` for the authenticated user from `private.nova_team_members` through the server-owned private-schema REST adapter, and returns the derived legacy `{ teamId }` payload.                                                                                                                                                                                                                              |
 | `GET /api/v1/task-board-status-templates`                                                                                                                                | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust preserves authenticated Supabase browser-cookie and non-app-session Bearer access, rejects Tuturuuu app-session tokens without falling back to stale cookies, reads the global `task_board_status_templates` catalog through the server-owned Supabase REST adapter, preserves legacy `is_default.desc,name.asc` ordering, and returns the raw legacy `{ templates }` payload.                                                                                                                        |
 | `GET /api/v1/workspaces/limits`                                                                                                                                          | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust validates the browser Supabase auth cookie with Supabase Auth, treats `tuturuuu.com` and `xwf.tuturuuu.com` user emails as unlimited, otherwise reads only the exact count of non-deleted workspaces created by the authenticated user through the server-owned Supabase REST adapter, and returns the legacy `canCreate`, `currentCount`, `limit`, and `remaining` payload.                                                                                                                   |
+| `GET` / `PATCH` `/api/v1/user/onboarding-progress`                                                                                                                       | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust validates the browser Supabase session with Supabase Auth, reads or upserts only the authenticated user's `onboarding_progress` row through the server-owned Supabase REST adapter, preserves the legacy allowed-field filter, null missing-row response, invalid/empty update errors, and method handling.                                                                                                                                                                                          |
+| `POST /api/v1/aurora/health`                                                                                                                                             | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust validates the browser Supabase session with Supabase Auth, preserves the exact `@tuturuuu.com` email-domain gate, calls `AURORA_EXTERNAL_URL/health`, and returns the legacy success, auth, forbidden, and upstream-failure JSON bodies.                                                                                                                                                                                                                                                             |
 | `GET /api/v1/aurora/forecast`, `GET /api/v1/aurora/ml-metrics`, `GET /api/v1/aurora/statistical-metrics`                                                                 | `apps/backend` Rust route dispatcher | `route-overrides.json` marks only the read-only `GET` method artifacts `migrated`; Rust reads the public Aurora forecast and metric tables through the server-owned Supabase REST adapter. Forecast reads preserve the legacy combined `{ statistical_forecast, ml_forecast }` object, `date.asc` table ordering, and `YYYY-MM-DD` date shape, while metric reads return the raw legacy row arrays. The external ingest `POST` methods remain `legacy-next`.                                                                                              |
 | `GET /api/v1/infrastructure/changelog`, `GET /api/v1/infrastructure/changelog/:id`, `GET /api/v1/infrastructure/changelog/slug/:slug`                                    | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the list/id `GET` methods and slug route `migrated`; Rust reads `changelog_entries` through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace `manage_changelog`, falls back to published-only public reads for anonymous or unauthorized sessions, preserves exact-count list pagination and singular PostgREST detail/slug lookups, and maps `PGRST116` to the legacy `404` body. Changelog writes, publish, and upload remain legacy-owned. |
 | `GET /api/v1/inventory/storefronts/:slug`, `GET /api/v1/inventory/orders/:publicToken`                                                                                    | `apps/backend` Rust route dispatcher | `route-overrides.json` marks both public inventory read endpoints `migrated`; Rust keeps storefront/order data behind private inventory RPCs and service-role private-schema metadata reads, preserves public storefront CDN cache headers, private storefront/order app-session and browser-session membership checks, simulated HMAC order tokens, private no-store cache headers, and legacy `401`/`403`/`404`/`500` JSON bodies. Storefront checkout creation, analytics events, Polar webhooks, and workspace inventory management remain legacy-owned.         |
@@ -624,7 +629,8 @@ For Cloudflare specifically:
 
 - Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, `SUPABASE_URL`,
   `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and
-  `DISCORD_APP_DEPLOYMENT_URL` with `wrangler secret put`,
+  `DISCORD_APP_DEPLOYMENT_URL`, plus `AURORA_EXTERNAL_URL`, with
+  `wrangler secret put`,
   `wrangler versions secret put`, or Cloudflare dashboard secret bindings.
   The TanStack Worker reaches the backend Worker through the `BACKEND` service
   binding; configure `BACKEND_INTERNAL_URL` only for non-binding HTTP fallback
@@ -688,6 +694,8 @@ consumed by the TanStack shell through a Start server function:
 | `GET /api/v1/nova/me/team`                                                                                                                                     | Legacy-compatible authenticated current-user Nova team lookup backed by Nova app-session auth or browser Supabase cookie auth and a server-owned private-schema team membership lookup.                                     |
 | `GET /api/v1/task-board-status-templates`                                                                                                                      | Legacy-compatible authenticated global task-board status template catalog backed by Supabase cookie or Bearer auth and server-owned ordered catalog reads.                                                                    |
 | `GET /api/v1/workspaces/limits`                                                                                                                               | Legacy-compatible authenticated workspace creation limit check backed by Supabase Auth cookie validation and server-owned exact counts of non-deleted workspaces created by the caller.                                      |
+| `GET` / `PATCH` `/api/v1/user/onboarding-progress`                                                                                                             | Legacy-compatible authenticated onboarding progress reader/updater backed by Supabase Auth cookie validation, server-owned `onboarding_progress` reads/upserts, and the legacy allowed-field update contract.                |
+| `POST /api/v1/aurora/health`                                                                                                                                   | Legacy-compatible protected Aurora health probe backed by Supabase Auth cookie validation, the legacy Tuturuuu email-domain gate, and an outbound `AURORA_EXTERNAL_URL/health` check.                                      |
 | `GET /api/v1/internal/holidays`                                                                                                                               | Legacy-compatible public Vietnamese holiday list backed by the Rust server-owned Supabase REST adapter, including optional parseInt-style year filtering. POST/item/bulk admin holiday mutations remain legacy-owned.         |
 | `GET /api/v1/topic-announcement-verifications/:token`                                                                                                         | Legacy-compatible public Topic Announcements email verification route backed by server-owned private-schema Supabase REST reads and updates. Workspace Topic Announcements management APIs remain legacy-owned.               |
 | `GET /api/v1/users/me/profile`                                                                                                                                | App-session current-user profile route. It verifies `ttr_app_` JWTs, reads `users` and `user_private_details` through the server-owned Supabase REST adapter, and returns the legacy profile shape with no-store headers.     |

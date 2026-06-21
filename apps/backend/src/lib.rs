@@ -248,6 +248,7 @@ const SUPABASE_REFERENCE_KEYS: [&str; 7] = [
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BackendConfig {
     pub app_coordination_secrets: Vec<String>,
+    pub aurora_external_url: String,
     pub(crate) contact_data: contact::ContactDataConfig,
     pub cron_secret: String,
     pub deployment_target: String,
@@ -266,6 +267,7 @@ impl BackendConfig {
     pub fn new(environment: impl Into<String>, service_name: impl Into<String>) -> Self {
         Self {
             app_coordination_secrets: Vec::new(),
+            aurora_external_url: String::new(),
             contact_data: contact::ContactDataConfig::disabled(),
             cron_secret: String::new(),
             deployment_target: default_deployment_target().to_owned(),
@@ -289,6 +291,10 @@ impl BackendConfig {
 
         Self {
             app_coordination_secrets: contact::app_coordination_secrets_from_env(&environment),
+            aurora_external_url: env("AURORA_EXTERNAL_URL", "")
+                .trim()
+                .trim_end_matches('/')
+                .to_owned(),
             contact_data: contact::contact_data_config_from_env(),
             cron_secret: cron_secret_from_env(),
             deployment_target: env("BACKEND_DEPLOYMENT_TARGET", default_deployment_target()),
@@ -2613,6 +2619,10 @@ pub mod worker_runtime {
 
         BackendConfig {
             app_coordination_secrets: app_coordination_secrets_from_worker_env(env, &environment),
+            aurora_external_url: var(env, "AURORA_EXTERNAL_URL", "")
+                .trim()
+                .trim_end_matches('/')
+                .to_owned(),
             contact_data: contact_data_config_from_worker_env(env),
             cron_secret: cron_secret_from_worker_env(env),
             deployment_target: "cloudflare-workers".to_owned(),
@@ -2796,6 +2806,12 @@ mod tests {
             "https://project-ref.supabase.co/",
             "test-service-role-secret",
         );
+        config
+    }
+
+    fn backend_config_with_aurora_health() -> BackendConfig {
+        let mut config = backend_config_with_contact_data();
+        config.aurora_external_url = "https://aurora.example.test/".to_owned();
         config
     }
 
@@ -4837,6 +4853,141 @@ mod tests {
                 Some("test-service-role-secret")
             );
         }
+    }
+
+    #[tokio::test]
+    async fn aurora_health_post_requires_authenticated_supabase_user() {
+        let config = backend_config_with_aurora_health();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, request("POST", "/api/v1/aurora/health"), &outbound)
+                .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Not authenticated");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn aurora_health_post_rejects_non_tuturuuu_email_domain() {
+        let config = backend_config_with_aurora_health();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-1","email":"ada@example.com"}"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/health",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Unauthorized email domain");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn aurora_health_post_maps_upstream_failure_to_legacy_error() {
+        let config = backend_config_with_aurora_health();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"ada@tuturuuu.com"}"#),
+            outbound_response(503, r#"{"ok":false}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("POST", "/api/v1/aurora/health")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Error fetching health");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(calls[1].url, "https://aurora.example.test/health");
+        assert_eq!(calls[1].headers, Vec::<(String, String)>::new());
+    }
+
+    #[tokio::test]
+    async fn aurora_health_post_returns_legacy_success_when_upstream_is_ok() {
+        let config = backend_config_with_aurora_health();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"ada@tuturuuu.com"}"#),
+            outbound_response(200, r#"{"ok":true}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("POST", "/api/v1/aurora/health")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body, json!({ "message": "Success" }));
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(calls[1].url, "https://aurora.example.test/health");
+    }
+
+    #[tokio::test]
+    async fn aurora_health_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_aurora_health();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, request("GET", "/api/v1/aurora/health"), &outbound)
+                .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("POST"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]

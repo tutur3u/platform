@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 981,
-        "migrated": 51,
-        "percentComplete": 12.02,
-        "remaining": 981,
-        "terminal": 134,
+        "legacyNext": 979,
+        "migrated": 53,
+        "percentComplete": 12.2,
+        "remaining": 979,
+        "terminal": 136,
         "total": 1115,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 999,
-        "migrated": 56,
-        "percentComplete": 12.21,
-        "remaining": 999,
-        "terminal": 139,
+        "legacyNext": 997,
+        "migrated": 58,
+        "percentComplete": 12.39,
+        "remaining": 997,
+        "terminal": 141,
         "total": 1138,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1248,
-      "migrated": 186,
-      "percentComplete": 17.73,
-      "remaining": 1248,
-      "terminal": 269,
+      "legacyNext": 1246,
+      "migrated": 188,
+      "percentComplete": 17.86,
+      "remaining": 1246,
+      "terminal": 271,
       "total": 1517,
       "unknownStatus": 0
     }
@@ -1225,7 +1225,7 @@
       "methods": ["POST"],
       "routePath": "/api/v1/aurora/health",
       "sourceFile": "apps/web/src/app/api/v1/aurora/health/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -4682,7 +4682,7 @@
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/user/onboarding-progress",
       "sourceFile": "apps/web/src/app/api/v1/user/onboarding-progress/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

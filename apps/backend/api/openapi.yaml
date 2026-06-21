@@ -85,6 +85,109 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/user/onboarding-progress:
+    get:
+      summary: Current user onboarding progress
+      description: Migrated replacement for apps/web/src/app/api/v1/user/onboarding-progress/route.ts GET. The Rust backend validates the browser Supabase session with Supabase Auth, reads only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, and preserves the legacy null response when no row exists.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Current user's onboarding progress row, or null when no row exists.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/OnboardingProgress"
+                  - type: "null"
+        "401":
+          description: Caller is missing a valid browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingProgressMessage"
+        "500":
+          description: Onboarding progress row could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingProgressMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PATCH
+    patch:
+      summary: Update current user onboarding progress
+      description: Migrated replacement for apps/web/src/app/api/v1/user/onboarding-progress/route.ts PATCH. The Rust backend validates the browser Supabase session with Supabase Auth, filters the JSON body to the legacy allowed onboarding fields, fixes user_id to the authenticated user, and upserts through the server-owned Supabase REST adapter.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchOnboardingProgressRequest"
+      responses:
+        "200":
+          description: Upserted onboarding progress row.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingProgress"
+        "400":
+          description: Invalid JSON body or no allowlisted fields were provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingProgressMessage"
+        "401":
+          description: Caller is missing a valid browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingProgressMessage"
+        "500":
+          description: Onboarding progress row could not be updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingProgressMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PATCH
   /api/v1/ai/whitelist/me:
     get:
       summary: Current user AI whitelist status
@@ -638,6 +741,57 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/aurora/health:
+    post:
+      summary: Legacy-compatible protected Aurora health probe
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/health/route.ts POST. The Rust backend revalidates the caller's Supabase session through Supabase Auth, preserves the legacy exact `@tuturuuu.com` email-domain gate, then checks `AURORA_EXTERNAL_URL/health` through the shared outbound HTTP adapter. It returns the legacy JSON bodies for missing auth, unauthorized email domains, upstream failure, and success.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Aurora upstream health endpoint returned a 2xx status.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthResponse"
+        "401":
+          description: Caller is missing a valid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthUnauthorized"
+        "403":
+          description: Authenticated caller does not have the legacy Tuturuuu email domain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthForbidden"
+        "500":
+          description: Aurora upstream health endpoint could not be reached or returned a non-2xx status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST
   /api/v1/aurora/ml-metrics:
     get:
       summary: Legacy-compatible Aurora ML metrics list
@@ -1047,7 +1201,12 @@ paths:
         description: Legacy workspace path segment. The legacy Next.js route ignored this value, and the Rust migration preserves that behavior until crawler workspace ownership is redesigned.
     get:
       summary: List crawler domains
-      description: Migrated replacement for apps/web/src/app/api/[wsId]/crawlers/domains/route.ts. Reads `crawled_urls.url` and non-skipped `crawled_url_next_urls.url` through the server-owned Supabase REST adapter, extracts valid URL hostnames, deduplicates them, and returns the sorted legacy domain list with `cached: false`.
+      description: >
+        Migrated replacement for apps/web/src/app/api/[wsId]/crawlers/domains/route.ts.
+        Reads `crawled_urls.url` and non-skipped `crawled_url_next_urls.url`
+        through the server-owned Supabase REST adapter, extracts valid URL
+        hostnames, deduplicates them, and returns the sorted legacy domain list
+        with `cached: false`.
       responses:
         "200":
           description: Sorted unique crawler domains.
@@ -3448,6 +3607,144 @@ components:
           type: string
           examples:
             - Error checking workspace limit
+    OnboardingProgress:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        completed_steps:
+          type: array
+          items:
+            type: string
+        current_step:
+          type: string
+        workspace_name:
+          type:
+            - string
+            - "null"
+        workspace_description:
+          type:
+            - string
+            - "null"
+        workspace_avatar_url:
+          type:
+            - string
+            - "null"
+        profile_completed:
+          type: boolean
+        tour_completed:
+          type: boolean
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        use_case:
+          type:
+            - string
+            - "null"
+        flow_type:
+          type:
+            - string
+            - "null"
+        invited_emails:
+          type: array
+          items:
+            type: string
+            format: email
+        theme_preference:
+          type:
+            - string
+            - "null"
+        language_preference:
+          type:
+            - string
+            - "null"
+        notifications_enabled:
+          type: boolean
+        team_workspace_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+    PatchOnboardingProgressRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        completed_steps:
+          type: array
+          items:
+            type: string
+        current_step:
+          type: string
+        workspace_name:
+          type:
+            - string
+            - "null"
+        workspace_description:
+          type:
+            - string
+            - "null"
+        workspace_avatar_url:
+          type:
+            - string
+            - "null"
+        profile_completed:
+          type: boolean
+        tour_completed:
+          type: boolean
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        use_case:
+          type:
+            - string
+            - "null"
+        flow_type:
+          type:
+            - string
+            - "null"
+        invited_emails:
+          type: array
+          items:
+            type: string
+            format: email
+        theme_preference:
+          type:
+            - string
+            - "null"
+        language_preference:
+          type:
+            - string
+            - "null"
+        notifications_enabled:
+          type: boolean
+        team_workspace_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+      description: The Rust backend ignores keys outside the legacy onboarding progress allowlist and fixes user_id to the authenticated caller.
+    OnboardingProgressMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - Invalid request body
+            - No valid fields to update
+            - Failed to fetch onboarding progress
+            - Failed to update onboarding progress
     AiWhitelistMeResponse:
       type: object
       required:
@@ -3806,6 +4103,42 @@ components:
           type: string
           examples:
             - Error fetching forecast data
+    AuroraHealthResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Success
+    AuroraHealthUnauthorized:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Not authenticated
+    AuroraHealthForbidden:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized email domain
+    AuroraHealthError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error fetching health
     AuroraMetricsError:
       type: object
       required:

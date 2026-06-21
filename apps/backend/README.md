@@ -122,6 +122,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `date` fields to the legacy `YYYY-MM-DD` response shape, and returns the
   combined `{ statistical_forecast, ml_forecast }` object. Forecast `POST`
   ingestion remains legacy-owned until external Aurora writes move behind Rust.
+- `POST /api/v1/aurora/health`: legacy-compatible protected Aurora health
+  probe. Rust revalidates the browser Supabase session, preserves the legacy
+  exact `@tuturuuu.com` email-domain gate, calls
+  `AURORA_EXTERNAL_URL/health`, and returns the legacy success, auth, and
+  upstream-failure JSON bodies.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
 /api/v1/auth/mobile/password-login`, `OPTIONS
 /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,
@@ -246,18 +251,20 @@ bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
 bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
 bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
 `apps/backend/wrangler.jsonc` declares `BACKEND_INTERNAL_TOKEN`,
 `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and
-`DISCORD_APP_DEPLOYMENT_URL` under `secrets.required`. Wrangler prompts for
-values during `secret put`; do not commit those values in `wrangler.jsonc`,
-`vars`, docs, or shell history. `/readyz` reports not-ready until
-`BACKEND_INTERNAL_TOKEN` exists. Contact/profile preview APIs also require the
-Supabase secrets, and the Rust-owned Discord cron proxy requires `CRON_SECRET`
-plus `DISCORD_APP_DEPLOYMENT_URL`.
+`DISCORD_APP_DEPLOYMENT_URL`, and `AURORA_EXTERNAL_URL` under
+`secrets.required`. Wrangler prompts for values during `secret put`; do not
+commit those values in `wrangler.jsonc`, `vars`, docs, or shell history.
+`/readyz` reports not-ready until `BACKEND_INTERNAL_TOKEN` exists.
+Contact/profile preview APIs also require the Supabase secrets, the Rust-owned
+Discord cron proxy requires `CRON_SECRET` plus `DISCORD_APP_DEPLOYMENT_URL`,
+and the Rust-owned Aurora health probe requires `AURORA_EXTERNAL_URL`.
 
 After deployment, smoke-test the returned Worker origin. Before the TanStack
 Worker is deployed, the backend-only curl checks are enough:
@@ -297,12 +304,10 @@ endpoints:
 
 ```sh
 bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
-bun wrangler secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
 ```
 
-Both origin secrets initially point at the backend Worker origin. Server-side
-calls prefer `BACKEND_INTERNAL_URL`; browser-safe calls prefer
-`BACKEND_PUBLIC_ORIGIN`. The desired protected-traffic cutover is a Cloudflare
-service binding from `apps/tanstack-web` to `tuturuuu-backend`, then a validator
-update that accepts the binding before removing the internal backend URL secret.
+`BACKEND_PUBLIC_ORIGIN` initially points at the backend Worker origin.
+Server-side calls prefer the Cloudflare `BACKEND` service binding and use
+`BACKEND_INTERNAL_URL` only as a non-Cloudflare HTTP fallback for local, Docker,
+or emergency preview runs. Browser-safe calls use `BACKEND_PUBLIC_ORIGIN`.

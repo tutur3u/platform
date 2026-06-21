@@ -109,6 +109,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/task-board-status-templates by preserving authenticated Supabase session access for browser cookies and non-app-session Bearer tokens, rejecting Tuturuuu app-session tokens without falling back to stale cookies, reading the global task_board_status_templates catalog through the server-owned Supabase REST adapter with legacy is_default.desc/name.asc ordering, and returning the raw legacy templates payload."
     },
+    "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, empty update rejection, null missing-row response, and unsupported-method behavior."
+    },
+    "api:/api/v1/aurora/health:apps/web/src/app/api/v1/aurora/health/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles POST /api/v1/aurora/health by validating the browser Supabase session with Supabase Auth, preserving the legacy exact @tuturuuu.com email-domain gate, calling AURORA_EXTERNAL_URL/health through the outbound HTTP adapter, and returning the legacy success, auth, forbidden, and upstream-failure JSON bodies."
+    },
     "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {
