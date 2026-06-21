@@ -422,6 +422,12 @@ test('Supabase CLI workflows use tokenized retry setup', () => {
     'utf8'
   );
 
+  assert.match(
+    setupAction,
+    /BUN_INSTALL: \$\{\{ runner\.temp \}\}\/supabase-cli-bun/,
+    'Supabase CLI setup must isolate its transient Bun install from repo Bun setup'
+  );
+
   for (const workflowFile of workflowFiles) {
     const workflow = fs.readFileSync(
       path.join(workflowsDir, workflowFile),
