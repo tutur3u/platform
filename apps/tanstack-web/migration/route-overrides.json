@@ -214,6 +214,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/v1/infrastructure/users/fields/types with the deterministic legacy field type payload and no longer opens a Supabase admin client for static metadata."
     },
+    "api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/ai/models through the server-owned Supabase REST adapter, preserving private.ai_gateway_models reads with Accept-Profile/Content-Profile private headers, the fixed public column list, default language type filtering, provider/tag/enabled/search/ids filters, exact-count pagination, capped ID filters, no-store JSON responses, and the legacy 500 error body."
+    },
     "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

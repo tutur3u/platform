@@ -56,6 +56,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `GET /api/v1/infrastructure/users/fields/types`: legacy-compatible static
   user field type metadata migrated from `apps/web`. The Rust route returns the
   deterministic ordered legacy payload without opening a Supabase admin client.
+- `GET /api/v1/infrastructure/ai/models`: legacy-compatible public AI model
+  catalog backed by `private.ai_gateway_models`. Rust reads through the
+  server-owned Supabase REST adapter with private-schema headers, keeps the
+  fixed public column list, preserves provider/type/tag/enabled/search/ids
+  filters, supports exact-count pagination, and caps ID filters at 100.
 - `GET /api/v1/users/me/profile`: contact migration route. It
   verifies Tuturuuu app-session JWTs from `Authorization: Bearer ttr_app_...`,
   `tuturuuu_web_app_session`, or `tuturuuu_app_session`, then reads `users` and

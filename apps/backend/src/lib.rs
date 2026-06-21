@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod ai_models;
 mod aurora;
 mod changelog;
 mod contact;
@@ -350,6 +351,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = aurora::handle_aurora_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = ai_models::handle_ai_models_route(config, request, outbound).await {
         return response;
     }
 
@@ -2772,6 +2777,13 @@ mod tests {
         Box::leak(value.into_boxed_str())
     }
 
+    fn decoded_query_value(raw_url: &str, key: &str) -> Option<String> {
+        url::Url::parse(raw_url)
+            .ok()?
+            .query_pairs()
+            .find_map(|(name, value)| (name == key).then(|| value.into_owned()))
+    }
+
     #[tokio::test]
     async fn async_handler_preserves_pure_route_dispatch_without_outbound_calls() {
         let config = backend_config_with_internal_token();
@@ -2926,6 +2938,224 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
         assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn ai_models_get_reads_private_models_with_default_language_filter() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {
+                    "id":"openai/gpt-5-mini",
+                    "provider":"openai",
+                    "type":"language",
+                    "is_enabled":true
+                }
+            ]"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/infrastructure/ai/models"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!([
+                {
+                    "id": "openai/gpt-5-mini",
+                    "provider": "openai",
+                    "type": "language",
+                    "is_enabled": true
+                }
+            ])
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert!(
+            calls[0]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/ai_gateway_models?")
+        );
+        let select = decoded_query_value(&calls[0].url, "select").unwrap();
+        assert!(select.contains("cache_read_price_per_token"));
+        assert!(select.contains("web_search_price"));
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "order").as_deref(),
+            Some("provider.asc,name.asc")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "type").as_deref(),
+            Some("eq.language")
+        );
+        assert_eq!(decoded_query_value(&calls[0].url, "provider"), None);
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[0], "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(recorded_header(&calls[0], "Range"), None);
+        assert_eq!(recorded_header(&calls[0], "Prefer"), None);
+    }
+
+    #[tokio::test]
+    async fn ai_models_get_preserves_filters_search_ids_and_pagination() {
+        let config = backend_config_with_contact_data();
+        let outbound =
+            RecordingOutboundClient::with_responses(vec![outbound_response_with_headers(
+                200,
+                r#"[
+                {
+                    "id":"google/gemini-3.1-flash-lite",
+                    "provider":"google",
+                    "name":"Gemini Flash Lite"
+                }
+            ]"#,
+                vec![("content-range".to_owned(), "25-49/123".to_owned())],
+            )]);
+        let ids = std::iter::once("model-0".to_owned())
+            .chain((0..105).map(|index| format!("model-{index}")))
+            .collect::<Vec<_>>()
+            .join(",");
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(leaked_test_str(format!(
+                    "https://tuturuuu.localhost/api/v1/infrastructure/ai/models?format=paginated&page=2.9&limit=25.8&provider=google&enabled=false&type=all&q=ge,mini%25(pro)&tag=thinking&ids={ids}"
+                ))),
+                ..request("GET", "/api/v1/infrastructure/ai/models")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "data": [
+                    {
+                        "id": "google/gemini-3.1-flash-lite",
+                        "provider": "google",
+                        "name": "Gemini Flash Lite"
+                    }
+                ],
+                "pagination": {
+                    "page": 2,
+                    "limit": 25,
+                    "total": 123,
+                },
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "provider").as_deref(),
+            Some("eq.google")
+        );
+        assert_eq!(decoded_query_value(&calls[0].url, "type"), None);
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "is_enabled").as_deref(),
+            Some("eq.false")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "tags").as_deref(),
+            Some("cs.{thinking}")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "or").as_deref(),
+            Some(
+                "(id.ilike.%geminipro%,name.ilike.%geminipro%,provider.ilike.%geminipro%,description.ilike.%geminipro%)"
+            )
+        );
+        let id_filter = decoded_query_value(&calls[0].url, "id").unwrap();
+        assert!(id_filter.starts_with("in.("));
+        assert!(id_filter.ends_with(')'));
+        let filtered_ids = id_filter
+            .trim_start_matches("in.(")
+            .trim_end_matches(')')
+            .split(',')
+            .collect::<Vec<_>>();
+        assert_eq!(filtered_ids.len(), 100);
+        assert_eq!(filtered_ids[0], "model-0");
+        assert_eq!(filtered_ids[1], "model-1");
+        assert!(!filtered_ids.contains(&"model-100"));
+        assert_eq!(recorded_header(&calls[0], "Range-Unit"), Some("items"));
+        assert_eq!(recorded_header(&calls[0], "Range"), Some("25-49"));
+        assert_eq!(recorded_header(&calls[0], "Prefer"), Some("count=exact"));
+    }
+
+    #[tokio::test]
+    async fn ai_models_get_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/infrastructure/ai/models"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn ai_models_get_fails_closed_when_contact_data_is_not_configured() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/infrastructure/ai/models"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error fetching AI Models");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn ai_models_get_fails_closed_when_supabase_rejects_request() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(500, r#"{"error":"failed"}"#);
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/infrastructure/ai/models"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error fetching AI Models");
+        assert_eq!(outbound.calls().len(), 1);
     }
 
     #[tokio::test]

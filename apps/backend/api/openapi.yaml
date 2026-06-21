@@ -230,6 +230,106 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/ai/models:
+    get:
+      summary: Legacy-compatible public AI model catalog
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/ai/models/route.ts GET. The Rust backend reads private.ai_gateway_models through the server-owned Supabase REST adapter with the fixed public column list, private-schema PostgREST headers, legacy filters, optional exact-count pagination, sanitized ILIKE search, capped ID filtering, and the legacy error body. No browser-visible service-role or private-schema access is exposed.
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - paginated
+          description: Enables the legacy paginated response shape when set to paginated.
+        - name: page
+          in: query
+          schema:
+            type: string
+          description: Positive numeric page value. Presence also enables pagination.
+        - name: limit
+          in: query
+          schema:
+            type: string
+          description: Positive numeric page size capped at 100. Presence also enables pagination.
+        - name: provider
+          in: query
+          schema:
+            type: string
+          description: Optional exact provider filter.
+        - name: enabled
+          in: query
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          description: Optional enabled/disabled filter.
+        - name: type
+          in: query
+          schema:
+            type: string
+            examples:
+              - language
+              - image
+              - all
+          description: Optional model type filter. Defaults to language; all disables the type filter.
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Optional sanitized search term. Alias of search.
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Optional sanitized search term applied to id, name, provider, and description.
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Optional tag contained in the model tags array.
+        - name: ids
+          in: query
+          schema:
+            type: string
+          description: Optional comma-separated model IDs, deduplicated and capped at 100.
+      responses:
+        "200":
+          description: AI model rows or an exact-count paginated response.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/AIGatewayModelRow"
+                  - $ref: "#/components/schemas/AIModelsPaginatedResponse"
+        "500":
+          description: AI model rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIModelsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/changelog:
     get:
       summary: Legacy-compatible changelog list
@@ -2824,6 +2924,80 @@ components:
           type: string
           examples:
             - Internal Server Error
+    AIGatewayModelRow:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          examples:
+            - google/gemini-3.1-flash-lite
+        provider:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        is_enabled:
+          type: boolean
+        context_window:
+          type: integer
+        max_tokens:
+          type: integer
+        input_price_per_token:
+          type: number
+        output_price_per_token:
+          type: number
+        cache_read_price_per_token:
+          type: number
+        cache_write_price_per_token:
+          type: number
+        search_price:
+          type: number
+        web_search_price:
+          type: number
+        image_gen_price:
+          type: number
+    AIModelsPaginatedResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIGatewayModelRow"
+        pagination:
+          type: object
+          required:
+            - page
+            - limit
+            - total
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+    AIModelsError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error fetching AI Models
     ChangelogEntry:
       type: object
       additionalProperties: true
