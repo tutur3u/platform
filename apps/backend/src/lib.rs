@@ -12,6 +12,7 @@ mod crawlers;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
+mod inventory;
 mod mobile_version;
 mod nova;
 mod outbound;
@@ -251,6 +252,7 @@ pub struct BackendConfig {
     pub deployment_target: String,
     pub discord_app_deployment_url: String,
     pub environment: String,
+    pub(crate) inventory_simulated_order_secrets: Vec<String>,
     pub internal_token: String,
     pub local_e2e_migration_access: bool,
     pub port: u16,
@@ -268,6 +270,7 @@ impl BackendConfig {
             deployment_target: default_deployment_target().to_owned(),
             discord_app_deployment_url: String::new(),
             environment: environment.into(),
+            inventory_simulated_order_secrets: Vec::new(),
             internal_token: String::new(),
             local_e2e_migration_access: false,
             port: 7820,
@@ -280,6 +283,8 @@ impl BackendConfig {
     #[cfg(feature = "native")]
     pub fn from_env() -> Self {
         let environment = env("BACKEND_ENV", "development");
+        let inventory_simulated_order_secrets =
+            inventory_simulated_order_secrets_from_env(&environment);
 
         Self {
             app_coordination_secrets: contact::app_coordination_secrets_from_env(&environment),
@@ -291,6 +296,7 @@ impl BackendConfig {
                 .trim_end_matches('/')
                 .to_owned(),
             environment,
+            inventory_simulated_order_secrets,
             internal_token: std::env::var("BACKEND_INTERNAL_TOKEN")
                 .unwrap_or_default()
                 .trim()
@@ -420,6 +426,10 @@ pub(crate) async fn handle_backend_request(
     if let Some(response) =
         topic_announcements::handle_topic_announcement_route(config, request, outbound).await
     {
+        return response;
+    }
+
+    if let Some(response) = inventory::handle_inventory_route(config, request, outbound).await {
         return response;
     }
 
@@ -2242,6 +2252,33 @@ fn cron_secret_from_env() -> String {
 }
 
 #[cfg(feature = "native")]
+fn inventory_simulated_order_secrets_from_env(environment: &str) -> Vec<String> {
+    let mut secrets = Vec::new();
+
+    for key in inventory::INVENTORY_SIMULATED_ORDER_SECRET_KEYS {
+        let Ok(value) = std::env::var(key) else {
+            continue;
+        };
+        push_unique_secret(&mut secrets, &value);
+    }
+
+    if secrets.is_empty() && !environment.trim().eq_ignore_ascii_case("production") {
+        secrets.push(inventory::LOCAL_DEVELOPMENT_SIMULATED_ORDER_SECRET.to_owned());
+    }
+
+    secrets
+}
+
+#[cfg(feature = "native")]
+fn push_unique_secret(secrets: &mut Vec<String>, value: &str) {
+    let value = value.trim();
+
+    if !value.is_empty() && !secrets.iter().any(|secret| secret == value) {
+        secrets.push(value.to_owned());
+    }
+}
+
+#[cfg(feature = "native")]
 fn parse_port(value: &str) -> u16 {
     value
         .trim()
@@ -2563,6 +2600,8 @@ pub mod worker_runtime {
 
     fn worker_config(env: &Env) -> BackendConfig {
         let environment = var(env, "BACKEND_ENV", "production");
+        let inventory_simulated_order_secrets =
+            inventory_simulated_order_secrets_from_worker_env(env, &environment);
 
         BackendConfig {
             app_coordination_secrets: app_coordination_secrets_from_worker_env(env, &environment),
@@ -2574,6 +2613,7 @@ pub mod worker_runtime {
                 .trim_end_matches('/')
                 .to_owned(),
             environment,
+            inventory_simulated_order_secrets,
             internal_token: var(env, "BACKEND_INTERNAL_TOKEN", ""),
             local_e2e_migration_access: false,
             port: 7820,
@@ -2611,6 +2651,27 @@ pub mod worker_runtime {
 
         if secrets.is_empty() && !environment.trim().eq_ignore_ascii_case("production") {
             secrets.push(super::contact::LOCAL_DEVELOPMENT_APP_COORDINATION_SECRET.to_owned());
+        }
+
+        secrets
+    }
+
+    fn inventory_simulated_order_secrets_from_worker_env(
+        env: &Env,
+        environment: &str,
+    ) -> Vec<String> {
+        let mut secrets = Vec::new();
+
+        for key in super::inventory::INVENTORY_SIMULATED_ORDER_SECRET_KEYS {
+            let value = var(env, key, "");
+            let value = value.trim();
+            if !value.is_empty() && !secrets.iter().any(|secret| secret == value) {
+                secrets.push(value.to_owned());
+            }
+        }
+
+        if secrets.is_empty() && !environment.trim().eq_ignore_ascii_case("production") {
+            secrets.push(super::inventory::LOCAL_DEVELOPMENT_SIMULATED_ORDER_SECRET.to_owned());
         }
 
         secrets

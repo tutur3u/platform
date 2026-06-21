@@ -313,6 +313,188 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/inventory/storefronts/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Public storefront slug.
+    get:
+      summary: Public inventory storefront
+      description: Migrated replacement for apps/web/src/app/api/v1/inventory/storefronts/[slug]/route.ts GET. The Rust backend reads the storefront payload through the server-owned private.get_public_inventory_storefront RPC. Public storefronts receive short CDN cache headers. Private storefronts require a valid storefront/inventory app-session token or browser Supabase session plus workspace membership, and never expose private inventory tables directly to browser code.
+      security:
+        - {}
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBearer: []
+        - SupabaseBrowserSessionCookie: []
+      responses:
+        "200":
+          description: Public storefront payload, including storefront metadata and commerce content.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - public, s-maxage=60, stale-while-revalidate=300
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - storefront
+                additionalProperties: true
+                properties:
+                  storefront:
+                    type: object
+                    additionalProperties: true
+        "401":
+          description: Private storefront requires a valid app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactUnauthorized"
+        "403":
+          description: Caller is authenticated but is not a workspace member for the private storefront.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Forbidden
+        "404":
+          description: Storefront was not found or inventory is disabled for the storefront workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Not found
+        "500":
+          description: Storefront payload or private membership lookup could not be loaded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Failed to load storefront
+                      - Failed to verify workspace access
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/inventory/orders/{publicToken}:
+    parameters:
+      - name: publicToken
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Public checkout token, including signed simulated-order tokens.
+    get:
+      summary: Public inventory order lookup
+      description: Migrated replacement for apps/web/src/app/api/v1/inventory/orders/[publicToken]/route.ts GET. The Rust backend verifies simulated HMAC order tokens locally, reads persisted orders through private.get_inventory_checkout_by_public_token, and checks private storefront order access with server-owned private-schema metadata reads. Public orders preserve the legacy no explicit cache header, while private storefront orders return private no-store.
+      security:
+        - {}
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBearer: []
+        - SupabaseBrowserSessionCookie: []
+      responses:
+        "200":
+          description: Public order payload.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - private, no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - order
+                properties:
+                  order:
+                    type: object
+                    additionalProperties: true
+        "401":
+          description: Private storefront order requires a valid app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactUnauthorized"
+        "403":
+          description: Caller is authenticated but is not a workspace member for the private storefront order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Forbidden
+        "404":
+          description: Order was not found, token is invalid, or storefront metadata is missing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Not found
+        "500":
+          description: Order payload or private membership lookup could not be loaded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Failed to load order
+                      - Failed to verify workspace access
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/share/course/{courseId}:
     parameters:
       - name: courseId

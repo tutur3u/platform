@@ -93,6 +93,14 @@ const staticMarketingRoutes = [
     heading: 'AI Models Directory',
   },
   {
+    path: `/${DEFAULT_LOCALE}/changelog`,
+    heading: "What's New in Tuturuuu",
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/tools/random`,
+    heading: 'Secure random generator',
+  },
+  {
     path: `/${DEFAULT_LOCALE}/women-in-tech`,
     heading:
       'From Vietnam to the World: Women Leading the Future of Technology',

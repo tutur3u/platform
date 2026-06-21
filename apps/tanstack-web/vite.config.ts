@@ -25,6 +25,7 @@ const staticPublicRouteSegments = [
   '/security/bug-bounty',
   '/security/policy',
   '/terms',
+  '/tools/random',
   '/women-in-tech',
   '/products/ai',
   '/products/calendar',

@@ -42,6 +42,7 @@ import { Route as LocaleUiIndexRouteImport } from './routes/$locale/ui/index'
 import { Route as LocaleVisualizationsHorseRacingRouteImport } from './routes/$locale/visualizations/horse-racing'
 import { Route as LocaleUiSetupRouteImport } from './routes/$locale/ui/setup'
 import { Route as LocaleUiContributingRouteImport } from './routes/$locale/ui/contributing'
+import { Route as LocaleToolsRandomRouteImport } from './routes/$locale/tools/random'
 import { Route as LocaleSolutionsRetailRouteImport } from './routes/$locale/solutions/retail'
 import { Route as LocaleSolutionsRestaurantsRouteImport } from './routes/$locale/solutions/restaurants'
 import { Route as LocaleSolutionsRealestateRouteImport } from './routes/$locale/solutions/realestate'
@@ -270,6 +271,11 @@ const LocaleUiSetupRoute = LocaleUiSetupRouteImport.update({
 const LocaleUiContributingRoute = LocaleUiContributingRouteImport.update({
   id: '/$locale/ui/contributing',
   path: '/$locale/ui/contributing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleToolsRandomRoute = LocaleToolsRandomRouteImport.update({
+  id: '/$locale/tools/random',
+  path: '/$locale/tools/random',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleSolutionsRetailRoute = LocaleSolutionsRetailRouteImport.update({
@@ -681,6 +687,7 @@ export interface FileRoutesByFullPath {
   '/$locale/solutions/realestate': typeof LocaleSolutionsRealestateRoute
   '/$locale/solutions/restaurants': typeof LocaleSolutionsRestaurantsRoute
   '/$locale/solutions/retail': typeof LocaleSolutionsRetailRoute
+  '/$locale/tools/random': typeof LocaleToolsRandomRoute
   '/$locale/ui/contributing': typeof LocaleUiContributingRoute
   '/$locale/ui/setup': typeof LocaleUiSetupRoute
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute
@@ -778,6 +785,7 @@ export interface FileRoutesByTo {
   '/$locale/solutions/realestate': typeof LocaleSolutionsRealestateRoute
   '/$locale/solutions/restaurants': typeof LocaleSolutionsRestaurantsRoute
   '/$locale/solutions/retail': typeof LocaleSolutionsRetailRoute
+  '/$locale/tools/random': typeof LocaleToolsRandomRoute
   '/$locale/ui/contributing': typeof LocaleUiContributingRoute
   '/$locale/ui/setup': typeof LocaleUiSetupRoute
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute
@@ -876,6 +884,7 @@ export interface FileRoutesById {
   '/$locale/solutions/realestate': typeof LocaleSolutionsRealestateRoute
   '/$locale/solutions/restaurants': typeof LocaleSolutionsRestaurantsRoute
   '/$locale/solutions/retail': typeof LocaleSolutionsRetailRoute
+  '/$locale/tools/random': typeof LocaleToolsRandomRoute
   '/$locale/ui/contributing': typeof LocaleUiContributingRoute
   '/$locale/ui/setup': typeof LocaleUiSetupRoute
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute
@@ -975,6 +984,7 @@ export interface FileRouteTypes {
     | '/$locale/solutions/realestate'
     | '/$locale/solutions/restaurants'
     | '/$locale/solutions/retail'
+    | '/$locale/tools/random'
     | '/$locale/ui/contributing'
     | '/$locale/ui/setup'
     | '/$locale/visualizations/horse-racing'
@@ -1072,6 +1082,7 @@ export interface FileRouteTypes {
     | '/$locale/solutions/realestate'
     | '/$locale/solutions/restaurants'
     | '/$locale/solutions/retail'
+    | '/$locale/tools/random'
     | '/$locale/ui/contributing'
     | '/$locale/ui/setup'
     | '/$locale/visualizations/horse-racing'
@@ -1169,6 +1180,7 @@ export interface FileRouteTypes {
     | '/$locale/solutions/realestate'
     | '/$locale/solutions/restaurants'
     | '/$locale/solutions/retail'
+    | '/$locale/tools/random'
     | '/$locale/ui/contributing'
     | '/$locale/ui/setup'
     | '/$locale/visualizations/horse-racing'
@@ -1264,6 +1276,7 @@ export interface RootRouteChildren {
   LocaleSolutionsRealestateRoute: typeof LocaleSolutionsRealestateRoute
   LocaleSolutionsRestaurantsRoute: typeof LocaleSolutionsRestaurantsRoute
   LocaleSolutionsRetailRoute: typeof LocaleSolutionsRetailRoute
+  LocaleToolsRandomRoute: typeof LocaleToolsRandomRoute
   LocaleUiContributingRoute: typeof LocaleUiContributingRoute
   LocaleUiSetupRoute: typeof LocaleUiSetupRoute
   LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute
@@ -1521,6 +1534,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/ui/contributing'
       fullPath: '/$locale/ui/contributing'
       preLoaderRoute: typeof LocaleUiContributingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/tools/random': {
+      id: '/$locale/tools/random'
+      path: '/$locale/tools/random'
+      fullPath: '/$locale/tools/random'
+      preLoaderRoute: typeof LocaleToolsRandomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/solutions/retail': {
@@ -2081,6 +2101,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleSolutionsRealestateRoute: LocaleSolutionsRealestateRoute,
   LocaleSolutionsRestaurantsRoute: LocaleSolutionsRestaurantsRoute,
   LocaleSolutionsRetailRoute: LocaleSolutionsRetailRoute,
+  LocaleToolsRandomRoute: LocaleToolsRandomRoute,
   LocaleUiContributingRoute: LocaleUiContributingRoute,
   LocaleUiSetupRoute: LocaleUiSetupRoute,
   LocaleVisualizationsHorseRacingRoute: LocaleVisualizationsHorseRacingRoute,

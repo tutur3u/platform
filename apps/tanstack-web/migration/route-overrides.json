@@ -159,6 +159,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/slug/:slug through the server-owned Supabase REST adapter, preserving the public published-only changelog lookup by slug, non-null published_at filter, PostgREST single-row response, and legacy 404/500 JSON error body."
     },
+    "api:/api/v1/inventory/orders/:publicToken:apps/web/src/app/api/v1/inventory/orders/[publicToken]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/orders/:publicToken through server-owned private inventory RPCs and private-schema metadata reads, preserving simulated HMAC order tokens, public order reads, private-storefront app-session/browser-session membership checks, private no-store cache headers, and the legacy 404/500 JSON bodies."
+    },
+    "api:/api/v1/inventory/storefronts/:slug:apps/web/src/app/api/v1/inventory/storefronts/[slug]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/storefronts/:slug through the server-owned private get_public_inventory_storefront RPC, preserving public storefront cache headers, private-storefront app-session/browser-session membership checks, and the legacy 401/403/404/500 JSON bodies without exposing private inventory tables to browser code."
+    },
     "api:/api/v1/topic-announcement-verifications/:token:apps/web/src/app/api/v1/topic-announcement-verifications/[token]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -837,6 +847,16 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/models ports the legacy public AI model directory through a Start loader/server function, TanStack Query hydration, and @tuturuuu/internal-api row/page facades backed by the Rust-owned /api/v1/infrastructure/ai/models endpoint. Browser code does not call protected app APIs or Supabase directly."
+    },
+    "page:/:locale/changelog:apps/web/src/app/[locale]/(marketing)/changelog/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/changelog ports the legacy public changelog index through a Start loader/server function, TanStack Query hydration, ISR-style CDN headers, and @tuturuuu/internal-api backend facades backed by the Rust-owned /api/v1/infrastructure/changelog GET endpoint. Browser code does not call protected app APIs or Supabase directly."
+    },
+    "page:/:locale/tools/random:apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/tools/random ports the legacy browser-local secure random generator with localized English/Vietnamese copy, Web Crypto ID/token/password generation, and clipboard actions without auth, Supabase, server actions, or protected app API access."
     },
     "page:/:locale/contributors:apps/web/src/app/[locale]/(marketing)/contributors/page.tsx": {
       "status": "migrated",
