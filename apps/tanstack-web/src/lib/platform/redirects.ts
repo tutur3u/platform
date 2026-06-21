@@ -114,6 +114,20 @@ export function getMailAppOrigin() {
   });
 }
 
+export function getDriveAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'drive',
+    candidates: [
+      process.env.DRIVE_APP_URL,
+      process.env.NEXT_PUBLIC_DRIVE_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://drive.tuturuuu.com'
+        : getLocalInternalAppUrl('drive', 'http://localhost:7817'),
+  });
+}
+
 export function getCmsAppOrigin() {
   return resolveInternalAppUrl({
     appName: 'cms',
@@ -179,6 +193,26 @@ export function buildMailRedirectHref(
   if (options.folder) {
     url.searchParams.set('folder', options.folder);
   }
+
+  return url.toString();
+}
+
+export function buildDriveRedirectHref(
+  workspaceId: string,
+  options: {
+    personal?: boolean;
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId, {
+    personal: options.personal,
+  });
+  const url = new URL(
+    `/${encodeURIComponent(workspaceSlug)}`,
+    `${getDriveAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams);
 
   return url.toString();
 }

@@ -67,6 +67,7 @@ import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products
 import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar'
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai'
 import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm'
+import { Route as LocaleDocumentsDocumentIdRouteImport } from './routes/$locale/documents/$documentId'
 import { Route as LocaleChangelogSlugRouteImport } from './routes/$locale/changelog.$slug'
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
 import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts'
@@ -81,6 +82,7 @@ import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
 import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations'
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects'
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm'
+import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive'
 import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet'
 import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index'
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index'
@@ -407,6 +409,12 @@ const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
   path: '/$locale/games/farm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleDocumentsDocumentIdRoute =
+  LocaleDocumentsDocumentIdRouteImport.update({
+    id: '/$locale/documents/$documentId',
+    path: '/$locale/documents/$documentId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleChangelogSlugRoute = LocaleChangelogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -477,6 +485,11 @@ const LocaleWsIdExternalProjectsRoute =
 const LocaleWsIdEpmRoute = LocaleWsIdEpmRouteImport.update({
   id: '/$locale/$wsId/epm',
   path: '/$locale/$wsId/epm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWsIdDriveRoute = LocaleWsIdDriveRouteImport.update({
+  id: '/$locale/$wsId/drive',
+  path: '/$locale/$wsId/drive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleWsIdDietRoute = LocaleWsIdDietRouteImport.update({
@@ -649,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
+  '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
@@ -663,6 +677,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute
+  '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute
   '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -747,6 +762,7 @@ export interface FileRoutesByTo {
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
+  '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
@@ -761,6 +777,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute
+  '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute
   '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -846,6 +863,7 @@ export interface FileRoutesById {
   '/products/meet-together': typeof ProductsMeetTogetherRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute
+  '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
@@ -860,6 +878,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute
+  '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute
   '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -946,6 +965,7 @@ export interface FileRouteTypes {
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/$wsId/diet'
+    | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/integrations'
@@ -960,6 +980,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
     | '/$locale/changelog/$slug'
+    | '/$locale/documents/$documentId'
     | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -1044,6 +1065,7 @@ export interface FileRouteTypes {
     | '/products/meet-together'
     | '/$locale'
     | '/$locale/$wsId/diet'
+    | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/integrations'
@@ -1058,6 +1080,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
     | '/$locale/changelog/$slug'
+    | '/$locale/documents/$documentId'
     | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -1142,6 +1165,7 @@ export interface FileRouteTypes {
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/$wsId/diet'
+    | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/integrations'
@@ -1156,6 +1180,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
     | '/$locale/changelog/$slug'
+    | '/$locale/documents/$documentId'
     | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -1241,6 +1266,7 @@ export interface RootRouteChildren {
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute
+  LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
   LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute
@@ -1254,6 +1280,7 @@ export interface RootRouteChildren {
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
   LocaleWsIdWorkoutsRoute: typeof LocaleWsIdWorkoutsRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
+  LocaleDocumentsDocumentIdRoute: typeof LocaleDocumentsDocumentIdRoute
   LocaleGamesFarmRoute: typeof LocaleGamesFarmRoute
   LocaleProductsAiRoute: typeof LocaleProductsAiRoute
   LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute
@@ -1711,6 +1738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleGamesFarmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/documents/$documentId': {
+      id: '/$locale/documents/$documentId'
+      path: '/$locale/documents/$documentId'
+      fullPath: '/$locale/documents/$documentId'
+      preLoaderRoute: typeof LocaleDocumentsDocumentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/changelog/$slug': {
       id: '/$locale/changelog/$slug'
       path: '/$slug'
@@ -1807,6 +1841,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/$wsId/epm'
       fullPath: '/$locale/$wsId/epm'
       preLoaderRoute: typeof LocaleWsIdEpmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/drive': {
+      id: '/$locale/$wsId/drive'
+      path: '/$locale/$wsId/drive'
+      fullPath: '/$locale/$wsId/drive'
+      preLoaderRoute: typeof LocaleWsIdDriveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/$wsId/diet': {
@@ -2066,6 +2107,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,
+  LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
   LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,
@@ -2079,6 +2121,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
   LocaleWsIdWorkoutsRoute: LocaleWsIdWorkoutsRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
+  LocaleDocumentsDocumentIdRoute: LocaleDocumentsDocumentIdRoute,
   LocaleGamesFarmRoute: LocaleGamesFarmRoute,
   LocaleProductsAiRoute: LocaleProductsAiRoute,
   LocaleProductsCalendarRoute: LocaleProductsCalendarRoute,

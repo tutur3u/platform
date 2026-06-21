@@ -4,6 +4,7 @@ import {
   buildCmsCollectionRedirectHref,
   buildCmsEntryRedirectHref,
   buildCmsRedirectHref,
+  buildDriveRedirectHref,
   buildFinanceTransactionCategoriesRedirectHref,
   buildMailRedirectHref,
   buildQrGeneratorRedirectHref,
@@ -146,6 +147,32 @@ describe('public redirect helpers', () => {
     expect(buildMailRedirectHref('ws-1')).toBe('https://mail.example.com/ws-1');
     expect(buildMailRedirectHref('ws-1', { folder: 'sent' })).toBe(
       'https://mail.example.com/ws-1?folder=sent'
+    );
+  });
+
+  it('preserves legacy Drive app redirect targets', () => {
+    vi.stubEnv('DRIVE_APP_URL', 'https://drive.example.com/base/');
+
+    expect(buildDriveRedirectHref('ws-1')).toBe(
+      'https://drive.example.com/ws-1'
+    );
+    expect(buildDriveRedirectHref('personal-ws', { personal: true })).toBe(
+      'https://drive.example.com/personal'
+    );
+    expect(buildDriveRedirectHref(ROOT_WORKSPACE_ID)).toBe(
+      'https://drive.example.com/internal'
+    );
+  });
+
+  it('preserves legacy Drive query forwarding', () => {
+    vi.stubEnv('DRIVE_APP_URL', 'https://drive.example.com');
+
+    expect(
+      buildDriveRedirectHref('ws-1', {
+        searchParams: '?path=assets&q=demo&tag=a&tag=b&empty=',
+      })
+    ).toBe(
+      'https://drive.example.com/ws-1?path=assets&q=demo&tag=a&tag=b&empty='
     );
   });
 
