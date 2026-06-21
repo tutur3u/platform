@@ -80,6 +80,12 @@ pub(crate) const CONTACT_DATA_LAYER_NOT_READY_MESSAGE: &str =
     "Rust contact data persistence is not configured yet";
 const CONTACT_DATA_REQUEST_FAILED_MESSAGE: &str = "Rust contact data request failed";
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct AppSessionIdentity {
+    pub(crate) email: Option<String>,
+    pub(crate) id: String,
+}
+
 #[derive(Clone, Eq, PartialEq)]
 pub(crate) struct RedactedSecret(String);
 
@@ -217,6 +223,23 @@ pub(crate) struct ContactDataLayerStatus {
 #[cfg(test)]
 pub(crate) fn current_user_app_session_targets() -> &'static [&'static str] {
     &CURRENT_USER_APP_SESSION_TARGETS
+}
+
+pub(crate) fn request_has_app_session_token(request: BackendRequest<'_>) -> bool {
+    session::has_app_session_token(request)
+}
+
+pub(crate) fn resolve_app_session_identity(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    expected_targets: &[&str],
+) -> Result<AppSessionIdentity, ()> {
+    session::resolve_app_session(config, request, expected_targets)
+        .map(|actor| AppSessionIdentity {
+            email: actor.claims.email,
+            id: actor.claims.sub,
+        })
+        .map_err(|_| ())
 }
 
 #[derive(Serialize)]

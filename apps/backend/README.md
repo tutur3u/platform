@@ -61,6 +61,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   server-owned Supabase REST adapter with private-schema headers, keeps the
   fixed public column list, preserves provider/type/tag/enabled/search/ids
   filters, supports exact-count pagination, and caps ID filters at 100.
+- `GET /api/v1/ai/whitelist/me`: legacy-compatible current-user AI whitelist
+  status route. Rust preserves app-session-first auth for satellite apps,
+  falls back to browser Supabase cookies only when no app-session token is
+  present, reads only `enabled` from `private.ai_whitelisted_emails`, and
+  returns the derived `{ email, enabled }` payload.
 - `GET /api/v1/workspaces/limits`: legacy-compatible workspace creation limit
   check. Rust validates browser Supabase auth cookies with Supabase Auth,
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise

@@ -96,6 +96,10 @@ pub(super) fn resolve_app_session(
     )))
 }
 
+pub(super) fn has_app_session_token(request: BackendRequest<'_>) -> bool {
+    !app_session_token_candidates(request).is_empty()
+}
+
 #[cfg(feature = "native")]
 pub(crate) fn app_coordination_secrets_from_env(environment: &str) -> Vec<String> {
     let mut secrets = Vec::new();
