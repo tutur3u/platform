@@ -201,10 +201,15 @@
     },
     "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts": {
       "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request validates the public client/platform query, reads WEB_OTP_ENABLED for web/tulearn and mobile OTP policy for mobile clients through the server-owned Supabase REST adapter, preserves wildcard CORS headers, fails open for non-mobile config errors, and fails closed for mobile policy errors."
+        },
         "OPTIONS": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend route_request handles the legacy OTP settings CORS preflight with the shared wildcard 204 response. GET remains legacy-owned until OTP settings lookup and diagnostics move behind the Rust backend."
+          "note": "Rust backend route_request handles the legacy OTP settings CORS preflight with the shared wildcard 204 response. GET is also Rust-owned for public OTP availability lookup."
         }
       }
     },

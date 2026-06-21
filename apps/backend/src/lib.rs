@@ -2999,6 +2999,154 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn otp_settings_reads_web_config_without_mobile_policy_validation() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(200, r#"[{"value":"true"}]"#);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/auth/otp/settings?client=web&platform=",
+                ),
+                ..request("GET", mobile_version::OTP_SETTINGS_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["otpEnabled"], true);
+        assert_eq!(
+            header_value(&response, "access-control-allow-origin"),
+            Some("*")
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        let call = &calls[0];
+        assert_eq!(call.method, OutboundMethod::Get);
+        assert!(call.url.contains("select=value"));
+        assert!(call.url.contains("id=eq.WEB_OTP_ENABLED"));
+        assert!(!call.url.contains("MOBILE_IOS_EFFECTIVE_VERSION"));
+    }
+
+    #[tokio::test]
+    async fn otp_settings_fails_open_for_web_when_config_is_unavailable() {
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &BackendConfig::new("test", "backend"),
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/auth/otp/settings?client=tulearn"),
+                ..request("GET", mobile_version::OTP_SETTINGS_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["otpEnabled"], false);
+        assert!(
+            response.body["diagnosticCode"]
+                .as_str()
+                .unwrap()
+                .starts_with("AUTH-OTP-SETTINGS-")
+        );
+        assert_eq!(
+            header_value(&response, "access-control-allow-origin"),
+            Some("*")
+        );
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn otp_settings_reads_mobile_policy_and_fails_closed() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {"id":"MOBILE_IOS_OTP_ENABLED","value":true},
+                {"id":"MOBILE_ANDROID_OTP_ENABLED","value":"false"}
+            ]"#,
+        );
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/auth/otp/settings?client=mobile&platform=ios"),
+                ..request("GET", mobile_version::OTP_SETTINGS_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["otpEnabled"], true);
+        assert!(
+            outbound.calls()[0]
+                .url
+                .contains("MOBILE_ANDROID_EFFECTIVE_VERSION")
+        );
+
+        let unavailable = handle_backend_request(
+            &BackendConfig::new("test", "backend"),
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/auth/otp/settings?client=mobile&platform=android"),
+                ..request("GET", mobile_version::OTP_SETTINGS_PATH)
+            },
+            &RecordingOutboundClient::default(),
+        )
+        .await;
+
+        assert_eq!(unavailable.status, 500);
+        assert!(
+            unavailable.body["diagnosticCode"]
+                .as_str()
+                .unwrap()
+                .starts_with("AUTH-OTP-SETTINGS-")
+        );
+        assert_eq!(unavailable.body["error"], "Failed to load OTP settings");
+    }
+
+    #[tokio::test]
+    async fn otp_settings_validates_query_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        for (url, message) in [
+            (
+                "https://tuturuuu.localhost/api/v1/auth/otp/settings",
+                r#"Invalid option: expected one of "web"|"mobile"|"tulearn""#,
+            ),
+            (
+                "https://tuturuuu.localhost/api/v1/auth/otp/settings?client=mobile",
+                "Mobile OTP settings requests must include a platform",
+            ),
+            (
+                "https://tuturuuu.localhost/api/v1/auth/otp/settings?client=web&platform=windows",
+                r#"Invalid option: expected one of "ios"|"android""#,
+            ),
+        ] {
+            let response = handle_backend_request(
+                &config,
+                BackendRequest {
+                    url: Some(url),
+                    ..request("GET", mobile_version::OTP_SETTINGS_PATH)
+                },
+                &outbound,
+            )
+            .await;
+
+            assert_eq!(response.status, 400, "{url}");
+            assert_eq!(response.body["error"], message);
+            assert_eq!(
+                header_value(&response, "access-control-allow-origin"),
+                Some("*")
+            );
+        }
+
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
     async fn mobile_version_check_rejects_unsupported_methods_but_leaves_options_route_owned() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::default();
@@ -3011,6 +3159,33 @@ mod tests {
         let options = handle_backend_request(
             &config,
             request("OPTIONS", mobile_version::MOBILE_VERSION_CHECK_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(rejected.status, 405);
+        assert_eq!(rejected.allow, Some("GET, OPTIONS"));
+        assert_eq!(options.status, 204);
+        assert_eq!(
+            header_value(&options, "access-control-allow-methods"),
+            Some(MOBILE_AUTH_CORS_ALLOW_METHODS)
+        );
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn otp_settings_rejects_unsupported_methods_but_leaves_options_route_owned() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let rejected = handle_backend_request(
+            &config,
+            request("POST", mobile_version::OTP_SETTINGS_PATH),
+            &outbound,
+        )
+        .await;
+        let options = handle_backend_request(
+            &config,
+            request("OPTIONS", mobile_version::OTP_SETTINGS_PATH),
             &outbound,
         )
         .await;

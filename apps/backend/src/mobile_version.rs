@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse,
@@ -9,8 +10,10 @@ use crate::{
 };
 
 pub(crate) const MOBILE_VERSION_CHECK_PATH: &str = "/api/v1/mobile/version-check";
+pub(crate) const OTP_SETTINGS_PATH: &str = "/api/v1/auth/otp/settings";
 
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
+const AUTH_OTP_SETTINGS_DIAGNOSTIC_PREFIX: &str = "AUTH-OTP-SETTINGS";
 const MOBILE_IOS_EFFECTIVE_VERSION: &str = "MOBILE_IOS_EFFECTIVE_VERSION";
 const MOBILE_IOS_MINIMUM_VERSION: &str = "MOBILE_IOS_MINIMUM_VERSION";
 const MOBILE_IOS_OTP_ENABLED: &str = "MOBILE_IOS_OTP_ENABLED";
@@ -32,6 +35,7 @@ const MOBILE_VERSION_POLICY_CONFIG_IDS: [&str; 9] = [
     WEB_OTP_ENABLED,
 ];
 const MOBILE_VERSION_POLICY_ERROR: &str = "Failed to evaluate mobile version policy";
+const OTP_SETTINGS_ERROR: &str = "Failed to load OTP settings";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum MobilePlatform {
@@ -77,6 +81,11 @@ struct WorkspaceConfigRow {
     value: Value,
 }
 
+#[derive(Deserialize)]
+struct WorkspaceConfigValueRow {
+    value: Value,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct MobileVersionCheckResponse {
@@ -97,6 +106,9 @@ pub(crate) async fn handle_mobile_version_route(
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
     match (request.method, request.path) {
+        ("GET", OTP_SETTINGS_PATH) => Some(otp_settings_response(config, request, outbound).await),
+        ("OPTIONS", OTP_SETTINGS_PATH) => None,
+        (method, OTP_SETTINGS_PATH) => Some(method_not_allowed(method, "GET, OPTIONS")),
         ("GET", MOBILE_VERSION_CHECK_PATH) => {
             Some(mobile_version_check_response(config, request, outbound).await)
         }
@@ -104,6 +116,112 @@ pub(crate) async fn handle_mobile_version_route(
         (method, MOBILE_VERSION_CHECK_PATH) => Some(method_not_allowed(method, "GET, OPTIONS")),
         _ => None,
     }
+}
+
+async fn otp_settings_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let query = match parse_otp_settings_query(request.url) {
+        Ok(query) => query,
+        Err(message) => return mobile_json_response(400, json!({ "error": message })),
+    };
+
+    let otp_enabled = match query.client {
+        OtpClient::Mobile => match get_mobile_version_policies(config, outbound).await {
+            Ok(policies) => match query.platform {
+                Some(MobilePlatform::Ios) => policies.ios.otp_enabled,
+                Some(MobilePlatform::Android) => policies.android.otp_enabled,
+                None => false,
+            },
+            Err(()) => {
+                return mobile_json_response(
+                    500,
+                    json!({
+                        "diagnosticCode": auth_otp_settings_diagnostic_code(),
+                        "error": OTP_SETTINGS_ERROR,
+                    }),
+                );
+            }
+        },
+        OtpClient::Web | OtpClient::Tulearn => {
+            match get_web_otp_enabled_config(config, outbound).await {
+                Ok(value) => value,
+                Err(()) => {
+                    return mobile_json_response(
+                        200,
+                        json!({
+                            "diagnosticCode": auth_otp_settings_diagnostic_code(),
+                            "otpEnabled": false,
+                        }),
+                    );
+                }
+            }
+        }
+    };
+
+    mobile_json_response(200, json!({ "otpEnabled": otp_enabled }))
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OtpClient {
+    Mobile,
+    Tulearn,
+    Web,
+}
+
+impl OtpClient {
+    fn parse(value: Option<&str>) -> Result<Self, &'static str> {
+        match value {
+            Some("mobile") => Ok(Self::Mobile),
+            Some("tulearn") => Ok(Self::Tulearn),
+            Some("web") => Ok(Self::Web),
+            _ => Err(r#"Invalid option: expected one of "web"|"mobile"|"tulearn""#),
+        }
+    }
+}
+
+struct OtpSettingsQuery {
+    client: OtpClient,
+    platform: Option<MobilePlatform>,
+}
+
+fn parse_otp_settings_query(request_url: Option<&str>) -> Result<OtpSettingsQuery, String> {
+    let url = request_url
+        .and_then(|value| url::Url::parse(value).ok())
+        .ok_or_else(|| "Invalid request parameters".to_owned())?;
+    let client = OtpClient::parse(
+        url.query_pairs()
+            .find_map(|(key, value)| (key == "client").then_some(value.into_owned()))
+            .as_deref(),
+    )
+    .map_err(str::to_owned)?;
+    let raw_platform = url
+        .query_pairs()
+        .find_map(|(key, value)| (key == "platform").then_some(value.into_owned()))
+        .filter(|value| !value.is_empty());
+    let platform = if let Some(value) = raw_platform.as_deref() {
+        Some(MobilePlatform::parse(Some(value)).map_err(str::to_owned)?)
+    } else {
+        None
+    };
+
+    if client == OtpClient::Mobile && platform.is_none() {
+        return Err("Mobile OTP settings requests must include a platform".to_owned());
+    }
+
+    Ok(OtpSettingsQuery { client, platform })
+}
+
+fn auth_otp_settings_diagnostic_code() -> String {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+    let suffix = (nanos & 0xFF_FFFF) as u32;
+
+    format!("{AUTH_OTP_SETTINGS_DIAGNOSTIC_PREFIX}-{suffix:06X}")
 }
 
 async fn mobile_version_check_response(
@@ -203,6 +321,49 @@ async fn get_mobile_version_policies(
     validate_mobile_version_policies(&policies).map_err(|_| ())?;
 
     Ok(policies)
+}
+
+async fn get_web_otp_enabled_config(
+    config: &BackendConfig,
+    outbound: &impl OutboundHttpClient,
+) -> Result<bool, ()> {
+    if !config.contact_data.configured() {
+        return Err(());
+    }
+
+    let Some(url) = config.contact_data.rest_url(
+        "workspace_configs",
+        &[
+            ("select", "value".to_owned()),
+            ("ws_id", format!("eq.{ROOT_WORKSPACE_ID}")),
+            ("id", format!("eq.{WEB_OTP_ENABLED}")),
+        ],
+    ) else {
+        return Err(());
+    };
+    let Some(service_role_key) = config.contact_data.service_role_key() else {
+        return Err(());
+    };
+    let authorization = format!("Bearer {service_role_key}");
+    let response = outbound
+        .send(
+            OutboundRequest::new(OutboundMethod::Get, &url)
+                .with_header("Accept", APPLICATION_JSON)
+                .with_header("Authorization", &authorization)
+                .with_header("apikey", service_role_key),
+        )
+        .await
+        .map_err(|_| ())?;
+
+    if !is_success_status(response.status) {
+        return Err(());
+    }
+
+    let rows = response
+        .json::<Vec<WorkspaceConfigValueRow>>()
+        .map_err(|_| ())?;
+
+    Ok(normalize_config_bool(rows.first().map(|row| &row.value)))
 }
 
 fn normalize_mobile_version_policies(rows: &[WorkspaceConfigRow]) -> MobileVersionPolicies {

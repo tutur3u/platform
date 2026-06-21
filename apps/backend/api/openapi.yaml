@@ -644,9 +644,79 @@ paths:
                 examples:
                   - "86400"
   /api/v1/auth/otp/settings:
+    get:
+      summary: Public OTP availability settings
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/auth/otp/settings/route.ts. Validates the public client/platform query, reads WEB_OTP_ENABLED for web and tulearn clients, reads mobile OTP policy for mobile clients, preserves legacy wildcard CORS headers, fails open for non-mobile config failures, and fails closed for mobile policy failures.
+      parameters:
+        - name: client
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - web
+              - mobile
+              - tulearn
+        - name: platform
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - ios
+              - android
+          description: Required when client is mobile.
+      responses:
+        "200":
+          description: OTP availability for the requested public client.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                examples:
+                  - "*"
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                examples:
+                  - GET, POST, OPTIONS
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                examples:
+                  - Content-Type, Authorization
+            Access-Control-Max-Age:
+              schema:
+                type: string
+                examples:
+                  - "86400"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpSettingsResponse"
+        "400":
+          description: Invalid client or platform query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpSettingsValidationError"
+        "500":
+          description: Mobile OTP policy could not be loaded or validated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpSettingsServerError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, OPTIONS
     options:
       summary: Legacy OTP settings CORS preflight
-      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/otp/settings/route.ts. GET remains legacy-owned until OTP settings lookup and diagnostics move behind the Rust backend.
+      description: Method-level migrated replacement for the OPTIONS export in apps/web/src/app/api/v1/auth/otp/settings/route.ts. GET is also Rust-owned and returns the legacy public OTP settings payload.
       responses:
         "204":
           description: Empty CORS preflight response.
@@ -2371,6 +2441,44 @@ components:
           examples:
             - Version must use x.y.z format
             - Failed to evaluate mobile version policy
+    OtpSettingsResponse:
+      type: object
+      required:
+        - otpEnabled
+      properties:
+        otpEnabled:
+          type: boolean
+        diagnosticCode:
+          type: string
+          pattern: ^AUTH-OTP-SETTINGS-[A-Z0-9]+$
+          description: Present only for the legacy non-mobile fail-open fallback.
+          examples:
+            - AUTH-OTP-SETTINGS-ABC123
+    OtpSettingsValidationError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Invalid option: expected one of "web"|"mobile"|"tulearn"
+            - Mobile OTP settings requests must include a platform
+    OtpSettingsServerError:
+      type: object
+      required:
+        - diagnosticCode
+        - error
+      properties:
+        diagnosticCode:
+          type: string
+          pattern: ^AUTH-OTP-SETTINGS-[A-Z0-9]+$
+          examples:
+            - AUTH-OTP-SETTINGS-ABC123
+        error:
+          type: string
+          enum:
+            - Failed to load OTP settings
     BrowserStateRecoveryForbidden:
       type: object
       required:
