@@ -169,4 +169,21 @@ describe('BoardHeader', () => {
     );
     expect(boardLayoutSettingsProps?.wsId).toBe('ws-fallback');
   });
+
+  it('renders a natural public title and hides member-only controls in read-only mode', () => {
+    renderBoardHeader({
+      publicView: true,
+      readOnly: true,
+      titlePrefix: <span data-testid="public-title-prefix">Tuturuuu /</span>,
+    });
+
+    expect(screen.queryByTestId('board-switcher')).not.toBeInTheDocument();
+    expect(screen.getByTestId('public-title-prefix')).toBeInTheDocument();
+    expect(screen.getByText('Roadmap')).toBeInTheDocument();
+    expect(screen.queryByTestId('board-user-presence')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('task-filter')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('ws-task-boards.share.action')
+    ).not.toBeInTheDocument();
+  });
 });

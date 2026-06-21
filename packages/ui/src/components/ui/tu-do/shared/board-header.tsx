@@ -81,7 +81,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { CopyBoardDialog } from '../boards/copy-board-dialog';
@@ -125,6 +125,10 @@ interface Props {
   onRecycleBinOpen?: () => void;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
+  availableViews?: ViewType[];
+  publicView?: boolean;
+  readOnly?: boolean;
+  titlePrefix?: ReactNode;
 }
 
 export function BoardHeader({
@@ -147,6 +151,10 @@ export function BoardHeader({
   onRecycleBinOpen,
   isMultiSelectMode,
   setIsMultiSelectMode,
+  availableViews,
+  publicView = false,
+  readOnly = false,
+  titlePrefix,
 }: Props) {
   const t = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
@@ -172,6 +180,12 @@ export function BoardHeader({
   const queryClient = useQueryClient();
   const router = useRouter();
   const tasksHref = useTasksHref();
+  const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
+  const activeView = enabledViews.includes(currentView)
+    ? currentView
+    : (enabledViews[0] ?? 'kanban');
+  const interactiveControlsVisible = !readOnly;
+  const managerControlsVisible = !hideActions && !readOnly;
 
   // Stable refs for callbacks and values to avoid effect re-runs
   const onFiltersChangeRef = useRef(onFiltersChange);
@@ -352,6 +366,9 @@ export function BoardHeader({
       description: t('ws-task-boards.views.timeline_description'),
     },
   };
+  const viewOptions = Object.entries(viewConfig).filter(([view]) =>
+    enabledViews.includes(view as ViewType)
+  );
 
   // Create metadata for presence tracking (excludes search query for stability)
   const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
@@ -375,22 +392,32 @@ export function BoardHeader({
               <ArrowLeft className="h-5 w-5" />
             </Link>
           )}
-          <BoardSwitcher
-            board={{ ...board, ws_id: workspaceId }}
-            translations={{
-              loadingBoards: t('common.loading'),
-              noOtherBoards: t('common.no_other_boards'),
-              activeBoards: t('common.active_boards'),
-              archivedBoards: t('common.archived_boards'),
-              deletedBoards: t('common.deleted_boards'),
-              untitled: t('common.untitled'),
-              active: t('common.active'),
-              archived: t('common.archived'),
-              deleted: t('common.deleted'),
-              daysLeft: t('common.days_left', { count: '{count}' }),
-              tasks: t('common.tasks'),
-            }}
-          />
+          {publicView ? (
+            <div className="flex min-w-0 items-center gap-2">
+              {titlePrefix}
+              <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
+                {board.name || t('common.untitled')}
+              </h1>
+            </div>
+          ) : (
+            <BoardSwitcher
+              board={{ ...board, ws_id: workspaceId }}
+              translations={{
+                loadingBoards: t('common.loading'),
+                noOtherBoards: t('common.no_other_boards'),
+                activeBoards: t('common.active_boards'),
+                archivedBoards: t('common.archived_boards'),
+                deletedBoards: t('common.deleted_boards'),
+                untitled: t('common.untitled'),
+                active: t('common.active'),
+                archived: t('common.archived'),
+                deleted: t('common.deleted'),
+                daysLeft: t('common.days_left', { count: '{count}' }),
+                searchBoards: t('common.search_boards'),
+                tasks: t('common.tasks'),
+              }}
+            />
+          )}
         </div>
 
         {/* Search Bar */}
@@ -422,7 +449,7 @@ export function BoardHeader({
         {/* Controls - Compact Row */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Online Users */}
-          {!isPersonalWorkspace && (
+          {interactiveControlsVisible && !isPersonalWorkspace && (
             <BoardUserPresenceAvatarsComponent
               boardId={board.id}
               currentMetadata={presenceMetadata}
@@ -432,47 +459,54 @@ export function BoardHeader({
           )}
 
           {/* Smart Focus Button */}
-          <Button
-            variant={isSmartFocusActive ? 'secondary' : 'outline'}
-            size="xs"
-            onClick={handleSmartFocus}
-            disabled={isLoading}
-            className={cn(
-              'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
-              isSmartFocusActive
-                ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
-                : 'text-muted-foreground hover:text-dynamic-yellow'
-            )}
-            title={
-              isSmartFocusActive
-                ? t('common.clear_smart_focus')
-                : t('common.smart_focus')
-            }
-          >
-            <Zap
+          {interactiveControlsVisible && (
+            <Button
+              variant={isSmartFocusActive ? 'secondary' : 'outline'}
+              size="xs"
+              onClick={handleSmartFocus}
+              disabled={isLoading}
               className={cn(
-                'h-3.5 w-3.5',
-                isSmartFocusActive && 'fill-current'
+                'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
+                isSmartFocusActive
+                  ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
+                  : 'text-muted-foreground hover:text-dynamic-yellow'
               )}
-            />
-          </Button>
+              title={
+                isSmartFocusActive
+                  ? t('common.clear_smart_focus')
+                  : t('common.smart_focus')
+              }
+            >
+              <Zap
+                className={cn(
+                  'h-3.5 w-3.5',
+                  isSmartFocusActive && 'fill-current'
+                )}
+              />
+            </Button>
+          )}
 
           {/* Multi-select Toggle */}
-          <Button
-            variant={isMultiSelectMode ? 'secondary' : 'outline'}
-            size="xs"
-            onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
-            className={cn(
-              'h-7 px-1.5 sm:h-8 sm:px-2',
-              isMultiSelectMode &&
-                'bg-primary/10 text-primary hover:bg-primary/20'
-            )}
-            title={t('common.choose_tasks')}
-          >
-            <CopyCheck
-              className={cn('h-3.5 w-3.5', isMultiSelectMode && 'text-primary')}
-            />
-          </Button>
+          {interactiveControlsVisible && (
+            <Button
+              variant={isMultiSelectMode ? 'secondary' : 'outline'}
+              size="xs"
+              onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
+              className={cn(
+                'h-7 px-1.5 sm:h-8 sm:px-2',
+                isMultiSelectMode &&
+                  'bg-primary/10 text-primary hover:bg-primary/20'
+              )}
+              title={t('common.choose_tasks')}
+            >
+              <CopyCheck
+                className={cn(
+                  'h-3.5 w-3.5',
+                  isMultiSelectMode && 'text-primary'
+                )}
+              />
+            </Button>
+          )}
 
           {/* List Status Filter */}
           <Select
@@ -516,12 +550,12 @@ export function BoardHeader({
             <DropdownMenuTrigger asChild>
               <Button size="xs" variant="outline">
                 {(() => {
-                  const Icon = viewConfig[currentView].icon;
+                  const Icon = viewConfig[activeView].icon;
                   return (
                     <>
                       <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span className="hidden text-[10px] sm:text-xs md:inline">
-                        {viewConfig[currentView].label}
+                        {viewConfig[activeView].label}
                       </span>
                       <ChevronDown className="h-3 w-3 opacity-50 sm:h-3.5 sm:w-3.5" />
                     </>
@@ -530,7 +564,7 @@ export function BoardHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {Object.entries(viewConfig).map(([view, config]) => {
+              {viewOptions.map(([view, config]) => {
                 const Icon = config.icon;
                 return (
                   <DropdownMenuItem
@@ -560,12 +594,14 @@ export function BoardHeader({
           </DropdownMenu>
 
           {/* Task Filter */}
-          <TaskFilter
-            wsId={workspaceId}
-            currentUserId={currentUserId}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-          />
+          {interactiveControlsVisible && (
+            <TaskFilter
+              wsId={workspaceId}
+              currentUserId={currentUserId}
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+            />
+          )}
 
           {/* Sort Dropdown */}
           <DropdownMenu open={sortMenuOpen} onOpenChange={setSortMenuOpen}>
@@ -860,7 +896,7 @@ export function BoardHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {!hideActions && (
+          {managerControlsVisible && (
             <Button
               type="button"
               size="xs"
@@ -877,7 +913,7 @@ export function BoardHeader({
           )}
 
           {/* Board Actions Menu */}
-          {!hideActions && (
+          {managerControlsVisible && (
             <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button

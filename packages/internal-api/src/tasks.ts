@@ -545,6 +545,25 @@ export interface WorkspaceTaskBoardSharesResponse {
   shares: WorkspaceTaskBoardShare[];
 }
 
+export interface WorkspaceTaskBoardViewableMember {
+  avatar_url: string | null;
+  display_name: string | null;
+  email: string | null;
+  handle: string | null;
+  id: string;
+  is_creator: boolean;
+  roles: Array<{
+    id: string;
+    name: string;
+  }>;
+  user_id: string;
+  workspace_member_type: string | null;
+}
+
+export interface WorkspaceTaskBoardViewableMembersResponse {
+  members: WorkspaceTaskBoardViewableMember[];
+}
+
 export interface WorkspaceTaskBoardPublicLink {
   board_id: string;
   code: string;
@@ -1004,6 +1023,20 @@ export async function deleteWorkspaceTaskBoardShare(
     {
       method: 'DELETE',
       query: { shareId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceTaskBoardViewableMembers(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardViewableMembersResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/viewable-members`,
+    {
       cache: 'no-store',
     }
   );

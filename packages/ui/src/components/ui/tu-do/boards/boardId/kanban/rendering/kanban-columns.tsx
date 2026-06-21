@@ -55,6 +55,7 @@ interface KanbanColumnsProps {
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   deadlineLabels?: KanbanDeadlineLabels;
   deadlineSections?: KanbanDeadlineSections;
+  readOnly?: boolean;
 }
 
 export function KanbanColumns({
@@ -85,6 +86,7 @@ export function KanbanColumns({
   onTaskListCollapsedChange,
   deadlineLabels,
   deadlineSections,
+  readOnly = false,
 }: KanbanColumnsProps) {
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
@@ -121,7 +123,7 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
-          {deadlineSections && deadlineLabels && (
+          {!readOnly && deadlineSections && deadlineLabels && (
             <KanbanDeadlinePanels
               availableLists={realColumns}
               boardId={boardId}
@@ -210,10 +212,13 @@ export function KanbanColumns({
                 wsId={workspaceId}
                 onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
                 onTaskListCollapsedChange={onTaskListCollapsedChange}
+                readOnly={readOnly}
               />
             );
           })}
-          <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+          {!readOnly && (
+            <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+          )}
         </div>
       </SortableContext>
 

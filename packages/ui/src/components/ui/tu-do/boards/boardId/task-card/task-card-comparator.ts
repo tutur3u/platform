@@ -25,6 +25,7 @@ export function areTaskCardPropsEqual(
   next: TaskCardProps
 ) {
   if (prev.isOverlay !== next.isOverlay) return false;
+  if (prev.readOnly !== next.readOnly) return false;
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (

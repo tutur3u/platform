@@ -170,6 +170,7 @@ function renderBoardViews(overrides?: {
   board?: Record<string, unknown>;
   idleBottomIsland?: React.ReactNode;
   lists?: TaskList[];
+  props?: Partial<React.ComponentProps<typeof BoardViews>>;
   tasks?: Task[];
   workspace?: { id: string; personal: boolean };
 }) {
@@ -192,6 +193,7 @@ function renderBoardViews(overrides?: {
           workspace={(overrides?.workspace ?? mockWorkspace) as any}
           workspaceLabels={mockWorkspaceLabels}
           idleBottomIsland={overrides?.idleBottomIsland}
+          {...overrides?.props}
         />
       </HotkeysProvider>
     </QueryClientProvider>
@@ -224,6 +226,26 @@ describe('BoardViews', () => {
       list: formatHotkeySequence(['G', 'L']),
       timeline: formatHotkeySequence(['G', 'T']),
     });
+  });
+
+  it('passes explicit read-only public mode through shared board components', () => {
+    renderBoardViews({
+      props: {
+        availableViews: ['kanban', 'list'],
+        publicHeaderPrefix: <span data-testid="public-prefix" />,
+        publicView: true,
+        readOnly: true,
+      },
+    });
+
+    expect(boardHeaderProps).toMatchObject({
+      availableViews: ['kanban', 'list'],
+      publicView: true,
+      readOnly: true,
+    });
+    expect(boardHeaderProps?.titlePrefix).toBeDefined();
+    expect(kanbanBoardProps?.readOnly).toBe(true);
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
   });
 
   it('switches between kanban, list, and timeline using TanStack hotkey sequences', async () => {

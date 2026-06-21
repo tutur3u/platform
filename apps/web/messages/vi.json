@@ -4469,6 +4469,7 @@
     "screenshot-alt": "Ảnh chụp màn hình {number}",
     "screenshots-optional": "Ảnh chụp màn hình (Tùy chọn, tối đa 5 hình)",
     "scroll_to_explore": "Cuộn để khám phá",
+    "search_boards": "Tìm kiếm bảng...",
     "search_labels": "Tìm kiếm nhãn...",
     "search_members": "Tìm thành viên...",
     "search_projects": "Tìm kiếm dự án...",
@@ -20027,6 +20028,12 @@
       "email_placeholder": "khach@example.com",
       "empty": "Bảng này chưa được chia sẻ trực tiếp với ai.",
       "guest_scope": "Khách của bảng chỉ có thể mở các bảng được chia sẻ trực tiếp với họ. Khách quyền xem có thể đọc nhiệm vụ trong bảng. Khách quyền sửa có thể tạo và cập nhật nhiệm vụ, danh sách trong bảng này, nhưng không thể quản lý cài đặt không gian làm việc, thành viên, vai trò, nhãn, dự án, mẫu, lưu trữ/xóa bảng hoặc các bảng khác.",
+      "guests": {
+        "description": "Mời người cụ thể bằng email vào bảng này mà không thêm họ làm thành viên không gian làm việc.",
+        "title": "Khách trực tiếp của bảng",
+        "tooltip": "Khách quyền xem có thể đọc nhiệm vụ trong bảng. Khách quyền sửa có thể tạo và cập nhật nhiệm vụ, danh sách trong bảng này, nhưng không thể quản lý cài đặt không gian làm việc, thành viên, vai trò, nhãn, dự án, mẫu, lưu trữ/xóa hoặc các bảng khác."
+      },
+      "note": "Thông tin về quyền truy cập này",
       "permission": {
         "edit": "Có thể sửa",
         "view": "Có thể xem"
@@ -20044,12 +20051,21 @@
         "enable_failed": "Không thể bật liên kết bảng công khai",
         "enabled": "Đã bật liên kết bảng công khai",
         "open": "Mở",
-        "title": "Liên kết công khai"
+        "title": "Liên kết công khai",
+        "tooltip": "Bất kỳ ai có URL này đều có thể xem bảng chỉ đọc đã được lược bỏ dữ liệu riêng tư mà không cần đăng nhập. Liên kết không được liệt kê công khai và có thể tắt tại đây."
       },
       "removed": "Đã xóa chia sẻ bảng",
       "saved": "Đã lưu chia sẻ bảng",
       "shared_with": "Đã chia sẻ với",
-      "title": "Chia sẻ {name}"
+      "title": "Chia sẻ {name}",
+      "workspace_members": {
+        "badge": "Quản lý dự án",
+        "creator": "Người tạo",
+        "description": "Thành viên không gian làm việc có quyền Quản lý dự án có thể xem bảng này thông qua quyền trong không gian làm việc.",
+        "empty": "Hiện chưa có thành viên nào có quyền Quản lý dự án.",
+        "title": "Thành viên có quyền truy cập",
+        "tooltip": "Danh sách này chỉ tải khi bạn mở mục này và chỉ bao gồm thành viên có quyền hiệu lực là Quản lý dự án."
+      }
     },
     "singular": "Bảng nhiệm vụ",
     "stats": {

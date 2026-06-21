@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionAuthContext } from '@/lib/api-auth';
 
 const createAdminClientMock = vi.fn();
+const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
 const taskBoardShareResults: Array<{ data: unknown; error: unknown }> = [];
@@ -43,6 +44,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
     await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
   return {
     ...actual,
+    getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
+      getPermissionsMock(...args),
     normalizeWorkspaceId: (
       ...args: Parameters<typeof normalizeWorkspaceIdMock>
     ) => normalizeWorkspaceIdMock(...args),
@@ -66,6 +69,9 @@ describe('task board list access', () => {
     vi.clearAllMocks();
 
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(true),
+    });
     normalizeWorkspaceIdMock.mockResolvedValue(
       '00000000-0000-4000-8000-000000000123'
     );

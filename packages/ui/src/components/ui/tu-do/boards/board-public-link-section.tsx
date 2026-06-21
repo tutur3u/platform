@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, ExternalLink, Globe2, Loader2, Trash2 } from '@tuturuuu/icons';
+import {
+  Copy,
+  ExternalLink,
+  Globe2,
+  Info,
+  Loader2,
+  Trash2,
+} from '@tuturuuu/icons';
 import {
   disableWorkspaceTaskBoardPublicLink,
   enableWorkspaceTaskBoardPublicLink,
@@ -11,6 +18,12 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
@@ -96,6 +109,22 @@ export function BoardPublicLinkSection({
           <div className="flex items-center gap-2 font-medium text-sm">
             <Globe2 className="h-4 w-4 text-muted-foreground" />
             {t('ws-task-boards.share.public.title')}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label={t('ws-task-boards.share.note')}
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {t('ws-task-boards.share.public.tooltip')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <p className="text-muted-foreground text-sm">
             {t('ws-task-boards.share.public.description')}

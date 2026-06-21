@@ -4469,6 +4469,7 @@
     "screenshot-alt": "Screenshot {number}",
     "screenshots-optional": "Screenshots (Optional, up to 5 images)",
     "scroll_to_explore": "Scroll to explore",
+    "search_boards": "Search boards...",
     "search_labels": "Search labels...",
     "search_members": "Search members...",
     "search_projects": "Search projects...",
@@ -20027,6 +20028,12 @@
       "email_placeholder": "guest@example.com",
       "empty": "This board has not been shared directly with anyone yet.",
       "guest_scope": "Board guests can only open boards shared directly with them. View guests can read board tasks. Edit guests can create and update tasks and lists inside this board, but cannot manage workspace settings, members, roles, labels, projects, templates, board archive/delete settings, or other boards.",
+      "guests": {
+        "description": "Invite specific people by email to this board without making them workspace members.",
+        "title": "Direct board guests",
+        "tooltip": "View guests can read board tasks. Edit guests can create and update tasks and lists in this board, but cannot manage workspace settings, members, roles, labels, projects, templates, archive/delete settings, or other boards."
+      },
+      "note": "About this access",
       "permission": {
         "edit": "Can edit",
         "view": "Can view"
@@ -20044,12 +20051,21 @@
         "enable_failed": "Could not enable public board link",
         "enabled": "Public board link enabled",
         "open": "Open",
-        "title": "Public link"
+        "title": "Public link",
+        "tooltip": "Anyone with this URL can view a sanitized read-only board without signing in. The link is not listed publicly and can be disabled here."
       },
       "removed": "Board share removed",
       "saved": "Board share saved",
       "shared_with": "Shared with",
-      "title": "Share {name}"
+      "title": "Share {name}",
+      "workspace_members": {
+        "badge": "Manage Projects",
+        "creator": "Creator",
+        "description": "Workspace members with Manage Projects can view this board through workspace permissions.",
+        "empty": "No workspace members currently have Manage Projects.",
+        "title": "Workspace members with access",
+        "tooltip": "This list is fetched on demand and only includes workspace members whose effective permissions include Manage Projects."
+      }
     },
     "singular": "Task Board",
     "stats": {
