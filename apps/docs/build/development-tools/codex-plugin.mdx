@@ -260,6 +260,14 @@ ask the human partner to arbitrate. They should never format, stage, or fix
 unrelated dirty files simply because a repo-wide check or commit hook reports
 them.
 
+When coordinating subagents, split work into named lanes with disjoint owned
+paths, excluded paths, validation commands, and a no-stage/no-commit boundary
+unless the lane explicitly owns a commit. The coordinator owns integration and
+shared generated artifacts by default, including TanStack route trees, migration
+manifests, route overrides, OpenAPI snapshots, docs navigation, sorted
+translation bundles, and Supabase generated types. Workers should report
+generated drift and hand off exact follow-up instead of silently committing it.
+
 The normal scoped commit path still lets Git hooks run. Agents may use
 `git commit --no-verify` only when they can produce a proof packet for their
 exact staged paths: reviewed status and staged diff output, path ownership,
@@ -342,6 +350,10 @@ library.
 - Keep shared-worktree and commit-window coordination guidance aligned across
   `AGENTS.md`, the Agent Operating Manual, `$tuturuuu-agent-coordination`, and
   `$tuturuuu-commit`.
+- Keep parallel subagent lane, staged-set ownership, generated-artifact
+  ownership, and hook-failure guidance aligned across the Agent Operating
+  Manual, `$tuturuuu-agent-coordination`, `$tuturuuu-commit`, and Git
+  conventions docs.
 - Keep platform release/version guidance aligned across `AGENTS.md`,
   `$tuturuuu-web-release`, and the Web Docker Deployment runbook.
 - Add marketplace metadata only when deciding where the plugin should be

@@ -351,6 +351,9 @@ bun git-commit-window wait --owner "<agent/task>" --scope "type(scope): subject"
 
 Use `--allow-staged` only after inspecting existing staged files. The commit
 window does not grant ownership of files or permission to stage unrelated paths.
+Existing staged files are owned by the staging agent or coordinator until
+explicitly reassigned. If a file appears as `MM`, both its staged and unstaged
+diffs need owner review before commit.
 
 Let commit hooks run by default. This is a proof-gated no-verify path: use
 `git commit --no-verify` only when the current agent can prove its exact staged
@@ -363,6 +366,13 @@ skipped components with path-based rationale; unrelated dirty files excluded
 from the claim; and `bun check:mobile` coverage when `apps/mobile` is touched.
 If ownership is unclear, proof is incomplete, or the check mapping is uncertain,
 do not bypass the hook.
+
+Commit hooks and repo checks can read the whole worktree, including files owned
+by other agents. If they fail on unrelated dirty files, release the commit
+window and report the blocker instead of formatting, fixing, staging, or
+committing those files for convenience. Only the staged-set owner may use the
+proof-gated no-verify path, and only with exact-path evidence for the staged
+files.
 
 ### Branch Management
 

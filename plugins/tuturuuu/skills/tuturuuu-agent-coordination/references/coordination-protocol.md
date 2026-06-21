@@ -38,6 +38,47 @@ It complements `git status`; it does not replace it.
 6. Pick a non-overlapping write set before editing. If the task truly needs an
    overlapped path, coordinate first.
 
+## Coordinator And Subagent Lanes
+
+Use subagents to increase throughput only after the coordinator has split the
+work into lanes that can move independently. A good lane has a named owner, a
+small owned path set, explicit excluded paths, expected validation commands, and
+a clear handoff shape. Do not delegate two workers to the same unresolved files
+unless one is read-only or the second worker is explicitly continuing a
+completed handoff.
+
+Before spawning workers, the coordinator should create or update a parent note
+that lists each lane:
+
+```md
+Delegated lanes:
+- backend-aurora-health: apps/backend/src/aurora.rs, apps/backend/src/lib.rs
+- tanstack-drive-redirect: apps/tanstack-web/src/routes/$locale/$wsId/drive.tsx,
+  apps/tanstack-web/src/lib/platform/redirects.ts
+- migration-audit: read-only route manifest/docs audit
+Coordinator-owned paths:
+- apps/tanstack-web/src/routeTree.gen.ts
+- apps/tanstack-web/migration/route-manifest.json
+```
+
+Worker prompts should say that the worker is not alone in the codebase, must run
+`git status --short`, must create its own coordination note before editing, must
+not revert other changes, and must not stage or commit unless the lane explicitly
+owns a commit. Include exact owned paths and forbidden paths in the prompt.
+
+Workers should hand off with:
+
+- changed files
+- validation commands and pass/fail results
+- generated files they intentionally left for the coordinator
+- unrelated failures that blocked broader validation
+- known parity gaps or follow-up risks
+- confirmation that nothing was staged or committed
+
+The coordinator reviews worker diffs before staging. If a worker's handoff
+requires generated artifacts, the coordinator either owns that regeneration or
+spawns a dedicated generator lane after all inputs are stable.
+
 ## When To Create A Note
 
 Create a note under `tmp/agent-coordination/` before editing when any condition
@@ -66,6 +107,10 @@ Owned paths:
 - <path or directory>
 Observed dirty paths:
 - <pre-existing path you will not touch>
+Delegated lanes:
+- <optional coordinator-owned lane name and worker-owned paths>
+Coordinator-owned paths:
+- <optional generated/shared integration path>
 Status: working | blocked | handoff | done
 Needs: <specific question or response requested, or None>
 Commit window: not needed | claimed | waiting | blocked | released
@@ -81,6 +126,41 @@ owned path set so other agents can proceed around you.
 Do not record `bun git-commit-window` tokens in coordination notes. Tokens are
 printed in the terminal for the agent that claimed the window and should be used
 only to check or release that lock.
+
+When acting as a coordinator, add `Delegated lanes` and
+`Coordinator-owned paths` only when they clarify the split. Do not use the
+parent note as a blanket claim over all child paths; each worker still needs a
+focused owned path set.
+
+## Generated And Integration Files
+
+Generated files need explicit ownership because they often combine many workers'
+inputs. Examples include:
+
+- `apps/tanstack-web/src/routeTree.gen.ts`
+- `apps/tanstack-web/migration/route-manifest.json`
+- `apps/tanstack-web/migration/route-overrides.json` when centrally regenerated
+- migration progress/docs tables
+- `apps/backend/api/openapi.yaml`
+- `apps/docs/docs.json`
+- sorted translation bundles
+- Supabase generated DB types
+
+Default to coordinator-owned regeneration after all relevant worker patches are
+reviewed. A worker may edit generated artifacts only when its lane explicitly
+owns the source input and the generated output, and when no other active lane is
+changing another input to the same artifact.
+
+Route workers should usually implement route/component files and leave
+`Needs: Coordinator regenerate route tree` in their note or final handoff.
+The coordinator should run canonical commands such as
+`bun migration:tanstack:routes`, `bun migration:tanstack:manifest`, and
+`bun migration:tanstack:check` after the route/source inputs are stable.
+
+If a validation command regenerates an out-of-scope artifact, the worker should
+report it and either revert only that generated diff or leave it unstaged for
+the coordinator, depending on the lane prompt. Never silently commit generated
+drift from another lane.
 
 ## Archived Coordination Notes
 
@@ -114,6 +194,11 @@ takes over or a human asks for cleanup.
   them.
 - If your work can be split, take the disjoint slice and record the boundary in
   your note.
+- Existing staged files are owned by the staging agent or coordinator until
+  explicitly reassigned. Workers may edit disjoint unstaged files, but must not
+  stage, unstage, amend, or commit while another staged set exists.
+- If a path is `MM`, the staged and unstaged portions require owner review
+  before commit.
 - If you need the same files, write a response note that names the blocked paths
   and what you need. Ask the user when the choice affects product behavior or
   when ownership cannot be resolved locally.
@@ -154,6 +239,14 @@ the window. The claim it receives after waking still uses the 5-10 minute TTL.
 If files are already staged, claim or wait only after inspecting
 `git diff --cached --stat` and `git diff --cached --name-only`, then pass
 `--allow-staged` when the staged set is intentional and preserved.
+`--allow-staged` means "preserve this staged set"; it does not mean "take over
+this staged set."
+
+Commit hooks and root checks may read the whole worktree, not only staged files.
+When unrelated worker files cause a hook to fail, release the commit window and
+record the blocker. Do not patch, format, or stage those unrelated files just to
+make your commit pass. Either wait for that lane to hand off, ask the coordinator
+to integrate it, or retry when the unrelated dirty files are stable.
 
 Useful operations:
 
@@ -194,4 +287,7 @@ coordination notes.
 - When using commit hooks, keep unrelated dirty files unstaged. If a hook reads
   the whole worktree and fails outside your scope, report that as an unrelated
   blocker instead of widening the patch.
+- Only the staged-set owner may use the proof-gated no-verify path, and only
+  with exact-path proof for the staged set. Other workers' dirty files are not
+  proof that your staged paths are safe.
 - Never stage `tmp/agent-coordination/` or its `archive/` subtree.

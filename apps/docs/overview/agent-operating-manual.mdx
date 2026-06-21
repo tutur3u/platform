@@ -97,6 +97,16 @@ Each note should include:
 
 If two agents need the same file set, do not race. Reply in `tmp/agent-coordination/`, choose a disjoint slice, or ask the human partner to arbitrate. Do not edit another agent's note unless explicitly asked. Before the final response or handoff, update your own note to `done`, `handoff`, or `blocked` with verification and residual risks. Archive only your own completed `done` note unless the human partner explicitly requests broader cleanup. When committing, stage explicit paths only and never stage coordination notes or archived coordination notes. If a repo-wide check or commit hook fails because of another agent's files, do not fix those files just to satisfy the hook; report the blocker and keep your own diff scoped.
 
+For parallel subagent work, split lanes before spawning workers. Each worker
+needs a narrow owned path set, forbidden overlap, validation commands, and a
+handoff contract; workers should not stage or commit unless that is their
+explicit lane. The coordinator owns integration: review worker diffs,
+regenerate shared artifacts such as route trees, route manifests, route
+overrides, OpenAPI snapshots, docs navigation, sorted translations, or generated
+DB types after inputs are stable, then stage exact paths. Existing staged files
+belong to the staging agent or coordinator until explicitly reassigned; if a
+path is `MM`, review both staged and unstaged portions before committing.
+
 ### Git Commit Window
 
 Use `bun git-commit-window` to serialize Git index and commit operations in a shared checkout. The lock lives at `tmp/agent-coordination/git-commit-window.lock.json`, which is ignored by Git. It is advisory: it does not grant ownership of files and does not allow broad staging. Claims default to 10 minutes, may only be 5-10 minutes, and should be held only for focused staging and commit work.
