@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 990,
-        "migrated": 33,
-        "percentComplete": 10.49,
+        "migrated": 35,
+        "percentComplete": 10.65,
         "remaining": 990,
-        "terminal": 116,
-        "total": 1106,
+        "terminal": 118,
+        "total": 1108,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 1008,
-        "migrated": 38,
-        "percentComplete": 10.72,
+        "migrated": 40,
+        "percentComplete": 10.88,
         "remaining": 1008,
-        "terminal": 121,
-        "total": 1129,
+        "terminal": 123,
+        "total": 1131,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1259,
-      "migrated": 164,
-      "percentComplete": 16.4,
+      "migrated": 166,
+      "percentComplete": 16.51,
       "remaining": 1259,
-      "terminal": 247,
-      "total": 1506,
+      "terminal": 249,
+      "total": 1508,
       "unknownStatus": 0
     }
   },
@@ -1216,22 +1216,48 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts",
+      "id": "api:GET:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/aurora/ml-metrics",
+      "sourceFile": "apps/web/src/app/api/v1/aurora/ml-metrics/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/aurora/ml-metrics",
       "sourceFile": "apps/web/src/app/api/v1/aurora/ml-metrics/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts"
     },
     {
-      "id": "api:/api/v1/aurora/statistical-metrics:apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts",
+      "id": "api:GET:/api/v1/aurora/statistical-metrics:apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/aurora/statistical-metrics",
+      "sourceFile": "apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/aurora/statistical-metrics:apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/aurora/statistical-metrics:apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/aurora/statistical-metrics",
       "sourceFile": "apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/aurora/statistical-metrics:apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts"
     },
     {
       "id": "api:/api/v1/auth/accounts:apps/web/src/app/api/v1/auth/accounts/route.ts",
@@ -13957,11 +13983,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1106,
+    "apiRoutes": 1108,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 305,
-    "routeHandlers": 1129,
+    "routeHandlers": 1131,
     "methodCounts": {
       "GET": 634,
       "HEAD": 1,
@@ -13971,6 +13997,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1506
+    "total": 1508
   }
 }

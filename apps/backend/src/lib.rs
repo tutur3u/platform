@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod aurora;
 mod contact;
 mod crawlers;
 mod holidays;
@@ -343,6 +344,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = aurora::handle_aurora_route(config, request, outbound).await {
         return response;
     }
 
@@ -2897,6 +2902,119 @@ mod tests {
 
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn aurora_ml_metrics_get_reads_public_rows_from_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {"id":"metric-1","model":"lstm","rmse":0.42,"weighted_score":0.91}
+            ]"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/aurora/ml-metrics"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!([
+                {"id":"metric-1","model":"lstm","rmse":0.42,"weighted_score":0.91}
+            ])
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_ml_metrics?select=*"
+        );
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn aurora_statistical_metrics_get_reads_public_rows_from_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {"id":"metric-2","model":"arima","no_scaling":true,"weighted_score":0.88}
+            ]"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/aurora/statistical-metrics"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!([
+                {"id":"metric-2","model":"arima","no_scaling":true,"weighted_score":0.88}
+            ])
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_statistical_metrics?select=*"
+        );
+    }
+
+    #[tokio::test]
+    async fn aurora_metrics_get_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        for path in [
+            "/api/v1/aurora/ml-metrics",
+            "/api/v1/aurora/statistical-metrics",
+        ] {
+            let response = handle_backend_request(&config, request("POST", path), &outbound).await;
+
+            assert_eq!(response.status, 405, "{path}");
+            assert_eq!(response.allow, Some("GET"), "{path}");
+            assert_eq!(response.body["error"], "method not allowed", "{path}");
+        }
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn aurora_metrics_get_fails_closed_when_contact_data_is_not_configured() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        for path in [
+            "/api/v1/aurora/ml-metrics",
+            "/api/v1/aurora/statistical-metrics",
+        ] {
+            let response = handle_backend_request(&config, request("GET", path), &outbound).await;
+
+            assert_eq!(response.status, 500, "{path}");
+            assert_eq!(response.body["error"], "Internal Server Error", "{path}");
+        }
         assert_eq!(outbound.calls().len(), 0);
     }
 

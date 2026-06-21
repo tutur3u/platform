@@ -118,6 +118,82 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/aurora/ml-metrics:
+    get:
+      summary: Legacy-compatible Aurora ML metrics list
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/ml-metrics/route.ts GET. The Rust backend reads public Aurora ML metric rows through the server-owned Supabase REST adapter and returns the raw legacy row array. POST remains legacy-owned until external Aurora metric ingestion and write authorization move behind Rust.
+      responses:
+        "200":
+          description: Aurora ML metric rows.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuroraMetricRow"
+        "500":
+          description: Aurora metric rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraMetricsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/aurora/statistical-metrics:
+    get:
+      summary: Legacy-compatible Aurora statistical metrics list
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts GET. The Rust backend reads public Aurora statistical metric rows through the server-owned Supabase REST adapter and returns the raw legacy row array. POST remains legacy-owned until external Aurora metric ingestion and write authorization move behind Rust.
+      responses:
+        "200":
+          description: Aurora statistical metric rows.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuroraMetricRow"
+        "500":
+          description: Aurora metric rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraMetricsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/{wsId}/crawlers/domains:
     parameters:
       - name: wsId
@@ -2415,6 +2491,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CalendarMockEvent"
+    AuroraMetricRow:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        ws_id:
+          type: string
+        model:
+          type: string
+        rmse:
+          type: number
+        directional_accuracy:
+          type: number
+        turning_point_accuracy:
+          type: number
+        weighted_score:
+          type: number
+        no_scaling:
+          type: boolean
+    AuroraMetricsError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Internal Server Error
     VietnameseHoliday:
       type: object
       additionalProperties: true
