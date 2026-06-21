@@ -126,6 +126,47 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/users/me/hive-access:
+    get:
+      summary: Current user Hive access status
+      description: Migrated replacement for apps/web/src/app/api/v1/users/me/hive-access/route.ts GET. The Rust backend preserves the legacy app-session-first auth behavior for current-user app-session targets, falls back to browser Supabase auth cookies only when no app-session token is present, reads only `hive_members.enabled` and `platform_user_roles.enabled,allow_role_management` for the authenticated user through the server-owned Supabase REST adapter, and returns the derived `{ hasAccess, isAdmin, isMember }` payload without exposing private membership rows.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+      responses:
+        "200":
+          description: Current user's Hive access status.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - private, max-age=300, stale-while-revalidate=60
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiveAccessResponse"
+        "401":
+          description: Caller is missing a valid app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiveAccessUnauthorized"
+        "500":
+          description: Hive access could not be resolved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiveAccessError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/share/course/{courseId}:
     parameters:
       - name: courseId
@@ -3007,6 +3048,37 @@ components:
           type: string
           examples:
             - Unauthorized
+    HiveAccessResponse:
+      type: object
+      required:
+        - hasAccess
+        - isAdmin
+        - isMember
+      properties:
+        hasAccess:
+          type: boolean
+        isAdmin:
+          type: boolean
+        isMember:
+          type: boolean
+    HiveAccessUnauthorized:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+    HiveAccessError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Failed to resolve Hive access
     RequestBodyLengthRequiredError:
       type: object
       required:

@@ -220,7 +220,6 @@ pub(crate) struct ContactDataLayerStatus {
     supabase_origin: Option<String>,
 }
 
-#[cfg(test)]
 pub(crate) fn current_user_app_session_targets() -> &'static [&'static str] {
     &CURRENT_USER_APP_SESSION_TARGETS
 }

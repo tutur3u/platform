@@ -84,6 +84,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/ai/whitelist/me by preserving the legacy app-session-first auth behavior for satellite app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only the enabled flag for the authenticated email from private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the derived legacy email/enabled payload."
     },
+    "api:/api/v1/users/me/hive-access:apps/web/src/app/api/v1/users/me/hive-access/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/users/me/hive-access by preserving the legacy app-session-first auth behavior for current-user app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only hive_members.enabled and platform_user_roles.enabled/allow_role_management for the authenticated user through the server-owned Supabase REST adapter, returning the derived legacy hasAccess/isAdmin/isMember payload, and keeping the legacy private cache directive on successful responses."
+    },
     "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {

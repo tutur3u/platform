@@ -9,6 +9,7 @@ mod aurora;
 mod changelog;
 mod contact;
 mod crawlers;
+mod hive_access;
 mod holidays;
 mod mobile_version;
 mod outbound;
@@ -380,6 +381,10 @@ pub(crate) async fn handle_backend_request(
     if let Some(response) =
         workspace_limits::handle_workspace_limits_route(config, request, outbound).await
     {
+        return response;
+    }
+
+    if let Some(response) = hive_access::handle_hive_access_route(config, request, outbound).await {
         return response;
     }
 
@@ -3175,6 +3180,226 @@ mod tests {
         let response = handle_backend_request(
             &config,
             request("POST", "/api/v1/ai/whitelist/me"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn hive_access_requires_session_auth_before_private_lookup() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/users/me/hive-access"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn hive_access_accepts_current_user_app_session_targets() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "hive",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[{"enabled":true}]"#),
+            outbound_response(200, r#"[{"enabled":true,"allow_role_management":true}]"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/users/me/hive-access", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.cache_control,
+            Some("private, max-age=300, stale-while-revalidate=60")
+        );
+        assert_eq!(
+            response.body,
+            json!({
+                "hasAccess": true,
+                "isAdmin": true,
+                "isMember": true,
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert!(
+            calls[0]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/hive_members?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "select").as_deref(),
+            Some("enabled")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "user_id").as_deref(),
+            Some("eq.app-session-user-1")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "limit").as_deref(),
+            Some("1")
+        );
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert!(
+            calls[1]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/platform_user_roles?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "select").as_deref(),
+            Some("enabled,allow_role_management")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "user_id").as_deref(),
+            Some("eq.app-session-user-1")
+        );
+    }
+
+    #[tokio::test]
+    async fn hive_access_rejects_wrong_app_session_target_without_fallback() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "storefront",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_bearer("GET", "/api/v1/users/me/hive-access", token)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn hive_access_accepts_browser_supabase_cookie_and_missing_rows() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"browser-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(200, "[]"),
+            outbound_response(200, r#"[{"enabled":true,"allow_role_management":false}]"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/v1/users/me/hive-access")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "hasAccess": false,
+                "isAdmin": false,
+                "isMember": false,
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "user_id").as_deref(),
+            Some("eq.browser-user-1")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[2].url, "user_id").as_deref(),
+            Some("eq.browser-user-1")
+        );
+    }
+
+    #[tokio::test]
+    async fn hive_access_maps_table_failures_to_legacy_error() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "hive",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_response(500, r#"{"message":"failed"}"#);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/users/me/hive-access", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Failed to resolve Hive access");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn hive_access_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/users/me/hive-access"),
             &outbound,
         )
         .await;
