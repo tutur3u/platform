@@ -98,6 +98,56 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/{wsId}/crawlers/domains:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy workspace path segment. The legacy Next.js route ignored this value, and the Rust migration preserves that behavior until crawler workspace ownership is redesigned.
+    get:
+      summary: List crawler domains
+      description: Migrated replacement for apps/web/src/app/api/[wsId]/crawlers/domains/route.ts. Reads `crawled_urls.url` and non-skipped `crawled_url_next_urls.url` through the server-owned Supabase REST adapter, extracts valid URL hostnames, deduplicates them, and returns the sorted legacy domain list with `cached: false`.
+      responses:
+        "200":
+          description: Sorted unique crawler domains.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - cached
+                  - domains
+                properties:
+                  cached:
+                    type: boolean
+                    description: Always false for the migrated parity endpoint.
+                  domains:
+                    type: array
+                    items:
+                      type: string
+        "500":
+          description: Supabase crawler data access is not configured or failed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Internal Server Error
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /.well-known/{slug}:
     get:
       summary: Blocked well-known probe path

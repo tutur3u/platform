@@ -6,11 +6,11 @@
         "acceptedRemoval": 79,
         "key": "api",
         "label": "api",
-        "legacyNext": 996,
-        "migrated": 30,
-        "percentComplete": 9.86,
-        "remaining": 996,
-        "terminal": 109,
+        "legacyNext": 995,
+        "migrated": 31,
+        "percentComplete": 9.95,
+        "remaining": 995,
+        "terminal": 110,
         "total": 1105,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 79,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1014,
-        "migrated": 35,
-        "percentComplete": 10.11,
-        "remaining": 1014,
-        "terminal": 114,
+        "legacyNext": 1013,
+        "migrated": 36,
+        "percentComplete": 10.2,
+        "remaining": 1013,
+        "terminal": 115,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -146,15 +146,6 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/:wsId/calendar/auto-schedule:apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET"],
-        "routePath": "/api/:wsId/crawlers/domains",
-        "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/domains/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts"
       },
       {
         "kind": "api",
@@ -317,17 +308,26 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/course:apps/web/src/app/api/ai/course/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/email-draft",
+        "sourceFile": "apps/web/src/app/api/ai/email-draft/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/email-draft:apps/web/src/app/api/ai/email-draft/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 79,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1265,
-      "migrated": 161,
-      "percentComplete": 15.95,
-      "remaining": 1265,
-      "terminal": 240,
+      "legacyNext": 1264,
+      "migrated": 162,
+      "percentComplete": 16.01,
+      "remaining": 1264,
+      "terminal": 241,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -348,7 +348,7 @@
       "methods": ["GET"],
       "routePath": "/api/:wsId/crawlers/domains",
       "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/domains/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

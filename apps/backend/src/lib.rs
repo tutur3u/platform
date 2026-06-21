@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contact;
+mod crawlers;
 mod mobile_version;
 mod outbound;
 
@@ -337,6 +338,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = crawlers::handle_crawler_route(config, request, outbound).await {
         return response;
     }
 
@@ -2794,6 +2799,105 @@ mod tests {
 
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn crawler_domains_aggregates_sorted_unique_domains() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"[
+                    {"url":"https://Example.com/docs"},
+                    {"url":"not a url"},
+                    {"url":"https://beta.example/path"}
+                ]"#,
+            ),
+            outbound_response(
+                200,
+                r#"[
+                    {"url":"https://alpha.example"},
+                    {"url":"https://example.com/queued"},
+                    {"url":null}
+                ]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/personal/crawlers/domains"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["cached"], false);
+        assert_eq!(
+            response.body["domains"],
+            json!(["alpha.example", "beta.example", "example.com"])
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/crawled_urls?select=url"
+        );
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/crawled_url_next_urls?select=url&skipped=eq.false"
+        );
+
+        for call in calls {
+            assert_eq!(recorded_header(&call, "Accept"), Some(APPLICATION_JSON));
+            assert_eq!(
+                recorded_header(&call, "Authorization"),
+                Some("Bearer test-service-role-secret")
+            );
+            assert_eq!(
+                recorded_header(&call, "apikey"),
+                Some("test-service-role-secret")
+            );
+            assert_eq!(recorded_header(&call, "Range-Unit"), Some("items"));
+            assert_eq!(recorded_header(&call, "Range"), Some("0-999"));
+        }
+    }
+
+    #[tokio::test]
+    async fn crawler_domains_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/personal/crawlers/domains"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn crawler_domains_fails_closed_when_contact_data_is_not_configured() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/personal/crawlers/domains"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["error"], "Internal Server Error");
         assert_eq!(outbound.calls().len(), 0);
     }
 

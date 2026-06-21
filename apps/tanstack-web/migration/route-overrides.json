@@ -20,6 +20,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/health with the legacy response body."
     },
+    "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/domains by reading crawled_urls and non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, extracting valid URL hostnames, deduplicating them, and returning the sorted legacy domain list with cached false. The legacy route ignored wsId; this migration preserves that behavior until crawler workspace ownership is redesigned."
+    },
     "api:/api/auth/me/session:apps/web/src/app/api/auth/me/session/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
