@@ -40,6 +40,9 @@ import {
 
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
+const PRIVATE_EXTERNAL_PROJECT_DELIVERY_COLLECTION_SLUGS = new Set([
+  'contact-submissions',
+]);
 
 type FieldDefinitionSchemaScope = {
   collectionId: string | null;
@@ -1043,7 +1046,7 @@ type UpsertCollectionPayload = {
   description?: string | null;
   slug: string;
   title: string;
-  actorId: string;
+  actorId: string | null;
   workspaceId: string;
 };
 
@@ -1709,7 +1712,7 @@ type UpsertEntryPayload = {
   subtitle?: string | null;
   summary?: string | null;
   title: string;
-  actorId: string;
+  actorId: string | null;
   workspaceId: string;
 };
 
@@ -1749,7 +1752,7 @@ export async function updateWorkspaceExternalProjectEntry(
     summary: string | null;
     title: string;
   }> & {
-    actorId: string;
+    actorId: string | null;
     workspaceId: string;
   },
   db?: AdminDb
@@ -2683,9 +2686,20 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, entryIds, admin),
   ]);
 
-  const collectionsPayload = collections.map((collection) => ({
+  const deliveryCollections = collections.filter(
+    (collection) =>
+      !PRIVATE_EXTERNAL_PROJECT_DELIVERY_COLLECTION_SLUGS.has(collection.slug)
+  );
+  const deliveryCollectionIds = new Set(
+    deliveryCollections.map((collection) => collection.id)
+  );
+  const deliveryEntries = entries.filter((entry) =>
+    deliveryCollectionIds.has(entry.collection_id)
+  );
+
+  const collectionsPayload = deliveryCollections.map((collection) => ({
     ...collection,
-    entries: entries
+    entries: deliveryEntries
       .filter((entry) => entry.collection_id === collection.id)
       .map((entry) => ({
         ...entry,

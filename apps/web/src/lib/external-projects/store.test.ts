@@ -58,10 +58,173 @@ function createScopedUpdateDb(row: Record<string, unknown>) {
   };
 }
 
+function createOrderedSelectResult<T>(result: T) {
+  const query = {
+    eq: vi.fn(() => query),
+    in: vi.fn(() => query),
+    order: vi.fn(() => query),
+    then: (resolve: (value: T) => unknown, reject?: (reason: unknown) => unknown) =>
+      Promise.resolve(result).then(resolve, reject),
+  };
+
+  return query;
+}
+
 describe('external project store cleanup', () => {
   beforeEach(() => {
     mocks.deleteWorkspaceStorageObjectByPath.mockReset();
     mocks.deleteWorkspaceStorageObjectByPath.mockResolvedValue(undefined);
+  });
+
+  it('excludes private contact submissions from public delivery payloads', async () => {
+    const collections = [
+      {
+        collection_type: 'brands',
+        config: {},
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        description: null,
+        id: 'collection-brands',
+        is_enabled: true,
+        slug: 'brands',
+        title: 'Brands',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+      {
+        collection_type: 'contact-submissions',
+        config: { privateDelivery: true },
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        description: null,
+        id: 'collection-contact-submissions',
+        is_enabled: true,
+        slug: 'contact-submissions',
+        title: 'Contact Inbox',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+    ];
+    const entries = [
+      {
+        collection_id: 'collection-brands',
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        id: 'entry-brand',
+        metadata: {},
+        profile_data: {},
+        published_at: null,
+        scheduled_for: null,
+        slug: 'brand',
+        sort_order: 0,
+        source_adapter: null,
+        stable_source_id: null,
+        status: 'published',
+        subtitle: null,
+        summary: 'Visible brand',
+        title: 'Visible Brand',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+      {
+        collection_id: 'collection-contact-submissions',
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        id: 'entry-submission',
+        metadata: { privateDelivery: true },
+        profile_data: { email: 'visitor@example.com' },
+        published_at: null,
+        scheduled_for: null,
+        slug: 'private-message',
+        sort_order: 0,
+        source_adapter: null,
+        stable_source_id: null,
+        status: 'published',
+        subtitle: 'visitor@example.com',
+        summary: 'Private message',
+        title: 'Private Visitor',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+    ];
+
+    const db = {
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_external_project_collections') {
+          return {
+            select: vi.fn(() =>
+              createOrderedSelectResult({ data: collections, error: null })
+            ),
+          };
+        }
+
+        if (table === 'workspace_external_project_entries') {
+          return {
+            select: vi.fn(() =>
+              createOrderedSelectResult({ data: entries, error: null })
+            ),
+          };
+        }
+
+        if (
+          table === 'workspace_external_project_blocks' ||
+          table === 'workspace_external_project_assets'
+        ) {
+          return {
+            select: vi.fn(() =>
+              createOrderedSelectResult({ data: [], error: null })
+            ),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    const { buildWorkspaceExternalProjectDeliveryPayload } = await import(
+      './store'
+    );
+
+    const payload = await buildWorkspaceExternalProjectDeliveryPayload(
+      {
+        binding: {
+          adapter: 'richfield',
+          canonical_id: 'richfield-main',
+          canonical_project: {
+            allowed_collections: [],
+            allowed_features: [],
+            adapter: 'richfield',
+            created_at: '2026-01-01T00:00:00Z',
+            created_by: null,
+            delivery_profile: {},
+            display_name: 'Richfield',
+            id: 'richfield-main',
+            is_active: true,
+            metadata: {},
+            updated_at: '2026-01-01T00:00:00Z',
+            updated_by: null,
+          },
+          enabled: true,
+          workspace_id: 'workspace-1',
+        },
+        includeDrafts: false,
+        workspaceId: 'workspace-1',
+      },
+      db as never
+    );
+
+    expect(payload.collections.map((collection) => collection.slug)).toEqual([
+      'brands',
+    ]);
+    expect(
+      payload.collections.flatMap((collection) =>
+        collection.entries.map((entry) => entry.slug)
+      )
+    ).toEqual(['brand']);
   });
 
   it('deletes referenced storage files when removing an entry', async () => {
