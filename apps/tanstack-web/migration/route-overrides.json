@@ -74,6 +74,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/admin/tasks/embeddings/stats by validating the browser Supabase auth cookie with Supabase Auth, requiring a Tuturuuu admin email domain, reading exact system-wide task counts through the server-owned Supabase REST adapter, and returning the derived legacy embedding coverage payload. POST /api/admin/tasks/embeddings/generate remains legacy-owned because it streams SSE progress and performs embedding writes."
     },
+    "api:/api/v1/workspaces/limits:apps/web/src/app/api/v1/workspaces/limits/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/limits by validating the browser Supabase auth cookie with Supabase Auth, treating tuturuuu.com and xwf.tuturuuu.com user emails as unlimited, reading only exact non-deleted workspace counts by creator_id through the server-owned Supabase REST adapter for external users, and returning the derived legacy canCreate/currentCount/limit/remaining payload."
+    },
     "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {

@@ -85,20 +85,7 @@ async fn request_has_tuturuuu_admin_session(
         return false;
     };
 
-    is_valid_tuturuuu_email(user.email.as_deref())
-}
-
-fn is_valid_tuturuuu_email(email: Option<&str>) -> bool {
-    let Some(email) = email else {
-        return false;
-    };
-    let Some((local, domain)) = email.split_once('@') else {
-        return false;
-    };
-
-    !local.is_empty()
-        && !local.chars().any(char::is_whitespace)
-        && matches!(domain, "tuturuuu.com" | "xwf.tuturuuu.com")
+    supabase_auth::is_valid_tuturuuu_email(user.email.as_deref())
 }
 
 async fn task_count(

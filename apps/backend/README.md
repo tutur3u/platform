@@ -61,6 +61,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   server-owned Supabase REST adapter with private-schema headers, keeps the
   fixed public column list, preserves provider/type/tag/enabled/search/ids
   filters, supports exact-count pagination, and caps ID filters at 100.
+- `GET /api/v1/workspaces/limits`: legacy-compatible workspace creation limit
+  check. Rust validates browser Supabase auth cookies with Supabase Auth,
+  bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise
+  reads only an exact count of non-deleted workspaces created by the
+  authenticated user, and returns the derived legacy limit payload.
 - `GET /api/v1/users/me/profile`: contact migration route. It
   verifies Tuturuuu app-session JWTs from `Authorization: Bearer ttr_app_...`,
   `tuturuuu_web_app_session`, or `tuturuuu_app_session`, then reads `users` and

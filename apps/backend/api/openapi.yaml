@@ -48,6 +48,43 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/limits:
+    get:
+      summary: Legacy-compatible workspace creation limit check
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/limits/route.ts GET. The Rust backend validates the browser Supabase auth cookie with Supabase Auth, treats `tuturuuu.com` and `xwf.tuturuuu.com` users as unlimited, and otherwise reads only an exact count of non-deleted workspaces created by the authenticated user through the server-owned Supabase REST adapter. Browser callers receive the derived legacy limit payload without raw workspace rows or service-role access.
+      responses:
+        "200":
+          description: Workspace creation limit result for the authenticated user.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceLimitResponse"
+        "401":
+          description: Caller is missing a valid browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceLimitUnauthorized"
+        "500":
+          description: Workspace count could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceLimitError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/share/course/{courseId}:
     parameters:
       - name: courseId
@@ -2859,6 +2896,48 @@ components:
           type: string
           examples:
             - count failed
+    WorkspaceLimitResponse:
+      type: object
+      required:
+        - canCreate
+        - currentCount
+        - limit
+        - remaining
+      properties:
+        canCreate:
+          type: boolean
+        currentCount:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 0
+          examples:
+            - 10
+        remaining:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          description: Remaining free workspace creations, or null for unlimited internal Tuturuuu accounts.
+    WorkspaceLimitUnauthorized:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+    WorkspaceLimitError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error checking workspace limit
     RequestBodyLengthRequiredError:
       type: object
       required:

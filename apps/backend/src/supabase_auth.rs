@@ -60,6 +60,19 @@ pub(crate) async fn fetch_supabase_auth_user(
     response.json::<SupabaseAuthUser>().ok()
 }
 
+pub(crate) fn is_valid_tuturuuu_email(email: Option<&str>) -> bool {
+    let Some(email) = email else {
+        return false;
+    };
+    let Some((local, domain)) = email.split_once('@') else {
+        return false;
+    };
+
+    !local.is_empty()
+        && !local.chars().any(char::is_whitespace)
+        && matches!(domain, "tuturuuu.com" | "xwf.tuturuuu.com")
+}
+
 fn supabase_access_token_from_cookie_header(cookie_header: &str) -> Option<String> {
     let groups = supabase_auth_cookie_groups(cookie_header);
 
