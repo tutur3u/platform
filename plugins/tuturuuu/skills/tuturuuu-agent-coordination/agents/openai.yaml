@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu Agent Coordination"
-  short_description: "Coordinate shared Tuturuuu worktrees"
-  default_prompt: "Coordinate this shared worktree task, wait for short commit access if needed, and archive its note."
+  short_description: "Coordinate shared checkouts, worktrees, and branches across harnesses"
+  default_prompt: "Coordinate this shared-checkout task across concurrent agents and worktrees, then commit safely and archive the note."

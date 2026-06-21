@@ -29,6 +29,15 @@ Use the commit window plus exact path staging. The commit window serializes Git
 index and commit operations; exact staging keeps unrelated human or agent work
 out of commits.
 
+The window is **per-checkout**: its lock lives in the current working directory,
+so it only serializes commits among agents that share one checkout. A separate
+`git worktree` has its own lock and its own Git index, so the window does not
+coordinate across worktrees — there, isolation comes from each worktree being on
+its own branch. Claim the window for same-checkout commit safety; rely on
+branches and the shared remote to integrate separate worktrees. In a hot shared
+checkout, commit your owned paths promptly in small scoped commits so a
+concurrent rebase or reset cannot discard a large uncommitted set.
+
 Claims default to 10 minutes and may only be 5-10 minutes. Claim only when you
 are ready to stage and commit; release the token as soon as the operation
 finishes or aborts.

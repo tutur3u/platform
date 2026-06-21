@@ -330,6 +330,19 @@ commit operation without becoming part of a commit. Claims default to 10
 minutes and may only be 5-10 minutes, so claim only when ready to stage,
 inspect, and commit.
 
+This coordination is **per-checkout** and **harness-agnostic**. The commit
+window and the `tmp/agent-coordination/` notes both live in the working
+directory, so they coordinate every agent or human sharing one checkout —
+parallel Codex or Claude Code sessions, background tasks, and same-directory
+subagents — regardless of which tool they run under. A separate `git worktree`
+has its own lock file, its own notes, and its own Git index, so the window does
+not span worktrees; separate worktrees stay isolated by being on different
+branches and integrate through the shared remote instead. In a hot shared
+checkout, commit your owned paths promptly in small scoped commits: a large
+unstaged set can be discarded by a concurrent rebase, `reset --hard`,
+`checkout`, or `stash` from any agent or human. (`bun git-sync` is isolated and
+safe; manual destructive Git is not.)
+
 ```bash
 bun git-commit-window status
 bun git-commit-window claim --owner "<agent/task>" --scope "type(scope): subject"

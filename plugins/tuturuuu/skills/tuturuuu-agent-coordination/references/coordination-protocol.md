@@ -3,6 +3,86 @@
 This protocol keeps concurrent human and agent work from overwriting each other.
 It complements `git status`; it does not replace it.
 
+## Scope: One Checkout Vs Separate Worktrees
+
+The coordination substrate in this repo is **per-checkout**. Both the notes under
+`tmp/agent-coordination/` and the commit-window lock at
+`tmp/agent-coordination/git-commit-window.lock.json` live inside the working
+directory, and the lock script resolves its root from its own file location
+(`scripts/git-commit-window.js` -> repo root of *that* checkout). This has two
+direct consequences:
+
+- **Same checkout (most common).** Multiple agents and humans sharing one working
+  directory — parallel Codex or Claude Code sessions, background tasks, and
+  subagents launched in the same directory — all see the same notes and contend
+  for the same commit window. Notes + window are the live coordination signal
+  here. This is the default case this protocol addresses.
+- **Separate `git worktree` checkouts.** A linked worktree (`git worktree add`,
+  Claude Code / Workflow `isolation: worktree`, or an agent given its own
+  worktree) has its own working directory, its own `tmp/agent-coordination/`,
+  its own commit-window lock file, and its own Git index. Notes written in one
+  worktree are invisible to another, and the commit window does **not** serialize
+  commits across worktrees. Do not rely on either to coordinate across separate
+  worktrees.
+
+Separate worktrees are instead isolated by **branch and index**: Git refuses to
+check out the same branch in two worktrees, so each worktree is on a distinct
+branch with a distinct index, and concurrent edits/commits there cannot corrupt
+each other. They converge later through the shared object database and remote
+(merge, rebase, `bun git-sync`, or a PR), not through notes or the window. Use an
+isolated worktree precisely when parallel work would otherwise fight over one
+index or tree (mass refactors, conflicting large edits, risky rebases); use the
+shared-checkout notes + window when agents must cooperate in one directory.
+
+## Branch Posture
+
+- Default to committing on the working branch the user handed you. Do not create
+  a new branch unless the user asks or you are intentionally isolating work in a
+  separate worktree.
+- When you do branch (including the branch a new worktree creates), use a name
+  the repo checker accepts: `feature/`, `feat/`, `fix/`, `bugfix/`, `hotfix/`,
+  `release/`, `chore/`, `docs/`, `style/`, `refactor/`, `perf/`, `dependabot/`,
+  or `claude/`.
+- Long-running or conflict-prone parallel work belongs on its own branch/worktree
+  and integrates back through a merge/rebase/PR, not by piling uncommitted edits
+  into a hot shared checkout.
+- `bun git-sync` fast-forwards `main` and release branches through a temporary
+  detached worktree and leaves the current checkout untouched. It is the safe way
+  to advance shared branches; never hand-reset a shared branch other agents are
+  working on.
+
+## Harness-Agnostic Coordination
+
+This protocol is the same regardless of which harness an agent runs under — Codex,
+Claude Code, or another tool. They all read the same `git status`, the same
+`tmp/agent-coordination/` notes (in a shared checkout), and the same commit
+window. Cooperate through those shared artifacts, never through harness-internal
+state another tool cannot see.
+
+- Put the harness and a session/agent id on the note's `Agent:` line so others
+  know which tool owns it, e.g. `claude-code/<session>` or `codex/<session>`.
+- Subagents and background tasks spawned **in the same checkout** share the
+  parent's notes and window — give them disjoint owned paths and a no-commit
+  boundary unless a lane explicitly owns a commit. Subagents in an **isolated
+  worktree** do not; coordinate those by branch.
+- Any harness or human can run destructive Git (rebase, reset, checkout, stash)
+  in a shared checkout. Coordination notes are advisory and do not prevent it.
+
+## Protect Uncommitted Work
+
+A hot shared checkout (rapid concurrent commits from several agents) makes large
+uncommitted working sets fragile: a concurrent rebase, `reset --hard`, branch
+`checkout`, or `stash` by any agent or human can discard unstaged edits that are
+not in the object database, with no stash left behind. `bun git-sync` itself is
+now isolated and safe, but manual destructive Git in the shared checkout is not.
+
+- Commit early and often in small, scoped commits instead of accumulating a large
+  uncommitted multi-file set.
+- After a big multi-file generation or refactor, claim the commit window and
+  commit your owned paths promptly rather than leaving them exposed.
+- If you must hold uncommitted work, keep your coordination note current so other
+  agents avoid destructive operations over your paths.
+
 ## Triage
 
 1. Run `git status --short`.
@@ -101,8 +181,9 @@ Use a sortable timestamp and short slug:
 `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<task-slug>.md`.
 
 ```md
-Agent: <agent name or session id>
+Agent: <harness/session-or-agent-id, e.g. claude-code/<session> | codex/<session>>
 Intent: <one-line task summary>
+Checkout: <shared main checkout | worktree <name/branch>>  # only when not the shared main checkout
 Owned paths:
 - <path or directory>
 Observed dirty paths:
@@ -122,6 +203,12 @@ Risks:
 
 Keep claims narrow. If the task scope shrinks, update the note with the smaller
 owned path set so other agents can proceed around you.
+
+Name the harness and session on the `Agent:` line so a different tool reading the
+note knows who owns it. Add the `Checkout:` line only when you are working in a
+separate worktree or non-default branch — it tells same-checkout agents that your
+note's paths are being edited elsewhere and that the commit window you hold is
+local to that worktree.
 
 Do not record `bun git-commit-window` tokens in coordination notes. Tokens are
 printed in the terminal for the agent that claimed the window and should be used
