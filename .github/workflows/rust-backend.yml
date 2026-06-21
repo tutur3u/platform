@@ -52,6 +52,9 @@ permissions:
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
     with:
       workflow_name: rust-backend.yml
 

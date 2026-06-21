@@ -191,7 +191,21 @@ const staticMarketingRoutes = [
   },
 ];
 
+const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
+
 const redirects = [
+  {
+    path: `/${DEFAULT_LOCALE}/calendar/meet-together`,
+    location: '/meet-together',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/calendar/meet-together/plans/summer`,
+    location: '/meet-together/plans/summer',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/docs`,
+    location: 'https://docs.tuturuuu.com',
+  },
   {
     path: `/${DEFAULT_LOCALE}/pricing`,
     location: '/pricing',
@@ -202,6 +216,18 @@ const redirects = [
   },
   {
     path: `/${DEFAULT_LOCALE}/qr-generator?utm_source=e2e&tag=a&tag=b`,
+    location: /\/qr-generator\?utm_source=e2e&tag=a&tag=b$/u,
+  },
+  {
+    path: '/pricing',
+    location: '/?hash-nav=1#pricing',
+  },
+  {
+    path: '/products/meet-together',
+    location: '/meet-together',
+  },
+  {
+    path: '/qr-generator?utm_source=e2e&tag=a&tag=b',
     location: /\/qr-generator\?utm_source=e2e&tag=a&tag=b$/u,
   },
 ];
@@ -243,27 +269,29 @@ test.describe('Public migrated marketing routes', () => {
     });
   }
 
-  test('renders default landing route', async ({ page }) => {
-    const response = await page.goto('/', {
-      waitUntil: 'domcontentloaded',
-    });
+  for (const route of landingRoutes) {
+    test(`renders landing route ${route.path}`, async ({ page }) => {
+      const response = await page.goto(route.path, {
+        waitUntil: 'domcontentloaded',
+      });
 
-    expect(response?.ok()).toBe(true);
-    await expect(
-      page
-        .getByRole('heading', { name: /Work Smarter\.\s+Live Better\./u })
-        .first()
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(
-      page.getByRole('heading', { name: 'Everything you need' }).first()
-    ).toBeVisible();
-    await expect(
-      page
-        .getByRole('heading', { name: 'Simple pricing. No surprises.' })
-        .first()
-    ).toBeVisible();
-    await expectNoPublicRouteRuntimeError(page);
-  });
+      expect(response?.ok()).toBe(true);
+      await expect(
+        page
+          .getByRole('heading', { name: /Work Smarter\.\s+Live Better\./u })
+          .first()
+      ).toBeVisible({ timeout: 30_000 });
+      await expect(
+        page.getByRole('heading', { name: 'Everything you need' }).first()
+      ).toBeVisible();
+      await expect(
+        page
+          .getByRole('heading', { name: 'Simple pricing. No surprises.' })
+          .first()
+      ).toBeVisible();
+      await expectNoPublicRouteRuntimeError(page);
+    });
+  }
 
   for (const route of staticMarketingRoutes) {
     test(`renders static marketing route ${route.path}`, async ({ page }) => {

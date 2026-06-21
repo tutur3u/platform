@@ -484,6 +484,43 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
   );
 });
 
+test('restricted ci-check callers grant deployment marker read access', () => {
+  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+  const workflowFiles = fs
+    .readdirSync(workflowsDir)
+    .filter((fileName) => /\.ya?ml$/.test(fileName));
+
+  for (const workflowFile of workflowFiles) {
+    const workflow = fs.readFileSync(
+      path.join(workflowsDir, workflowFile),
+      'utf8'
+    );
+
+    if (!workflow.includes('uses: ./.github/workflows/ci-check.yml')) {
+      continue;
+    }
+
+    const jobsIndex = workflow.indexOf('\njobs:');
+    const preamble = jobsIndex === -1 ? workflow : workflow.slice(0, jobsIndex);
+    const restrictsTokenPermissions = /^permissions:\s*(?:\n|\{)/m.test(
+      preamble
+    );
+    const workflowCanReadDeployments = /^ {2}deployments:\s*read\b/m.test(
+      preamble
+    );
+
+    if (!restrictsTokenPermissions || workflowCanReadDeployments) {
+      continue;
+    }
+
+    assert.match(
+      workflow,
+      /^ {2}check-ci:\n(?: {4}.*\n)* {4}permissions:\n(?: {6}.*\n)* {6}deployments:\s*read\b/m,
+      `${workflowFile} check-ci job must grant deployments: read when top-level permissions restrict the token`
+    );
+  }
+});
+
 test('disabled ci entries still skip regardless of affected status', () => {
   const output = execFileSync(
     'bun',
