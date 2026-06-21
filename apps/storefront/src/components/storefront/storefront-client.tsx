@@ -8,7 +8,6 @@ import {
   type InventoryPublicStorefrontResponse,
   recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
-import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
@@ -20,9 +19,8 @@ import {
 } from '@tuturuuu/ui/storefront';
 import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import { useQueryState } from 'nuqs';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useCart } from './storefront-cart';
 import {
@@ -37,6 +35,7 @@ type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
 type StorefrontClientProps = {
   buyerDefaults?: StorefrontBuyerDefaults;
+  clearCartOnMount?: boolean;
   headerActions?: ReactNode;
   initialCheckoutOpen?: boolean;
   initialStorefront?: InventoryPublicStorefrontResponse | null;
@@ -48,6 +47,7 @@ type StorefrontClientProps = {
 
 export function StorefrontClient({
   buyerDefaults,
+  clearCartOnMount = false,
   headerActions,
   initialCheckoutOpen = false,
   initialStorefront,
@@ -60,15 +60,12 @@ export function StorefrontClient({
   const cart = useCart(storeSlug);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { resolvedTheme } = useTheme();
   const [detailListingId, setDetailListingId] = useQueryState('product');
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(
     initialCheckoutOpen || mode === 'checkout'
   );
-  const [isPolarConfirmed, setIsPolarConfirmed] = useState(false);
-  const [checkoutInstance, setCheckoutInstance] =
-    useState<PolarEmbedCheckout | null>(null);
+  const checkoutWindowRef = useRef<Window | null>(null);
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -139,6 +136,13 @@ export function StorefrontClient({
     void queryClient.invalidateQueries({ queryKey: ['storefront', storeSlug] });
   }, [mode, orderQuery.data?.order.status, queryClient, storeSlug]);
 
+  useEffect(() => {
+    if (!clearCartOnMount) return;
+
+    cart.clear();
+    void queryClient.invalidateQueries({ queryKey: ['storefront', storeSlug] });
+  }, [cart.clear, clearCartOnMount, queryClient, storeSlug]);
+
   type CheckoutLineInput = {
     listingId: string;
     variantId?: string;
@@ -169,53 +173,95 @@ export function StorefrontClient({
     router.push(`${target.pathname}${target.search}${target.hash}`);
   };
 
-  const openEmbeddedPolarCheckout = async (checkoutUrl: string) => {
-    setIsRedirecting(true);
-    setIsPolarConfirmed(false);
+  const closePreparedCheckoutWindow = () => {
+    const checkoutWindow = checkoutWindowRef.current;
+    checkoutWindowRef.current = null;
+
+    if (!checkoutWindow || checkoutWindow.closed) return;
+    try {
+      checkoutWindow.close();
+    } catch {
+      // Ignore browser-specific restrictions when closing a prepared popup.
+    }
+  };
+
+  const prepareCheckoutWindow = () => {
+    if (typeof window === 'undefined' || isSimulatedCheckout) return;
+
+    const existingWindow = checkoutWindowRef.current;
+    if (existingWindow && !existingWindow.closed) return;
+
+    const checkoutWindow = window.open(
+      '',
+      '_blank',
+      'popup,width=520,height=780'
+    );
+    if (!checkoutWindow) return;
+
+    checkoutWindowRef.current = checkoutWindow;
 
     try {
-      const checkout = await PolarEmbedCheckout.create(checkoutUrl, {
-        theme: resolvedTheme === 'dark' ? 'dark' : 'light',
-      });
-
-      checkout.addEventListener('close', () => {
-        setCheckoutInstance(null);
-        setIsRedirecting(false);
-        setIsPolarConfirmed(false);
-      });
-      checkout.addEventListener('confirmed', () => {
-        setIsPolarConfirmed(true);
-      });
-      checkout.addEventListener('success', (event) => {
-        event.preventDefault();
-        checkout.close();
-        cart.clear();
-        setCheckoutInstance(null);
-        setIsCheckoutOpen(false);
-        setIsRedirecting(false);
-        setIsPolarConfirmed(false);
-        navigateToCheckoutResult(event.detail.successURL);
-      });
-
-      setCheckoutInstance(checkout);
-      setIsRedirecting(false);
-    } catch (error) {
-      setCheckoutInstance(null);
-      setIsRedirecting(false);
-      setIsPolarConfirmed(false);
-      toast.error(
-        error instanceof Error && error.message
-          ? error.message
-          : t('checkoutError')
-      );
+      checkoutWindow.document.title = t('checkout');
+      checkoutWindow.document.body.style.margin = '0';
+      checkoutWindow.document.body.style.minHeight = '100vh';
+      checkoutWindow.document.body.style.display = 'grid';
+      checkoutWindow.document.body.style.placeItems = 'center';
+      checkoutWindow.document.body.style.fontFamily =
+        'Inter, ui-sans-serif, system-ui, sans-serif';
+      checkoutWindow.document.body.textContent = t('redirectingToCheckout');
+      checkoutWindow.opener = null;
+    } catch {
+      // The browser may restrict access to the prepared window. It can still be
+      // navigated once the checkout URL is ready.
     }
+  };
+
+  const openPolarCheckoutWindow = (checkoutUrl: string) => {
+    setIsRedirecting(true);
+
+    const preparedWindow = checkoutWindowRef.current;
+    checkoutWindowRef.current = null;
+
+    const checkoutWindow =
+      preparedWindow && !preparedWindow.closed
+        ? preparedWindow
+        : window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+
+    if (checkoutWindow) {
+      try {
+        checkoutWindow.opener = null;
+        checkoutWindow.location.assign(checkoutUrl);
+        checkoutWindow.focus();
+      } catch {
+        window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      setIsCheckoutOpen(false);
+      setIsRedirecting(false);
+      return;
+    }
+
+    window.location.assign(checkoutUrl);
   };
 
   useEffect(() => {
     return () => {
-      checkoutInstance?.close();
+      const checkoutWindow = checkoutWindowRef.current;
+      checkoutWindowRef.current = null;
+
+      if (!checkoutWindow || checkoutWindow.closed) return;
+      try {
+        checkoutWindow.close();
+      } catch {
+        // Ignore browser-specific restrictions when closing a prepared popup.
+      }
     };
-  }, [checkoutInstance]);
+  }, []);
+
+  const startCheckout = (input: CheckoutInput) => {
+    if (!isSimulatedCheckout) prepareCheckoutWindow();
+    checkoutMutation.mutate(input);
+  };
 
   const checkoutMutation = useMutation({
     mutationFn: async (input: CheckoutInput) => {
@@ -230,8 +276,8 @@ export function StorefrontClient({
       });
     },
     onError: (error) => {
+      closePreparedCheckoutWindow();
       setIsRedirecting(false);
-      setIsPolarConfirmed(false);
       toast.error(
         error instanceof Error && error.message
           ? error.message
@@ -240,6 +286,7 @@ export function StorefrontClient({
     },
     onSuccess: async ({ checkoutUrl }) => {
       if (!checkoutUrl) {
+        closePreparedCheckoutWindow();
         setIsRedirecting(false);
         toast.error(t('checkoutError'));
         return;
@@ -252,7 +299,7 @@ export function StorefrontClient({
         return;
       }
 
-      await openEmbeddedPolarCheckout(checkoutUrl);
+      openPolarCheckoutWindow(checkoutUrl);
     },
   });
 
@@ -399,6 +446,7 @@ export function StorefrontClient({
     checkout: t('checkout'),
     checkoutDisabled: t('checkoutDisabled'),
     checkoutDisabledBadge: t('checkoutDisabledBadge'),
+    contactDetails: t('contactDetails'),
     demoBadge: t('demoBadge'),
     emptyCart: t('emptyCart'),
     emptyListingsDescription: t('emptyListingsDescription'),
@@ -406,6 +454,7 @@ export function StorefrontClient({
     fallbackDescription: t('fallbackDescription'),
     fromPrice: t('fromPrice'),
     instantCheckout: t('instantCheckout'),
+    orderSummary: t('orderSummary'),
     redirectingToCheckout: t('redirectingToCheckout'),
     selectOptions: t('selectOptions'),
     viewDetails: t('viewDetails'),
@@ -448,7 +497,7 @@ export function StorefrontClient({
       headerActions={headerActions}
       isDemo={isDemoStorefront}
       isRedirecting={isRedirecting}
-      isSubmitting={checkoutMutation.isPending || isPolarConfirmed}
+      isSubmitting={checkoutMutation.isPending}
       labels={surfaceLabels}
       listings={listings}
       mode={surfaceMode}
@@ -459,7 +508,7 @@ export function StorefrontClient({
           listingId: buyNowListingId,
           metadata: { instant: true, lines: 1 },
         });
-        checkoutMutation.mutate({
+        startCheckout({
           customerEmail: buyerDefaults?.email ?? undefined,
           customerName: buyerDefaults?.name ?? undefined,
           lines: [
@@ -477,7 +526,7 @@ export function StorefrontClient({
           eventType: 'checkout_started',
           metadata: { lines: checkoutListings.length },
         });
-        checkoutMutation.mutate({
+        startCheckout({
           customerEmail:
             String(formData.get('customerEmail') ?? '').trim() || undefined,
           customerName:
@@ -518,7 +567,7 @@ export function StorefrontClient({
           eventType: 'checkout_started',
           metadata: { instant: true, lines: checkoutListings.length },
         });
-        checkoutMutation.mutate({
+        startCheckout({
           customerEmail: buyerDefaults.email,
           customerName: buyerDefaults.name ?? undefined,
           lines: cartCheckoutLines(),
@@ -537,14 +586,13 @@ function StorefrontSkeleton({ label }: { label: string }) {
   return (
     <main className="min-h-dvh bg-background" aria-busy="true">
       <span className="sr-only">{label}</span>
-      <div className="h-1 w-full bg-muted" />
       <header className="border-border border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
           <div className="h-6 w-40 animate-pulse rounded-md bg-muted" />
           <div className="h-11 w-16 animate-pulse rounded-2xl bg-muted" />
         </div>
       </header>
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="mx-auto max-w-7xl px-4 py-5">
         <div className="min-w-0">
           <div className="h-52 w-full animate-pulse rounded-2xl bg-muted" />
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -560,7 +608,6 @@ function StorefrontSkeleton({ label }: { label: string }) {
             ))}
           </div>
         </div>
-        <div className="hidden h-72 animate-pulse rounded-2xl bg-muted lg:block" />
       </section>
     </main>
   );

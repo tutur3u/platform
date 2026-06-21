@@ -1,11 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type {
   InventoryStorefront,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
 import { describe, expect, it } from 'vitest';
 import { StorefrontSurface } from './storefront-surface';
-import { sanitizeStorefrontAccentColor } from './utils';
+import { formatStorefrontPrice, sanitizeStorefrontAccentColor } from './utils';
 
 const storefront: InventoryStorefront = {
   accentColor: '#abc',
@@ -56,6 +56,15 @@ const listing: InventoryStorefrontListing = {
   wsId: storefront.wsId,
 };
 
+const secondListing: InventoryStorefrontListing = {
+  ...listing,
+  id: 'listing-2',
+  price: 2500,
+  productId: 'product-2',
+  title: 'Team Workshop With Long Name',
+  unitId: 'unit-2',
+};
+
 describe('StorefrontSurface', () => {
   it('sanitizes hex accent colors only', () => {
     expect(sanitizeStorefrontAccentColor('#abc')).toBe('#aabbcc');
@@ -80,10 +89,11 @@ describe('StorefrontSurface', () => {
     expect(screen.getAllByText('Preview Store')).toHaveLength(2);
     expect(screen.getByText('No buyer listings')).toBeInTheDocument();
     expect(screen.getByText('Create a listing next.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cart: 0' }));
     expect(screen.getByText('Preview checkout disabled')).toBeDisabled();
   });
 
-  it('links storefront chrome back to the store and keeps the cart icon stable', () => {
+  it('links storefront chrome back to the store and opens cart from the header popover', () => {
     render(
       <StorefrontSurface
         cartHref="/preview-store/cart"
@@ -100,11 +110,68 @@ describe('StorefrontSurface', () => {
       '/preview-store'
     );
 
-    const cartLink = screen.getByRole('link', { name: 'Cart: 2' });
-    expect(cartLink).toHaveAttribute('href', '/preview-store/cart');
-    expect(cartLink).toHaveClass('h-11', 'min-w-14', 'shrink-0');
-    expect(cartLink.querySelector('svg')).toHaveClass('size-5', 'shrink-0');
+    expect(screen.queryByText('$2.00')).not.toBeInTheDocument();
+
+    const cartButton = screen.getByRole('button', { name: 'Cart: 2' });
+    expect(cartButton).toHaveClass('h-11', 'min-w-14', 'shrink-0');
+    expect(cartButton.querySelector('svg')).toHaveClass('size-5', 'shrink-0');
+
+    fireEvent.click(cartButton);
+
+    expect(screen.getByRole('region', { name: 'Cart' })).toBeInTheDocument();
+    expect(screen.getAllByText('$2.00')).toHaveLength(2);
     expect(screen.getAllByText('1M')).toHaveLength(1);
+  });
+
+  it('keeps the compatibility cart page as a full cart review', () => {
+    render(
+      <StorefrontSurface
+        cartHref="/preview-store/cart"
+        cartLines={[{ listingId: listing.id, quantity: 2 }]}
+        checkoutHref="/preview-store/checkout"
+        listings={[listing]}
+        mode="cart"
+        onCheckoutOpen={() => undefined}
+        storefront={storefront}
+        storefrontHref="/preview-store"
+      />
+    );
+
+    expect(screen.getByRole('region', { name: 'Cart' })).toBeInTheDocument();
+    expect(screen.getByText('1:1 Mentoring')).toBeInTheDocument();
+    expect(screen.getAllByText('$2.00')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: /Checkout/ })).toBeEnabled();
+  });
+
+  it('keeps long item names and large totals inside the cart row bounds', () => {
+    const largeListing: InventoryStorefrontListing = {
+      ...listing,
+      price: 123_456_789,
+      title:
+        'A very long product title with specifications, measurements, and buyer-facing detail',
+    };
+    const expectedTotal = formatStorefrontPrice(largeListing.price * 5, 'USD');
+
+    render(
+      <StorefrontSurface
+        cartLines={[{ listingId: largeListing.id, quantity: 5 }]}
+        listings={[largeListing]}
+        mode="cart"
+        storefront={storefront}
+      />
+    );
+
+    const amount = screen.getByTitle(expectedTotal);
+    expect(amount).toHaveClass(
+      'max-w-[9rem]',
+      'overflow-hidden',
+      'text-ellipsis',
+      'text-right'
+    );
+    expect(screen.getByText(largeListing.title)).toHaveClass(
+      'line-clamp-2',
+      'break-words'
+    );
   });
 
   it('prefills checkout buyer details while keeping editable form fields', () => {
@@ -114,14 +181,23 @@ describe('StorefrontSurface', () => {
           email: 'buyer@example.com',
           name: 'Sokora Buyer',
         }}
-        cartLines={[{ listingId: listing.id, quantity: 1 }]}
-        listings={[listing]}
+        cartLines={[
+          { listingId: listing.id, quantity: 1 },
+          { listingId: secondListing.id, quantity: 1 },
+        ]}
+        listings={[listing, secondListing]}
         mode="checkout"
         onCheckoutSubmit={() => undefined}
         storefront={storefront}
       />
     );
 
+    expect(
+      screen.getByRole('button', { name: /Order summary/ })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Contact details' })
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Name')).toHaveValue('Sokora Buyer');
     expect(screen.getByLabelText('Email')).toHaveValue('buyer@example.com');
     expect(screen.getByLabelText('Name')).toBeEnabled();
@@ -156,6 +232,7 @@ describe('StorefrontSurface', () => {
     );
 
     expect(screen.queryByText('Checkout disabled')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cart: 0' }));
     expect(screen.getByText('Checkout unavailable')).toBeDisabled();
   });
 

@@ -1,3 +1,4 @@
+import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
 import { StorefrontClient } from '@/components/storefront/storefront-client';
 
 export default async function StorefrontCheckoutSuccessPage({
@@ -6,5 +7,14 @@ export default async function StorefrontCheckoutSuccessPage({
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
-  return <StorefrontClient mode="store" storeSlug={storeSlug} />;
+  const buyerDefaults = await getStorefrontBuyerDefaults();
+
+  return (
+    <StorefrontClient
+      buyerDefaults={buyerDefaults}
+      clearCartOnMount
+      mode="store"
+      storeSlug={storeSlug}
+    />
+  );
 }

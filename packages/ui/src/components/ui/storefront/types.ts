@@ -37,11 +37,13 @@ export type StorefrontSurfaceLabels = {
   checkout: string;
   checkoutDisabled: string;
   checkoutDisabledBadge: string;
+  contactDetails: string;
   couponNote: string;
   demoBadge: string;
   emptyCart: string;
   fromPrice: string;
   instantCheckout: string;
+  orderSummary: string;
   redirectingToCheckout: string;
   selectOptions: string;
   viewDetails: string;
@@ -77,11 +79,13 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   checkout: 'Checkout',
   checkoutDisabled: 'Checkout is disabled in preview',
   checkoutDisabledBadge: 'Checkout disabled',
+  contactDetails: 'Contact details',
   couponNote: 'Have a coupon? You can apply it at checkout.',
   demoBadge: 'Demo',
   emptyCart: 'Add a listing to start checkout.',
   fromPrice: 'From',
   instantCheckout: 'Instant checkout',
+  orderSummary: 'Order summary',
   redirectingToCheckout: 'Taking you to secure checkout…',
   selectOptions: 'Select options',
   viewDetails: 'View details',
