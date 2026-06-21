@@ -167,6 +167,71 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/hive/ai/models:
+    get:
+      summary: Hive AI model catalog
+      description: Migrated replacement for apps/web/src/app/api/v1/hive/ai/models/route.ts GET. The Rust backend preserves Hive-only app-session auth and browser Supabase cookie fallback, requires Hive member or admin access before private reads, reads only the UI-safe model columns from `private.ai_gateway_models`, applies legacy `enabled` and `type` filters, orders by provider then name, and returns the derived `{ models }` UI payload without exposing private rows or service-role access to the browser.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+      parameters:
+        - name: enabled
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - "false"
+          description: When set to `false`, disabled models are included. Any other value preserves the legacy default enabled-only filter.
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: language
+          description: Model type filter. The `all` sentinel disables type filtering.
+      responses:
+        "200":
+          description: Hive-visible AI models mapped to the shared UI model shape.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiveAiModelsResponse"
+        "401":
+          description: Caller is missing a valid Hive app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiveAccessUnauthorized"
+        "403":
+          description: Caller is authenticated but lacks Hive member/admin access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiveAccessRequired"
+        "500":
+          description: Hive access or private model lookup failed.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/HiveAccessError"
+                  - $ref: "#/components/schemas/HiveAiModelsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/share/course/{courseId}:
     parameters:
       - name: courseId
@@ -3161,6 +3226,15 @@ components:
           type: string
           examples:
             - Unauthorized
+    HiveAccessRequired:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Hive access required
     HiveAccessError:
       type: object
       required:
@@ -3170,6 +3244,49 @@ components:
           type: string
           examples:
             - Failed to resolve Hive access
+    HiveAiModelsResponse:
+      type: object
+      required:
+        - models
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/HiveAiModel"
+    HiveAiModel:
+      type: object
+      required:
+        - disabled
+        - label
+        - provider
+        - value
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        provider:
+          type: string
+        description:
+          type: string
+        context:
+          type: integer
+          minimum: 0
+        disabled:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+    HiveAiModelsError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Failed to list AI models
     RequestBodyLengthRequiredError:
       type: object
       required:

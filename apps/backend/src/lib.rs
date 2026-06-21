@@ -10,6 +10,7 @@ mod changelog;
 mod contact;
 mod crawlers;
 mod hive_access;
+mod hive_ai_models;
 mod holidays;
 mod mobile_version;
 mod outbound;
@@ -385,6 +386,12 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = hive_access::handle_hive_access_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_ai_models::handle_hive_ai_models_route(config, request, outbound).await
+    {
         return response;
     }
 
@@ -3400,6 +3407,278 @@ mod tests {
         let response = handle_backend_request(
             &config,
             request("POST", "/api/v1/users/me/hive-access"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_requires_hive_session_before_private_lookup() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, request("GET", "/api/v1/hive/ai/models"), &outbound)
+                .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_rejects_wrong_app_session_target_without_fallback() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "calendar",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_bearer("GET", "/api/v1/hive/ai/models", token)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_requires_member_or_admin_access_before_model_lookup() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "hive",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[{"enabled":false}]"#),
+            outbound_response(200, r#"[{"enabled":true,"allow_role_management":false}]"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/hive/ai/models", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["error"], "Hive access required");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_reads_private_models_with_default_filters() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "hive",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[{"enabled":true}]"#),
+            outbound_response(200, r#"[{"enabled":false,"allow_role_management":false}]"#),
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "context_window":1048576,
+                        "description":"Fast model",
+                        "id":"google/gemini-2.5-flash",
+                        "is_enabled":true,
+                        "name":"",
+                        "provider":null,
+                        "tags":["fast","hive"],
+                        "type":"language"
+                    }
+                ]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/hive/ai/models", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!({
+                "models": [
+                    {
+                        "context": 1048576,
+                        "description": "Fast model",
+                        "disabled": false,
+                        "label": "gemini-2.5-flash",
+                        "provider": "google",
+                        "tags": ["fast", "hive"],
+                        "value": "google/gemini-2.5-flash",
+                    }
+                ],
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert!(
+            calls[2]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/ai_gateway_models?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[2].url, "select").as_deref(),
+            Some("context_window,description,id,is_enabled,name,provider,tags,type")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[2].url, "order").as_deref(),
+            Some("provider.asc,name.asc")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[2].url, "type").as_deref(),
+            Some("eq.language")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[2].url, "is_enabled").as_deref(),
+            Some("eq.true")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_accepts_browser_session_and_all_disabled_query() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"browser-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(200, r#"[{"enabled":false}]"#),
+            outbound_response(200, r#"[{"enabled":true,"allow_role_management":true}]"#),
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "context_window":null,
+                        "description":null,
+                        "id":"custom-model",
+                        "is_enabled":false,
+                        "name":"Custom Model",
+                        "provider":"",
+                        "tags":null,
+                        "type":"image"
+                    }
+                ]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/hive/ai/models?enabled=false&type=all",
+                ),
+                ..request("GET", "/api/v1/hive/ai/models")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "models": [
+                    {
+                        "disabled": true,
+                        "label": "Custom Model",
+                        "provider": "custom-model",
+                        "value": "custom-model",
+                    }
+                ],
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(decoded_query_value(&calls[3].url, "type"), None);
+        assert_eq!(decoded_query_value(&calls[3].url, "is_enabled"), None);
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_maps_private_lookup_failures_to_legacy_error() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "hive",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[{"enabled":true}]"#),
+            outbound_response(200, r#"[{"enabled":false,"allow_role_management":false}]"#),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/hive/ai/models", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["error"], "Failed to list AI models");
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn hive_ai_models_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/hive/ai/models"),
             &outbound,
         )
         .await;

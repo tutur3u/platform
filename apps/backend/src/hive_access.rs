@@ -14,8 +14,8 @@ const PLATFORM_USER_ROLES_TABLE: &str = "platform_user_roles";
 const HIVE_ACCESS_CACHE_CONTROL: &str = "private, max-age=300, stale-while-revalidate=60";
 
 #[derive(Debug)]
-struct AuthenticatedHiveUser {
-    id: String,
+pub(crate) struct AuthenticatedHiveUser {
+    pub(crate) id: String,
 }
 
 #[derive(Deserialize)]
@@ -49,7 +49,14 @@ async fn hive_access_response(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let user = match authenticated_user(config, request, outbound).await {
+    let user = match authenticated_user(
+        config,
+        request,
+        contact::current_user_app_session_targets(),
+        outbound,
+    )
+    .await
+    {
         Ok(user) => user,
         Err(()) => return unauthorized_response(),
     };
@@ -62,17 +69,15 @@ async fn hive_access_response(
     hive_access_success_response(access)
 }
 
-async fn authenticated_user(
+pub(crate) async fn authenticated_user(
     config: &BackendConfig,
     request: BackendRequest<'_>,
+    expected_app_session_targets: &[&str],
     outbound: &impl OutboundHttpClient,
 ) -> Result<AuthenticatedHiveUser, ()> {
     if contact::request_has_app_session_token(request) {
-        let identity = contact::resolve_app_session_identity(
-            config,
-            request,
-            contact::current_user_app_session_targets(),
-        )?;
+        let identity =
+            contact::resolve_app_session_identity(config, request, expected_app_session_targets)?;
 
         return non_empty_user_id(identity.id);
     }
@@ -102,12 +107,18 @@ fn non_empty_user_id(user_id: String) -> Result<AuthenticatedHiveUser, ()> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-struct HiveAccess {
-    is_admin: bool,
-    is_member: bool,
+pub(crate) struct HiveAccess {
+    pub(crate) is_admin: bool,
+    pub(crate) is_member: bool,
 }
 
-async fn resolve_hive_access(
+impl HiveAccess {
+    pub(crate) fn has_access(&self) -> bool {
+        self.is_admin || self.is_member
+    }
+}
+
+pub(crate) async fn resolve_hive_access(
     contact_data: &contact::ContactDataConfig,
     user_id: &str,
     outbound: &impl OutboundHttpClient,
@@ -199,7 +210,7 @@ fn hive_access_success_response(access: HiveAccess) -> BackendResponse {
     let mut response = json_response(
         200,
         json!({
-            "hasAccess": access.is_admin || access.is_member,
+            "hasAccess": access.has_access(),
             "isAdmin": access.is_admin,
             "isMember": access.is_member,
         }),
