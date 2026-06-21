@@ -57,7 +57,7 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replace('node scripts/check-cloudflare-workers.js', '')
+      workflow.replaceAll('node scripts/check-cloudflare-workers.js', '')
     ).join('\n'),
     /check-cloudflare-workers/
   );
@@ -84,15 +84,30 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replaceAll('apps/tanstack-web/src/lib/cloudflare/backend.ts', '')
+      workflow.replaceAll('apps/tanstack-web/**', '')
     ).join('\n'),
-    /cloudflare\/backend/
+    /tanstack-web/
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replaceAll('apps/tanstack-web/src/lib/migration-status.ts', '')
+      workflow.replace('bun run --filter @tuturuuu/tanstack-web type-check', '')
     ).join('\n'),
-    /migration-status/
+    /type-check/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace('cloudflare-deployment-preflight:', '')
+    ).join('\n'),
+    /cloudflare-deployment-preflight/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace(
+        'bun wrangler secret list --config apps/backend/wrangler.jsonc --format json',
+        ''
+      )
+    ).join('\n'),
+    /secret list/
   );
   assert.match(
     validateRustBackendWorkflow(
