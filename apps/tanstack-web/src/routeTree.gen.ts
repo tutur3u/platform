@@ -63,6 +63,7 @@ import { Route as LocaleProductsDocumentsRouteImport } from './routes/$locale/pr
 import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products/crm'
 import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar'
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai'
+import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm'
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
 import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts'
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce'
@@ -381,6 +382,11 @@ const LocaleProductsAiRoute = LocaleProductsAiRouteImport.update({
   path: '/$locale/products/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
+  id: '/$locale/games/farm',
+  path: '/$locale/games/farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleCalendarMeetTogetherRoute =
   LocaleCalendarMeetTogetherRouteImport.update({
     id: '/$locale/calendar/meet-together',
@@ -623,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
+  '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
   '/$locale/products/crm': typeof LocaleProductsCrmRoute
@@ -715,6 +722,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
+  '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
   '/$locale/products/crm': typeof LocaleProductsCrmRoute
@@ -808,6 +816,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
+  '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
   '/$locale/products/crm': typeof LocaleProductsCrmRoute
@@ -902,6 +911,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
+    | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
     | '/$locale/products/crm'
@@ -994,6 +1004,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
+    | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
     | '/$locale/products/crm'
@@ -1086,6 +1097,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
+    | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
     | '/$locale/products/crm'
@@ -1179,6 +1191,7 @@ export interface RootRouteChildren {
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
   LocaleWsIdWorkoutsRoute: typeof LocaleWsIdWorkoutsRoute
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
+  LocaleGamesFarmRoute: typeof LocaleGamesFarmRoute
   LocaleProductsAiRoute: typeof LocaleProductsAiRoute
   LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute
   LocaleProductsCrmRoute: typeof LocaleProductsCrmRoute
@@ -1605,6 +1618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleProductsAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/games/farm': {
+      id: '/$locale/games/farm'
+      path: '/$locale/games/farm'
+      fullPath: '/$locale/games/farm'
+      preLoaderRoute: typeof LocaleGamesFarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/calendar/meet-together': {
       id: '/$locale/calendar/meet-together'
       path: '/$locale/calendar/meet-together'
@@ -1945,6 +1965,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
   LocaleWsIdWorkoutsRoute: LocaleWsIdWorkoutsRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
+  LocaleGamesFarmRoute: LocaleGamesFarmRoute,
   LocaleProductsAiRoute: LocaleProductsAiRoute,
   LocaleProductsCalendarRoute: LocaleProductsCalendarRoute,
   LocaleProductsCrmRoute: LocaleProductsCrmRoute,

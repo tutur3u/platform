@@ -694,6 +694,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/women-in-tech defines the legacy localized metadata, Open Graph, Twitter, canonical, alternate-language, keyword, and image tags through createPageHead. This marks only the metadata layout artifact migrated; the page remains legacy-owned until visual/runtime differences have acceptance or E2E evidence."
     },
+    "layout:/:locale/games/farm:apps/web/src/app/[locale]/games/farm/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/games/farm enforces the legacy Tuturuuu-email-only gate through a Start server function backed by the Rust /api/v1/users/me/profile endpoint instead of the Next.js Supabase server client."
+    },
+    "page:/:locale/games/farm:apps/web/src/app/[locale]/games/farm/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/games/farm ports the client-side farm game, local engine, board, weather display, seed inventory, crop actions, metadata, and keyboard controls without Next.js APIs or browser access to protected backend data."
+    },
     "layout:/:locale/partners:apps/web/src/app/[locale]/(marketing)/partners/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
