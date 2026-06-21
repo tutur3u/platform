@@ -641,6 +641,33 @@
       "title": "Liên Kết Nhanh"
     }
   },
+  "marketing-models": {
+    "all_providers": "Tất cả nhà cung cấp",
+    "all_tags": "Tất cả thẻ",
+    "all_types": "Tất cả loại",
+    "context_window_label": "Cửa sổ ngữ cảnh",
+    "filter_provider": "Tất cả nhà cung cấp",
+    "filter_tag": "Tất cả thẻ",
+    "filter_type": "Tất cả loại",
+    "free": "Miễn phí",
+    "generation_price_label": "Giá tạo ảnh",
+    "input_price_label": "Đầu vào",
+    "load_failed": "Không thể tải mô hình. Vui lòng thử lại.",
+    "load_more": "Tải thêm",
+    "loading_more": "Đang tải thêm...",
+    "max_output_label": "Đầu ra tối đa",
+    "no_results": "Không tìm thấy mô hình phù hợp.",
+    "not_available": "Không có",
+    "output_price_label": "Đầu ra",
+    "per_image": "/ ảnh",
+    "search_placeholder": "Tìm kiếm mô hình...",
+    "showing_count": "Đang hiển thị {count} / {total} mô hình",
+    "subtitle": "Khám phá đầy đủ các mô hình AI được cung cấp bởi Tuturuuu.",
+    "title": "Danh mục Mô hình AI",
+    "view_grid": "Xem dạng lưới",
+    "view_list": "Xem dạng danh sách",
+    "view_mode": "Chế độ xem"
+  },
   "integrations-page": {
     "actions": {
       "comingSoon": "Sắp ra mắt",

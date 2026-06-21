@@ -833,6 +833,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/contact ports the localized contact page with TanStack Query hydration, Start server functions, and @tuturuuu/internal-api calls to the Rust-owned current-user profile and support-inquiry endpoints. No browser code receives protected backend tokens or calls Supabase directly."
     },
+    "page:/:locale/models:apps/web/src/app/[locale]/(marketing)/models/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/models ports the legacy public AI model directory through a Start loader/server function, TanStack Query hydration, and @tuturuuu/internal-api row/page facades backed by the Rust-owned /api/v1/infrastructure/ai/models endpoint. Browser code does not call protected app APIs or Supabase directly."
+    },
     "page:/:locale/contributors:apps/web/src/app/[locale]/(marketing)/contributors/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

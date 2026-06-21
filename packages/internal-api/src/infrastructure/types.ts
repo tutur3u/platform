@@ -3,6 +3,7 @@ import type {
   AIWhitelistDomain,
   AIWhitelistEmail,
 } from '@tuturuuu/types';
+import type { Json } from '@tuturuuu/types/db';
 import type { ChatMessage } from '../chat-types';
 
 export interface MobilePlatformVersionPolicyPayload {
@@ -358,13 +359,27 @@ export interface AIWhitelistEmailResponse {
 }
 
 export type GatewayModelRow = {
+  cache_read_price_per_token?: number | string | null;
+  cache_write_price_per_token?: number | string | null;
   context_window: number | null;
   description: string | null;
   id: string;
+  image_gen_price?: number | string | null;
+  input_price_per_token?: number | string | null;
+  input_tiers?: Json | null;
   is_enabled: boolean | null;
+  max_tokens?: number | null;
   name: string;
+  output_price_per_token?: number | string | null;
+  output_tiers?: Json | null;
+  pricing_raw?: Json | null;
   provider: string;
+  released_at?: string | null;
+  search_price?: number | string | null;
+  synced_at?: string | null;
   tags: string[] | null;
+  type?: string | null;
+  web_search_price?: number | string | null;
 };
 
 export interface ListAiGatewayModelsParams {
@@ -384,6 +399,15 @@ export interface ListAiGatewayModelsPageParams
 
 export interface AiGatewayModelsPage {
   data: AIModelUI[];
+  pagination: {
+    limit: number;
+    page: number;
+    total: number;
+  };
+}
+
+export interface GatewayModelRowsPage {
+  data: GatewayModelRow[];
   pagination: {
     limit: number;
     page: number;

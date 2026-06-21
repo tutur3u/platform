@@ -641,6 +641,33 @@
       "title": "Quick Links"
     }
   },
+  "marketing-models": {
+    "all_providers": "All Providers",
+    "all_tags": "All Tags",
+    "all_types": "All Types",
+    "context_window_label": "Context Window",
+    "filter_provider": "All Providers",
+    "filter_tag": "All Tags",
+    "filter_type": "All Types",
+    "free": "Free",
+    "generation_price_label": "Generation Price",
+    "input_price_label": "Input",
+    "load_failed": "Failed to load models. Please try again.",
+    "load_more": "Load more",
+    "loading_more": "Loading more...",
+    "max_output_label": "Max Output",
+    "no_results": "No models found matching your criteria.",
+    "not_available": "N/A",
+    "output_price_label": "Output",
+    "per_image": "/ image",
+    "search_placeholder": "Search models...",
+    "showing_count": "Showing {count} of {total} models",
+    "subtitle": "Explore the full range of AI models powered by Tuturuuu.",
+    "title": "AI Models Directory",
+    "view_grid": "Grid view",
+    "view_list": "List view",
+    "view_mode": "View mode"
+  },
   "integrations-page": {
     "actions": {
       "comingSoon": "Coming Soon",

@@ -89,6 +89,10 @@ const staticMarketingRoutes = [
     heading: 'Contributors',
   },
   {
+    path: `/${DEFAULT_LOCALE}/models`,
+    heading: 'AI Models Directory',
+  },
+  {
     path: `/${DEFAULT_LOCALE}/women-in-tech`,
     heading:
       'From Vietnam to the World: Women Leading the Future of Technology',

@@ -716,3 +716,41 @@ test('TanStack contact route stays terminal across Rust APIs and Start page', ()
     assert.deepEqual(route.methods, expected.methods);
   }
 });
+
+test('TanStack models route stays terminal across Rust API and Start page', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        rootDir,
+        'apps',
+        'tanstack-web',
+        'migration',
+        'route-manifest.json'
+      ),
+      'utf8'
+    )
+  );
+  const routes = new Map(manifest.routes.map((route) => [route.id, route]));
+  const terminalModelRoutes = [
+    {
+      id: 'api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts',
+      methods: ['GET'],
+      targetOwner: 'rust-backend',
+    },
+    {
+      id: 'page:/:locale/models:apps/web/src/app/[locale]/(marketing)/models/page.tsx',
+      methods: [],
+      targetOwner: 'tanstack-start',
+    },
+  ];
+
+  for (const expected of terminalModelRoutes) {
+    const route = routes.get(expected.id);
+
+    assert.ok(route, `missing models migration route: ${expected.id}`);
+    assert.equal(route.status, 'migrated');
+    assert.equal(route.targetOwner, expected.targetOwner);
+    assert.deepEqual(route.methods, expected.methods);
+  }
+});

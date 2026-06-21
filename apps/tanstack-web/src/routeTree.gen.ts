@@ -23,6 +23,7 @@ import { Route as LocaleQrGeneratorRouteImport } from './routes/$locale/qr-gener
 import { Route as LocalePrivacyRouteImport } from './routes/$locale/privacy'
 import { Route as LocalePricingRouteImport } from './routes/$locale/pricing'
 import { Route as LocalePartnersRouteImport } from './routes/$locale/partners'
+import { Route as LocaleModelsRouteImport } from './routes/$locale/models'
 import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together'
 import { Route as LocaleLogoutRouteImport } from './routes/$locale/logout'
 import { Route as LocaleLoginRouteImport } from './routes/$locale/login'
@@ -31,6 +32,7 @@ import { Route as LocaleDocsRouteImport } from './routes/$locale/docs'
 import { Route as LocaleContributorsRouteImport } from './routes/$locale/contributors'
 import { Route as LocaleContactRouteImport } from './routes/$locale/contact'
 import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines'
+import { Route as LocaleChangelogRouteImport } from './routes/$locale/changelog'
 import { Route as LocaleCareersRouteImport } from './routes/$locale/careers'
 import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding'
 import { Route as LocaleBlogRouteImport } from './routes/$locale/blog'
@@ -64,6 +66,7 @@ import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products
 import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar'
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai'
 import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm'
+import { Route as LocaleChangelogSlugRouteImport } from './routes/$locale/changelog.$slug'
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together'
 import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts'
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce'
@@ -172,6 +175,11 @@ const LocalePartnersRoute = LocalePartnersRouteImport.update({
   path: '/$locale/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleModelsRoute = LocaleModelsRouteImport.update({
+  id: '/$locale/models',
+  path: '/$locale/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
   id: '/$locale/meet-together',
   path: '/$locale/meet-together',
@@ -213,6 +221,11 @@ const LocaleCommunityGuidelinesRoute =
     path: '/$locale/community-guidelines',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleChangelogRoute = LocaleChangelogRouteImport.update({
+  id: '/$locale/changelog',
+  path: '/$locale/changelog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleCareersRoute = LocaleCareersRouteImport.update({
   id: '/$locale/careers',
   path: '/$locale/careers',
@@ -387,6 +400,11 @@ const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
   id: '/$locale/games/farm',
   path: '/$locale/games/farm',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleChangelogSlugRoute = LocaleChangelogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LocaleChangelogRoute,
 } as any)
 const LocaleCalendarMeetTogetherRoute =
   LocaleCalendarMeetTogetherRouteImport.update({
@@ -604,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/$locale/blog': typeof LocaleBlogRoute
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
+  '/$locale/changelog': typeof LocaleChangelogRouteWithChildren
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/contact': typeof LocaleContactRoute
   '/$locale/contributors': typeof LocaleContributorsRoute
@@ -612,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/$locale/login': typeof LocaleLoginRoute
   '/$locale/logout': typeof LocaleLogoutRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
+  '/$locale/models': typeof LocaleModelsRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -636,6 +656,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
+  '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute
   '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -698,6 +719,7 @@ export interface FileRoutesByTo {
   '/$locale/blog': typeof LocaleBlogRoute
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
+  '/$locale/changelog': typeof LocaleChangelogRouteWithChildren
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/contact': typeof LocaleContactRoute
   '/$locale/contributors': typeof LocaleContributorsRoute
@@ -706,6 +728,7 @@ export interface FileRoutesByTo {
   '/$locale/login': typeof LocaleLoginRoute
   '/$locale/logout': typeof LocaleLogoutRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
+  '/$locale/models': typeof LocaleModelsRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -730,6 +753,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
+  '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute
   '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -793,6 +817,7 @@ export interface FileRoutesById {
   '/$locale/blog': typeof LocaleBlogRoute
   '/$locale/branding': typeof LocaleBrandingRoute
   '/$locale/careers': typeof LocaleCareersRoute
+  '/$locale/changelog': typeof LocaleChangelogRouteWithChildren
   '/$locale/community-guidelines': typeof LocaleCommunityGuidelinesRoute
   '/$locale/contact': typeof LocaleContactRoute
   '/$locale/contributors': typeof LocaleContributorsRoute
@@ -801,6 +826,7 @@ export interface FileRoutesById {
   '/$locale/login': typeof LocaleLoginRoute
   '/$locale/logout': typeof LocaleLogoutRoute
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute
+  '/$locale/models': typeof LocaleModelsRoute
   '/$locale/partners': typeof LocalePartnersRoute
   '/$locale/pricing': typeof LocalePricingRoute
   '/$locale/privacy': typeof LocalePrivacyRoute
@@ -825,6 +851,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren
+  '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute
   '/$locale/games/farm': typeof LocaleGamesFarmRoute
   '/$locale/products/ai': typeof LocaleProductsAiRoute
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute
@@ -889,6 +916,7 @@ export interface FileRouteTypes {
     | '/$locale/blog'
     | '/$locale/branding'
     | '/$locale/careers'
+    | '/$locale/changelog'
     | '/$locale/community-guidelines'
     | '/$locale/contact'
     | '/$locale/contributors'
@@ -897,6 +925,7 @@ export interface FileRouteTypes {
     | '/$locale/login'
     | '/$locale/logout'
     | '/$locale/meet-together'
+    | '/$locale/models'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -921,6 +950,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
+    | '/$locale/changelog/$slug'
     | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -983,6 +1013,7 @@ export interface FileRouteTypes {
     | '/$locale/blog'
     | '/$locale/branding'
     | '/$locale/careers'
+    | '/$locale/changelog'
     | '/$locale/community-guidelines'
     | '/$locale/contact'
     | '/$locale/contributors'
@@ -991,6 +1022,7 @@ export interface FileRouteTypes {
     | '/$locale/login'
     | '/$locale/logout'
     | '/$locale/meet-together'
+    | '/$locale/models'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -1015,6 +1047,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
+    | '/$locale/changelog/$slug'
     | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -1077,6 +1110,7 @@ export interface FileRouteTypes {
     | '/$locale/blog'
     | '/$locale/branding'
     | '/$locale/careers'
+    | '/$locale/changelog'
     | '/$locale/community-guidelines'
     | '/$locale/contact'
     | '/$locale/contributors'
@@ -1085,6 +1119,7 @@ export interface FileRouteTypes {
     | '/$locale/login'
     | '/$locale/logout'
     | '/$locale/meet-together'
+    | '/$locale/models'
     | '/$locale/partners'
     | '/$locale/pricing'
     | '/$locale/privacy'
@@ -1109,6 +1144,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
     | '/$locale/calendar/meet-together'
+    | '/$locale/changelog/$slug'
     | '/$locale/games/farm'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
@@ -1172,6 +1208,7 @@ export interface RootRouteChildren {
   LocaleBlogRoute: typeof LocaleBlogRoute
   LocaleBrandingRoute: typeof LocaleBrandingRoute
   LocaleCareersRoute: typeof LocaleCareersRoute
+  LocaleChangelogRoute: typeof LocaleChangelogRouteWithChildren
   LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
   LocaleContactRoute: typeof LocaleContactRoute
   LocaleContributorsRoute: typeof LocaleContributorsRoute
@@ -1180,6 +1217,7 @@ export interface RootRouteChildren {
   LocaleLoginRoute: typeof LocaleLoginRoute
   LocaleLogoutRoute: typeof LocaleLogoutRoute
   LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute
+  LocaleModelsRoute: typeof LocaleModelsRoute
   LocalePartnersRoute: typeof LocalePartnersRoute
   LocalePricingRoute: typeof LocalePricingRoute
   LocalePrivacyRoute: typeof LocalePrivacyRoute
@@ -1352,6 +1390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalePartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/models': {
+      id: '/$locale/models'
+      path: '/$locale/models'
+      fullPath: '/$locale/models'
+      preLoaderRoute: typeof LocaleModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/meet-together': {
       id: '/$locale/meet-together'
       path: '/$locale/meet-together'
@@ -1406,6 +1451,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/community-guidelines'
       fullPath: '/$locale/community-guidelines'
       preLoaderRoute: typeof LocaleCommunityGuidelinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/changelog': {
+      id: '/$locale/changelog'
+      path: '/$locale/changelog'
+      fullPath: '/$locale/changelog'
+      preLoaderRoute: typeof LocaleChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/careers': {
@@ -1638,6 +1690,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/games/farm'
       preLoaderRoute: typeof LocaleGamesFarmRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$locale/changelog/$slug': {
+      id: '/$locale/changelog/$slug'
+      path: '/$slug'
+      fullPath: '/$locale/changelog/$slug'
+      preLoaderRoute: typeof LocaleChangelogSlugRouteImport
+      parentRoute: typeof LocaleChangelogRoute
     }
     '/$locale/calendar/meet-together': {
       id: '/$locale/calendar/meet-together'
@@ -1901,6 +1960,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LocaleChangelogRouteChildren {
+  LocaleChangelogSlugRoute: typeof LocaleChangelogSlugRoute
+}
+
+const LocaleChangelogRouteChildren: LocaleChangelogRouteChildren = {
+  LocaleChangelogSlugRoute: LocaleChangelogSlugRoute,
+}
+
+const LocaleChangelogRouteWithChildren = LocaleChangelogRoute._addFileChildren(
+  LocaleChangelogRouteChildren,
+)
+
 interface LocaleSecurityRouteChildren {
   LocaleSecurityBugBountyRoute: typeof LocaleSecurityBugBountyRoute
   LocaleSecurityPolicyRoute: typeof LocaleSecurityPolicyRoute
@@ -1954,6 +2025,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleBlogRoute: LocaleBlogRoute,
   LocaleBrandingRoute: LocaleBrandingRoute,
   LocaleCareersRoute: LocaleCareersRoute,
+  LocaleChangelogRoute: LocaleChangelogRouteWithChildren,
   LocaleCommunityGuidelinesRoute: LocaleCommunityGuidelinesRoute,
   LocaleContactRoute: LocaleContactRoute,
   LocaleContributorsRoute: LocaleContributorsRoute,
@@ -1962,6 +2034,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleLoginRoute: LocaleLoginRoute,
   LocaleLogoutRoute: LocaleLogoutRoute,
   LocaleMeetTogetherRoute: LocaleMeetTogetherRoute,
+  LocaleModelsRoute: LocaleModelsRoute,
   LocalePartnersRoute: LocalePartnersRoute,
   LocalePricingRoute: LocalePricingRoute,
   LocalePrivacyRoute: LocalePrivacyRoute,

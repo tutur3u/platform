@@ -17,6 +17,8 @@ import {
   listAIWhitelistDomains,
   listAIWhitelistEmails,
   listAiAgents,
+  listAiGatewayModelRows,
+  listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
   pauseAiAgentChannel,
   revokeGitHubBotWatcherClient,
@@ -236,6 +238,38 @@ describe('AI whitelist email internal API helpers', () => {
 });
 
 describe('AI gateway model internal API helpers', () => {
+  it('lists raw model rows for filter options', async () => {
+    const rawModel = {
+      context_window: 1_000_000,
+      description: 'Stable Flash Lite',
+      id: 'google/gemini-3.1-flash-lite',
+      is_enabled: true,
+      name: 'Gemini 3.1 Flash Lite',
+      provider: 'google',
+      tags: ['thinking'],
+      type: 'language',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse([rawModel]));
+
+    const rows = await listAiGatewayModelRows(
+      {
+        type: 'all',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/models?type=all',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    expect(rows).toEqual([rawModel]);
+  });
+
   it('lists a searchable paginated model page through the apps/web API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
@@ -290,6 +324,52 @@ describe('AI gateway model internal API helpers', () => {
         },
       ],
       pagination: { limit: 25, page: 2, total: 51 },
+    });
+  });
+
+  it('lists raw paginated model rows for the public model directory', async () => {
+    const rawModel = {
+      context_window: 1_000_000,
+      description: 'Stable Flash Lite',
+      id: 'google/gemini-3.1-flash-lite',
+      image_gen_price: null,
+      input_price_per_token: 0.0000001,
+      is_enabled: true,
+      max_tokens: 8192,
+      name: 'Gemini 3.1 Flash Lite',
+      output_price_per_token: 0.0000004,
+      provider: 'google',
+      tags: ['thinking'],
+      type: 'language',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [rawModel],
+        pagination: { limit: 60, page: 1, total: 1 },
+      })
+    );
+
+    const page = await listAiGatewayModelRowsPage(
+      {
+        limit: 60,
+        page: 1,
+        type: 'all',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/models?format=paginated&limit=60&page=1&type=all',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    expect(page).toEqual({
+      data: [rawModel],
+      pagination: { limit: 60, page: 1, total: 1 },
     });
   });
 });
