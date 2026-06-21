@@ -15,6 +15,7 @@ mod holidays;
 mod inventory;
 mod mobile_version;
 mod nova;
+mod onboarding_progress;
 mod outbound;
 mod supabase_auth;
 mod task_board_status_templates;
@@ -361,6 +362,12 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        onboarding_progress::handle_onboarding_progress_route(config, request, outbound).await
+    {
         return response;
     }
 
@@ -1155,6 +1162,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
             | ("POST", "/api/v1/infrastructure/sidebar")
             | ("POST", "/api/v1/infrastructure/sidebar/sizes")
     ) || contact::should_buffer_request_body(method, path)
+        || onboarding_progress::should_buffer_request_body(method, path)
 }
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
@@ -2725,6 +2733,7 @@ mod tests {
         CONTACT_DATA_LAYER_NOT_READY_MESSAGE, CURRENT_USER_PROFILE_PATH, SUPPORT_INQUIRIES_PATH,
         verify_app_session_token,
     };
+    use super::onboarding_progress::ONBOARDING_PROGRESS_PATH;
     use super::outbound::{
         OutboundError, OutboundFuture, OutboundHttpClient, OutboundMethod, OutboundRequest,
         OutboundResponse,
@@ -2932,6 +2941,219 @@ mod tests {
 
         let payload: serde_json::Value = response.json().expect("json payload");
         assert_eq!(payload["ok"], true);
+    }
+
+    #[tokio::test]
+    async fn onboarding_progress_requires_authenticated_user() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, request("GET", ONBOARDING_PROGRESS_PATH), &outbound)
+                .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn onboarding_progress_reads_current_user_row() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
+            outbound_response(
+                200,
+                r#"[{"user_id":"user-123","current_step":"workspace","tour_completed":false}]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "GET",
+                ONBOARDING_PROGRESS_PATH,
+                "supabase-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["user_id"], "user-123");
+        assert_eq!(response.body["current_step"], "workspace");
+        assert_eq!(response.body["tour_completed"], false);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer supabase-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/onboarding_progress?select=*&user_id=eq.user-123&limit=1"
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn onboarding_progress_returns_null_when_row_is_missing() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
+            outbound_response(200, "[]"),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "GET",
+                ONBOARDING_PROGRESS_PATH,
+                "supabase-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, Value::Null);
+    }
+
+    #[tokio::test]
+    async fn onboarding_progress_patch_filters_fields_and_upserts() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
+            outbound_response(
+                201,
+                r#"[{"user_id":"user-123","current_step":"profile","tour_completed":true}]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(
+                    r#"{"current_step":"profile","tour_completed":true,"invited_emails":["team@example.com"],"ignored":"value"}"#,
+                ),
+                ..request_with_bearer(
+                    "PATCH",
+                    ONBOARDING_PROGRESS_PATH,
+                    "supabase-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["user_id"], "user-123");
+        assert_eq!(response.body["current_step"], "profile");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[1].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/onboarding_progress?select=*&on_conflict=user_id"
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Prefer"),
+            Some("resolution=merge-duplicates,return=representation")
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[1].body.as_deref().unwrap()).unwrap(),
+            json!({
+                "current_step": "profile",
+                "invited_emails": ["team@example.com"],
+                "tour_completed": true,
+                "user_id": "user-123",
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn onboarding_progress_patch_rejects_invalid_or_empty_updates() {
+        let config = backend_config_with_contact_data();
+        let invalid_json_outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-123","email":"ada@example.com"}"#,
+        );
+        let invalid_json_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some("not-json"),
+                ..request_with_bearer(
+                    "PATCH",
+                    ONBOARDING_PROGRESS_PATH,
+                    "supabase-access-token".to_owned(),
+                )
+            },
+            &invalid_json_outbound,
+        )
+        .await;
+
+        assert_eq!(invalid_json_response.status, 400);
+        assert_eq!(
+            invalid_json_response.body["message"],
+            "Invalid request body"
+        );
+        assert_eq!(invalid_json_outbound.calls().len(), 1);
+
+        let empty_outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-123","email":"ada@example.com"}"#,
+        );
+        let empty_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(r#"{"ignored":"value"}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    ONBOARDING_PROGRESS_PATH,
+                    "supabase-access-token".to_owned(),
+                )
+            },
+            &empty_outbound,
+        )
+        .await;
+
+        assert_eq!(empty_response.status, 400);
+        assert_eq!(empty_response.body["message"], "No valid fields to update");
+        assert_eq!(empty_outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn onboarding_progress_rejects_unsupported_methods() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", ONBOARDING_PROGRESS_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET, PATCH"));
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]
@@ -6648,10 +6870,15 @@ mod tests {
             "PATCH",
             CURRENT_USER_PROFILE_PATH
         ));
+        assert!(should_buffer_request_body(
+            "PATCH",
+            ONBOARDING_PROGRESS_PATH
+        ));
         assert!(!should_buffer_request_body(
             "POST",
             CURRENT_USER_PROFILE_PATH
         ));
+        assert!(!should_buffer_request_body("GET", ONBOARDING_PROGRESS_PATH));
         assert!(!should_buffer_request_body("PATCH", SUPPORT_INQUIRIES_PATH));
 
         for (method, path) in [

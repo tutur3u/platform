@@ -71,6 +71,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise
   reads only an exact count of non-deleted workspaces created by the
   authenticated user, and returns the derived legacy limit payload.
+- `GET` / `PATCH` `/api/v1/user/onboarding-progress`: legacy-compatible
+  onboarding progress route. Rust validates browser Supabase auth cookies with
+  Supabase Auth, reads the authenticated user's `onboarding_progress` row
+  through the server-owned Supabase REST adapter, and PATCH upserts only the
+  legacy allowlisted onboarding fields with `user_id` fixed to the
+  authenticated user.
 - `GET /api/v1/users/me/profile`: contact migration route. It
   verifies Tuturuuu app-session JWTs from `Authorization: Bearer ttr_app_...`,
   `tuturuuu_web_app_session`, or `tuturuuu_app_session`, then reads `users` and
