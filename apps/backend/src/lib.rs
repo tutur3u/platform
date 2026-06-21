@@ -13,6 +13,7 @@ mod hive_access;
 mod hive_ai_models;
 mod holidays;
 mod mobile_version;
+mod nova;
 mod outbound;
 mod supabase_auth;
 mod task_embeddings;
@@ -392,6 +393,10 @@ pub(crate) async fn handle_backend_request(
     if let Some(response) =
         hive_ai_models::handle_hive_ai_models_route(config, request, outbound).await
     {
+        return response;
+    }
+
+    if let Some(response) = nova::handle_nova_route(config, request, outbound).await {
         return response;
     }
 
@@ -3190,6 +3195,249 @@ mod tests {
             &outbound,
         )
         .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_requires_session_auth_before_private_lookup() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, request("GET", "/api/v1/nova/me/team"), &outbound)
+                .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_accepts_nova_app_session_target() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "nova",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[{"team_id":"6a5cbf77-7d95-427f-a263-9705bd416f3d"}]"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/nova/me/team", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!({
+                "teamId": "6a5cbf77-7d95-427f-a263-9705bd416f3d",
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert!(
+            calls[0]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/nova_team_members?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "select").as_deref(),
+            Some("team_id")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "user_id").as_deref(),
+            Some("eq.app-session-user-1")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "limit").as_deref(),
+            Some("2")
+        );
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[0], "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_rejects_wrong_app_session_target_without_fallback() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "platform",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_bearer("GET", "/api/v1/nova/me/team", token)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_accepts_browser_supabase_cookie_and_missing_row() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"browser-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(200, "[]"),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/v1/nova/me/team")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, json!({ "teamId": null }));
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "user_id").as_deref(),
+            Some("eq.browser-user-1")
+        );
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_maps_private_lookup_failures_to_legacy_error() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "nova",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_response(500, r#"{"message":"failed"}"#);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/nova/me/team", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Failed to load current team");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_maps_duplicate_team_rows_to_legacy_error() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "nova",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {"team_id":"6a5cbf77-7d95-427f-a263-9705bd416f3d"},
+                {"team_id":"9a6ae7c2-5f3e-41d7-b422-f457df8970f6"}
+            ]"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/nova/me/team", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Failed to load current team");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_maps_missing_data_layer_to_legacy_error_without_outbound_call() {
+        let config = backend_config_with_app_session_secret();
+        let token = app_session_token(&app_session_claims(
+            "nova",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/nova/me/team", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Failed to load current team");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn nova_me_team_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, request("POST", "/api/v1/nova/me/team"), &outbound)
+                .await;
 
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));

@@ -99,6 +99,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/hive/ai/models by preserving Hive-only app-session auth and browser Supabase cookie fallback, requiring Hive member or admin access before private reads, reading only UI-safe model columns from private.ai_gateway_models through the server-owned private-schema REST adapter, preserving the legacy enabled/type filters and provider/name ordering, and returning the derived models UI payload."
     },
+    "api:/api/v1/nova/me/team:apps/web/src/app/api/v1/nova/me/team/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/nova/me/team by preserving Nova-only app-session auth and browser Supabase cookie fallback, reading only team_id for the authenticated user from private.nova_team_members through the server-owned private-schema REST adapter, and returning the derived legacy teamId payload."
+    },
     "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {

@@ -126,6 +126,47 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/nova/me/team:
+    get:
+      summary: Current user Nova team
+      description: Migrated replacement for apps/web/src/app/api/v1/nova/me/team/route.ts GET. The Rust backend preserves the legacy app-session-first auth behavior for the Nova app-session target, falls back to browser Supabase auth cookies only when no app-session token is present, reads only `team_id` from `private.nova_team_members` for the authenticated user through the server-owned private-schema REST adapter, and returns the derived `{ teamId }` payload without exposing private membership rows.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+      responses:
+        "200":
+          description: Current user's Nova team id, if any.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NovaCurrentTeamResponse"
+        "401":
+          description: Caller is missing a valid Nova app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NovaUnauthorized"
+        "500":
+          description: Current Nova team could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NovaCurrentTeamError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/users/me/hive-access:
     get:
       summary: Current user Hive access status
@@ -3204,6 +3245,36 @@ components:
           type: string
           examples:
             - Unauthorized
+    NovaCurrentTeamResponse:
+      type: object
+      required:
+        - teamId
+      properties:
+        teamId:
+          type:
+            - string
+            - "null"
+          format: uuid
+          examples:
+            - 6a5cbf77-7d95-427f-a263-9705bd416f3d
+    NovaUnauthorized:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+    NovaCurrentTeamError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Failed to load current team
     HiveAccessResponse:
       type: object
       required:
