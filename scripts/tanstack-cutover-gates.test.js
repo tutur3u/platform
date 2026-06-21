@@ -111,10 +111,13 @@ function createValidBenchmarkReport(generatedAt = new Date().toISOString()) {
 }
 
 function createValidCloudflareSmokeReport(
-  generatedAt = new Date().toISOString()
+  generatedAt = new Date().toISOString(),
+  origins = {}
 ) {
-  const backendOrigin = 'https://backend.example.workers.dev';
-  const tanstackOrigin = 'https://tanstack.example.workers.dev';
+  const backendOrigin =
+    origins.backendOrigin ?? 'https://backend.example.workers.dev';
+  const tanstackOrigin =
+    origins.tanstackOrigin ?? 'https://tanstack.example.workers.dev';
 
   return {
     generatedAt,
@@ -747,6 +750,27 @@ test('validateCloudflareSmokeReport requires smoke provenance', () => {
   assert.match(validation.failures.join('\n'), /missing tanstackOrigin/u);
 });
 
+test('validateCloudflareSmokeReport requires HTTPS except for local smoke origins', () => {
+  const localReport = createValidCloudflareSmokeReport(undefined, {
+    backendOrigin: 'http://localhost:8780',
+    tanstackOrigin: 'http://127.0.0.1:8784',
+  });
+
+  assert.equal(validateCloudflareSmokeReport(localReport).ok, true);
+
+  const remoteReport = createValidCloudflareSmokeReport(undefined, {
+    backendOrigin: 'http://backend.example.workers.dev',
+    tanstackOrigin: 'https://tanstack.example.workers.dev',
+  });
+  const validation = validateCloudflareSmokeReport(remoteReport);
+
+  assert.equal(validation.ok, false);
+  assert.match(
+    validation.failures.join('\n'),
+    /Cloudflare smoke backendOrigin must use HTTPS unless it targets localhost/u
+  );
+});
+
 test('validateCloudflareSmokeReport rejects probe URLs from the wrong origin', () => {
   const report = createValidCloudflareSmokeReport();
   const tanstackRoot = report.results.find(
@@ -801,6 +825,34 @@ test('validateBenchmarkReport requires distinct frontend origin evidence', () =>
   assert.match(
     sameOriginValidation.failures.join('\n'),
     /distinct Next and TanStack origins/u
+  );
+});
+
+test('validateBenchmarkReport requires HTTPS except for local benchmark origins', () => {
+  const local = createValidBenchmarkReport();
+  local.setups.backend.origin = 'http://localhost:7820';
+  local.setups.backend.routes = [
+    createBenchmarkRoute('/healthz', 200, local.setups.backend.origin),
+  ];
+  local.setups.next.origin = 'http://127.0.0.1:7803';
+  local.setups.next.routes = [
+    createBenchmarkRoute('/', 200, local.setups.next.origin),
+  ];
+  local.setups.tanstack.origin = 'http://[::1]:7824';
+  local.setups.tanstack.routes = [
+    createBenchmarkRoute('/', 200, local.setups.tanstack.origin),
+  ];
+
+  assert.equal(validateBenchmarkReport(local).ok, true);
+
+  const remote = createValidBenchmarkReport();
+  remote.setups.next.origin = 'http://next.example.com';
+  const validation = validateBenchmarkReport(remote);
+
+  assert.equal(validation.ok, false);
+  assert.match(
+    validation.failures.join('\n'),
+    /next benchmark origin must use HTTPS unless it targets localhost/u
   );
 });
 
@@ -1131,6 +1183,27 @@ test('validateE2EReport requires distinct frontend origin evidence', () => {
   assert.match(
     credentialedValidation.failures.join('\n'),
     /next E2E origin must not include credentials/u
+  );
+});
+
+test('validateE2EReport requires HTTPS except for local frontend origins', () => {
+  const local = createValidE2EReport();
+  local.frontends.next.origin = 'http://localhost:7803';
+  local.frontends.tanstack.origin = 'http://127.0.0.1:7824';
+  local.origins.next = local.frontends.next.origin;
+  local.origins.tanstack = local.frontends.tanstack.origin;
+
+  assert.equal(validateE2EReport(local).ok, true);
+
+  const remote = createValidE2EReport();
+  remote.frontends.tanstack.origin = 'http://tanstack.example.com';
+  remote.origins.tanstack = remote.frontends.tanstack.origin;
+  const validation = validateE2EReport(remote);
+
+  assert.equal(validation.ok, false);
+  assert.match(
+    validation.failures.join('\n'),
+    /tanstack E2E origin must use HTTPS unless it targets localhost/u
   );
 });
 

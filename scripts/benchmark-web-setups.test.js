@@ -42,6 +42,45 @@ test('parseArgs accepts compare benchmark options', () => {
   assert.equal(args.requireAll, true);
 });
 
+test('parseArgs allows plaintext only for local benchmark origins', () => {
+  const local = parseArgs([
+    '--setup',
+    'compare',
+    '--next-origin',
+    'http://127.0.0.1:7803',
+    '--tanstack-origin',
+    'http://[::1]:7824',
+    '--backend-origin',
+    'http://localhost:7820',
+  ]);
+
+  assert.equal(local.origins.next, 'http://127.0.0.1:7803');
+  assert.equal(local.origins.tanstack, 'http://[::1]:7824');
+  assert.equal(local.origins.backend, 'http://localhost:7820');
+
+  assert.throws(
+    () =>
+      parseArgs([
+        '--setup',
+        'next',
+        '--next-origin',
+        'http://next.example.com',
+      ]),
+    /next benchmark origin must use HTTPS unless it targets localhost/u
+  );
+
+  assert.throws(
+    () =>
+      parseArgs([
+        '--setup',
+        'backend',
+        '--backend-origin',
+        'http://backend.example.com',
+      ]),
+    /backend benchmark origin must use HTTPS unless it targets localhost/u
+  );
+});
+
 test('parseArgs rejects compare benchmark origins that normalize to the same URL origin', () => {
   assert.throws(
     () =>
@@ -137,9 +176,9 @@ test('runBenchmark sends backend auth to protected migration samples', async () 
       backendToken: 'server-token',
       frontendThreshold: 0.25,
       origins: {
-        backend: 'http://backend.local',
-        next: 'http://next.local',
-        tanstack: 'http://tanstack.local',
+        backend: 'https://backend.local',
+        next: 'https://next.local',
+        tanstack: 'https://tanstack.local',
       },
       profile: 'smoke',
       requireAll: false,
@@ -378,9 +417,9 @@ test('runBenchmark requireAll fails compare reports with unmatched frontend rout
       apiThreshold: 0.1,
       frontendThreshold: 0.25,
       origins: {
-        backend: 'http://backend.local',
-        next: 'http://next.local',
-        tanstack: 'http://tanstack.local',
+        backend: 'https://backend.local',
+        next: 'https://next.local',
+        tanstack: 'https://tanstack.local',
       },
       profile: 'smoke',
       requireAll: true,
@@ -407,9 +446,9 @@ test('runBenchmark requireAll fails compare reports with missing metric evidence
       apiThreshold: 0.1,
       frontendThreshold: 0.25,
       origins: {
-        backend: 'http://backend.local',
-        next: 'http://next.local',
-        tanstack: 'http://tanstack.local',
+        backend: 'https://backend.local',
+        next: 'https://next.local',
+        tanstack: 'https://tanstack.local',
       },
       profile: 'smoke',
       requireAll: true,
@@ -435,7 +474,7 @@ test('runBenchmark rejects compare runs pointed at the same frontend origin', as
         apiThreshold: 0.1,
         frontendThreshold: 0.25,
         origins: {
-          backend: 'http://backend.local',
+          backend: 'https://backend.local',
           next: 'https://frontend.local/next',
           tanstack: 'https://frontend.local/tanstack',
         },

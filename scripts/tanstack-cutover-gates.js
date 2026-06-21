@@ -46,6 +46,12 @@ const REQUIRED_CLOUDFLARE_SMOKE_PROBES = Object.freeze([
 ]);
 const REQUIRED_CLOUDFLARE_SMOKE_REPORTER =
   'scripts/smoke-cloudflare-workers.js';
+const LOCAL_HTTP_HOSTNAMES = new Set([
+  '127.0.0.1',
+  '::1',
+  '[::1]',
+  'localhost',
+]);
 
 function readJson(filePath, fsImpl = fs) {
   return JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
@@ -396,6 +402,18 @@ function hasPositiveNumber(value) {
   return Number.isFinite(numericValue) && numericValue > 0;
 }
 
+function isLocalHttpHostname(hostname) {
+  return LOCAL_HTTP_HOSTNAMES.has(hostname.toLowerCase());
+}
+
+function validateSecureOriginProtocol(url, label) {
+  if (url.protocol === 'http:' && !isLocalHttpHostname(url.hostname)) {
+    return `${label} must use HTTPS unless it targets localhost.`;
+  }
+
+  return null;
+}
+
 function normalizeBenchmarkEvidenceOrigin(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
     return {
@@ -417,6 +435,18 @@ function normalizeBenchmarkEvidenceOrigin(value, label) {
     if (url.username || url.password) {
       return {
         failure: `${label} benchmark origin must not include credentials.`,
+        origin: null,
+      };
+    }
+
+    const protocolFailure = validateSecureOriginProtocol(
+      url,
+      `${label} benchmark origin`
+    );
+
+    if (protocolFailure) {
+      return {
+        failure: protocolFailure,
         origin: null,
       };
     }
@@ -552,6 +582,18 @@ function normalizeE2EOriginEvidence(value, label) {
     if (url.username || url.password) {
       return {
         failure: `${label} E2E origin must not include credentials.`,
+        origin: null,
+      };
+    }
+
+    const protocolFailure = validateSecureOriginProtocol(
+      url,
+      `${label} E2E origin`
+    );
+
+    if (protocolFailure) {
+      return {
+        failure: protocolFailure,
         origin: null,
       };
     }
@@ -984,6 +1026,18 @@ function normalizeCloudflareSmokeOrigin(value, label) {
     if (url.username || url.password) {
       return {
         failure: `Cloudflare smoke ${label} must not include credentials.`,
+        origin: null,
+      };
+    }
+
+    const protocolFailure = validateSecureOriginProtocol(
+      url,
+      `Cloudflare smoke ${label}`
+    );
+
+    if (protocolFailure) {
+      return {
+        failure: protocolFailure,
         origin: null,
       };
     }

@@ -19,6 +19,12 @@ const DEFAULT_ORIGINS = Object.freeze({
   next: 'https://tuturuuu.localhost',
   tanstack: 'https://tanstack.tuturuuu.localhost',
 });
+const LOCAL_HTTP_HOSTNAMES = new Set([
+  '127.0.0.1',
+  '::1',
+  '[::1]',
+  'localhost',
+]);
 const ROUTES_BY_PROFILE = Object.freeze({
   smoke: {
     backend: ['/healthz', '/api/migration/status'],
@@ -106,6 +112,10 @@ function parsePositiveInteger(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function isLocalHttpHostname(hostname) {
+  return LOCAL_HTTP_HOSTNAMES.has(hostname.toLowerCase());
+}
+
 function normalizeBenchmarkOrigin(value, label) {
   const rawValue = String(value ?? '').trim();
 
@@ -132,6 +142,12 @@ function normalizeBenchmarkOrigin(value, label) {
 
   if (url.username || url.password) {
     throw new Error(`${label} benchmark origin must not include credentials.`);
+  }
+
+  if (url.protocol === 'http:' && !isLocalHttpHostname(url.hostname)) {
+    throw new Error(
+      `${label} benchmark origin must use HTTPS unless it targets localhost.`
+    );
   }
 
   return url.origin;
