@@ -20,8 +20,9 @@ import {
 import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { openHostedPolarCheckout } from './checkout-window';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -65,7 +66,6 @@ export function StorefrontClient({
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(
     initialCheckoutOpen || mode === 'checkout'
   );
-  const checkoutWindowRef = useRef<Window | null>(null);
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -173,93 +173,17 @@ export function StorefrontClient({
     router.push(`${target.pathname}${target.search}${target.hash}`);
   };
 
-  const closePreparedCheckoutWindow = () => {
-    const checkoutWindow = checkoutWindowRef.current;
-    checkoutWindowRef.current = null;
-
-    if (!checkoutWindow || checkoutWindow.closed) return;
-    try {
-      checkoutWindow.close();
-    } catch {
-      // Ignore browser-specific restrictions when closing a prepared popup.
-    }
-  };
-
-  const prepareCheckoutWindow = () => {
-    if (typeof window === 'undefined' || isSimulatedCheckout) return;
-
-    const existingWindow = checkoutWindowRef.current;
-    if (existingWindow && !existingWindow.closed) return;
-
-    const checkoutWindow = window.open(
-      '',
-      '_blank',
-      'popup,width=520,height=780'
-    );
-    if (!checkoutWindow) return;
-
-    checkoutWindowRef.current = checkoutWindow;
-
-    try {
-      checkoutWindow.document.title = t('checkout');
-      checkoutWindow.document.body.style.margin = '0';
-      checkoutWindow.document.body.style.minHeight = '100vh';
-      checkoutWindow.document.body.style.display = 'grid';
-      checkoutWindow.document.body.style.placeItems = 'center';
-      checkoutWindow.document.body.style.fontFamily =
-        'Inter, ui-sans-serif, system-ui, sans-serif';
-      checkoutWindow.document.body.textContent = t('redirectingToCheckout');
-      checkoutWindow.opener = null;
-    } catch {
-      // The browser may restrict access to the prepared window. It can still be
-      // navigated once the checkout URL is ready.
-    }
-  };
-
   const openPolarCheckoutWindow = (checkoutUrl: string) => {
     setIsRedirecting(true);
 
-    const preparedWindow = checkoutWindowRef.current;
-    checkoutWindowRef.current = null;
-
-    const checkoutWindow =
-      preparedWindow && !preparedWindow.closed
-        ? preparedWindow
-        : window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
-
-    if (checkoutWindow) {
-      try {
-        checkoutWindow.opener = null;
-        checkoutWindow.location.assign(checkoutUrl);
-        checkoutWindow.focus();
-      } catch {
-        window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
-      }
-
+    const result = openHostedPolarCheckout(checkoutUrl);
+    if (result === 'new-tab') {
       setIsCheckoutOpen(false);
       setIsRedirecting(false);
-      return;
     }
-
-    window.location.assign(checkoutUrl);
   };
 
-  useEffect(() => {
-    return () => {
-      const checkoutWindow = checkoutWindowRef.current;
-      checkoutWindowRef.current = null;
-
-      if (!checkoutWindow || checkoutWindow.closed) return;
-      try {
-        checkoutWindow.close();
-      } catch {
-        // Ignore browser-specific restrictions when closing a prepared popup.
-      }
-    };
-  }, []);
-
   const startCheckout = (input: CheckoutInput) => {
-    if (!isSimulatedCheckout) prepareCheckoutWindow();
     checkoutMutation.mutate(input);
   };
 
@@ -276,7 +200,6 @@ export function StorefrontClient({
       });
     },
     onError: (error) => {
-      closePreparedCheckoutWindow();
       setIsRedirecting(false);
       toast.error(
         error instanceof Error && error.message
@@ -286,7 +209,6 @@ export function StorefrontClient({
     },
     onSuccess: async ({ checkoutUrl }) => {
       if (!checkoutUrl) {
-        closePreparedCheckoutWindow();
         setIsRedirecting(false);
         toast.error(t('checkoutError'));
         return;
