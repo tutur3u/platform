@@ -69,7 +69,22 @@ cutover. Public/static work and the verification layer run independently.
 Unblocks every authenticated page. Migrate to Rust/TanStack-server:
 - Cross-app session/token validation and `/api/v1/auth/accounts/*`.
 - Current-user profile (`/api/v1/users/me/profile`) and core identity reads.
-- **Exit criteria:** authenticated requests resolve a session without `apps/web`.
+- **A server-side TanStack auth gate** (`getUser()` + `redirect('/login?nextUrl=…')`
+  in a route `beforeLoad`/loader). Today `apps/tanstack-web/src/lib/platform/session.ts`
+  only exposes `hasAuthSessionCookie` — there is no server-side session
+  resolution, and no migrated route performs an auth-gated server fetch.
+- **Exit criteria:** authenticated requests resolve a session without `apps/web`,
+  and a route can server-side gate + redirect unauthenticated users to login.
+
+> **Verified blocker (2026-06-21).** This gate is what blocks the bulk of the
+> remaining page routes — including deceptively "public-looking" ones. The
+> legacy `/:locale/shared/{forms,task,user-profile}/…` pages call
+> `supabase.auth.getUser()` and `redirect('/login')` when unauthenticated, then
+> fetch with the user's session; they are **not** public and must not be
+> migrated as service-key public reads. Only genuinely public routes (e.g.
+> `documents/$documentId` gated by an `is_public` column) are migratable before
+> this gate lands. **Always check a legacy page for `auth.getUser()` /
+> `redirect('/login')` before migrating it as public.**
 
 ### Phase 2 — Workspace data API parity *(P1)*
 - Workspace membership, limits/tier, and the highest-traffic `/api/[wsId]/*`
