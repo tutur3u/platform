@@ -13,6 +13,7 @@ COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migrati
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/apps/backend/target \
     cd apps/backend && cargo build --release --locked --features native --bin backend && \
+    mkdir -p /out && \
     cp target/release/backend /out/backend
 
 FROM gcr.io/distroless/static-debian12:nonroot AS runner
