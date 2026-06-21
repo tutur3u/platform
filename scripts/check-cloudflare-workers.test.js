@@ -84,6 +84,24 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
+      workflow.replaceAll('apps/tanstack-web/src/lib/cloudflare/backend.ts', '')
+    ).join('\n'),
+    /cloudflare\/backend/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('apps/tanstack-web/src/lib/migration-status.ts', '')
+    ).join('\n'),
+    /migration-status/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('packages/internal-api/src/backend.ts', '')
+    ).join('\n'),
+    /internal-api/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
       workflow.replaceAll(
         'apps/docs/platform/architecture/tanstack-rust-migration.mdx',
         ''
