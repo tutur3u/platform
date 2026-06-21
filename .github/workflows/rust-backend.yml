@@ -232,13 +232,14 @@ jobs:
 
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "can_deploy=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Cloudflare deployment skipped::${missing[*]} is not configured in the cloudflare-workers-preview environment. CI validation already ran; deployment jobs will be skipped."
+            echo "::warning title=Cloudflare deployment skipped::action_required: ${missing[*]} is not configured in the cloudflare-workers-preview environment. CI validation already ran; deployment jobs will be skipped."
             {
-              echo "## Cloudflare deployment skipped"
+              echo "## action_required: Cloudflare deployment credentials missing"
               echo
-              echo "Configure these values in the cloudflare-workers-preview GitHub Environment before rerunning with deployment_mode=deploy:"
+              echo "Configure these values in GitHub repository Settings -> Environments -> cloudflare-workers-preview before rerunning with deployment_mode=deploy:"
               printf -- "- %s\n" "${missing[@]}"
               echo
+              echo "Use Environment secrets for secrets and Environment variables for non-secret identifiers."
               echo "CLOUDFLARE_API_TOKEN must be a Cloudflare API token scoped to this account with Workers Scripts edit access."
               echo "CLOUDFLARE_ACCOUNT_ID should be stored as a GitHub Environment variable; a secret with the same name is accepted only as a fallback."
               echo "Worker runtime secrets are stored in Cloudflare, not GitHub. The deploy jobs check them with wrangler secret list before uploading."
@@ -323,12 +324,13 @@ jobs:
             esac
 
             if [ "$list_failed" = "true" ]; then
-              echo "::warning title=${label} Worker deployment skipped::Wrangler could not list secret names for ${worker_name}. Check CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, account access, and that the Worker exists."
+              echo "::warning title=action_required: ${label} Worker secret preflight unavailable::Wrangler could not list secret names for ${worker_name}. Check CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, account access, and that the Worker exists."
               {
-                echo "## ${label} Worker deployment skipped"
+                echo "## action_required: ${label} Worker secret preflight unavailable"
                 echo
                 echo "Wrangler could not list secret names for \`${worker_name}\` using \`${config_path}\`."
-                echo "Confirm the \`cloudflare-workers-preview\` GitHub Environment has \`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\`, the token can read Workers scripts in the account, and the Worker exists."
+                echo "Confirm the \`cloudflare-workers-preview\` GitHub Environment has \`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\`, the token can read Workers scripts in the account, and the Worker exists in that Cloudflare account."
+                echo "Set GitHub values in repository Settings -> Environments -> cloudflare-workers-preview. Set Worker runtime secrets in Cloudflare with \`bun wrangler secret put <NAME> --config ${config_path}\`."
               } >> "$GITHUB_STEP_SUMMARY"
               return 1
             fi
@@ -352,9 +354,9 @@ jobs:
             if [ -s "$missing_file" ]; then
               local missing_csv
               missing_csv="$(node -e "const fs = require('node:fs'); console.log(fs.readFileSync(process.argv[1], 'utf8').trim().split(/\\n/u).filter(Boolean).join(', '));" "$missing_file")"
-              echo "::warning title=Missing ${label} Worker secrets::Cloudflare Worker ${worker_name} is missing: ${missing_csv}. The selected deploy job will be skipped."
+              echo "::warning title=action_required: Missing ${label} Worker secrets::Cloudflare Worker ${worker_name} is missing: ${missing_csv}. The selected deploy job will be skipped."
               {
-                echo "## ${label} Worker deployment skipped"
+                echo "## action_required: Missing ${label} Worker secrets"
                 echo
                 echo "Cloudflare Worker \`${worker_name}\` is missing required secret names:"
                 while IFS= read -r secret_name; do
@@ -362,7 +364,7 @@ jobs:
                   echo "- \`${secret_name}\`"
                 done < "$missing_file"
                 echo
-                echo "Configure them from a trusted shell; Wrangler prompts for values and the workflow never prints secret values:"
+                echo "Configure them in Cloudflare from a trusted shell authenticated to the correct account; Wrangler prompts for values and the workflow never prints secret values:"
                 while IFS= read -r secret_name; do
                   [ -n "$secret_name" ] || continue
                   echo "- \`bun wrangler secret put ${secret_name} --config ${config_path}\`"
