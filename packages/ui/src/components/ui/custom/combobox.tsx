@@ -67,6 +67,8 @@ interface ComboboxProps {
   creatingText?: string;
   /** Override label shown on the trigger button */
   label?: React.ReactNode;
+  /** Whether to render the selected option icon inside the trigger button */
+  showSelectedIcon?: boolean;
   /** Additional class name for the container */
   className?: string;
   /** Whether the combobox is disabled */
@@ -107,6 +109,7 @@ export function Combobox({
   createText,
   creatingText,
   label,
+  showSelectedIcon = true,
   className,
   disabled,
   useFirstValueAsDefault = false,
@@ -295,7 +298,7 @@ export function Combobox({
                 !selectedLabel && 'text-muted-foreground'
               )}
             >
-              {selectedOption?.icon && (
+              {showSelectedIcon && selectedOption?.icon && (
                 <span className="flex shrink-0 items-center justify-center">
                   {React.isValidElement(selectedOption.icon)
                     ? React.cloneElement(

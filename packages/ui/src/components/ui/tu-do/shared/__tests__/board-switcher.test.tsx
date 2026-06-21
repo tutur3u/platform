@@ -9,9 +9,10 @@ const pushMock = vi.fn();
 let comboboxProps:
   | {
       onChange: (value: string) => void;
-      options: Array<{ label: string; value: string }>;
+      options: Array<{ icon?: unknown; label: string; value: string }>;
       searchPlaceholder?: string;
       selected?: string;
+      showSelectedIcon?: boolean;
     }
   | undefined;
 
@@ -113,7 +114,9 @@ describe('BoardSwitcher', () => {
     expect(comboboxProps).toMatchObject({
       searchPlaceholder: 'Search boards...',
       selected: 'board-1',
+      showSelectedIcon: false,
     });
+    expect(comboboxProps?.options.some((option) => option.icon)).toBe(true);
 
     fireEvent.click(screen.getByTestId('board-combobox'));
 

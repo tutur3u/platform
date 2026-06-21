@@ -203,7 +203,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
             <CurrentBoardIcon className="h-4 w-4" />
           </span>
-          <span className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
+          <span className="truncate font-semibold text-foreground text-sm">
             {translateBoardName(board.name)}
           </span>
         </span>
@@ -217,6 +217,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
       placeholder={translateBoardName(board.name)}
       searchPlaceholder={t.searchBoards}
       selected={board.id}
+      showSelectedIcon={false}
     />
   );
 }

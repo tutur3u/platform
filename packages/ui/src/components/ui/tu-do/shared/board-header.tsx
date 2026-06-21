@@ -395,7 +395,7 @@ export function BoardHeader({
           {publicView ? (
             <div className="flex min-w-0 items-center gap-2">
               {titlePrefix}
-              <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
+              <h1 className="truncate font-semibold text-foreground text-sm">
                 {board.name || t('common.untitled')}
               </h1>
             </div>
@@ -917,11 +917,11 @@ export function BoardHeader({
             <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 transition-all hover:bg-muted sm:h-7 sm:w-7"
+                  variant="outline"
+                  size="xs"
+                  className="h-7 px-1.5 text-muted-foreground sm:h-8 sm:px-2"
                 >
-                  <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                   <span className="sr-only">Open board menu</span>
                 </Button>
               </DropdownMenuTrigger>

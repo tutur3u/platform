@@ -170,6 +170,17 @@ describe('BoardHeader', () => {
     expect(boardLayoutSettingsProps?.wsId).toBe('ws-fallback');
   });
 
+  it('renders the board menu trigger with compact outline header styling', () => {
+    renderBoardHeader();
+
+    const menuTrigger = screen.getByRole('button', {
+      name: 'Open board menu',
+    });
+
+    expect(menuTrigger).toHaveClass('border', 'h-7', 'px-1.5');
+    expect(menuTrigger).toHaveClass('sm:h-8', 'sm:px-2');
+  });
+
   it('renders a natural public title and hides member-only controls in read-only mode', () => {
     renderBoardHeader({
       publicView: true,

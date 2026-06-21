@@ -138,4 +138,28 @@ describe('Combobox', () => {
 
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
+
+  it('can hide the selected trigger icon while keeping option icons visible', () => {
+    render(
+      <Combobox
+        options={[
+          {
+            label: 'Alpha',
+            value: 'alpha',
+            icon: <span data-testid="alpha-option-icon">A</span>,
+          },
+          { label: 'Beta', value: 'beta' },
+        ]}
+        placeholder="Pick item"
+        selected="alpha"
+        showSelectedIcon={false}
+      />
+    );
+
+    expect(screen.queryByTestId('alpha-option-icon')).not.toBeInTheDocument();
+
+    openCombobox();
+
+    expect(screen.getByTestId('alpha-option-icon')).toBeInTheDocument();
+  });
 });
