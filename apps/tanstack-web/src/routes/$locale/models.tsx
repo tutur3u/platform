@@ -18,6 +18,7 @@ import type {
 } from '../../components/models/models-types';
 import { MODELS_PAGE_SIZE } from '../../components/models/models-types';
 import { withTanstackBackendRuntime } from '../../lib/cloudflare/backend';
+import { PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS } from '../../lib/platform/cache';
 import { createPageHead } from '../../lib/platform/head';
 import {
   getMessages,
@@ -130,6 +131,7 @@ export const Route = createFileRoute('/$locale/models')({
       title: messages.title,
     });
   },
+  headers: () => PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
   loader: () => loadModelsDirectory(),
 });
 

@@ -392,7 +392,8 @@ function validateTanstackWebViteConfig(viteConfigContent) {
   const cloudflarePluginSpreadIndex = viteConfigContent.indexOf(
     '...cloudflarePlugins'
   );
-  const tanstackStartIndex = viteConfigContent.indexOf('tanstackStart()');
+  const tanstackStartIndex =
+    /\btanstackStart\s*\(/u.exec(viteConfigContent)?.index ?? -1;
 
   if (cloudflarePluginIndex === -1) {
     errors.push(

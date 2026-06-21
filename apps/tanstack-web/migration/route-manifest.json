@@ -18,12 +18,12 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 223,
+        "legacyNext": 224,
         "migrated": 82,
-        "percentComplete": 26.89,
-        "remaining": 223,
+        "percentComplete": 26.8,
+        "remaining": 224,
         "terminal": 82,
-        "total": 305,
+        "total": 306,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 249,
+        "legacyNext": 250,
         "migrated": 128,
-        "percentComplete": 33.95,
-        "remaining": 249,
+        "percentComplete": 33.86,
+        "remaining": 250,
         "terminal": 128,
-        "total": 377,
+        "total": 378,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1247,
+      "legacyNext": 1248,
       "migrated": 182,
-      "percentComplete": 17.53,
-      "remaining": 1247,
+      "percentComplete": 17.51,
+      "remaining": 1248,
       "terminal": 265,
-      "total": 1512,
+      "total": 1513,
       "unknownStatus": 0
     }
   },
@@ -13906,6 +13906,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/tools/random:apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/tools/random",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/ui:apps/web/src/app/[locale]/ui/page.tsx",
       "kind": "page",
       "methods": [],
@@ -14036,7 +14045,7 @@
     "apiRoutes": 1112,
     "cronRoutes": 19,
     "layouts": 67,
-    "pages": 305,
+    "pages": 306,
     "routeHandlers": 1135,
     "methodCounts": {
       "GET": 634,
@@ -14047,6 +14056,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1512
+    "total": 1513
   }
 }

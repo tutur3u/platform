@@ -13,6 +13,7 @@ import type {
   ChangelogListResponse,
 } from '../../components/changelog/types';
 import { withTanstackBackendRuntime } from '../../lib/cloudflare/backend';
+import { PUBLIC_CHANGELOG_CACHE_HEADERS } from '../../lib/platform/cache';
 import { createPageHead } from '../../lib/platform/head';
 import { resolveMessagesLocale } from '../../lib/platform/messages';
 
@@ -66,6 +67,7 @@ export const Route = createFileRoute('/$locale/changelog/$slug')({
       title: 'Changelog | Tuturuuu',
     });
   },
+  headers: () => PUBLIC_CHANGELOG_CACHE_HEADERS,
   loader: async ({ context, params }) => {
     const slug = typeof params.slug === 'string' ? params.slug : '';
 

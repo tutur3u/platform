@@ -29,6 +29,32 @@ Cloudflare preview uses the `BACKEND` service binding first and keeps
 `BACKEND_INTERNAL_URL` as an HTTP fallback for local, Docker, and emergency
 non-binding runs.
 
+## Rendering And Cache Policy
+
+Every migrated TanStack route must declare its rendering/cache class before it
+is marked terminal in `route-overrides.json`:
+
+| Class                          | Use for                                                                                 | Required implementation                                                                                                           |
+| ------------------------------ | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Static prerender               | Public routes whose HTML is fully local/static at build time.                           | Add the localized path to `apps/tanstack-web/vite.config.ts` `tanstackStart({ pages, prerender })`; keep `crawlLinks: true` plus the static-route filter enabled. |
+| ISR-style CDN revalidation     | Public routes backed by slow-changing Rust/backend data, such as models and changelog. | Add route-level `headers()` with `Cache-Control` `s-maxage` plus `stale-while-revalidate`; add `CDN-Cache-Control` for Cloudflare. |
+| Dynamic no-store               | Authenticated, workspace-scoped, session-specific, or secret-backed routes.             | Do not prerender; use server functions/internal API calls with forwarded auth and no shared-cache headers.                         |
+| Redirect/static compatibility  | Redirect-only compatibility routes such as QR and docs handoffs.                        | Keep redirect behavior exact; only cache when the target contract is public and invariant.                                         |
+
+This follows TanStack Start's current guidance: prerender public paths through
+the Start Vite plugin, use standard HTTP cache headers for ISR-style pages, and
+prefer CDN headers such as `CDN-Cache-Control` for Cloudflare-specific shared
+cache control. Official references:
+[Static Prerendering](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering)
+and
+[Incremental Static Regeneration](https://tanstack.com/start/latest/docs/framework/react/guide/isr).
+
+The initial prerender set intentionally includes only public, unauthenticated,
+non-backend-backed pages. Backend-backed public pages are not prerendered at
+build time because Docker, CI, and Cloudflare builds must not require a live
+Rust backend just to emit static HTML. Instead, those pages use conservative
+ISR-style CDN headers from `apps/tanstack-web/src/lib/platform/cache.ts`.
+
 ## Cloudflare Preview Deployment
 
 Cloudflare preview deployments are supported before cutover so the team can
@@ -304,12 +330,12 @@ methods stay visible as `legacy-next`.
 
 Current inventory:
 
-- `305` pages
+- `306` pages
 - `67` layouts
 - `1,135` route handler artifacts
 - `19` cron handlers
-- `1,512` total tracked route artifacts
-- `182` migrated artifacts, `265` terminal artifacts, and `1,247` remaining
+- `1,513` total tracked route artifacts
+- `182` migrated artifacts, `265` terminal artifacts, and `1,248` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
