@@ -12,6 +12,7 @@ const DEFAULT_OUTPUT_DIR = path.join(
   'web-migration'
 );
 const DEFAULT_TIMEOUT_MS = 10_000;
+const EXPECTED_BACKEND_DEPLOYMENT_TARGET = 'cloudflare-workers';
 const LOCAL_HTTP_HOSTNAMES = new Set([
   '127.0.0.1',
   '::1',
@@ -163,7 +164,8 @@ function createSmokePlan({ backendOrigin, tanstackOrigin, token }) {
       id: 'backend-migration-status',
       jsonCheck: (payload) =>
         payload?.backend?.runtime === 'rust' &&
-        typeof payload?.backend?.deploymentTarget === 'string',
+        payload?.backend?.deploymentTarget ===
+          EXPECTED_BACKEND_DEPLOYMENT_TARGET,
       label: 'Rust migration status',
       origin: backendOrigin,
       path: '/api/migration/status',

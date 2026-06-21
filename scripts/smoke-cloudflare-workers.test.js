@@ -207,6 +207,45 @@ test('runSmoke validates migration JSON shape and TanStack backend-connected she
   assert.doesNotMatch(JSON.stringify(report.provenance), /secret-token/u);
 });
 
+test('runSmoke requires the Rust backend to report a Cloudflare Workers target', async () => {
+  const fetchImpl = async (url, init) => {
+    if (url.endsWith('/api/migration/status')) {
+      const authorization = new Headers(init.headers).get('authorization');
+
+      if (authorization !== 'Bearer secret-token') {
+        return Response.json({ error: 'unauthorized' }, { status: 401 });
+      }
+
+      return Response.json({
+        backend: {
+          deploymentTarget: 'container',
+          runtime: 'rust',
+        },
+      });
+    }
+
+    return new Response('TanStack Start + Rust readiness Backend reachable', {
+      status: 200,
+    });
+  };
+
+  const report = await runSmoke(
+    {
+      backendOrigin: 'https://backend.example.workers.dev',
+      tanstackOrigin: 'https://tanstack.example.workers.dev',
+      timeoutMs: 1000,
+      token: 'secret-token',
+    },
+    fetchImpl
+  );
+
+  assert.equal(report.ok, false);
+  assert.equal(
+    report.results[2].detail,
+    'JSON response did not match the expected migration status shape'
+  );
+});
+
 test('runSmoke fails when the TanStack shell cannot reach the Rust backend', async () => {
   const fetchImpl = async (url, init) => {
     if (url.endsWith('/api/migration/status')) {
