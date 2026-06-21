@@ -1376,6 +1376,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactSameOriginRequired"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
         "401":
           description: Missing or invalid app-session token.
           content:
@@ -1436,6 +1440,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactSameOriginRequired"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
         "401":
           description: Missing or invalid app-session token.
           content:
@@ -1501,6 +1509,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PreferenceValidationError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
         "405":
           description: Unsupported HTTP method.
           headers:
@@ -1560,6 +1572,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PreferenceValidationError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
         "405":
           description: Unsupported HTTP method.
           headers:
@@ -1625,6 +1641,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PreferenceValidationError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
         "405":
           description: Unsupported HTTP method.
           headers:
@@ -1921,7 +1941,48 @@ components:
       type: http
       scheme: bearer
       description: CRON_SECRET or VERCEL_CRON_SECRET configured through Cloudflare secrets or local environment variables.
+  responses:
+    RequestBodyLengthRequired:
+      description: Buffered JSON mutations require Content-Length so the Rust backend can enforce the 64 KiB body limit before reading.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RequestBodyLengthRequiredError"
+    RequestBodyTooLarge:
+      description: Buffered JSON request body exceeded the Rust backend 64 KiB limit.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RequestBodyTooLargeError"
   schemas:
+    RequestBodyLengthRequiredError:
+      type: object
+      required:
+        - error
+        - maxBytes
+      properties:
+        error:
+          type: string
+          enum:
+            - request body content length required
+        maxBytes:
+          type: integer
+          enum:
+            - 65536
+    RequestBodyTooLargeError:
+      type: object
+      required:
+        - error
+        - maxBytes
+      properties:
+        error:
+          type: string
+          enum:
+            - request body too large
+        maxBytes:
+          type: integer
+          enum:
+            - 65536
     LegacyHealth:
       type: object
       required:
