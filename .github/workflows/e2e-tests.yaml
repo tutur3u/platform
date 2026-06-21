@@ -59,7 +59,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
+          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-
 
       - name: Load cached Docker images
         if: steps.cache-supabase.outputs.cache-hit == 'true'
@@ -75,6 +77,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Cache turbo build
         uses: actions/cache@v5
@@ -228,17 +231,24 @@ jobs:
           NODE
 
       - name: Save Supabase Docker images for cache
-        if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-hit != 'true' }}
+        id: prepare-supabase-docker-cache
+        if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
         run: |
           mkdir -p /tmp/supabase-docker
           docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
+          if [ -s /tmp/supabase-docker/images.tar ]; then
+            echo "cache-ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Supabase Docker images were available to cache."
+            echo "cache-ready=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Cache Supabase Docker images
-        if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-hit != 'true' }}
+        if: ${{ always() && steps.prepare-supabase-docker-cache.outputs.cache-ready == 'true' }}
         uses: actions/cache/save@v5
         with:
           path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
+          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # --- Upload artifacts on failure ---
       - name: Upload E2E diagnostics
@@ -264,6 +274,7 @@ jobs:
         with:
           name: test-results-${{ matrix.shard }}-of-${{ matrix.total_shards }}
           path: apps/web/test-results/
+          if-no-files-found: ignore
           retention-days: 14
 
       # --- Cleanup ---

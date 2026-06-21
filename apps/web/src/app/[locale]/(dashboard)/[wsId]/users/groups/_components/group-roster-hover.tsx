@@ -19,7 +19,7 @@ import {
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildWorkspaceUserSearchValue } from '@/lib/workspace-user-search';
 
 const ROSTER_PAGE_SIZE = 25;
@@ -118,11 +118,19 @@ export function GroupRosterHover({
     () => membersQuery.data?.pages.flatMap((page) => page.data) ?? [],
     [membersQuery.data?.pages]
   );
+  const membersSearchText = useMemo(
+    () => members.map(memberSearchText).join(' '),
+    [members]
+  );
+  const lastPublishedSearchTextRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!onSearchTextChange || members.length === 0) return;
-    onSearchTextChange(groupId, members.map(memberSearchText).join(' '));
-  }, [groupId, members, onSearchTextChange]);
+    if (!onSearchTextChange || membersSearchText.length === 0) return;
+    const publishKey = `${groupId}\u0000${membersSearchText}`;
+    if (lastPublishedSearchTextRef.current === publishKey) return;
+    lastPublishedSearchTextRef.current = publishKey;
+    onSearchTextChange(groupId, membersSearchText);
+  }, [groupId, membersSearchText, onSearchTextChange]);
 
   const totalCount = managerCount + nonManagerCount;
 

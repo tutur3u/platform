@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GroupRosterHover } from './group-roster-hover';
 
@@ -150,5 +151,66 @@ describe('GroupRosterHover', () => {
     );
     expect(await screen.findByText('Manager Two')).toBeTruthy();
     expect(screen.getByText('Manager')).toBeTruthy();
+  });
+
+  it('publishes loaded roster search text once for unchanged members', async () => {
+    const searchTextCalls: string[] = [];
+
+    listWorkspaceUserGroupMembersMock.mockResolvedValue({
+      data: [
+        {
+          avatar_url: null,
+          display_name: 'Student One',
+          email: 'student.one@example.com',
+          full_name: null,
+          id: 'user-1',
+          phone: '+84000000001',
+          role: 'STUDENT',
+        },
+      ],
+      next: undefined,
+    });
+
+    function RosterSearchCapture() {
+      const [, setCapturedTextByGroupId] = useState(
+        () => new Map<string, string>()
+      );
+
+      return (
+        <GroupRosterHover
+          groupId="group-1"
+          managerCount={0}
+          nonManagerCount={1}
+          wsId="workspace-1"
+          onSearchTextChange={(groupId, value) => {
+            searchTextCalls.push(`${groupId}:${value}`);
+            setCapturedTextByGroupId((current) => {
+              const next = new Map(current);
+              next.set(groupId, value);
+              return next;
+            });
+          }}
+        />
+      );
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RosterSearchCapture />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => expect(searchTextCalls).toHaveLength(1));
+    await waitFor(() =>
+      expect(searchTextCalls).toEqual([
+        'group-1:Student One student.one@example.com +84000000001 student one student.one@example.com +84000000001',
+      ])
+    );
   });
 });

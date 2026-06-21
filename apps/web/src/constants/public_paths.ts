@@ -29,6 +29,7 @@ export const APP_PUBLIC_PATHS = [
   '/ai/chats',
   '/facebook-mockup',
   '/qr-generator',
+  '/docs',
   '/documents',
   '/ui',
   '/shared/forms',

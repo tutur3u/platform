@@ -526,6 +526,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     'Redact E2E diagnostics artifact'
   );
   const uploadIndex = e2eJob.indexOf('Upload Playwright report');
+  const testResultsUploadIndex = e2eJob.indexOf('Upload test results');
 
   assert.match(
     workflow,
@@ -538,6 +539,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(e2eJob, /PORTLESS_PORT: "1355"/u);
   assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
+  assert.match(
+    e2eJob,
+    /package-manager-cache: false/u,
+    'setup-node must not run a second Bun package-manager cache restore'
+  );
   assert.notEqual(cleanupIndex, -1);
   assert.notEqual(runIndex, -1);
   assert.notEqual(diagnosticsIndex, -1);
@@ -546,6 +552,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(diagnosticsUploadIndex, -1);
   assert.notEqual(diagnosticsRedactionIndex, -1);
   assert.notEqual(uploadIndex, -1);
+  assert.notEqual(testResultsUploadIndex, -1);
   assert.doesNotMatch(
     e2eJob,
     /name: Start Portless shared localhost proxy/u,
@@ -599,6 +606,25 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
   assert.match(
     e2eJob,
+    /key: supabase-docker-\$\{\{ runner\.os \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/u,
+    'Supabase Docker cache saves need a per-run key to avoid cross-run save conflicts'
+  );
+  assert.match(
+    e2eJob,
+    /restore-keys: \|\n {12}supabase-docker-\$\{\{ runner\.os \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-/u
+  );
+  assert.match(
+    e2eJob,
+    /id: prepare-supabase-docker-cache/u,
+    'E2E cache upload must verify a tarball exists before saving'
+  );
+  assert.match(e2eJob, /cache-ready=true/u);
+  assert.match(
+    e2eJob,
+    /steps\.prepare-supabase-docker-cache\.outputs\.cache-ready == 'true'/u
+  );
+  assert.match(
+    e2eJob,
     /docker ps -a --filter "label=com\.docker\.compose\.project=\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}"/u
   );
   assert.match(
@@ -627,6 +653,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(e2eJob, /path: tmp\/e2e-diagnostics\//u);
   assert.match(e2eJob, /if-no-files-found: warn/u);
+  assert.match(
+    e2eJob,
+    /name: test-results-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}[\s\S]*?path: apps\/web\/test-results\/\n {10}if-no-files-found: ignore/u,
+    'successful shards may not create Playwright test-results artifacts'
+  );
 });
 
 test('Supabase production migration requires production platform deploy and successful staged SHA', () => {

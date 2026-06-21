@@ -24,7 +24,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GroupedSessionTimeblockMoveForm } from './grouped-session-timeblock-move-form';
 import { GroupedSessionTimeblockRow } from './grouped-session-timeblock-row';
 import type {
@@ -186,6 +186,17 @@ export function GroupedSessionTimeblockDialog({
     filteredSessions.every((session) => selectedIds.has(session.id));
   const moveSessions =
     moveTarget === 'all' ? (timeblock?.sessions ?? []) : selectedSessions;
+  const handleRosterSearchTextChange = useCallback(
+    (groupId: string, value: string) => {
+      setRosterSearchByGroupId((current) => {
+        if (current.get(groupId) === value) return current;
+        const next = new Map(current);
+        next.set(groupId, value);
+        return next;
+      });
+    },
+    []
+  );
 
   if (!timeblock) {
     return <Dialog open={open} onOpenChange={onOpenChange} />;
@@ -366,13 +377,7 @@ export function GroupedSessionTimeblockDialog({
                   onEditSession={onEditSession}
                   onFilterGroup={onFilterGroup}
                   onInlineUpdate={onInlineUpdate}
-                  onRosterSearchTextChange={(groupId, value) => {
-                    setRosterSearchByGroupId((current) => {
-                      const next = new Map(current);
-                      next.set(groupId, value);
-                      return next;
-                    });
-                  }}
+                  onRosterSearchTextChange={handleRosterSearchTextChange}
                   onToggleSelected={toggleSession}
                 />
               ))}

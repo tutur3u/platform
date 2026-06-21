@@ -7,4 +7,10 @@ describe('app public paths', () => {
       expect.arrayContaining(['/ui', '/en/ui', '/vi/ui'])
     );
   });
+
+  it('allows unauthenticated access to the docs redirect route', () => {
+    expect(APP_PUBLIC_PATHS).toEqual(
+      expect.arrayContaining(['/docs', '/en/docs', '/vi/docs'])
+    );
+  });
 });

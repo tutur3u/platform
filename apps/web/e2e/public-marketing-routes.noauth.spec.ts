@@ -193,6 +193,9 @@ const staticMarketingRoutes = [
 
 const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
 
+const qrAppRedirectLocation =
+  /^https:\/\/(?:[a-z0-9-]+\.)?qr\.tuturuuu\.localhost(?::\d+)?\/\?utm_source=e2e&tag=a&tag=b$/u;
+
 const redirects = [
   {
     path: `/${DEFAULT_LOCALE}/calendar/meet-together`,
@@ -216,7 +219,7 @@ const redirects = [
   },
   {
     path: `/${DEFAULT_LOCALE}/qr-generator?utm_source=e2e&tag=a&tag=b`,
-    location: /\/qr-generator\?utm_source=e2e&tag=a&tag=b$/u,
+    location: qrAppRedirectLocation,
   },
   {
     path: '/pricing',
@@ -228,7 +231,7 @@ const redirects = [
   },
   {
     path: '/qr-generator?utm_source=e2e&tag=a&tag=b',
-    location: /\/qr-generator\?utm_source=e2e&tag=a&tag=b$/u,
+    location: qrAppRedirectLocation,
   },
 ];
 
