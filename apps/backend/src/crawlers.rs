@@ -5,8 +5,10 @@ use std::collections::BTreeSet;
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
     method_not_allowed, no_store_response,
-    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
+    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
 };
+
+mod uncrawled;
 
 const SUPABASE_MAX_ROWS: usize = 1000;
 const CRAWLED_URLS_TABLE: &str = "crawled_urls";
@@ -17,20 +19,28 @@ struct CrawlerUrlRow {
     url: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CrawlerRoute {
+    Domains,
+    Uncrawled,
+}
+
 pub(crate) async fn handle_crawler_route(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
-    if !is_crawler_domains_path(request.path) {
-        return None;
-    }
+    let route = crawler_route(request.path)?;
 
-    if request.method != "GET" {
-        return Some(method_not_allowed(request.method, "GET"));
-    }
-
-    Some(crawler_domains_response(&config.contact_data, outbound).await)
+    Some(match (request.method, route) {
+        ("GET", CrawlerRoute::Domains) => {
+            crawler_domains_response(&config.contact_data, outbound).await
+        }
+        ("GET", CrawlerRoute::Uncrawled) => {
+            uncrawled::crawler_uncrawled_response(&config.contact_data, request, outbound).await
+        }
+        (method, _) => method_not_allowed(method, "GET"),
+    })
 }
 
 async fn crawler_domains_response(
@@ -118,6 +128,21 @@ async fn fetch_url_rows(
     params: &[(&str, String)],
     offset: usize,
 ) -> Result<Vec<CrawlerUrlRow>, ()> {
+    let range = format!("{offset}-{}", offset + SUPABASE_MAX_ROWS - 1);
+    let response =
+        send_supabase_get(contact_data, outbound, table, params, Some(&range), None).await?;
+
+    response.json::<Vec<CrawlerUrlRow>>().map_err(|_| ())
+}
+
+async fn send_supabase_get(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    table: &str,
+    params: &[(&str, String)],
+    range: Option<&str>,
+    prefer: Option<&'static str>,
+) -> Result<OutboundResponse, ()> {
     let Some(url) = contact_data.rest_url(table, params) else {
         return Err(());
     };
@@ -126,13 +151,20 @@ async fn fetch_url_rows(
     };
 
     let authorization = format!("Bearer {service_role_key}");
-    let range = format!("{offset}-{}", offset + SUPABASE_MAX_ROWS - 1);
-    let request = OutboundRequest::new(OutboundMethod::Get, &url)
+    let mut request = OutboundRequest::new(OutboundMethod::Get, &url)
         .with_header("Accept", APPLICATION_JSON)
         .with_header("Authorization", &authorization)
-        .with_header("apikey", service_role_key)
-        .with_header("Range-Unit", "items")
-        .with_header("Range", &range);
+        .with_header("apikey", service_role_key);
+
+    if let Some(range) = range {
+        request = request
+            .with_header("Range-Unit", "items")
+            .with_header("Range", range);
+    }
+
+    if let Some(prefer) = prefer {
+        request = request.with_header("Prefer", prefer);
+    }
 
     let response = outbound.send(request).await.map_err(|_| ())?;
 
@@ -140,7 +172,7 @@ async fn fetch_url_rows(
         return Err(());
     }
 
-    response.json::<Vec<CrawlerUrlRow>>().map_err(|_| ())
+    Ok(response)
 }
 
 fn hostname_from_url(raw_url: &str) -> Option<String> {
@@ -149,14 +181,23 @@ fn hostname_from_url(raw_url: &str) -> Option<String> {
         .and_then(|url| url.host_str().map(str::to_owned))
 }
 
-fn is_crawler_domains_path(path: &str) -> bool {
+fn crawler_route(path: &str) -> Option<CrawlerRoute> {
     let mut segments = path.trim_start_matches('/').split('/');
 
-    matches!(segments.next(), Some("api"))
-        && segments.next().is_some_and(|segment| !segment.is_empty())
-        && matches!(segments.next(), Some("crawlers"))
-        && matches!(segments.next(), Some("domains"))
-        && segments.next().is_none()
+    if !matches!(segments.next(), Some("api"))
+        || segments.next().is_none_or(|segment| segment.is_empty())
+        || !matches!(segments.next(), Some("crawlers"))
+    {
+        return None;
+    }
+
+    let route = match segments.next() {
+        Some("domains") => CrawlerRoute::Domains,
+        Some("uncrawled") => CrawlerRoute::Uncrawled,
+        _ => return None,
+    };
+
+    segments.next().is_none().then_some(route)
 }
 
 fn is_success_status(status: u16) -> bool {

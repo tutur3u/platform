@@ -148,6 +148,103 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/{wsId}/crawlers/uncrawled:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy workspace path segment. The legacy Next.js route ignored this value, and the Rust migration preserves that behavior until crawler workspace ownership is redesigned.
+    get:
+      summary: List uncrawled crawler URLs
+      description: Migrated replacement for apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts. Reads non-skipped `crawled_url_next_urls` through the server-owned Supabase REST adapter, preserves the legacy domain/search URL filters and pagination shape, removes URLs that already exist in `crawled_urls`, groups the remaining rows by `origin_id`, and returns the legacy `uncrawledUrls`, `groupedUrls`, and `pagination` payload.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: domain
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional URL substring filter. The `all` sentinel disables this filter.
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional URL substring search filter.
+      responses:
+        "200":
+          description: Paginated uncrawled crawler URLs.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - groupedUrls
+                  - pagination
+                  - uncrawledUrls
+                properties:
+                  uncrawledUrls:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CrawlerUncrawledUrl"
+                  groupedUrls:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/CrawlerUncrawledUrl"
+                  pagination:
+                    type: object
+                    required:
+                      - page
+                      - pageSize
+                      - totalItems
+                      - totalPages
+                    properties:
+                      page:
+                        type: integer
+                      pageSize:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+        "500":
+          description: Supabase crawler data access is not configured or failed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Internal Server Error
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /.well-known/{slug}:
     get:
       summary: Blocked well-known probe path
@@ -2147,6 +2244,25 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CalendarMockEvent"
+    CrawlerUncrawledUrl:
+      type: object
+      required:
+        - created_at
+        - origin_id
+        - skipped
+        - url
+      properties:
+        created_at:
+          type: string
+          format: date-time
+        origin_id:
+          type: string
+        origin_url:
+          type: string
+        skipped:
+          type: boolean
+        url:
+          type: string
     CronUnauthorized:
       type: object
       required:

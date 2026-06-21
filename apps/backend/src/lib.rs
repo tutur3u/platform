@@ -2639,9 +2639,20 @@ mod tests {
     }
 
     fn outbound_response(status: u16, body_text: impl Into<String>) -> OutboundResponse {
+        outbound_response_with_headers(status, body_text, Vec::new())
+    }
+
+    fn outbound_response_with_headers(
+        status: u16,
+        body_text: impl Into<String>,
+        headers: Vec<(String, String)>,
+    ) -> OutboundResponse {
+        let mut response_headers = vec![("content-type".to_owned(), APPLICATION_JSON.to_owned())];
+        response_headers.extend(headers);
+
         OutboundResponse {
             body_text: body_text.into(),
-            headers: vec![("content-type".to_owned(), APPLICATION_JSON.to_owned())],
+            headers: response_headers,
             status,
         }
     }
@@ -2867,37 +2878,137 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn crawler_domains_rejects_unsupported_methods_without_outbound_call() {
+    async fn crawler_uncrawled_filters_existing_urls_and_groups_results() {
         let config = backend_config_with_contact_data();
-        let outbound = RecordingOutboundClient::default();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response_with_headers(
+                200,
+                r#"[{"url":"https://example.com/new"}]"#,
+                vec![("content-range".to_owned(), "0-0/3".to_owned())],
+            ),
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "created_at":"2026-01-02T00:00:00Z",
+                        "origin_id":"origin-1",
+                        "origin_url":"https://seed.example",
+                        "skipped":false,
+                        "url":"https://example.com/already"
+                    },
+                    {
+                        "created_at":"2026-01-03T00:00:00Z",
+                        "origin_id":"origin-1",
+                        "origin_url":"https://seed.example",
+                        "skipped":false,
+                        "url":"https://example.com/new"
+                    }
+                ]"#,
+            ),
+            outbound_response(200, r#"[{"url":"https://example.com/already/"}]"#),
+        ]);
 
         let response = handle_backend_request(
             &config,
-            request("POST", "/api/personal/crawlers/domains"),
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/personal/crawlers/uncrawled?page=2&pageSize=2&domain=example.com&search=new",
+                ),
+                ..request("GET", "/api/personal/crawlers/uncrawled")
+            },
             &outbound,
         )
         .await;
 
-        assert_eq!(response.status, 405);
-        assert_eq!(response.allow, Some("GET"));
-        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body["pagination"],
+            json!({
+                "page": 2,
+                "pageSize": 2,
+                "totalPages": 2,
+                "totalItems": 3,
+            })
+        );
+        assert_eq!(
+            response.body["uncrawledUrls"],
+            json!([
+                {
+                    "created_at": "2026-01-03T00:00:00Z",
+                    "origin_id": "origin-1",
+                    "origin_url": "https://seed.example",
+                    "skipped": false,
+                    "url": "https://example.com/new",
+                }
+            ])
+        );
+        assert_eq!(
+            response.body["groupedUrls"],
+            json!({
+                "origin-1": [
+                    {
+                        "created_at": "2026-01-03T00:00:00Z",
+                        "origin_id": "origin-1",
+                        "origin_url": "https://seed.example",
+                        "skipped": false,
+                        "url": "https://example.com/new",
+                    }
+                ]
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert!(calls[0].url.contains("/rest/v1/crawled_url_next_urls?"));
+        assert!(calls[0].url.contains("select=url"));
+        assert!(calls[0].url.contains("skipped=eq.false"));
+        assert!(calls[0].url.contains("url=ilike.%25example.com%25"));
+        assert!(calls[0].url.contains("url=ilike.%25new%25"));
+        assert_eq!(recorded_header(&calls[0], "Range"), Some("0-0"));
+        assert_eq!(recorded_header(&calls[0], "Prefer"), Some("count=exact"));
+
+        assert!(calls[1].url.contains("/rest/v1/crawled_url_next_urls?"));
+        assert!(calls[1].url.contains("origin_url%3Aurl"));
+        assert_eq!(recorded_header(&calls[1], "Range"), Some("2-3"));
+        assert_eq!(recorded_header(&calls[1], "Prefer"), None);
+
+        assert!(calls[2].url.contains("/rest/v1/crawled_urls?select=url"));
+        assert!(calls[2].url.contains("url=in."));
+        assert_eq!(recorded_header(&calls[2], "Range"), None);
+    }
+
+    #[tokio::test]
+    async fn crawler_routes_reject_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        for path in [
+            "/api/personal/crawlers/domains",
+            "/api/personal/crawlers/uncrawled",
+        ] {
+            let response = handle_backend_request(&config, request("POST", path), &outbound).await;
+
+            assert_eq!(response.status, 405, "{path}");
+            assert_eq!(response.allow, Some("GET"), "{path}");
+            assert_eq!(response.body["error"], "method not allowed", "{path}");
+        }
         assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]
-    async fn crawler_domains_fails_closed_when_contact_data_is_not_configured() {
+    async fn crawler_routes_fail_closed_when_contact_data_is_not_configured() {
         let config = backend_config_with_internal_token();
         let outbound = RecordingOutboundClient::default();
 
-        let response = handle_backend_request(
-            &config,
-            request("GET", "/api/personal/crawlers/domains"),
-            &outbound,
-        )
-        .await;
+        for path in [
+            "/api/personal/crawlers/domains",
+            "/api/personal/crawlers/uncrawled",
+        ] {
+            let response = handle_backend_request(&config, request("GET", path), &outbound).await;
 
-        assert_eq!(response.status, 500);
-        assert_eq!(response.body["error"], "Internal Server Error");
+            assert_eq!(response.status, 500, "{path}");
+            assert_eq!(response.body["error"], "Internal Server Error", "{path}");
+        }
         assert_eq!(outbound.calls().len(), 0);
     }
 

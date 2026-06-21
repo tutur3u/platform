@@ -6,11 +6,11 @@
         "acceptedRemoval": 79,
         "key": "api",
         "label": "api",
-        "legacyNext": 995,
-        "migrated": 31,
-        "percentComplete": 9.95,
-        "remaining": 995,
-        "terminal": 110,
+        "legacyNext": 994,
+        "migrated": 32,
+        "percentComplete": 10.05,
+        "remaining": 994,
+        "terminal": 111,
         "total": 1105,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 79,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1013,
-        "migrated": 36,
-        "percentComplete": 10.2,
-        "remaining": 1013,
-        "terminal": 115,
+        "legacyNext": 1012,
+        "migrated": 37,
+        "percentComplete": 10.28,
+        "remaining": 1012,
+        "terminal": 116,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -155,15 +155,6 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/:wsId/crawlers/list:apps/web/src/app/api/[wsId]/crawlers/list/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET"],
-        "routePath": "/api/:wsId/crawlers/uncrawled",
-        "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/:wsId/crawlers/uncrawled:apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts"
       },
       {
         "kind": "api",
@@ -317,17 +308,26 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/email-draft:apps/web/src/app/api/ai/email-draft/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/executions",
+        "sourceFile": "apps/web/src/app/api/ai/executions/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/executions:apps/web/src/app/api/ai/executions/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 79,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1264,
-      "migrated": 162,
-      "percentComplete": 16.01,
-      "remaining": 1264,
-      "terminal": 241,
+      "legacyNext": 1263,
+      "migrated": 163,
+      "percentComplete": 16.08,
+      "remaining": 1263,
+      "terminal": 242,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -366,7 +366,7 @@
       "methods": ["GET"],
       "routePath": "/api/:wsId/crawlers/uncrawled",
       "sourceFile": "apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
