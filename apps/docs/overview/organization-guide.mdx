@@ -1,7 +1,7 @@
 ---
 title: 'Documentation Organization Guide'
 description: 'Understand the Tuturuuu documentation structure and how to extend it.'
-updatedAt: '2025-09-26'
+updatedAt: '2026-06-21'
 ---
 
 # Documentation Organization Guide
@@ -31,29 +31,32 @@ apps/docs/
 └── reference/            # API contracts and schemas
 ```
 
-Assets such as images remain in `apps/docs/images/`. Shared assets for navigation (logo, favicon) sit alongside `docs.json`.
+Assets such as images remain in `apps/docs/images/`. Shared assets for navigation (logo, favicon) sit alongside `docs.json`, which is the single source of truth for sidebar navigation, theme, and grouping (Mintlify reads it on build). Adding a file to one of the directories above does **not** publish it until you also register it in `docs.json`.
 
 ## ✍️ Adding New Content
 
 1. **Pick a Section** – Choose the directory that matches your topic. When in doubt, align with how end users will search for the information.
-2. **Create the File** – Use front matter with `title`, `description`, and `updated` fields. Example:
+2. **Create the File** – Use front matter with `title`, `description`, and `updatedAt` fields. Example:
 
    ```mdx
    ---
    title: 'My Guide'
    description: 'Brief purpose statement.'
-   updated: '2025-09-26'
+   updatedAt: '2026-06-21'
    ---
    ```
+
+   Set `updatedAt` to the date you last meaningfully changed the page (`YYYY-MM-DD`). Keep the single-quote style to match the rest of the docs set.
 3. **Cross-Link Thoughtfully** – Prefer absolute links such as `/platform/features/command-center-dashboard` so moves do not break references.
 4. **Update Navigation** – Add the new page to `apps/docs/docs.json` in the appropriate group.
 
 ## ✅ Conventions to Remember
 
-- **Navigation** mirrors the directory layout; keep related pages together.
-- **Diagrams** use Mermaid 10.8.0 syntax.
+- **Navigation** is defined in `apps/docs/docs.json` and should mirror the directory layout; keep related pages together.
+- **Diagrams** use Mermaid syntax (rendered by Mintlify).
 - **Images** belong in `apps/docs/images/` and are referenced with absolute paths (`/images/...`).
-- **Docs Linting** relies on Biome; run formatting and lint checks before submitting changes.
+- **Internal links** use absolute documentation paths (for example `/build/overview`, not `/overview`) so moving files does not break references.
+- **Linting** — Markdown and MDX are explicitly excluded from Biome (`biome.json` ignores `**/*.md` and `**/*.mdx`), so `bun check` does not lint these pages. Validate docs by previewing them with the Mintlify CLI and checking that links resolve and front matter is present, rather than relying on Biome formatting.
 
 Need inspiration for structuring a new guide? Browse the [Platform Overview](/platform/overview) and [Build & Ship](/build/overview) pages—they demonstrate the preferred narrative pattern (context → diagrams → next steps).
 

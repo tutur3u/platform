@@ -1,13 +1,13 @@
 ---
 title: "Workspace Routing"
 description: "Legacy entry point for workspace routing documentation"
-updatedAt: "2026-05-17"
+updatedAt: "2026-06-21"
 ---
 
 This legacy page has been superseded by the architecture docs:
 
-- `platform/architecture/routing`
-- `platform/architecture/workspaces-permissions`
+- [Routing](/platform/architecture/routing)
+- [Workspaces and permissions](/platform/architecture/workspaces-permissions)
 
 The short version is:
 
@@ -19,4 +19,8 @@ The short version is:
 - `getPermissions()` is the fine-grained authorization helper layered on top of routing and membership.
 - Root redirects can be user-configured per workspace via `user_workspace_configs` (config id: `ROOT_DEFAULT_NAVIGATION`), but those defaults only apply when the user visits the app root (`/` or a locale root such as `/vi`). Direct workspace home routes such as `/personal` or `/{workspace}` must stay on the workspace home surface instead of auto-opening a configured app or task board. Redirect targets should be validated at request time and stale deep links (for example deleted task boards) must gracefully fall back to a broader route.
 
-Prefer the two architecture pages above for current implementation details.
+Prefer the two architecture pages above for current implementation
+details. Note also that `apps/web` (Next.js, port `7803`) is being migrated to
+`apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust); see the
+[TanStack + Rust migration](/platform/architecture/tanstack-rust-migration) for
+how routing responsibilities are shifting.

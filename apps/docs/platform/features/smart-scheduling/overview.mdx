@@ -1,6 +1,7 @@
 ---
 title: Smart Scheduling Overview
 description: Intelligent, unified scheduling for habits and tasks with priority-aware event placement
+updatedAt: '2026-06-21'
 ---
 
 # Smart Scheduling
@@ -81,7 +82,7 @@ Click the **Smart Schedule** button in the calendar toolbar to run scheduling fo
 
 ### Automatic Scheduling
 
-Smart Scheduling runs automatically every hour via a background cron job. This ensures your calendar stays up-to-date as you add new habits and tasks.
+Smart Scheduling runs automatically every 6 hours via a background cron job (`/api/cron/calendar/smart-schedule`, scheduled `0 */6 * * *`). This keeps your calendar up to date as you add new habits and tasks. You can always trigger an on-demand run from the calendar toolbar in between cron cycles.
 
 <Info>
 The cron job only schedules items with `auto_schedule` enabled. You can enable/disable auto-scheduling per habit or task.
@@ -91,7 +92,7 @@ The cron job only schedules items with `auto_schedule` enabled. You can enable/d
 
 ### Window Days
 
-Controls how far into the future to schedule events (default: 30 days, max: 90 days).
+Controls how far into the future to schedule events (default: 30 days, clamped to a 7-90 day range).
 
 ### Force Reschedule
 
@@ -136,4 +137,4 @@ Content-Type: application/json
 }
 ```
 
-See [API Reference](/reference/api-reference/smart-schedule) for full details.
+The `windowDays` value is clamped server-side to a minimum of 7 and a maximum of 90 days (default 30). See [API Reference](/platform/features/smart-scheduling/api-reference) for full details.

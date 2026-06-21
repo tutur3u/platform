@@ -1,6 +1,7 @@
 ---
 title: Duration Optimization
 description: How Smart Scheduling optimizes habit duration based on time slot characteristics
+updatedAt: '2026-06-21'
 ---
 
 # Duration Optimization
@@ -77,28 +78,37 @@ Falls back to your standard preferred duration.
 When multiple time slots are available, the system scores each one to find the best:
 
 ```typescript
-function scoreSlotForHabit(habit, slot): number {
+function scoreSlotForHabit(habit, slot, timezone?, weights?): number {
+  const characteristics = getSlotCharacteristics(habit, slot, timezone);
   let score = 0;
 
-  // Ideal time match is best (+1000)
-  if (slotContainsIdealTime(slot, habit.ideal_time)) {
-    score += 1000;
+  // Ideal time match is best (default +1000, overridable via weights)
+  if (characteristics.matchesIdealTime) {
+    score += weights?.habitIdealTimeBonus ?? 1000;
   }
 
-  // Time preference match is second best (+500)
-  if (slotMatchesPreference(slot, habit.time_preference)) {
-    score += 500;
+  // Time preference match is second best (default +500, overridable)
+  if (characteristics.matchesPreference) {
+    score += weights?.habitPreferenceBonus ?? 500;
   }
 
-  // Prefer slots that fit preferred duration (+200/+100)
-  if (slot.maxAvailable >= habit.preferred) {
+  // Prefer slots that fit preferred duration (+200), else minimum (+100)
+  const { preferred, min } = getEffectiveDurationBounds(habit);
+  if (slot.maxAvailable >= preferred) {
     score += 200;
-  } else if (slot.maxAvailable >= habit.minimum) {
+  } else if (slot.maxAvailable >= min) {
     score += 100;
   }
 
-  // Slight preference for earlier slots (tiebreaker)
-  score -= slot.start.getHours() * 0.1;
+  // Tiebreaker (timezone-aware hour):
+  // - With a preference set, slightly prefer earlier slots
+  // - With no preference, prefer slots closer to noon to spread habits out
+  const slotHour = getLocalHour(slot.start, timezone);
+  if (habit.time_preference || habit.ideal_time) {
+    score -= slotHour * 0.1;
+  } else {
+    score -= Math.abs(slotHour - 12) * 0.5;
+  }
 
   return score;
 }
@@ -147,15 +157,23 @@ Preference: Evening
 The duration optimizer is implemented in `packages/ai/src/scheduling/duration-optimizer.ts`:
 
 ```typescript
-// Key exports
+// Key exports (signatures simplified; optional params shown where they matter)
 export function getEffectiveDurationBounds(habit): { preferred, min, max };
 export function calculateOptimalDuration(habit, slot, characteristics): number;
-export function timeMatchesSlot(idealTime: string, slot): boolean;
-export function slotMatchesPreference(preference: TimeOfDayPreference, slot): boolean;
-export function getSlotCharacteristics(habit, slot): SlotCharacteristics;
-export function scoreSlotForHabit(habit, slot): number;
-export function findBestSlotForHabit(habit, slots): TimeSlotInfo | null;
+export function timeMatchesSlot(idealTime: string, slot, timezone?): boolean;
+export function slotMatchesPreference(preference: TimeOfDayPreference, slot, timezone?): boolean;
+export function getSlotCharacteristics(habit, slot, timezone?): SlotCharacteristics;
+export function scoreSlotForHabit(habit, slot, timezone?, weights?): number;
+export function findBestSlotForHabit(habit, slots, timezone?, weights?): TimeSlotInfo | null;
 ```
+
+<Info>
+Most matching and scoring functions accept an optional `timezone` so that
+`ideal_time` and time-of-day preferences are interpreted in the user's local
+time rather than the server's. `scoreSlotForHabit` and `findBestSlotForHabit`
+also accept optional `SchedulingWeights` to override the default ideal-time and
+preference bonuses.
+</Info>
 
 ## Configuration in Habit Form
 
@@ -184,10 +202,11 @@ When creating or editing a habit, you can configure duration optimization:
 
 ## Testing
 
-The duration optimizer is tested with 54 test cases covering:
+The duration optimizer ships with an extensive unit-test suite (currently 127
+cases) covering:
 
 - Duration bounds calculation
-- Time matching and preference detection
+- Time matching and preference detection (including timezone-aware extraction)
 - Slot scoring and selection
 - Integration scenarios for real-world habits
 

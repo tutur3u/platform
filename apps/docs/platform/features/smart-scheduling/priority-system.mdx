@@ -1,6 +1,7 @@
 ---
 title: Priority System
 description: How Smart Scheduling calculates and uses priority for scheduling decisions
+updatedAt: '2026-06-21'
 ---
 
 # Priority System
@@ -52,18 +53,18 @@ const baseScores = {
   low: 1000
 };
 
-// Urgency bonus from deadline proximity
+// Urgency bonus from deadline proximity (added to the base score)
 function getUrgencyBonus(deadline: Date | null): number {
   if (!deadline) return 0;
 
   const hoursUntil = (deadline - now) / (1000 * 60 * 60);
 
-  if (hoursUntil <= 0) return 5000;    // Overdue - highest urgency
-  if (hoursUntil <= 24) return 2000;   // Due within 24h
-  if (hoursUntil <= 48) return 1000;   // Due within 48h
-  if (hoursUntil <= 72) return 500;    // Due within 3 days
-  if (hoursUntil <= 168) return 200;   // Due within 7 days
-  return 0;                             // Due later
+  if (hoursUntil < 0) return 5000;    // Overdue - highest urgency
+  if (hoursUntil < 24) return 2000;   // Due within 24h
+  if (hoursUntil < 48) return 1000;   // Due within 48h
+  if (hoursUntil < 72) return 500;    // Due within 3 days
+  if (hoursUntil < 168) return 200;   // Due within 7 days
+  return 0;                            // Due later
 }
 ```
 
@@ -135,7 +136,7 @@ export function calculatePriorityScore(item: PrioritizableItem): number;
 
 ## Testing
 
-The priority system is thoroughly tested with 61 test cases covering:
+The priority system is thoroughly tested with a comprehensive suite (60 test cases as of this writing) covering:
 
 - Priority weight ordering
 - Explicit priority handling
