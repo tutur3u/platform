@@ -87,6 +87,24 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, published/category filters, published_at/created_at ordering, exact-count pagination, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned until changelog writes move behind Rust."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/:id through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, singular PostgREST response handling, PGRST116-to-404 mapping, no-store JSON responses, and the legacy 404/500 JSON error body. PUT and DELETE remain legacy-owned until changelog writes move behind Rust."
+        }
+      }
+    },
     "api:/api/v1/infrastructure/changelog/slug/:slug:apps/web/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

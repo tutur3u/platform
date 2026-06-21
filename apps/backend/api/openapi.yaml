@@ -194,6 +194,119 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/changelog:
+    get:
+      summary: Legacy-compatible changelog list
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/route.ts GET. The Rust backend reads changelog_entries through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace manage_changelog through has_workspace_permission, falls back to published-only public reads for anonymous or unauthorized callers, preserves published/category filters, published_at/created_at ordering, exact-count pagination, and the legacy 500 JSON body. POST remains legacy-owned until changelog writes move behind Rust.
+      parameters:
+        - name: published
+          in: query
+          schema:
+            type: string
+            examples:
+              - "true"
+              - "false"
+          description: Admin-only draft filter. Public callers always receive published entries with non-null published_at.
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Optional raw changelog category filter.
+        - name: page
+          in: query
+          schema:
+            type: string
+            examples:
+              - "1"
+          description: Legacy parseInt-style page value.
+        - name: pageSize
+          in: query
+          schema:
+            type: string
+            examples:
+              - "20"
+          description: Legacy parseInt-style page size value.
+      responses:
+        "200":
+          description: Changelog entries with exact-count pagination.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryListResponse"
+        "500":
+          description: Changelog entries could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryListError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/infrastructure/changelog/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Changelog entry identifier.
+    get:
+      summary: Legacy-compatible changelog lookup by id
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts GET. The Rust backend reads changelog_entries through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace manage_changelog through has_workspace_permission, falls back to published-only public reads for anonymous or unauthorized callers, requests the PostgREST singular object response used by the legacy Supabase single() call, and maps PGRST116 to the legacy 404 JSON body. PUT and DELETE remain legacy-owned until changelog writes move behind Rust.
+      responses:
+        "200":
+          description: Changelog entry row.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntry"
+        "404":
+          description: No changelog entry matched the id and caller visibility.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryLookupError"
+        "500":
+          description: Changelog entry lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryLookupError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/changelog/slug/{slug}:
     parameters:
       - name: slug
@@ -2691,6 +2804,48 @@ components:
             - string
             - "null"
           format: date-time
+    ChangelogEntryListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChangelogEntry"
+        pagination:
+          type: object
+          required:
+            - page
+            - pageSize
+            - total
+            - totalPages
+          properties:
+            page:
+              type:
+                - integer
+                - "null"
+            pageSize:
+              type:
+                - integer
+                - "null"
+            total:
+              type: integer
+              minimum: 0
+            totalPages:
+              type:
+                - integer
+                - "null"
+    ChangelogEntryListError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error fetching changelog entries
     ChangelogEntryLookupError:
       type: object
       required:

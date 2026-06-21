@@ -2761,6 +2761,17 @@ mod tests {
         }
     }
 
+    fn supabase_auth_cookie_value(access_token: &str) -> String {
+        format!(
+            "base64-{}",
+            contact::encode_app_session_part(format!(r#"{{"access_token":"{access_token}"}}"#))
+        )
+    }
+
+    fn leaked_test_str(value: String) -> &'static str {
+        Box::leak(value.into_boxed_str())
+    }
+
     #[tokio::test]
     async fn async_handler_preserves_pure_route_dispatch_without_outbound_calls() {
         let config = backend_config_with_internal_token();
@@ -3472,6 +3483,234 @@ mod tests {
         assert_eq!(response.status, 500);
         assert_eq!(response.body["message"], "Changelog entry not found");
         assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn changelog_list_get_reads_public_entries_with_exact_count() {
+        let config = backend_config_with_contact_data();
+        let outbound =
+            RecordingOutboundClient::with_responses(vec![outbound_response_with_headers(
+                200,
+                r#"[
+                {
+                    "id":"entry-1",
+                    "title":"Security update",
+                    "slug":"security-update",
+                    "is_published":true,
+                    "published_at":"2026-06-01T00:00:00Z"
+                }
+            ]"#,
+                vec![("content-range".to_owned(), "5-5/6".to_owned())],
+            )]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/infrastructure/changelog?page=2&pageSize=5&published=false&category=security",
+                ),
+                ..request("GET", "/api/v1/infrastructure/changelog")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["data"][0]["slug"], "security-update");
+        assert_eq!(
+            response.body["pagination"],
+            json!({
+                "page": 2,
+                "pageSize": 5,
+                "total": 6,
+                "totalPages": 2,
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert!(calls[0].url.contains("/rest/v1/changelog_entries?"));
+        assert!(calls[0].url.contains("select=*"));
+        assert!(
+            calls[0]
+                .url
+                .contains("order=published_at.desc.nullslast%2Ccreated_at.desc")
+        );
+        assert!(calls[0].url.contains("is_published=eq.true"));
+        assert!(calls[0].url.contains("published_at=not.is.null"));
+        assert!(calls[0].url.contains("category=eq.security"));
+        assert!(!calls[0].url.contains("is_published=eq.false"));
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(recorded_header(&calls[0], "Range-Unit"), Some("items"));
+        assert_eq!(recorded_header(&calls[0], "Range"), Some("5-9"));
+        assert_eq!(recorded_header(&calls[0], "Prefer"), Some("count=exact"));
+    }
+
+    #[tokio::test]
+    async fn changelog_list_get_allows_manage_changelog_cookie_to_read_drafts() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response_with_headers(
+                200,
+                r#"[
+                    {
+                        "id":"entry-2",
+                        "title":"Draft entry",
+                        "slug":"draft-entry",
+                        "category":"feature",
+                        "is_published":false,
+                        "published_at":null
+                    }
+                ]"#,
+                vec![("content-range".to_owned(), "0-0/1".to_owned())],
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(
+                    format!("theme=dark; sb-project-ref-auth-token={cookie_value}")
+                )),
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/infrastructure/changelog?published=false&category=feature",
+                ),
+                ..request("GET", "/api/v1/infrastructure/changelog")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["data"][0]["slug"], "draft-entry");
+        assert_eq!(response.body["data"][0]["is_published"], false);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/rpc/has_workspace_permission"
+        );
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(
+                calls[1].body.as_ref().expect("permission request body")
+            )
+            .expect("permission request json"),
+            json!({
+                "p_permission": "manage_changelog",
+                "p_user_id": "user-1",
+                "p_ws_id": "00000000-0000-0000-0000-000000000000",
+            })
+        );
+        assert_eq!(calls[2].method, OutboundMethod::Get);
+        assert!(calls[2].url.contains("is_published=eq.false"));
+        assert!(calls[2].url.contains("category=eq.feature"));
+        assert!(!calls[2].url.contains("published_at=not.is.null"));
+    }
+
+    #[tokio::test]
+    async fn changelog_detail_get_falls_back_to_public_read_for_duplicate_auth_cookies() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{
+                "id":"entry-3",
+                "title":"Published detail",
+                "slug":"published-detail",
+                "is_published":true,
+                "published_at":"2026-06-01T00:00:00Z"
+            }"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(
+                    format!(
+                        "sb-project-ref-auth-token={cookie_value}; sb-project-ref-auth-token={cookie_value}"
+                    ),
+                )),
+                ..request("GET", "/api/v1/infrastructure/changelog/entry-3")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["slug"], "published-detail");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/changelog_entries?select=*&id=eq.entry-3&is_published=eq.true&published_at=not.is.null"
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+    }
+
+    #[tokio::test]
+    async fn changelog_detail_get_allows_manage_changelog_cookie_to_read_draft() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(
+                200,
+                r#"{
+                    "id":"entry-4",
+                    "title":"Draft detail",
+                    "slug":"draft-detail",
+                    "is_published":false,
+                    "published_at":null
+                }"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/v1/infrastructure/changelog/entry-4")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["slug"], "draft-detail");
+        assert_eq!(response.body["is_published"], false);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[2].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/changelog_entries?select=*&id=eq.entry-4"
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
     }
 
     #[tokio::test]

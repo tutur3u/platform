@@ -167,6 +167,26 @@ impl ContactDataConfig {
             query.finish()
         ))
     }
+
+    pub(crate) fn auth_url(&self, path: &str) -> Option<String> {
+        url_origin(&self.supabase_url)?;
+
+        Some(format!(
+            "{}/auth/v1/{}",
+            self.supabase_url,
+            path.trim_start_matches('/')
+        ))
+    }
+
+    pub(crate) fn rpc_url(&self, function: &str) -> Option<String> {
+        url_origin(&self.supabase_url)?;
+
+        Some(format!(
+            "{}/rest/v1/rpc/{}",
+            self.supabase_url,
+            function.trim_start_matches('/')
+        ))
+    }
 }
 
 #[cfg(feature = "native")]

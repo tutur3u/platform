@@ -80,6 +80,16 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `private.topic_announcement_contact_verifications` through the server-owned
   Supabase REST adapter, and returns the legacy HTML success, invalid,
   already-used, expired, and failure pages.
+- `GET /api/v1/infrastructure/changelog`,
+  `GET /api/v1/infrastructure/changelog/:id`, and
+  `GET /api/v1/infrastructure/changelog/slug/:slug`: legacy-compatible
+  changelog readers backed by the server-owned Supabase REST adapter. List and
+  id reads validate browser Supabase auth cookies with Supabase Auth, check root
+  workspace `manage_changelog` through `has_workspace_permission`, and fall
+  back to published-only public reads for anonymous, malformed-cookie, expired,
+  or unauthorized sessions. Changelog `POST`, `PUT`, `DELETE`, publish, and
+  upload routes remain legacy-owned until write authorization and storage
+  handling move behind Rust.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
 /api/v1/auth/mobile/password-login`, `OPTIONS
 /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,

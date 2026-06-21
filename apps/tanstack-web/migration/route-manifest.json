@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 988,
-        "migrated": 37,
-        "percentComplete": 10.83,
-        "remaining": 988,
-        "terminal": 120,
-        "total": 1108,
+        "legacyNext": 989,
+        "migrated": 39,
+        "percentComplete": 10.98,
+        "remaining": 989,
+        "terminal": 122,
+        "total": 1111,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1006,
-        "migrated": 42,
-        "percentComplete": 11.05,
-        "remaining": 1006,
-        "terminal": 125,
-        "total": 1131,
+        "legacyNext": 1007,
+        "migrated": 44,
+        "percentComplete": 11.2,
+        "remaining": 1007,
+        "terminal": 127,
+        "total": 1134,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1257,
-      "migrated": 168,
-      "percentComplete": 16.64,
-      "remaining": 1257,
-      "terminal": 251,
-      "total": 1508,
+      "legacyNext": 1258,
+      "migrated": 170,
+      "percentComplete": 16.74,
+      "remaining": 1258,
+      "terminal": 253,
+      "total": 1511,
       "unknownStatus": 0
     }
   },
@@ -2585,22 +2585,59 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/changelog",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/changelog/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/changelog",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/changelog/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts"
     },
     {
-      "id": "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
       "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/changelog/:id",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts"
+    },
+    {
+      "id": "api:PUT:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
+      "kind": "api",
+      "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/changelog/:id",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "PUT",
+      "parentId": "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts"
+    },
+    {
+      "id": "api:DELETE:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
+      "kind": "api",
+      "methods": ["DELETE"],
+      "routePath": "/api/v1/infrastructure/changelog/:id",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "DELETE",
+      "parentId": "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/changelog/:id/publish:apps/web/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts",
@@ -13983,11 +14020,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1108,
+    "apiRoutes": 1111,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 305,
-    "routeHandlers": 1131,
+    "routeHandlers": 1134,
     "methodCounts": {
       "GET": 634,
       "HEAD": 1,
@@ -13997,6 +14034,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1508
+    "total": 1511
   }
 }
