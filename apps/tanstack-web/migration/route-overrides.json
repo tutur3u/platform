@@ -20,6 +20,15 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/health with the legacy response body."
     },
+    "api:/api/v1/internal/holidays:apps/web/src/app/api/v1/internal/holidays/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles the public Vietnamese holiday list GET through the server-owned Supabase REST adapter, preserving optional parseInt-style year filtering, date ascending ordering, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned until admin holiday mutation behavior moves behind the Rust backend."
+        }
+      }
+    },
     "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

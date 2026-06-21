@@ -306,10 +306,10 @@ Current inventory:
 
 - `305` pages
 - `67` layouts
-- `1,128` route handler artifacts
+- `1,129` route handler artifacts
 - `19` cron handlers
-- `1,505` total tracked route artifacts
-- `163` migrated artifacts, `245` terminal artifacts, and `1,260` remaining
+- `1,506` total tracked route artifacts
+- `164` migrated artifacts, `246` terminal artifacts, and `1,260` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -636,6 +636,7 @@ consumed by the TanStack shell through a Start server function:
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar`                                                                                     | Legacy-compatible sidebar collapsed preference cookie route for `sidebar-collapsed`.                                                                                                                                          |
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar/sizes`                                                                               | Legacy-compatible sidebar sizing preference cookie route for `sidebar-size` and `main-content-size`.                                                                                                                          |
 | `GET /api/v1/infrastructure/users/fields/types`                                                                                        | Legacy-compatible static user field type metadata route returning `TEXT`, `NUMBER`, `BOOLEAN`, `DATE`, and `DATETIME` in the original order.                                                                                  |
+| `GET /api/v1/internal/holidays`                                                                                                        | Legacy-compatible public Vietnamese holiday list backed by the Rust server-owned Supabase REST adapter, including optional parseInt-style year filtering. POST/item/bulk admin holiday mutations remain legacy-owned.         |
 | `GET /api/v1/users/me/profile`                                                                                                         | App-session current-user profile route. It verifies `ttr_app_` JWTs, reads `users` and `user_private_details` through the server-owned Supabase REST adapter, and returns the legacy profile shape with no-store headers.     |
 | `PATCH /api/v1/users/me/profile`                                                                                                       | App-session profile mutation route. It enforces same-origin confirmation for cookie auth, validates `display_name`, `bio`, and `avatar_url`, and persists the allowed fields to the `users` row through Supabase REST.        |
 | `POST /api/v1/inquiries`                                                                                                               | App-session support-inquiry route. It enforces same-origin confirmation for cookie auth, validates the legacy payload and field limits, and inserts `support_inquiries` with `creator_id` from the resolved app-session user. |

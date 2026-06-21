@@ -1100,6 +1100,51 @@ paths:
                 type: string
                 examples:
                   - Origin
+  /api/v1/internal/holidays:
+    get:
+      summary: Legacy-compatible Vietnamese holiday list
+      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/route.ts GET. The Rust backend reads public Vietnamese holiday rows through the server-owned Supabase REST adapter, preserves the optional parseInt-style year filter, orders rows by date ascending, and leaves admin holiday mutations on legacy Next.js routes.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional calendar year filter. The legacy route used JavaScript parseInt behavior, so numeric prefixes such as 2026abc still filter year 2026.
+      responses:
+        "200":
+          description: Ordered holiday rows.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VietnameseHoliday"
+        "500":
+          description: Holiday rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidaysError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/migrate/grouped-score-names:
     put:
       summary: Disabled grouped score names infrastructure migration
@@ -2350,6 +2395,28 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CalendarMockEvent"
+    VietnameseHoliday:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        year:
+          type: integer
+    HolidaysError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error fetching holidays
     CrawlerUncrawledUrl:
       type: object
       required:

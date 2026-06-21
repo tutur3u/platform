@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contact;
 mod crawlers;
+mod holidays;
 mod mobile_version;
 mod outbound;
 
@@ -345,6 +346,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = crawlers::handle_crawler_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = holidays::handle_holidays_route(config, request, outbound).await {
         return response;
     }
 
@@ -3086,6 +3091,126 @@ mod tests {
             assert_eq!(response.status, 500, "{path}");
             assert_eq!(response.body["error"], "Internal Server Error", "{path}");
         }
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn holidays_get_lists_public_holidays_from_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"[
+                {"id":"holiday-1","date":"2026-01-01","name":"New Year","year":2026},
+                {"id":"holiday-2","date":"2026-04-30","name":"Reunification Day","year":2026}
+            ]"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/internal/holidays"),
+                ..request("GET", "/api/v1/internal/holidays")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!([
+                {"id":"holiday-1","date":"2026-01-01","name":"New Year","year":2026},
+                {"id":"holiday-2","date":"2026-04-30","name":"Reunification Day","year":2026}
+            ])
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=*&order=date.asc"
+        );
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn holidays_get_preserves_legacy_year_filter_parsing() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[]"#),
+            outbound_response(200, r#"[]"#),
+        ]);
+
+        let filtered = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/internal/holidays?year=2026abc"),
+                ..request("GET", "/api/v1/internal/holidays")
+            },
+            &outbound,
+        )
+        .await;
+        let ignored_zero = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some("https://tuturuuu.localhost/api/v1/internal/holidays?year=0"),
+                ..request("GET", "/api/v1/internal/holidays")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(filtered.status, 200);
+        assert_eq!(ignored_zero.status, 200);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert!(calls[0].url.contains("year=eq.2026"));
+        assert!(!calls[1].url.contains("year=eq."));
+    }
+
+    #[tokio::test]
+    async fn holidays_get_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/internal/holidays"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn holidays_get_fails_closed_when_contact_data_is_not_configured() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/internal/holidays"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error fetching holidays");
         assert_eq!(outbound.calls().len(), 0);
     }
 
