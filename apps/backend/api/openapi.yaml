@@ -11,6 +11,93 @@ servers:
   - url: http://localhost:7820
     description: Local backend runtime
 paths:
+  /api/share/course/{courseId}:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy shared-course identifier.
+    get:
+      deprecated: true
+      summary: Retired legacy shared course API
+      description: Terminal decommission replacement for apps/web/src/app/api/share/course/[courseId]/route.ts. The maintained shared-course reader remains GET /api/v1/course?courseId=..., so the legacy alias returns 410 instead of preserving duplicate route ownership.
+      responses:
+        "410":
+          description: Legacy shared course API was intentionally removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredLegacyApiRoute"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/sync-logs:
+    get:
+      deprecated: true
+      summary: Retired legacy all-workspace sync logs API
+      description: Terminal decommission replacement for apps/web/src/app/api/sync-logs/route.ts. Calendar sync monitoring now uses workspace-scoped server-owned data fetching, so the broad legacy API returns 410.
+      responses:
+        "410":
+          description: Legacy sync logs API was intentionally removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredLegacyApiRoute"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/payment/migrations/subscriptions/cross-check:
+    post:
+      deprecated: true
+      summary: Retired monolithic subscription cross-check API
+      description: Terminal decommission replacement for apps/web/src/app/api/payment/migrations/subscriptions/cross-check/route.ts. Billing maintenance now uses the phase-1, phase-2, and phase-3 cross-check endpoints, so the old monolithic route returns 410.
+      responses:
+        "410":
+          description: Legacy subscription cross-check API was intentionally removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredLegacyApiRoute"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST
+  /api/users/search:
+    get:
+      deprecated: true
+      summary: Retired legacy user search API
+      description: Terminal decommission replacement for apps/web/src/app/api/users/search/route.ts. The legacy unauthenticated RPC wrapper is not preserved for the Rust backend cutover; future people search must use a maintained server-owned API.
+      responses:
+        "410":
+          description: Legacy user search API was intentionally removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredLegacyApiRoute"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /.well-known/{slug}:
     get:
       summary: Blocked well-known probe path
@@ -1289,12 +1376,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactSameOriginRequired"
-        "503":
-          description: Contact data adapter configuration is missing.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactDataLayerNotReady"
         "401":
           description: Missing or invalid app-session token.
           content:
@@ -1302,11 +1383,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContactUnauthorized"
         "503":
-          description: App coordination secret is missing.
+          description: App coordination secret or contact data adapter configuration is missing.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AppSessionConfigurationError"
+                oneOf:
+                  - $ref: "#/components/schemas/AppSessionConfigurationError"
+                  - $ref: "#/components/schemas/ContactDataLayerNotReady"
         "500":
           description: Supabase profile update failed.
           content:
@@ -1353,12 +1436,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContactSameOriginRequired"
-        "503":
-          description: Contact data adapter configuration is missing.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ContactDataLayerNotReady"
         "401":
           description: Missing or invalid app-session token.
           content:
@@ -1366,11 +1443,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContactUnauthorized"
         "503":
-          description: App coordination secret is missing.
+          description: App coordination secret or contact data adapter configuration is missing.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AppSessionConfigurationError"
+                oneOf:
+                  - $ref: "#/components/schemas/AppSessionConfigurationError"
+                  - $ref: "#/components/schemas/ContactDataLayerNotReady"
         "500":
           description: Supabase inquiry insert failed.
           content:
@@ -2282,6 +2361,20 @@ components:
           type: string
           examples:
             - This infrastructure batch migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.
+    RetiredLegacyApiRoute:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - ENDPOINT_REMOVED
+        message:
+          type: string
+          examples:
+            - This legacy API has been removed.
     InfrastructureMigrationForbidden:
       type: object
       required:

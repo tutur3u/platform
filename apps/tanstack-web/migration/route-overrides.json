@@ -25,6 +25,26 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: this debug-style endpoint exposes raw sb-* auth cookie values and the full Supabase session payload. No in-repo callers reference /api/auth/me/session, and the TanStack/Rust cutover must not preserve raw session export behavior."
     },
+    "api:/api/share/course/:courseId:apps/web/src/app/api/share/course/[courseId]/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the redundant legacy shared-course alias and returns 410 ENDPOINT_REMOVED. The maintained shared-course reader remains GET /api/v1/course?courseId=..., so the duplicate alias is intentionally not preserved for Cloudflare cutover."
+    },
+    "api:/api/sync-logs:apps/web/src/app/api/sync-logs/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the broad legacy all-workspace sync logs API and returns 410 ENDPOINT_REMOVED. Calendar sync monitoring now uses workspace-scoped server-owned data fetching, so the legacy API is intentionally not preserved."
+    },
+    "api:/api/payment/migrations/subscriptions/cross-check:apps/web/src/app/api/payment/migrations/subscriptions/cross-check/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the old monolithic subscription cross-check route and returns 410 ENDPOINT_REMOVED. The billing maintenance UI uses the phase-1, phase-2, and phase-3 endpoints, which remain legacy-owned until separately migrated."
+    },
+    "api:/api/users/search:apps/web/src/app/api/users/search/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the unused legacy unauthenticated user-search RPC wrapper and returns 410 ENDPOINT_REMOVED. Future people search must use a maintained server-owned API instead of preserving this broad public wrapper."
+    },
     "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

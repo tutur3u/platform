@@ -175,6 +175,12 @@ const MISSING_CRON_SECRET_MESSAGE: &str = "CRON_SECRET or VERCEL_CRON_SECRET is 
 const MISSING_DISCORD_APP_DEPLOYMENT_URL_MESSAGE: &str = "DISCORD_APP_DEPLOYMENT_URL is not set";
 const INVALID_DISCORD_JSON_MESSAGE: &str = "Invalid JSON from Discord app";
 const DISCORD_APP_REQUEST_FAILED_MESSAGE: &str = "Discord app request failed";
+const RETIRED_LEGACY_API_ERROR: &str = "ENDPOINT_REMOVED";
+const RETIRED_SHARE_COURSE_MESSAGE: &str =
+    "This legacy shared course API has been removed. Use GET /api/v1/course?courseId=... instead.";
+const RETIRED_SYNC_LOGS_MESSAGE: &str = "This legacy all-workspace sync logs API has been removed. Use workspace-scoped calendar sync monitoring instead.";
+const RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE: &str = "This legacy monolithic subscription cross-check API has been removed. Use the phase-specific cross-check endpoints instead.";
+const RETIRED_USER_SEARCH_MESSAGE: &str = "This legacy user search API has been removed. Use a maintained server-owned people search API instead.";
 #[cfg(feature = "native")]
 const TRUTHY_ENV_VALUES: [&str; 4] = ["1", "true", "yes", "on"];
 #[cfg(feature = "native")]
@@ -638,6 +644,20 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         (method, "/api/health") => method_not_allowed(method, "GET"),
         ("GET", "/api/v1/calendar/mock") => calendar_mock_response(),
         (method, "/api/v1/calendar/mock") => method_not_allowed(method, "GET"),
+        ("GET", path) if is_retired_share_course_path(path) => {
+            retired_legacy_api_response(RETIRED_SHARE_COURSE_MESSAGE)
+        }
+        (method, path) if is_retired_share_course_path(path) => method_not_allowed(method, "GET"),
+        ("GET", "/api/sync-logs") => retired_legacy_api_response(RETIRED_SYNC_LOGS_MESSAGE),
+        (method, "/api/sync-logs") => method_not_allowed(method, "GET"),
+        ("POST", "/api/payment/migrations/subscriptions/cross-check") => {
+            retired_legacy_api_response(RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE)
+        }
+        (method, "/api/payment/migrations/subscriptions/cross-check") => {
+            method_not_allowed(method, "POST")
+        }
+        ("GET", "/api/users/search") => retired_legacy_api_response(RETIRED_USER_SEARCH_MESSAGE),
+        (method, "/api/users/search") => method_not_allowed(method, "GET"),
         ("PUT", GROUPED_SCORE_NAMES_MIGRATION_PATH) => {
             grouped_score_names_migration_response(config)
         }
@@ -1193,6 +1213,16 @@ fn obsolete_workspace_migration_response(config: &BackendConfig) -> BackendRespo
     )
 }
 
+fn retired_legacy_api_response(message: &'static str) -> BackendResponse {
+    json_response(
+        410,
+        json!({
+            "message": message,
+            "error": RETIRED_LEGACY_API_ERROR,
+        }),
+    )
+}
+
 fn require_infrastructure_migration_dev_mode(config: &BackendConfig) -> Option<BackendResponse> {
     if config
         .environment
@@ -1665,6 +1695,16 @@ fn is_serwist_route_path(path: &str) -> bool {
     let segments = path_segments(path);
 
     segments.len() == 2 && segments[0] == "serwist" && !segments[1].is_empty()
+}
+
+fn is_retired_share_course_path(path: &str) -> bool {
+    let segments = path_segments(path);
+
+    segments.len() == 4
+        && segments[0] == "api"
+        && segments[1] == "share"
+        && segments[2] == "course"
+        && !segments[3].is_empty()
 }
 
 fn is_auth_cors_preflight_path(path: &str) -> bool {
@@ -3200,6 +3240,84 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
         assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[test]
+    fn retired_legacy_api_routes_return_terminal_removed_responses() {
+        for (method, path, message) in [
+            (
+                "GET",
+                "/api/share/course/9f7d44c7-ccab-4ff5-9b7a-25b85edda5a6",
+                RETIRED_SHARE_COURSE_MESSAGE,
+            ),
+            ("GET", "/api/sync-logs", RETIRED_SYNC_LOGS_MESSAGE),
+            (
+                "POST",
+                "/api/payment/migrations/subscriptions/cross-check",
+                RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE,
+            ),
+            ("GET", "/api/users/search", RETIRED_USER_SEARCH_MESSAGE),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("production", "backend"),
+                request(method, path),
+            );
+
+            assert_eq!(response.status, 410, "{method} {path}");
+            assert_eq!(response.content_type, Some(APPLICATION_JSON));
+            assert_eq!(response.body["error"], RETIRED_LEGACY_API_ERROR);
+            assert_eq!(response.body["message"], message);
+        }
+    }
+
+    #[test]
+    fn retired_legacy_api_routes_reject_unsupported_methods() {
+        for (method, path, allow) in [
+            ("POST", "/api/share/course/example-course-id", "GET"),
+            ("POST", "/api/sync-logs", "GET"),
+            (
+                "GET",
+                "/api/payment/migrations/subscriptions/cross-check",
+                "POST",
+            ),
+            ("DELETE", "/api/users/search", "GET"),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("production", "backend"),
+                request(method, path),
+            );
+
+            assert_eq!(response.status, 405, "{method} {path}");
+            assert_eq!(response.allow, Some(allow));
+            assert_eq!(response.body["error"], "method not allowed");
+        }
+    }
+
+    #[test]
+    fn retired_legacy_api_routes_do_not_match_nested_maintained_paths() {
+        let response = route_request(
+            &BackendConfig::new("production", "backend"),
+            request(
+                "POST",
+                "/api/payment/migrations/subscriptions/cross-check/phase-1",
+            ),
+        );
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["error"], "not found");
+    }
+
+    #[test]
+    fn retired_legacy_api_responses_use_json_body_shape() {
+        let response = route_request(
+            &BackendConfig::new("production", "backend"),
+            request("GET", "/api/users/search"),
+        );
+
+        assert_eq!(response.content_type, Some(APPLICATION_JSON));
+        assert!(!response.body_empty);
+        assert_eq!(response.body["error"], RETIRED_LEGACY_API_ERROR);
+        assert_eq!(response.body["message"], RETIRED_USER_SEARCH_MESSAGE);
     }
 
     #[test]

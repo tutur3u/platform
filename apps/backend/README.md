@@ -75,19 +75,19 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   adapter, and returns the legacy `supported` / `update-recommended` /
   `update-required` payload with wildcard CORS headers.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
-  /api/v1/auth/mobile/password-login`, `OPTIONS
-  /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,
+/api/v1/auth/mobile/password-login`, `OPTIONS
+/api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,
   `OPTIONS /api/v1/auth/otp/send`, `OPTIONS /api/v1/auth/otp/verify`,
   `OPTIONS /api/v1/auth/otp/settings`, and
   `OPTIONS /api/v1/mobile/version-check`: method-level legacy-compatible CORS
   preflights that return the shared wildcard empty `204` response. Their
   paired auth `POST` and settings `GET` methods remain legacy-owned.
 - `OPTIONS /api/v1/auth/qr-login/challenges`, `OPTIONS
-  /api/v1/auth/qr-login/challenges/:challengeId`, `OPTIONS
-  /api/v1/auth/qr-login/challenges/:challengeId/approve`, `OPTIONS
-  /api/v1/auth/mfa/mobile/challenges`, `OPTIONS
-  /api/v1/auth/mfa/mobile/challenges/:challengeId`, `OPTIONS
-  /api/v1/auth/mfa/mobile/challenges/:challengeId/approve`, and
+/api/v1/auth/qr-login/challenges/:challengeId`, `OPTIONS
+/api/v1/auth/qr-login/challenges/:challengeId/approve`, `OPTIONS
+/api/v1/auth/mfa/mobile/challenges`, `OPTIONS
+/api/v1/auth/mfa/mobile/challenges/:challengeId`, `OPTIONS
+/api/v1/auth/mfa/mobile/challenges/:challengeId/approve`, and
   `OPTIONS /api/v1/auth/mfa/mobile/approvals`: method-level
   legacy-compatible bare empty `204` preflights. Their paired challenge
   creation, polling, approval, and listing methods remain legacy-owned.
@@ -116,6 +116,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   keeps the development/local-E2E guard and returns `410 MIGRATION_DISABLED`
   instead of preserving broad Supabase admin writes from the
   Cloudflare-compatible backend.
+- `GET /api/share/course/:courseId`, `GET /api/sync-logs`,
+  `POST /api/payment/migrations/subscriptions/cross-check`, and
+  `GET /api/users/search`: terminal decommission for retired legacy APIs. Rust
+  returns `410 ENDPOINT_REMOVED` and preserves method-level `Allow` headers
+  while maintained replacement paths or phase-specific routes remain separate
+  migration work.
 - `GET /api/migration/status`: runtime and route-ownership status consumed by
   `apps/tanstack-web`; requires `Authorization: Bearer <BACKEND_INTERNAL_TOKEN>`.
   The response includes redacted contact data adapter readiness
