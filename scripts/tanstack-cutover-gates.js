@@ -212,6 +212,18 @@ function countManifestRoutes(routes) {
   return counts;
 }
 
+function findBackendRouteOwnershipFailures(routes) {
+  return routes.filter(
+    (route) =>
+      BACKEND_ROUTE_KINDS.has(route.kind) &&
+      route.targetOwner !== 'rust-backend'
+  );
+}
+
+function formatRouteOwnershipFailure(route) {
+  return `${route.routePath} [${route.kind}; ${route.targetOwner || 'unmapped'}] ${route.sourceFile}`;
+}
+
 function gate(id, label, ok, detail) {
   return {
     detail,
@@ -285,7 +297,10 @@ function checkManifestGates({
     rootDir,
   });
   const counts = countManifestRoutes(manifest.routes);
-  const backendMapped = counts.backendOwned === counts.backendRouteArtifacts;
+  const backendOwnershipFailures = findBackendRouteOwnershipFailures(
+    manifest.routes
+  );
+  const backendMapped = backendOwnershipFailures.length === 0;
   const terminalStatuses =
     counts.total === counts.acceptedRemoval + counts.migrated;
   const noLegacy = counts.legacyNext === 0;
@@ -319,7 +334,18 @@ function checkManifestGates({
       'backend-owned-routes-mapped',
       'Backend-owned handlers mapped',
       backendMapped,
-      `${counts.backendOwned} of ${counts.backendRouteArtifacts} backend route artifacts target the Rust backend.`
+      backendMapped
+        ? `${counts.backendRouteArtifacts} backend route artifacts target the Rust backend.`
+        : `${counts.backendRouteArtifacts - backendOwnershipFailures.length} of ${
+            counts.backendRouteArtifacts
+          } backend route artifacts target the Rust backend. Misowned backend routes:\n${backendOwnershipFailures
+            .slice(0, 20)
+            .map(formatRouteOwnershipFailure)
+            .join('\n')}${
+            backendOwnershipFailures.length > 20
+              ? `\n...and ${backendOwnershipFailures.length - 20} more.`
+              : ''
+          }`
     ),
     gate(
       'terminal-migration-statuses',
@@ -388,6 +414,13 @@ function normalizeBenchmarkEvidenceOrigin(value, label) {
       };
     }
 
+    if (url.username || url.password) {
+      return {
+        failure: `${label} benchmark origin must not include credentials.`,
+        origin: null,
+      };
+    }
+
     return {
       failure: null,
       origin: url.origin,
@@ -406,7 +439,17 @@ function validateUrlMatchesOrigin(value, expectedOrigin, label) {
   }
 
   try {
-    const actualOrigin = new URL(value).origin;
+    const url = new URL(value);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return `${label} URL must use http or https.`;
+    }
+
+    if (url.username || url.password) {
+      return `${label} URL must not include credentials.`;
+    }
+
+    const actualOrigin = url.origin;
 
     if (actualOrigin !== expectedOrigin) {
       return `${label} origin ${actualOrigin} does not match setup origin ${expectedOrigin}.`;
@@ -726,6 +769,27 @@ function validateBenchmarkReport(report, options = {}) {
             ? `Benchmark report has incomplete frontend route coverage (${details}).`
             : 'Benchmark report has incomplete frontend route coverage.'
         );
+      }
+
+      if (Array.isArray(coverage.matchedRoutes)) {
+        const p95Routes = new Set(
+          (report.gates?.comparisons ?? [])
+            .filter((comparison) => comparison.metric === 'frontend-route-p95')
+            .map((comparison) =>
+              typeof comparison.routePath === 'string'
+                ? comparison.routePath.trim()
+                : ''
+            )
+            .filter(Boolean)
+        );
+
+        for (const routePath of coverage.matchedRoutes) {
+          if (!p95Routes.has(routePath)) {
+            failures.push(
+              `Benchmark report is missing frontend-route-p95 compare evidence for ${routePath}.`
+            );
+          }
+        }
       }
     }
   }

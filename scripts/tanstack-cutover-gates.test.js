@@ -607,6 +607,70 @@ test('checkManifestGates fails when any route or API is unmapped', () => {
   }
 });
 
+test('checkManifestGates rejects backend route artifacts mapped away from Rust', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanstack-gates-'));
+  const appDir = path.join(rootDir, 'apps', 'web', 'src', 'app');
+  const routeFile = path.join(appDir, 'api', 'health', 'route.ts');
+  const pageFile = path.join(appDir, '[locale]', 'page.tsx');
+  const manifestPath = path.join(
+    rootDir,
+    'apps',
+    'tanstack-web',
+    'migration',
+    'route-manifest.json'
+  );
+  const overridesPath = path.join(
+    rootDir,
+    'apps',
+    'tanstack-web',
+    'migration',
+    'route-overrides.json'
+  );
+
+  try {
+    fs.mkdirSync(path.dirname(routeFile), { recursive: true });
+    fs.mkdirSync(path.dirname(pageFile), { recursive: true });
+    fs.writeFileSync(routeFile, 'export function GET() {}\n');
+    fs.writeFileSync(
+      pageFile,
+      'export default function Page() { return null; }\n'
+    );
+    writeJson(overridesPath, {
+      routes: {
+        'api:/api/health:apps/web/src/app/api/health/route.ts': {
+          note: 'Fixture intentionally misroutes a backend API artifact.',
+          status: 'migrated',
+          targetOwner: 'tanstack-start',
+        },
+        'page:/:locale:apps/web/src/app/[locale]/page.tsx': {
+          note: 'Fixture intentionally masks the backend count with a page.',
+          status: 'migrated',
+          targetOwner: 'rust-backend',
+        },
+      },
+    });
+    writeManifest({ appDir, manifestPath, overridesPath, rootDir });
+
+    const result = checkManifestGates({
+      appDir,
+      manifestPath,
+      overridesPath,
+      requireMigrated: true,
+      rootDir,
+    });
+    const backendGate = result.gates.find(
+      (gate) => gate.id === 'backend-owned-routes-mapped'
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(backendGate.ok, false);
+    assert.match(backendGate.detail, /0 of 1 backend route artifacts/u);
+    assert.match(backendGate.detail, /\/api\/health \[api; tanstack-start\]/u);
+  } finally {
+    fs.rmSync(rootDir, { force: true, recursive: true });
+  }
+});
+
 test('validateBenchmarkReport requires compare full setup metrics', () => {
   const validation = validateBenchmarkReport({
     gates: {
@@ -737,6 +801,38 @@ test('validateBenchmarkReport requires distinct frontend origin evidence', () =>
   assert.match(
     sameOriginValidation.failures.join('\n'),
     /distinct Next and TanStack origins/u
+  );
+});
+
+test('validateBenchmarkReport rejects credentialed benchmark origins and URLs', () => {
+  const credentialedOrigin = createValidBenchmarkReport();
+  credentialedOrigin.setups.next.origin = 'https://user:pass@next.example.com';
+
+  const credentialedOriginValidation =
+    validateBenchmarkReport(credentialedOrigin);
+
+  assert.equal(credentialedOriginValidation.ok, false);
+  assert.match(
+    credentialedOriginValidation.failures.join('\n'),
+    /next benchmark origin must not include credentials/u
+  );
+
+  const credentialedUrl = createValidBenchmarkReport();
+  credentialedUrl.setups.next.routes[0].url =
+    'https://user:pass@next.example.com/';
+  credentialedUrl.setups.tanstack.routes[0].samples[0].url =
+    'https://user:pass@tanstack.example.com/';
+
+  const credentialedUrlValidation = validateBenchmarkReport(credentialedUrl);
+
+  assert.equal(credentialedUrlValidation.ok, false);
+  assert.match(
+    credentialedUrlValidation.failures.join('\n'),
+    /next \/ route URL must not include credentials/u
+  );
+  assert.match(
+    credentialedUrlValidation.failures.join('\n'),
+    /tanstack \/ sample 1 URL must not include credentials/u
   );
 });
 
@@ -912,6 +1008,32 @@ test('validateBenchmarkReport rejects incomplete frontend route coverage', () =>
   assert.match(
     validation.failures.join('\n'),
     /missing from TanStack: \/login/u
+  );
+});
+
+test('validateBenchmarkReport requires p95 evidence for every matched frontend route', () => {
+  const report = createValidBenchmarkReport();
+  report.setups.next.routes.push(
+    createBenchmarkRoute('/login', 200, report.setups.next.origin)
+  );
+  report.setups.tanstack.routes.push(
+    createBenchmarkRoute('/login', 200, report.setups.tanstack.origin)
+  );
+  report.gates.frontendRouteCoverage = {
+    complete: true,
+    matchedRoutes: ['/', '/login'],
+    nextRoutes: ['/', '/login'],
+    tanstackRoutes: ['/', '/login'],
+    unmatchedNextRoutes: [],
+    unmatchedTanstackRoutes: [],
+  };
+
+  const validation = validateBenchmarkReport(report);
+
+  assert.equal(validation.ok, false);
+  assert.match(
+    validation.failures.join('\n'),
+    /missing frontend-route-p95 compare evidence for \/login/u
   );
 });
 

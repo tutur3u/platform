@@ -753,9 +753,10 @@ Compare reports must prove that the legacy Next.js and TanStack Start samples
 came from distinct normalized frontend origins. `bun benchmark:web-setups`
 rejects same-origin compare runs before writing a report, and
 `bun migration:tanstack:gates` rejects benchmark evidence with missing origins,
-identical Next/TanStack origins, or route/sample URLs that do not match the
-recorded setup origin. Docker E2E compare evidence uses the same distinct-origin
-rule for the browser-facing Next and TanStack frontend runs.
+credentialed origins, identical Next/TanStack origins, route/sample URLs that do
+not match the recorded setup origin, or matched frontend routes without their
+own `frontend-route-p95` comparison. Docker E2E compare evidence uses the same
+distinct-origin rule for the browser-facing Next and TanStack frontend runs.
 
 Use full mode when both frontends are running with representative seeded data:
 
