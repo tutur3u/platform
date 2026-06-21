@@ -7,6 +7,7 @@ describe('external project adapter fixtures', () => {
       'exocorpse',
       'junly',
       'kendra',
+      'richfield',
       'shiraoki',
       'shu',
       'theguyser',
@@ -16,7 +17,7 @@ describe('external project adapter fixtures', () => {
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra)/
+        /(junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
@@ -79,6 +80,21 @@ describe('external project adapter fixtures', () => {
     ).toEqual(['profile', 'voice-reels', 'credits', 'studio', 'contact']);
 
     expect(
+      externalProjectAdapterFixtures.richfield.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual([
+      'brands',
+      'leadership',
+      'milestones',
+      'contact-page',
+      'contact-channels',
+      'contact-submissions',
+      'jobs',
+      'image-library',
+    ]);
+
+    expect(
       externalProjectAdapterFixtures.shu.collections.map(
         (collection) => collection.slug
       )
@@ -132,6 +148,74 @@ describe('external project adapter fixtures', () => {
       ],
       ['writing-worlds', ['genre', 'status', 'contentWarnings'], []],
       ['social-links', ['url', 'platform', 'isPrimary'], ['rel']],
+    ]);
+  });
+
+  it('ships Richfield field definitions for the CMS test collections', () => {
+    expect(
+      externalProjectAdapterFixtures.richfield.schema?.collections.map(
+        (collection) => [
+          collection.slug,
+          collection.profileFields?.map((field) => field.key) ?? [],
+          collection.blockTypes ?? [],
+          collection.assetTypes ?? [],
+        ]
+      )
+    ).toEqual([
+      [
+        'brands',
+        ['country', 'year', 'category', 'accent', 'feature', 'featureCaption'],
+        [],
+        ['image'],
+      ],
+      ['leadership', ['role'], ['markdown', 'quote'], ['image']],
+      ['milestones', ['year', 'country', 'brand', 'aboutOnly'], [], []],
+      [
+        'contact-page',
+        ['headline', 'intro', 'mapQuery', 'backgroundImageSlug'],
+        ['markdown'],
+        ['image'],
+      ],
+      [
+        'contact-channels',
+        ['kind', 'href', 'secondary', 'cta', 'external', 'sortOrder'],
+        [],
+        [],
+      ],
+      [
+        'contact-submissions',
+        [
+          'name',
+          'company',
+          'country',
+          'email',
+          'inquiryType',
+          'receivedAt',
+          'submissionStatus',
+          'emailNotificationStatus',
+        ],
+        ['markdown'],
+        [],
+      ],
+      [
+        'jobs',
+        ['positions', 'location', 'deadline', 'href', 'sortOrder'],
+        [],
+        [],
+      ],
+      [
+        'image-library',
+        [
+          'pageSection',
+          'usageTags',
+          'objectPosition',
+          'ratio',
+          'credit',
+          'sortOrder',
+        ],
+        [],
+        ['image'],
+      ],
     ]);
   });
 

@@ -122,6 +122,94 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
     ],
     landingSlugs: ['profile', 'social-links'],
   },
+  richfield: {
+    contentViews: [
+      {
+        collectionSlugs: ['brands'],
+        createCollection: {
+          collectionType: 'brands',
+          description:
+            'Partner brands, portfolio categories, launch years, and story copy.',
+          emptyHint: 'Import Richfield content or create the first brand.',
+          entryTitle: 'Brand',
+          slug: 'brands',
+          title: 'Brands',
+        },
+        description:
+          'Partner brands, portfolio categories, launch years, and story copy.',
+        id: 'brands',
+        label: 'Brands',
+        navigationLabel: 'Brands',
+      },
+      {
+        collectionSlugs: ['leadership'],
+        description: 'Leadership profiles, biographies, photos, and quotes.',
+        id: 'leadership',
+        label: 'Leadership',
+        navigationLabel: 'Leadership',
+      },
+      {
+        collectionSlugs: ['milestones'],
+        description: 'Company timeline milestones and brand partnership history.',
+        id: 'timeline',
+        label: 'Timeline',
+        navigationLabel: 'Timeline',
+      },
+      {
+        collectionSlugs: [
+          'contact-page',
+          'contact-channels',
+          'contact-submissions',
+        ],
+        createCollection: {
+          collectionType: 'contact-page',
+          description:
+            'Public contact page copy, channels, and private visitor messages.',
+          emptyHint: 'Import Richfield content or create contact details first.',
+          entryTitle: 'Contact page',
+          slug: 'contact-page',
+          title: 'Contact',
+        },
+        description:
+          'Contact page copy, public channels, and private visitor messages.',
+        id: 'contacts',
+        label: 'Contacts',
+        navigationLabel: 'Contacts',
+      },
+      {
+        collectionSlugs: ['jobs'],
+        createCollection: {
+          collectionType: 'jobs',
+          description: 'Open roles, listing details, deadlines, and links.',
+          emptyHint: 'Create the first vacancy when Richfield is hiring.',
+          entryTitle: 'Job',
+          slug: 'jobs',
+          title: 'Jobs',
+        },
+        description: 'Open roles, listing details, deadlines, and links.',
+        id: 'careers',
+        label: 'Careers',
+        navigationLabel: 'Careers',
+      },
+      {
+        collectionSlugs: ['image-library'],
+        createCollection: {
+          collectionType: 'image-library',
+          description:
+            'Reusable site images grouped by page section and usage tags.',
+          emptyHint: 'Upload the first reusable site image.',
+          entryTitle: 'Image',
+          slug: 'image-library',
+          title: 'Images',
+        },
+        description: 'Reusable site images grouped by page section.',
+        id: 'images',
+        label: 'Images',
+        navigationLabel: 'Images',
+      },
+    ],
+    landingSlugs: ['brands', 'contact-page', 'contact-channels', 'jobs', 'image-library'],
+  },
   yoola: {
     contentViews: [
       {
