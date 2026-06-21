@@ -1,11 +1,12 @@
 ---
 title: 'Development'
 description: 'Learn how to preview changes locally.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
   **Prerequisite**: You should have installed [Node.js](https://nodejs.org)
-  (version 20 or higher).
+  (version 22 or higher, matching the repo's `engines.node` of `>=22`).
 </Info>
 
 ## Installation
@@ -64,8 +65,9 @@ To complete the initial setup, please restart your IDE so that it can recognize 
 <Tip>
   If you're using VS Code, you can install following the recommended extensions
   that will help you with the development process:
-  [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint),
-  [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode),
+  [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
+  (this repo standardizes on Biome for linting and formatting via `biome.json`,
+  not ESLint or Prettier),
   [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer),
   [Tailwind CSS
   IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss),
@@ -564,4 +566,4 @@ Tests are still a work in progress. We're currently working on adding tests to a
 
 ## Git Conventions
 
-Tuturuuu uses standardized conventions for Git commits and branch naming. For more information, see the [Git Conventions](/git-conventions) guide to learn how to format your commits and branch names to align with our workflow.
+Tuturuuu uses standardized conventions for Git commits and branch naming. For more information, see the [Git Conventions](/build/development-tools/git-conventions) guide to learn how to format your commits and branch names to align with our workflow.

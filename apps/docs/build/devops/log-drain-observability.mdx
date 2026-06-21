@@ -1,6 +1,7 @@
 ---
 title: Internal Log Drain and Observability
 description: Operate the Postgres-backed log drain that powers web runtime logs, requests, deployments, analytics, cron, and observability views.
+updatedAt: "2026-06-21"
 ---
 
 ## Overview
@@ -59,6 +60,25 @@ The drain is fail-open: if Postgres is unavailable, requests and cron jobs conti
 
 ## Legacy Compatibility
 
+The monitoring UI reads both the Postgres drain and the pre-drain blue/green
+files under `tmp/docker-web`. Before the Postgres log drain existed, the
+blue/green watcher captured proxy traffic, watcher logs, and request console
+lines as plain files. The Requests and Logs tabs still merge those legacy files
+in, and Deployments are enriched from the watcher snapshot so commit subject,
+full hash, short hash, stamp, active color, and runtime lane remain visible even
+before the Postgres drain has a complete history.
+
+Legacy Docker console capture coalesces timestamped continuation lines from the
+same container write before persisting request console logs. This keeps object
+dumps from old route console output attached to one function/request row instead
+of turning every serialized property into a separate log row.
+
+Request-archive console lenses store and return redacted summaries only. Both the
+watcher ingestion path and the web-side archive normalization redact common
+bearer tokens, JWTs, sensitive key/value fields, sensitive query parameters, and
+email addresses, then cap each attached console message at 500 characters. Raw
+app-container console payloads are never persisted in `blue-green-request-logs`.
+
 ## Projects
 
 Infrastructure → Monitoring → Projects is the log-drain-owned project registry for Docker web deployments. The built-in project is seeded as:
@@ -81,8 +101,6 @@ Changing the selected branch queues the project for deployment. For the built-in
 The project list also reconciles stale queued state for the built-in project from the blue/green runtime snapshot. If the active or latest successful deployment matches the queued commit, or was completed after the queue timestamp, the API clears `queued`, marks the project `ready`, and refreshes the latest commit fields from deployment history.
 
 For imported projects, the same watcher polls enabled projects from the registry, keeps managed source checkouts under `tmp/docker-web/projects/<projectId>/repo`, and writes generated Next.js compose/runtime files under `tmp/docker-web/projects/<projectId>/runtime`. These services run with the shared `tuturuuu` Compose project name, attach to the central Docker network, and receive `PLATFORM_PROJECT_ID`, selected branch, log-drain, Redis, `PORT`, and `HOSTNAME=0.0.0.0` environment wiring. Hostname routes are merged into the central nginx proxy config so nginx remains the mandatory entrypoint. Managed project hostnames must be plain DNS names; the API rejects ports, wildcards, whitespace, nginx syntax, and reserved Tuturuuu platform hostnames, and the watcher defensively drops unsafe persisted values before rendering nginx.
-
-The revamped monitoring UI reads both the Postgres drain and the pre-drain blue/green files under `tmp/docker-web`. Requests and Logs include retained proxy traffic, watcher logs, and request console lines while deployments are enriched from the watcher snapshot so commit subject, full hash, short hash, stamp, active color, and runtime lane remain visible even before the Postgres drain has a complete history.
 
 The Logs tab serves grouped rows. Events with the same request id collapse into
 one expandable row; legacy standalone logs fall back to route, source,

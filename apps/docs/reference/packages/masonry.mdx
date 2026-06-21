@@ -1,12 +1,12 @@
 ---
 title: '@tuturuuu/masonry'
 description: 'A high-performance, responsive masonry grid component for React applications'
-updatedAt: '2025-11-07'
+updatedAt: '2026-06-21'
 ---
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.10 introduces ultra-aggressive optimization for near-perfect visual balance with 50 passes and 0.5%/5px tolerance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, ultra-aggressive exhaustive optimization, and memoized calculations.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. The current release (0.4.3) ships only CI/release-pipeline fixes on top of 0.3.10 — the public component API is unchanged. Version 0.3.10 introduced ultra-aggressive optimization for near-perfect visual balance with 50 passes and 0.5%/5px tolerance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, ultra-aggressive exhaustive optimization, and memoized calculations.
 
 ## Installation
 
@@ -700,7 +700,21 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.3.10 (Current - Near-Perfect Balance Release)
+For the canonical, machine-generated changelog see [`packages/masonry/CHANGELOG.md`](https://github.com/tutur3u/platform/blob/main/packages/masonry/CHANGELOG.md).
+
+### 0.4.1 – 0.4.3 (Current - CI/Release Fixes)
+
+These releases contain **no public API changes** — the `Masonry` component, props, and
+distribution algorithms are identical to 0.3.10. They are release-pipeline and build
+recovery fixes only:
+
+- **0.4.3**: `fix(ci)` auto-recover package release dependencies
+- **0.4.2**: `fix(ci)` recover releases and package `tsgo` builds
+- **0.4.1**: Release-pipeline recovery (no source changes)
+
+No migration or code changes are required when upgrading from 0.3.10 to 0.4.x.
+
+### 0.3.10 (Near-Perfect Balance Release)
 
 **Ultra-Aggressive Optimization:**
 - 🎯 **50 optimization passes**: Thoroughly explores solution space (vs previous 20)

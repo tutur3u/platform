@@ -1,6 +1,7 @@
 ---
 title: 'Cleaning Your Tuturuuu Clone'
 description: 'How to reset your local Tuturuuu repository to a clean state.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
@@ -11,10 +12,33 @@ description: 'How to reset your local Tuturuuu repository to a clean state.'
 
 ## Prerequisites
 
-- Ensure you have [bun](https://bun.sh/) installed (version 1.0.0 or higher recommended).
-- Update bun to the latest version for best compatibility.
+- Ensure you have [bun](https://bun.sh/) installed. The repository pins a specific
+  Bun version via the `packageManager` field in the root `package.json` (currently
+  `bun@1.3.14`) — match that version so your local toolchain stays in sync.
+- Node `>=22` is also required (see the `engines` field in the root `package.json`).
 
-## Steps to Clean Your Clone
+## Quick Cleanup (Recommended)
+
+The repository ships a one-shot root script that performs the full cleanup for you:
+
+```bash
+bun clean
+```
+
+This removes `bun.lock`, deletes every `node_modules` directory, and clears all
+`.next` and `.turbo` build caches across the monorepo (it uses
+`npkill --delete-all` under the hood). After it finishes, reinstall everything:
+
+```bash
+bun i
+```
+
+<Tip>
+  `bun clean` is the supported shortcut for the manual steps below. Reach for the
+  manual steps when you want finer control over which folders are removed.
+</Tip>
+
+## Manual Cleanup (Granular Alternative)
 
 ### 1. Delete the lockfile
 
@@ -39,7 +63,16 @@ bunx npkill
   automatically.
 </Tip>
 
-### 3. Reinstall dependencies
+### 3. Clear build caches (optional)
+
+Remove stale `.next` and `.turbo` build caches if you suspect they are causing
+issues (the `bun clean` shortcut does this automatically):
+
+```bash
+find . -name node_modules -prune -o \( -name .next -o -name .turbo \) -type d -exec rm -rf {} +
+```
+
+### 4. Reinstall dependencies
 
 Install all required dependencies using bun:
 

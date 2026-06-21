@@ -1,12 +1,12 @@
 ---
 title: "Git Conventions"
 description: "Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow."
-updatedAt: "2026-06-12"
+updatedAt: "2026-06-21"
 ---
 
 <Info>
   **Prerequisite**: You should be familiar with basic Git operations and
-  understand the [Monorepo Architecture](/monorepo-architecture) of our
+  understand the [Monorepo Architecture](/build/development-tools/monorepo-architecture) of our
   codebase.
 </Info>
 
@@ -304,7 +304,8 @@ jobs:
 ### Writing Good Commit Messages
 
 1. Use the imperative mood ("add" not "added" or "adds")
-2. Capitalize the first letter of the description
+2. Keep the description in lowercase to match the repository's observed convention
+   (for example, `feat(backend): migrate nova team read`)
 3. Do not end the description with a period
 4. Keep the description under 72 characters
 5. Use the body to explain the what and why, not the how
@@ -312,7 +313,7 @@ jobs:
 Example of a well-formatted commit:
 
 ```
-feat(auth): Add multi-factor authentication support
+feat(auth): add multi-factor authentication support
 
 Implement TOTP-based multi-factor authentication to improve security.
 The implementation follows the RFC 6238 standard.

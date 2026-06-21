@@ -1,7 +1,7 @@
 ---
 title: "DevOps & Deployment"
 description: "The operational map for how Tuturuuu is built, deployed, migrated, and validated."
-updatedAt: "2026-06-12"
+updatedAt: "2026-06-21"
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -14,9 +14,11 @@ released, or recovered.
 | Surface                                                                                                                                                                               | Source of truth                                                                                         | Delivery target                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Platform web app (`apps/web`)                                                                                                                                                         | `.github/workflows/vercel-preview-platform.yaml`, `.github/workflows/vercel-production-platform.yaml`   | Vercel preview build validation and production deploy   |
-| Satellite web apps (`apps/apps`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/inventory`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`, `apps/qr`) | `.github/workflows/vercel-*.yaml`                                                                       | Vercel preview and production deployments               |
+| Satellite web apps (every app under `apps/*` with a `vercel-preview-<app>.yaml` / `vercel-production-<app>.yaml` pair: `apps`, `nova`, `rewise`, `calendar`, `finance`, `inventory`, `meet`, `tasks`, `track`, `shortener`, `qr`, `cms`, `mail`, `learn`, `teach`, `chat`, `drive`, `mind`, `storefront`) | `.github/workflows/vercel-preview-*.yaml`, `.github/workflows/vercel-production-*.yaml`                                          | Vercel preview and production deployments               |
 | Database schema (`apps/database`)                                                                                                                                                     | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
 | Self-hosted web runtime (`apps/web`)                                                                                                                                                  | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
+| Migration web runtime (`apps/tanstack-web`)                                                                                                                                           | `apps/tanstack-web/Dockerfile`, `apps/tanstack-web/wrangler.jsonc`, `.github/workflows/rust-backend.yml` | Docker sidecar + Cloudflare Worker (`tuturuuu-tanstack-web`) — see [Web Docker Deployment](/build/devops/web-docker-deployment) |
+| Rust backend (`apps/backend`)                                                                                                                                                         | `apps/backend/Dockerfile`, `apps/backend/wrangler.jsonc`, `.github/workflows/rust-backend.yml`          | Docker sidecar on port `7820` + Cloudflare Worker (`tuturuuu-backend`) — see [Web Docker Deployment](/build/devops/web-docker-deployment) |
 | Discord utilities (`apps/discord`)                                                                                                                                                    | `.github/workflows/discord-modal-deploy.yml`                                                            | Modal                                                   |
 | Mobile artifacts (`apps/mobile`)                                                                                                                                                      | `.github/workflows/mobile-build-*.yaml`                                                                 | Build artifacts for Android, iOS, macOS, Windows        |
 | Shared packages (`packages/*`)                                                                                                                                                        | `.github/workflows/release-*.yaml`                                                                      | npm                                                     |
@@ -38,6 +40,7 @@ released, or recovered.
   `scripts/check-discord-python.js`.
 - Vercel handles hosted satellite web deployments, platform preview build validation, and the hosted platform production deploy. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
 - Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
+- The TanStack/Rust migration runs in parallel with `apps/web`: `apps/tanstack-web` (TanStack Start) and `apps/backend` (Rust, port `7820`) ship as Docker sidecars and Cloudflare Workers, validated by `.github/workflows/rust-backend.yml` and `bun check:cloudflare`. See [Web Docker Deployment](/build/devops/web-docker-deployment) and the [TanStack/Rust migration](/platform/architecture/tanstack-rust-migration) plan.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
 
 ## Operational Flow
@@ -60,6 +63,7 @@ flowchart LR
 
 ## What Changed Recently
 
+- The TanStack/Rust migration runtimes are now first-class deployment surfaces: `apps/backend` (Rust) builds a native binary, a Docker image, and a Cloudflare Worker bundle via `.github/workflows/rust-backend.yml`, and `apps/tanstack-web` deploys as a Cloudflare Worker (`tuturuuu-tanstack-web`) bound to the backend Worker (`tuturuuu-backend`).
 - `apps/web` now supports both in-place Docker production deploys and blue/green deploys.
 - `docker-setup-check.yaml` validates Docker parity, renders both compose files, and builds both the dev and production web images.
 - Production Redis in Docker now requires a token, but `scripts/docker-web.js`

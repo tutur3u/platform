@@ -1,15 +1,33 @@
 ---
 title: 'Reference'
 description: 'Authoritative references for APIs and contracts.'
-updatedAt: '2025-09-26'
+updatedAt: '2026-06-21'
 ---
 
 # Reference
 
-This section collects stable contracts—APIs, schemas, and integration guides.
+This section collects stable contracts—APIs, schemas, database internals, and package integration guides.
 
-## Available References
+## Database
 
-- **AI Endpoint** – Review request and response schemas for the [Generate API](/reference/api-reference/endpoint/generate).
+- **[Schema Overview](/reference/database/schema-overview)** – Core tables, relationships, and conventions across the Tuturuuu platform database.
+- **[Row-Level Security Policies](/reference/database/rls-policies)** – The security model and RLS patterns that gate workspace data access.
+- **[Migrations Guide](/reference/database/migrations-guide)** – Creating, testing, and deploying Supabase migrations safely.
 
-More reference material will appear here as we stabilize additional interfaces. If you need implementation guides, jump to [Build](/build/overview); for product tours, explore [Platform](/platform/overview).
+## Packages
+
+- **[`tuturuuu` SDK](/reference/packages/sdk)** – Official TypeScript/JavaScript SDK for the platform.
+- **[`@tuturuuu/masonry`](/reference/packages/masonry)** – High-performance, responsive masonry grid component for React.
+- **[`@tuturuuu/utils/effect`](/reference/packages/utils-effect)** – Curated Effect entrypoint and Tuturuuu error helpers for typed server orchestration.
+- **[`@tuturuuu/supabase`](/reference/packages/supabase)** – Supabase client creation patterns and utilities.
+- **[`@tuturuuu/trigger`](/reference/packages/trigger)** – Trigger.dev task helpers and background-job patterns.
+
+## API Reference
+
+- **[Generate API](/reference/api-reference/endpoint/generate)** – Request and response schemas for the AI generate endpoint.
+
+<Note>
+  The platform is mid-migration from `apps/web` (Next.js, port 7803) toward `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust). Some package and database reference pages—especially [`@tuturuuu/supabase`](/reference/packages/supabase) and [`@tuturuuu/trigger`](/reference/packages/trigger)—document `apps/web` patterns. The backend/TanStack equivalents are tracked in the [TanStack + Rust migration guide](/platform/architecture/tanstack-rust-migration).
+</Note>
+
+If you need implementation guides, jump to [Build](/build/overview); for product tours, explore [Platform](/platform/overview).

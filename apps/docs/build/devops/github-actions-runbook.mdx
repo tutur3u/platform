@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-14"
+updatedAt: "2026-06-21"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -57,20 +57,28 @@ is ambiguous without a manifest or source path.
 - `vercel-preview-platform.yaml`
 - `vercel-preview-apps.yaml`
 - `vercel-preview-calendar.yaml`
+- `vercel-preview-chat.yaml`
 - `vercel-preview-cms.yaml`
+- `vercel-preview-drive.yaml`
 - `vercel-preview-finance.yaml`
 - `vercel-preview-inventory.yaml`
+- `vercel-preview-learn.yaml`
 - `vercel-preview-mail.yaml`
 - `vercel-preview-meet.yaml`
+- `vercel-preview-mind.yaml`
 - `vercel-preview-nova.yaml`
 - `vercel-preview-qr.yaml`
 - `vercel-preview-rewise.yaml`
 - `vercel-preview-shortener.yaml`
+- `vercel-preview-storefront.yaml`
 - `vercel-preview-tasks.yaml`
-- `vercel-preview-track.yaml`
-- `vercel-preview-learn.yaml`
 - `vercel-preview-teach.yaml`
-- Matching `vercel-production-*.yaml` workflows for production
+- `vercel-preview-track.yaml`
+- A matching `vercel-production-*.yaml` workflow exists for each app above
+
+This list drifts as satellite apps are added; treat
+`.github/workflows/vercel-preview-*.yaml` and
+`.github/workflows/vercel-production-*.yaml` as the authoritative source.
 
 CMS uses the same Vercel deployment pattern as the other satellite apps:
 
@@ -368,8 +376,8 @@ the iOS/macOS build workflows use Xcode 16.4, keep `connectivity_plus` pinned to
 ### Mobile store beta deployment
 
 `mobile-deploy-stores.yaml` runs automatically on `production` pushes that touch
-`apps/mobile/**`, the workflow file, `ci-check.yml`, or `tuturuuu.ts`. It is a
-beta-store workflow only:
+`apps/mobile/**`, `scripts/mobile-deployment/**`, the workflow file,
+`ci-check.yml`, or `tuturuuu.ts`. It is a beta-store workflow only:
 
 - Android builds the production flavor AAB from `apps/mobile/.env.github` and
   publishes it to the Google Play `internal` track.

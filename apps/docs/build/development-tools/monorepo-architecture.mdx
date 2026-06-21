@@ -1,11 +1,13 @@
 ---
 title: 'Monorepo Architecture'
 description: 'Understanding Tuturuuu monorepo architecture and the benefits of using Turborepo.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
-  **Prerequisite**: You should have followed the [Development](/development)
-  setup guide to understand the basic structure of the codebase.
+  **Prerequisite**: You should have followed the
+  [Development](/build/development-tools/development) setup guide to understand
+  the basic structure of the codebase.
 </Info>
 
 ## What is a Monorepo?
@@ -64,7 +66,7 @@ All developers use the same:
 
 - Package manager (bun)
 - Build system (Turborepo)
-- Code style guidelines (enforced by ESLint and Prettier)
+- Code style guidelines (enforced by Biome)
 - Testing framework
 - CI/CD pipelines
 
@@ -98,10 +100,10 @@ bun lint
 
 Turborepo understands dependencies between packages and ensures tasks are run in the correct order.
 
-```bash
-# In turbo.json
+```json
+// In turbo.json (Turbo 2.x uses "tasks", not the older "pipeline")
 {
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"]
@@ -191,7 +193,7 @@ When working in our monorepo, you'll typically:
 
 Satellite apps can also be started with app-specific scripts when you only need one frontend plus the shared `web` API host. For example, `bun dev:cms` runs the CMS app together with the shared packages and `apps/web`.
 
-For more detailed instructions on development workflow, see the [Development](/development) and [Local Supabase Development](/local-supabase-development) guides.
+For more detailed instructions on development workflow, see the [Development](/build/development-tools/development) and [Local Supabase Development](/build/development-tools/local-supabase-development) guides.
 
 ## Best Practices
 
