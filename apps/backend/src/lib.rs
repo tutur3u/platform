@@ -23,6 +23,7 @@ mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
 mod topic_announcements;
+mod user_profile;
 mod workspace_limits;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
@@ -374,6 +375,11 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = auth_mfa::handle_auth_mfa_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = user_profile::handle_user_profile_route(config, request, outbound).await
+    {
         return response;
     }
 
@@ -1178,6 +1184,8 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
             | ("POST", "/api/v1/infrastructure/sidebar")
             | ("POST", "/api/v1/infrastructure/sidebar/sizes")
     ) || contact::should_buffer_request_body(method, path)
+        || auth_mfa::should_buffer_request_body(method, path)
+        || user_profile::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
 }
 
@@ -7022,6 +7030,7 @@ mod tests {
             "/api/v1/infrastructure/languages",
             "/api/v1/infrastructure/sidebar",
             "/api/v1/infrastructure/sidebar/sizes",
+            "/api/auth/mfa/totp/factors",
             SUPPORT_INQUIRIES_PATH,
         ] {
             assert!(should_buffer_request_body("POST", path), "{path}");

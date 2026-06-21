@@ -79,6 +79,17 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   assurance-level route. Rust revalidates the browser cookie or non-app-session
   Bearer token with Supabase Auth, then derives the legacy AAL payload from the
   JWT `aal` / `amr` claims plus verified Supabase Auth factors on the user JSON.
+- `GET` / `POST` `/api/auth/mfa/totp/factors` and `GET` / `DELETE`
+  `/api/auth/mfa/totp/factors/:factorId`: legacy-compatible Supabase TOTP
+  factor routes. Rust mirrors Auth JS factor listing from the revalidated
+  Supabase user JSON, enrolls and unenrolls factors through Supabase Auth REST,
+  preserves the QR-code normalization and factor-detail lookup behavior, and
+  keeps the legacy no-store/error response shape.
+- `PATCH /api/v1/user/profile`: legacy-compatible browser-session profile
+  mutation. Rust revalidates the Supabase browser cookie or non-app-session
+  Bearer token, validates `display_name`, `bio`, and `avatar_url` with the
+  legacy limits, and updates only the authenticated user's `users` row through
+  the server-owned Supabase REST adapter.
 - `GET` / `PATCH` `/api/v1/user/onboarding-progress`: legacy-compatible
   onboarding progress route. Rust validates browser Supabase auth cookies with
   Supabase Auth, reads the authenticated user's `onboarding_progress` row

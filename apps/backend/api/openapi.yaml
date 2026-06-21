@@ -95,6 +95,224 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/auth/mfa/totp/factors:
+    get:
+      summary: Legacy-compatible Supabase MFA factor list
+      description: Migrated replacement for apps/web/src/app/api/auth/mfa/totp/factors/route.ts GET. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, then mirrors Auth JS listFactors by grouping factors from the revalidated user JSON.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Auth JS-compatible MFA factor groups for the current Supabase user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaFactorsResponse"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "500":
+          description: The Supabase user could not be revalidated or parsed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
+    post:
+      summary: Legacy-compatible Supabase TOTP factor enrollment
+      description: Migrated replacement for apps/web/src/app/api/auth/mfa/totp/factors/route.ts POST. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, then enrolls a TOTP factor through Supabase Auth REST and preserves Auth JS QR-code normalization.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthMfaEnrollTotpRequest"
+      responses:
+        "200":
+          description: Supabase Auth TOTP enrollment payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaEnrollTotpResponse"
+        "400":
+          description: Supabase Auth rejected the enrollment request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Supabase Auth could not be reached or returned invalid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
+  /api/auth/mfa/totp/factors/{factorId}:
+    parameters:
+      - name: factorId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Legacy-compatible Supabase TOTP factor detail
+      description: Migrated replacement for apps/web/src/app/api/auth/mfa/totp/factors/[factorId]/route.ts GET. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token, derives the Auth JS factor list from the user JSON, and returns the matching verified TOTP factor.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Matching verified TOTP factor.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaFactor"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "404":
+          description: No verified TOTP factor with this id exists in the current user's factor list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "500":
+          description: The Supabase user could not be revalidated or parsed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, DELETE
+    delete:
+      summary: Legacy-compatible Supabase TOTP factor unenrollment
+      description: Migrated replacement for apps/web/src/app/api/auth/mfa/totp/factors/[factorId]/route.ts DELETE. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, then unenrolls the factor through Supabase Auth REST and returns the legacy success wrapper.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Factor was unenrolled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaUnenrollResponse"
+        "400":
+          description: Supabase Auth rejected the unenrollment request or the factor id is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "500":
+          description: Supabase Auth could not be reached or returned invalid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, DELETE
+  /api/v1/user/profile:
+    patch:
+      summary: Legacy-compatible Supabase browser-session profile update
+      description: Migrated replacement for apps/web/src/app/api/v1/user/profile/route.ts PATCH. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, validates the legacy display_name, bio, and avatar_url payload, and updates only the authenticated user's users row through the server-owned Supabase REST adapter.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfilePatchRequest"
+      responses:
+        "200":
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfilePatchResponse"
+        "400":
+          description: The profile payload failed legacy validation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfilePatchValidationError"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfilePatchMessage"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Supabase profile update failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfilePatchMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PATCH
   /api/admin/tasks/embeddings/stats:
     get:
       summary: Legacy-compatible admin task embedding statistics
@@ -3677,6 +3895,157 @@ components:
           examples:
             - Unauthorized
             - Internal server error
+    AuthMfaError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Factor not found
+            - Internal server error
+    AuthMfaFactor:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - factor_type
+        - status
+      properties:
+        id:
+          type: string
+          examples:
+            - factor-123
+        factor_type:
+          type: string
+          examples:
+            - totp
+        status:
+          type: string
+          examples:
+            - verified
+        friendly_name:
+          type:
+            - string
+            - "null"
+    AuthMfaFactorsResponse:
+      type: object
+      required:
+        - all
+        - phone
+        - totp
+        - webauthn
+      properties:
+        all:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthMfaFactor"
+        phone:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthMfaFactor"
+        totp:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthMfaFactor"
+        webauthn:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthMfaFactor"
+    AuthMfaEnrollTotpRequest:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+          examples:
+            - Authenticator
+    AuthMfaEnrollTotpResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          examples:
+            - factor-123
+        type:
+          type: string
+          examples:
+            - totp
+        totp:
+          type: object
+          additionalProperties: true
+    AuthMfaUnenrollResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+          examples:
+            - Factor unenrolled successfully
+        data:
+          type: object
+          additionalProperties: true
+          properties:
+            id:
+              type: string
+              examples:
+                - factor-123
+    UserProfilePatchRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        bio:
+          type:
+            - string
+            - "null"
+          maxLength: 1000
+        avatar_url:
+          type:
+            - string
+            - "null"
+          format: uri
+    UserProfilePatchResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Profile updated successfully
+    UserProfilePatchMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Not authenticated
+            - Error updating profile
+    UserProfilePatchValidationError:
+      type: object
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+          examples:
+            - Invalid request data
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
     AdminTaskEmbeddingStats:
       type: object
       required:

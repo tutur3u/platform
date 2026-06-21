@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 978,
-        "migrated": 55,
-        "percentComplete": 12.37,
-        "remaining": 978,
-        "terminal": 138,
+        "legacyNext": 975,
+        "migrated": 58,
+        "percentComplete": 12.63,
+        "remaining": 975,
+        "terminal": 141,
         "total": 1116,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 996,
-        "migrated": 60,
-        "percentComplete": 12.55,
-        "remaining": 996,
-        "terminal": 143,
+        "legacyNext": 993,
+        "migrated": 63,
+        "percentComplete": 12.82,
+        "remaining": 993,
+        "terminal": 146,
         "total": 1139,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1245,
-      "migrated": 190,
-      "percentComplete": 17.98,
-      "remaining": 1245,
-      "terminal": 273,
+      "legacyNext": 1242,
+      "migrated": 193,
+      "percentComplete": 18.18,
+      "remaining": 1242,
+      "terminal": 276,
       "total": 1518,
       "unknownStatus": 0
     }
@@ -735,7 +735,7 @@
       "methods": ["GET", "POST"],
       "routePath": "/api/auth/mfa/totp/factors",
       "sourceFile": "apps/web/src/app/api/auth/mfa/totp/factors/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -744,7 +744,7 @@
       "methods": ["GET", "DELETE"],
       "routePath": "/api/auth/mfa/totp/factors/:factorId",
       "sourceFile": "apps/web/src/app/api/auth/mfa/totp/factors/[factorId]/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -4691,7 +4691,7 @@
       "methods": ["PATCH"],
       "routePath": "/api/v1/user/profile",
       "sourceFile": "apps/web/src/app/api/v1/user/profile/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

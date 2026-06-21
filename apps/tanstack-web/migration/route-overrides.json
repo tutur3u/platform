@@ -59,6 +59,21 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/auth/mfa/totp/assurance-level by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, deriving currentLevel from the JWT aal claim, deriving nextLevel from verified Supabase Auth factors, and returning currentAuthenticationMethods from the JWT amr claim."
     },
+    "api:/api/auth/mfa/totp/factors:apps/web/src/app/api/auth/mfa/totp/factors/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET and POST /api/auth/mfa/totp/factors by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, deriving listFactors from the revalidated user JSON like Auth JS, and enrolling TOTP factors through Supabase Auth REST while preserving QR-code normalization and legacy error responses."
+    },
+    "api:/api/auth/mfa/totp/factors/:factorId:apps/web/src/app/api/auth/mfa/totp/factors/[factorId]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET and DELETE /api/auth/mfa/totp/factors/:factorId by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, finding verified TOTP factors from the Auth JS-compatible listFactors payload, and unenrolling factors through Supabase Auth REST with the legacy success wrapper."
+    },
+    "api:/api/v1/user/profile:apps/web/src/app/api/v1/user/profile/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles PATCH /api/v1/user/profile by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, validating display_name, bio, and avatar_url with the legacy limits, and updating only the authenticated user's users row through the server-owned Supabase REST adapter."
+    },
     "api:/api/share/course/:courseId:apps/web/src/app/api/share/course/[courseId]/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
