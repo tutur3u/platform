@@ -4,6 +4,7 @@ import {
   getBackendMigrationStatus,
 } from '@tuturuuu/internal-api/backend';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { withTanstackBackendRuntime } from './cloudflare/backend';
 import { readTanStackMigrationStatus } from './migration-status';
 import { tanstackRouteManifest } from './route-manifest';
 
@@ -11,6 +12,10 @@ vi.mock('@tuturuuu/internal-api/backend', () => ({
   getBackendMigrationCutoverGates: vi.fn(),
   getBackendMigrationProgress: vi.fn(),
   getBackendMigrationStatus: vi.fn(),
+}));
+
+vi.mock('./cloudflare/backend', () => ({
+  withTanstackBackendRuntime: vi.fn(),
 }));
 
 const ROUTE_METHOD_COUNTS = {
@@ -25,6 +30,10 @@ const ROUTE_METHOD_COUNTS = {
 
 describe('readTanStackMigrationStatus', () => {
   beforeEach(() => {
+    vi.mocked(withTanstackBackendRuntime).mockReset();
+    vi.mocked(withTanstackBackendRuntime).mockResolvedValue({
+      baseUrl: 'https://backend-binding.internal',
+    });
     vi.mocked(getBackendMigrationCutoverGates).mockReset();
     vi.mocked(getBackendMigrationProgress).mockReset();
     vi.mocked(getBackendMigrationStatus).mockReset();
@@ -137,6 +146,16 @@ describe('readTanStackMigrationStatus', () => {
 
     const status = await readTanStackMigrationStatus();
 
+    expect(withTanstackBackendRuntime).toHaveBeenCalledWith();
+    expect(getBackendMigrationStatus).toHaveBeenCalledWith({
+      baseUrl: 'https://backend-binding.internal',
+    });
+    expect(getBackendMigrationCutoverGates).toHaveBeenCalledWith({
+      baseUrl: 'https://backend-binding.internal',
+    });
+    expect(getBackendMigrationProgress).toHaveBeenCalledWith({
+      baseUrl: 'https://backend-binding.internal',
+    });
     expect(status.backendReachable).toBe(true);
     expect(status.cutoverGates.counts.legacyNext).toBe(1369);
     expect(status.migrationProgress.progress.byOwner[0]?.key).toBe(

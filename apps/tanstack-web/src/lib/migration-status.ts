@@ -6,6 +6,7 @@ import {
   getBackendMigrationProgress,
   getBackendMigrationStatus,
 } from '@tuturuuu/internal-api/backend';
+import { withTanstackBackendRuntime } from './cloudflare/backend';
 import { tanstackRouteManifest } from './route-manifest';
 
 export type TanStackMigrationStatus = BackendMigrationStatus & {
@@ -99,10 +100,11 @@ export async function readTanStackMigrationStatus(): Promise<TanStackMigrationSt
   const checkedAt = new Date().toISOString();
 
   try {
+    const backendOptions = await withTanstackBackendRuntime();
     const [status, cutoverGates, migrationProgress] = await Promise.all([
-      getBackendMigrationStatus(),
-      getBackendMigrationCutoverGates(),
-      getBackendMigrationProgress(),
+      getBackendMigrationStatus(backendOptions),
+      getBackendMigrationCutoverGates(backendOptions),
+      getBackendMigrationProgress(backendOptions),
     ]);
 
     return {
