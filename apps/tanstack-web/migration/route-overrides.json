@@ -573,6 +573,21 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/meet preserves the legacy 307 redirect to /:wsId/meet/plans. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/meet/plans:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/plans/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/meet/plans redirects to the standalone Meet app workspace plans route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
+    },
+    "page:/:locale/:wsId/meet/meetings:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/meet/meetings redirects to the standalone Meet app workspace meetings route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
+    },
+    "page:/:locale/:wsId/meet/meetings/:meetingId:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/[meetingId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/meet/meetings/$meetingId redirects to the standalone Meet app meeting detail route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
+    },
     "page:/:locale/:wsId/roles:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/roles/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -627,6 +642,31 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId preserves the legacy 308 redirect to /:wsId/education/courses/:courseId/builder. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/extra-content:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/extra-content/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content ports the legacy Extra Reading placeholder with localized title and disabled AI action. This marks only the page artifact migrated; parent dashboard/course/module data ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/hive redirects to the standalone Hive app dashboard while preserving query parameters. This marks only the page handoff artifact migrated; Hive APIs and parent dashboard/session ownership remain separately owned."
+    },
+    "page:/:locale/:wsId/hive/not-whitelisted:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/not-whitelisted/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/hive/not-whitelisted redirects to the standalone Hive access request page while preserving query parameters. This marks only the page handoff artifact migrated; Hive APIs and parent dashboard/session ownership remain separately owned."
+    },
+    "page:/:locale/:wsId/mind:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/mind redirects to the standalone Mind workspace route while preserving query parameters. This marks only the page handoff artifact migrated; Mind APIs and parent dashboard/session ownership remain separately owned."
+    },
+    "page:/:locale/:wsId/mind/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/mind/boards/$boardId redirects to the standalone Mind board route while preserving query parameters. This marks only the page handoff artifact migrated; Mind APIs and parent dashboard/session ownership remain separately owned."
     },
     "page:/:locale/:wsId/epm:apps/web/src/app/[locale]/(dashboard)/[wsId]/epm/page.tsx": {
       "status": "migrated",

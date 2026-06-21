@@ -114,6 +114,20 @@ export function getMailAppOrigin() {
   });
 }
 
+export function getMeetAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'meet',
+    candidates: [
+      process.env.MEET_APP_URL,
+      process.env.NEXT_PUBLIC_MEET_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://meet.tuturuuu.com'
+        : getLocalInternalAppUrl('meet', 'http://localhost:7807'),
+  });
+}
+
 export function getDriveAppOrigin() {
   return resolveInternalAppUrl({
     appName: 'drive',
@@ -125,6 +139,34 @@ export function getDriveAppOrigin() {
       process.env.NODE_ENV === 'production'
         ? 'https://drive.tuturuuu.com'
         : getLocalInternalAppUrl('drive', 'http://localhost:7817'),
+  });
+}
+
+export function getHiveAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'hive',
+    candidates: [
+      process.env.HIVE_APP_URL,
+      process.env.NEXT_PUBLIC_HIVE_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://hive.tuturuuu.com'
+        : getLocalInternalAppUrl('hive', 'http://localhost:7814'),
+  });
+}
+
+export function getMindAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'mind',
+    candidates: [
+      process.env.MIND_APP_URL,
+      process.env.NEXT_PUBLIC_MIND_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://mind.tuturuuu.com'
+        : getLocalInternalAppUrl('mind', 'http://localhost:7816'),
   });
 }
 
@@ -197,6 +239,58 @@ export function buildMailRedirectHref(
   return url.toString();
 }
 
+export function buildMeetPlansRedirectHref(
+  workspaceId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId);
+  const url = new URL(
+    `/workspace/${encodeURIComponent(workspaceSlug)}/plans`,
+    `${getMeetAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
+export function buildMeetMeetingsRedirectHref(
+  workspaceId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId);
+  const url = new URL(
+    `/workspace/${encodeURIComponent(workspaceSlug)}/meetings`,
+    `${getMeetAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
+export function buildMeetMeetingRedirectHref(
+  workspaceId: string,
+  meetingId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId);
+  const url = new URL(
+    `/workspace/${encodeURIComponent(workspaceSlug)}/meetings/${encodeURIComponent(meetingId)}`,
+    `${getMeetAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
 export function buildDriveRedirectHref(
   workspaceId: string,
   options: {
@@ -210,6 +304,61 @@ export function buildDriveRedirectHref(
   const url = new URL(
     `/${encodeURIComponent(workspaceSlug)}`,
     `${getDriveAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
+export function buildHiveDashboardRedirectHref(
+  options: { searchParams?: LegacySearchParams | string | URLSearchParams } = {}
+) {
+  const url = new URL('/dashboard', `${getHiveAppOrigin()}/`);
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
+export function buildHiveNotWhitelistedRedirectHref(
+  options: { searchParams?: LegacySearchParams | string | URLSearchParams } = {}
+) {
+  const url = new URL('/not-whitelisted', `${getHiveAppOrigin()}/`);
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
+export function buildMindRedirectHref(
+  workspaceId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId);
+  const url = new URL(
+    `/${encodeURIComponent(workspaceSlug)}`,
+    `${getMindAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams);
+
+  return url.toString();
+}
+
+export function buildMindBoardRedirectHref(
+  workspaceId: string,
+  boardId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+  } = {}
+) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId);
+  const url = new URL(
+    `/${encodeURIComponent(workspaceSlug)}/boards/${encodeURIComponent(boardId)}`,
+    `${getMindAppOrigin()}/`
   );
 
   appendSearchParams(url, options.searchParams);

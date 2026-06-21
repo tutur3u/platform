@@ -340,7 +340,11 @@
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
     "back-to-home": "Quay lại trang chủ",
     "coming_soon": "Sắp ra mắt",
+    "generate_with_ai": "Tạo với AI",
     "loading": "Đang tải..."
+  },
+  "course-details-tabs": {
+    "extra_reading": "Đọc thêm"
   },
   "organizational_structure": {
     "add_collaboration": "Thêm hợp tác",

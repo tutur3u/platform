@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 223,
-        "migrated": 84,
-        "percentComplete": 27.36,
-        "remaining": 223,
-        "terminal": 84,
+        "legacyNext": 215,
+        "migrated": 92,
+        "percentComplete": 29.97,
+        "remaining": 215,
+        "terminal": 92,
         "total": 307,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 249,
-        "migrated": 130,
-        "percentComplete": 34.3,
-        "remaining": 249,
-        "terminal": 130,
+        "legacyNext": 241,
+        "migrated": 138,
+        "percentComplete": 36.41,
+        "remaining": 241,
+        "terminal": 138,
         "total": 379,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1242,
-      "migrated": 193,
-      "percentComplete": 18.18,
-      "remaining": 1242,
-      "terminal": 276,
+      "legacyNext": 1234,
+      "migrated": 201,
+      "percentComplete": 18.71,
+      "remaining": 1234,
+      "terminal": 284,
       "total": 1518,
       "unknownStatus": 0
     }
@@ -11679,7 +11679,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/extra-content",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/extra-content/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12048,7 +12048,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/hive",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12057,7 +12057,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/hive/not-whitelisted",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/not-whitelisted/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12633,7 +12633,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/meet/meetings",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12642,7 +12642,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/meet/meetings/:meetingId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/[meetingId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12651,7 +12651,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/meet/plans",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/plans/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12696,7 +12696,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/mind",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12705,7 +12705,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/mind/boards/:boardId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

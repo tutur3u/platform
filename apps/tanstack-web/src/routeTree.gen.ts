@@ -77,9 +77,11 @@ import { Route as LocaleWsIdReadingsRouteImport } from './routes/$locale/$wsId/r
 import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator'
 import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/progress'
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls'
+import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind'
 import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics'
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
 import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations'
+import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive'
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects'
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm'
 import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive'
@@ -87,12 +89,18 @@ import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet'
 import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index'
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index'
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId'
+import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code'
+import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode'
+import { Route as LocaleSharedFormsShareCodeRouteImport } from './routes/$locale/shared/forms/$shareCode'
 import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$'
 import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements'
 import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure'
 import { Route as LocaleWsIdTasksHabitsRouteImport } from './routes/$locale/$wsId/tasks/habits'
 import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes/$locale/$wsId/platform/external-projects'
+import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans'
+import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings'
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent'
+import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted'
 import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale/$wsId/education/quizzes'
 import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$locale/$wsId/education/quiz-sets'
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library'
@@ -102,11 +110,14 @@ import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$lo
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId'
 import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$locale/$wsId/tasks/boards/$boardId'
 import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/settings/infrastructure/app-coordination'
+import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId'
+import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId'
 import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories'
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId'
 import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId'
 import { Route as LocaleWsIdEducationCoursesCourseIdRouteImport } from './routes/$locale/$wsId/education/courses/$courseId'
 import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new'
+import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
 
 const Char126offlineRoute = Char126offlineRouteImport.update({
   id: '/~offline',
@@ -461,6 +472,11 @@ const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
   path: '/$locale/$wsId/polls',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdMindRoute = LocaleWsIdMindRouteImport.update({
+  id: '/$locale/$wsId/mind',
+  path: '/$locale/$wsId/mind',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
   id: '/$locale/$wsId/metrics',
   path: '/$locale/$wsId/metrics',
@@ -474,6 +490,11 @@ const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
 const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
   id: '/$locale/$wsId/integrations',
   path: '/$locale/$wsId/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWsIdHiveRoute = LocaleWsIdHiveRouteImport.update({
+  id: '/$locale/$wsId/hive',
+  path: '/$locale/$wsId/hive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleWsIdExternalProjectsRoute =
@@ -513,6 +534,24 @@ const LocaleUiComponentsComponentIdRoute =
     path: '/$locale/ui/components/$componentId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleSharedUserProfileCodeRoute =
+  LocaleSharedUserProfileCodeRouteImport.update({
+    id: '/$locale/shared/user-profile/$code',
+    path: '/$locale/shared/user-profile/$code',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleSharedTaskShareCodeRoute =
+  LocaleSharedTaskShareCodeRouteImport.update({
+    id: '/$locale/shared/task/$shareCode',
+    path: '/$locale/shared/task/$shareCode',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LocaleSharedFormsShareCodeRoute =
+  LocaleSharedFormsShareCodeRouteImport.update({
+    id: '/$locale/shared/forms/$shareCode',
+    path: '/$locale/shared/forms/$shareCode',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleCalendarMeetTogetherSplatRoute =
   LocaleCalendarMeetTogetherSplatRouteImport.update({
     id: '/$',
@@ -542,11 +581,27 @@ const LocaleWsIdPlatformExternalProjectsRoute =
     path: '/$locale/$wsId/platform/external-projects',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdMeetPlansRoute = LocaleWsIdMeetPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => LocaleWsIdMeetRoute,
+} as any)
+const LocaleWsIdMeetMeetingsRoute = LocaleWsIdMeetMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => LocaleWsIdMeetRoute,
+} as any)
 const LocaleWsIdMailSentRoute = LocaleWsIdMailSentRouteImport.update({
   id: '/$locale/$wsId/mail/sent',
   path: '/$locale/$wsId/mail/sent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleWsIdHiveNotWhitelistedRoute =
+  LocaleWsIdHiveNotWhitelistedRouteImport.update({
+    id: '/not-whitelisted',
+    path: '/not-whitelisted',
+    getParentRoute: () => LocaleWsIdHiveRoute,
+  } as any)
 const LocaleWsIdEducationQuizzesRoute =
   LocaleWsIdEducationQuizzesRouteImport.update({
     id: '/$locale/$wsId/education/quizzes',
@@ -600,6 +655,18 @@ const LocaleWsIdSettingsInfrastructureAppCoordinationRoute =
     path: '/$locale/$wsId/settings/infrastructure/app-coordination',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdMindBoardsBoardIdRoute =
+  LocaleWsIdMindBoardsBoardIdRouteImport.update({
+    id: '/boards/$boardId',
+    path: '/boards/$boardId',
+    getParentRoute: () => LocaleWsIdMindRoute,
+  } as any)
+const LocaleWsIdMeetMeetingsMeetingIdRoute =
+  LocaleWsIdMeetMeetingsMeetingIdRouteImport.update({
+    id: '/$meetingId',
+    path: '/$meetingId',
+    getParentRoute: () => LocaleWsIdMeetMeetingsRoute,
+  } as any)
 const LocaleWsIdFinanceTransactionsCategoriesRoute =
   LocaleWsIdFinanceTransactionsCategoriesRouteImport.update({
     id: '/$locale/$wsId/finance/transactions/categories',
@@ -630,6 +697,14 @@ const LocaleWsIdAiChatMyChatbotsNewRoute =
     path: '/$locale/$wsId/ai-chat/my-chatbots/new',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute =
+  LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport.update(
+    {
+      id: '/modules/$moduleId/extra-content',
+      path: '/modules/$moduleId/extra-content',
+      getParentRoute: () => LocaleWsIdEducationCoursesCourseIdRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -665,9 +740,11 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
+  '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
-  '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
+  '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
@@ -712,24 +789,33 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
+  '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
+  '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren
+  '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
   '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/shared/forms/$shareCode': typeof LocaleSharedFormsShareCodeRoute
+  '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute
+  '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute
-  '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
+  '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
+  '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute
+  '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute
+  '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -765,9 +851,11 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
+  '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
-  '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
+  '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
@@ -812,24 +900,33 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
+  '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
+  '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren
+  '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
   '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/shared/forms/$shareCode': typeof LocaleSharedFormsShareCodeRoute
+  '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute
+  '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail': typeof LocaleWsIdMailIndexRoute
   '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute
-  '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
+  '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
+  '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute
+  '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute
+  '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -866,9 +963,11 @@ export interface FileRoutesById {
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute
+  '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute
-  '/$locale/$wsId/meet': typeof LocaleWsIdMeetRoute
+  '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute
+  '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute
@@ -913,24 +1012,33 @@ export interface FileRoutesById {
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute
+  '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute
+  '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren
+  '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
   '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/shared/forms/$shareCode': typeof LocaleSharedFormsShareCodeRoute
+  '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute
+  '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute
-  '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRoute
+  '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute
+  '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute
+  '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute
+  '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -968,9 +1076,11 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
+    | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/metrics'
+    | '/$locale/$wsId/mind'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
@@ -1015,12 +1125,18 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
+    | '/$locale/$wsId/meet/meetings'
+    | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
     | '/$locale/$wsId/tasks/habits'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/shared/forms/$shareCode'
+    | '/$locale/shared/task/$shareCode'
+    | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail/'
     | '/$locale/ui/components/'
@@ -1029,10 +1145,13 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/transactions/categories'
+    | '/$locale/$wsId/meet/meetings/$meetingId'
+    | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
     | '/$locale/$wsId/tasks/boards/$boardId'
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1068,9 +1187,11 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
+    | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/metrics'
+    | '/$locale/$wsId/mind'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
@@ -1115,12 +1236,18 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
+    | '/$locale/$wsId/meet/meetings'
+    | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
     | '/$locale/$wsId/tasks/habits'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/shared/forms/$shareCode'
+    | '/$locale/shared/task/$shareCode'
+    | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail'
     | '/$locale/ui/components'
@@ -1129,10 +1256,13 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/transactions/categories'
+    | '/$locale/$wsId/meet/meetings/$meetingId'
+    | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
     | '/$locale/$wsId/tasks/boards/$boardId'
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
   id:
     | '__root__'
     | '/'
@@ -1168,9 +1298,11 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
+    | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/metrics'
+    | '/$locale/$wsId/mind'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
@@ -1215,12 +1347,18 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
+    | '/$locale/$wsId/meet/meetings'
+    | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
     | '/$locale/$wsId/tasks/habits'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/shared/forms/$shareCode'
+    | '/$locale/shared/task/$shareCode'
+    | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail/'
     | '/$locale/ui/components/'
@@ -1229,10 +1367,13 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/transactions/categories'
+    | '/$locale/$wsId/meet/meetings/$meetingId'
+    | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
     | '/$locale/$wsId/tasks/boards/$boardId'
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1269,9 +1410,11 @@ export interface RootRouteChildren {
   LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
+  LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren
   LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute
-  LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRoute
+  LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRouteWithChildren
   LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute
+  LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
   LocaleWsIdProgressRoute: typeof LocaleWsIdProgressRoute
   LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute
@@ -1318,11 +1461,14 @@ export interface RootRouteChildren {
   LocaleWsIdTasksHabitsRoute: typeof LocaleWsIdTasksHabitsRoute
   LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute
   LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute
+  LocaleSharedFormsShareCodeRoute: typeof LocaleSharedFormsShareCodeRoute
+  LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute
+  LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
   LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute
-  LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRoute
+  LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
   LocaleWsIdFinanceTransactionsCategoriesRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRoute
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
   LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute
@@ -1808,6 +1954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdPollsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/mind': {
+      id: '/$locale/$wsId/mind'
+      path: '/$locale/$wsId/mind'
+      fullPath: '/$locale/$wsId/mind'
+      preLoaderRoute: typeof LocaleWsIdMindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/$wsId/metrics': {
       id: '/$locale/$wsId/metrics'
       path: '/$locale/$wsId/metrics'
@@ -1827,6 +1980,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/$wsId/integrations'
       fullPath: '/$locale/$wsId/integrations'
       preLoaderRoute: typeof LocaleWsIdIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/hive': {
+      id: '/$locale/$wsId/hive'
+      path: '/$locale/$wsId/hive'
+      fullPath: '/$locale/$wsId/hive'
+      preLoaderRoute: typeof LocaleWsIdHiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/$wsId/external-projects': {
@@ -1878,6 +2038,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleUiComponentsComponentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/shared/user-profile/$code': {
+      id: '/$locale/shared/user-profile/$code'
+      path: '/$locale/shared/user-profile/$code'
+      fullPath: '/$locale/shared/user-profile/$code'
+      preLoaderRoute: typeof LocaleSharedUserProfileCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/shared/task/$shareCode': {
+      id: '/$locale/shared/task/$shareCode'
+      path: '/$locale/shared/task/$shareCode'
+      fullPath: '/$locale/shared/task/$shareCode'
+      preLoaderRoute: typeof LocaleSharedTaskShareCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/shared/forms/$shareCode': {
+      id: '/$locale/shared/forms/$shareCode'
+      path: '/$locale/shared/forms/$shareCode'
+      fullPath: '/$locale/shared/forms/$shareCode'
+      preLoaderRoute: typeof LocaleSharedFormsShareCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/calendar/meet-together/$': {
       id: '/$locale/calendar/meet-together/$'
       path: '/$'
@@ -1913,12 +2094,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdPlatformExternalProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/meet/plans': {
+      id: '/$locale/$wsId/meet/plans'
+      path: '/plans'
+      fullPath: '/$locale/$wsId/meet/plans'
+      preLoaderRoute: typeof LocaleWsIdMeetPlansRouteImport
+      parentRoute: typeof LocaleWsIdMeetRoute
+    }
+    '/$locale/$wsId/meet/meetings': {
+      id: '/$locale/$wsId/meet/meetings'
+      path: '/meetings'
+      fullPath: '/$locale/$wsId/meet/meetings'
+      preLoaderRoute: typeof LocaleWsIdMeetMeetingsRouteImport
+      parentRoute: typeof LocaleWsIdMeetRoute
+    }
     '/$locale/$wsId/mail/sent': {
       id: '/$locale/$wsId/mail/sent'
       path: '/$locale/$wsId/mail/sent'
       fullPath: '/$locale/$wsId/mail/sent'
       preLoaderRoute: typeof LocaleWsIdMailSentRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/hive/not-whitelisted': {
+      id: '/$locale/$wsId/hive/not-whitelisted'
+      path: '/not-whitelisted'
+      fullPath: '/$locale/$wsId/hive/not-whitelisted'
+      preLoaderRoute: typeof LocaleWsIdHiveNotWhitelistedRouteImport
+      parentRoute: typeof LocaleWsIdHiveRoute
     }
     '/$locale/$wsId/education/quizzes': {
       id: '/$locale/$wsId/education/quizzes'
@@ -1983,6 +2185,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/$wsId/mind/boards/$boardId': {
+      id: '/$locale/$wsId/mind/boards/$boardId'
+      path: '/boards/$boardId'
+      fullPath: '/$locale/$wsId/mind/boards/$boardId'
+      preLoaderRoute: typeof LocaleWsIdMindBoardsBoardIdRouteImport
+      parentRoute: typeof LocaleWsIdMindRoute
+    }
+    '/$locale/$wsId/meet/meetings/$meetingId': {
+      id: '/$locale/$wsId/meet/meetings/$meetingId'
+      path: '/$meetingId'
+      fullPath: '/$locale/$wsId/meet/meetings/$meetingId'
+      preLoaderRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRouteImport
+      parentRoute: typeof LocaleWsIdMeetMeetingsRoute
+    }
     '/$locale/$wsId/finance/transactions/categories': {
       id: '/$locale/$wsId/finance/transactions/categories'
       path: '/$locale/$wsId/finance/transactions/categories'
@@ -2017,6 +2233,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/$wsId/ai-chat/my-chatbots/new'
       preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsNewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': {
+      id: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
+      path: '/modules/$moduleId/extra-content'
+      fullPath: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
+      preLoaderRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport
+      parentRoute: typeof LocaleWsIdEducationCoursesCourseIdRoute
     }
   }
 }
@@ -2062,6 +2285,58 @@ const LocaleWsIdEpmRouteWithChildren = LocaleWsIdEpmRoute._addFileChildren(
   LocaleWsIdEpmRouteChildren,
 )
 
+interface LocaleWsIdHiveRouteChildren {
+  LocaleWsIdHiveNotWhitelistedRoute: typeof LocaleWsIdHiveNotWhitelistedRoute
+}
+
+const LocaleWsIdHiveRouteChildren: LocaleWsIdHiveRouteChildren = {
+  LocaleWsIdHiveNotWhitelistedRoute: LocaleWsIdHiveNotWhitelistedRoute,
+}
+
+const LocaleWsIdHiveRouteWithChildren = LocaleWsIdHiveRoute._addFileChildren(
+  LocaleWsIdHiveRouteChildren,
+)
+
+interface LocaleWsIdMeetMeetingsRouteChildren {
+  LocaleWsIdMeetMeetingsMeetingIdRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRoute
+}
+
+const LocaleWsIdMeetMeetingsRouteChildren: LocaleWsIdMeetMeetingsRouteChildren =
+  {
+    LocaleWsIdMeetMeetingsMeetingIdRoute: LocaleWsIdMeetMeetingsMeetingIdRoute,
+  }
+
+const LocaleWsIdMeetMeetingsRouteWithChildren =
+  LocaleWsIdMeetMeetingsRoute._addFileChildren(
+    LocaleWsIdMeetMeetingsRouteChildren,
+  )
+
+interface LocaleWsIdMeetRouteChildren {
+  LocaleWsIdMeetMeetingsRoute: typeof LocaleWsIdMeetMeetingsRouteWithChildren
+  LocaleWsIdMeetPlansRoute: typeof LocaleWsIdMeetPlansRoute
+}
+
+const LocaleWsIdMeetRouteChildren: LocaleWsIdMeetRouteChildren = {
+  LocaleWsIdMeetMeetingsRoute: LocaleWsIdMeetMeetingsRouteWithChildren,
+  LocaleWsIdMeetPlansRoute: LocaleWsIdMeetPlansRoute,
+}
+
+const LocaleWsIdMeetRouteWithChildren = LocaleWsIdMeetRoute._addFileChildren(
+  LocaleWsIdMeetRouteChildren,
+)
+
+interface LocaleWsIdMindRouteChildren {
+  LocaleWsIdMindBoardsBoardIdRoute: typeof LocaleWsIdMindBoardsBoardIdRoute
+}
+
+const LocaleWsIdMindRouteChildren: LocaleWsIdMindRouteChildren = {
+  LocaleWsIdMindBoardsBoardIdRoute: LocaleWsIdMindBoardsBoardIdRoute,
+}
+
+const LocaleWsIdMindRouteWithChildren = LocaleWsIdMindRoute._addFileChildren(
+  LocaleWsIdMindRouteChildren,
+)
+
 interface LocaleCalendarMeetTogetherRouteChildren {
   LocaleCalendarMeetTogetherSplatRoute: typeof LocaleCalendarMeetTogetherSplatRoute
 }
@@ -2074,6 +2349,21 @@ const LocaleCalendarMeetTogetherRouteChildren: LocaleCalendarMeetTogetherRouteCh
 const LocaleCalendarMeetTogetherRouteWithChildren =
   LocaleCalendarMeetTogetherRoute._addFileChildren(
     LocaleCalendarMeetTogetherRouteChildren,
+  )
+
+interface LocaleWsIdEducationCoursesCourseIdRouteChildren {
+  LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute
+}
+
+const LocaleWsIdEducationCoursesCourseIdRouteChildren: LocaleWsIdEducationCoursesCourseIdRouteChildren =
+  {
+    LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute:
+      LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute,
+  }
+
+const LocaleWsIdEducationCoursesCourseIdRouteWithChildren =
+  LocaleWsIdEducationCoursesCourseIdRoute._addFileChildren(
+    LocaleWsIdEducationCoursesCourseIdRouteChildren,
   )
 
 const rootRouteChildren: RootRouteChildren = {
@@ -2110,9 +2400,11 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
+  LocaleWsIdHiveRoute: LocaleWsIdHiveRouteWithChildren,
   LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,
-  LocaleWsIdMeetRoute: LocaleWsIdMeetRoute,
+  LocaleWsIdMeetRoute: LocaleWsIdMeetRouteWithChildren,
   LocaleWsIdMetricsRoute: LocaleWsIdMetricsRoute,
+  LocaleWsIdMindRoute: LocaleWsIdMindRouteWithChildren,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
   LocaleWsIdProgressRoute: LocaleWsIdProgressRoute,
   LocaleWsIdQrGeneratorRoute: LocaleWsIdQrGeneratorRoute,
@@ -2161,12 +2453,15 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdUsersStructureRoute: LocaleWsIdUsersStructureRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
     LocaleWsIdUsersTopicAnnouncementsRoute,
+  LocaleSharedFormsShareCodeRoute: LocaleSharedFormsShareCodeRoute,
+  LocaleSharedTaskShareCodeRoute: LocaleSharedTaskShareCodeRoute,
+  LocaleSharedUserProfileCodeRoute: LocaleSharedUserProfileCodeRoute,
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
   LocaleWsIdMailIndexRoute: LocaleWsIdMailIndexRoute,
   LocaleUiComponentsIndexRoute: LocaleUiComponentsIndexRoute,
   LocaleWsIdAiChatMyChatbotsNewRoute: LocaleWsIdAiChatMyChatbotsNewRoute,
   LocaleWsIdEducationCoursesCourseIdRoute:
-    LocaleWsIdEducationCoursesCourseIdRoute,
+    LocaleWsIdEducationCoursesCourseIdRouteWithChildren,
   LocaleWsIdFinanceTransactionsCategoriesRoute:
     LocaleWsIdFinanceTransactionsCategoriesRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:

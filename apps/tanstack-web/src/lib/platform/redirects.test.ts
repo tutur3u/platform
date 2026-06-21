@@ -6,7 +6,14 @@ import {
   buildCmsRedirectHref,
   buildDriveRedirectHref,
   buildFinanceTransactionCategoriesRedirectHref,
+  buildHiveDashboardRedirectHref,
+  buildHiveNotWhitelistedRedirectHref,
   buildMailRedirectHref,
+  buildMeetMeetingRedirectHref,
+  buildMeetMeetingsRedirectHref,
+  buildMeetPlansRedirectHref,
+  buildMindBoardRedirectHref,
+  buildMindRedirectHref,
   buildQrGeneratorRedirectHref,
   buildVerifyTokenRedirectHref,
   courseBuilderRedirectHref,
@@ -150,6 +157,28 @@ describe('public redirect helpers', () => {
     );
   });
 
+  it('preserves Meet app handoff targets and query forwarding', () => {
+    vi.stubEnv('MEET_APP_URL', 'https://meet.example.com/base/');
+
+    expect(buildMeetPlansRedirectHref('ws-1')).toBe(
+      'https://meet.example.com/workspace/ws-1/plans'
+    );
+    expect(
+      buildMeetMeetingsRedirectHref('ws-1', {
+        searchParams: '?page=2&search=planning',
+      })
+    ).toBe(
+      'https://meet.example.com/workspace/ws-1/meetings?page=2&search=planning'
+    );
+    expect(
+      buildMeetMeetingRedirectHref('ws-1', 'meeting/1', {
+        searchParams: new URLSearchParams([['tab', 'recordings']]),
+      })
+    ).toBe(
+      'https://meet.example.com/workspace/ws-1/meetings/meeting%2F1?tab=recordings'
+    );
+  });
+
   it('preserves legacy Drive app redirect targets', () => {
     vi.stubEnv('DRIVE_APP_URL', 'https://drive.example.com/base/');
 
@@ -174,6 +203,30 @@ describe('public redirect helpers', () => {
     ).toBe(
       'https://drive.example.com/ws-1?path=assets&q=demo&tag=a&tag=b&empty='
     );
+  });
+
+  it('preserves Hive app handoff targets and query forwarding', () => {
+    vi.stubEnv('HIVE_APP_URL', 'https://hive.example.com/base/');
+
+    expect(
+      buildHiveDashboardRedirectHref({
+        searchParams: '?panel=world&serverId=server-1',
+      })
+    ).toBe('https://hive.example.com/dashboard?panel=world&serverId=server-1');
+    expect(buildHiveNotWhitelistedRedirectHref()).toBe(
+      'https://hive.example.com/not-whitelisted'
+    );
+  });
+
+  it('preserves Mind app handoff targets and query forwarding', () => {
+    vi.stubEnv('MIND_APP_URL', 'https://mind.example.com/base/');
+
+    expect(buildMindRedirectHref('ws-1')).toBe('https://mind.example.com/ws-1');
+    expect(
+      buildMindBoardRedirectHref('ws-1', 'board/1', {
+        searchParams: '?view=map',
+      })
+    ).toBe('https://mind.example.com/ws-1/boards/board%2F1?view=map');
   });
 
   it('preserves legacy CMS app redirect targets', () => {

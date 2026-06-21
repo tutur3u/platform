@@ -340,7 +340,11 @@
     "404-msg": "The page you are looking for does not exist.",
     "back-to-home": "Go back to home",
     "coming_soon": "Coming Soon",
+    "generate_with_ai": "Generate with AI",
     "loading": "Loading..."
+  },
+  "course-details-tabs": {
+    "extra_reading": "Extra Reading"
   },
   "organizational_structure": {
     "add_collaboration": "Add collaboration",
