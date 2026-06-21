@@ -29,6 +29,7 @@ const {
   clearBlueGreenRuntime,
   classifySupabaseOrigin,
   describeActiveDeploymentConflict,
+  ensureLogDrainPostgresReady,
   ensureRequiredComposeEnvironment,
   ensureProductionSupabaseOrigin,
   formatSupabaseOriginReport,
@@ -111,6 +112,117 @@ function isHiveDbMigrateRun(command, args) {
 function createCommandResult(stdout = '') {
   return { code: 0, signal: null, stderr: '', stdout };
 }
+
+function healthyLogDrainPostgresResult(command, args) {
+  if (command !== 'docker') {
+    return null;
+  }
+
+  if (args.includes('ps') && args.at(-1) === 'log-drain-postgres') {
+    return createCommandResult('log-drain-postgres-123\n');
+  }
+
+  if (args[0] === 'inspect' && args.at(-1) === 'log-drain-postgres-123') {
+    return createCommandResult('healthy\n');
+  }
+
+  return null;
+}
+
+test('ensureLogDrainPostgresReady skips startup when log-drain Postgres is healthy', async () => {
+  const calls = [];
+
+  await ensureLogDrainPostgresReady({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { PATH: 'test-path' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (args.includes('ps') && args.at(-1) === 'log-drain-postgres') {
+        return createCommandResult('log-drain-123\n');
+      }
+
+      if (args[0] === 'inspect' && args.at(-1) === 'log-drain-123') {
+        return createCommandResult('healthy\n');
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  assert.equal(
+    calls.some(([, args]) => args.includes('up')),
+    false
+  );
+});
+
+test('ensureLogDrainPostgresReady recreates an exited log-drain Postgres container once', async () => {
+  const calls = [];
+  let upAttempts = 0;
+
+  await ensureLogDrainPostgresReady({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { PATH: 'test-path' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('up') &&
+        args.at(-1) === 'log-drain-postgres'
+      ) {
+        upAttempts += 1;
+        return createCommandResult('');
+      }
+
+      if (
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('rm') &&
+        args.at(-1) === 'log-drain-postgres'
+      ) {
+        return createCommandResult('');
+      }
+
+      if (args.includes('ps') && args.at(-1) === 'log-drain-postgres') {
+        return createCommandResult(
+          upAttempts >= 2 ? 'log-drain-retry\n' : 'log-drain-stale\n'
+        );
+      }
+
+      if (args[0] === 'inspect') {
+        return createCommandResult(
+          args.at(-1) === 'log-drain-retry' ? 'healthy\n' : 'exited\n'
+        );
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  assert.equal(upAttempts, 2);
+  assert.equal(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('rm') &&
+        args.includes('-f') &&
+        args.at(-1) === 'log-drain-postgres'
+    ),
+    true
+  );
+  assert.equal(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' && args[0] === 'volume' && args.includes('rm')
+    ),
+    false
+  );
+});
 
 function getMigrationCleanupService(command, args) {
   if (command !== 'docker' || args[0] !== 'ps' || !args.includes('-aq')) {
@@ -3182,6 +3294,8 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 
     const cleanupResult = migrationCleanupResult(command, args);
     if (cleanupResult) return cleanupResult;
+    const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
+    if (logDrainPostgresResult) return logDrainPostgresResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -3632,6 +3746,8 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
 
     const cleanupResult = migrationCleanupResult(command, args);
     if (cleanupResult) return cleanupResult;
+    const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
+    if (logDrainPostgresResult) return logDrainPostgresResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -3742,6 +3858,9 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
 
   const runCommand = async (command, args) => {
     calls.push([command, args]);
+
+    const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
+    if (logDrainPostgresResult) return logDrainPostgresResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -5522,6 +5641,8 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
 
     const cleanupResult = migrationCleanupResult(command, args);
     if (cleanupResult) return cleanupResult;
+    const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
+    if (logDrainPostgresResult) return logDrainPostgresResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -5811,6 +5932,8 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
 
     const cleanupResult = migrationCleanupResult(command, args);
     if (cleanupResult) return cleanupResult;
+    const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
+    if (logDrainPostgresResult) return logDrainPostgresResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };

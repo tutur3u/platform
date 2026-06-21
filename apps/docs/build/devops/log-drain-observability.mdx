@@ -201,4 +201,20 @@ If the UI is empty:
 3. Check that the route or cron handler is using `serverLogger` or a log-drain wrapper.
 4. Use Infrastructure → Monitoring → Logs to search by message, route, request id, level, or source.
 
+If `bun serve:web:docker:bg` fails with
+`dependency failed to start: container ...-log-drain-postgres-1 exited (1)`,
+the deploy helper now starts `log-drain-postgres` before promoting the web lane
+and retries once after removing only the exited service container. The
+`platform-log-drain-postgres` volume is intentionally left intact. If the retry
+still fails, inspect the Postgres logs:
+
+```bash
+docker compose -f docker-compose.web.prod.yml --profile redis logs --tail 200 log-drain-postgres
+```
+
+When the logs mention incompatible database files, a corrupted data directory,
+or another persistent storage problem, back up or migrate the
+`platform-log-drain-postgres` volume before retrying. Do not remove that volume
+unless losing local observability history is an explicit operator decision.
+
 If logs are missing only for cron jobs, verify the cron route is wrapped with `withCronLogDrain(...)` and the cron runner is calling the expected web origin.

@@ -48,6 +48,7 @@ const {
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
+  removeComposeServicesIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
@@ -124,6 +125,7 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CLOUDFLARED_SERVICE = 'cloudflared';
+const LOG_DRAIN_POSTGRES_SERVICE = 'log-drain-postgres';
 const LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES =
   10 * 1024 * 1024 * 1024;
 
@@ -619,6 +621,125 @@ function getInPlaceProdServices(parsed) {
   return services;
 }
 
+function isLogDrainPostgresStartupError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /\blog-drain-postgres\b/iu.test(message) ||
+    /dependency failed to start/iu.test(message)
+  );
+}
+
+function createLogDrainPostgresStartupError(error) {
+  const detail = error instanceof Error ? error.message : String(error);
+
+  return new Error(
+    [
+      `${LOG_DRAIN_POSTGRES_SERVICE} failed to start before blue/green promotion.`,
+      'The deploy helper retried once after removing only the exited service container; the persistent platform-log-drain-postgres volume was left intact.',
+      `Inspect the service with: docker compose -f docker-compose.web.prod.yml --profile redis logs --tail 200 ${LOG_DRAIN_POSTGRES_SERVICE}`,
+      'If the logs mention incompatible database files or data-directory corruption, back up or migrate the volume before retrying.',
+      `Original failure: ${detail}`,
+    ].join('\n')
+  );
+}
+
+async function getComposeServiceStatus(serviceName, options) {
+  const containerId = await getComposeServiceContainerId(serviceName, {
+    ...options,
+    includeStopped: true,
+  });
+
+  if (!containerId) {
+    return null;
+  }
+
+  try {
+    return await getContainerHealthStatus(containerId, options);
+  } catch {
+    return 'unknown';
+  }
+}
+
+async function ensureLogDrainPostgresReady({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+}) {
+  if (
+    await isComposeServiceHealthy(LOG_DRAIN_POSTGRES_SERVICE, {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    })
+  ) {
+    return;
+  }
+
+  const options = {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  };
+  const start = async () => {
+    await runComposeUpWithNameConflictRecovery({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      fsImpl,
+      runCommand: run,
+      services: [LOG_DRAIN_POSTGRES_SERVICE],
+      upArgs: [
+        'up',
+        '--detach',
+        '--no-build',
+        '--remove-orphans',
+        LOG_DRAIN_POSTGRES_SERVICE,
+      ],
+    });
+    await waitForComposeServiceHealthy(LOG_DRAIN_POSTGRES_SERVICE, options);
+  };
+
+  try {
+    await start();
+    return;
+  } catch (error) {
+    const status = await getComposeServiceStatus(
+      LOG_DRAIN_POSTGRES_SERVICE,
+      options
+    );
+    const shouldRetry =
+      status === 'dead' ||
+      status === 'exited' ||
+      isLogDrainPostgresStartupError(error);
+
+    if (!shouldRetry) {
+      throw createLogDrainPostgresStartupError(error);
+    }
+
+    process.stderr.write(
+      `[docker-web] ${LOG_DRAIN_POSTGRES_SERVICE} did not become healthy (${status ?? 'unknown'}); removing the service container and retrying once.\n`
+    );
+
+    await removeComposeServicesIfPresent([LOG_DRAIN_POSTGRES_SERVICE], {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
+  }
+
+  try {
+    await start();
+  } catch (error) {
+    throw createLogDrainPostgresStartupError(error);
+  }
+}
+
 async function promptForActiveDeploymentCancellation(
   conflict,
   {
@@ -922,6 +1043,13 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
             composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
         };
+    await ensureLogDrainPostgresReady({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: workflowEnv,
+      fsImpl,
+      runCommand: run,
+    });
     const changedFiles = await getBlueGreenDeploymentChangedFiles({
       env,
       fsImpl,
@@ -1173,6 +1301,7 @@ module.exports = {
   getPositiveIntegerEnv,
   hasComposeProfile,
   hasComposeServiceContainer,
+  ensureLogDrainPostgresReady,
   isTransientSupabaseResetError,
   isComposeServiceHealthy,
   isBlueGreenColor,
