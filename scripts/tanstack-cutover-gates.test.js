@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -316,6 +317,7 @@ test('parseArgs accepts cutover evidence paths', () => {
   assert.match(args.benchmarkReportPath, /benchmark\.json$/u);
   assert.match(args.cloudflareSmokeReportPath, /cloudflare-smoke\.json$/u);
   assert.match(args.e2eReportPath, /e2e\.json$/u);
+  assert.match(args.outputPath, /result\.json$/u);
 });
 
 test('countManifestRoutes summarizes ownership and status gates', () => {
@@ -351,6 +353,46 @@ test('runCutoverGates passes with manifest, benchmark, and E2E evidence', () => 
       result.gates.every((gate) => gate.ok),
       true
     );
+  } finally {
+    fs.rmSync(fixture.rootDir, { force: true, recursive: true });
+  }
+});
+
+test('CLI writes cutover gate output JSON for review handoff', () => {
+  const fixture = createCutoverFixture();
+  const outputPath = path.join(fixture.rootDir, 'cutover-gates.json');
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(__dirname, 'tanstack-cutover-gates.js'),
+        '--allow-legacy',
+        '--benchmark-report',
+        fixture.benchmarkReportPath,
+        '--cloudflare-smoke-report',
+        fixture.cloudflareSmokeReportPath,
+        '--e2e-report',
+        fixture.e2eReportPath,
+        '--output',
+        outputPath,
+      ],
+      {
+        cwd: path.join(__dirname, '..'),
+        encoding: 'utf8',
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /TanStack\/Rust cutover gates passed/u);
+    assert.equal(fs.existsSync(outputPath), true);
+
+    const output = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    assert.equal(output.ok, true);
+    assert.ok(output.manifest.counts.total > 0);
+    assert.ok(output.benchmark);
+    assert.ok(output.e2e);
+    assert.ok(output.cloudflareSmoke);
   } finally {
     fs.rmSync(fixture.rootDir, { force: true, recursive: true });
   }

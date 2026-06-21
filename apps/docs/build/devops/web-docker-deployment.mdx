@@ -364,11 +364,14 @@ the report can satisfy migration gates.
 bun migration:tanstack:gates -- \
   --e2e-report tmp/e2e/web-migration/compare-report.json \
   --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json \
-  --cloudflare-smoke-report tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json
+  --cloudflare-smoke-report tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json \
+  --output tmp/benchmarks/web-migration/<timestamp>/cutover-gates.json
 ```
 
 The gate command does not start Docker. It only validates explicit report files
-so generated evidence remains under ignored `tmp/` paths.
+so generated evidence remains under ignored `tmp/` paths. The output JSON is the
+review/handoff artifact that links the Docker E2E, benchmark, and Cloudflare
+smoke evidence for sign-off without committing generated reports.
 
 Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
 custom image tags for the current `ttr-e2e-*` project, so per-run containers,
