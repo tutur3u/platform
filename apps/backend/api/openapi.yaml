@@ -1461,6 +1461,112 @@ paths:
                 type: string
                 examples:
                   - PUT
+  /api/v1/workspaces/{wsId}/encryption/migrate:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Workspace identifier or alias.
+    get:
+      deprecated: true
+      summary: Retired workspace encryption migration status
+      description: Terminal decommission replacement for apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts. The legacy admin calendar-event encryption status reader is intentionally unavailable in the Rust backend and returns 410 in all environments.
+      responses:
+        "410":
+          description: Workspace encryption migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredWorkspaceEncryptionMigrationDisabled"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
+    post:
+      deprecated: true
+      summary: Retired workspace encryption event migration
+      description: Terminal decommission replacement for apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts. The legacy admin calendar-event encryption mutation is intentionally unavailable in the Rust backend and returns 410 in all environments.
+      responses:
+        "410":
+          description: Workspace encryption migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredWorkspaceEncryptionMigrationDisabled"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
+  /api/v1/workspaces/{wsId}/storage/migrate:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Workspace identifier or alias.
+    post:
+      deprecated: true
+      summary: Retired workspace storage provider migration
+      description: Terminal decommission replacement for apps/web/src/app/api/v1/workspaces/[wsId]/storage/migrate/route.ts. The legacy provider-to-provider storage migration mutation is intentionally unavailable in the Rust backend and returns 410 in all environments.
+      responses:
+        "410":
+          description: Workspace storage migration endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredWorkspaceStorageMigrationDisabled"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST
+  /api/v2/workspaces/{wsId}/migrate/{module}:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Workspace identifier.
+      - name: module
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy migration export module slug.
+    get:
+      deprecated: true
+      summary: Retired workspace API-key migration export
+      description: Terminal decommission replacement for apps/web/src/app/api/v2/workspaces/[wsId]/migrate/[module]/route.ts. The legacy broad Supabase admin export reader is intentionally unavailable in the Rust backend and returns 410 in all environments.
+      responses:
+        "410":
+          description: Workspace migration export endpoint is intentionally disabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetiredWorkspaceExportMigrationDisabled"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/users/fields/types:
     get:
       summary: Legacy-compatible user field type list
@@ -2682,6 +2788,48 @@ components:
           type: string
           examples:
             - This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.
+    RetiredWorkspaceEncryptionMigrationDisabled:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - MIGRATION_DISABLED
+        message:
+          type: string
+          examples:
+            - Workspace encryption event migration is no longer available. Use maintained E2EE rollout tooling or local backfill scripts instead.
+    RetiredWorkspaceStorageMigrationDisabled:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - MIGRATION_DISABLED
+        message:
+          type: string
+          examples:
+            - Workspace storage provider migration is no longer available. Use maintained storage migration runbooks or local backfill scripts instead.
+    RetiredWorkspaceExportMigrationDisabled:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - MIGRATION_DISABLED
+        message:
+          type: string
+          examples:
+            - Workspace API-key migration export is no longer available. Use maintained database exports or local backfill scripts instead.
     ObsoleteInfrastructureMigrationDisabled:
       type: object
       required:

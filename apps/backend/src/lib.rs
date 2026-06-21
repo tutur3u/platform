@@ -72,6 +72,9 @@ const GROUPED_SCORE_NAMES_MIGRATION_PATH: &str =
 const GROUPED_SCORE_NAMES_MIGRATION_DISABLED_MESSAGE: &str = "Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.";
 const OBSOLETE_INFRASTRUCTURE_MIGRATION_DISABLED_MESSAGE: &str = "This infrastructure batch migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.";
 const OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE: &str = "This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.";
+const RETIRED_WORKSPACE_ENCRYPTION_MIGRATION_DISABLED_MESSAGE: &str = "Workspace encryption event migration is no longer available. Use maintained E2EE rollout tooling or local backfill scripts instead.";
+const RETIRED_WORKSPACE_STORAGE_MIGRATION_DISABLED_MESSAGE: &str = "Workspace storage provider migration is no longer available. Use maintained storage migration runbooks or local backfill scripts instead.";
+const RETIRED_WORKSPACE_EXPORT_MIGRATION_DISABLED_MESSAGE: &str = "Workspace API-key migration export is no longer available. Use maintained database exports or local backfill scripts instead.";
 const OBSOLETE_INFRASTRUCTURE_MIGRATION_POST_ONLY: [&str; 1] = ["ensure-platform-users"];
 const OBSOLETE_INFRASTRUCTURE_MIGRATION_GET_PUT_PATCH: [&str; 3] = [
     "wallet-transactions",
@@ -681,6 +684,16 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
             method,
             obsolete_workspace_migration_allowed_methods(path).unwrap_or("PUT"),
         ),
+        (method, path) if is_retired_workspace_data_migration_method(method, path) => {
+            let (_, message) = retired_workspace_data_migration_route(path)
+                .unwrap_or(("GET", OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE));
+            retired_workspace_data_migration_response(message)
+        }
+        (method, path) if is_retired_workspace_data_migration_path(path) => {
+            let (allowed_methods, _) = retired_workspace_data_migration_route(path)
+                .unwrap_or(("GET", OBSOLETE_WORKSPACE_MIGRATION_DISABLED_MESSAGE));
+            method_not_allowed(method, allowed_methods)
+        }
         ("GET", USER_FIELD_TYPES_PATH) => user_field_types_response(),
         (method, USER_FIELD_TYPES_PATH) => method_not_allowed(method, "GET"),
         ("GET", contact::CURRENT_USER_PROFILE_PATH) => {
@@ -1339,6 +1352,16 @@ fn obsolete_workspace_migration_response(config: &BackendConfig) -> BackendRespo
     )
 }
 
+fn retired_workspace_data_migration_response(message: &'static str) -> BackendResponse {
+    json_response(
+        410,
+        json!({
+            "message": message,
+            "error": "MIGRATION_DISABLED",
+        }),
+    )
+}
+
 fn retired_legacy_api_response(message: &'static str) -> BackendResponse {
     json_response(
         410,
@@ -1946,6 +1969,60 @@ fn obsolete_workspace_migration_allowed_methods(path: &str) -> Option<&'static s
         && segments[6] == "migrate"
     {
         return Some("PUT");
+    }
+
+    None
+}
+
+fn is_retired_workspace_data_migration_method(method: &str, path: &str) -> bool {
+    retired_workspace_data_migration_route(path).is_some_and(|(allowed, _)| {
+        allowed
+            .split(", ")
+            .any(|allowed_method| allowed_method == method)
+    })
+}
+
+fn is_retired_workspace_data_migration_path(path: &str) -> bool {
+    retired_workspace_data_migration_route(path).is_some()
+}
+
+fn retired_workspace_data_migration_route(path: &str) -> Option<(&'static str, &'static str)> {
+    let segments = path_segments(path);
+
+    if segments.len() == 6
+        && segments[0] == "api"
+        && segments[1] == "v1"
+        && segments[2] == "workspaces"
+        && !segments[3].is_empty()
+        && segments[4] == "encryption"
+        && segments[5] == "migrate"
+    {
+        return Some((
+            "GET, POST",
+            RETIRED_WORKSPACE_ENCRYPTION_MIGRATION_DISABLED_MESSAGE,
+        ));
+    }
+
+    if segments.len() == 6
+        && segments[0] == "api"
+        && segments[1] == "v1"
+        && segments[2] == "workspaces"
+        && !segments[3].is_empty()
+        && segments[4] == "storage"
+        && segments[5] == "migrate"
+    {
+        return Some(("POST", RETIRED_WORKSPACE_STORAGE_MIGRATION_DISABLED_MESSAGE));
+    }
+
+    if segments.len() == 6
+        && segments[0] == "api"
+        && segments[1] == "v2"
+        && segments[2] == "workspaces"
+        && !segments[3].is_empty()
+        && segments[4] == "migrate"
+        && !segments[5].is_empty()
+    {
+        return Some(("GET", RETIRED_WORKSPACE_EXPORT_MIGRATION_DISABLED_MESSAGE));
     }
 
     None
@@ -5319,6 +5396,68 @@ mod tests {
         ] {
             let response = route_request(
                 &BackendConfig::new("development", "backend"),
+                request(method, path),
+            );
+
+            assert_eq!(response.status, 405, "{method} {path}");
+            assert_eq!(response.allow, Some(allow));
+            assert_eq!(response.body["error"], "method not allowed");
+        }
+    }
+
+    #[test]
+    fn retired_workspace_data_migration_routes_return_disabled_response() {
+        for (method, path, message) in [
+            (
+                "GET",
+                "/api/v1/workspaces/acme/encryption/migrate",
+                RETIRED_WORKSPACE_ENCRYPTION_MIGRATION_DISABLED_MESSAGE,
+            ),
+            (
+                "POST",
+                "/api/v1/workspaces/acme/encryption/migrate",
+                RETIRED_WORKSPACE_ENCRYPTION_MIGRATION_DISABLED_MESSAGE,
+            ),
+            (
+                "POST",
+                "/api/v1/workspaces/acme/storage/migrate",
+                RETIRED_WORKSPACE_STORAGE_MIGRATION_DISABLED_MESSAGE,
+            ),
+            (
+                "GET",
+                "/api/v2/workspaces/acme/migrate/wallet-types",
+                RETIRED_WORKSPACE_EXPORT_MIGRATION_DISABLED_MESSAGE,
+            ),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("production", "backend"),
+                request(method, path),
+            );
+
+            assert_eq!(response.status, 410, "{method} {path}");
+            assert_eq!(response.content_type, Some(APPLICATION_JSON));
+            assert_eq!(response.body["error"], "MIGRATION_DISABLED");
+            assert_eq!(response.body["message"], message);
+        }
+    }
+
+    #[test]
+    fn retired_workspace_data_migration_routes_reject_unsupported_methods() {
+        for (method, path, allow) in [
+            (
+                "PUT",
+                "/api/v1/workspaces/acme/encryption/migrate",
+                "GET, POST",
+            ),
+            ("GET", "/api/v1/workspaces/acme/storage/migrate", "POST"),
+            (
+                "POST",
+                "/api/v2/workspaces/acme/migrate/wallet-types",
+                "GET",
+            ),
+        ] {
+            let response = route_request(
+                &BackendConfig::new("production", "backend"),
                 request(method, path),
             );
 

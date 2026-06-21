@@ -110,6 +110,21 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet transaction migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy finance data write is intentionally not preserved for Cloudflare cutover."
     },
+    "api:/api/v1/workspaces/:wsId/encryption/migrate:apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy workspace encryption GET/POST migration helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy admin calendar-event encryption read/write path is intentionally not preserved for Cloudflare cutover; use maintained E2EE rollout tooling or local backfill scripts instead."
+    },
+    "api:/api/v1/workspaces/:wsId/storage/migrate:apps/web/src/app/api/v1/workspaces/[wsId]/storage/migrate/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy workspace storage POST migration helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy provider-to-provider storage mutation path is intentionally not preserved for Cloudflare cutover; use maintained storage migration runbooks or local backfill scripts instead."
+    },
+    "api:/api/v2/workspaces/:wsId/migrate/:module:apps/web/src/app/api/v2/workspaces/[wsId]/migrate/[module]/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy API-key GET migration export helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy broad Supabase admin export path is intentionally not preserved for Cloudflare cutover; use maintained database exports or local backfill scripts instead."
+    },
     "api:/api/v1/infrastructure/languages:apps/web/src/app/api/v1/infrastructure/languages/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

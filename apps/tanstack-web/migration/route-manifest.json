@@ -3,14 +3,14 @@
   "progress": {
     "byKind": [
       {
-        "acceptedRemoval": 79,
+        "acceptedRemoval": 82,
         "key": "api",
         "label": "api",
-        "legacyNext": 994,
+        "legacyNext": 991,
         "migrated": 32,
-        "percentComplete": 10.05,
-        "remaining": 994,
-        "terminal": 111,
+        "percentComplete": 10.32,
+        "remaining": 991,
+        "terminal": 114,
         "total": 1105,
         "unknownStatus": 0
       },
@@ -113,14 +113,14 @@
     ],
     "byOwner": [
       {
-        "acceptedRemoval": 79,
+        "acceptedRemoval": 82,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1012,
+        "legacyNext": 1009,
         "migrated": 37,
-        "percentComplete": 10.28,
-        "remaining": 1012,
-        "terminal": 116,
+        "percentComplete": 10.55,
+        "remaining": 1009,
+        "terminal": 119,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -320,14 +320,14 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 79,
+      "acceptedRemoval": 82,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1263,
+      "legacyNext": 1260,
       "migrated": 163,
-      "percentComplete": 16.08,
-      "remaining": 1263,
-      "terminal": 242,
+      "percentComplete": 16.28,
+      "remaining": 1260,
+      "terminal": 245,
       "total": 1505,
       "unknownStatus": 0
     }
@@ -5736,7 +5736,7 @@
       "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/encryption/migrate",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -7828,7 +7828,7 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/storage/migrate",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/migrate/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
@@ -9781,7 +9781,7 @@
       "methods": ["GET"],
       "routePath": "/api/v2/workspaces/:wsId/migrate/:module",
       "sourceFile": "apps/web/src/app/api/v2/workspaces/[wsId]/migrate/[module]/route.ts",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
     {
