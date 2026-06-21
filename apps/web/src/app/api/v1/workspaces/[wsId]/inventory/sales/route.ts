@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { listCompletedCheckoutSales } from '@/lib/inventory/commerce/checkouts';
 import { canViewInventorySales } from '@/lib/inventory/permissions';
 import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
 import { getInventorySales } from '@/lib/inventory/sales-rpc';
@@ -19,20 +20,44 @@ interface Params {
 }
 
 type InventorySaleListItem = {
-  category_name: string | null;
+  category_name?: string | null;
   completed_at: string | null;
   created_at: string | null;
-  creator_name: string | null;
+  creator_name?: string | null;
+  currency?: string | null;
   customer_name: string | null;
   id: string;
   items_count: number;
-  note: string | null;
-  notice: string | null;
-  owners: string[];
+  note?: string | null;
+  notice?: string | null;
+  owners?: string[];
   paid_amount: number;
+  polar_order_id?: string | null;
+  public_token?: string | null;
+  source: 'checkout_session' | 'finance_invoice';
   total_quantity: number;
-  wallet_name: string | null;
+  wallet_name?: string | null;
 };
+
+function saleTimestamp(sale: InventorySaleListItem) {
+  const timestamp = sale.completed_at ?? sale.created_at;
+  if (!timestamp) return 0;
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function normalizeFinanceSale(
+  sale: Omit<InventorySaleListItem, 'source'> & {
+    source?: InventorySaleListItem['source'];
+  }
+): InventorySaleListItem {
+  return {
+    ...sale,
+    currency: sale.currency ?? null,
+    owners: sale.owners ?? [],
+    source: 'finance_invoice',
+  };
+}
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
@@ -57,31 +82,51 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { limit, offset } = parsed.data;
-  const [salesResult, realtimeEnabled] = await Promise.all([
-    getInventorySales<InventorySaleListItem>({
-      limit,
-      offset,
-      sbAdmin,
-      wsId,
-    })
-      .then((data) => ({ data, error: null }))
-      .catch((error) => ({ data: null, error })),
-    isInventoryRealtimeEnabled(wsId),
-  ]);
+  const windowLimit = limit + offset;
+  const [financeSalesResult, checkoutSalesResult, realtimeEnabled] =
+    await Promise.all([
+      getInventorySales<InventorySaleListItem>({
+        limit: windowLimit,
+        offset: 0,
+        sbAdmin,
+        wsId,
+      })
+        .then((data) => ({ data, error: null }))
+        .catch((error) => ({ data: null, error })),
+      listCompletedCheckoutSales({
+        limit: windowLimit,
+        offset: 0,
+        sbAdmin,
+        wsId,
+      })
+        .then((data) => ({ data, error: null }))
+        .catch((error) => ({ data: null, error })),
+      isInventoryRealtimeEnabled(wsId),
+    ]);
 
-  if (salesResult.error) {
-    serverLogger.error('Error fetching inventory sales', salesResult.error);
+  if (financeSalesResult.error || checkoutSalesResult.error) {
+    serverLogger.error('Error fetching inventory sales', {
+      checkoutSalesError: checkoutSalesResult.error,
+      financeSalesError: financeSalesResult.error,
+    });
     return NextResponse.json(
       { message: 'Failed to fetch inventory sales' },
       { status: 500 }
     );
   }
 
-  const data = salesResult.data?.data ?? [];
+  const data = [
+    ...(financeSalesResult.data?.data ?? []).map(normalizeFinanceSale),
+    ...(checkoutSalesResult.data?.data ?? []),
+  ]
+    .sort((a, b) => saleTimestamp(b) - saleTimestamp(a))
+    .slice(offset, offset + limit);
 
   return NextResponse.json({
     data,
-    count: salesResult.data?.count ?? data.length,
+    count:
+      (financeSalesResult.data?.count ?? 0) +
+      (checkoutSalesResult.data?.count ?? 0),
     realtime_enabled: realtimeEnabled,
   });
 }

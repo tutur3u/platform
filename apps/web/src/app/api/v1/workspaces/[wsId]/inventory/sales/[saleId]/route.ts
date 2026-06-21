@@ -171,6 +171,7 @@ function normalizeSaleDetail(data: SaleInvoiceRow) {
         )
       ),
     ],
+    source: 'finance_invoice' as const,
     lines: lines.map((line: SaleInvoiceProductRow) => ({
       product_id: line.product_id ?? '',
       product_name: line.product_name ?? '',

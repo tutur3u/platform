@@ -970,6 +970,10 @@
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
+        "source": {
+          "checkout": "Checkout",
+          "finance": "Invoice"
+        },
         "status": {
           "completed": "Completed",
           "expired": "Expired",
@@ -1164,7 +1168,7 @@
         "audits": "Audit events will appear after checkout, stock, or setup changes are recorded.",
         "bundles": "Create a bundle, then attach component products to prepare a campaign-ready listing.",
         "checkouts": "Reserved and completed Polar checkout sessions will appear here.",
-        "sales": "Finalized checkout sales linked to finance invoices will appear here.",
+        "sales": "Completed checkout and invoice sales will appear here.",
         "storefronts": "Create a storefront, customize its theme, then publish listings for buyers."
       },
       "forms": {

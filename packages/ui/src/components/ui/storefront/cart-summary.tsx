@@ -7,7 +7,6 @@ import type { FormEvent } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { AccentButton } from './accent-button';
-import { StorefrontImagePanel } from './image-panel';
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartEntry,
@@ -30,6 +29,7 @@ export function StorefrontCartSummary({
   isPreview,
   isSubmitting,
   labels,
+  onCheckoutOpen,
   onCheckoutSubmit,
   onInstantCheckout,
   radius,
@@ -44,6 +44,7 @@ export function StorefrontCartSummary({
   isPreview: boolean;
   isSubmitting: boolean;
   labels: StorefrontSurfaceLabels;
+  onCheckoutOpen?: () => void;
   onCheckoutSubmit?: (formData: FormData) => void;
   onInstantCheckout?: () => void;
   radius: string;
@@ -54,7 +55,7 @@ export function StorefrontCartSummary({
   const isCheckoutDisabled = storefront.checkoutMode === 'disabled';
   const submitDisabled =
     !hasCart || isSubmitting || isCheckoutDisabled || !onCheckoutSubmit;
-  const canOpenCheckout = hasCart && Boolean(checkoutHref);
+  const canOpenCheckout = hasCart && Boolean(checkoutHref || onCheckoutOpen);
   const buyerEmail = buyerDefaults?.email?.trim() || undefined;
   const buyerName = buyerDefaults?.name?.trim() || undefined;
   const inputClassName =
@@ -64,7 +65,8 @@ export function StorefrontCartSummary({
   return (
     <aside
       className={cn(
-        'h-fit p-4 lg:sticky lg:top-4',
+        'h-fit p-4',
+        isCheckout ? null : 'lg:sticky lg:top-4',
         isCheckout ? 'p-5 sm:p-6' : null,
         storefrontSurfaceClasses[storefront.surfaceStyle],
         radius
@@ -87,14 +89,9 @@ export function StorefrontCartSummary({
             : null;
           return (
             <div
-              className="flex items-center gap-3 text-sm"
+              className="flex items-start gap-3 text-sm"
               key={storefrontCartLineKey(line.listingId, line.variantId)}
             >
-              <StorefrontImagePanel
-                className={cn('size-10 shrink-0 rounded-md', radius)}
-                imageUrl={variant?.imageUrl ?? listing.imageUrl}
-                label={listing.title}
-              />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{listing.title}</p>
                 {variantLabel ? (
@@ -198,12 +195,24 @@ export function StorefrontCartSummary({
               {isSubmitting ? labels.reserving : labels.instantCheckout}
             </AccentButton>
           ) : null}
-          <Button asChild className={cn('w-full', radius)} variant="outline">
-            <a href={checkoutHref}>
+          {onCheckoutOpen ? (
+            <Button
+              className={cn('w-full', radius)}
+              onClick={onCheckoutOpen}
+              type="button"
+              variant="outline"
+            >
               {labels.checkout}
               <ArrowRight className="size-4 shrink-0" />
-            </a>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild className={cn('w-full', radius)} variant="outline">
+              <a href={checkoutHref}>
+                {labels.checkout}
+                <ArrowRight className="size-4 shrink-0" />
+              </a>
+            </Button>
+          )}
         </div>
       ) : (
         <Button className={cn('mt-4 w-full', radius)} disabled type="button">

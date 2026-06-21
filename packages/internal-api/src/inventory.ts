@@ -791,14 +791,26 @@ export type InventoryBatchPayload = {
   total_diff?: number;
 };
 
+export type InventorySaleSource = 'checkout_session' | 'finance_invoice';
+
 export type InventorySaleSummary = {
+  category_name?: string | null;
   completed_at: string | null;
   created_at: string | null;
+  creator_name?: string | null;
+  currency?: string | null;
   customer_name: string | null;
   id: string;
   items_count: number;
+  note?: string | null;
+  notice?: string | null;
+  owners?: string[];
   paid_amount: number;
+  polar_order_id?: string | null;
+  public_token?: string | null;
+  source: InventorySaleSource;
   total_quantity: number;
+  wallet_name?: string | null;
 };
 
 export type InventorySaleLine = {
@@ -930,6 +942,10 @@ export type InventoryUnitPayload = {
 export type InventoryOffsetListQuery = {
   limit?: number;
   offset?: number;
+};
+
+export type InventoryOrderHistoryQuery = InventoryOffsetListQuery & {
+  storeSlug?: string;
 };
 
 export type InventoryStorefrontPayload = {
@@ -1223,6 +1239,22 @@ export type InventoryPublicStorefrontResponse = {
 export type InventoryCheckoutResponse = {
   checkout: InventoryCheckoutSession;
   checkoutUrl: string | null;
+};
+
+export type InventoryOrderHistoryItem = {
+  checkout: InventoryCheckoutSession;
+  completedAt: string | null;
+  createdAt: string | null;
+  currency: string;
+  id: string;
+  lines: InventoryCheckoutLine[];
+  polarStatus: InventoryPolarCheckoutStatus | null;
+  publicToken: string;
+  status: InventoryCheckoutStatus;
+  storefrontId: string;
+  storefrontName: string;
+  storefrontSlug: string;
+  totalAmount: number;
 };
 
 function workspaceInventoryPath(wsId: string, suffix: string) {
@@ -2591,5 +2623,17 @@ export function getInventoryPublicOrder(
     order: InventoryCheckoutSession;
   }>(`/api/v1/inventory/orders/${encodePathSegment(publicToken)}`, {
     cache: 'no-store',
+  });
+}
+
+export function listInventoryOrderHistory(
+  query?: InventoryOrderHistoryQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<InventoryOrderHistoryItem>
+  >('/api/v1/inventory/orders', {
+    cache: 'no-store',
+    query: asQuery(query),
   });
 }

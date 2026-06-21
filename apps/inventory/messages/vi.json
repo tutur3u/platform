@@ -970,6 +970,10 @@
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "source": {
+          "checkout": "Checkout",
+          "finance": "Hóa đơn"
+        },
         "status": {
           "completed": "Hoàn tất",
           "expired": "Hết hạn",
@@ -1164,7 +1168,7 @@
         "audits": "Sự kiện kiểm toán sẽ xuất hiện sau các thay đổi checkout, tồn kho hoặc thiết lập.",
         "bundles": "Tạo combo rồi gắn sản phẩm thành phần để chuẩn bị listing cho chiến dịch.",
         "checkouts": "Các phiên checkout Polar đã giữ hàng hoặc hoàn tất sẽ xuất hiện tại đây.",
-        "sales": "Doanh số checkout đã hoàn tất và liên kết hóa đơn tài chính sẽ xuất hiện tại đây.",
+        "sales": "Doanh số checkout và hóa đơn đã hoàn tất sẽ xuất hiện tại đây.",
         "storefronts": "Tạo cửa hàng, tùy chỉnh giao diện rồi xuất bản listing cho người mua."
       },
       "forms": {

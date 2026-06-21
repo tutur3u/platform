@@ -9,7 +9,7 @@ export default async function StorefrontOrderPage({
   const { publicToken, storeSlug } = await params;
   return (
     <StorefrontClient
-      headerActions={<StorefrontHeaderActions />}
+      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
       mode="order"
       publicToken={publicToken}
       storeSlug={storeSlug}

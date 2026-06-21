@@ -182,7 +182,7 @@ export function StorefrontProductDetail({
                           'inline-flex h-10 items-center justify-center border px-3 font-medium text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
                           radius,
                           isActive
-                            ? 'border-[var(--storefront-accent,var(--primary))] bg-[var(--storefront-accent,var(--primary))]/10 text-[var(--storefront-accent,var(--primary))]'
+                            ? 'border-[var(--storefront-accent-border,var(--border))] bg-[var(--storefront-accent-soft,var(--muted))] text-[var(--storefront-accent-text,var(--primary))]'
                             : 'border-border bg-card hover:bg-muted/45'
                         )}
                         key={value.id}

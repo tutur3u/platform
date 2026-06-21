@@ -16,7 +16,7 @@ export default async function StorefrontPage({
 
   return (
     <StorefrontClient
-      headerActions={<StorefrontHeaderActions />}
+      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
       initialStorefront={initialStorefront}
       mode="store"
       storeSlug={storeSlug}

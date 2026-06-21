@@ -27,6 +27,8 @@ const PUBLIC_STOREFRONT_API_PATTERN =
 const PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN =
   /^\/api\/v1\/inventory\/storefronts\/[^/]+\/analytics\/events\/?$/u;
 const PUBLIC_ORDER_API_PATTERN = /^\/api\/v1\/inventory\/orders\/[^/]+\/?$/u;
+const PUBLIC_POLAR_WEBHOOK_API_PATTERN =
+  /^\/api\/v1\/inventory\/polar\/webhook\/[^/]+\/?$/u;
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -93,6 +95,10 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
     method === 'POST' &&
     PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN.test(pathname)
   ) {
+    return true;
+  }
+
+  if (method === 'POST' && PUBLIC_POLAR_WEBHOOK_API_PATTERN.test(pathname)) {
     return true;
   }
 

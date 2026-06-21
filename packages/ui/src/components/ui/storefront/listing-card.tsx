@@ -92,7 +92,7 @@ export function StorefrontListingCard({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <button
-            className="min-w-0 truncate text-left font-semibold transition hover:text-[var(--storefront-accent,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-default disabled:hover:text-foreground"
+            className="min-w-0 truncate text-left font-semibold transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-default disabled:hover:text-foreground"
             disabled={!openDetail}
             onClick={openDetail}
             type="button"

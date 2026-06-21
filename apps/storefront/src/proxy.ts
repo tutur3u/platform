@@ -54,16 +54,28 @@ function getNextValue(request: NextRequest) {
 
 function isPublicStorefrontPath(unlocalizedPath: string) {
   if (unlocalizedPath === '/') return true;
+  if (unlocalizedPath === '/orders') return false;
   if (
     unlocalizedPath.startsWith('/login') ||
-    unlocalizedPath.startsWith('/verify-token') ||
-    unlocalizedPath.startsWith('/store')
+    unlocalizedPath.startsWith('/verify-token')
   ) {
     return true;
   }
 
-  const [, , childPath] = unlocalizedPath.split('/');
-  return childPath !== 'checkout';
+  const segments = unlocalizedPath.split('/').filter(Boolean);
+
+  if (segments[0] === 'store') {
+    const [, , childPath, publicToken] = segments;
+    if (childPath === 'checkout') return false;
+    if (childPath === 'orders' && !publicToken) return false;
+    return true;
+  }
+
+  const [, childPath, publicToken] = segments;
+  if (childPath === 'checkout') return false;
+  if (childPath === 'orders' && !publicToken) return false;
+
+  return true;
 }
 
 function getCanonicalLocaleRedirect(request: NextRequest) {

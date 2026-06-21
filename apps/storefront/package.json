@@ -23,6 +23,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
+    "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

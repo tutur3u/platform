@@ -1,16 +1,16 @@
-import { StorefrontClient } from '@/components/storefront/storefront-client';
+import { PurchaseHistoryClient } from '@/components/storefront/purchase-history-client';
 import { StorefrontHeaderActions } from '../../storefront-header-actions';
 
-export default async function StorefrontCartPage({
+export default async function StorefrontOrdersPage({
   params,
 }: {
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
+
   return (
-    <StorefrontClient
+    <PurchaseHistoryClient
       headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
-      mode="cart"
       storeSlug={storeSlug}
     />
   );

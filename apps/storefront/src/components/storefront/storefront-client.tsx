@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
@@ -8,6 +8,7 @@ import {
   type InventoryPublicStorefrontResponse,
   recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
+import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
@@ -19,9 +20,10 @@ import {
 } from '@tuturuuu/ui/storefront';
 import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useQueryState } from 'nuqs';
-import { type ReactNode, useMemo, useState } from 'react';
-import { Link } from '@/i18n/navigation';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -36,6 +38,7 @@ type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 type StorefrontClientProps = {
   buyerDefaults?: StorefrontBuyerDefaults;
   headerActions?: ReactNode;
+  initialCheckoutOpen?: boolean;
   initialStorefront?: InventoryPublicStorefrontResponse | null;
   listingId?: string;
   mode: StorefrontMode;
@@ -46,6 +49,7 @@ type StorefrontClientProps = {
 export function StorefrontClient({
   buyerDefaults,
   headerActions,
+  initialCheckoutOpen = false,
   initialStorefront,
   listingId,
   mode,
@@ -54,8 +58,17 @@ export function StorefrontClient({
 }: StorefrontClientProps) {
   const t = useTranslations('storefront');
   const cart = useCart(storeSlug);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { resolvedTheme } = useTheme();
   const [detailListingId, setDetailListingId] = useQueryState('product');
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(
+    initialCheckoutOpen || mode === 'checkout'
+  );
+  const [isPolarConfirmed, setIsPolarConfirmed] = useState(false);
+  const [checkoutInstance, setCheckoutInstance] =
+    useState<PolarEmbedCheckout | null>(null);
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -65,6 +78,8 @@ export function StorefrontClient({
     initialData: initialStorefront ?? undefined,
     queryFn: () => getOptionalInventoryPublicStorefront(storeSlug),
     queryKey: ['storefront', storeSlug],
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const storefront = storefrontQuery.data?.storefront;
   const isDemoStorefront = isDemoStorefrontFixture(storefront);
@@ -84,6 +99,11 @@ export function StorefrontClient({
       publicToken,
       isDemoStorefront ? 'demo-fixture' : 'live',
     ],
+    refetchInterval: (query) => {
+      const order = query.state.data?.order;
+      if (!order || order.status === 'completed') return false;
+      return 2000;
+    },
   });
   const listings = storefrontQuery.data?.listings ?? [];
   const selectedListing = listings.find((listing) => listing.id === listingId);
@@ -111,6 +131,14 @@ export function StorefrontClient({
       Math.min(line.quantity, lineLimit(listing, variant)) > 0
   );
 
+  useEffect(() => {
+    if (mode !== 'order' || orderQuery.data?.order.status !== 'completed') {
+      return;
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ['storefront', storeSlug] });
+  }, [mode, orderQuery.data?.order.status, queryClient, storeSlug]);
+
   type CheckoutLineInput = {
     listingId: string;
     variantId?: string;
@@ -123,6 +151,71 @@ export function StorefrontClient({
     customerPhone?: string | null;
     note?: string | null;
   };
+
+  const navigateToCheckoutResult = (url: string) => {
+    let target: URL;
+    try {
+      target = new URL(url, window.location.origin);
+    } catch {
+      toast.error(t('checkoutError'));
+      return;
+    }
+
+    if (target.origin !== window.location.origin) {
+      toast.error(t('checkoutError'));
+      return;
+    }
+
+    router.push(`${target.pathname}${target.search}${target.hash}`);
+  };
+
+  const openEmbeddedPolarCheckout = async (checkoutUrl: string) => {
+    setIsRedirecting(true);
+    setIsPolarConfirmed(false);
+
+    try {
+      const checkout = await PolarEmbedCheckout.create(checkoutUrl, {
+        theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+      });
+
+      checkout.addEventListener('close', () => {
+        setCheckoutInstance(null);
+        setIsRedirecting(false);
+        setIsPolarConfirmed(false);
+      });
+      checkout.addEventListener('confirmed', () => {
+        setIsPolarConfirmed(true);
+      });
+      checkout.addEventListener('success', (event) => {
+        event.preventDefault();
+        checkout.close();
+        cart.clear();
+        setCheckoutInstance(null);
+        setIsCheckoutOpen(false);
+        setIsRedirecting(false);
+        setIsPolarConfirmed(false);
+        navigateToCheckoutResult(event.detail.successURL);
+      });
+
+      setCheckoutInstance(checkout);
+      setIsRedirecting(false);
+    } catch (error) {
+      setCheckoutInstance(null);
+      setIsRedirecting(false);
+      setIsPolarConfirmed(false);
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : t('checkoutError')
+      );
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      checkoutInstance?.close();
+    };
+  }, [checkoutInstance]);
 
   const checkoutMutation = useMutation({
     mutationFn: async (input: CheckoutInput) => {
@@ -138,24 +231,28 @@ export function StorefrontClient({
     },
     onError: (error) => {
       setIsRedirecting(false);
+      setIsPolarConfirmed(false);
       toast.error(
         error instanceof Error && error.message
           ? error.message
           : t('checkoutError')
       );
     },
-    onSuccess: ({ checkoutUrl }) => {
+    onSuccess: async ({ checkoutUrl }) => {
       if (!checkoutUrl) {
         setIsRedirecting(false);
         toast.error(t('checkoutError'));
         return;
       }
 
-      // Keep the loading overlay visible across the redirect — the page is
-      // navigating away to the Polar-hosted checkout.
-      setIsRedirecting(true);
-      cart.clear();
-      window.location.assign(checkoutUrl);
+      if (isSimulatedCheckout) {
+        cart.clear();
+        setIsCheckoutOpen(false);
+        navigateToCheckoutResult(checkoutUrl);
+        return;
+      }
+
+      await openEmbeddedPolarCheckout(checkoutUrl);
     },
   });
 
@@ -291,6 +388,7 @@ export function StorefrontClient({
   }
 
   const resolvedMode = mode === 'product' && !selectedListing ? 'store' : mode;
+  const surfaceMode = resolvedMode === 'checkout' ? 'cart' : resolvedMode;
   const surfaceLabels: Partial<StorefrontSurfaceLabels> = {
     add: t('add'),
     available: t('available'),
@@ -350,10 +448,10 @@ export function StorefrontClient({
       headerActions={headerActions}
       isDemo={isDemoStorefront}
       isRedirecting={isRedirecting}
-      isSubmitting={checkoutMutation.isPending}
+      isSubmitting={checkoutMutation.isPending || isPolarConfirmed}
       labels={surfaceLabels}
       listings={listings}
-      mode={resolvedMode}
+      mode={surfaceMode}
       onBuyNow={(buyNowListingId, variantId) => {
         // Instant checkout for a single product, skipping the cart entirely.
         recordAnalyticsEvent({
@@ -373,6 +471,7 @@ export function StorefrontClient({
           ],
         });
       }}
+      checkoutOpen={isCheckoutOpen}
       onCheckoutSubmit={(formData) => {
         recordAnalyticsEvent({
           eventType: 'checkout_started',
@@ -389,6 +488,8 @@ export function StorefrontClient({
           note: String(formData.get('note') ?? '') || null,
         });
       }}
+      onCheckoutOpen={() => setIsCheckoutOpen(true)}
+      onCheckoutOpenChange={setIsCheckoutOpen}
       onDecrement={(selectedListingId, variantId) => {
         cart.decrement(selectedListingId, variantId);
         recordAnalyticsEvent({
@@ -410,7 +511,7 @@ export function StorefrontClient({
         // One-click checkout from the cart: submit directly when we already know
         // the buyer, otherwise send them to the checkout form to fill details.
         if (!buyerDefaults?.email) {
-          window.location.assign(`/${storeSlug}/checkout`);
+          setIsCheckoutOpen(true);
           return;
         }
         recordAnalyticsEvent({

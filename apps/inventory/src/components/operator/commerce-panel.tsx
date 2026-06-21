@@ -293,6 +293,7 @@ function SaleRows({
     <div className="grid gap-2">
       {filteredRows.map((row) => {
         const date = formatDate(row.completed_at ?? row.created_at, locale);
+        const isCheckoutSale = row.source === 'checkout_session';
 
         return (
           <article
@@ -301,10 +302,21 @@ function SaleRows({
           >
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
-                <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                {isCheckoutSale ? (
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
                 <p className="truncate font-medium">
                   {row.customer_name ?? row.id}
                 </p>
+                <StatusBadge
+                  value={
+                    isCheckoutSale
+                      ? t('commerce.source.checkout')
+                      : t('commerce.source.finance')
+                  }
+                />
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
                 <span>{t('commerce.items', { count: row.items_count })}</span>
@@ -314,11 +326,18 @@ function SaleRows({
                     {date}
                   </span>
                 ) : null}
+                {isCheckoutSale && row.public_token ? (
+                  <span className="font-mono">{row.public_token}</span>
+                ) : null}
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-              <StatusBadge value={money(row.paid_amount)} />
-              <SaleNoteDialog sale={row} wsId={wsId} />
+              <StatusBadge
+                value={money(row.paid_amount, row.currency ?? 'USD')}
+              />
+              {isCheckoutSale ? null : (
+                <SaleNoteDialog sale={row} wsId={wsId} />
+              )}
             </div>
           </article>
         );
@@ -410,6 +429,7 @@ export function CommercePanel({
     (row) => row.status === 'completed'
   ).length;
   const salesTotal = sales.reduce((total, row) => total + row.paid_amount, 0);
+  const salesCurrency = sales.find((row) => row.currency)?.currency ?? 'USD';
 
   return (
     <div className="grid gap-3">
@@ -438,7 +458,7 @@ export function CommercePanel({
           description={t('metrics.revenueDescription')}
           icon={CircleDollarSign}
           label={t('metrics.revenue')}
-          value={money(salesTotal)}
+          value={money(salesTotal, salesCurrency)}
         />
       </div>
       <CommerceTabs onChange={setTab} tab={tab} />

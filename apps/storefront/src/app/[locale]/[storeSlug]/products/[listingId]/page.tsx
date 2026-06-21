@@ -9,7 +9,7 @@ export default async function StorefrontProductPage({
   const { listingId, storeSlug } = await params;
   return (
     <StorefrontClient
-      headerActions={<StorefrontHeaderActions />}
+      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
       listingId={listingId}
       mode="product"
       storeSlug={storeSlug}

@@ -16,7 +16,8 @@ export default async function StorefrontCheckoutPage({
         email: user?.email,
         name: user?.display_name ?? user?.full_name ?? user?.name,
       }}
-      headerActions={<StorefrontHeaderActions />}
+      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
+      initialCheckoutOpen
       mode="checkout"
       storeSlug={storeSlug}
     />

@@ -104,6 +104,7 @@ describe('StorefrontSurface', () => {
     expect(cartLink).toHaveAttribute('href', '/preview-store/cart');
     expect(cartLink).toHaveClass('h-11', 'min-w-14', 'shrink-0');
     expect(cartLink.querySelector('svg')).toHaveClass('size-5', 'shrink-0');
+    expect(screen.getAllByText('1M')).toHaveLength(1);
   });
 
   it('prefills checkout buyer details while keeping editable form fields', () => {
@@ -169,13 +170,29 @@ describe('StorefrontSurface', () => {
             {
               createdAt: null,
               description: null,
+              href: null,
+              id: 'section-empty',
+              imageUrl: null,
+              items: [],
+              metadata: {},
+              sectionType: 'promo',
+              sortOrder: 0,
+              status: 'published',
+              storefrontId: storefront.id,
+              title: null,
+              updatedAt: null,
+              wsId: storefront.wsId,
+            },
+            {
+              createdAt: null,
+              description: null,
               href: 'javascript:alert(document.domain)',
               id: 'section-unsafe',
               imageUrl: null,
               items: [],
               metadata: {},
               sectionType: 'promo',
-              sortOrder: 0,
+              sortOrder: 1,
               status: 'published',
               storefrontId: storefront.id,
               title: 'Unsafe section',
@@ -191,7 +208,7 @@ describe('StorefrontSurface', () => {
               items: [],
               metadata: {},
               sectionType: 'promo',
-              sortOrder: 1,
+              sortOrder: 2,
               status: 'published',
               storefrontId: storefront.id,
               title: 'Safe section',
@@ -204,6 +221,7 @@ describe('StorefrontSurface', () => {
     );
 
     expect(screen.getByText('Safe section')).toBeInTheDocument();
+    expect(screen.queryByText('Storefront section')).not.toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'example.com/promo' })
     ).toHaveAttribute('href', 'https://example.com/promo');
