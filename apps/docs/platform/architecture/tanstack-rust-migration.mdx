@@ -63,7 +63,7 @@ secret-looking values under `vars`:
 
 | Worker                             | Required preview secrets                                                  |
 | ---------------------------------- | ------------------------------------------------------------------------- |
-| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL` |
+| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL` |
 | `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_URL`, `BACKEND_INTERNAL_TOKEN` |
 
 For local Worker previews, put secret values next to the owning Wrangler config
@@ -93,6 +93,8 @@ rustup target add wasm32-unknown-unknown
 cargo install worker-build --locked
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
 bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
@@ -140,6 +142,8 @@ versions command family instead:
 ```bash
 bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler versions secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+bun wrangler versions secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler versions deploy --config apps/backend/wrangler.jsonc

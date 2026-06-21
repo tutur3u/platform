@@ -7,6 +7,7 @@ const {
   GITIGNORE_PATH,
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
+  TANSTACK_RUST_MIGRATION_DOC_PATH,
   TANSTACK_WEB_PACKAGE_JSON_PATH,
   TANSTACK_WEB_ROUTE_TREE_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
@@ -260,27 +261,43 @@ test('Wrangler configs declare required preview secrets by name', () => {
 });
 
 test('Cloudflare preview runbook documents required Worker secrets', () => {
-  const runbook = fs.readFileSync(WEB_DOCKER_DEPLOYMENT_DOC_PATH, 'utf8');
+  for (const [runbookPath, runbookLabel] of [
+    [
+      WEB_DOCKER_DEPLOYMENT_DOC_PATH,
+      'apps/docs/build/devops/web-docker-deployment.mdx',
+    ],
+    [
+      TANSTACK_RUST_MIGRATION_DOC_PATH,
+      'apps/docs/platform/architecture/tanstack-rust-migration.mdx',
+    ],
+  ]) {
+    const runbook = fs.readFileSync(runbookPath, 'utf8');
 
-  assert.deepEqual(validateCloudflarePreviewRunbook(runbook), []);
-  assert.match(
-    validateCloudflarePreviewRunbook(
-      runbook.replace(
-        'bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc',
-        ''
-      )
-    ).join('\n'),
-    /DISCORD_APP_DEPLOYMENT_URL/
-  );
-  assert.match(
-    validateCloudflarePreviewRunbook(
-      runbook.replace(
-        'bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc',
-        ''
-      )
-    ).join('\n'),
-    /BACKEND_INTERNAL_URL/
-  );
+    assert.deepEqual(
+      validateCloudflarePreviewRunbook(runbook, runbookLabel),
+      []
+    );
+    assert.match(
+      validateCloudflarePreviewRunbook(
+        runbook.replace(
+          'bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc',
+          ''
+        ),
+        runbookLabel
+      ).join('\n'),
+      /SUPABASE_URL/
+    );
+    assert.match(
+      validateCloudflarePreviewRunbook(
+        runbook.replace(
+          'bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc',
+          ''
+        ),
+        runbookLabel
+      ).join('\n'),
+      /BACKEND_INTERNAL_URL/
+    );
+  }
 });
 
 test('Wrangler vars reject secret names and secret-looking values', () => {

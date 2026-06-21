@@ -26,6 +26,14 @@ const WEB_DOCKER_DEPLOYMENT_DOC_PATH = path.join(
   'devops',
   'web-docker-deployment.mdx'
 );
+const TANSTACK_RUST_MIGRATION_DOC_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'docs',
+  'platform',
+  'architecture',
+  'tanstack-rust-migration.mdx'
+);
 const TANSTACK_WEB_PACKAGE_JSON_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -548,7 +556,10 @@ function validateTanstackWebWranglerConfig(config) {
   return errors;
 }
 
-function validateCloudflarePreviewRunbook(runbookContent) {
+function validateCloudflarePreviewRunbook(
+  runbookContent,
+  runbookPath = 'apps/docs/build/devops/web-docker-deployment.mdx'
+) {
   const errors = [];
   const commandGroups = [
     {
@@ -570,13 +581,13 @@ function validateCloudflarePreviewRunbook(runbookContent) {
 
       if (!runbookContent.includes(bootstrapCommand)) {
         errors.push(
-          `apps/docs/build/devops/web-docker-deployment.mdx must document ${label} bootstrap command: ${bootstrapCommand}`
+          `${runbookPath} must document ${label} bootstrap command: ${bootstrapCommand}`
         );
       }
 
       if (!runbookContent.includes(versionCommand)) {
         errors.push(
-          `apps/docs/build/devops/web-docker-deployment.mdx must document ${label} version-rotation command: ${versionCommand}`
+          `${runbookPath} must document ${label} version-rotation command: ${versionCommand}`
         );
       }
     }
@@ -599,6 +610,17 @@ function checkCloudflareWorkersSetup({
   ),
   rustBackendWorkflowContent = fsImpl.readFileSync(
     path.join(rootDir, '.github', 'workflows', 'rust-backend.yml'),
+    'utf8'
+  ),
+  tanstackRustMigrationDocContent = fsImpl.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'docs',
+      'platform',
+      'architecture',
+      'tanstack-rust-migration.mdx'
+    ),
     'utf8'
   ),
   webDockerDeploymentDocContent = fsImpl.readFileSync(
@@ -638,7 +660,14 @@ function checkCloudflareWorkersSetup({
     ...validateTanstackWebViteConfig(tanstackWebViteConfigContent),
     ...validateTanstackWebRouteTree(tanstackWebRouteTreeContent),
     ...validateTanstackWebWranglerConfig(tanstackWebWranglerConfig),
-    ...validateCloudflarePreviewRunbook(webDockerDeploymentDocContent),
+    ...validateCloudflarePreviewRunbook(
+      webDockerDeploymentDocContent,
+      'apps/docs/build/devops/web-docker-deployment.mdx'
+    ),
+    ...validateCloudflarePreviewRunbook(
+      tanstackRustMigrationDocContent,
+      'apps/docs/platform/architecture/tanstack-rust-migration.mdx'
+    ),
   ];
 }
 
@@ -660,6 +689,7 @@ module.exports = {
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
   TANSTACK_WEB_PACKAGE_JSON_PATH,
+  TANSTACK_RUST_MIGRATION_DOC_PATH,
   TANSTACK_WEB_ROUTE_TREE_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
