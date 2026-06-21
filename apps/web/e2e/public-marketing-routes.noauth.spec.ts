@@ -81,6 +81,10 @@ const staticMarketingRoutes = [
     heading: "Let's Build Together",
   },
   {
+    path: `/${DEFAULT_LOCALE}/contributors`,
+    heading: 'Contributors',
+  },
+  {
     path: '/vi/about',
     heading: 'Giải Phóng Tiềm Năng Con Người Thông Qua Công Nghệ Thông Minh',
   },
