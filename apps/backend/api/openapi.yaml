@@ -167,6 +167,46 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/task-board-status-templates:
+    get:
+      summary: Task board status templates
+      description: Migrated replacement for apps/web/src/app/api/v1/task-board-status-templates/route.ts GET. The Rust backend preserves authenticated Supabase session access for browser cookies and non-app-session Bearer tokens, rejects Tuturuuu app-session tokens without falling back to stale cookies, reads the global `task_board_status_templates` catalog through the server-owned Supabase REST adapter, preserves the legacy `is_default.desc,name.asc` ordering, and returns the raw template row payload behind `{ templates }`.
+      security:
+        - SupabaseBearer: []
+        - SupabaseBrowserSessionCookie: []
+      responses:
+        "200":
+          description: Ordered task-board status template catalog.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskBoardStatusTemplatesResponse"
+        "401":
+          description: Caller is missing a valid Supabase browser cookie or non-app-session Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskBoardStatusTemplatesUnauthorized"
+        "500":
+          description: Status templates could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskBoardStatusTemplatesError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/users/me/hive-access:
     get:
       summary: Current user Hive access status
@@ -3122,6 +3162,10 @@ components:
       in: cookie
       name: sb-{project-ref}-auth-token
       description: Supabase browser auth cookie, including chunked `sb-{project-ref}-auth-token.N` variants, revalidated through Supabase Auth before protected data access.
+    SupabaseBearer:
+      type: http
+      scheme: bearer
+      description: Non-app-session Supabase access token supplied by mobile or API callers and revalidated through Supabase Auth before protected data access.
   responses:
     RequestBodyLengthRequired:
       description: Buffered JSON mutations require Content-Length so the Rust backend can enforce the 64 KiB body limit before reading.
@@ -3275,6 +3319,91 @@ components:
           type: string
           examples:
             - Failed to load current team
+    TaskBoardStatusTemplatesResponse:
+      type: object
+      required:
+        - templates
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskBoardStatusTemplate"
+    TaskBoardStatusTemplate:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - statuses
+        - is_default
+        - created_at
+        - updated_at
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        statuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskBoardStatusDefinition"
+        is_default:
+          type:
+            - boolean
+            - "null"
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    TaskBoardStatusDefinition:
+      type: object
+      additionalProperties: true
+      properties:
+        status:
+          type: string
+          enum:
+            - documents
+            - not_started
+            - active
+            - review
+            - done
+            - closed
+        name:
+          type: string
+        color:
+          type: string
+        allow_multiple:
+          type: boolean
+    TaskBoardStatusTemplatesUnauthorized:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+    TaskBoardStatusTemplatesError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Failed to fetch status templates
     HiveAccessResponse:
       type: object
       required:

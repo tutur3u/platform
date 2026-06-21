@@ -9,6 +9,7 @@ use crate::{
 };
 
 const SUPABASE_AUTH_COOKIE_BASE64_PREFIX: &str = "base64-";
+const APP_SESSION_BEARER_PREFIX: &str = "ttr_app_";
 const SUPABASE_AUTH_USER_PATH: &str = "user";
 
 #[derive(Clone, Debug, Default)]
@@ -30,9 +31,15 @@ pub(crate) struct SupabaseAuthUser {
 }
 
 pub(crate) fn request_access_token(request: BackendRequest<'_>) -> Option<String> {
-    request
-        .cookie
-        .and_then(supabase_access_token_from_cookie_header)
+    if contact::request_has_app_session_token(request) {
+        return None;
+    }
+
+    bearer_access_token(request.authorization).or_else(|| {
+        request
+            .cookie
+            .and_then(supabase_access_token_from_cookie_header)
+    })
 }
 
 pub(crate) async fn fetch_supabase_auth_user(
@@ -80,6 +87,16 @@ fn supabase_access_token_from_cookie_header(cookie_header: &str) -> Option<Strin
         .values()
         .filter_map(supabase_auth_cookie_value)
         .find_map(|value| access_token_from_supabase_cookie_value(&value))
+}
+
+fn bearer_access_token(authorization: Option<&str>) -> Option<String> {
+    let token = authorization?.strip_prefix("Bearer ")?.trim();
+
+    if token.is_empty() || token.starts_with(APP_SESSION_BEARER_PREFIX) {
+        return None;
+    }
+
+    Some(token.to_owned())
 }
 
 fn supabase_auth_cookie_groups(cookie_header: &str) -> BTreeMap<String, SupabaseAuthCookieGroup> {

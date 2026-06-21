@@ -104,6 +104,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/nova/me/team by preserving Nova-only app-session auth and browser Supabase cookie fallback, reading only team_id for the authenticated user from private.nova_team_members through the server-owned private-schema REST adapter, and returning the derived legacy teamId payload."
     },
+    "api:/api/v1/task-board-status-templates:apps/web/src/app/api/v1/task-board-status-templates/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/task-board-status-templates by preserving authenticated Supabase session access for browser cookies and non-app-session Bearer tokens, rejecting Tuturuuu app-session tokens without falling back to stale cookies, reading the global task_board_status_templates catalog through the server-owned Supabase REST adapter with legacy is_default.desc/name.asc ordering, and returning the raw legacy templates payload."
+    },
     "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {

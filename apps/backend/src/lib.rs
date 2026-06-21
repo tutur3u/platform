@@ -16,6 +16,7 @@ mod mobile_version;
 mod nova;
 mod outbound;
 mod supabase_auth;
+mod task_board_status_templates;
 mod task_embeddings;
 mod topic_announcements;
 mod workspace_limits;
@@ -397,6 +398,14 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = nova::handle_nova_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = task_board_status_templates::handle_task_board_status_templates_route(
+        config, request, outbound,
+    )
+    .await
+    {
         return response;
     }
 
@@ -3438,6 +3447,233 @@ mod tests {
         let response =
             handle_backend_request(&config, request("POST", "/api/v1/nova/me/team"), &outbound)
                 .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn task_board_status_templates_requires_session_before_admin_read() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/task-board-status-templates"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn task_board_status_templates_reads_ordered_global_templates() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let templates = r#"[
+            {
+                "id":"template-default",
+                "name":"Default",
+                "description":null,
+                "statuses":[
+                    {
+                        "status":"not_started",
+                        "name":"Not Started",
+                        "color":"gray",
+                        "allow_multiple":true
+                    }
+                ],
+                "is_default":true,
+                "created_at":"2025-06-08T14:00:08+00:00",
+                "updated_at":"2026-05-07T14:21:00+00:00"
+            }
+        ]"#;
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"browser-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(200, templates),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/v1/task-board-status-templates")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!({
+                "templates": [
+                    {
+                        "id": "template-default",
+                        "name": "Default",
+                        "description": null,
+                        "statuses": [
+                            {
+                                "status": "not_started",
+                                "name": "Not Started",
+                                "color": "gray",
+                                "allow_multiple": true,
+                            }
+                        ],
+                        "is_default": true,
+                        "created_at": "2025-06-08T14:00:08+00:00",
+                        "updated_at": "2026-05-07T14:21:00+00:00",
+                    }
+                ],
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert!(
+            calls[1].url.starts_with(
+                "https://project-ref.supabase.co/rest/v1/task_board_status_templates?"
+            )
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "select").as_deref(),
+            Some("*")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "order").as_deref(),
+            Some("is_default.desc,name.asc")
+        );
+        assert_eq!(recorded_header(&calls[1], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[1], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn task_board_status_templates_accepts_supabase_bearer_before_cookie() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("stale-browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"mobile-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(200, "[]"),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer mobile-access-token"),
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/v1/task-board-status-templates")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, json!({ "templates": [] }));
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer mobile-access-token")
+        );
+    }
+
+    #[tokio::test]
+    async fn task_board_status_templates_rejects_app_session_without_cookie_fallback() {
+        let config = backend_config_with_contact_data();
+        let token = valid_app_session_token();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_bearer("GET", "/api/v1/task-board-status-templates", token)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn task_board_status_templates_maps_admin_read_failures_to_legacy_error() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"browser-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/v1/task-board-status-templates")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Failed to fetch status templates");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn task_board_status_templates_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/task-board-status-templates"),
+            &outbound,
+        )
+        .await;
 
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
