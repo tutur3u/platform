@@ -249,6 +249,35 @@ report it and either revert only that generated diff or leave it unstaged for
 the coordinator, depending on the lane prompt. Never silently commit generated
 drift from another lane.
 
+### Dirty-Checkout Generation
+
+Generators see the filesystem, not coordination intent. In a shared checkout,
+untracked or dirty inputs from another lane can be swept into route trees,
+OpenAPI snapshots, docs navigation, generated manifests, or sorted locale files
+even when those source files are not staged. Before running a generator, ask:
+
+- Which source globs does the generator scan?
+- Are any matching dirty or untracked paths owned by another active note?
+- Would the generated artifact compile or validate if those other paths are not
+  staged in the same commit?
+
+If any answer is uncertain, do not run the generator directly in the dirty
+checkout. Use one of these safer patterns:
+
+- Run the generator in a clean detached worktree at the intended base commit,
+  copy in only the source files owned by the current lane, then copy back only
+  the generated artifact.
+- Temporarily pass an explicit input/output path when the generator supports it.
+- Split source and generated work so the lane that owns the dirty inputs also
+  owns the generated artifact and can stage them together.
+- Leave `Needs: Coordinator regenerate <artifact>` in the worker handoff and let
+  the coordinator regenerate after all relevant lanes are stable.
+
+When using a temporary worktree, remove it before handoff and record the method
+in `Verification:`. Never stage or commit a generated artifact that references
+untracked source files from another lane; it creates a committed tree that
+fails in a clean checkout.
+
 ## Archived Coordination Notes
 
 Keep the top-level `tmp/agent-coordination/` directory small enough for fast

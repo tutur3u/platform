@@ -267,6 +267,9 @@ shared generated artifacts by default, including TanStack route trees, migration
 manifests, route overrides, OpenAPI snapshots, docs navigation, sorted
 translation bundles, and Supabase generated types. Workers should report
 generated drift and hand off exact follow-up instead of silently committing it.
+When a generator can see dirty or untracked files owned by another lane,
+regenerate from a clean worktree or an explicit input set and copy back only the
+intended artifact.
 
 The normal scoped commit path still lets Git hooks run. Agents may use
 `git commit --no-verify` only when they can produce a proof packet for their
