@@ -86,6 +86,28 @@ Unblocks every authenticated page. Migrate to Rust/TanStack-server:
 > this gate lands. **Always check a legacy page for `auth.getUser()` /
 > `redirect('/login')` before migrating it as public.**
 
+> **Unblock delivered (2026-06-21).** The server-side gate now exists:
+> `apps/tanstack-web/src/lib/platform/auth-gate.ts` (fail-closed; 20 unit tests).
+> Use it in an auth-gated route's loader to replicate the legacy login redirect:
+>
+> ```ts
+> import { requireCurrentUser } from '../../../lib/platform/auth-gate';
+>
+> loader: async ({ params }) => {
+>   const user = await requireCurrentUser({
+>     locale: params.locale,
+>     nextPath: `/shared/user-profile/${params.code}`,
+>   }); // throws a 307 redirect to /$locale/login when unauthenticated
+>   // ...then fetch the resource with withForwardedInternalApiAuth(getRequestHeaders())
+> }
+> ```
+>
+> It resolves the session by forwarding request auth to internal-api
+> `/api/v1/users/me/profile` (the same forwarding the migrated `integrations`
+> route uses) and **fails closed** — any error or empty profile redirects to
+> login, never renders. The remaining per-route work is porting each route's
+> data loader + content component on top of this gate.
+
 ### Phase 2 — Workspace data API parity *(P1)*
 - Workspace membership, limits/tier, and the highest-traffic `/api/[wsId]/*`
   read endpoints behind dashboard pages.
