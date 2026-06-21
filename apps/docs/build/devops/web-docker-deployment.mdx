@@ -1,7 +1,7 @@
 ---
-title: "Web Docker Deployment"
-description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-06-20"
+title: 'Web Docker Deployment'
+description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
+updatedAt: '2026-06-20'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime and the
@@ -228,12 +228,13 @@ incremental preview validation:
    bun wrangler versions deploy --config apps/backend/wrangler.jsonc
    ```
 
-3. Bind the TanStack Worker to the backend Worker origin by name, not by
-   committing values:
+3. Bind the TanStack Worker to the backend Worker by service binding and keep
+   secret values out of source. `apps/tanstack-web/wrangler.jsonc` declares the
+   `BACKEND` service binding to `tuturuuu-backend`; `BACKEND_INTERNAL_URL` is
+   only an optional HTTP fallback for local or emergency non-binding runs:
 
    ```bash
    bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
-   bun wrangler secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
    bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
    ```
 
@@ -241,7 +242,6 @@ incremental preview validation:
 
    ```bash
    bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
-   bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
    bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
    bun wrangler versions deploy --config apps/tanstack-web/wrangler.jsonc
    ```

@@ -13,11 +13,13 @@
     "enabled": true,
     "head_sampling_rate": 0.05
   },
+  "services": [
+    {
+      "binding": "BACKEND",
+      "service": "tuturuuu-backend"
+    }
+  ],
   "secrets": {
-    "required": [
-      "BACKEND_PUBLIC_ORIGIN",
-      "BACKEND_INTERNAL_URL",
-      "BACKEND_INTERNAL_TOKEN"
-    ]
+    "required": ["BACKEND_PUBLIC_ORIGIN", "BACKEND_INTERNAL_TOKEN"]
   }
 }

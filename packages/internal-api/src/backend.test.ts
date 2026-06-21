@@ -9,6 +9,7 @@ import {
   getBackendMigrationProgress,
   getBackendMigrationStatus,
   getConfiguredBackendApiBaseUrl,
+  withBackendServiceBinding,
   withForwardedBackendApiAuth,
 } from './backend';
 
@@ -35,6 +36,16 @@ const ROUTE_METHOD_COUNTS = {
 function getFetchHeaders(fetchMock: ReturnType<typeof vi.fn>) {
   const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
   return new Headers(init?.headers);
+}
+
+function getServiceBindingRequest(fetchMock: ReturnType<typeof vi.fn>) {
+  const input = fetchMock.mock.calls[0]?.[0];
+
+  if (!(input instanceof Request)) {
+    throw new Error('Expected service binding fetch to receive a Request.');
+  }
+
+  return input;
 }
 
 describe('backend API client', () => {
@@ -532,6 +543,115 @@ describe('backend API client', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://backend:7820/healthz',
       expect.any(Object)
+    );
+  });
+
+  it('prefers a Cloudflare backend service binding over configured HTTP origins', async () => {
+    vi.stubEnv('BACKEND_INTERNAL_URL', 'http://backend:7820');
+    const bindingFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { 'content-type': 'application/json' },
+        status: 200,
+      })
+    );
+
+    const health = await getBackendLegacyHealth(
+      withBackendServiceBinding({
+        fetch: bindingFetch as unknown as typeof fetch,
+      })
+    );
+
+    expect(health.status).toBe('ok');
+    expect(bindingFetch).toHaveBeenCalledTimes(1);
+
+    const request = getServiceBindingRequest(bindingFetch);
+    expect(request.url).toBe(
+      'https://backend.service.tuturuuu.internal/api/health'
+    );
+    expect(request.headers.get('accept')).toBe('application/json');
+  });
+
+  it('forwards app-session auth through the Cloudflare backend service binding', async () => {
+    const bindingFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          avatar_url: null,
+          created_at: '2026-06-20T00:00:00.000Z',
+          default_workspace_id: null,
+          display_name: 'Ada',
+          email: 'ada@example.com',
+          full_name: null,
+          id: 'user_123',
+          new_email: null,
+        }),
+        {
+          headers: { 'content-type': 'application/json' },
+          status: 200,
+        }
+      )
+    );
+
+    await getBackendCurrentUserProfile(
+      withForwardedBackendApiAuth(
+        new Headers({
+          authorization: 'Bearer ttr_app_token',
+          cookie:
+            'tuturuuu_app_session=ttr_app_cookie; sb-localhost-auth-token=secret',
+        }),
+        withBackendServiceBinding({
+          fetch: bindingFetch as unknown as typeof fetch,
+        })
+      )
+    );
+
+    const request = getServiceBindingRequest(bindingFetch);
+    expect(request.url).toBe(
+      'https://backend.service.tuturuuu.internal/api/v1/users/me/profile'
+    );
+    expect(request.headers.get('authorization')).toBe('Bearer ttr_app_token');
+    expect(request.headers.get('cookie')).toBe(
+      'tuturuuu_app_session=ttr_app_cookie'
+    );
+  });
+
+  it('uses the service-binding origin for backend same-origin mutation headers', async () => {
+    const payload = {
+      email: 'ada@example.com',
+      message: 'Please help me with this contact request.',
+      name: 'Ada Lovelace',
+      product: 'web' as const,
+      subject: 'Need help',
+      type: 'support' as const,
+    };
+    const bindingFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          inquiryId: 'inquiry_123',
+          success: true,
+        }),
+        {
+          headers: { 'content-type': 'application/json' },
+          status: 200,
+        }
+      )
+    );
+
+    await createBackendSupportInquiry(
+      payload,
+      withBackendServiceBinding({
+        fetch: bindingFetch as unknown as typeof fetch,
+      })
+    );
+
+    const request = getServiceBindingRequest(bindingFetch);
+    expect(request.url).toBe(
+      'https://backend.service.tuturuuu.internal/api/v1/inquiries'
+    );
+    expect(request.headers.get('origin')).toBe(
+      'https://backend.service.tuturuuu.internal'
+    );
+    expect(request.headers.get('referer')).toBe(
+      'https://backend.service.tuturuuu.internal/tanstack-contact-server-function'
     );
   });
 });

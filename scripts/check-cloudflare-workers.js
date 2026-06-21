@@ -72,9 +72,12 @@ const BACKEND_REQUIRED_SECRETS = [
 ];
 const TANSTACK_WEB_REQUIRED_SECRETS = [
   'BACKEND_PUBLIC_ORIGIN',
-  'BACKEND_INTERNAL_URL',
   'BACKEND_INTERNAL_TOKEN',
 ];
+const TANSTACK_WEB_BACKEND_SERVICE_BINDING = {
+  binding: 'BACKEND',
+  service: 'tuturuuu-backend',
+};
 const REQUIRED_OBSERVABILITY_HEAD_SAMPLING_RATE = 0.05;
 const SECRET_VAR_NAME_PATTERN =
   /(^|_)(ACCESS_TOKEN|API_KEY|AUTHORIZATION|CREDENTIAL|INTERNAL_TOKEN|JWT|PASSWORD|PRIVATE_KEY|SECRET|TOKEN)($|_)/i;
@@ -299,6 +302,35 @@ function validateVarsDoNotContainSecrets(config, label, requiredSecrets) {
   }
 
   return errors;
+}
+
+function validateServiceBinding(config, label, expectedBinding) {
+  const services = config.services;
+
+  if (!Array.isArray(services)) {
+    return [
+      `${label} must declare services with binding ${expectedBinding.binding} targeting ${expectedBinding.service}.`,
+    ];
+  }
+
+  const matchingService = services.find(
+    (service) =>
+      isPlainObject(service) && service.binding === expectedBinding.binding
+  );
+
+  if (!matchingService) {
+    return [
+      `${label} services must include binding ${expectedBinding.binding} targeting ${expectedBinding.service}.`,
+    ];
+  }
+
+  if (matchingService.service !== expectedBinding.service) {
+    return [
+      `${label} services.${expectedBinding.binding} must target ${expectedBinding.service}.`,
+    ];
+  }
+
+  return [];
 }
 
 function validateTanstackWebPackageJson(packageJson) {
@@ -536,6 +568,11 @@ function validateTanstackWebWranglerConfig(config) {
   }
 
   errors.push(
+    ...validateServiceBinding(
+      config,
+      'apps/tanstack-web/wrangler.jsonc',
+      TANSTACK_WEB_BACKEND_SERVICE_BINDING
+    ),
     ...validateRequiredSecrets(
       config,
       'apps/tanstack-web/wrangler.jsonc',
@@ -553,7 +590,7 @@ function validateTanstackWebWranglerConfig(config) {
     (!isPlainObject(config.vars) || Object.keys(config.vars).length > 0)
   ) {
     errors.push(
-      'apps/tanstack-web/wrangler.jsonc must not commit backend origins or tokens; set BACKEND_PUBLIC_ORIGIN, BACKEND_INTERNAL_URL, and BACKEND_INTERNAL_TOKEN with Wrangler secrets or deployment environment configuration.'
+      'apps/tanstack-web/wrangler.jsonc must not commit backend origins or tokens; set BACKEND_PUBLIC_ORIGIN and BACKEND_INTERNAL_TOKEN with Wrangler secrets or deployment environment configuration. Use BACKEND_INTERNAL_URL only as an optional non-Cloudflare HTTP fallback.'
     );
   }
 

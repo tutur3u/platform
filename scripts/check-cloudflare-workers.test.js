@@ -283,15 +283,22 @@ test('Wrangler configs declare required preview secrets by name', () => {
   assert.match(
     validateTanstackWebWranglerConfig({
       ...tanstackConfig,
-      secrets: { required: ['BACKEND_PUBLIC_ORIGIN'] },
+      services: [],
     }).join('\n'),
-    /BACKEND_INTERNAL_URL/
+    /BACKEND/
+  );
+  assert.match(
+    validateTanstackWebWranglerConfig({
+      ...tanstackConfig,
+      services: [{ binding: 'BACKEND', service: 'wrong-backend' }],
+    }).join('\n'),
+    /tuturuuu-backend/
   );
   assert.match(
     validateTanstackWebWranglerConfig({
       ...tanstackConfig,
       secrets: {
-        required: ['BACKEND_PUBLIC_ORIGIN', 'BACKEND_INTERNAL_URL'],
+        required: ['BACKEND_PUBLIC_ORIGIN'],
       },
     }).join('\n'),
     /BACKEND_INTERNAL_TOKEN/
@@ -328,12 +335,12 @@ test('Cloudflare preview runbook documents required Worker secrets', () => {
     assert.match(
       validateCloudflarePreviewRunbook(
         runbook.replace(
-          'bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc',
+          'bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc',
           ''
         ),
         runbookLabel
       ).join('\n'),
-      /BACKEND_INTERNAL_URL/
+      /BACKEND_INTERNAL_TOKEN/
     );
   }
 });

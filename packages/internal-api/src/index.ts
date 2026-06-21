@@ -81,6 +81,7 @@ export {
   type WebAccountsResponse,
 } from './auth';
 export {
+  type BackendApiClientOptions,
   type BackendCreateSupportInquiryResponse,
   type BackendLegacyHealth,
   type BackendMigrationCutoverGates,
@@ -91,6 +92,7 @@ export {
   type BackendRouteManifestProgressBucket,
   type BackendRouteManifestRoute,
   type BackendRouteManifestSummary,
+  type BackendServiceBinding,
   createBackendApiClient,
   createBackendSupportInquiry,
   getBackendCurrentUserProfile,
@@ -100,6 +102,7 @@ export {
   getBackendMigrationProgress,
   getBackendMigrationStatus,
   getConfiguredBackendApiBaseUrl,
+  withBackendServiceBinding,
   withForwardedBackendApiAuth,
 } from './backend';
 export {

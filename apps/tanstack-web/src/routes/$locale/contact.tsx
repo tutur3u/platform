@@ -14,6 +14,7 @@ import type {
   ContactInquirySubmissionResult,
   ContactProfile,
 } from '../../data/contact/contact-form';
+import { withTanstackBackendRuntime } from '../../lib/cloudflare/backend';
 import { createPageHead } from '../../lib/platform/head';
 import { resolveMessagesLocale } from '../../lib/platform/messages';
 
@@ -21,8 +22,9 @@ const getCurrentUserContactProfile = createServerFn({
   method: 'GET',
 }).handler(async (): Promise<ContactProfile | null> => {
   try {
+    const backendRuntime = await withTanstackBackendRuntime();
     const profile = await getBackendCurrentUserProfile(
-      withForwardedBackendApiAuth(getRequestHeaders())
+      withForwardedBackendApiAuth(getRequestHeaders(), backendRuntime)
     );
 
     return {
@@ -43,9 +45,10 @@ const createContactInquiry = createServerFn({ method: 'POST' })
   .validator((data: ContactFormValues) => data)
   .handler(async ({ data }): Promise<ContactInquirySubmissionResult> => {
     try {
+      const backendRuntime = await withTanstackBackendRuntime();
       const response = await createBackendSupportInquiry(
         data,
-        withForwardedBackendApiAuth(getRequestHeaders())
+        withForwardedBackendApiAuth(getRequestHeaders(), backendRuntime)
       );
 
       return {

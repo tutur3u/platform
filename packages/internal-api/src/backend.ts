@@ -136,6 +136,15 @@ export type BackendMigrationCutoverGates = {
   summary: BackendRouteManifestSummary;
 };
 
+export type BackendServiceBinding = {
+  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+};
+export type BackendApiClientOptions = InternalApiClientOptions & {
+  serviceBinding?: BackendServiceBinding | null;
+};
+
+const BACKEND_SERVICE_BINDING_ORIGIN =
+  'https://backend.service.tuturuuu.internal';
 const DEFAULT_LOCAL_BACKEND_ORIGIN = 'http://localhost:7820';
 const LOCAL_PLAINTEXT_BACKEND_HOSTS = new Set([
   '0.0.0.0',
@@ -286,25 +295,66 @@ export function getConfiguredBackendApiBaseUrl() {
   );
 }
 
-export function createBackendApiClient(options: InternalApiClientOptions = {}) {
-  return createInternalApiClient({
-    baseUrl: getConfiguredBackendApiBaseUrl(),
+function createBackendServiceBindingFetch(
+  serviceBinding: BackendServiceBinding
+): typeof fetch {
+  return (input, init) => serviceBinding.fetch(new Request(input, init));
+}
+
+function resolveBackendApiClientOptions(
+  options: BackendApiClientOptions = {}
+): InternalApiClientOptions {
+  const { serviceBinding, ...clientOptions } = options;
+
+  if (typeof window !== 'undefined' || !serviceBinding) {
+    return clientOptions;
+  }
+
+  return {
+    ...clientOptions,
+    baseUrl: clientOptions.baseUrl ?? BACKEND_SERVICE_BINDING_ORIGIN,
+    fetch:
+      clientOptions.fetch ?? createBackendServiceBindingFetch(serviceBinding),
+  };
+}
+
+export function withBackendServiceBinding(
+  serviceBinding: BackendServiceBinding | null | undefined,
+  options: BackendApiClientOptions = {}
+): BackendApiClientOptions {
+  if (!serviceBinding || typeof window !== 'undefined') {
+    return options;
+  }
+
+  return {
     ...options,
+    serviceBinding,
+  };
+}
+
+export function createBackendApiClient(options: BackendApiClientOptions = {}) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createInternalApiClient({
+    baseUrl: clientOptions.baseUrl ?? getConfiguredBackendApiBaseUrl(),
+    ...clientOptions,
   });
 }
 
 export function withForwardedBackendApiAuth(
   requestHeaders: RequestHeaderAccessor,
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
   return withForwardedInternalApiAuth(requestHeaders, {
-    ...options,
-    baseUrl: options.baseUrl ?? getConfiguredBackendApiBaseUrl(),
+    ...clientOptions,
+    baseUrl: clientOptions.baseUrl ?? getConfiguredBackendApiBaseUrl(),
   });
 }
 
 function withBackendSameOriginMutationHeaders(
-  options: InternalApiClientOptions,
+  options: BackendApiClientOptions,
   headers: HeadersInit
 ) {
   const requestHeaders = new Headers(options.defaultHeaders);
@@ -331,7 +381,7 @@ function withBackendSameOriginMutationHeaders(
   return requestHeaders;
 }
 
-export function getBackendLegacyHealth(options: InternalApiClientOptions = {}) {
+export function getBackendLegacyHealth(options: BackendApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendLegacyHealth>(
     '/api/health',
     {
@@ -341,7 +391,7 @@ export function getBackendLegacyHealth(options: InternalApiClientOptions = {}) {
 }
 
 export function getBackendCurrentUserProfile(
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
   return createBackendApiClient(options).json<CurrentUserProfileResponse>(
     '/api/v1/users/me/profile',
@@ -353,14 +403,16 @@ export function getBackendCurrentUserProfile(
 
 export function createBackendSupportInquiry(
   payload: CreateSupportInquiryPayload,
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
   return createBackendApiClient(
-    options
+    clientOptions
   ).json<BackendCreateSupportInquiryResponse>('/api/v1/inquiries', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: withBackendSameOriginMutationHeaders(options, {
+    headers: withBackendSameOriginMutationHeaders(clientOptions, {
       'Content-Type': 'application/json',
     }),
     method: 'POST',
@@ -368,7 +420,7 @@ export function createBackendSupportInquiry(
 }
 
 export function getBackendMigrationStatus(
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
   return createBackendApiClient(options).json<BackendMigrationStatus>(
     '/api/migration/status',
@@ -382,7 +434,7 @@ export function getBackendMigrationStatus(
 }
 
 export function getBackendMigrationManifest(
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
   return createBackendApiClient(options).json<BackendMigrationManifest>(
     '/api/migration/manifest',
@@ -396,7 +448,7 @@ export function getBackendMigrationManifest(
 }
 
 export function getBackendMigrationProgress(
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
   return createBackendApiClient(options).json<BackendMigrationProgress>(
     '/api/migration/progress',
@@ -410,7 +462,7 @@ export function getBackendMigrationProgress(
 }
 
 export function getBackendMigrationCutoverGates(
-  options: InternalApiClientOptions = {}
+  options: BackendApiClientOptions = {}
 ) {
   return createBackendApiClient(options).json<BackendMigrationCutoverGates>(
     '/api/migration/cutover-gates',

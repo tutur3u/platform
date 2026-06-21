@@ -1,7 +1,7 @@
 ---
-title: "TanStack Start And Rust Migration"
-description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-21"
+title: 'TanStack Start And Rust Migration'
+description: 'Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend'
+updatedAt: '2026-06-21'
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -25,6 +25,9 @@ native container now and keeps a Cloudflare Workers Rust entrypoint ready in
 Use `bun dev:tanstack-web` for local TanStack work. Docker dev also exposes the
 `tanstack-web` service on port `7824` and injects `BACKEND_PUBLIC_ORIGIN`,
 `BACKEND_INTERNAL_URL`, and `BACKEND_INTERNAL_TOKEN` for Rust backend calls.
+Cloudflare preview uses the `BACKEND` service binding first and keeps
+`BACKEND_INTERNAL_URL` as an HTTP fallback for local, Docker, and emergency
+non-binding runs.
 
 ## Cloudflare Preview Deployment
 
@@ -64,7 +67,7 @@ secret-looking values under `vars`:
 | Worker                             | Required preview secrets                                                                                                                               |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL` |
-| `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_URL`, `BACKEND_INTERNAL_TOKEN`                                                                              |
+| `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`; `BACKEND` service binding to `tuturuuu-backend`                                                     |
 
 For local Worker previews, put secret values next to the owning Wrangler config
 in ignored files:
@@ -126,13 +129,13 @@ curl -fsS \
   https://<backend-worker-origin>/api/migration/status
 ```
 
-Then configure the TanStack Worker with the deployed backend origin. Store the
-origin as Cloudflare secrets for preview runs so account-specific hostnames and
-future internal-only origins do not become source defaults:
+Then configure the TanStack Worker. `apps/tanstack-web/wrangler.jsonc`
+declares a `BACKEND` service binding to `tuturuuu-backend`, so the backend
+Worker must be deployed first. Store only the browser-safe public backend
+origin and the shared internal token as Cloudflare secrets for preview runs:
 
 ```bash
 bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
-bun wrangler secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
 ```
 
@@ -149,21 +152,23 @@ bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backen
 bun wrangler versions deploy --config apps/backend/wrangler.jsonc
 
 bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
-bun wrangler versions secret put BACKEND_INTERNAL_URL --config apps/tanstack-web/wrangler.jsonc
 bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
 bun wrangler versions deploy --config apps/tanstack-web/wrangler.jsonc
 ```
 
-Both origin values should initially be the backend Worker origin, for example the
-`https://<backend-worker>.<subdomain>.workers.dev` URL returned by the backend
-deploy. `BACKEND_PUBLIC_ORIGIN` is the public browser-safe origin used for
-public probes and non-protected traffic. `BACKEND_INTERNAL_URL` is the
-server-side backend URL used by the TanStack Worker until a private binding
-replaces public-origin HTTP. The TanStack Worker also needs the same
-`BACKEND_INTERNAL_TOKEN` value so Start server functions can call the protected
-Rust migration inventory endpoints. Local `wrangler dev` can omit the origin
-bindings because `packages/internal-api` falls back to `http://localhost:7820`;
-local migration dashboard calls will fall back to the checked manifest when the
+`BACKEND_PUBLIC_ORIGIN` should initially be the backend Worker origin, for
+example the `https://<backend-worker>.<subdomain>.workers.dev` URL returned by
+the backend deploy. It remains the browser-safe origin used for public probes
+and non-protected traffic. Start server functions prefer the `BACKEND` service
+binding for Worker-to-Worker backend calls and fall back to
+`BACKEND_INTERNAL_URL` only outside Cloudflare or when the binding is absent.
+Use `BACKEND_INTERNAL_URL` in local Docker, local Node preview, or emergency
+HTTP fallback runs; do not make it a required TanStack Worker secret while the
+service binding is declared. The TanStack Worker still needs the same
+`BACKEND_INTERNAL_TOKEN` value so Start server functions can call protected Rust
+migration inventory endpoints. Local `wrangler dev` can omit origin bindings
+because `packages/internal-api` falls back to `http://localhost:7820`; local
+migration dashboard calls will fall back to the checked manifest when the
 backend token is not configured.
 
 Deploy the TanStack Start Worker after the backend origin secrets are present:
@@ -188,9 +193,9 @@ and `http://localhost:8784` for TanStack Start. Keep those ports stable because
 
 Set the same env variable names that the deployed Workers use. Keep values in
 the shell, local ignored env files, or Wrangler secret storage only:
-`BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
-`BACKEND_INTERNAL_URL`. When the TanStack local Worker needs to call a local
-backend Worker, set both origin values to the local backend Wrangler origin.
+`BACKEND_INTERNAL_TOKEN` and `BACKEND_PUBLIC_ORIGIN`. When the TanStack local
+Worker cannot use the `BACKEND` service binding, set `BACKEND_INTERNAL_URL` to
+the local backend Wrangler origin as an HTTP fallback.
 
 Then run the preview smoke command against the returned Worker origins:
 
@@ -210,8 +215,9 @@ rejection for the protected migration status endpoint, and the TanStack root
 shell. It fails on unexpected `4xx` and `5xx` responses, requires the TanStack
 root shell to show `Backend reachable`, and redacts the bearer token from
 output. That final check proves the deployed Start server function can reach
-the Rust Worker through the configured backend origin and token, not just that
-the static shell rendered. Use `--output` to persist the smoke report under
+the Rust Worker through the service binding or configured HTTP fallback and
+token, not just that the static shell rendered. Use `--output` to persist the
+smoke report under
 ignored `tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json` when
 the run is part of a cutover rehearsal.
 For deployed E2E smoke runs, set `TANSTACK_EXPECT_BACKEND_REACHABLE=1` and
@@ -261,19 +267,21 @@ domains, or secret values. If a preview deploy regresses, roll back the Worker
 version or remove the preview route, then run `bun smoke:cloudflare` against the
 remaining preview origins before resuming canary traffic.
 
-The desired protected-traffic cutover is a Cloudflare service binding from the
-TanStack Worker to the backend Worker, for example a future
-`services` entry with binding name `BACKEND` and service `tuturuuu-backend`.
-That cutover must update the server-only backend client path and
-`bun check:cloudflare` before removing `BACKEND_INTERNAL_URL`. Until then,
-protected workspace and admin APIs must not move to production Worker traffic:
-browser code must never receive service tokens, and server-owned protected data
-must stay behind server-owned calls.
+Protected TanStack-to-backend traffic now has a Cloudflare service binding from
+the TanStack Worker to the backend Worker: binding name `BACKEND`, service
+`tuturuuu-backend`. The shared backend client prefers that binding in
+server-only TanStack code and keeps `BACKEND_INTERNAL_URL` as a non-Cloudflare
+HTTP fallback. Protected workspace and admin APIs still must not move to
+production Worker traffic until each route has backend tests, OpenAPI coverage,
+an internal-api facade, and migration gate evidence. Browser code must never
+receive service tokens, and server-owned protected data must stay behind
+server-owned calls.
 
 Current Cloudflare limitations:
 
-- Service bindings are pending. `BACKEND_INTERNAL_URL` still points at an HTTP
-  origin, usually the backend Worker preview URL.
+- Runtime service binding smoke is pending. The config and internal client use
+  the `BACKEND` binding, but deployed smoke still needs to prove the binding
+  path in Cloudflare preview before production host routing.
 - Production host routing is pending full route manifest completion, Docker
   compare-mode E2E evidence, benchmark evidence, and
   `bun migration:tanstack:gates`.
@@ -565,13 +573,15 @@ variable names only.
 
 For Cloudflare specifically:
 
-- Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`,
-  `BACKEND_INTERNAL_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-  `CRON_SECRET`, and `DISCORD_APP_DEPLOYMENT_URL` with `wrangler secret put`,
-  `wrangler versions secret put`, or Cloudflare dashboard secret bindings. Use
-  `secret put` for first preview bootstrap only because it deploys a new active
-  version immediately; use the versions command family for rotations and
-  canaries.
+- Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, `SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and
+  `DISCORD_APP_DEPLOYMENT_URL` with `wrangler secret put`,
+  `wrangler versions secret put`, or Cloudflare dashboard secret bindings.
+  The TanStack Worker reaches the backend Worker through the `BACKEND` service
+  binding; configure `BACKEND_INTERNAL_URL` only for non-binding HTTP fallback
+  runs. Use `secret put` for first preview bootstrap only because it deploys a
+  new active version immediately; use the versions command family for
+  rotations and canaries.
 - Bind `TUTURUUU_APP_COORDINATION_SECRET` on the backend Worker before testing
   contact/profile routes. The Rust verifier also accepts existing
   app-coordination fallback secret names for compatibility, but the dedicated
