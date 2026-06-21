@@ -85,6 +85,11 @@ const staticMarketingRoutes = [
     heading: 'Contributors',
   },
   {
+    path: `/${DEFAULT_LOCALE}/women-in-tech`,
+    heading:
+      'From Vietnam to the World: Women Leading the Future of Technology',
+  },
+  {
     path: '/vi/about',
     heading: 'Giải Phóng Tiềm Năng Con Người Thông Qua Công Nghệ Thông Minh',
   },

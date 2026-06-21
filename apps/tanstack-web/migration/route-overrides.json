@@ -704,6 +704,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/women-in-tech defines the legacy localized metadata, Open Graph, Twitter, canonical, alternate-language, keyword, and image tags through createPageHead. This marks only the metadata layout artifact migrated; the page remains legacy-owned until visual/runtime differences have acceptance or E2E evidence."
     },
+    "page:/:locale/women-in-tech:apps/web/src/app/[locale]/(marketing)/women-in-tech/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/women-in-tech ports the public Vietnamese Women's Day page with local English/Vietnamese content, copied public media, native image rendering, CSS animation, and a local NEXT_LOCALE cookie language switcher. The migration explicitly accepts dependency-free replacements for legacy Next Image, Next navigation, next-intl, and framer-motion runtime behavior, with no auth, Supabase, or protected workspace data access."
+    },
     "layout:/:locale/games/farm:apps/web/src/app/[locale]/games/farm/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
