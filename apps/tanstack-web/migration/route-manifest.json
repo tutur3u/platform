@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 209,
-        "migrated": 98,
-        "percentComplete": 31.92,
-        "remaining": 209,
-        "terminal": 98,
+        "legacyNext": 200,
+        "migrated": 107,
+        "percentComplete": 34.85,
+        "remaining": 200,
+        "terminal": 107,
         "total": 307,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 235,
-        "migrated": 144,
-        "percentComplete": 37.99,
-        "remaining": 235,
-        "terminal": 144,
+        "legacyNext": 226,
+        "migrated": 153,
+        "percentComplete": 40.37,
+        "remaining": 226,
+        "terminal": 153,
         "total": 379,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1228,
-      "migrated": 207,
-      "percentComplete": 19.1,
-      "remaining": 1228,
-      "terminal": 290,
+      "legacyNext": 1219,
+      "migrated": 216,
+      "percentComplete": 19.7,
+      "remaining": 1219,
+      "terminal": 299,
       "total": 1518,
       "unknownStatus": 0
     }
@@ -11868,7 +11868,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/(dashboard)/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11904,7 +11904,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/debts",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/debts/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11913,7 +11913,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/debts/:debtId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/debts/[debtId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11922,7 +11922,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/invoices",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11931,7 +11931,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/invoices/:invoiceId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/[invoiceId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11940,7 +11940,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/invoices/new",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/new/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11949,7 +11949,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/recurring",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/recurring/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11976,7 +11976,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/transactions/:transactionId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/[transactionId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12003,7 +12003,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/finance/wallets/:walletId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/wallets/[walletId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

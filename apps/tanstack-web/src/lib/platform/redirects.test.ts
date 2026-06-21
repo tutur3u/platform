@@ -106,8 +106,12 @@ describe('public redirect helpers', () => {
   });
 
   it('preserves legacy Finance page redirect paths and query forwarding', () => {
+    expect(buildFinanceRedirectHref('ws-1', '')).toBe('/ws-1/finance');
     expect(buildFinanceRedirectHref('ws-1', 'analytics')).toBe(
       '/ws-1/finance/analytics'
+    );
+    expect(buildFinanceRedirectHref(ROOT_WORKSPACE_ID, 'debts/debt-1')).toBe(
+      '/internal/finance/debts/debt-1'
     );
     expect(buildFinanceRedirectHref('ws-1', '/budgets/')).toBe(
       '/ws-1/finance/budgets'
@@ -126,6 +130,15 @@ describe('public redirect helpers', () => {
         },
       })
     ).toBe('/ws-1/finance/wallets?create=credit-card&q=cash+box&tool=import');
+    expect(
+      buildFinanceRedirectHref(
+        'ws-1',
+        `transactions/${encodeURIComponent('txn/1')}`,
+        {
+          searchParams: '?tab=history',
+        }
+      )
+    ).toBe('/ws-1/finance/transactions/txn%2F1?tab=history');
   });
 
   it('preserves legacy education permanent redirect targets', () => {

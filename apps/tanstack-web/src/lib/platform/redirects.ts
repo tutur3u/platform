@@ -62,8 +62,11 @@ export function buildFinanceRedirectHref(
     personal: options.personal,
   });
   const normalizedFinancePath = financePath.replace(/^\/+|\/+$/g, '');
+  const financeSuffix = normalizedFinancePath
+    ? `/${normalizedFinancePath}`
+    : '';
   const url = new URL(
-    `/${workspaceSlug}/finance/${normalizedFinancePath}`,
+    `/${workspaceSlug}/finance${financeSuffix}`,
     'https://finance.local'
   );
 
