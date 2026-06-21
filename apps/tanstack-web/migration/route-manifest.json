@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 988,
-        "migrated": 41,
-        "percentComplete": 11.15,
-        "remaining": 988,
-        "terminal": 124,
+        "legacyNext": 987,
+        "migrated": 42,
+        "percentComplete": 11.24,
+        "remaining": 987,
+        "terminal": 125,
         "total": 1112,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 1006,
-        "migrated": 46,
-        "percentComplete": 11.37,
-        "remaining": 1006,
-        "terminal": 129,
+        "legacyNext": 1005,
+        "migrated": 47,
+        "percentComplete": 11.45,
+        "remaining": 1005,
+        "terminal": 130,
         "total": 1135,
         "unknownStatus": 0
       },
@@ -182,15 +182,6 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/admin/tasks/embeddings/generate:apps/web/src/app/api/admin/tasks/embeddings/generate/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET"],
-        "routePath": "/api/admin/tasks/embeddings/stats",
-        "sourceFile": "apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/admin/tasks/embeddings/stats:apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts"
       },
       {
         "kind": "api",
@@ -317,17 +308,26 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/executions:apps/web/src/app/api/ai/executions/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/generate",
+        "sourceFile": "apps/web/src/app/api/ai/generate/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/generate:apps/web/src/app/api/ai/generate/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1257,
-      "migrated": 172,
-      "percentComplete": 16.87,
-      "remaining": 1257,
-      "terminal": 255,
+      "legacyNext": 1256,
+      "migrated": 173,
+      "percentComplete": 16.93,
+      "remaining": 1256,
+      "terminal": 256,
       "total": 1512,
       "unknownStatus": 0
     }
@@ -402,7 +402,7 @@
       "methods": ["GET"],
       "routePath": "/api/admin/tasks/embeddings/stats",
       "sourceFile": "apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

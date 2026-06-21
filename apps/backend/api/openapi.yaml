@@ -11,6 +11,43 @@ servers:
   - url: http://localhost:7820
     description: Local backend runtime
 paths:
+  /api/admin/tasks/embeddings/stats:
+    get:
+      summary: Legacy-compatible admin task embedding statistics
+      description: Migrated replacement for apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts GET. The Rust backend validates the browser Supabase auth cookie with Supabase Auth, requires a Tuturuuu admin email domain, then reads only exact task counts through the server-owned Supabase REST adapter. It returns the derived legacy statistics payload without exposing raw task rows or service-role access.
+      responses:
+        "200":
+          description: System-wide task embedding coverage statistics.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTaskEmbeddingStats"
+        "401":
+          description: Caller is missing a valid Tuturuuu admin browser session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTaskEmbeddingStatsUnauthorized"
+        "500":
+          description: Task statistics could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTaskEmbeddingStatsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/share/course/{courseId}:
     parameters:
       - name: courseId
@@ -2778,6 +2815,50 @@ components:
           schema:
             $ref: "#/components/schemas/RequestBodyTooLargeError"
   schemas:
+    AdminTaskEmbeddingStats:
+      type: object
+      required:
+        - total
+        - withEmbeddings
+        - withoutEmbeddings
+        - percentageComplete
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        withEmbeddings:
+          type: integer
+          minimum: 0
+        withoutEmbeddings:
+          type: integer
+          minimum: 0
+        percentageComplete:
+          type: number
+          minimum: 0
+          maximum: 100
+    AdminTaskEmbeddingStatsUnauthorized:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized - Tuturuuu admin access required
+    AdminTaskEmbeddingStatsError:
+      type: object
+      required:
+        - message
+        - error
+      properties:
+        message:
+          type: string
+          examples:
+            - Failed to fetch task statistics
+        error:
+          type: string
+          examples:
+            - count failed
     RequestBodyLengthRequiredError:
       type: object
       required:

@@ -1,13 +1,11 @@
-use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
     method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
+    supabase_auth,
 };
 
 const CHANGELOG_LIST_PATH: &str = "/api/v1/infrastructure/changelog";
@@ -21,8 +19,6 @@ const MANAGE_CHANGELOG_PERMISSION: &str = "manage_changelog";
 const POSTGREST_SINGLE_JSON: &str = "application/vnd.pgrst.object+json";
 const POSTGREST_SINGULAR_RESPONSE_ERROR_CODE: &str = "PGRST116";
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
-const SUPABASE_AUTH_COOKIE_BASE64_PREFIX: &str = "base64-";
-const SUPABASE_AUTH_USER_PATH: &str = "user";
 
 #[derive(Deserialize)]
 struct PostgrestError {
@@ -35,23 +31,6 @@ struct ChangelogListQuery {
     page: Option<i64>,
     page_size: Option<i64>,
     published: Option<bool>,
-}
-
-#[derive(Clone, Debug, Default)]
-struct SupabaseAuthCookieGroup {
-    base: Option<String>,
-    chunks: BTreeMap<usize, String>,
-    duplicate: bool,
-}
-
-#[derive(Deserialize)]
-struct SupabaseCookieSession {
-    access_token: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct SupabaseUserResponse {
-    id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -259,43 +238,19 @@ async fn request_has_changelog_admin_access(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> bool {
-    let Some(access_token) = request_access_token(request) else {
+    let Some(access_token) = supabase_auth::request_access_token(request) else {
         return false;
     };
-    let Some(user_id) = fetch_supabase_user_id(contact_data, &access_token, outbound).await else {
+    let Some(user) =
+        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
+    else {
+        return false;
+    };
+    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
         return false;
     };
 
     has_manage_changelog_permission(contact_data, &user_id, outbound).await
-}
-
-async fn fetch_supabase_user_id(
-    contact_data: &contact::ContactDataConfig,
-    access_token: &str,
-    outbound: &impl OutboundHttpClient,
-) -> Option<String> {
-    let user_url = contact_data.auth_url(SUPABASE_AUTH_USER_PATH)?;
-    let service_role_key = contact_data.service_role_key()?;
-    let authorization = format!("Bearer {access_token}");
-    let response = outbound
-        .send(
-            OutboundRequest::new(OutboundMethod::Get, &user_url)
-                .with_header("Accept", APPLICATION_JSON)
-                .with_header("Authorization", &authorization)
-                .with_header("apikey", service_role_key),
-        )
-        .await
-        .ok()?;
-
-    if !(200..300).contains(&response.status) {
-        return None;
-    }
-
-    response
-        .json::<SupabaseUserResponse>()
-        .ok()
-        .and_then(|user| user.id)
-        .filter(|id| !id.trim().is_empty())
 }
 
 async fn has_manage_changelog_permission(
@@ -484,116 +439,6 @@ fn public_changelog_filters() -> Vec<(&'static str, String)> {
         ("is_published", "eq.true".to_owned()),
         ("published_at", "not.is.null".to_owned()),
     ]
-}
-
-fn request_access_token(request: BackendRequest<'_>) -> Option<String> {
-    request
-        .cookie
-        .and_then(supabase_access_token_from_cookie_header)
-}
-
-fn supabase_access_token_from_cookie_header(cookie_header: &str) -> Option<String> {
-    let groups = supabase_auth_cookie_groups(cookie_header);
-
-    groups
-        .values()
-        .filter_map(supabase_auth_cookie_value)
-        .find_map(|value| access_token_from_supabase_cookie_value(&value))
-}
-
-fn supabase_auth_cookie_groups(cookie_header: &str) -> BTreeMap<String, SupabaseAuthCookieGroup> {
-    let mut groups = BTreeMap::<String, SupabaseAuthCookieGroup>::new();
-
-    for (name, value) in cookie_header
-        .split(';')
-        .filter_map(|cookie| cookie.trim().split_once('='))
-    {
-        let Some((storage_key, chunk_index)) = supabase_auth_cookie_name_parts(name.trim()) else {
-            continue;
-        };
-        let group = groups.entry(storage_key).or_default();
-
-        match chunk_index {
-            Some(index) => {
-                if group
-                    .chunks
-                    .insert(index, value.trim().to_owned())
-                    .is_some()
-                {
-                    group.duplicate = true;
-                }
-            }
-            None => {
-                if group.base.is_some() {
-                    group.duplicate = true;
-                }
-                group.base = Some(value.trim().to_owned());
-            }
-        }
-    }
-
-    groups
-}
-
-fn supabase_auth_cookie_name_parts(name: &str) -> Option<(String, Option<usize>)> {
-    if !name.starts_with("sb-") {
-        return None;
-    }
-
-    if name.ends_with("-auth-token") {
-        return Some((name.to_owned(), None));
-    }
-
-    let (storage_key, suffix) = name.rsplit_once('.')?;
-
-    if !storage_key.ends_with("-auth-token") {
-        return None;
-    }
-
-    suffix
-        .parse::<usize>()
-        .ok()
-        .map(|index| (storage_key.to_owned(), Some(index)))
-}
-
-fn supabase_auth_cookie_value(group: &SupabaseAuthCookieGroup) -> Option<String> {
-    if group.duplicate {
-        return None;
-    }
-
-    match (&group.base, group.chunks.is_empty()) {
-        (Some(base), true) => return Some(base.clone()),
-        (Some(_), false) => return None,
-        (None, true) => return None,
-        (None, false) => {}
-    }
-
-    let mut value = String::new();
-    for index in 0..group.chunks.len() {
-        value.push_str(group.chunks.get(&index)?);
-    }
-
-    Some(value)
-}
-
-fn access_token_from_supabase_cookie_value(cookie_value: &str) -> Option<String> {
-    let session =
-        if let Some(base64_body) = cookie_value.strip_prefix(SUPABASE_AUTH_COOKIE_BASE64_PREFIX) {
-            let mut padded = base64_body.to_owned();
-            while padded.len() % 4 != 0 {
-                padded.push('=');
-            }
-            let decoded = URL_SAFE.decode(padded.as_bytes()).ok()?;
-            serde_json::from_slice::<SupabaseCookieSession>(&decoded).ok()?
-        } else if cookie_value.starts_with('{') {
-            serde_json::from_str::<SupabaseCookieSession>(cookie_value).ok()?
-        } else {
-            return None;
-        };
-
-    session
-        .access_token
-        .filter(|token| !token.trim().is_empty())
 }
 
 fn total_count_from_content_range(response: &OutboundResponse) -> Option<usize> {

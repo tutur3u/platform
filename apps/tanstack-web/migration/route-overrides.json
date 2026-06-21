@@ -69,6 +69,11 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy development-only Tuturuuu API proxy used Next.js and Undici to forward arbitrary allowlisted API paths and carried SSRF-sensitive outbound proxy behavior. No in-repo callers reference /api/v1/proxy/tuturuuu, and the Cloudflare cutover should use maintained internal API clients or direct backend routes instead. Rust returns terminal 410 ENDPOINT_REMOVED with the legacy GET allow list."
     },
+    "api:/api/admin/tasks/embeddings/stats:apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/admin/tasks/embeddings/stats by validating the browser Supabase auth cookie with Supabase Auth, requiring a Tuturuuu admin email domain, reading exact system-wide task counts through the server-owned Supabase REST adapter, and returning the derived legacy embedding coverage payload. POST /api/admin/tasks/embeddings/generate remains legacy-owned because it streams SSE progress and performs embedding writes."
+    },
     "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {

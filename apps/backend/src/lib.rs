@@ -11,6 +11,8 @@ mod crawlers;
 mod holidays;
 mod mobile_version;
 mod outbound;
+mod supabase_auth;
+mod task_embeddings;
 mod topic_announcements;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
@@ -359,6 +361,12 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = changelog::handle_changelog_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        task_embeddings::handle_task_embeddings_route(config, request, outbound).await
+    {
         return response;
     }
 
@@ -4066,6 +4074,169 @@ mod tests {
             recorded_header(&calls[2], "Accept"),
             Some("application/vnd.pgrst.object+json")
         );
+    }
+
+    #[tokio::test]
+    async fn admin_task_embedding_stats_requires_tuturuuu_admin_before_task_counts() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/admin/tasks/embeddings/stats"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(
+            response.body["message"],
+            "Unauthorized - Tuturuuu admin access required"
+        );
+        assert_eq!(outbound.calls().len(), 0);
+
+        let cookie_value = supabase_auth_cookie_value("external-access-token");
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-1","email":"member@example.com"}"#,
+        );
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/admin/tasks/embeddings/stats")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer external-access-token")
+        );
+    }
+
+    #[tokio::test]
+    async fn admin_task_embedding_stats_counts_total_and_missing_embeddings() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"member@xwf.tuturuuu.com"}"#),
+            outbound_response_with_headers(
+                200,
+                "[]",
+                vec![("content-range".to_owned(), "0-0/250".to_owned())],
+            ),
+            outbound_response_with_headers(
+                200,
+                "[]",
+                vec![("content-range".to_owned(), "0-0/100".to_owned())],
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/admin/tasks/embeddings/stats")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!({
+                "total": 250,
+                "withEmbeddings": 150,
+                "withoutEmbeddings": 100,
+                "percentageComplete": 60.0,
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/tasks?select=id"
+        );
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/tasks?select=id&embedding=is.null"
+        );
+
+        for call in calls.iter().skip(1) {
+            assert_eq!(call.method, OutboundMethod::Get);
+            assert_eq!(recorded_header(call, "Accept"), Some(APPLICATION_JSON));
+            assert_eq!(
+                recorded_header(call, "Authorization"),
+                Some("Bearer test-service-role-secret")
+            );
+            assert_eq!(
+                recorded_header(call, "apikey"),
+                Some("test-service-role-secret")
+            );
+            assert_eq!(recorded_header(call, "Range-Unit"), Some("items"));
+            assert_eq!(recorded_header(call, "Range"), Some("0-0"));
+            assert_eq!(recorded_header(call, "Prefer"), Some("count=exact"));
+        }
+    }
+
+    #[tokio::test]
+    async fn admin_task_embedding_stats_maps_supabase_count_errors() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"member@tuturuuu.com"}"#),
+            outbound_response(500, r#"{"message":"count failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", "/api/admin/tasks/embeddings/stats")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Failed to fetch task statistics");
+        assert_eq!(response.body["error"], "count failed");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn admin_task_embedding_stats_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/admin/tasks/embeddings/stats"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]

@@ -74,6 +74,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   app-session JWTs, requires same-origin confirmation for cookie auth, validates
   the legacy inquiry JSON shape and field limits, then inserts
   `support_inquiries` with `creator_id` from the resolved user.
+- `GET /api/admin/tasks/embeddings/stats`: legacy-compatible admin task
+  embedding statistics route. Rust validates browser Supabase auth cookies with
+  Supabase Auth, requires a `tuturuuu.com` or `xwf.tuturuuu.com` user email,
+  reads exact task counts through the server-owned Supabase REST adapter, and
+  returns only derived coverage statistics.
 - `GET /api/v1/mobile/version-check`: public mobile update-policy route. Rust
   validates `platform=ios|android` and strict `version=x.y.z`, reads the fixed
   root workspace mobile policy config IDs through the server-owned Supabase REST
