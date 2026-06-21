@@ -154,6 +154,12 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
     ).join('\n'),
     /@tuturuuu\/tanstack-web/u
   );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace("body.includes('Backend reachable')", 'true')
+    ).join('\n'),
+    /Backend reachable/u
+  );
 });
 
 test('validateDockerignore reports generated app artifacts in the context', () => {
@@ -734,6 +740,17 @@ test('validateDockerProdCompose reports missing TanStack backend health dependen
   assert.match(errors, /x-tanstack-web-service/);
   assert.match(errors, /backend/);
   assert.match(errors, /service_healthy/);
+});
+
+test('validateDockerProdCompose reports status-only TanStack healthchecks', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    "body.includes(''Backend reachable'')",
+    'true'
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /Backend reachable/u);
 });
 
 test('validateDockerProdCompose rejects public production port mappings and fallback token', () => {

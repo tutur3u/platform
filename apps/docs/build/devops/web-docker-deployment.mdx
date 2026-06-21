@@ -1,7 +1,7 @@
 ---
-title: 'Web Docker Deployment'
-description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-06-20'
+title: "Web Docker Deployment"
+description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
+updatedAt: "2026-06-20"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime and the
@@ -143,6 +143,9 @@ parallel `apps/tanstack-web` migration runtime.
   proxy-routing experiment. Production TanStack services wait on the Rust
   backend `service_healthy` check before starting, because the Start runtime
   uses `BACKEND_INTERNAL_URL=http://backend:7820` for server-owned API calls.
+  The TanStack image and production Compose healthchecks also require the root
+  readiness page to include `Backend reachable`, so a status-only shell cannot
+  satisfy Docker cutover readiness when the Rust backend is unreachable.
   Use `DOCKER_WEB_FRONTEND=next|tanstack` to select the default web frontend in
   migration-aware scripts. Cloudflare preview deploys use
   `apps/tanstack-web/wrangler.jsonc` plus the app-local

@@ -892,6 +892,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
     "http://127.0.0.1:'' + port + path",
+    "body.includes(''Backend reachable'')",
     '      test: ["CMD", "/app/backend", "healthcheck"]',
     '      - BACKEND_ENV=production\n      - BACKEND_INTERNAL_TOKEN\n      - PORT=7820',
     '      - PORT=8000\n      - SUPABASE_URL',
@@ -1197,6 +1198,7 @@ function validateTanstackWebDockerfile(dockerfileContent) {
     ),
     'bun run --filter @tuturuuu/tanstack-web build',
     'ENV PORT=7824',
+    "body.includes('Backend reachable')",
     'CMD ["bun", ".output/server/index.mjs"]',
   ];
 
