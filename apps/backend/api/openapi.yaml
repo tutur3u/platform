@@ -50,6 +50,51 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/auth/mfa/totp/assurance-level:
+    get:
+      summary: Legacy-compatible Supabase MFA assurance level
+      description: Migrated replacement for apps/web/src/app/api/auth/mfa/totp/assurance-level/route.ts GET. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, then derives the no-argument Supabase Auth MFA assurance-level response from the JWT `aal` and `amr` claims plus verified factors on the revalidated user JSON. Tuturuuu app-session tokens are intentionally ignored for this Supabase browser-session route.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Authenticator assurance level for the current Supabase session.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaAssuranceLevelResponse"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaAssuranceLevelError"
+        "500":
+          description: The Supabase user could not be revalidated or the session JWT could not be decoded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMfaAssuranceLevelError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/admin/tasks/embeddings/stats:
     get:
       summary: Legacy-compatible admin task embedding statistics
@@ -3595,6 +3640,43 @@ components:
           type: string
           examples:
             - Unauthorized
+    AuthMfaAssuranceLevelResponse:
+      type: object
+      required:
+        - currentLevel
+        - nextLevel
+        - currentAuthenticationMethods
+      properties:
+        currentLevel:
+          type:
+            - string
+            - "null"
+          examples:
+            - aal1
+        nextLevel:
+          type:
+            - string
+            - "null"
+          examples:
+            - aal2
+        currentAuthenticationMethods:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          examples:
+            - - method: password
+                timestamp: 1710000000
+    AuthMfaAssuranceLevelError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Internal server error
     AdminTaskEmbeddingStats:
       type: object
       required:

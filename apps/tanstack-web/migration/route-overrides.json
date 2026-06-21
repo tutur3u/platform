@@ -54,6 +54,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/auth/me by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth and returning the raw legacy { user } JSON payload, or the legacy unauthorized message."
     },
+    "api:/api/auth/mfa/totp/assurance-level:apps/web/src/app/api/auth/mfa/totp/assurance-level/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/auth/mfa/totp/assurance-level by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, deriving currentLevel from the JWT aal claim, deriving nextLevel from verified Supabase Auth factors, and returning currentAuthenticationMethods from the JWT amr claim."
+    },
     "api:/api/share/course/:courseId:apps/web/src/app/api/share/course/[courseId]/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
