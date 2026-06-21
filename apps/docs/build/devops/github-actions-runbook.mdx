@@ -204,15 +204,20 @@ jobs to run:
 If either value is missing, the workflow emits a
 `Cloudflare deployment skipped` warning, records setup guidance in the job
 summary, and skips deploy jobs after CI validation has completed. A non-empty
-but invalid token still fails during Wrangler operations.
+but invalid or under-scoped token normally surfaces as a Worker secret preflight
+skip or a Wrangler failure before upload.
 
-Worker runtime secrets live in Cloudflare, not GitHub. The workflow checks them
-with `wrangler secret list` before upload and fails with exact setup commands
-when any required name is missing:
+Worker runtime secrets live in Cloudflare, not GitHub. After the GitHub
+credential preflight passes, a dedicated Worker secret preflight checks the
+selected Workers with `wrangler secret list`. It reads only secret names, never
+secret values. If Wrangler cannot list names, or if any required name is
+missing, the workflow emits a warning, writes setup commands to the job summary,
+and skips the selected deploy job instead of failing later inside a deploy
+step.
 
 | Worker                   | Required Cloudflare Worker secrets                                                                                                                  |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tuturuuu-backend`       | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL` |
+| `tuturuuu-backend`       | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL` |
 | `tuturuuu-tanstack-web`  | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`                                                                                                   |
 
 Bootstrap missing Worker secrets from a trusted local shell with Wrangler:
@@ -224,6 +229,7 @@ bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
 bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
 bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
 bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
 bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
 ```
@@ -231,8 +237,14 @@ bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangl
 Deploy the backend before the TanStack Worker when `deploy_target` is not `all`.
 The TanStack Worker has a `BACKEND` service binding to `tuturuuu-backend`, so a
 frontend-only deployment assumes the backend Worker and its secrets already
-exist. `deployment_mode=dry-run` compiles and runs Wrangler checks without
-uploading; `deployment_mode=deploy` uploads the selected Worker version.
+exist. When `deploy_target=all`, a skipped backend deployment also keeps the
+TanStack deployment skipped, even if the TanStack Worker secrets are present.
+
+`deployment_mode=dry-run` compiles and runs Wrangler checks without uploading,
+but it still uses the same Cloudflare account, token, Worker name, and secret
+name preflights as `deployment_mode=deploy`. Treat a dry-run skip as a setup
+gap, not as a deploy failure. `deployment_mode=deploy` uploads the selected
+Worker version only after those preflights pass.
 
 ### Quality and security
 

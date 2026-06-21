@@ -149,7 +149,7 @@ jobs:
         run: node scripts/check-cloudflare-workers.js
 
       - name: Type-check TanStack Start app
-        run: bun run --filter @tuturuuu/tanstack-web type-check
+        run: bun type-check:tanstack-web
 
       - name: Test TanStack Start app
         run: bun run --filter @tuturuuu/tanstack-web test
@@ -254,10 +254,161 @@ jobs:
             echo "Use deployment_mode=dry-run until the backend and TanStack Workers have all required secrets in Cloudflare."
           } >> "$GITHUB_STEP_SUMMARY"
 
+  cloudflare-worker-secrets-preflight:
+    name: Cloudflare Worker secrets preflight
+    needs: [cloudflare-deployment-preflight]
+    if: needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    outputs:
+      can_deploy_backend: ${{ steps.worker-secrets.outputs.can_deploy_backend }}
+      can_deploy_tanstack_web: ${{ steps.worker-secrets.outputs.can_deploy_tanstack_web }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Check selected Worker secrets
+        id: worker-secrets
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOY_BACKEND: ${{ needs.cloudflare-deployment-preflight.outputs.deploy_backend }}
+          DEPLOY_TANSTACK_WEB: ${{ needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web }}
+        run: |
+          set -euo pipefail
+
+          can_deploy_backend=false
+          can_deploy_tanstack_web=false
+
+          check_worker_secrets() {
+            local key="$1"
+            local label="$2"
+            local worker_name="$3"
+            local config_path="$4"
+            local required_json="$5"
+            local secrets_file="$RUNNER_TEMP/${key}-worker-secrets.json"
+            local missing_file="$RUNNER_TEMP/${key}-missing-secrets.txt"
+            local list_failed=false
+
+            case "$config_path" in
+              apps/backend/wrangler.jsonc)
+                bun wrangler secret list --config apps/backend/wrangler.jsonc --format json > "$secrets_file" || list_failed=true
+                ;;
+              apps/tanstack-web/wrangler.jsonc)
+                bun wrangler secret list --config apps/tanstack-web/wrangler.jsonc --format json > "$secrets_file" || list_failed=true
+                ;;
+              *)
+                echo "::error title=Invalid Worker config::Unexpected Worker config path ${config_path}."
+                return 1
+                ;;
+            esac
+
+            if [ "$list_failed" = "true" ]; then
+              echo "::warning title=${label} Worker deployment skipped::Wrangler could not list secret names for ${worker_name}. Check CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, account access, and that the Worker exists."
+              {
+                echo "## ${label} Worker deployment skipped"
+                echo
+                echo "Wrangler could not list secret names for \`${worker_name}\` using \`${config_path}\`."
+                echo "Confirm the \`cloudflare-workers-preview\` GitHub Environment has \`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\`, the token can read Workers scripts in the account, and the Worker exists."
+              } >> "$GITHUB_STEP_SUMMARY"
+              return 1
+            fi
+
+            node - "$secrets_file" "$required_json" "$missing_file" <<'NODE'
+          const fs = require('node:fs');
+          const [, , secretsFile, requiredJson, missingFile] = process.argv;
+          const actualSecrets = JSON.parse(fs.readFileSync(secretsFile, 'utf8'));
+          const requiredSecrets = JSON.parse(requiredJson);
+          const actualNames = new Set(
+            actualSecrets
+              .map((secret) =>
+                typeof secret === 'string' ? secret : secret?.name
+              )
+              .filter(Boolean)
+          );
+          const missing = requiredSecrets.filter((name) => !actualNames.has(name));
+          fs.writeFileSync(missingFile, missing.join('\n'));
+          NODE
+
+            if [ -s "$missing_file" ]; then
+              local missing_csv
+              missing_csv="$(node -e "const fs = require('node:fs'); console.log(fs.readFileSync(process.argv[1], 'utf8').trim().split(/\\n/u).filter(Boolean).join(', '));" "$missing_file")"
+              echo "::warning title=Missing ${label} Worker secrets::Cloudflare Worker ${worker_name} is missing: ${missing_csv}. The selected deploy job will be skipped."
+              {
+                echo "## ${label} Worker deployment skipped"
+                echo
+                echo "Cloudflare Worker \`${worker_name}\` is missing required secret names:"
+                while IFS= read -r secret_name; do
+                  [ -n "$secret_name" ] || continue
+                  echo "- \`${secret_name}\`"
+                done < "$missing_file"
+                echo
+                echo "Configure them from a trusted shell; Wrangler prompts for values and the workflow never prints secret values:"
+                while IFS= read -r secret_name; do
+                  [ -n "$secret_name" ] || continue
+                  echo "- \`bun wrangler secret put ${secret_name} --config ${config_path}\`"
+                done < "$missing_file"
+              } >> "$GITHUB_STEP_SUMMARY"
+              return 1
+            fi
+
+            {
+              echo "## ${label} Worker secret preflight"
+              echo
+              echo "All required secret names are present for \`${worker_name}\`. Values were not read or printed."
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          if [ "$DEPLOY_BACKEND" = "true" ]; then
+            if check_worker_secrets \
+              backend \
+              Backend \
+              tuturuuu-backend \
+              apps/backend/wrangler.jsonc \
+              '["BACKEND_INTERNAL_TOKEN","TUTURUUU_APP_COORDINATION_SECRET","SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","CRON_SECRET","DISCORD_APP_DEPLOYMENT_URL","AURORA_EXTERNAL_URL"]'; then
+              can_deploy_backend=true
+            fi
+          fi
+
+          if [ "$DEPLOY_TANSTACK_WEB" = "true" ]; then
+            if check_worker_secrets \
+              tanstack-web \
+              "TanStack" \
+              tuturuuu-tanstack-web \
+              apps/tanstack-web/wrangler.jsonc \
+              '["BACKEND_PUBLIC_ORIGIN","BACKEND_INTERNAL_TOKEN"]'; then
+              can_deploy_tanstack_web=true
+            fi
+          fi
+
+          {
+            echo "can_deploy_backend=$can_deploy_backend"
+            echo "can_deploy_tanstack_web=$can_deploy_tanstack_web"
+          } >> "$GITHUB_OUTPUT"
+
   deploy-backend:
     name: Deploy Rust backend Worker
-    needs: [cloudflare-deployment-preflight]
-    if: needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_backend == 'true'
+    needs: [cloudflare-deployment-preflight, cloudflare-worker-secrets-preflight]
+    if: needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_backend == 'true' && needs.cloudflare-worker-secrets-preflight.outputs.can_deploy_backend == 'true'
     runs-on: ubuntu-latest
     environment: cloudflare-workers-preview
     permissions:
@@ -291,45 +442,6 @@ jobs:
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
 
-      - name: Check backend Worker secrets
-        shell: bash
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          secrets_file="$RUNNER_TEMP/backend-worker-secrets.json"
-          bun wrangler secret list --config apps/backend/wrangler.jsonc --format json > "$secrets_file"
-
-          node - "$secrets_file" '["BACKEND_INTERNAL_TOKEN","TUTURUUU_APP_COORDINATION_SECRET","SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","CRON_SECRET","DISCORD_APP_DEPLOYMENT_URL"]' <<'NODE'
-          const fs = require('node:fs');
-          const [, , secretsFile, requiredJson] = process.argv;
-          const actualSecrets = JSON.parse(fs.readFileSync(secretsFile, 'utf8'));
-          const requiredSecrets = JSON.parse(requiredJson);
-          const actualNames = new Set(
-            actualSecrets
-              .map((secret) =>
-                typeof secret === 'string' ? secret : secret?.name
-              )
-              .filter(Boolean)
-          );
-          const missing = requiredSecrets.filter((name) => !actualNames.has(name));
-
-          if (missing.length > 0) {
-            console.error(
-              `::error title=Missing backend Worker secrets::Cloudflare Worker tuturuuu-backend is missing: ${missing.join(', ')}`
-            );
-            console.error('Configure the missing secrets before rerunning:');
-            for (const name of missing) {
-              console.error(
-                `bun wrangler secret put ${name} --config apps/backend/wrangler.jsonc`
-              );
-            }
-            process.exit(1);
-          }
-          NODE
-
       - name: Deploy backend Worker
         shell: bash
         env:
@@ -348,8 +460,8 @@ jobs:
 
   deploy-tanstack-web:
     name: Deploy TanStack Start Worker
-    needs: [cloudflare-deployment-preflight, deploy-backend]
-    if: always() && needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web == 'true' && (needs.cloudflare-deployment-preflight.outputs.deploy_backend != 'true' || needs.deploy-backend.result == 'success')
+    needs: [cloudflare-deployment-preflight, cloudflare-worker-secrets-preflight, deploy-backend]
+    if: always() && needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web == 'true' && needs.cloudflare-worker-secrets-preflight.outputs.can_deploy_tanstack_web == 'true' && (needs.cloudflare-deployment-preflight.outputs.deploy_backend != 'true' || needs.deploy-backend.result == 'success')
     runs-on: ubuntu-latest
     environment: cloudflare-workers-preview
     permissions:
@@ -373,45 +485,6 @@ jobs:
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
-
-      - name: Check TanStack Worker secrets
-        shell: bash
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          secrets_file="$RUNNER_TEMP/tanstack-worker-secrets.json"
-          bun wrangler secret list --config apps/tanstack-web/wrangler.jsonc --format json > "$secrets_file"
-
-          node - "$secrets_file" '["BACKEND_PUBLIC_ORIGIN","BACKEND_INTERNAL_TOKEN"]' <<'NODE'
-          const fs = require('node:fs');
-          const [, , secretsFile, requiredJson] = process.argv;
-          const actualSecrets = JSON.parse(fs.readFileSync(secretsFile, 'utf8'));
-          const requiredSecrets = JSON.parse(requiredJson);
-          const actualNames = new Set(
-            actualSecrets
-              .map((secret) =>
-                typeof secret === 'string' ? secret : secret?.name
-              )
-              .filter(Boolean)
-          );
-          const missing = requiredSecrets.filter((name) => !actualNames.has(name));
-
-          if (missing.length > 0) {
-            console.error(
-              `::error title=Missing TanStack Worker secrets::Cloudflare Worker tuturuuu-tanstack-web is missing: ${missing.join(', ')}`
-            );
-            console.error('Configure the missing secrets after the backend Worker is deployed:');
-            for (const name of missing) {
-              console.error(
-                `bun wrangler secret put ${name} --config apps/tanstack-web/wrangler.jsonc`
-              );
-            }
-            process.exit(1);
-          }
-          NODE
 
       - name: Deploy TanStack Start Worker
         shell: bash

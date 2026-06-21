@@ -90,7 +90,7 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replace('bun run --filter @tuturuuu/tanstack-web type-check', '')
+      workflow.replace('bun type-check:tanstack-web', '')
     ).join('\n'),
     /type-check/
   );

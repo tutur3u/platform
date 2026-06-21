@@ -69,6 +69,7 @@ const BACKEND_REQUIRED_SECRETS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'CRON_SECRET',
   'DISCORD_APP_DEPLOYMENT_URL',
+  'AURORA_EXTERNAL_URL',
 ];
 const TANSTACK_WEB_REQUIRED_SECRETS = [
   'BACKEND_PUBLIC_ORIGIN',
@@ -192,7 +193,7 @@ function validateRustBackendWorkflow(workflowContent) {
     'CLOUDFLARE_API_TOKEN',
     'CLOUDFLARE_ACCOUNT_ID',
     '::warning title=Cloudflare deployment skipped::',
-    'bun run --filter @tuturuuu/tanstack-web type-check',
+    'bun type-check:tanstack-web',
     'bun run --filter @tuturuuu/tanstack-web test',
     'bun wrangler secret list --config apps/backend/wrangler.jsonc --format json',
     'bun wrangler secret list --config apps/tanstack-web/wrangler.jsonc --format json',
