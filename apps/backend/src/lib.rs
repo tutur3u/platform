@@ -3007,11 +3007,99 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn aurora_forecast_get_reads_public_rows_from_supabase() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "id":"stat-1",
+                        "date":"2026-01-02T08:30:00Z",
+                        "auto_arima":1.25,
+                        "auto_arima_lo_90":1.0,
+                        "auto_arima_hi_90":1.5
+                    }
+                ]"#,
+            ),
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "id":"ml-1",
+                        "date":"2026-01-03",
+                        "xgboost":3.15,
+                        "catboost":2.71
+                    }
+                ]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/aurora/forecast"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!({
+                "statistical_forecast": [
+                    {
+                        "id": "stat-1",
+                        "date": "2026-01-02",
+                        "auto_arima": 1.25,
+                        "auto_arima_lo_90": 1.0,
+                        "auto_arima_hi_90": 1.5
+                    }
+                ],
+                "ml_forecast": [
+                    {
+                        "id": "ml-1",
+                        "date": "2026-01-03",
+                        "xgboost": 3.15,
+                        "catboost": 2.71
+                    }
+                ],
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[0].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_statistical_forecast?select=*&order=date.asc"
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_ml_forecast?select=*&order=date.asc"
+        );
+
+        for call in calls {
+            assert_eq!(recorded_header(&call, "Accept"), Some(APPLICATION_JSON));
+            assert_eq!(
+                recorded_header(&call, "Authorization"),
+                Some("Bearer test-service-role-secret")
+            );
+            assert_eq!(
+                recorded_header(&call, "apikey"),
+                Some("test-service-role-secret")
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn aurora_metrics_get_rejects_unsupported_methods_without_outbound_call() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::default();
 
         for path in [
+            "/api/v1/aurora/forecast",
             "/api/v1/aurora/ml-metrics",
             "/api/v1/aurora/statistical-metrics",
         ] {
@@ -3022,6 +3110,26 @@ mod tests {
             assert_eq!(response.body["error"], "method not allowed", "{path}");
         }
         assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn aurora_forecast_get_fails_closed_with_legacy_message() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[]"#),
+            outbound_response(500, r#"{"error":"failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/aurora/forecast"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error fetching forecast data");
+        assert_eq!(outbound.calls().len(), 2);
     }
 
     #[tokio::test]
@@ -3038,6 +3146,23 @@ mod tests {
             assert_eq!(response.status, 500, "{path}");
             assert_eq!(response.body["error"], "Internal Server Error", "{path}");
         }
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn aurora_forecast_get_fails_closed_when_contact_data_is_not_configured() {
+        let config = backend_config_with_internal_token();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/aurora/forecast"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error fetching forecast data");
         assert_eq!(outbound.calls().len(), 0);
     }
 

@@ -69,6 +69,15 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy development-only Tuturuuu API proxy used Next.js and Undici to forward arbitrary allowlisted API paths and carried SSRF-sensitive outbound proxy behavior. No in-repo callers reference /api/v1/proxy/tuturuuu, and the Cloudflare cutover should use maintained internal API clients or direct backend routes instead. Rust returns terminal 410 ENDPOINT_REMOVED with the legacy GET allow list."
     },
+    "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles the public Aurora forecast GET through the server-owned Supabase REST adapter, preserving statistical_forecast and ml_forecast table reads, date ascending ordering, YYYY-MM-DD date normalization, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts forecast rows."
+        }
+      }
+    },
     "api:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts": {
       "methods": {
         "GET": {

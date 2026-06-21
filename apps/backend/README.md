@@ -90,6 +90,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   or unauthorized sessions. Changelog `POST`, `PUT`, `DELETE`, publish, and
   upload routes remain legacy-owned until write authorization and storage
   handling move behind Rust.
+- `GET /api/v1/aurora/forecast`: legacy-compatible public Aurora forecast
+  reader backed by the server-owned Supabase REST adapter. Rust reads the
+  statistical and ML forecast tables with `date.asc` ordering, normalizes row
+  `date` fields to the legacy `YYYY-MM-DD` response shape, and returns the
+  combined `{ statistical_forecast, ml_forecast }` object. Forecast `POST`
+  ingestion remains legacy-owned until external Aurora writes move behind Rust.
 - `OPTIONS /api/v1/auth/password-login`, `OPTIONS
 /api/v1/auth/mobile/password-login`, `OPTIONS
 /api/v1/auth/mobile/send-otp`, `OPTIONS /api/v1/auth/mobile/verify-otp`,

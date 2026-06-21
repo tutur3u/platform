@@ -118,6 +118,42 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/aurora/forecast:
+    get:
+      summary: Legacy-compatible Aurora forecast response
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/forecast/route.ts GET. The Rust backend reads the public Aurora statistical and ML forecast tables through the server-owned Supabase REST adapter, preserves date-ascending ordering, normalizes forecast date fields to the legacy YYYY-MM-DD response shape, and returns the legacy combined object. POST remains legacy-owned until external Aurora forecast ingestion and write authorization move behind Rust.
+      responses:
+        "200":
+          description: Aurora statistical and ML forecast rows.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraForecastResponse"
+        "500":
+          description: Aurora forecast rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraForecastError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/aurora/ml-metrics:
     get:
       summary: Legacy-compatible Aurora ML metrics list
@@ -2734,6 +2770,51 @@ components:
           type: number
         no_scaling:
           type: boolean
+    AuroraForecastResponse:
+      type: object
+      required:
+        - statistical_forecast
+        - ml_forecast
+      properties:
+        statistical_forecast:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuroraForecastRow"
+        ml_forecast:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuroraForecastRow"
+    AuroraForecastRow:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        ws_id:
+          type: string
+        date:
+          type: string
+          examples:
+            - "2026-01-02"
+        auto_arima:
+          type: number
+        elasticnet:
+          type: number
+        lightgbm:
+          type: number
+        xgboost:
+          type: number
+        catboost:
+          type: number
+    AuroraForecastError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Error fetching forecast data
     AuroraMetricsError:
       type: object
       required:

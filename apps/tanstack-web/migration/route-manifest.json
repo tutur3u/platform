@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 989,
-        "migrated": 39,
-        "percentComplete": 10.98,
+        "migrated": 40,
+        "percentComplete": 11.06,
         "remaining": 989,
-        "terminal": 122,
-        "total": 1111,
+        "terminal": 123,
+        "total": 1112,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 1007,
-        "migrated": 44,
-        "percentComplete": 11.2,
+        "migrated": 45,
+        "percentComplete": 11.28,
         "remaining": 1007,
-        "terminal": 127,
-        "total": 1134,
+        "terminal": 128,
+        "total": 1135,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1258,
-      "migrated": 170,
-      "percentComplete": 16.74,
+      "migrated": 171,
+      "percentComplete": 16.8,
       "remaining": 1258,
-      "terminal": 253,
-      "total": 1511,
+      "terminal": 254,
+      "total": 1512,
       "unknownStatus": 0
     }
   },
@@ -1198,13 +1198,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts",
+      "id": "api:GET:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/aurora/forecast",
+      "sourceFile": "apps/web/src/app/api/v1/aurora/forecast/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/aurora/forecast",
       "sourceFile": "apps/web/src/app/api/v1/aurora/forecast/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts"
     },
     {
       "id": "api:/api/v1/aurora/health:apps/web/src/app/api/v1/aurora/health/route.ts",
@@ -14020,11 +14033,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1111,
+    "apiRoutes": 1112,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 305,
-    "routeHandlers": 1134,
+    "routeHandlers": 1135,
     "methodCounts": {
       "GET": 634,
       "HEAD": 1,
@@ -14034,6 +14047,6 @@
       "DELETE": 193,
       "OPTIONS": 16
     },
-    "total": 1511
+    "total": 1512
   }
 }
