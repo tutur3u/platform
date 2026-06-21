@@ -32,6 +32,13 @@ const DEFAULT_E2E_COMPARE_REPORT_PATH = path.join(
   'web-migration',
   'compare-report.json'
 );
+const DEFAULT_E2E_PLAYWRIGHT_JSON_REPORT_DIR = path.join(
+  ROOT_DIR,
+  'tmp',
+  'e2e',
+  'web-migration',
+  'playwright-json'
+);
 const DEFAULT_HEALTH_URL = 'http://127.0.0.1:7803/login';
 const DEFAULT_PORTLESS_BASE_URL = LOCAL_E2E_BASE_URL;
 const DEFAULT_PORTLESS_HEALTH_URL = `${DEFAULT_PORTLESS_BASE_URL}/login`;
@@ -313,12 +320,21 @@ function isPassedE2EResult(result) {
 function normalizeE2ECompareResult(result) {
   const normalized = { ...result };
   const durationMs = Number(normalized.durationMs);
+  const executedCount = Number(normalized.executedCount);
+  const passedCount = Number(normalized.passedCount);
 
   if (normalized.wallMs === undefined && Number.isFinite(durationMs)) {
     normalized.wallMs = durationMs;
   }
 
-  if (normalized.passRate === undefined) {
+  if (
+    normalized.passRate === undefined &&
+    Number.isFinite(executedCount) &&
+    executedCount > 0 &&
+    Number.isFinite(passedCount)
+  ) {
+    normalized.passRate = passedCount / executedCount;
+  } else if (normalized.passRate === undefined) {
     normalized.passRate = isPassedE2EResult(normalized) ? 1 : 0;
   }
 
@@ -357,6 +373,54 @@ function normalizeFrontendE2EOrigin(value) {
   } catch {
     return null;
   }
+}
+
+function getE2EPlaywrightJsonReportPath(frontend, env = process.env) {
+  const reportDir = path.resolve(
+    env.E2E_PLAYWRIGHT_JSON_REPORT_DIR ?? DEFAULT_E2E_PLAYWRIGHT_JSON_REPORT_DIR
+  );
+
+  return path.join(reportDir, `${frontend}-report.json`);
+}
+
+function withPlaywrightJsonReporterArgs(playwrightArgs = []) {
+  const filteredArgs = [];
+
+  for (let index = 0; index < playwrightArgs.length; index += 1) {
+    const arg = playwrightArgs[index];
+
+    if (arg === '--reporter') {
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--reporter=')) {
+      continue;
+    }
+
+    filteredArgs.push(arg);
+  }
+
+  return [...filteredArgs, '--reporter=json'];
+}
+
+function getPlaywrightJsonSummary(reportPath, fsImpl = fs) {
+  const report = JSON.parse(fsImpl.readFileSync(reportPath, 'utf8'));
+  const stats = report.stats ?? {};
+  const passedCount = Math.max(0, Number(stats.expected) || 0);
+  const failedCount = Math.max(0, Number(stats.unexpected) || 0);
+  const flakyCount = Math.max(0, Number(stats.flaky) || 0);
+  const skippedCount = Math.max(0, Number(stats.skipped) || 0);
+  const executedCount = passedCount + failedCount + flakyCount;
+
+  return {
+    executedCount,
+    failedCount,
+    flakyCount,
+    passedCount,
+    skippedCount,
+    testCount: executedCount + skippedCount,
+  };
 }
 
 function createE2ECompareReport(frontends, generatedAt = new Date()) {
@@ -420,18 +484,35 @@ async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
   const origin = normalizeFrontendE2EOrigin(
     getFrontendE2EBaseUrl(frontend, process.env)
   );
+  const playwrightJsonReportPath = getE2EPlaywrightJsonReportPath(
+    frontend,
+    process.env
+  );
+
+  fs.mkdirSync(path.dirname(playwrightJsonReportPath), { recursive: true });
+  fs.rmSync(playwrightJsonReportPath, { force: true });
 
   try {
     await runWebE2E([], {
       ...options,
+      env: {
+        ...(options.env ?? {}),
+        PLAYWRIGHT_JSON_OUTPUT_NAME: playwrightJsonReportPath,
+      },
       frontend,
-      playwrightArgs,
+      playwrightArgs: withPlaywrightJsonReporterArgs(playwrightArgs),
     });
+    const summary = getPlaywrightJsonSummary(playwrightJsonReportPath);
 
     return {
       durationMs: Date.now() - startedAt,
       origin,
       passed: true,
+      playwright: {
+        reporter: 'json',
+        reportPath: path.relative(ROOT_DIR, playwrightJsonReportPath),
+      },
+      ...summary,
       status: 'passed',
     };
   } catch (error) {
@@ -1759,6 +1840,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       envFilePath,
       rootDir: ROOT_DIR,
     }),
+    ...(options.env ?? {}),
     [SKIP_WATCH_HISTORY_ENV]: '1',
     [WATCHER_CONTAINER_ENV]: '1',
     DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
@@ -1913,6 +1995,7 @@ module.exports = {
   createE2ECompareReport,
   formatBlueGreenStages,
   getE2ECompareReportPath,
+  getE2EPlaywrightJsonReportPath,
   getPortlessAliasVerifyAttempts,
   getPortlessAliasVerifyDelayMs,
   getE2EPortlessRouteName,
@@ -1940,6 +2023,7 @@ module.exports = {
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
+  getPlaywrightJsonSummary,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
   isPortlessProxyConfigMismatchError,
@@ -1967,4 +2051,5 @@ module.exports = {
   shouldKeepStack,
   stopDockerizedE2E,
   waitForUrl,
+  withPlaywrightJsonReporterArgs,
 };

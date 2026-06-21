@@ -836,6 +836,19 @@ function validateE2EReport(report) {
     if (result.passed !== true && !isPassedE2EStatus(result.status)) {
       failures.push(`${frontend} E2E status is ${result.status ?? 'missing'}.`);
     }
+
+    const testCount = Number(result.testCount);
+    const executedCount = Number(result.executedCount);
+
+    if (!Number.isFinite(testCount) || !Number.isFinite(executedCount)) {
+      failures.push(
+        `${frontend} E2E report is missing Playwright test execution evidence.`
+      );
+    } else if (testCount <= 0 || executedCount <= 0) {
+      failures.push(
+        `${frontend} E2E report has zero executed Playwright tests.`
+      );
+    }
   }
 
   if (Array.isArray(report.failedTests) && report.failedTests.length > 0) {

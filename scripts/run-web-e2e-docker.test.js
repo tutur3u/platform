@@ -30,6 +30,7 @@ const {
   formatBlueGreenStages,
   getPortlessCommandEnv,
   getE2ECompareReportPath,
+  getE2EPlaywrightJsonReportPath,
   getE2EPortlessRouteName,
   getE2EPortlessTargetPort,
   getDockerComposeDiagnosticArgs,
@@ -53,6 +54,7 @@ const {
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
+  getPlaywrightJsonSummary,
   getFrontendE2EBaseUrl,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
@@ -76,6 +78,7 @@ const {
   routeListHasPortlessAlias,
   shouldKeepStack,
   waitForUrl,
+  withPlaywrightJsonReporterArgs,
   writeE2ECompareReport,
 } = require('./run-web-e2e-docker.js');
 
@@ -804,16 +807,88 @@ test('parseE2EFrontendArgs strips frontend flags before Playwright runs', () => 
   );
 });
 
+test('withPlaywrightJsonReporterArgs forces JSON reporter evidence for compare mode', () => {
+  assert.deepEqual(
+    withPlaywrightJsonReporterArgs([
+      '--project',
+      'chromium',
+      '--reporter',
+      'line',
+      'auth.spec.ts',
+    ]),
+    ['--project', 'chromium', 'auth.spec.ts', '--reporter=json']
+  );
+  assert.deepEqual(withPlaywrightJsonReporterArgs(['--reporter=html']), [
+    '--reporter=json',
+  ]);
+});
+
+test('getPlaywrightJsonSummary extracts executed test counts', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playwright-json-'));
+  const reportPath = path.join(tempDir, 'report.json');
+
+  try {
+    fs.writeFileSync(
+      reportPath,
+      JSON.stringify({
+        stats: {
+          expected: 7,
+          flaky: 1,
+          skipped: 2,
+          unexpected: 1,
+        },
+      })
+    );
+
+    assert.deepEqual(getPlaywrightJsonSummary(reportPath), {
+      executedCount: 9,
+      failedCount: 1,
+      flakyCount: 1,
+      passedCount: 7,
+      skippedCount: 2,
+      testCount: 11,
+    });
+    assert.match(
+      getE2EPlaywrightJsonReportPath('tanstack', {
+        E2E_PLAYWRIGHT_JSON_REPORT_DIR: tempDir,
+      }),
+      /tanstack-report\.json$/u
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('createE2ECompareReport summarizes next and TanStack results', () => {
   const report = createE2ECompareReport(
     {
       next: {
         durationMs: 1000,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
         origin: 'https://tuturuuu.localhost',
         passed: true,
+        passedCount: 4,
+        playwright: {
+          reporter: 'json',
+          reportPath: 'tmp/e2e/web-migration/playwright-json/next-report.json',
+        },
+        skippedCount: 1,
         status: 'passed',
+        testCount: 5,
       },
-      tanstack: { durationMs: 1200, passed: true, status: 'passed' },
+      tanstack: {
+        durationMs: 1200,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
+        passed: true,
+        passedCount: 4,
+        skippedCount: 0,
+        status: 'passed',
+        testCount: 4,
+      },
     },
     new Date('2026-06-20T00:00:00.000Z')
   );
@@ -823,18 +898,34 @@ test('createE2ECompareReport summarizes next and TanStack results', () => {
     frontends: {
       next: {
         durationMs: 1000,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
         origin: 'https://tuturuuu.localhost',
         passed: true,
         passRate: 1,
+        passedCount: 4,
+        playwright: {
+          reporter: 'json',
+          reportPath: 'tmp/e2e/web-migration/playwright-json/next-report.json',
+        },
+        skippedCount: 1,
         status: 'passed',
+        testCount: 5,
         wallMs: 1000,
       },
       tanstack: {
         durationMs: 1200,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
         origin: null,
         passed: true,
         passRate: 1,
+        passedCount: 4,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 4,
         wallMs: 1200,
       },
     },

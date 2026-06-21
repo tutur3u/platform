@@ -198,15 +198,25 @@ function createValidE2EReport(generatedAt = new Date().toISOString()) {
     frontend: 'compare',
     frontends: {
       next: {
+        executedCount: 10,
+        failedCount: 0,
         origin: origins.next,
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 10000,
       },
       tanstack: {
+        executedCount: 10,
+        failedCount: 0,
         origin: origins.tanstack,
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 11000,
       },
     },
@@ -910,9 +920,14 @@ test('validateE2EReport requires both frontend results', () => {
     frontend: 'compare',
     frontends: {
       next: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://next.example.com',
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 10000,
       },
     },
@@ -931,15 +946,25 @@ test('validateE2EReport accepts Docker compare report output', () => {
     {
       next: {
         durationMs: 10000,
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://next.example.com',
         passed: true,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
       },
       tanstack: {
         durationMs: 11000,
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://tanstack.example.com',
         passed: true,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
       },
     },
     new Date('2026-06-20T00:00:00.000Z')
@@ -987,19 +1012,55 @@ test('validateE2EReport requires distinct frontend origin evidence', () => {
   );
 });
 
+test('validateE2EReport requires nonzero Playwright execution evidence', () => {
+  const missing = createValidE2EReport();
+  delete missing.frontends.next.testCount;
+  delete missing.frontends.next.executedCount;
+
+  const missingValidation = validateE2EReport(missing);
+
+  assert.equal(missingValidation.ok, false);
+  assert.match(
+    missingValidation.failures.join('\n'),
+    /next E2E report is missing Playwright test execution evidence/u
+  );
+
+  const zero = createValidE2EReport();
+  zero.frontends.tanstack.testCount = 0;
+  zero.frontends.tanstack.executedCount = 0;
+
+  const zeroValidation = validateE2EReport(zero);
+
+  assert.equal(zeroValidation.ok, false);
+  assert.match(
+    zeroValidation.failures.join('\n'),
+    /tanstack E2E report has zero executed Playwright tests/u
+  );
+});
+
 test('validateE2EReport requires explicit compare frontend mode', () => {
   const validation = validateE2EReport({
     frontends: {
       next: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://next.example.com',
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 10000,
       },
       tanstack: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://tanstack.example.com',
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 11000,
       },
     },
@@ -1019,15 +1080,25 @@ test('validateE2EReport rejects pass-rate and wall-time regressions without acce
     frontend: 'compare',
     frontends: {
       next: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://next.example.com',
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 10000,
       },
       tanstack: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://tanstack.example.com',
         passRate: 0.9,
+        passedCount: 9,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 13000,
       },
     },
@@ -1051,15 +1122,25 @@ test('validateE2EReport allows accepted wall-time regressions', () => {
     frontend: 'compare',
     frontends: {
       next: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://next.example.com',
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 10000,
       },
       tanstack: {
+        executedCount: 10,
+        failedCount: 0,
         origin: 'https://tanstack.example.com',
         passRate: 1,
+        passedCount: 10,
+        skippedCount: 0,
         status: 'passed',
+        testCount: 10,
         wallMs: 13000,
       },
     },

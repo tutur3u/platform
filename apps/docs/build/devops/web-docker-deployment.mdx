@@ -339,9 +339,11 @@ host to the direct TanStack Docker port `7824` by default. If
 Compare mode writes `tmp/e2e/web-migration/compare-report.json` after both
 frontend runs complete. Set `E2E_COMPARE_REPORT_PATH` to redirect that evidence
 file under another ignored `tmp/` location. The report records the normalized
-Next and TanStack frontend origins used by the run, and the cutover gate rejects
-missing, credentialed, invalid, or same-origin compare evidence before it can
-satisfy terminal migration gates.
+Next and TanStack frontend origins used by the run plus per-frontend Playwright
+test counts from JSON reporter output. The cutover gate rejects missing,
+credentialed, invalid, or same-origin compare evidence, and it also rejects
+reports that do not prove nonzero Playwright execution for both frontends before
+they can satisfy terminal migration gates.
 
 Before cutover, pair the compare-mode E2E evidence with a full benchmark report
 and Cloudflare smoke report:
