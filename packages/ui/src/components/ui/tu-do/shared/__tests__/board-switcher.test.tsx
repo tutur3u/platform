@@ -114,8 +114,8 @@ describe('BoardSwitcher', () => {
     expect(comboboxProps).toMatchObject({
       searchPlaceholder: 'Search boards...',
       selected: 'board-1',
-      showSelectedIcon: false,
     });
+    expect(comboboxProps?.showSelectedIcon).toBeUndefined();
     expect(comboboxProps?.options.some((option) => option.icon)).toBe(true);
 
     fireEvent.click(screen.getByTestId('board-combobox'));

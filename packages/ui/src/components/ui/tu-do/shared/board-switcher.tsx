@@ -88,9 +88,6 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
     enabled: !!board.ws_id,
   });
 
-  const CurrentBoardIcon =
-    getIconComponentByKey(board.icon as PlatformIconKey | null) ?? LayoutGrid;
-
   const boardOptions = useMemo(() => {
     const byId = new Map<string, BoardWithStatus>();
     for (const item of boards) byId.set(item.id, item);
@@ -199,13 +196,8 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
       disabled={isFetchingBoards}
       emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
       label={
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <CurrentBoardIcon className="h-4 w-4" />
-          </span>
-          <span className="truncate font-semibold text-foreground text-sm">
-            {translateBoardName(board.name)}
-          </span>
+        <span className="truncate font-semibold text-foreground text-sm">
+          {translateBoardName(board.name)}
         </span>
       }
       onChange={(value) => {
@@ -217,7 +209,6 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
       placeholder={translateBoardName(board.name)}
       searchPlaceholder={t.searchBoards}
       selected={board.id}
-      showSelectedIcon={false}
     />
   );
 }
