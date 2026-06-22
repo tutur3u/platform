@@ -102,6 +102,75 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
+      workflow.replace('post-deploy-smoke:', '')
+    ).join('\n'),
+    /post-deploy-smoke/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace(
+        "needs.cloudflare-deployment-preflight.outputs.deployment_mode == 'deploy'",
+        ''
+      )
+    ).join('\n'),
+    /deployment_mode/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace("needs.deploy-tanstack-web.result == 'success'", '')
+    ).join('\n'),
+    /deploy-tanstack-web/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('BACKEND_WORKER_ORIGIN', '')
+    ).join('\n'),
+    /BACKEND_WORKER_ORIGIN/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('TANSTACK_WEB_WORKER_ORIGIN', '')
+    ).join('\n'),
+    /TANSTACK_WEB_WORKER_ORIGIN/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN', '')
+    ).join('\n'),
+    /CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace(
+        'bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"',
+        ''
+      )
+    ).join('\n'),
+    /smoke:cloudflare/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace(
+        'CLOUDFLARE_SMOKE_REPORT_PATH: tmp/benchmarks/web-migration/',
+        ''
+      )
+    ).join('\n'),
+    /tmp\/benchmarks\/web-migration/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace('actions/upload-artifact@v7', '')
+    ).join('\n'),
+    /upload-artifact/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('GITHUB_STEP_SUMMARY', '')
+    ).join('\n'),
+    /GITHUB_STEP_SUMMARY/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
       workflow.replace(
         'bun wrangler secret list --config apps/backend/wrangler.jsonc --format json',
         ''

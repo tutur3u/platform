@@ -200,6 +200,9 @@ jobs to run:
 | ----------------------- | -------------------------- | ------------------------------------------------------------------------ |
 | `CLOUDFLARE_API_TOKEN`  | Environment secret         | Cloudflare API token with Workers Scripts edit access for this account.  |
 | `CLOUDFLARE_ACCOUNT_ID` | Environment variable       | Cloudflare account id used by Wrangler. A same-named secret is accepted only as a fallback. |
+| `BACKEND_WORKER_ORIGIN` | Environment variable       | Deployed Rust backend Worker origin used by the post-deploy smoke gate.  |
+| `TANSTACK_WEB_WORKER_ORIGIN` | Environment variable  | Deployed TanStack Worker origin used by the post-deploy smoke gate.      |
+| `CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN` | Environment secret | Dedicated smoke token mapped to `BACKEND_INTERNAL_TOKEN` only while running `bun smoke:cloudflare`. |
 
 If either value is missing, the workflow emits a
 `Cloudflare deployment skipped` warning, records setup guidance in the job
@@ -245,6 +248,24 @@ but it still uses the same Cloudflare account, token, Worker name, and secret
 name preflights as `deployment_mode=deploy`. Treat a dry-run skip as a setup
 gap, not as a deploy failure. `deployment_mode=deploy` uploads the selected
 Worker version only after those preflights pass.
+
+When `deploy_target=all` and `deployment_mode=deploy`, the
+`post-deploy-smoke` job runs only after both Worker deploy jobs succeed. It
+requires `BACKEND_WORKER_ORIGIN`, `TANSTACK_WEB_WORKER_ORIGIN`, and
+`CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN`; missing values fail the full deploy
+workflow with a warning, an error, and setup guidance in the step summary
+instead of silently skipping runtime verification. The job runs:
+
+```sh
+bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"
+```
+
+The JSON report is written under
+`tmp/benchmarks/web-migration/<run-id>-<attempt>/cloudflare-smoke.json`,
+uploaded as the `cloudflare-smoke-<run-id>-<attempt>` workflow artifact, and
+summarized in the GitHub step summary. The report must come from the deployed
+backend and TanStack Worker origins; do not point these variables at local
+Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 
 ### Quality and security
 

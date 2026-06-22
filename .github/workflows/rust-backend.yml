@@ -509,3 +509,145 @@ jobs:
           fi
 
           bun --cwd apps/tanstack-web run deploy:cloudflare
+
+  post-deploy-smoke:
+    name: Smoke deployed Cloudflare Workers
+    needs: [cloudflare-deployment-preflight, deploy-backend, deploy-tanstack-web]
+    if: always() && needs.cloudflare-deployment-preflight.outputs.deployment_mode == 'deploy' && needs.cloudflare-deployment-preflight.outputs.deploy_backend == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web == 'true' && needs.deploy-backend.result == 'success' && needs.deploy-tanstack-web.result == 'success'
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_SMOKE_REPORT_PATH: tmp/benchmarks/web-migration/${{ github.run_id }}-${{ github.run_attempt }}/cloudflare-smoke.json
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Check Cloudflare smoke inputs
+        shell: bash
+        env:
+          BACKEND_WORKER_ORIGIN: ${{ vars.BACKEND_WORKER_ORIGIN }}
+          TANSTACK_WEB_WORKER_ORIGIN: ${{ vars.TANSTACK_WEB_WORKER_ORIGIN }}
+          BACKEND_INTERNAL_TOKEN: ${{ secrets.CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+
+          if [ -z "${BACKEND_WORKER_ORIGIN:-}" ]; then
+            missing+=("GitHub Environment variable BACKEND_WORKER_ORIGIN")
+          fi
+
+          if [ -z "${TANSTACK_WEB_WORKER_ORIGIN:-}" ]; then
+            missing+=("GitHub Environment variable TANSTACK_WEB_WORKER_ORIGIN")
+          fi
+
+          if [ -z "${BACKEND_INTERNAL_TOKEN:-}" ]; then
+            missing+=("GitHub Environment secret CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf -v missing_csv "%s, " "${missing[@]}"
+            missing_csv="${missing_csv%, }"
+            echo "::warning title=Cloudflare smoke inputs missing::action_required: ${missing_csv} must be configured in the cloudflare-workers-preview environment."
+            echo "::error title=Cloudflare smoke verification blocked::Full Cloudflare deploys require backend and TanStack Worker origins plus the dedicated smoke token before the post-deploy gate can run."
+            {
+              echo "## action_required: Cloudflare smoke inputs missing"
+              echo
+              echo "A full Cloudflare deploy completed, but the post-deploy smoke gate cannot run until these GitHub Environment values are configured:"
+              printf -- "- %s\n" "${missing[@]}"
+              echo
+              echo "Store \`BACKEND_WORKER_ORIGIN\` and \`TANSTACK_WEB_WORKER_ORIGIN\` as non-secret Environment variables."
+              echo "Store \`CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN\` as an Environment secret; the workflow maps it to \`BACKEND_INTERNAL_TOKEN\` only for \`bun smoke:cloudflare\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Run Cloudflare smoke
+        shell: bash
+        env:
+          BACKEND_WORKER_ORIGIN: ${{ vars.BACKEND_WORKER_ORIGIN }}
+          TANSTACK_WEB_WORKER_ORIGIN: ${{ vars.TANSTACK_WEB_WORKER_ORIGIN }}
+          BACKEND_INTERNAL_TOKEN: ${{ secrets.CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$(dirname "$CLOUDFLARE_SMOKE_REPORT_PATH")"
+          bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"
+
+      - name: Upload Cloudflare smoke report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cloudflare-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CLOUDFLARE_SMOKE_REPORT_PATH }}
+          if-no-files-found: warn
+
+      - name: Summarize Cloudflare smoke
+        if: always()
+        shell: bash
+        env:
+          BACKEND_WORKER_ORIGIN: ${{ vars.BACKEND_WORKER_ORIGIN }}
+          TANSTACK_WEB_WORKER_ORIGIN: ${{ vars.TANSTACK_WEB_WORKER_ORIGIN }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Cloudflare post-deploy smoke"
+            echo
+            echo "- Backend origin: \`${BACKEND_WORKER_ORIGIN:-missing}\`"
+            echo "- TanStack origin: \`${TANSTACK_WEB_WORKER_ORIGIN:-missing}\`"
+            echo "- Report path: \`$CLOUDFLARE_SMOKE_REPORT_PATH\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ ! -f "$CLOUDFLARE_SMOKE_REPORT_PATH" ]; then
+            {
+              echo
+              echo "No JSON smoke report was written. Check the smoke input validation and runner logs."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node - "$CLOUDFLARE_SMOKE_REPORT_PATH" <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('node:fs');
+          const reportPath = process.argv[2];
+          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+
+          console.log('');
+          console.log(`Result: ${report.ok ? 'pass' : 'fail'}`);
+          console.log('');
+          console.log('| Probe | Status | Duration | Detail |');
+          console.log('| --- | --- | ---: | --- |');
+
+          for (const result of report.results ?? []) {
+            const label = String(result.label ?? result.id ?? 'unknown').replaceAll('|', '\\|');
+            const status = result.status ?? 'error';
+            const detail = result.detail
+              ? String(result.detail).replaceAll('|', '\\|')
+              : '-';
+            const duration = Number.isFinite(result.durationMs)
+              ? `${result.durationMs} ms`
+              : '-';
+
+            console.log(
+              `| ${label} | ${result.ok ? 'pass' : 'fail'} (${status}) | ${duration} | ${detail} |`
+            );
+          }
+          NODE
