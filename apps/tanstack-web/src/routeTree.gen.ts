@@ -118,6 +118,7 @@ import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes
 import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans';
 import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings';
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent';
+import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
 import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets';
 import { Route as LocaleWsIdFinanceTransactionsRouteImport } from './routes/$locale/$wsId/finance/transactions';
@@ -728,6 +729,12 @@ const LocaleWsIdMailSentRoute = LocaleWsIdMailSentRouteImport.update({
   path: '/$wsId/mail/sent',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdInventoryBatchesRoute =
+  LocaleWsIdInventoryBatchesRouteImport.update({
+    id: '/$wsId/inventory/batches',
+    path: '/$wsId/inventory/batches',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdHiveNotWhitelistedRoute =
   LocaleWsIdHiveNotWhitelistedRouteImport.update({
     id: '/not-whitelisted',
@@ -1057,6 +1064,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
@@ -1205,6 +1213,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
@@ -1355,6 +1364,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
@@ -1506,6 +1516,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
@@ -1654,6 +1665,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
@@ -1803,6 +1815,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
@@ -2626,6 +2639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdMailSentRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/inventory/batches': {
+      id: '/$locale/$wsId/inventory/batches';
+      path: '/$wsId/inventory/batches';
+      fullPath: '/$locale/$wsId/inventory/batches';
+      preLoaderRoute: typeof LocaleWsIdInventoryBatchesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/hive/not-whitelisted': {
       id: '/$locale/$wsId/hive/not-whitelisted';
       path: '/not-whitelisted';
@@ -3239,6 +3259,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute;
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute;
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
+  LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute;
   LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute;
   LocaleWsIdTasksTaskIdRoute: typeof LocaleWsIdTasksTaskIdRoute;
@@ -3352,6 +3373,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRoute,
   LocaleWsIdEducationQuizSetsRoute: LocaleWsIdEducationQuizSetsRoute,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
+  LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,
   LocaleWsIdPlatformExternalProjectsRoute:
     LocaleWsIdPlatformExternalProjectsRoute,
