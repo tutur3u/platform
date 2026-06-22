@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const { spawn } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -19,6 +21,22 @@ const START_REGISTRATION_FOOTER = Object.freeze([
   '}',
 ]);
 const START_REGISTRATION_FOOTER_BLOCK = START_REGISTRATION_FOOTER.join('\n');
+const ROUTE_TREE_FORMATTER_CONFIG = Object.freeze({
+  formatter: {
+    enabled: true,
+    indentStyle: 'space',
+    indentWidth: 2,
+    lineEnding: 'lf',
+    lineWidth: 80,
+  },
+  javascript: {
+    formatter: {
+      quoteStyle: 'single',
+      semicolons: 'always',
+      trailingCommas: 'es5',
+    },
+  },
+});
 
 function getStartRegistrationFooter() {
   return [START_REGISTRATION_FOOTER_BLOCK];
@@ -77,11 +95,78 @@ function getRouterGeneratorExports(moduleNamespace) {
   return { Generator, getConfig };
 }
 
+function runCommand(command, args, { cwd = ROOT_DIR } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: 'inherit',
+    });
+
+    child.on('error', reject);
+    child.on('exit', (code, signal) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(
+        new Error(
+          signal
+            ? `${command} ${args.join(' ')} terminated with signal ${signal}`
+            : `${command} ${args.join(' ')} exited with code ${code}`
+        )
+      );
+    });
+  });
+}
+
+async function formatGeneratedRouteTree({
+  configDir = os.tmpdir(),
+  formatterCommand = 'bunx',
+  fsImpl = fs.promises,
+  generatedRouteTree,
+  rootDir = ROOT_DIR,
+  run = runCommand,
+} = {}) {
+  if (!generatedRouteTree) {
+    throw new Error('formatGeneratedRouteTree requires generatedRouteTree.');
+  }
+
+  const tempDir = await fsImpl.mkdtemp(
+    path.join(configDir, 'tanstack-route-tree-format-')
+  );
+  const configPath = path.join(tempDir, 'biome.json');
+
+  try {
+    await fsImpl.writeFile(
+      configPath,
+      `${JSON.stringify(ROUTE_TREE_FORMATTER_CONFIG, null, 2)}\n`
+    );
+    await run(
+      formatterCommand,
+      [
+        'biome',
+        'format',
+        '--write',
+        '--config-path',
+        configPath,
+        generatedRouteTree,
+      ],
+      { cwd: rootDir }
+    );
+  } finally {
+    await fsImpl.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
 async function generateTanstackRouteTree({
   appDir = DEFAULT_TANSTACK_WEB_DIR,
+  formatRouteTree = true,
+  formatterCommand = 'bunx',
   importPath,
   logger = console,
   rootDir = ROOT_DIR,
+  runFormatter = formatGeneratedRouteTree,
 } = {}) {
   const resolvedImportPath =
     importPath ??
@@ -96,6 +181,14 @@ async function generateTanstackRouteTree({
   const generator = new Generator({ config, root: rootDir });
 
   await generator.run();
+
+  if (formatRouteTree) {
+    await runFormatter({
+      formatterCommand,
+      generatedRouteTree: config.generatedRouteTree,
+      rootDir,
+    });
+  }
 
   const relativeRouteTreePath = path.relative(
     rootDir,
@@ -150,12 +243,15 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_TANSTACK_WEB_DIR,
   ROOT_DIR,
+  ROUTE_TREE_FORMATTER_CONFIG,
   ROUTER_GENERATOR_PACKAGE,
   START_REGISTRATION_FOOTER,
   START_REGISTRATION_FOOTER_BLOCK,
+  formatGeneratedRouteTree,
   generateTanstackRouteTree,
   getRouterGeneratorExports,
   getStartRegistrationFooter,
   parseArgs,
   resolveRouterGeneratorImportPath,
+  runCommand,
 };

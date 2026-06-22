@@ -8,6 +8,8 @@ const {
   ROUTER_GENERATOR_PACKAGE,
   START_REGISTRATION_FOOTER,
   START_REGISTRATION_FOOTER_BLOCK,
+  formatGeneratedRouteTree,
+  generateTanstackRouteTree,
   getRouterGeneratorExports,
   getStartRegistrationFooter,
   parseArgs,
@@ -90,6 +92,116 @@ test('getRouterGeneratorExports accepts ESM and CJS-like namespaces', () => {
     () => getRouterGeneratorExports({ default: {} }),
     /Generator and getConfig/u
   );
+});
+
+test('formatGeneratedRouteTree formats ignored generated output with an isolated config', async () => {
+  const generatedRouteTree = path.join(
+    ROOT_DIR,
+    'apps',
+    'tanstack-web',
+    'src',
+    'routeTree.gen.ts'
+  );
+  const writes = [];
+  const removals = [];
+  const runs = [];
+
+  await formatGeneratedRouteTree({
+    configDir: path.join(path.sep, 'tmp'),
+    formatterCommand: 'bunx',
+    fsImpl: {
+      mkdtemp: async (prefix) => `${prefix}abc123`,
+      writeFile: async (filePath, content) =>
+        writes.push({ filePath, content }),
+      rm: async (filePath, options) => removals.push({ filePath, options }),
+    },
+    generatedRouteTree,
+    rootDir: ROOT_DIR,
+    run: async (command, args, options) =>
+      runs.push({ command, args, options }),
+  });
+
+  assert.equal(writes.length, 1);
+  assert.equal(path.basename(writes[0].filePath), 'biome.json');
+  assert.match(writes[0].content, /"semicolons": "always"/u);
+  assert.match(writes[0].content, /"quoteStyle": "single"/u);
+  assert.deepEqual(runs, [
+    {
+      command: 'bunx',
+      args: [
+        'biome',
+        'format',
+        '--write',
+        '--config-path',
+        writes[0].filePath,
+        generatedRouteTree,
+      ],
+      options: { cwd: ROOT_DIR },
+    },
+  ]);
+  assert.deepEqual(removals, [
+    {
+      filePath: path.dirname(writes[0].filePath),
+      options: { recursive: true, force: true },
+    },
+  ]);
+});
+
+test('generateTanstackRouteTree formats the generated route tree after generator output', async () => {
+  const globalKey = `__tanstackRouteTreeGeneratorTest${Date.now()}`;
+  const generatedRouteTree = path.join(
+    ROOT_DIR,
+    'apps',
+    'tanstack-web',
+    'src',
+    'routeTree.gen.ts'
+  );
+  const moduleSource = `
+    export class Generator {
+      constructor({ config, root }) {
+        globalThis[${JSON.stringify(globalKey)}].constructorArgs = { config, root };
+      }
+      async run() {
+        globalThis[${JSON.stringify(globalKey)}].ran = true;
+      }
+    }
+    export function getConfig(options, appDir) {
+      globalThis[${JSON.stringify(globalKey)}].footer = options.routeTreeFileFooter();
+      globalThis[${JSON.stringify(globalKey)}].appDir = appDir;
+      return { generatedRouteTree: ${JSON.stringify(generatedRouteTree)} };
+    }
+  `;
+  const formatterCalls = [];
+  const appDir = path.join(ROOT_DIR, 'apps', 'tanstack-web');
+
+  globalThis[globalKey] = {};
+
+  try {
+    const result = await generateTanstackRouteTree({
+      appDir,
+      importPath: `data:text/javascript,${encodeURIComponent(moduleSource)}`,
+      logger: { log: () => {} },
+      rootDir: ROOT_DIR,
+      runFormatter: async (options) => formatterCalls.push(options),
+    });
+
+    assert.equal(globalThis[globalKey].ran, true);
+    assert.equal(globalThis[globalKey].appDir, appDir);
+    assert.deepEqual(globalThis[globalKey].footer, [
+      START_REGISTRATION_FOOTER_BLOCK,
+    ]);
+    assert.equal(globalThis[globalKey].constructorArgs.root, ROOT_DIR);
+    assert.deepEqual(formatterCalls, [
+      {
+        formatterCommand: 'bunx',
+        generatedRouteTree,
+        rootDir: ROOT_DIR,
+      },
+    ]);
+    assert.equal(result.generatedRouteTree, generatedRouteTree);
+  } finally {
+    delete globalThis[globalKey];
+  }
 });
 
 test('parseArgs resolves optional root and app directories', () => {
