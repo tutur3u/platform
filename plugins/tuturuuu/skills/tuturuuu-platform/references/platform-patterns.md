@@ -102,6 +102,38 @@ shared-package changes.
   stale content through the current route/document workspace or a server-returned
   resource workspace, not through the embedded attribute alone.
 
+## TanStack Start Migration (apps/tanstack-web)
+
+- Shared `@tuturuuu/ui` clients import Next-only framework APIs. apps/tanstack-web
+  resolves them at runtime via three compat layers so ported routes keep the
+  shared imports AS-IS (no source rewrites):
+  - `next/navigation` -> vite `resolve.alias` to
+    `src/lib/platform/next-navigation-shim.tsx` (useRouter/usePathname/
+    useSearchParams/useParams/redirect/notFound on TanStack Router).
+  - `next/link` -> vite `resolve.alias` to `src/lib/platform/next-link-shim.tsx`
+    (renders identical `<a href>`, upgrades plain internal left-clicks to SPA
+    navigation).
+  - `nuqs` (useQueryState/useQueryStates) -> the OFFICIAL
+    `nuqs/adapters/tanstack-router` `NuqsAdapter`, mounted in `__root.tsx`
+    `RootComponent` (inside router context). Prefer this first-party adapter
+    over a hand-rolled shim.
+- nuqs gotcha: the TanStack adapter reads URL state from router `state.search`
+  (filtered to watched keys) and writes via `navigate({ to: pathname + query })`.
+  So a route hosting nuqs hooks MUST let its nuqs-managed query keys pass through
+  TanStack Router `validateSearch` — a strict whitelist that drops unknown keys
+  silently breaks nuqs reads. Pass through unknown keys (or include the nuqs keys
+  in the route's search schema).
+- Auth-gate ported routes fail closed: call `requireCurrentUser({ locale,
+  nextPath })` FIRST in the loader (before workspace resolution), so anonymous or
+  unreachable-backend requests redirect to `/{locale}/login?nextUrl=...` with the
+  original `/{wsId}/{route}` path preserved. The unauthenticated redirect is
+  covered offline by `e2e/dashboard-auth-gate.noauth.spec.ts`.
+- Route porting is gated on backend readiness: a route is portable only when an
+  EXISTING `@tuturuuu/internal-api` reader already ships all its data. Raw
+  `fetch('/api/...')`, `/internal/...`, or direct `@tuturuuu/supabase` client use
+  is rejected by `scripts/check-tanstack-api-access.js` — wire an internal-api
+  facade instead, or leave the route for the backend wave that builds the reader.
+
 ## Translations And Navigation
 
 - Add, remove, or replace translation keys with `bun i18n:add --app <app>` or
