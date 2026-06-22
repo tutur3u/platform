@@ -169,7 +169,7 @@ fn paginated_list_range(query: &CallerTokenPaginatedListQuery) -> String {
     format!("{offset}-{}", offset + limit - 1)
 }
 
-fn parse_js_parse_int_prefix(value: &str) -> Option<i64> {
+pub(crate) fn parse_js_parse_int_prefix(value: &str) -> Option<i64> {
     let trimmed = value.trim_start();
     let mut chars = trimmed.char_indices().peekable();
     let mut sign = 1_i64;
@@ -203,7 +203,7 @@ fn parse_js_parse_int_prefix(value: &str) -> Option<i64> {
     digits.parse::<i64>().ok().map(|value| sign * value)
 }
 
-fn total_count_from_content_range(response: &OutboundResponse) -> Option<usize> {
+pub(crate) fn total_count_from_content_range(response: &OutboundResponse) -> Option<usize> {
     let header = response.header("content-range")?;
     let (_, total) = header.rsplit_once('/')?;
 

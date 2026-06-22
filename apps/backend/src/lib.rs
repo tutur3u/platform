@@ -19,11 +19,13 @@ mod email_blacklist;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
+mod infrastructure_abuse_events;
 mod infrastructure_catalog_exports;
 mod infrastructure_finance_exports;
 mod infrastructure_migration_exports;
 mod infrastructure_paginated_list;
 mod infrastructure_related_exports;
+mod infrastructure_root_auth;
 mod infrastructure_user_status_changes;
 mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
@@ -556,6 +558,12 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_abuse_events::handle_abuse_events_route(config, request, outbound).await
     {
         return response;
     }

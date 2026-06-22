@@ -540,6 +540,11 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/abuse-events:apps/web/src/app/api/v1/infrastructure/abuse-events/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/abuse-events by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, reading abuse_events with caller-token Supabase REST, and preserving the legacy ip/type/success filters, page/pageSize parseInt-style range behavior, exact-count pagination, raw row list response shape, and legacy auth/error bodies."
+    },
     "api:/api/v1/infrastructure/classes:apps/web/src/app/api/v1/infrastructure/classes/route.ts": {
       "methods": {
         "GET": {

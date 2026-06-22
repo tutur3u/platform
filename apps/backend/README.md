@@ -194,6 +194,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   helper so RLS remains active while preserving the required `ws_id`,
   parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
   legacy error bodies.
+- `GET /api/v1/infrastructure/abuse-events`: legacy-compatible root-workspace
+  abuse event list. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, checks root workspace membership with the
+  caller token, reads `abuse_events` through Supabase REST so RLS remains
+  active, and preserves the legacy `ip`, `type`, `success`, `page`, and
+  `pageSize` query behavior plus the `{ data, count, page, pageSize,
+  totalPages }` response envelope.
 - `GET /api/v1/infrastructure/email-blacklist` and
   `GET /api/v1/infrastructure/email-blacklist/:entryId`: legacy-compatible
   root-workspace email blacklist reads. Rust revalidates the browser Supabase

@@ -1,10 +1,12 @@
 use serde_json::{Value, json};
 
 use crate::{
-    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    no_store_response,
-    outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
-    supabase_auth,
+    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
+    infrastructure_root_auth::{
+        RootWorkspaceReadAuthError, authorize_root_workspace_read, send_caller_token_get,
+    },
+    json_response, no_store_response,
+    outbound::{OutboundHttpClient, OutboundResponse},
 };
 
 pub(crate) const EMAIL_BLACKLIST_PATH: &str = "/api/v1/infrastructure/email-blacklist";
@@ -12,14 +14,6 @@ pub(crate) const EMAIL_BLACKLIST_PATH: &str = "/api/v1/infrastructure/email-blac
 const EMAIL_BLACKLIST_TABLE: &str = "email_blacklist";
 const POSTGREST_SINGLE_JSON: &str = "application/vnd.pgrst.object+json";
 const POSTGREST_SINGULAR_RESPONSE_ERROR_CODE: &str = "PGRST116";
-const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
-const WORKSPACE_USER_LINKED_USERS_TABLE: &str = "workspace_user_linked_users";
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum EmailBlacklistReadAuthError {
-    Unauthorized,
-    Forbidden,
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum EmailBlacklistRoute {
@@ -50,13 +44,13 @@ async fn email_blacklist_get_response(
     let auth = authorize_email_blacklist_read(config, request, outbound).await;
     let access_token = match (auth, &route) {
         (Ok(access_token), _) => access_token,
-        (Err(EmailBlacklistReadAuthError::Unauthorized), _) => {
+        (Err(RootWorkspaceReadAuthError::Unauthorized), _) => {
             return no_store_response(json_response(401, json!({ "message": "Unauthorized" })));
         }
-        (Err(EmailBlacklistReadAuthError::Forbidden), EmailBlacklistRoute::Collection) => {
+        (Err(RootWorkspaceReadAuthError::Forbidden), EmailBlacklistRoute::Collection) => {
             return no_store_response(json_response(403, json!({ "message": "Forbidden" })));
         }
-        (Err(EmailBlacklistReadAuthError::Forbidden), EmailBlacklistRoute::Entry { .. }) => {
+        (Err(RootWorkspaceReadAuthError::Forbidden), EmailBlacklistRoute::Entry { .. }) => {
             return no_store_response(json_response(401, json!({ "message": "Unauthorized" })));
         }
     };
@@ -76,58 +70,8 @@ async fn authorize_email_blacklist_read(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
-) -> Result<String, EmailBlacklistReadAuthError> {
-    let contact_data = &config.contact_data;
-    let Some(access_token) = supabase_auth::request_access_token(request) else {
-        return Err(EmailBlacklistReadAuthError::Unauthorized);
-    };
-    let Some(user) =
-        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
-    else {
-        return Err(EmailBlacklistReadAuthError::Unauthorized);
-    };
-    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
-        return Err(EmailBlacklistReadAuthError::Unauthorized);
-    };
-
-    if has_root_workspace_membership(contact_data, outbound, &access_token, &user_id)
-        .await
-        .unwrap_or(false)
-    {
-        Ok(access_token)
-    } else {
-        Err(EmailBlacklistReadAuthError::Forbidden)
-    }
-}
-
-async fn has_root_workspace_membership(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    access_token: &str,
-    user_id: &str,
-) -> Result<bool, ()> {
-    let Some(url) = contact_data.rest_url(
-        WORKSPACE_USER_LINKED_USERS_TABLE,
-        &[
-            ("select", "*".to_owned()),
-            ("platform_user_id", format!("eq.{user_id}")),
-            ("ws_id", format!("eq.{ROOT_WORKSPACE_ID}")),
-            ("limit", "1".to_owned()),
-        ],
-    ) else {
-        return Err(());
-    };
-    let response =
-        send_caller_token_get(contact_data, outbound, &url, access_token, APPLICATION_JSON).await?;
-
-    if !is_success_status(response.status) {
-        return Ok(false);
-    }
-
-    response
-        .json::<Vec<Value>>()
-        .map(|rows| !rows.is_empty())
-        .map_err(|_| ())
+) -> Result<String, RootWorkspaceReadAuthError> {
+    authorize_root_workspace_read(config, request, outbound).await
 }
 
 async fn email_blacklist_collection_response(
@@ -203,29 +147,6 @@ async fn email_blacklist_entry_response(
     }
 }
 
-async fn send_caller_token_get(
-    contact_data: &contact::ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    url: &str,
-    access_token: &str,
-    accept: &str,
-) -> Result<OutboundResponse, ()> {
-    let Some(service_role_key) = contact_data.service_role_key() else {
-        return Err(());
-    };
-    let authorization = format!("Bearer {access_token}");
-
-    outbound
-        .send(
-            OutboundRequest::new(OutboundMethod::Get, url)
-                .with_header("Accept", accept)
-                .with_header("Authorization", &authorization)
-                .with_header("apikey", service_role_key),
-        )
-        .await
-        .map_err(|_| ())
-}
-
 fn email_blacklist_route(path: &str) -> Option<EmailBlacklistRoute> {
     if path == EMAIL_BLACKLIST_PATH {
         return Some(EmailBlacklistRoute::Collection);
@@ -270,7 +191,7 @@ mod tests {
     use super::*;
     use crate::{
         BackendConfig,
-        outbound::{OutboundFuture, OutboundHeader},
+        outbound::{OutboundFuture, OutboundHeader, OutboundMethod, OutboundRequest},
     };
     use std::cell::RefCell;
     use std::collections::VecDeque;
