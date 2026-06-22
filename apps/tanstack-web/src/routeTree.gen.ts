@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char126offlineRouteImport } from './routes/~offline'
 import { Route as QrGeneratorRouteImport } from './routes/qr-generator'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together'
@@ -95,6 +96,7 @@ import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/
 import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$'
 import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements'
 import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure'
+import { Route as LocaleWsIdTasksNotesRouteImport } from './routes/$locale/$wsId/tasks/notes'
 import { Route as LocaleWsIdTasksHabitsRouteImport } from './routes/$locale/$wsId/tasks/habits'
 import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes/$locale/$wsId/platform/external-projects'
 import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans'
@@ -148,15 +150,20 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleRouteRoute = LocaleRouteRouteImport.update({
+  id: '/$locale',
+  path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
-  id: '/$locale/',
-  path: '/$locale/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
   id: '/products/meet-together',
@@ -164,199 +171,199 @@ const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleWomenInTechRoute = LocaleWomenInTechRouteImport.update({
-  id: '/$locale/women-in-tech',
-  path: '/$locale/women-in-tech',
-  getParentRoute: () => rootRouteImport,
+  id: '/women-in-tech',
+  path: '/women-in-tech',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleVerifyTokenRoute = LocaleVerifyTokenRouteImport.update({
-  id: '/$locale/verify-token',
-  path: '/$locale/verify-token',
-  getParentRoute: () => rootRouteImport,
+  id: '/verify-token',
+  path: '/verify-token',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleTermsRoute = LocaleTermsRouteImport.update({
-  id: '/$locale/terms',
-  path: '/$locale/terms',
-  getParentRoute: () => rootRouteImport,
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleSecurityRoute = LocaleSecurityRouteImport.update({
-  id: '/$locale/security',
-  path: '/$locale/security',
-  getParentRoute: () => rootRouteImport,
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleQrGeneratorRoute = LocaleQrGeneratorRouteImport.update({
-  id: '/$locale/qr-generator',
-  path: '/$locale/qr-generator',
-  getParentRoute: () => rootRouteImport,
+  id: '/qr-generator',
+  path: '/qr-generator',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
-  id: '/$locale/privacy',
-  path: '/$locale/privacy',
-  getParentRoute: () => rootRouteImport,
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocalePricingRoute = LocalePricingRouteImport.update({
-  id: '/$locale/pricing',
-  path: '/$locale/pricing',
-  getParentRoute: () => rootRouteImport,
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocalePartnersRoute = LocalePartnersRouteImport.update({
-  id: '/$locale/partners',
-  path: '/$locale/partners',
-  getParentRoute: () => rootRouteImport,
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleModelsRoute = LocaleModelsRouteImport.update({
-  id: '/$locale/models',
-  path: '/$locale/models',
-  getParentRoute: () => rootRouteImport,
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
-  id: '/$locale/meet-together',
-  path: '/$locale/meet-together',
-  getParentRoute: () => rootRouteImport,
+  id: '/meet-together',
+  path: '/meet-together',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleLogoutRoute = LocaleLogoutRouteImport.update({
-  id: '/$locale/logout',
-  path: '/$locale/logout',
-  getParentRoute: () => rootRouteImport,
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleLoginRoute = LocaleLoginRouteImport.update({
-  id: '/$locale/login',
-  path: '/$locale/login',
-  getParentRoute: () => rootRouteImport,
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
-  id: '/$locale/facebook-mockup',
-  path: '/$locale/facebook-mockup',
-  getParentRoute: () => rootRouteImport,
+  id: '/facebook-mockup',
+  path: '/facebook-mockup',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleDocsRoute = LocaleDocsRouteImport.update({
-  id: '/$locale/docs',
-  path: '/$locale/docs',
-  getParentRoute: () => rootRouteImport,
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleContributorsRoute = LocaleContributorsRouteImport.update({
-  id: '/$locale/contributors',
-  path: '/$locale/contributors',
-  getParentRoute: () => rootRouteImport,
+  id: '/contributors',
+  path: '/contributors',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleContactRoute = LocaleContactRouteImport.update({
-  id: '/$locale/contact',
-  path: '/$locale/contact',
-  getParentRoute: () => rootRouteImport,
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleCommunityGuidelinesRoute =
   LocaleCommunityGuidelinesRouteImport.update({
-    id: '/$locale/community-guidelines',
-    path: '/$locale/community-guidelines',
-    getParentRoute: () => rootRouteImport,
+    id: '/community-guidelines',
+    path: '/community-guidelines',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleChangelogRoute = LocaleChangelogRouteImport.update({
-  id: '/$locale/changelog',
-  path: '/$locale/changelog',
-  getParentRoute: () => rootRouteImport,
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleCareersRoute = LocaleCareersRouteImport.update({
-  id: '/$locale/careers',
-  path: '/$locale/careers',
-  getParentRoute: () => rootRouteImport,
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleBrandingRoute = LocaleBrandingRouteImport.update({
-  id: '/$locale/branding',
-  path: '/$locale/branding',
-  getParentRoute: () => rootRouteImport,
+  id: '/branding',
+  path: '/branding',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleBlogRoute = LocaleBlogRouteImport.update({
-  id: '/$locale/blog',
-  path: '/$locale/blog',
-  getParentRoute: () => rootRouteImport,
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleAcceptableUseRoute = LocaleAcceptableUseRouteImport.update({
-  id: '/$locale/acceptable-use',
-  path: '/$locale/acceptable-use',
-  getParentRoute: () => rootRouteImport,
+  id: '/acceptable-use',
+  path: '/acceptable-use',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleAboutRoute = LocaleAboutRouteImport.update({
-  id: '/$locale/about',
-  path: '/$locale/about',
-  getParentRoute: () => rootRouteImport,
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleUiIndexRoute = LocaleUiIndexRouteImport.update({
-  id: '/$locale/ui/',
-  path: '/$locale/ui/',
-  getParentRoute: () => rootRouteImport,
+  id: '/ui/',
+  path: '/ui/',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleVisualizationsHorseRacingRoute =
   LocaleVisualizationsHorseRacingRouteImport.update({
-    id: '/$locale/visualizations/horse-racing',
-    path: '/$locale/visualizations/horse-racing',
-    getParentRoute: () => rootRouteImport,
+    id: '/visualizations/horse-racing',
+    path: '/visualizations/horse-racing',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleUiSetupRoute = LocaleUiSetupRouteImport.update({
-  id: '/$locale/ui/setup',
-  path: '/$locale/ui/setup',
-  getParentRoute: () => rootRouteImport,
+  id: '/ui/setup',
+  path: '/ui/setup',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleUiContributingRoute = LocaleUiContributingRouteImport.update({
-  id: '/$locale/ui/contributing',
-  path: '/$locale/ui/contributing',
-  getParentRoute: () => rootRouteImport,
+  id: '/ui/contributing',
+  path: '/ui/contributing',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleToolsRandomRoute = LocaleToolsRandomRouteImport.update({
-  id: '/$locale/tools/random',
-  path: '/$locale/tools/random',
-  getParentRoute: () => rootRouteImport,
+  id: '/tools/random',
+  path: '/tools/random',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleSolutionsRetailRoute = LocaleSolutionsRetailRouteImport.update({
-  id: '/$locale/solutions/retail',
-  path: '/$locale/solutions/retail',
-  getParentRoute: () => rootRouteImport,
+  id: '/solutions/retail',
+  path: '/solutions/retail',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleSolutionsRestaurantsRoute =
   LocaleSolutionsRestaurantsRouteImport.update({
-    id: '/$locale/solutions/restaurants',
-    path: '/$locale/solutions/restaurants',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/restaurants',
+    path: '/solutions/restaurants',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsRealestateRoute =
   LocaleSolutionsRealestateRouteImport.update({
-    id: '/$locale/solutions/realestate',
-    path: '/$locale/solutions/realestate',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/realestate',
+    path: '/solutions/realestate',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsPharmaciesRoute =
   LocaleSolutionsPharmaciesRouteImport.update({
-    id: '/$locale/solutions/pharmacies',
-    path: '/$locale/solutions/pharmacies',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/pharmacies',
+    path: '/solutions/pharmacies',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsManufacturingRoute =
   LocaleSolutionsManufacturingRouteImport.update({
-    id: '/$locale/solutions/manufacturing',
-    path: '/$locale/solutions/manufacturing',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/manufacturing',
+    path: '/solutions/manufacturing',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsHospitalityRoute =
   LocaleSolutionsHospitalityRouteImport.update({
-    id: '/$locale/solutions/hospitality',
-    path: '/$locale/solutions/hospitality',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/hospitality',
+    path: '/solutions/hospitality',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsHealthcareRoute =
   LocaleSolutionsHealthcareRouteImport.update({
-    id: '/$locale/solutions/healthcare',
-    path: '/$locale/solutions/healthcare',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/healthcare',
+    path: '/solutions/healthcare',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsEducationRoute =
   LocaleSolutionsEducationRouteImport.update({
-    id: '/$locale/solutions/education',
-    path: '/$locale/solutions/education',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/education',
+    path: '/solutions/education',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSolutionsConstructionRoute =
   LocaleSolutionsConstructionRouteImport.update({
-    id: '/$locale/solutions/construction',
-    path: '/$locale/solutions/construction',
-    getParentRoute: () => rootRouteImport,
+    id: '/solutions/construction',
+    path: '/solutions/construction',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSecurityPolicyRoute = LocaleSecurityPolicyRouteImport.update({
   id: '/policy',
@@ -369,76 +376,76 @@ const LocaleSecurityBugBountyRoute = LocaleSecurityBugBountyRouteImport.update({
   getParentRoute: () => LocaleSecurityRoute,
 } as any)
 const LocaleProductsWorkflowsRoute = LocaleProductsWorkflowsRouteImport.update({
-  id: '/$locale/products/workflows',
-  path: '/$locale/products/workflows',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/workflows',
+  path: '/products/workflows',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsTasksRoute = LocaleProductsTasksRouteImport.update({
-  id: '/$locale/products/tasks',
-  path: '/$locale/products/tasks',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/tasks',
+  path: '/products/tasks',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsMeetTogetherRoute =
   LocaleProductsMeetTogetherRouteImport.update({
-    id: '/$locale/products/meet-together',
-    path: '/$locale/products/meet-together',
-    getParentRoute: () => rootRouteImport,
+    id: '/products/meet-together',
+    path: '/products/meet-together',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleProductsMailRoute = LocaleProductsMailRouteImport.update({
-  id: '/$locale/products/mail',
-  path: '/$locale/products/mail',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/mail',
+  path: '/products/mail',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsLmsRoute = LocaleProductsLmsRouteImport.update({
-  id: '/$locale/products/lms',
-  path: '/$locale/products/lms',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/lms',
+  path: '/products/lms',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsInventoryRoute = LocaleProductsInventoryRouteImport.update({
-  id: '/$locale/products/inventory',
-  path: '/$locale/products/inventory',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/inventory',
+  path: '/products/inventory',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsFinanceRoute = LocaleProductsFinanceRouteImport.update({
-  id: '/$locale/products/finance',
-  path: '/$locale/products/finance',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/finance',
+  path: '/products/finance',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsDriveRoute = LocaleProductsDriveRouteImport.update({
-  id: '/$locale/products/drive',
-  path: '/$locale/products/drive',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/drive',
+  path: '/products/drive',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsDocumentsRoute = LocaleProductsDocumentsRouteImport.update({
-  id: '/$locale/products/documents',
-  path: '/$locale/products/documents',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/documents',
+  path: '/products/documents',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsCrmRoute = LocaleProductsCrmRouteImport.update({
-  id: '/$locale/products/crm',
-  path: '/$locale/products/crm',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/crm',
+  path: '/products/crm',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsCalendarRoute = LocaleProductsCalendarRouteImport.update({
-  id: '/$locale/products/calendar',
-  path: '/$locale/products/calendar',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/calendar',
+  path: '/products/calendar',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleProductsAiRoute = LocaleProductsAiRouteImport.update({
-  id: '/$locale/products/ai',
-  path: '/$locale/products/ai',
-  getParentRoute: () => rootRouteImport,
+  id: '/products/ai',
+  path: '/products/ai',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
-  id: '/$locale/games/farm',
-  path: '/$locale/games/farm',
-  getParentRoute: () => rootRouteImport,
+  id: '/games/farm',
+  path: '/games/farm',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleDocumentsDocumentIdRoute =
   LocaleDocumentsDocumentIdRouteImport.update({
-    id: '/$locale/documents/$documentId',
-    path: '/$locale/documents/$documentId',
-    getParentRoute: () => rootRouteImport,
+    id: '/documents/$documentId',
+    path: '/documents/$documentId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleChangelogSlugRoute = LocaleChangelogSlugRouteImport.update({
   id: '/$slug',
@@ -447,123 +454,123 @@ const LocaleChangelogSlugRoute = LocaleChangelogSlugRouteImport.update({
 } as any)
 const LocaleCalendarMeetTogetherRoute =
   LocaleCalendarMeetTogetherRouteImport.update({
-    id: '/$locale/calendar/meet-together',
-    path: '/$locale/calendar/meet-together',
-    getParentRoute: () => rootRouteImport,
+    id: '/calendar/meet-together',
+    path: '/calendar/meet-together',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdWorkoutsRoute = LocaleWsIdWorkoutsRouteImport.update({
-  id: '/$locale/$wsId/workouts',
-  path: '/$locale/$wsId/workouts',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/workouts',
+  path: '/$wsId/workouts',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdWorkforceRoute = LocaleWsIdWorkforceRouteImport.update({
-  id: '/$locale/$wsId/workforce',
-  path: '/$locale/$wsId/workforce',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/workforce',
+  path: '/$wsId/workforce',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdRolesRoute = LocaleWsIdRolesRouteImport.update({
-  id: '/$locale/$wsId/roles',
-  path: '/$locale/$wsId/roles',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/roles',
+  path: '/$wsId/roles',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdReadingsRoute = LocaleWsIdReadingsRouteImport.update({
-  id: '/$locale/$wsId/readings',
-  path: '/$locale/$wsId/readings',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/readings',
+  path: '/$wsId/readings',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
-  id: '/$locale/$wsId/qr-generator',
-  path: '/$locale/$wsId/qr-generator',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/qr-generator',
+  path: '/$wsId/qr-generator',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdProgressRoute = LocaleWsIdProgressRouteImport.update({
-  id: '/$locale/$wsId/progress',
-  path: '/$locale/$wsId/progress',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/progress',
+  path: '/$wsId/progress',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
-  id: '/$locale/$wsId/polls',
-  path: '/$locale/$wsId/polls',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/polls',
+  path: '/$wsId/polls',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdMindRoute = LocaleWsIdMindRouteImport.update({
-  id: '/$locale/$wsId/mind',
-  path: '/$locale/$wsId/mind',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/mind',
+  path: '/$wsId/mind',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
-  id: '/$locale/$wsId/metrics',
-  path: '/$locale/$wsId/metrics',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/metrics',
+  path: '/$wsId/metrics',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
-  id: '/$locale/$wsId/meet',
-  path: '/$locale/$wsId/meet',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/meet',
+  path: '/$wsId/meet',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
-  id: '/$locale/$wsId/integrations',
-  path: '/$locale/$wsId/integrations',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/integrations',
+  path: '/$wsId/integrations',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdHiveRoute = LocaleWsIdHiveRouteImport.update({
-  id: '/$locale/$wsId/hive',
-  path: '/$locale/$wsId/hive',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/hive',
+  path: '/$wsId/hive',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdFinanceRoute = LocaleWsIdFinanceRouteImport.update({
-  id: '/$locale/$wsId/finance',
-  path: '/$locale/$wsId/finance',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/finance',
+  path: '/$wsId/finance',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdExternalProjectsRoute =
   LocaleWsIdExternalProjectsRouteImport.update({
-    id: '/$locale/$wsId/external-projects',
-    path: '/$locale/$wsId/external-projects',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/external-projects',
+    path: '/$wsId/external-projects',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdEpmRoute = LocaleWsIdEpmRouteImport.update({
-  id: '/$locale/$wsId/epm',
-  path: '/$locale/$wsId/epm',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/epm',
+  path: '/$wsId/epm',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdDriveRoute = LocaleWsIdDriveRouteImport.update({
-  id: '/$locale/$wsId/drive',
-  path: '/$locale/$wsId/drive',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/drive',
+  path: '/$wsId/drive',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdDietRoute = LocaleWsIdDietRouteImport.update({
-  id: '/$locale/$wsId/diet',
-  path: '/$locale/$wsId/diet',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/diet',
+  path: '/$wsId/diet',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleUiComponentsIndexRoute = LocaleUiComponentsIndexRouteImport.update({
-  id: '/$locale/ui/components/',
-  path: '/$locale/ui/components/',
-  getParentRoute: () => rootRouteImport,
+  id: '/ui/components/',
+  path: '/ui/components/',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdMailIndexRoute = LocaleWsIdMailIndexRouteImport.update({
-  id: '/$locale/$wsId/mail/',
-  path: '/$locale/$wsId/mail/',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/mail/',
+  path: '/$wsId/mail/',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleUiComponentsComponentIdRoute =
   LocaleUiComponentsComponentIdRouteImport.update({
-    id: '/$locale/ui/components/$componentId',
-    path: '/$locale/ui/components/$componentId',
-    getParentRoute: () => rootRouteImport,
+    id: '/ui/components/$componentId',
+    path: '/ui/components/$componentId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSharedUserProfileCodeRoute =
   LocaleSharedUserProfileCodeRouteImport.update({
-    id: '/$locale/shared/user-profile/$code',
-    path: '/$locale/shared/user-profile/$code',
-    getParentRoute: () => rootRouteImport,
+    id: '/shared/user-profile/$code',
+    path: '/shared/user-profile/$code',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleSharedTaskShareCodeRoute =
   LocaleSharedTaskShareCodeRouteImport.update({
-    id: '/$locale/shared/task/$shareCode',
-    path: '/$locale/shared/task/$shareCode',
-    getParentRoute: () => rootRouteImport,
+    id: '/shared/task/$shareCode',
+    path: '/shared/task/$shareCode',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleCalendarMeetTogetherSplatRoute =
   LocaleCalendarMeetTogetherSplatRouteImport.update({
@@ -573,26 +580,31 @@ const LocaleCalendarMeetTogetherSplatRoute =
   } as any)
 const LocaleWsIdUsersTopicAnnouncementsRoute =
   LocaleWsIdUsersTopicAnnouncementsRouteImport.update({
-    id: '/$locale/$wsId/users/topic-announcements',
-    path: '/$locale/$wsId/users/topic-announcements',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/users/topic-announcements',
+    path: '/$wsId/users/topic-announcements',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdUsersStructureRoute =
   LocaleWsIdUsersStructureRouteImport.update({
-    id: '/$locale/$wsId/users/structure',
-    path: '/$locale/$wsId/users/structure',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/users/structure',
+    path: '/$wsId/users/structure',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
+const LocaleWsIdTasksNotesRoute = LocaleWsIdTasksNotesRouteImport.update({
+  id: '/$wsId/tasks/notes',
+  path: '/$wsId/tasks/notes',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
 const LocaleWsIdTasksHabitsRoute = LocaleWsIdTasksHabitsRouteImport.update({
-  id: '/$locale/$wsId/tasks/habits',
-  path: '/$locale/$wsId/tasks/habits',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/tasks/habits',
+  path: '/$wsId/tasks/habits',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdPlatformExternalProjectsRoute =
   LocaleWsIdPlatformExternalProjectsRouteImport.update({
-    id: '/$locale/$wsId/platform/external-projects',
-    path: '/$locale/$wsId/platform/external-projects',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/platform/external-projects',
+    path: '/$wsId/platform/external-projects',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdMeetPlansRoute = LocaleWsIdMeetPlansRouteImport.update({
   id: '/plans',
@@ -605,9 +617,9 @@ const LocaleWsIdMeetMeetingsRoute = LocaleWsIdMeetMeetingsRouteImport.update({
   getParentRoute: () => LocaleWsIdMeetRoute,
 } as any)
 const LocaleWsIdMailSentRoute = LocaleWsIdMailSentRouteImport.update({
-  id: '/$locale/$wsId/mail/sent',
-  path: '/$locale/$wsId/mail/sent',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/mail/sent',
+  path: '/$wsId/mail/sent',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdHiveNotWhitelistedRoute =
   LocaleWsIdHiveNotWhitelistedRouteImport.update({
@@ -669,56 +681,56 @@ const LocaleWsIdFinanceAnalyticsRoute =
   } as any)
 const LocaleWsIdEducationQuizzesRoute =
   LocaleWsIdEducationQuizzesRouteImport.update({
-    id: '/$locale/$wsId/education/quizzes',
-    path: '/$locale/$wsId/education/quizzes',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/education/quizzes',
+    path: '/$wsId/education/quizzes',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdEducationQuizSetsRoute =
   LocaleWsIdEducationQuizSetsRouteImport.update({
-    id: '/$locale/$wsId/education/quiz-sets',
-    path: '/$locale/$wsId/education/quiz-sets',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/education/quiz-sets',
+    path: '/$wsId/education/quiz-sets',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdEducationLibraryRoute =
   LocaleWsIdEducationLibraryRouteImport.update({
-    id: '/$locale/$wsId/education/library',
-    path: '/$locale/$wsId/education/library',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/education/library',
+    path: '/$wsId/education/library',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdEducationFlashcardsRoute =
   LocaleWsIdEducationFlashcardsRouteImport.update({
-    id: '/$locale/$wsId/education/flashcards',
-    path: '/$locale/$wsId/education/flashcards',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/education/flashcards',
+    path: '/$wsId/education/flashcards',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
-  id: '/$locale/$wsId/ai-chat/new',
-  path: '/$locale/$wsId/ai-chat/new',
-  getParentRoute: () => rootRouteImport,
+  id: '/$wsId/ai-chat/new',
+  path: '/$wsId/ai-chat/new',
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
 const LocaleWsIdUsersReportsReportIdRoute =
   LocaleWsIdUsersReportsReportIdRouteImport.update({
-    id: '/$locale/$wsId/users/reports/$reportId',
-    path: '/$locale/$wsId/users/reports/$reportId',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/users/reports/$reportId',
+    path: '/$wsId/users/reports/$reportId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdUsersGroupsGroupIdRoute =
   LocaleWsIdUsersGroupsGroupIdRouteImport.update({
-    id: '/$locale/$wsId/users/groups/$groupId',
-    path: '/$locale/$wsId/users/groups/$groupId',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/users/groups/$groupId',
+    path: '/$wsId/users/groups/$groupId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdTasksBoardsBoardIdRoute =
   LocaleWsIdTasksBoardsBoardIdRouteImport.update({
-    id: '/$locale/$wsId/tasks/boards/$boardId',
-    path: '/$locale/$wsId/tasks/boards/$boardId',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/tasks/boards/$boardId',
+    path: '/$wsId/tasks/boards/$boardId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdSettingsInfrastructureAppCoordinationRoute =
   LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport.update({
-    id: '/$locale/$wsId/settings/infrastructure/app-coordination',
-    path: '/$locale/$wsId/settings/infrastructure/app-coordination',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/settings/infrastructure/app-coordination',
+    path: '/$wsId/settings/infrastructure/app-coordination',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdMindBoardsBoardIdRoute =
   LocaleWsIdMindBoardsBoardIdRouteImport.update({
@@ -782,15 +794,15 @@ const LocaleWsIdEpmCollectionsCollectionIdRoute =
   } as any)
 const LocaleWsIdEducationCoursesCourseIdRoute =
   LocaleWsIdEducationCoursesCourseIdRouteImport.update({
-    id: '/$locale/$wsId/education/courses/$courseId',
-    path: '/$locale/$wsId/education/courses/$courseId',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/education/courses/$courseId',
+    path: '/$wsId/education/courses/$courseId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdAiChatMyChatbotsNewRoute =
   LocaleWsIdAiChatMyChatbotsNewRouteImport.update({
-    id: '/$locale/$wsId/ai-chat/my-chatbots/new',
-    path: '/$locale/$wsId/ai-chat/my-chatbots/new',
-    getParentRoute: () => rootRouteImport,
+    id: '/$wsId/ai-chat/my-chatbots/new',
+    path: '/$wsId/ai-chat/my-chatbots/new',
+    getParentRoute: () => LocaleRouteRoute,
   } as any)
 const LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute =
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport.update(
@@ -803,6 +815,7 @@ const LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$locale': typeof LocaleRouteRouteWithChildren
   '/pricing': typeof PricingRoute
   '/qr-generator': typeof QrGeneratorRoute
   '/~offline': typeof Char126offlineRoute
@@ -900,6 +913,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
   '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
+  '/$locale/$wsId/tasks/notes': typeof LocaleWsIdTasksNotesRoute
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
@@ -1025,6 +1039,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
   '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
+  '/$locale/$wsId/tasks/notes': typeof LocaleWsIdTasksNotesRoute
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
@@ -1054,6 +1069,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$locale': typeof LocaleRouteRouteWithChildren
   '/pricing': typeof PricingRoute
   '/qr-generator': typeof QrGeneratorRoute
   '/~offline': typeof Char126offlineRoute
@@ -1151,6 +1167,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute
   '/$locale/$wsId/tasks/habits': typeof LocaleWsIdTasksHabitsRoute
+  '/$locale/$wsId/tasks/notes': typeof LocaleWsIdTasksNotesRoute
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
@@ -1181,6 +1198,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$locale'
     | '/pricing'
     | '/qr-generator'
     | '/~offline'
@@ -1278,6 +1296,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
     | '/$locale/$wsId/tasks/habits'
+    | '/$locale/$wsId/tasks/notes'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
@@ -1403,6 +1422,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
     | '/$locale/$wsId/tasks/habits'
+    | '/$locale/$wsId/tasks/notes'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
@@ -1431,6 +1451,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$locale'
     | '/pricing'
     | '/qr-generator'
     | '/~offline'
@@ -1528,6 +1549,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
     | '/$locale/$wsId/tasks/habits'
+    | '/$locale/$wsId/tasks/notes'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
@@ -1557,101 +1579,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LocaleRouteRoute: typeof LocaleRouteRouteWithChildren
   PricingRoute: typeof PricingRoute
   QrGeneratorRoute: typeof QrGeneratorRoute
   Char126offlineRoute: typeof Char126offlineRoute
-  LocaleAboutRoute: typeof LocaleAboutRoute
-  LocaleAcceptableUseRoute: typeof LocaleAcceptableUseRoute
-  LocaleBlogRoute: typeof LocaleBlogRoute
-  LocaleBrandingRoute: typeof LocaleBrandingRoute
-  LocaleCareersRoute: typeof LocaleCareersRoute
-  LocaleChangelogRoute: typeof LocaleChangelogRouteWithChildren
-  LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
-  LocaleContactRoute: typeof LocaleContactRoute
-  LocaleContributorsRoute: typeof LocaleContributorsRoute
-  LocaleDocsRoute: typeof LocaleDocsRoute
-  LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
-  LocaleLoginRoute: typeof LocaleLoginRoute
-  LocaleLogoutRoute: typeof LocaleLogoutRoute
-  LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute
-  LocaleModelsRoute: typeof LocaleModelsRoute
-  LocalePartnersRoute: typeof LocalePartnersRoute
-  LocalePricingRoute: typeof LocalePricingRoute
-  LocalePrivacyRoute: typeof LocalePrivacyRoute
-  LocaleQrGeneratorRoute: typeof LocaleQrGeneratorRoute
-  LocaleSecurityRoute: typeof LocaleSecurityRouteWithChildren
-  LocaleTermsRoute: typeof LocaleTermsRoute
-  LocaleVerifyTokenRoute: typeof LocaleVerifyTokenRoute
-  LocaleWomenInTechRoute: typeof LocaleWomenInTechRoute
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute
-  LocaleIndexRoute: typeof LocaleIndexRoute
-  LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute
-  LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute
-  LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
-  LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
-  LocaleWsIdFinanceRoute: typeof LocaleWsIdFinanceRouteWithChildren
-  LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren
-  LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute
-  LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRouteWithChildren
-  LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute
-  LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren
-  LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
-  LocaleWsIdProgressRoute: typeof LocaleWsIdProgressRoute
-  LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute
-  LocaleWsIdReadingsRoute: typeof LocaleWsIdReadingsRoute
-  LocaleWsIdRolesRoute: typeof LocaleWsIdRolesRoute
-  LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
-  LocaleWsIdWorkoutsRoute: typeof LocaleWsIdWorkoutsRoute
-  LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
-  LocaleDocumentsDocumentIdRoute: typeof LocaleDocumentsDocumentIdRoute
-  LocaleGamesFarmRoute: typeof LocaleGamesFarmRoute
-  LocaleProductsAiRoute: typeof LocaleProductsAiRoute
-  LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute
-  LocaleProductsCrmRoute: typeof LocaleProductsCrmRoute
-  LocaleProductsDocumentsRoute: typeof LocaleProductsDocumentsRoute
-  LocaleProductsDriveRoute: typeof LocaleProductsDriveRoute
-  LocaleProductsFinanceRoute: typeof LocaleProductsFinanceRoute
-  LocaleProductsInventoryRoute: typeof LocaleProductsInventoryRoute
-  LocaleProductsLmsRoute: typeof LocaleProductsLmsRoute
-  LocaleProductsMailRoute: typeof LocaleProductsMailRoute
-  LocaleProductsMeetTogetherRoute: typeof LocaleProductsMeetTogetherRoute
-  LocaleProductsTasksRoute: typeof LocaleProductsTasksRoute
-  LocaleProductsWorkflowsRoute: typeof LocaleProductsWorkflowsRoute
-  LocaleSolutionsConstructionRoute: typeof LocaleSolutionsConstructionRoute
-  LocaleSolutionsEducationRoute: typeof LocaleSolutionsEducationRoute
-  LocaleSolutionsHealthcareRoute: typeof LocaleSolutionsHealthcareRoute
-  LocaleSolutionsHospitalityRoute: typeof LocaleSolutionsHospitalityRoute
-  LocaleSolutionsManufacturingRoute: typeof LocaleSolutionsManufacturingRoute
-  LocaleSolutionsPharmaciesRoute: typeof LocaleSolutionsPharmaciesRoute
-  LocaleSolutionsRealestateRoute: typeof LocaleSolutionsRealestateRoute
-  LocaleSolutionsRestaurantsRoute: typeof LocaleSolutionsRestaurantsRoute
-  LocaleSolutionsRetailRoute: typeof LocaleSolutionsRetailRoute
-  LocaleToolsRandomRoute: typeof LocaleToolsRandomRoute
-  LocaleUiContributingRoute: typeof LocaleUiContributingRoute
-  LocaleUiSetupRoute: typeof LocaleUiSetupRoute
-  LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute
-  LocaleUiIndexRoute: typeof LocaleUiIndexRoute
-  LocaleWsIdAiChatNewRoute: typeof LocaleWsIdAiChatNewRoute
-  LocaleWsIdEducationFlashcardsRoute: typeof LocaleWsIdEducationFlashcardsRoute
-  LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute
-  LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute
-  LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute
-  LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute
-  LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute
-  LocaleWsIdTasksHabitsRoute: typeof LocaleWsIdTasksHabitsRoute
-  LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute
-  LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute
-  LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute
-  LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute
-  LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
-  LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute
-  LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
-  LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute
-  LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
-  LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
-  LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute
-  LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute
-  LocaleWsIdUsersReportsReportIdRoute: typeof LocaleWsIdUsersReportsReportIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1677,6 +1609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale': {
+      id: '/$locale'
+      path: '/$locale'
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -1686,10 +1625,10 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/': {
       id: '/$locale/'
-      path: '/$locale'
+      path: '/'
       fullPath: '/$locale/'
       preLoaderRoute: typeof LocaleIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/products/meet-together': {
       id: '/products/meet-together'
@@ -1700,262 +1639,262 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/women-in-tech': {
       id: '/$locale/women-in-tech'
-      path: '/$locale/women-in-tech'
+      path: '/women-in-tech'
       fullPath: '/$locale/women-in-tech'
       preLoaderRoute: typeof LocaleWomenInTechRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/verify-token': {
       id: '/$locale/verify-token'
-      path: '/$locale/verify-token'
+      path: '/verify-token'
       fullPath: '/$locale/verify-token'
       preLoaderRoute: typeof LocaleVerifyTokenRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/terms': {
       id: '/$locale/terms'
-      path: '/$locale/terms'
+      path: '/terms'
       fullPath: '/$locale/terms'
       preLoaderRoute: typeof LocaleTermsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/security': {
       id: '/$locale/security'
-      path: '/$locale/security'
+      path: '/security'
       fullPath: '/$locale/security'
       preLoaderRoute: typeof LocaleSecurityRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/qr-generator': {
       id: '/$locale/qr-generator'
-      path: '/$locale/qr-generator'
+      path: '/qr-generator'
       fullPath: '/$locale/qr-generator'
       preLoaderRoute: typeof LocaleQrGeneratorRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/privacy': {
       id: '/$locale/privacy'
-      path: '/$locale/privacy'
+      path: '/privacy'
       fullPath: '/$locale/privacy'
       preLoaderRoute: typeof LocalePrivacyRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/pricing': {
       id: '/$locale/pricing'
-      path: '/$locale/pricing'
+      path: '/pricing'
       fullPath: '/$locale/pricing'
       preLoaderRoute: typeof LocalePricingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/partners': {
       id: '/$locale/partners'
-      path: '/$locale/partners'
+      path: '/partners'
       fullPath: '/$locale/partners'
       preLoaderRoute: typeof LocalePartnersRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/models': {
       id: '/$locale/models'
-      path: '/$locale/models'
+      path: '/models'
       fullPath: '/$locale/models'
       preLoaderRoute: typeof LocaleModelsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/meet-together': {
       id: '/$locale/meet-together'
-      path: '/$locale/meet-together'
+      path: '/meet-together'
       fullPath: '/$locale/meet-together'
       preLoaderRoute: typeof LocaleMeetTogetherRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/logout': {
       id: '/$locale/logout'
-      path: '/$locale/logout'
+      path: '/logout'
       fullPath: '/$locale/logout'
       preLoaderRoute: typeof LocaleLogoutRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/login': {
       id: '/$locale/login'
-      path: '/$locale/login'
+      path: '/login'
       fullPath: '/$locale/login'
       preLoaderRoute: typeof LocaleLoginRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/facebook-mockup': {
       id: '/$locale/facebook-mockup'
-      path: '/$locale/facebook-mockup'
+      path: '/facebook-mockup'
       fullPath: '/$locale/facebook-mockup'
       preLoaderRoute: typeof LocaleFacebookMockupRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/docs': {
       id: '/$locale/docs'
-      path: '/$locale/docs'
+      path: '/docs'
       fullPath: '/$locale/docs'
       preLoaderRoute: typeof LocaleDocsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/contributors': {
       id: '/$locale/contributors'
-      path: '/$locale/contributors'
+      path: '/contributors'
       fullPath: '/$locale/contributors'
       preLoaderRoute: typeof LocaleContributorsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/contact': {
       id: '/$locale/contact'
-      path: '/$locale/contact'
+      path: '/contact'
       fullPath: '/$locale/contact'
       preLoaderRoute: typeof LocaleContactRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/community-guidelines': {
       id: '/$locale/community-guidelines'
-      path: '/$locale/community-guidelines'
+      path: '/community-guidelines'
       fullPath: '/$locale/community-guidelines'
       preLoaderRoute: typeof LocaleCommunityGuidelinesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/changelog': {
       id: '/$locale/changelog'
-      path: '/$locale/changelog'
+      path: '/changelog'
       fullPath: '/$locale/changelog'
       preLoaderRoute: typeof LocaleChangelogRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/careers': {
       id: '/$locale/careers'
-      path: '/$locale/careers'
+      path: '/careers'
       fullPath: '/$locale/careers'
       preLoaderRoute: typeof LocaleCareersRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/branding': {
       id: '/$locale/branding'
-      path: '/$locale/branding'
+      path: '/branding'
       fullPath: '/$locale/branding'
       preLoaderRoute: typeof LocaleBrandingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/blog': {
       id: '/$locale/blog'
-      path: '/$locale/blog'
+      path: '/blog'
       fullPath: '/$locale/blog'
       preLoaderRoute: typeof LocaleBlogRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/acceptable-use': {
       id: '/$locale/acceptable-use'
-      path: '/$locale/acceptable-use'
+      path: '/acceptable-use'
       fullPath: '/$locale/acceptable-use'
       preLoaderRoute: typeof LocaleAcceptableUseRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/about': {
       id: '/$locale/about'
-      path: '/$locale/about'
+      path: '/about'
       fullPath: '/$locale/about'
       preLoaderRoute: typeof LocaleAboutRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/ui/': {
       id: '/$locale/ui/'
-      path: '/$locale/ui'
+      path: '/ui'
       fullPath: '/$locale/ui/'
       preLoaderRoute: typeof LocaleUiIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/visualizations/horse-racing': {
       id: '/$locale/visualizations/horse-racing'
-      path: '/$locale/visualizations/horse-racing'
+      path: '/visualizations/horse-racing'
       fullPath: '/$locale/visualizations/horse-racing'
       preLoaderRoute: typeof LocaleVisualizationsHorseRacingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/ui/setup': {
       id: '/$locale/ui/setup'
-      path: '/$locale/ui/setup'
+      path: '/ui/setup'
       fullPath: '/$locale/ui/setup'
       preLoaderRoute: typeof LocaleUiSetupRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/ui/contributing': {
       id: '/$locale/ui/contributing'
-      path: '/$locale/ui/contributing'
+      path: '/ui/contributing'
       fullPath: '/$locale/ui/contributing'
       preLoaderRoute: typeof LocaleUiContributingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/tools/random': {
       id: '/$locale/tools/random'
-      path: '/$locale/tools/random'
+      path: '/tools/random'
       fullPath: '/$locale/tools/random'
       preLoaderRoute: typeof LocaleToolsRandomRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/retail': {
       id: '/$locale/solutions/retail'
-      path: '/$locale/solutions/retail'
+      path: '/solutions/retail'
       fullPath: '/$locale/solutions/retail'
       preLoaderRoute: typeof LocaleSolutionsRetailRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/restaurants': {
       id: '/$locale/solutions/restaurants'
-      path: '/$locale/solutions/restaurants'
+      path: '/solutions/restaurants'
       fullPath: '/$locale/solutions/restaurants'
       preLoaderRoute: typeof LocaleSolutionsRestaurantsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/realestate': {
       id: '/$locale/solutions/realestate'
-      path: '/$locale/solutions/realestate'
+      path: '/solutions/realestate'
       fullPath: '/$locale/solutions/realestate'
       preLoaderRoute: typeof LocaleSolutionsRealestateRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/pharmacies': {
       id: '/$locale/solutions/pharmacies'
-      path: '/$locale/solutions/pharmacies'
+      path: '/solutions/pharmacies'
       fullPath: '/$locale/solutions/pharmacies'
       preLoaderRoute: typeof LocaleSolutionsPharmaciesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/manufacturing': {
       id: '/$locale/solutions/manufacturing'
-      path: '/$locale/solutions/manufacturing'
+      path: '/solutions/manufacturing'
       fullPath: '/$locale/solutions/manufacturing'
       preLoaderRoute: typeof LocaleSolutionsManufacturingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/hospitality': {
       id: '/$locale/solutions/hospitality'
-      path: '/$locale/solutions/hospitality'
+      path: '/solutions/hospitality'
       fullPath: '/$locale/solutions/hospitality'
       preLoaderRoute: typeof LocaleSolutionsHospitalityRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/healthcare': {
       id: '/$locale/solutions/healthcare'
-      path: '/$locale/solutions/healthcare'
+      path: '/solutions/healthcare'
       fullPath: '/$locale/solutions/healthcare'
       preLoaderRoute: typeof LocaleSolutionsHealthcareRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/education': {
       id: '/$locale/solutions/education'
-      path: '/$locale/solutions/education'
+      path: '/solutions/education'
       fullPath: '/$locale/solutions/education'
       preLoaderRoute: typeof LocaleSolutionsEducationRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/solutions/construction': {
       id: '/$locale/solutions/construction'
-      path: '/$locale/solutions/construction'
+      path: '/solutions/construction'
       fullPath: '/$locale/solutions/construction'
       preLoaderRoute: typeof LocaleSolutionsConstructionRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/security/policy': {
       id: '/$locale/security/policy'
@@ -1973,101 +1912,101 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/products/workflows': {
       id: '/$locale/products/workflows'
-      path: '/$locale/products/workflows'
+      path: '/products/workflows'
       fullPath: '/$locale/products/workflows'
       preLoaderRoute: typeof LocaleProductsWorkflowsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/tasks': {
       id: '/$locale/products/tasks'
-      path: '/$locale/products/tasks'
+      path: '/products/tasks'
       fullPath: '/$locale/products/tasks'
       preLoaderRoute: typeof LocaleProductsTasksRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/meet-together': {
       id: '/$locale/products/meet-together'
-      path: '/$locale/products/meet-together'
+      path: '/products/meet-together'
       fullPath: '/$locale/products/meet-together'
       preLoaderRoute: typeof LocaleProductsMeetTogetherRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/mail': {
       id: '/$locale/products/mail'
-      path: '/$locale/products/mail'
+      path: '/products/mail'
       fullPath: '/$locale/products/mail'
       preLoaderRoute: typeof LocaleProductsMailRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/lms': {
       id: '/$locale/products/lms'
-      path: '/$locale/products/lms'
+      path: '/products/lms'
       fullPath: '/$locale/products/lms'
       preLoaderRoute: typeof LocaleProductsLmsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/inventory': {
       id: '/$locale/products/inventory'
-      path: '/$locale/products/inventory'
+      path: '/products/inventory'
       fullPath: '/$locale/products/inventory'
       preLoaderRoute: typeof LocaleProductsInventoryRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/finance': {
       id: '/$locale/products/finance'
-      path: '/$locale/products/finance'
+      path: '/products/finance'
       fullPath: '/$locale/products/finance'
       preLoaderRoute: typeof LocaleProductsFinanceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/drive': {
       id: '/$locale/products/drive'
-      path: '/$locale/products/drive'
+      path: '/products/drive'
       fullPath: '/$locale/products/drive'
       preLoaderRoute: typeof LocaleProductsDriveRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/documents': {
       id: '/$locale/products/documents'
-      path: '/$locale/products/documents'
+      path: '/products/documents'
       fullPath: '/$locale/products/documents'
       preLoaderRoute: typeof LocaleProductsDocumentsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/crm': {
       id: '/$locale/products/crm'
-      path: '/$locale/products/crm'
+      path: '/products/crm'
       fullPath: '/$locale/products/crm'
       preLoaderRoute: typeof LocaleProductsCrmRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/calendar': {
       id: '/$locale/products/calendar'
-      path: '/$locale/products/calendar'
+      path: '/products/calendar'
       fullPath: '/$locale/products/calendar'
       preLoaderRoute: typeof LocaleProductsCalendarRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/products/ai': {
       id: '/$locale/products/ai'
-      path: '/$locale/products/ai'
+      path: '/products/ai'
       fullPath: '/$locale/products/ai'
       preLoaderRoute: typeof LocaleProductsAiRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/games/farm': {
       id: '/$locale/games/farm'
-      path: '/$locale/games/farm'
+      path: '/games/farm'
       fullPath: '/$locale/games/farm'
       preLoaderRoute: typeof LocaleGamesFarmRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/documents/$documentId': {
       id: '/$locale/documents/$documentId'
-      path: '/$locale/documents/$documentId'
+      path: '/documents/$documentId'
       fullPath: '/$locale/documents/$documentId'
       preLoaderRoute: typeof LocaleDocumentsDocumentIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/changelog/$slug': {
       id: '/$locale/changelog/$slug'
@@ -2078,164 +2017,164 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/calendar/meet-together': {
       id: '/$locale/calendar/meet-together'
-      path: '/$locale/calendar/meet-together'
+      path: '/calendar/meet-together'
       fullPath: '/$locale/calendar/meet-together'
       preLoaderRoute: typeof LocaleCalendarMeetTogetherRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/workouts': {
       id: '/$locale/$wsId/workouts'
-      path: '/$locale/$wsId/workouts'
+      path: '/$wsId/workouts'
       fullPath: '/$locale/$wsId/workouts'
       preLoaderRoute: typeof LocaleWsIdWorkoutsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/workforce': {
       id: '/$locale/$wsId/workforce'
-      path: '/$locale/$wsId/workforce'
+      path: '/$wsId/workforce'
       fullPath: '/$locale/$wsId/workforce'
       preLoaderRoute: typeof LocaleWsIdWorkforceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/roles': {
       id: '/$locale/$wsId/roles'
-      path: '/$locale/$wsId/roles'
+      path: '/$wsId/roles'
       fullPath: '/$locale/$wsId/roles'
       preLoaderRoute: typeof LocaleWsIdRolesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/readings': {
       id: '/$locale/$wsId/readings'
-      path: '/$locale/$wsId/readings'
+      path: '/$wsId/readings'
       fullPath: '/$locale/$wsId/readings'
       preLoaderRoute: typeof LocaleWsIdReadingsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/qr-generator': {
       id: '/$locale/$wsId/qr-generator'
-      path: '/$locale/$wsId/qr-generator'
+      path: '/$wsId/qr-generator'
       fullPath: '/$locale/$wsId/qr-generator'
       preLoaderRoute: typeof LocaleWsIdQrGeneratorRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/progress': {
       id: '/$locale/$wsId/progress'
-      path: '/$locale/$wsId/progress'
+      path: '/$wsId/progress'
       fullPath: '/$locale/$wsId/progress'
       preLoaderRoute: typeof LocaleWsIdProgressRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/polls': {
       id: '/$locale/$wsId/polls'
-      path: '/$locale/$wsId/polls'
+      path: '/$wsId/polls'
       fullPath: '/$locale/$wsId/polls'
       preLoaderRoute: typeof LocaleWsIdPollsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/mind': {
       id: '/$locale/$wsId/mind'
-      path: '/$locale/$wsId/mind'
+      path: '/$wsId/mind'
       fullPath: '/$locale/$wsId/mind'
       preLoaderRoute: typeof LocaleWsIdMindRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/metrics': {
       id: '/$locale/$wsId/metrics'
-      path: '/$locale/$wsId/metrics'
+      path: '/$wsId/metrics'
       fullPath: '/$locale/$wsId/metrics'
       preLoaderRoute: typeof LocaleWsIdMetricsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/meet': {
       id: '/$locale/$wsId/meet'
-      path: '/$locale/$wsId/meet'
+      path: '/$wsId/meet'
       fullPath: '/$locale/$wsId/meet'
       preLoaderRoute: typeof LocaleWsIdMeetRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/integrations': {
       id: '/$locale/$wsId/integrations'
-      path: '/$locale/$wsId/integrations'
+      path: '/$wsId/integrations'
       fullPath: '/$locale/$wsId/integrations'
       preLoaderRoute: typeof LocaleWsIdIntegrationsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/hive': {
       id: '/$locale/$wsId/hive'
-      path: '/$locale/$wsId/hive'
+      path: '/$wsId/hive'
       fullPath: '/$locale/$wsId/hive'
       preLoaderRoute: typeof LocaleWsIdHiveRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/finance': {
       id: '/$locale/$wsId/finance'
-      path: '/$locale/$wsId/finance'
+      path: '/$wsId/finance'
       fullPath: '/$locale/$wsId/finance'
       preLoaderRoute: typeof LocaleWsIdFinanceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/external-projects': {
       id: '/$locale/$wsId/external-projects'
-      path: '/$locale/$wsId/external-projects'
+      path: '/$wsId/external-projects'
       fullPath: '/$locale/$wsId/external-projects'
       preLoaderRoute: typeof LocaleWsIdExternalProjectsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/epm': {
       id: '/$locale/$wsId/epm'
-      path: '/$locale/$wsId/epm'
+      path: '/$wsId/epm'
       fullPath: '/$locale/$wsId/epm'
       preLoaderRoute: typeof LocaleWsIdEpmRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/drive': {
       id: '/$locale/$wsId/drive'
-      path: '/$locale/$wsId/drive'
+      path: '/$wsId/drive'
       fullPath: '/$locale/$wsId/drive'
       preLoaderRoute: typeof LocaleWsIdDriveRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/diet': {
       id: '/$locale/$wsId/diet'
-      path: '/$locale/$wsId/diet'
+      path: '/$wsId/diet'
       fullPath: '/$locale/$wsId/diet'
       preLoaderRoute: typeof LocaleWsIdDietRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/ui/components/': {
       id: '/$locale/ui/components/'
-      path: '/$locale/ui/components'
+      path: '/ui/components'
       fullPath: '/$locale/ui/components/'
       preLoaderRoute: typeof LocaleUiComponentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/mail/': {
       id: '/$locale/$wsId/mail/'
-      path: '/$locale/$wsId/mail'
+      path: '/$wsId/mail'
       fullPath: '/$locale/$wsId/mail/'
       preLoaderRoute: typeof LocaleWsIdMailIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/ui/components/$componentId': {
       id: '/$locale/ui/components/$componentId'
-      path: '/$locale/ui/components/$componentId'
+      path: '/ui/components/$componentId'
       fullPath: '/$locale/ui/components/$componentId'
       preLoaderRoute: typeof LocaleUiComponentsComponentIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/shared/user-profile/$code': {
       id: '/$locale/shared/user-profile/$code'
-      path: '/$locale/shared/user-profile/$code'
+      path: '/shared/user-profile/$code'
       fullPath: '/$locale/shared/user-profile/$code'
       preLoaderRoute: typeof LocaleSharedUserProfileCodeRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/shared/task/$shareCode': {
       id: '/$locale/shared/task/$shareCode'
-      path: '/$locale/shared/task/$shareCode'
+      path: '/shared/task/$shareCode'
       fullPath: '/$locale/shared/task/$shareCode'
       preLoaderRoute: typeof LocaleSharedTaskShareCodeRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/calendar/meet-together/$': {
       id: '/$locale/calendar/meet-together/$'
@@ -2246,31 +2185,38 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/$wsId/users/topic-announcements': {
       id: '/$locale/$wsId/users/topic-announcements'
-      path: '/$locale/$wsId/users/topic-announcements'
+      path: '/$wsId/users/topic-announcements'
       fullPath: '/$locale/$wsId/users/topic-announcements'
       preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/users/structure': {
       id: '/$locale/$wsId/users/structure'
-      path: '/$locale/$wsId/users/structure'
+      path: '/$wsId/users/structure'
       fullPath: '/$locale/$wsId/users/structure'
       preLoaderRoute: typeof LocaleWsIdUsersStructureRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/$wsId/tasks/notes': {
+      id: '/$locale/$wsId/tasks/notes'
+      path: '/$wsId/tasks/notes'
+      fullPath: '/$locale/$wsId/tasks/notes'
+      preLoaderRoute: typeof LocaleWsIdTasksNotesRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/tasks/habits': {
       id: '/$locale/$wsId/tasks/habits'
-      path: '/$locale/$wsId/tasks/habits'
+      path: '/$wsId/tasks/habits'
       fullPath: '/$locale/$wsId/tasks/habits'
       preLoaderRoute: typeof LocaleWsIdTasksHabitsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/platform/external-projects': {
       id: '/$locale/$wsId/platform/external-projects'
-      path: '/$locale/$wsId/platform/external-projects'
+      path: '/$wsId/platform/external-projects'
       fullPath: '/$locale/$wsId/platform/external-projects'
       preLoaderRoute: typeof LocaleWsIdPlatformExternalProjectsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/meet/plans': {
       id: '/$locale/$wsId/meet/plans'
@@ -2288,10 +2234,10 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/$wsId/mail/sent': {
       id: '/$locale/$wsId/mail/sent'
-      path: '/$locale/$wsId/mail/sent'
+      path: '/$wsId/mail/sent'
       fullPath: '/$locale/$wsId/mail/sent'
       preLoaderRoute: typeof LocaleWsIdMailSentRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/hive/not-whitelisted': {
       id: '/$locale/$wsId/hive/not-whitelisted'
@@ -2365,66 +2311,66 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/$wsId/education/quizzes': {
       id: '/$locale/$wsId/education/quizzes'
-      path: '/$locale/$wsId/education/quizzes'
+      path: '/$wsId/education/quizzes'
       fullPath: '/$locale/$wsId/education/quizzes'
       preLoaderRoute: typeof LocaleWsIdEducationQuizzesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/education/quiz-sets': {
       id: '/$locale/$wsId/education/quiz-sets'
-      path: '/$locale/$wsId/education/quiz-sets'
+      path: '/$wsId/education/quiz-sets'
       fullPath: '/$locale/$wsId/education/quiz-sets'
       preLoaderRoute: typeof LocaleWsIdEducationQuizSetsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/education/library': {
       id: '/$locale/$wsId/education/library'
-      path: '/$locale/$wsId/education/library'
+      path: '/$wsId/education/library'
       fullPath: '/$locale/$wsId/education/library'
       preLoaderRoute: typeof LocaleWsIdEducationLibraryRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/education/flashcards': {
       id: '/$locale/$wsId/education/flashcards'
-      path: '/$locale/$wsId/education/flashcards'
+      path: '/$wsId/education/flashcards'
       fullPath: '/$locale/$wsId/education/flashcards'
       preLoaderRoute: typeof LocaleWsIdEducationFlashcardsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/ai-chat/new': {
       id: '/$locale/$wsId/ai-chat/new'
-      path: '/$locale/$wsId/ai-chat/new'
+      path: '/$wsId/ai-chat/new'
       fullPath: '/$locale/$wsId/ai-chat/new'
       preLoaderRoute: typeof LocaleWsIdAiChatNewRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/users/reports/$reportId': {
       id: '/$locale/$wsId/users/reports/$reportId'
-      path: '/$locale/$wsId/users/reports/$reportId'
+      path: '/$wsId/users/reports/$reportId'
       fullPath: '/$locale/$wsId/users/reports/$reportId'
       preLoaderRoute: typeof LocaleWsIdUsersReportsReportIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/users/groups/$groupId': {
       id: '/$locale/$wsId/users/groups/$groupId'
-      path: '/$locale/$wsId/users/groups/$groupId'
+      path: '/$wsId/users/groups/$groupId'
       fullPath: '/$locale/$wsId/users/groups/$groupId'
       preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/tasks/boards/$boardId': {
       id: '/$locale/$wsId/tasks/boards/$boardId'
-      path: '/$locale/$wsId/tasks/boards/$boardId'
+      path: '/$wsId/tasks/boards/$boardId'
       fullPath: '/$locale/$wsId/tasks/boards/$boardId'
       preLoaderRoute: typeof LocaleWsIdTasksBoardsBoardIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/settings/infrastructure/app-coordination': {
       id: '/$locale/$wsId/settings/infrastructure/app-coordination'
-      path: '/$locale/$wsId/settings/infrastructure/app-coordination'
+      path: '/$wsId/settings/infrastructure/app-coordination'
       fullPath: '/$locale/$wsId/settings/infrastructure/app-coordination'
       preLoaderRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/mind/boards/$boardId': {
       id: '/$locale/$wsId/mind/boards/$boardId'
@@ -2498,17 +2444,17 @@ declare module '@tanstack/react-router' {
     }
     '/$locale/$wsId/education/courses/$courseId': {
       id: '/$locale/$wsId/education/courses/$courseId'
-      path: '/$locale/$wsId/education/courses/$courseId'
+      path: '/$wsId/education/courses/$courseId'
       fullPath: '/$locale/$wsId/education/courses/$courseId'
       preLoaderRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/ai-chat/my-chatbots/new': {
       id: '/$locale/$wsId/ai-chat/my-chatbots/new'
-      path: '/$locale/$wsId/ai-chat/my-chatbots/new'
+      path: '/$wsId/ai-chat/my-chatbots/new'
       fullPath: '/$locale/$wsId/ai-chat/my-chatbots/new'
       preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsNewRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
     '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': {
       id: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
@@ -2734,11 +2680,102 @@ const LocaleWsIdEducationCoursesCourseIdRouteWithChildren =
     LocaleWsIdEducationCoursesCourseIdRouteChildren,
   )
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  PricingRoute: PricingRoute,
-  QrGeneratorRoute: QrGeneratorRoute,
-  Char126offlineRoute: Char126offlineRoute,
+interface LocaleRouteRouteChildren {
+  LocaleAboutRoute: typeof LocaleAboutRoute
+  LocaleAcceptableUseRoute: typeof LocaleAcceptableUseRoute
+  LocaleBlogRoute: typeof LocaleBlogRoute
+  LocaleBrandingRoute: typeof LocaleBrandingRoute
+  LocaleCareersRoute: typeof LocaleCareersRoute
+  LocaleChangelogRoute: typeof LocaleChangelogRouteWithChildren
+  LocaleCommunityGuidelinesRoute: typeof LocaleCommunityGuidelinesRoute
+  LocaleContactRoute: typeof LocaleContactRoute
+  LocaleContributorsRoute: typeof LocaleContributorsRoute
+  LocaleDocsRoute: typeof LocaleDocsRoute
+  LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute
+  LocaleLoginRoute: typeof LocaleLoginRoute
+  LocaleLogoutRoute: typeof LocaleLogoutRoute
+  LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute
+  LocaleModelsRoute: typeof LocaleModelsRoute
+  LocalePartnersRoute: typeof LocalePartnersRoute
+  LocalePricingRoute: typeof LocalePricingRoute
+  LocalePrivacyRoute: typeof LocalePrivacyRoute
+  LocaleQrGeneratorRoute: typeof LocaleQrGeneratorRoute
+  LocaleSecurityRoute: typeof LocaleSecurityRouteWithChildren
+  LocaleTermsRoute: typeof LocaleTermsRoute
+  LocaleVerifyTokenRoute: typeof LocaleVerifyTokenRoute
+  LocaleWomenInTechRoute: typeof LocaleWomenInTechRoute
+  LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute
+  LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute
+  LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren
+  LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute
+  LocaleWsIdFinanceRoute: typeof LocaleWsIdFinanceRouteWithChildren
+  LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren
+  LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute
+  LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRouteWithChildren
+  LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute
+  LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren
+  LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute
+  LocaleWsIdProgressRoute: typeof LocaleWsIdProgressRoute
+  LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute
+  LocaleWsIdReadingsRoute: typeof LocaleWsIdReadingsRoute
+  LocaleWsIdRolesRoute: typeof LocaleWsIdRolesRoute
+  LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute
+  LocaleWsIdWorkoutsRoute: typeof LocaleWsIdWorkoutsRoute
+  LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren
+  LocaleDocumentsDocumentIdRoute: typeof LocaleDocumentsDocumentIdRoute
+  LocaleGamesFarmRoute: typeof LocaleGamesFarmRoute
+  LocaleProductsAiRoute: typeof LocaleProductsAiRoute
+  LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute
+  LocaleProductsCrmRoute: typeof LocaleProductsCrmRoute
+  LocaleProductsDocumentsRoute: typeof LocaleProductsDocumentsRoute
+  LocaleProductsDriveRoute: typeof LocaleProductsDriveRoute
+  LocaleProductsFinanceRoute: typeof LocaleProductsFinanceRoute
+  LocaleProductsInventoryRoute: typeof LocaleProductsInventoryRoute
+  LocaleProductsLmsRoute: typeof LocaleProductsLmsRoute
+  LocaleProductsMailRoute: typeof LocaleProductsMailRoute
+  LocaleProductsMeetTogetherRoute: typeof LocaleProductsMeetTogetherRoute
+  LocaleProductsTasksRoute: typeof LocaleProductsTasksRoute
+  LocaleProductsWorkflowsRoute: typeof LocaleProductsWorkflowsRoute
+  LocaleSolutionsConstructionRoute: typeof LocaleSolutionsConstructionRoute
+  LocaleSolutionsEducationRoute: typeof LocaleSolutionsEducationRoute
+  LocaleSolutionsHealthcareRoute: typeof LocaleSolutionsHealthcareRoute
+  LocaleSolutionsHospitalityRoute: typeof LocaleSolutionsHospitalityRoute
+  LocaleSolutionsManufacturingRoute: typeof LocaleSolutionsManufacturingRoute
+  LocaleSolutionsPharmaciesRoute: typeof LocaleSolutionsPharmaciesRoute
+  LocaleSolutionsRealestateRoute: typeof LocaleSolutionsRealestateRoute
+  LocaleSolutionsRestaurantsRoute: typeof LocaleSolutionsRestaurantsRoute
+  LocaleSolutionsRetailRoute: typeof LocaleSolutionsRetailRoute
+  LocaleToolsRandomRoute: typeof LocaleToolsRandomRoute
+  LocaleUiContributingRoute: typeof LocaleUiContributingRoute
+  LocaleUiSetupRoute: typeof LocaleUiSetupRoute
+  LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute
+  LocaleUiIndexRoute: typeof LocaleUiIndexRoute
+  LocaleWsIdAiChatNewRoute: typeof LocaleWsIdAiChatNewRoute
+  LocaleWsIdEducationFlashcardsRoute: typeof LocaleWsIdEducationFlashcardsRoute
+  LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute
+  LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute
+  LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute
+  LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute
+  LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute
+  LocaleWsIdTasksHabitsRoute: typeof LocaleWsIdTasksHabitsRoute
+  LocaleWsIdTasksNotesRoute: typeof LocaleWsIdTasksNotesRoute
+  LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute
+  LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute
+  LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute
+  LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute
+  LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
+  LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute
+  LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute
+  LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute
+  LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren
+  LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute
+  LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute
+  LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute
+  LocaleWsIdUsersReportsReportIdRoute: typeof LocaleWsIdUsersReportsReportIdRoute
+}
+
+const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAboutRoute: LocaleAboutRoute,
   LocaleAcceptableUseRoute: LocaleAcceptableUseRoute,
   LocaleBlogRoute: LocaleBlogRoute,
@@ -2762,7 +2799,6 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleTermsRoute: LocaleTermsRoute,
   LocaleVerifyTokenRoute: LocaleVerifyTokenRoute,
   LocaleWomenInTechRoute: LocaleWomenInTechRoute,
-  ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,
   LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,
@@ -2819,6 +2855,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdPlatformExternalProjectsRoute:
     LocaleWsIdPlatformExternalProjectsRoute,
   LocaleWsIdTasksHabitsRoute: LocaleWsIdTasksHabitsRoute,
+  LocaleWsIdTasksNotesRoute: LocaleWsIdTasksNotesRoute,
   LocaleWsIdUsersStructureRoute: LocaleWsIdUsersStructureRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
     LocaleWsIdUsersTopicAnnouncementsRoute,
@@ -2835,6 +2872,19 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,
   LocaleWsIdUsersGroupsGroupIdRoute: LocaleWsIdUsersGroupsGroupIdRoute,
   LocaleWsIdUsersReportsReportIdRoute: LocaleWsIdUsersReportsReportIdRoute,
+}
+
+const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
+  LocaleRouteRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  LocaleRouteRoute: LocaleRouteRouteWithChildren,
+  PricingRoute: PricingRoute,
+  QrGeneratorRoute: QrGeneratorRoute,
+  Char126offlineRoute: Char126offlineRoute,
+  ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
