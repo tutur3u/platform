@@ -540,12 +540,39 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/classes:apps/web/src/app/api/v1/infrastructure/classes/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/classes through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
     "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
           "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/mobile-versions by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading the fixed root workspace mobile policy config IDs through the server-owned Supabase REST adapter, validating legacy policy invariants, and returning the legacy admin policy snapshot. PUT remains legacy-owned until policy writes move to Rust."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/product-categories:apps/web/src/app/api/v1/infrastructure/product-categories/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-categories through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so product_categories RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/score-names:apps/web/src/app/api/v1/infrastructure/score-names/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/score-names through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so user_group_metrics RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
         }
       }
     },
