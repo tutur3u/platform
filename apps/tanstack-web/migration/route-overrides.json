@@ -676,6 +676,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/coupons by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.workspace_promotions through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
     },
+    "api:/api/v1/infrastructure/user-coupons:apps/web/src/app/api/v1/infrastructure/user-coupons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-coupons by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.workspace_promotions and private.user_linked_promotions through the server-owned Supabase REST adapter with private-schema headers, preserving the empty-promotion short-circuit, reattaching the legacy workspace_promotions relation object, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
     "api:/api/v1/infrastructure/payment-methods:apps/web/src/app/api/v1/infrastructure/payment-methods/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

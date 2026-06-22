@@ -3614,6 +3614,86 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/user-coupons:
+    get:
+      summary: Legacy-compatible user promotion export list
+      description: >
+        Migrated replacement for the GET export in
+        apps/web/src/app/api/v1/infrastructure/user-coupons/route.ts. The Rust
+        backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, normalizes the requested workspace,
+        requires the manage_external_migrations workspace permission through the
+        shared workspace permission resolver, reads private.workspace_promotions
+        to scope promotion ids, returns an empty `{ data, count }` page when the
+        workspace has no promotions, reads private.user_linked_promotions through
+        the server-owned Supabase REST adapter, reattaches the legacy
+        `workspace_promotions: { ws_id }` relation object to each linked row,
+        and preserves the legacy required ws_id query parameter, parseInt-style
+        limit/offset range behavior, exact-count pagination, raw row list
+        response, and legacy error bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User linked promotion rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "403":
+          description: Caller does not have manage_external_migrations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "404":
+          description: Requested workspace could not be resolved or permissions were unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Workspace promotions or user linked promotions could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/user-monthly-reports:
     get:
       summary: Legacy-compatible user monthly report export list

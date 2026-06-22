@@ -218,6 +218,7 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `workspace_users.ws_id`, preserving Supabase RLS, exact-count pagination, raw
   row list responses, and legacy error bodies.
 - `GET /api/v1/infrastructure/coupons`,
+  `GET /api/v1/infrastructure/user-coupons`,
   `GET /api/v1/infrastructure/user-monthly-reports`, and
   `GET /api/v1/infrastructure/user-monthly-report-logs`: legacy-compatible
   protected migration export reads for private promotion and monthly report
@@ -225,9 +226,10 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   revalidates the browser Supabase session cookie or non-app-session Bearer
   token, normalizes workspace identifiers, requires `manage_external_migrations`
   through the shared workspace permission resolver, reads the private
-  `workspace_promotions` table and monthly report views through the server-owned
-  Supabase REST adapter, and preserves exact-count pagination plus legacy error
-  bodies.
+  `workspace_promotions` / `user_linked_promotions` tables and monthly report
+  views through the server-owned Supabase REST adapter, reattaches the legacy
+  `workspace_promotions: { ws_id }` object to linked promotion rows, and
+  preserves exact-count pagination plus legacy error bodies.
 - `GET /api/v1/infrastructure/payment-methods` and
   `GET /api/v1/infrastructure/wallets`: legacy-compatible protected finance
   export reads for `private.workspace_wallets`. Rust revalidates the browser
