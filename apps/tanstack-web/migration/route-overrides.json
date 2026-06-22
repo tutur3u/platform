@@ -1033,6 +1033,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/structure ports the legacy local-state organizational-structure mock page, metadata, localized messages, canvas interactions, and dialogs without adding Supabase or app API access. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/users/tutoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/tutoring preserves the legacy tutoring page with fail-closed current-user auth, forwarded-auth full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared tutoring client. Tutoring data access stays behind existing internal-api helpers and the backing APIs remain separately tracked Rust migration work."
+    },
     "page:/:locale/:wsId/diet:apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
