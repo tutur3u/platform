@@ -66,6 +66,10 @@ function coverageExamplesForRoute(routePath) {
     return [`/${DEFAULT_LOCALE}/changelog/__e2e_missing_changelog_slug__`];
   }
 
+  if (routePath === '/:locale/documents/:documentId') {
+    return [`/${DEFAULT_LOCALE}/documents/__e2e_missing_document_id__`];
+  }
+
   if (routePath === '/:locale/ui/components/:componentId') {
     return [`/${DEFAULT_LOCALE}/ui/components/button`];
   }

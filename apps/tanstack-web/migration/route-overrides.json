@@ -888,6 +888,16 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy route.ts file is empty and exports no HTTP methods, so there is no runtime behavior to port."
     },
+    "layout:/:locale/documents/:documentId:apps/web/src/app/[locale]/(marketing)/documents/[documentId]/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/documents/$documentId owns the public document preview shell and fail-closed loader through a server function backed by Supabase REST. It intentionally uses stable localized generic head metadata instead of the legacy layout's document-name Open Graph lookup so missing Supabase env fails closed without turning metadata generation into a second data dependency."
+    },
+    "page:/:locale/documents/:documentId:apps/web/src/app/[locale]/(marketing)/documents/[documentId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/documents/$documentId fetches public workspace_documents rows through a Start server function, hydrates them with TanStack Query, preserves the legacy public-only not-found behavior for missing documents, and keeps the currently empty document body shell matching the legacy commented-out editor rendering."
+    },
     "layout:/:locale/products/ai:apps/web/src/app/[locale]/(marketing)/products/ai/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

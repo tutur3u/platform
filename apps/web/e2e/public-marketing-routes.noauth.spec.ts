@@ -207,6 +207,9 @@ const dynamicNotFoundRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/changelog/__e2e_missing_changelog_slug__`,
   },
+  {
+    path: `/${DEFAULT_LOCALE}/documents/__e2e_missing_document_id__`,
+  },
 ];
 
 const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];

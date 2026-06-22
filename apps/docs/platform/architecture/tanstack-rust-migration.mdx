@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-21"
+updatedAt: "2026-06-22"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -338,7 +338,7 @@ Current inventory:
 - `1,145` route handler artifacts
 - `19` cron handlers
 - `1,524` total tracked route artifacts
-- `232` migrated artifacts, `315` terminal artifacts, and `1,209` remaining
+- `234` migrated artifacts, `317` terminal artifacts, and `1,207` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -486,6 +486,7 @@ First TanStack Start migrated ownership:
 | `/:locale/{acceptable-use,community-guidelines,privacy,terms}`                                                                                                                         | `apps/tanstack-web` TanStack Start static routes | `route-overrides.json` marks each legal page and metadata-only layout `migrated`; the Start routes preserve the legacy static legal content, local legal primitives, and metadata without auth, Supabase, or protected workspace data access.                                                                                                                                                |
 | `/:locale/partners`                                                                                                                                                                    | `apps/tanstack-web` TanStack Start static route  | `route-overrides.json` marks the partners page and metadata-only layout `migrated`; the Start route preserves the legacy partner content, CTAs, outbound links, local partner primitives, and copied public logo assets without auth, Supabase, or protected workspace data access.                                                                                                          |
 | `/:locale/products/{ai,calendar,crm,documents,drive,finance,inventory,lms,mail,tasks,workflows}`                                                                                       | `apps/tanstack-web` TanStack Start static routes | `route-overrides.json` marks each static product page and layout `migrated`; the Start routes preserve the legacy product copy, metadata, and shared page primitives without adding auth, Supabase, or protected workspace data access.                                                                                                                                                      |
+| `/:locale/documents/:documentId`                                                                                                                                                       | `apps/tanstack-web` TanStack Start route         | `route-overrides.json` marks the public document page and layout `migrated`; the Start route fetches only public `workspace_documents` rows through a server function, hydrates with TanStack Query, preserves fail-closed not-found behavior, and keeps the current empty document body shell. The migrated layout uses stable localized generic head metadata instead of the legacy document-name Open Graph lookup to avoid a second metadata-time Supabase dependency. |
 | `/:locale/products/meet-together`                                                                                                                                                      | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/products/meet-together` and `/:locale/products/meet-together` throw a TanStack Router `307` redirect to `/meet-together`.                                                                                                                                                                                                                |
 | `/:locale/qr-generator`                                                                                                                                                                | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page `migrated`; `/qr-generator` and `/:locale/qr-generator` redirect to the QR app origin and forward the raw query string so duplicate query keys are preserved.                                                                                                                                                                                          |
 | `/:locale/changelog`                                                                                                                                                                   | `apps/tanstack-web` TanStack Start route         | `route-overrides.json` marks the changelog index page `migrated`; the Start route reads the Rust-owned public changelog `GET` API through a server function, hydrates the list with TanStack Query, applies ISR-style CDN headers, and falls back to an empty public state when the backend cannot return published entries.                                                                    |
