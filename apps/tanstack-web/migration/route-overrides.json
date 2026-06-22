@@ -668,6 +668,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/qr-generator preserves the legacy 307 redirect to the QR app origin while forwarding query parameters. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/drive:apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/drive preserves the legacy handoff to the Drive app origin with root-workspace internal slug handling, personal workspace slug normalization, and query forwarding. This marks only the page handoff artifact migrated; the Drive app owns its own auth and manage_drive permission gate, while parent dashboard layout/session ownership remains legacy-owned."
+    },
     "page:/:locale/:wsId/finance:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/(dashboard)/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
