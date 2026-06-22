@@ -128,7 +128,7 @@ async fn changelog_create_response(
     };
     let payload = match create_changelog_payload_from_body(request.body_text, &access.user_id) {
         Ok(payload) => payload,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
     let Some(url) = contact_data.rest_url(CHANGELOG_ENTRIES_TABLE, &[("select", "*".to_owned())])
     else {
@@ -140,12 +140,14 @@ async fn changelog_create_response(
     let Ok(response) = send_changelog_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Post,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        &access.access_token,
-        Some("return=representation"),
-        Some(&body),
+        ChangelogAuthenticatedRequest {
+            method: OutboundMethod::Post,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token: &access.access_token,
+            prefer: Some("return=representation"),
+            body: Some(&body),
+        },
     )
     .await
     else {
@@ -178,7 +180,7 @@ async fn changelog_update_response(
     };
     let payload = match update_changelog_payload_from_body(request.body_text) {
         Ok(payload) => payload,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
 
     match changelog_existing_entry(contact_data, &access.access_token, id, outbound).await {
@@ -199,12 +201,14 @@ async fn changelog_update_response(
     let Ok(response) = send_changelog_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Patch,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        &access.access_token,
-        Some("return=representation"),
-        Some(&body),
+        ChangelogAuthenticatedRequest {
+            method: OutboundMethod::Patch,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token: &access.access_token,
+            prefer: Some("return=representation"),
+            body: Some(&body),
+        },
     )
     .await
     else {
@@ -249,12 +253,14 @@ async fn changelog_delete_response(
     let Ok(response) = send_changelog_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Delete,
-        &url,
-        APPLICATION_JSON,
-        &access.access_token,
-        None,
-        None,
+        ChangelogAuthenticatedRequest {
+            method: OutboundMethod::Delete,
+            url: &url,
+            accept: APPLICATION_JSON,
+            access_token: &access.access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await
     else {
@@ -285,7 +291,7 @@ async fn changelog_publish_response(
     };
     let is_published = match publish_changelog_input_from_body(request.body_text) {
         Ok(is_published) => is_published,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
     let existing_entry =
         match changelog_existing_entry(contact_data, &access.access_token, id, outbound).await {
@@ -306,12 +312,14 @@ async fn changelog_publish_response(
     let Ok(response) = send_changelog_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Patch,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        &access.access_token,
-        Some("return=representation"),
-        Some(&body),
+        ChangelogAuthenticatedRequest {
+            method: OutboundMethod::Patch,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token: &access.access_token,
+            prefer: Some("return=representation"),
+            body: Some(&body),
+        },
     )
     .await
     else {
@@ -343,12 +351,14 @@ async fn changelog_existing_entry(
     let response = send_changelog_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Get,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        access_token,
-        None,
-        None,
+        ChangelogAuthenticatedRequest {
+            method: OutboundMethod::Get,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await?;
 
@@ -397,18 +407,18 @@ async fn request_changelog_write_access(
 fn create_changelog_payload_from_body(
     body_text: Option<&str>,
     user_id: &str,
-) -> Result<Value, BackendResponse> {
+) -> Result<Value, Box<BackendResponse>> {
     let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
-        return Err(invalid_request_data_response(vec![issue(
+        return Err(Box::new(invalid_request_data_response(vec![issue(
             "body",
             "Expected a JSON object",
-        )]));
+        )])));
     };
     let Some(object) = value.as_object() else {
-        return Err(invalid_request_data_response(vec![issue(
+        return Err(Box::new(invalid_request_data_response(vec![issue(
             "body",
             "Expected a JSON object",
-        )]));
+        )])));
     };
     let mut issues = Vec::new();
     let title = required_changelog_string(object, "title", MAX_NAME_LENGTH, &mut issues);
@@ -422,7 +432,7 @@ fn create_changelog_payload_from_body(
     let cover_image_url = optional_changelog_url(object, "cover_image_url", &mut issues);
 
     if !issues.is_empty() {
-        return Err(invalid_request_data_response(issues));
+        return Err(Box::new(invalid_request_data_response(issues)));
     }
 
     let mut payload = Map::new();
@@ -451,18 +461,20 @@ fn create_changelog_payload_from_body(
     Ok(Value::Object(payload))
 }
 
-fn update_changelog_payload_from_body(body_text: Option<&str>) -> Result<Value, BackendResponse> {
+fn update_changelog_payload_from_body(
+    body_text: Option<&str>,
+) -> Result<Value, Box<BackendResponse>> {
     let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
-        return Err(invalid_request_data_response(vec![issue(
+        return Err(Box::new(invalid_request_data_response(vec![issue(
             "body",
             "Expected a JSON object",
-        )]));
+        )])));
     };
     let Some(object) = value.as_object() else {
-        return Err(invalid_request_data_response(vec![issue(
+        return Err(Box::new(invalid_request_data_response(vec![issue(
             "body",
             "Expected a JSON object",
-        )]));
+        )])));
     };
     let mut issues = Vec::new();
     let title = optional_changelog_string(object, "title", MAX_NAME_LENGTH, false, &mut issues);
@@ -475,7 +487,7 @@ fn update_changelog_payload_from_body(body_text: Option<&str>) -> Result<Value, 
     let cover_image_url = optional_changelog_url(object, "cover_image_url", &mut issues);
 
     if !issues.is_empty() {
-        return Err(invalid_request_data_response(issues));
+        return Err(Box::new(invalid_request_data_response(issues)));
     }
 
     let mut payload = Map::new();
@@ -508,30 +520,32 @@ fn update_changelog_payload_from_body(body_text: Option<&str>) -> Result<Value, 
     Ok(Value::Object(payload))
 }
 
-fn publish_changelog_input_from_body(body_text: Option<&str>) -> Result<bool, BackendResponse> {
+fn publish_changelog_input_from_body(
+    body_text: Option<&str>,
+) -> Result<bool, Box<BackendResponse>> {
     let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
-        return Err(invalid_request_data_response(vec![issue(
+        return Err(Box::new(invalid_request_data_response(vec![issue(
             "body",
             "Expected a JSON object",
-        )]));
+        )])));
     };
     let Some(object) = value.as_object() else {
-        return Err(invalid_request_data_response(vec![issue(
+        return Err(Box::new(invalid_request_data_response(vec![issue(
             "body",
             "Expected a JSON object",
-        )]));
+        )])));
     };
 
     match object.get("is_published") {
         Some(Value::Bool(is_published)) => Ok(*is_published),
-        Some(_) => Err(invalid_request_data_response(vec![issue(
+        Some(_) => Err(Box::new(invalid_request_data_response(vec![issue(
             "is_published",
             "Expected boolean",
-        )])),
-        None => Err(invalid_request_data_response(vec![issue(
+        )]))),
+        None => Err(Box::new(invalid_request_data_response(vec![issue(
             "is_published",
             "Expected boolean",
-        )])),
+        )]))),
     }
 }
 
@@ -791,28 +805,32 @@ fn civil_from_unix_epoch_days(days: i64) -> (i64, i64, i64) {
     (year, month, day)
 }
 
+struct ChangelogAuthenticatedRequest<'a> {
+    method: OutboundMethod,
+    url: &'a str,
+    accept: &'a str,
+    access_token: &'a str,
+    prefer: Option<&'a str>,
+    body: Option<&'a str>,
+}
+
 async fn send_changelog_authenticated_request(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
-    method: OutboundMethod,
-    url: &str,
-    accept: &str,
-    access_token: &str,
-    prefer: Option<&str>,
-    body: Option<&str>,
+    params: ChangelogAuthenticatedRequest<'_>,
 ) -> Result<OutboundResponse, ()> {
     let service_role_key = contact_data.service_role_key().ok_or(())?;
-    let authorization = format!("Bearer {access_token}");
-    let mut request = OutboundRequest::new(method, url)
-        .with_header("Accept", accept)
+    let authorization = format!("Bearer {}", params.access_token);
+    let mut request = OutboundRequest::new(params.method, params.url)
+        .with_header("Accept", params.accept)
         .with_header("Authorization", &authorization)
         .with_header("apikey", service_role_key);
 
-    if let Some(prefer) = prefer {
+    if let Some(prefer) = params.prefer {
         request = request.with_header("Prefer", prefer);
     }
 
-    if let Some(body) = body {
+    if let Some(body) = params.body {
         request = request
             .with_header("Content-Type", APPLICATION_JSON)
             .with_body(body);

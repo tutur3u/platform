@@ -174,7 +174,7 @@ async fn create_holiday_response(
 
     let input = match create_holiday_input_from_body(request.body_text) {
         Ok(input) => input,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
 
     if holiday_exists_for_date(contact_data, &access_token, &input.date, outbound).await {
@@ -198,12 +198,14 @@ async fn create_holiday_response(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Post,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        &access_token,
-        Some("return=representation"),
-        Some(&body),
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Post,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token: &access_token,
+            prefer: Some("return=representation"),
+            body: Some(&body),
+        },
     )
     .await
     else {
@@ -232,7 +234,7 @@ async fn bulk_import_holidays_response(
 
     let input = match bulk_holidays_input_from_body(request.body_text) {
         Ok(input) => input,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
     let years_affected = unique_holiday_years(&input.holidays);
 
@@ -246,12 +248,14 @@ async fn bulk_import_holidays_response(
         let Ok(response) = send_holidays_authenticated_request(
             contact_data,
             outbound,
-            OutboundMethod::Delete,
-            &url,
-            APPLICATION_JSON,
-            &access_token,
-            None,
-            None,
+            HolidaysAuthenticatedRequest {
+                method: OutboundMethod::Delete,
+                url: &url,
+                accept: APPLICATION_JSON,
+                access_token: &access_token,
+                prefer: None,
+                body: None,
+            },
         )
         .await
         else {
@@ -291,12 +295,14 @@ async fn bulk_import_holidays_response(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Post,
-        &url,
-        APPLICATION_JSON,
-        &access_token,
-        Some(prefer),
-        Some(&body),
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Post,
+            url: &url,
+            accept: APPLICATION_JSON,
+            access_token: &access_token,
+            prefer: Some(prefer),
+            body: Some(&body),
+        },
     )
     .await
     else {
@@ -336,7 +342,7 @@ async fn update_holiday_response(
 
     let input = match update_holiday_input_from_body(request.body_text) {
         Ok(input) => input,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
 
     if !input.has_updates() {
@@ -357,17 +363,26 @@ async fn update_holiday_response(
         ));
     }
 
-    if let Some(date) = &input.date {
-        if holiday_conflict_exists_for_date(contact_data, &access_token, date, holiday_id, outbound)
+    let has_conflict = match &input.date {
+        Some(date) => {
+            holiday_conflict_exists_for_date(
+                contact_data,
+                &access_token,
+                date,
+                holiday_id,
+                outbound,
+            )
             .await
-        {
-            return no_store_response(json_response(
-                409,
-                json!({
-                    "message": HOLIDAY_DUPLICATE_MESSAGE,
-                }),
-            ));
         }
+        None => false,
+    };
+    if has_conflict {
+        return no_store_response(json_response(
+            409,
+            json!({
+                "message": HOLIDAY_DUPLICATE_MESSAGE,
+            }),
+        ));
     }
 
     let Some(url) = contact_data.rest_url(
@@ -385,12 +400,14 @@ async fn update_holiday_response(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Patch,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        &access_token,
-        Some("return=representation"),
-        Some(&body),
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Patch,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token: &access_token,
+            prefer: Some("return=representation"),
+            body: Some(&body),
+        },
     )
     .await
     else {
@@ -425,12 +442,14 @@ async fn delete_holiday_response(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Delete,
-        &url,
-        APPLICATION_JSON,
-        &access_token,
-        None,
-        None,
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Delete,
+            url: &url,
+            accept: APPLICATION_JSON,
+            access_token: &access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await
     else {
@@ -454,17 +473,10 @@ async fn request_holidays_admin_access(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<String> {
-    let Some(access_token) = supabase_auth::request_access_token(request) else {
-        return None;
-    };
-    let Some(user) =
-        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
-    else {
-        return None;
-    };
-    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
-        return None;
-    };
+    let access_token = supabase_auth::request_access_token(request)?;
+    let user =
+        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await?;
+    let user_id = user.id.filter(|id| !id.trim().is_empty())?;
 
     has_root_workspace_membership(contact_data, &access_token, &user_id, outbound)
         .await
@@ -491,12 +503,14 @@ async fn has_root_workspace_membership(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Get,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        access_token,
-        None,
-        None,
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Get,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await
     else {
@@ -533,12 +547,14 @@ async fn holiday_exists_for_id(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Get,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        access_token,
-        None,
-        None,
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Get,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await
     else {
@@ -575,12 +591,14 @@ async fn holiday_exists_for_date(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Get,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        access_token,
-        None,
-        None,
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Get,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await
     else {
@@ -619,12 +637,14 @@ async fn holiday_conflict_exists_for_date(
     let Ok(response) = send_holidays_authenticated_request(
         contact_data,
         outbound,
-        OutboundMethod::Get,
-        &url,
-        POSTGREST_SINGLE_JSON,
-        access_token,
-        None,
-        None,
+        HolidaysAuthenticatedRequest {
+            method: OutboundMethod::Get,
+            url: &url,
+            accept: POSTGREST_SINGLE_JSON,
+            access_token,
+            prefer: None,
+            body: None,
+        },
     )
     .await
     else {
@@ -642,28 +662,32 @@ async fn holiday_conflict_exists_for_date(
         .is_some()
 }
 
+struct HolidaysAuthenticatedRequest<'a> {
+    method: OutboundMethod,
+    url: &'a str,
+    accept: &'a str,
+    access_token: &'a str,
+    prefer: Option<&'a str>,
+    body: Option<&'a str>,
+}
+
 async fn send_holidays_authenticated_request(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
-    method: OutboundMethod,
-    url: &str,
-    accept: &str,
-    access_token: &str,
-    prefer: Option<&str>,
-    body: Option<&str>,
+    params: HolidaysAuthenticatedRequest<'_>,
 ) -> Result<OutboundResponse, ()> {
     let service_role_key = contact_data.service_role_key().ok_or(())?;
-    let authorization = format!("Bearer {access_token}");
-    let mut request = OutboundRequest::new(method, url)
-        .with_header("Accept", accept)
+    let authorization = format!("Bearer {}", params.access_token);
+    let mut request = OutboundRequest::new(params.method, params.url)
+        .with_header("Accept", params.accept)
         .with_header("Authorization", &authorization)
         .with_header("apikey", service_role_key);
 
-    if let Some(prefer) = prefer {
+    if let Some(prefer) = params.prefer {
         request = request.with_header("Prefer", prefer);
     }
 
-    if let Some(body) = body {
+    if let Some(body) = params.body {
         request = request
             .with_header("Content-Type", APPLICATION_JSON)
             .with_body(body);
@@ -674,16 +698,16 @@ async fn send_holidays_authenticated_request(
 
 fn create_holiday_input_from_body(
     body_text: Option<&str>,
-) -> Result<CreateHolidayInput, BackendResponse> {
+) -> Result<CreateHolidayInput, Box<BackendResponse>> {
     let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
-        return Err(invalid_input_response(json!({
+        return Err(Box::new(invalid_input_response(json!({
             "body": ["Expected a JSON object"],
-        })));
+        }))));
     };
     let Some(object) = value.as_object() else {
-        return Err(invalid_input_response(json!({
+        return Err(Box::new(invalid_input_response(json!({
             "body": ["Expected a JSON object"],
-        })));
+        }))));
     };
     let mut field_errors = Map::new();
 
@@ -703,7 +727,7 @@ fn create_holiday_input_from_body(
     };
     let name = match object.get("name").and_then(Value::as_str) {
         Some(name) if !name.is_empty() && name.chars().count() <= 100 => Some(name.to_owned()),
-        Some(name) if name.is_empty() => {
+        Some("") => {
             field_errors.insert("name".to_owned(), json!(["Expected at least 1 character"]));
             None
         }
@@ -722,22 +746,24 @@ fn create_holiday_input_from_body(
 
     match (date, name, field_errors.is_empty()) {
         (Some(date), Some(name), true) => Ok(CreateHolidayInput { date, name }),
-        _ => Err(invalid_input_response(Value::Object(field_errors))),
+        _ => Err(Box::new(invalid_input_response(Value::Object(
+            field_errors,
+        )))),
     }
 }
 
 fn bulk_holidays_input_from_body(
     body_text: Option<&str>,
-) -> Result<BulkHolidaysInput, BackendResponse> {
+) -> Result<BulkHolidaysInput, Box<BackendResponse>> {
     let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
-        return Err(invalid_input_response(json!({
+        return Err(Box::new(invalid_input_response(json!({
             "body": ["Expected a JSON object"],
-        })));
+        }))));
     };
     let Some(object) = value.as_object() else {
-        return Err(invalid_input_response(json!({
+        return Err(Box::new(invalid_input_response(json!({
             "body": ["Expected a JSON object"],
-        })));
+        }))));
     };
     let mut field_errors = Map::new();
 
@@ -785,7 +811,9 @@ fn bulk_holidays_input_from_body(
             replace_existing,
         })
     } else {
-        Err(invalid_input_response(Value::Object(field_errors)))
+        Err(Box::new(invalid_input_response(Value::Object(
+            field_errors,
+        ))))
     }
 }
 
@@ -816,7 +844,7 @@ fn bulk_holiday_input_from_value(
     };
     let name = match object.get("name").and_then(Value::as_str) {
         Some(name) if !name.is_empty() && name.chars().count() <= 100 => Some(name.to_owned()),
-        Some(name) if name.is_empty() => {
+        Some("") => {
             push_indexed_holidays_error(
                 field_errors,
                 index,
@@ -846,16 +874,16 @@ fn bulk_holiday_input_from_value(
 
 fn update_holiday_input_from_body(
     body_text: Option<&str>,
-) -> Result<UpdateHolidayInput, BackendResponse> {
+) -> Result<UpdateHolidayInput, Box<BackendResponse>> {
     let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
-        return Err(invalid_input_response(json!({
+        return Err(Box::new(invalid_input_response(json!({
             "body": ["Expected a JSON object"],
-        })));
+        }))));
     };
     let Some(object) = value.as_object() else {
-        return Err(invalid_input_response(json!({
+        return Err(Box::new(invalid_input_response(json!({
             "body": ["Expected a JSON object"],
-        })));
+        }))));
     };
     let mut field_errors = Map::new();
 
@@ -899,7 +927,9 @@ fn update_holiday_input_from_body(
     if field_errors.is_empty() {
         Ok(UpdateHolidayInput { date, name })
     } else {
-        Err(invalid_input_response(Value::Object(field_errors)))
+        Err(Box::new(invalid_input_response(Value::Object(
+            field_errors,
+        ))))
     }
 }
 

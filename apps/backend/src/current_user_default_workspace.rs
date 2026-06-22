@@ -195,12 +195,14 @@ async fn default_workspace_for_user(
 ) -> Option<WorkspaceResponse> {
     let default_workspace_id = fetch_default_workspace_id(contact_data, user, outbound).await?;
 
-    if let Some(workspace_id) = default_workspace_id.filter(|id| !id.trim().is_empty()) {
-        if let Some(workspace) =
+    let default_workspace = match default_workspace_id.filter(|id| !id.trim().is_empty()) {
+        Some(workspace_id) => {
             fetch_workspace_by_id(contact_data, user, outbound, &workspace_id).await
-        {
-            return Some(workspace);
         }
+        None => None,
+    };
+    if let Some(workspace) = default_workspace {
+        return Some(workspace);
     }
 
     fetch_personal_workspace(contact_data, user, outbound).await

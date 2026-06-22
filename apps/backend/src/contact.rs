@@ -390,7 +390,7 @@ async fn current_user_full_name_patch_response(
 
     let full_name = match full_name_from_body(request.body_text) {
         Ok(full_name) => full_name,
-        Err(response) => return no_store_response(response),
+        Err(response) => return no_store_response(*response),
     };
 
     if !config.contact_data.configured() {
@@ -838,7 +838,7 @@ async fn support_inquiry_data_patch_response(
 ) -> BackendResponse {
     let updates = match support_inquiry_patch_updates(request.body_text) {
         Ok(updates) => updates,
-        Err(response) => return no_store_response(response),
+        Err(response) => return no_store_response(*response),
     };
 
     if !config.contact_data.configured() {
@@ -1104,45 +1104,45 @@ fn profile_patch_updates(
     Ok(serde_json::Value::Object(updates))
 }
 
-fn full_name_from_body(body_text: Option<&str>) -> Result<String, BackendResponse> {
+fn full_name_from_body(body_text: Option<&str>) -> Result<String, Box<BackendResponse>> {
     let Some(body) = parse_json_body(body_text) else {
-        return Err(invalid_full_name_response(vec![validation_issue(
-            &[],
-            "body must be valid JSON",
-        )]));
+        return Err(Box::new(invalid_full_name_response(vec![
+            validation_issue(&[], "body must be valid JSON"),
+        ])));
     };
     let Some(body) = body.as_object() else {
-        return Err(invalid_full_name_response(vec![validation_issue(
-            &[],
-            "body must be a JSON object",
-        )]));
+        return Err(Box::new(invalid_full_name_response(vec![
+            validation_issue(&[], "body must be a JSON object"),
+        ])));
     };
     let Some(value) = body.get("full_name") else {
-        return Err(invalid_full_name_response(vec![validation_issue(
-            &["full_name"],
-            "full_name is required",
-        )]));
+        return Err(Box::new(invalid_full_name_response(vec![
+            validation_issue(&["full_name"], "full_name is required"),
+        ])));
     };
     let Some(full_name) = value.as_str() else {
-        return Err(invalid_full_name_response(vec![validation_issue(
-            &["full_name"],
-            "full_name must be a string",
-        )]));
+        return Err(Box::new(invalid_full_name_response(vec![
+            validation_issue(&["full_name"], "full_name must be a string"),
+        ])));
     };
 
     let trimmed = full_name.trim();
     let length = trimmed.encode_utf16().count();
     if length < 1 {
-        return Err(invalid_full_name_response(vec![validation_issue(
-            &["full_name"],
-            "full_name must contain at least 1 characters",
-        )]));
+        return Err(Box::new(invalid_full_name_response(vec![
+            validation_issue(
+                &["full_name"],
+                "full_name must contain at least 1 characters",
+            ),
+        ])));
     }
     if length > MAX_FULL_NAME_LENGTH {
-        return Err(invalid_full_name_response(vec![validation_issue(
-            &["full_name"],
-            format!("full_name must contain at most {MAX_FULL_NAME_LENGTH} characters"),
-        )]));
+        return Err(Box::new(invalid_full_name_response(vec![
+            validation_issue(
+                &["full_name"],
+                format!("full_name must contain at most {MAX_FULL_NAME_LENGTH} characters"),
+            ),
+        ])));
     }
 
     Ok(trimmed.to_owned())
@@ -1187,15 +1187,17 @@ fn invalid_contact_request_body_response(errors: Vec<String>) -> BackendResponse
 
 fn support_inquiry_patch_updates(
     body_text: Option<&str>,
-) -> Result<serde_json::Value, BackendResponse> {
+) -> Result<serde_json::Value, Box<BackendResponse>> {
     let Some(body) = parse_json_body(body_text) else {
-        return Err(support_inquiry_internal_server_error_response());
+        return Err(Box::new(support_inquiry_internal_server_error_response()));
     };
     let Some(body) = body.as_object() else {
-        return Err(invalid_support_inquiry_update_response(vec![json!({
-            "path": [],
-            "message": "Expected object",
-        })]));
+        return Err(Box::new(invalid_support_inquiry_update_response(vec![
+            json!({
+                "path": [],
+                "message": "Expected object",
+            }),
+        ])));
     };
     let mut updates = serde_json::Map::new();
     let mut errors = Vec::new();
@@ -1214,7 +1216,7 @@ fn support_inquiry_patch_updates(
     }
 
     if !errors.is_empty() {
-        return Err(invalid_support_inquiry_update_response(errors));
+        return Err(Box::new(invalid_support_inquiry_update_response(errors)));
     }
 
     Ok(serde_json::Value::Object(updates))
