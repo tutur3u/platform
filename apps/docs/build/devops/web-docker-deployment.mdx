@@ -2113,7 +2113,7 @@ Operational notes:
 `docker-setup-check.yaml` now validates all of the following:
 
 - `node scripts/check-docker-web.js`
-- `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js`
+- `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/run-tanstack-e2e-docker.test.js`
 - `docker compose -f docker-compose.web.yml config`
 - `docker compose -f docker-compose.web.yml --profile redis config`
 - `docker compose -f docker-compose.web.yml --profile cloudflared config`

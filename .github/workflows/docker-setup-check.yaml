@@ -23,6 +23,8 @@ on:
       - "scripts/docker-web.js"
       - "scripts/docker-web/**/*.js"
       - "scripts/docker-web.test.js"
+      - "scripts/run-tanstack-e2e-docker.js"
+      - "scripts/run-tanstack-e2e-docker.test.js"
       - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   push:
@@ -48,6 +50,8 @@ on:
       - "scripts/docker-web.js"
       - "scripts/docker-web/**/*.js"
       - "scripts/docker-web.test.js"
+      - "scripts/run-tanstack-e2e-docker.js"
+      - "scripts/run-tanstack-e2e-docker.test.js"
       - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   workflow_dispatch:
@@ -96,7 +100,7 @@ jobs:
         run: node scripts/check-docker-web.js
 
       - name: Run Docker helper tests
-        run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js
+        run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/run-tanstack-e2e-docker.test.js
 
       - name: Prepare production Docker runtime files
         run: |

@@ -314,6 +314,10 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'docker-setup-check.yaml'),
+    'utf8'
+  );
   const verifyJob = readWorkflowJobBlock('docker-setup-check.yaml', 'verify');
   const prePullIndex = verifyJob.indexOf('Pre-pull Docker BuildKit image');
   const setupBuildxIndex = verifyJob.indexOf('Setup Docker Buildx');
@@ -326,6 +330,12 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
   );
   assert.match(verifyJob, /docker pull moby\/buildkit:buildx-stable-1/u);
   assert.match(verifyJob, /driver-opts: image=moby\/buildkit:buildx-stable-1/u);
+  assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.js/u);
+  assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.test\.js/u);
+  assert.match(
+    verifyJob,
+    /node --test scripts\/check-docker-web\.test\.js scripts\/docker-web\.test\.js scripts\/run-tanstack-e2e-docker\.test\.js/u
+  );
 });
 
 test('Supabase staging migration includes every local migration when pushing', () => {
