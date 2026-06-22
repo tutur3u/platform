@@ -209,6 +209,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `page`, and `pageSize` query behavior plus the `{ data, count, page,
   pageSize, totalPages }` response envelope. POST/DELETE remain legacy-owned
   until Redis cache mutation parity moves to Rust.
+- `GET /api/v1/infrastructure/suspensions`: legacy-compatible active user
+  suspension list. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, requires root workspace
+  `manage_workspace_roles` through `has_workspace_permission` with the caller
+  token, reads active `user_suspensions` rows through the server-owned Supabase
+  REST adapter ordered by `suspended_at`, and returns the legacy raw row array.
+  POST and detail DELETE remain legacy-owned until suspension mutations move to
+  Rust.
 - `GET /api/v1/infrastructure/email-blacklist` and
   `GET /api/v1/infrastructure/email-blacklist/:entryId`: legacy-compatible
   root-workspace email blacklist reads. Rust revalidates the browser Supabase

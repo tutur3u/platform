@@ -3247,6 +3247,82 @@ paths:
                     type: string
                     examples:
                       - Error fetching blocked IPs
+  /api/v1/infrastructure/suspensions:
+    get:
+      summary: Legacy-compatible active suspension list
+      description: >
+        Method-level migrated replacement for the GET export in
+        apps/web/src/app/api/v1/infrastructure/suspensions/route.ts. The Rust
+        backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires the root workspace
+        manage_workspace_roles permission through has_workspace_permission with
+        the caller token, reads active user_suspensions rows through the
+        service-role Supabase REST adapter, and returns the legacy raw row
+        array. POST remains legacy-owned until suspension mutations move to
+        Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Raw active suspension rows ordered by suspended_at descending.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "403":
+          description: Authenticated caller lacks root workspace manage_workspace_roles.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Forbidden
+        "500":
+          description: Suspension rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Failed to fetch suspensions
   /api/v1/infrastructure/email-blacklist:
     get:
       summary: Legacy-compatible email blacklist list

@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 943,
-        "migrated": 104,
-        "percentComplete": 16.55,
+        "migrated": 105,
+        "percentComplete": 16.62,
         "remaining": 943,
-        "terminal": 187,
-        "total": 1130,
+        "terminal": 188,
+        "total": 1131,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 961,
-        "migrated": 109,
-        "percentComplete": 16.65,
+        "migrated": 110,
+        "percentComplete": 16.72,
         "remaining": 961,
-        "terminal": 192,
-        "total": 1153,
+        "terminal": 193,
+        "total": 1154,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1137,
-      "migrated": 311,
-      "percentComplete": 25.73,
+      "migrated": 312,
+      "percentComplete": 25.78,
       "remaining": 1137,
-      "terminal": 394,
-      "total": 1531,
+      "terminal": 395,
+      "total": 1532,
       "unknownStatus": 0
     }
   },
@@ -3943,13 +3943,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/suspensions",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/suspensions/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/suspensions",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/suspensions/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/suspensions/:id:apps/web/src/app/api/v1/infrastructure/suspensions/[id]/route.ts",
@@ -14244,11 +14257,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1130,
+    "apiRoutes": 1131,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1153,
+    "routeHandlers": 1154,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14258,6 +14271,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1531
+    "total": 1532
   }
 }

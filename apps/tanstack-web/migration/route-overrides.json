@@ -554,6 +554,15 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/suspensions by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace manage_workspace_roles through has_workspace_permission with the caller token, reading active user_suspensions rows through the service-role Supabase REST adapter, and preserving the legacy raw array success body plus Unauthorized, Forbidden, and Failed to fetch suspensions error bodies. POST remains legacy-owned until suspension mutations move to Rust."
+        }
+      }
+    },
     "api:/api/v1/infrastructure/classes:apps/web/src/app/api/v1/infrastructure/classes/route.ts": {
       "methods": {
         "GET": {
