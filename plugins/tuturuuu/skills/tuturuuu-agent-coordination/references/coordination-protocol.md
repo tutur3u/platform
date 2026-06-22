@@ -46,6 +46,13 @@ shared-checkout notes + window when agents must cooperate in one directory.
 - Long-running or conflict-prone parallel work belongs on its own branch/worktree
   and integrates back through a merge/rebase/PR, not by piling uncommitted edits
   into a hot shared checkout.
+- If unrelated dirty files already touch shared generated inputs or outputs
+  such as `apps/tanstack-web/src/routeTree.gen.ts`, migration manifests,
+  `packages/internal-api/src/index.ts`, generated DB types, message bundles, or
+  `bun.lock`, new implementation work should default to an isolated worktree or
+  read-only audit. Stay in the shared checkout only when the write set is clearly
+  disjoint and no generator, root formatter, or repo-wide check will sweep those
+  files into the current commit.
 - `bun git-sync` fast-forwards `main` and release branches through a temporary
   detached worktree and leaves the current checkout untouched. It is the safe way
   to advance shared branches; never hand-reset a shared branch other agents are
@@ -94,6 +101,10 @@ now isolated and safe, but manual destructive Git in the shared checkout is not.
 
    Do not scan the archive first. Archived notes are for targeted context, not
    live ownership.
+   `Status:` values must be exactly `working`, `blocked`, `handoff`, or `done`.
+   Put details such as `committed`, `done with concerns`, or follow-up context
+   in `Needs:`, `Verification:`, or `Risks:`. Treat missing or noncanonical
+   statuses as active until you read the note and resolve the ambiguity.
 3. If the archive exists, search archived context only when the current task
    references previous work, an active note points there, or a shared
    workflow/deployment decision needs history:
@@ -132,6 +143,7 @@ Every delegated lane should have a written contract before the worker starts:
 - `Owner`: worker/session id or `read-only explorer` when no files may change.
 - `Mode`: read-only audit, implementation, generator/integration, or
   verification.
+- `Lifecycle`: `pending`, `active`, `handoff`, `integrated`, or `closed`.
 - `Owned paths`: exact files/directories the worker may edit.
 - `Excluded paths`: generated artifacts, active-note paths, or dirty files the
   worker must not touch.
@@ -143,6 +155,11 @@ Every delegated lane should have a written contract before the worker starts:
   generated drift, parity gaps, and whether anything was staged.
 - `Commit authority`: default `none`; only one lane may own staging/commit
   authority for a checkpoint.
+
+Do not assign two implementation workers to overlapping write paths while both
+lanes are active. If a worker is continuing a previous lane, record that explicit
+takeover or continuation in the parent note and mark the previous lane
+`handoff`, `integrated`, or `closed`.
 
 Before spawning workers, the coordinator should create or update a parent note
 that lists each lane:
@@ -187,7 +204,8 @@ For broad migrations, checkpoint after each integrated slice before spawning or
 merging more lanes. A checkpoint is a short state update, not a planning essay:
 
 - refresh `git status --short`
-- close or mark completed subagents so stale lanes do not consume concurrency
+- close completed subagents in the harness so stale lanes do not consume
+  concurrency, and mark their parent-note lane `integrated` or `closed`
 - update the parent note with commit hash or handoff status
 - list validation that passed and any repo-wide blockers outside the staged set
 - list remaining unrelated dirty paths the coordinator will not touch
@@ -318,6 +336,18 @@ in `Verification:`. Never stage or commit a generated artifact that references
 untracked source files from another lane; it creates a committed tree that
 fails in a clean checkout.
 
+Record a clean-tree generation packet in `Verification:` when you use this
+pattern:
+
+- base commit used for the clean tree
+- source globs the generator scanned
+- lane-owned inputs copied into the clean tree, if any
+- generator command and output artifact paths
+- copied-back artifacts
+- cleanup command or temporary path removal
+- proof that the generated output does not reference untracked or other-lane
+  files
+
 ## Archived Coordination Notes
 
 Keep the top-level `tmp/agent-coordination/` directory small enough for fast
@@ -403,6 +433,17 @@ When unrelated worker files cause a hook to fail, release the commit window and
 record the blocker. Do not patch, format, or stage those unrelated files just to
 make your commit pass. Either wait for that lane to hand off, ask the coordinator
 to integrate it, or retry when the unrelated dirty files are stable.
+
+For commits made in a dirty shared checkout, record a closeout packet in the
+parent note before moving on:
+
+- staged path list
+- validation commands and results for the staged set
+- hook result, or proof-gated `--no-verify` rationale when unrelated files block
+  the hook
+- commit hash
+- commit-window release confirmation
+- remaining dirty-path summary and owner assumptions
 
 Useful operations:
 

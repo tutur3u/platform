@@ -164,7 +164,9 @@ Verification, Risks, and Commit window when a commit may be needed. Do not edit
 another agent's note unless explicitly asked. Archive only your own completed
 `done` notes under
 `tmp/agent-coordination/archive/<YYYY>/` when no handoff must remain visible.
-Never stage coordination notes.
+Use exact coordination statuses `working`, `blocked`, `handoff`, or `done`;
+archive top-level `done` notes, and treat missing or noncanonical statuses as
+active until resolved. Never stage coordination notes.
 
 `bun git-commit-window` stores an advisory lock at
 `tmp/agent-coordination/git-commit-window.lock.json`. It serializes Git index

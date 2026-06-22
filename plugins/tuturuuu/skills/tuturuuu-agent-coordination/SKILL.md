@@ -38,17 +38,28 @@ uncommitted work; read it when the task spans more than one checkout.
 - If `tmp/agent-coordination/` exists, inspect top-level active notes before
   editing. Treat `working`, `blocked`, and `handoff` notes as active
   coordination signals.
+- Treat `Status:` as canonical metadata: it must be exactly `working`,
+  `blocked`, `handoff`, or `done`. Details belong in `Needs:`, `Verification:`,
+  or `Risks:`. Missing or noncanonical statuses are active until resolved.
 - Treat `tmp/agent-coordination/archive/` as historical context. Search it only
   with targeted keywords when a task mentions prior work, an active note points
   to archived context, or you need deployment/workflow history. Archived notes
   do not block a write set by themselves.
 - Choose the smallest practical owned path set. Prefer files and focused
   directories over broad app or repo claims.
+- If unrelated dirty files touch shared generated inputs or outputs such as
+  route trees, migration manifests, `packages/internal-api/src/index.ts`,
+  generated DB types, message bundles, or `bun.lock`, default new implementation
+  work to an isolated worktree or read-only audit unless the write set is
+  clearly disjoint and no generator/root formatter will scan those files.
 - When using subagents, split work into disjoint lanes before spawning them.
   Give each worker exact owned paths, explicit excluded paths, validation
   commands, and a no-stage/no-commit boundary unless the worker explicitly owns
   a commit. Keep a parent coordination note that records lane names, owned
   paths, coordinator-owned generated files, and integration risks.
+- Track each lane lifecycle as `pending`, `active`, `handoff`, `integrated`, or
+  `closed`. Do not overlap implementation worker write paths unless the parent
+  note records an explicit takeover or continuation.
 - For Codex subagents, choose either a typed worker/explorer role with explicit
   lane context in the prompt or a full-history fork without a role override; the
   harness rejects full-history forks that also set an explicit agent role.
@@ -56,9 +67,9 @@ uncommitted work; read it when the task spans more than one checkout.
   generated outputs, validation, handoff shape, and commit authority. Read-only
   lanes should return evidence and risks without taking path ownership.
 - For broad migrations, checkpoint after each integrated slice: refresh status,
-  close completed subagents, update the parent note with commit or handoff
-  state, list validation and unrelated blockers, and choose the next
-  non-overlapping lane from current worktree state.
+  close completed subagents in the harness, mark their lanes integrated or
+  closed in the parent note, list validation and unrelated blockers, and choose
+  the next non-overlapping lane from current worktree state.
 - Create a note before editing when the worktree is dirty, active notes touch a
   nearby area, the task is long-running, or the requested change modifies
   coordination rules, plugin skills, docs, scripts, migrations, or broad app
@@ -76,8 +87,9 @@ uncommitted work; read it when the task spans more than one checkout.
 - Before regenerating shared artifacts in a dirty checkout, confirm that every
   dirty input the generator can see belongs to your lane. If not, regenerate
   from a clean worktree or another isolated input set, then copy back only the
-  intended generated artifact. Record the isolation method in the coordination
-  note.
+  intended generated artifact. Record the base commit, scanned globs, copied
+  lane inputs, generator command, copied-back artifacts, cleanup, and proof that
+  no untracked or other-lane files leaked into the output.
 - Protect uncommitted work in a hot shared checkout. Large unstaged multi-file
   sets can be discarded by a concurrent rebase, `reset --hard`, `checkout`, or
   `stash` from any agent or human (`bun git-sync` is isolated and safe, but
