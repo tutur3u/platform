@@ -3790,6 +3790,56 @@ paths:
                 type: string
                 examples:
                   - POST
+  /api/v1/users/me/full-name:
+    patch:
+      summary: Update current user full name
+      description: Migrated replacement for apps/web/src/app/api/v1/users/me/full-name/route.ts PATCH. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, requires a JSON full_name string whose trimmed length is 1 to 100 UTF-16 code units, and upserts user_private_details with user_id fixed to the authenticated user through Supabase REST using the caller token.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrentUserFullNamePatchRequest"
+      responses:
+        "200":
+          description: Full name updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserFullNamePatchMessage"
+        "400":
+          description: The full_name payload failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserFullNameValidationError"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserFullNameUnauthorized"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Supabase full-name update failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserFullNamePatchMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PATCH
   /api/v1/users/me/profile:
     get:
       summary: Current user profile
@@ -4747,6 +4797,62 @@ components:
           examples:
             - Not authenticated
             - Error updating profile
+    CurrentUserFullNamePatchRequest:
+      type: object
+      required:
+        - full_name
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: The Rust route trims this value before validating and persisting it.
+          examples:
+            - Ada Lovelace
+    CurrentUserFullNamePatchMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Full name updated successfully
+            - Error updating full name
+    CurrentUserFullNameUnauthorized:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+    CurrentUserFullNameValidationError:
+      type: object
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+          examples:
+            - Invalid full name
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - message
+              - path
+            properties:
+              message:
+                type: string
+              path:
+                type: array
+                items:
+                  type: string
+            additionalProperties: true
     UserProfilePatchValidationError:
       type: object
       required:

@@ -23,6 +23,7 @@ pub(crate) use session::{
 };
 
 pub(crate) const CURRENT_USER_PROFILE_PATH: &str = "/api/v1/users/me/profile";
+pub(crate) const CURRENT_USER_FULL_NAME_PATH: &str = "/api/v1/users/me/full-name";
 pub(crate) const SUPPORT_INQUIRIES_PATH: &str = "/api/v1/inquiries";
 const SUPPORT_INQUIRY_PATH_PREFIX: &str = "/api/v1/inquiries/";
 pub(crate) const SUPABASE_URL_KEYS: [&str; 4] = [
@@ -73,6 +74,7 @@ const SUPPORT_INQUIRY_PRODUCTS: [&str; 12] = [
     "other",
 ];
 const MAX_DISPLAY_NAME_LENGTH: usize = 100;
+const MAX_FULL_NAME_LENGTH: usize = 100;
 const MAX_BIO_LENGTH: usize = 1000;
 const MAX_EMAIL_LENGTH: usize = 320;
 const MAX_SUPPORT_INQUIRY_LENGTH: usize = 5000;
@@ -323,6 +325,12 @@ struct SupportInquiryInsert<'a> {
     inquiry_type: &'a str,
 }
 
+#[derive(Serialize)]
+struct CurrentUserFullNameUpsert<'a> {
+    user_id: &'a str,
+    full_name: &'a str,
+}
+
 enum SupportInquiryRoute<'a> {
     Detail { id: &'a str },
     MediaUrls,
@@ -341,6 +349,10 @@ pub(crate) async fn handle_contact_route(
             Some(current_user_profile_patch_data_response(config, request, outbound).await)
         }
         (method, CURRENT_USER_PROFILE_PATH) => Some(method_not_allowed(method, "GET, PATCH")),
+        ("PATCH", CURRENT_USER_FULL_NAME_PATH) => {
+            Some(current_user_full_name_patch_response(config, request, outbound).await)
+        }
+        (method, CURRENT_USER_FULL_NAME_PATH) => Some(method_not_allowed(method, "PATCH")),
         ("POST", SUPPORT_INQUIRIES_PATH) => {
             Some(support_inquiry_data_post_response(config, request, outbound).await)
         }
@@ -355,6 +367,75 @@ pub(crate) async fn handle_contact_route(
             SupportInquiryRoute::Detail { .. } => Some(method_not_allowed(method, "PATCH")),
             SupportInquiryRoute::MediaUrls => None,
         },
+    }
+}
+
+async fn current_user_full_name_patch_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let Some(access_token) = supabase_auth::request_access_token(request) else {
+        return full_name_unauthorized_response();
+    };
+    let Some(user) =
+        supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)
+            .await
+    else {
+        return full_name_unauthorized_response();
+    };
+    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
+        return full_name_unauthorized_response();
+    };
+
+    let full_name = match full_name_from_body(request.body_text) {
+        Ok(full_name) => full_name,
+        Err(response) => return no_store_response(response),
+    };
+
+    if !config.contact_data.configured() {
+        return contact_data_layer_not_ready_response(request);
+    }
+
+    let Some(full_name_url) = config.contact_data.rest_url(
+        "user_private_details",
+        &[("on_conflict", "user_id".to_owned())],
+    ) else {
+        return contact_data_layer_not_ready_response(request);
+    };
+    let upsert = CurrentUserFullNameUpsert {
+        user_id: &user_id,
+        full_name: &full_name,
+    };
+    let body = match serde_json::to_string(&upsert) {
+        Ok(body) => body,
+        Err(_) => {
+            return no_store_response(json_response(
+                500,
+                json!({ "message": "Internal server error" }),
+            ));
+        }
+    };
+
+    match send_contact_authenticated_request(
+        &config.contact_data,
+        outbound,
+        OutboundMethod::Post,
+        &full_name_url,
+        &access_token,
+        Some(&body),
+        Some("resolution=merge-duplicates,return=minimal"),
+    )
+    .await
+    {
+        Ok(response) if is_success_status(response.status) => no_store_response(json_response(
+            200,
+            json!({ "message": "Full name updated successfully" }),
+        )),
+        Ok(_) | Err(_) => no_store_response(json_response(
+            500,
+            json!({ "message": "Error updating full name" }),
+        )),
     }
 }
 
@@ -819,7 +900,9 @@ async fn support_inquiry_data_patch_response(
 pub(crate) fn should_buffer_request_body(method: &str, path: &str) -> bool {
     matches!(
         (method, path),
-        ("PATCH", CURRENT_USER_PROFILE_PATH) | ("POST", SUPPORT_INQUIRIES_PATH)
+        ("PATCH", CURRENT_USER_PROFILE_PATH)
+            | ("PATCH", CURRENT_USER_FULL_NAME_PATH)
+            | ("POST", SUPPORT_INQUIRIES_PATH)
     ) || matches!(
         (method, support_inquiry_route(path)),
         ("PATCH", Some(SupportInquiryRoute::Detail { .. }))
@@ -850,6 +933,43 @@ async fn send_contact_data_request(
     };
 
     let authorization = format!("Bearer {service_role_key}");
+    let mut request = OutboundRequest::new(method, url)
+        .with_header("Accept", APPLICATION_JSON)
+        .with_header("Authorization", &authorization)
+        .with_header("apikey", service_role_key);
+
+    if body.is_some() {
+        request = request.with_header("Content-Type", APPLICATION_JSON);
+    }
+
+    if let Some(prefer) = prefer {
+        request = request.with_header("Prefer", prefer);
+    }
+
+    if let Some(body) = body {
+        request = request.with_body(body);
+    }
+
+    outbound
+        .send(request)
+        .await
+        .map_err(|_| contact_data_layer_request_failed_response())
+}
+
+async fn send_contact_authenticated_request(
+    contact_data: &ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    method: OutboundMethod,
+    url: &str,
+    access_token: &str,
+    body: Option<&str>,
+    prefer: Option<&'static str>,
+) -> Result<OutboundResponse, BackendResponse> {
+    let Some(service_role_key) = contact_data.service_role_key() else {
+        return Err(contact_data_layer_request_failed_response());
+    };
+
+    let authorization = format!("Bearer {access_token}");
     let mut request = OutboundRequest::new(method, url)
         .with_header("Accept", APPLICATION_JSON)
         .with_header("Authorization", &authorization)
@@ -984,6 +1104,67 @@ fn profile_patch_updates(
     Ok(serde_json::Value::Object(updates))
 }
 
+fn full_name_from_body(body_text: Option<&str>) -> Result<String, BackendResponse> {
+    let Some(body) = parse_json_body(body_text) else {
+        return Err(invalid_full_name_response(vec![validation_issue(
+            &[],
+            "body must be valid JSON",
+        )]));
+    };
+    let Some(body) = body.as_object() else {
+        return Err(invalid_full_name_response(vec![validation_issue(
+            &[],
+            "body must be a JSON object",
+        )]));
+    };
+    let Some(value) = body.get("full_name") else {
+        return Err(invalid_full_name_response(vec![validation_issue(
+            &["full_name"],
+            "full_name is required",
+        )]));
+    };
+    let Some(full_name) = value.as_str() else {
+        return Err(invalid_full_name_response(vec![validation_issue(
+            &["full_name"],
+            "full_name must be a string",
+        )]));
+    };
+
+    let trimmed = full_name.trim();
+    let length = trimmed.encode_utf16().count();
+    if length < 1 {
+        return Err(invalid_full_name_response(vec![validation_issue(
+            &["full_name"],
+            "full_name must contain at least 1 characters",
+        )]));
+    }
+    if length > MAX_FULL_NAME_LENGTH {
+        return Err(invalid_full_name_response(vec![validation_issue(
+            &["full_name"],
+            format!("full_name must contain at most {MAX_FULL_NAME_LENGTH} characters"),
+        )]));
+    }
+
+    Ok(trimmed.to_owned())
+}
+
+fn validation_issue(path: &[&str], message: impl Into<String>) -> serde_json::Value {
+    json!({
+        "message": message.into(),
+        "path": path,
+    })
+}
+
+fn invalid_full_name_response(errors: Vec<serde_json::Value>) -> BackendResponse {
+    json_response(
+        400,
+        json!({
+            "errors": errors,
+            "message": "Invalid full name",
+        }),
+    )
+}
+
 fn invalid_profile_request_body_response(errors: Vec<String>) -> BackendResponse {
     json_response(
         400,
@@ -1047,6 +1228,15 @@ fn invalid_support_inquiry_update_response(details: Vec<serde_json::Value>) -> B
             "error": "Invalid request body",
         }),
     )
+}
+
+fn full_name_unauthorized_response() -> BackendResponse {
+    no_store_response(json_response(
+        401,
+        json!({
+            "error": "Unauthorized",
+        }),
+    ))
 }
 
 fn support_inquiry_admin_unauthorized_response() -> BackendResponse {
@@ -1209,4 +1399,43 @@ fn civil_from_days(days_since_unix_epoch: i64) -> (i32, u32, u32) {
     let year = year + if month <= 2 { 1 } else { 0 };
 
     (year as i32, month as u32, day as u32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn full_name_validation_trims_required_string() {
+        assert_eq!(
+            full_name_from_body(Some(r#"{"full_name":" Ada Lovelace ","ignored":true}"#)).unwrap(),
+            "Ada Lovelace"
+        );
+
+        let response = full_name_from_body(Some(r#"{"full_name":"   "}"#)).unwrap_err();
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid full name");
+        assert_eq!(response.body["errors"][0]["path"], json!(["full_name"]));
+
+        let response = full_name_from_body(Some(r#"{"display_name":"Ada"}"#)).unwrap_err();
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid full name");
+        assert_eq!(response.body["errors"][0]["path"], json!(["full_name"]));
+    }
+
+    #[test]
+    fn full_name_validation_uses_legacy_utf16_limit() {
+        let valid = "a".repeat(MAX_FULL_NAME_LENGTH);
+        let valid_body = format!(r#"{{"full_name":"{valid}"}}"#);
+        assert_eq!(full_name_from_body(Some(&valid_body)).unwrap(), valid);
+
+        let emoji_name = "😀".repeat((MAX_FULL_NAME_LENGTH / 2) + 1);
+        let emoji_body = format!(r#"{{"full_name":"{emoji_name}"}}"#);
+        let response = full_name_from_body(Some(&emoji_body)).unwrap_err();
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid full name");
+        assert_eq!(response.body["errors"][0]["path"], json!(["full_name"]));
+    }
 }

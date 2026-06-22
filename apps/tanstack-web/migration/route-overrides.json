@@ -359,6 +359,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles PATCH /api/v1/inquiries/:id by validating the legacy is_read/is_resolved payload, revalidating the browser Supabase session, requiring a Tuturuuu or XWF email domain, patching support_inquiries through the server-owned Supabase REST adapter, and preserving the legacy { data } success body plus 400/401/500 error bodies. The adjacent media-url storage route remains legacy-owned."
     },
+    "api:/api/v1/users/me/full-name:apps/web/src/app/api/v1/users/me/full-name/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles PATCH /api/v1/users/me/full-name by revalidating the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, requiring a JSON full_name string with trimmed length 1..100, and upserting user_private_details with user_id fixed to the authenticated user through Supabase REST using the caller token and on_conflict=user_id."
+    },
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

@@ -2768,8 +2768,8 @@ pub mod worker_runtime {
 mod tests {
     use super::contact::{
         APP_SESSION_COOKIE_NAME, APP_SESSION_SCOPE, AppCoordinationClaims,
-        CONTACT_DATA_LAYER_NOT_READY_MESSAGE, CURRENT_USER_PROFILE_PATH, SUPPORT_INQUIRIES_PATH,
-        verify_app_session_token,
+        CONTACT_DATA_LAYER_NOT_READY_MESSAGE, CURRENT_USER_FULL_NAME_PATH,
+        CURRENT_USER_PROFILE_PATH, SUPPORT_INQUIRIES_PATH, verify_app_session_token,
     };
     use super::onboarding_progress::ONBOARDING_PROGRESS_PATH;
     use super::outbound::{
@@ -8188,6 +8188,10 @@ mod tests {
         ));
         assert!(should_buffer_request_body(
             "PATCH",
+            CURRENT_USER_FULL_NAME_PATH
+        ));
+        assert!(should_buffer_request_body(
+            "PATCH",
             "/api/v1/inquiries/inquiry-1"
         ));
         assert!(should_buffer_request_body(
@@ -8197,6 +8201,10 @@ mod tests {
         assert!(!should_buffer_request_body(
             "POST",
             CURRENT_USER_PROFILE_PATH
+        ));
+        assert!(!should_buffer_request_body(
+            "GET",
+            CURRENT_USER_FULL_NAME_PATH
         ));
         assert!(!should_buffer_request_body(
             "PUT",
@@ -9000,6 +9008,143 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn current_user_full_name_requires_authenticated_supabase_session() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PATCH",
+                CURRENT_USER_FULL_NAME_PATH,
+                r#"{"full_name":"Ada Lovelace"}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn current_user_full_name_validates_body_after_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-123","email":"ada@example.com"}"#,
+        );
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(r#"{"full_name":"   "}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    CURRENT_USER_FULL_NAME_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid full name");
+        assert_eq!(response.body["errors"][0]["path"], json!(["full_name"]));
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn current_user_full_name_upserts_private_details_with_caller_token() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(r#"{"full_name":" Ada Lovelace ","ignored":"value"}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    CURRENT_USER_FULL_NAME_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({ "message": "Full name updated successfully" })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/user_private_details?on_conflict=user_id"
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Prefer"),
+            Some("resolution=merge-duplicates,return=minimal")
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[1].body.as_deref().unwrap()).unwrap(),
+            json!({
+                "full_name": "Ada Lovelace",
+                "user_id": "user-123",
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn current_user_full_name_returns_update_error_for_supabase_failure() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
+            outbound_response(500, r#"{"message":"database unavailable"}"#),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                body_text: Some(r#"{"full_name":"Ada Lovelace"}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    CURRENT_USER_FULL_NAME_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body,
+            json!({ "message": "Error updating full name" })
+        );
+    }
+
+    #[tokio::test]
     async fn devbox_cache_requires_authentication() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::default();
@@ -9540,6 +9685,15 @@ mod tests {
         .await;
         assert_eq!(profile_response.status, 405);
         assert_eq!(profile_response.allow, Some("GET, PATCH"));
+
+        let full_name_response = handle_backend_request(
+            &config,
+            request("GET", CURRENT_USER_FULL_NAME_PATH),
+            &outbound,
+        )
+        .await;
+        assert_eq!(full_name_response.status, 405);
+        assert_eq!(full_name_response.allow, Some("PATCH"));
 
         let inquiry_response =
             handle_backend_request(&config, request("GET", SUPPORT_INQUIRIES_PATH), &outbound)

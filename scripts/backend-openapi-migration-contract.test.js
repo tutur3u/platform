@@ -11,6 +11,7 @@ const MANIFEST_PATH = path.join(
 const OPENAPI_PATH = path.join(ROOT_DIR, 'apps/backend/api/openapi.yaml');
 const BACKEND_ROUTE_KINDS = new Set(['api', 'cron', 'route-handler', 'trpc']);
 const BUFFERED_JSON_OPERATIONS = [
+  ['PATCH', '/api/v1/users/me/full-name'],
   ['PATCH', '/api/v1/users/me/profile'],
   ['POST', '/api/v1/inquiries'],
   ['PATCH', '/api/v1/inquiries/{id}'],
