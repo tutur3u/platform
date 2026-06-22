@@ -5,15 +5,20 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse,
     MOBILE_AUTH_CORS_ALLOW_HEADERS, MOBILE_AUTH_CORS_ALLOW_METHODS, MOBILE_AUTH_CORS_MAX_AGE,
-    json_response, method_not_allowed,
+    contact, json_response, method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
+    supabase_auth,
 };
 
+pub(crate) const INFRASTRUCTURE_MOBILE_VERSIONS_PATH: &str =
+    "/api/v1/infrastructure/mobile-versions";
 pub(crate) const MOBILE_VERSION_CHECK_PATH: &str = "/api/v1/mobile/version-check";
 pub(crate) const OTP_SETTINGS_PATH: &str = "/api/v1/auth/otp/settings";
 
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
 const AUTH_OTP_SETTINGS_DIAGNOSTIC_PREFIX: &str = "AUTH-OTP-SETTINGS";
+const HAS_WORKSPACE_PERMISSION_RPC: &str = "has_workspace_permission";
+const MANAGE_WORKSPACE_ROLES_PERMISSION: &str = "manage_workspace_roles";
 const MOBILE_IOS_EFFECTIVE_VERSION: &str = "MOBILE_IOS_EFFECTIVE_VERSION";
 const MOBILE_IOS_MINIMUM_VERSION: &str = "MOBILE_IOS_MINIMUM_VERSION";
 const MOBILE_IOS_OTP_ENABLED: &str = "MOBILE_IOS_OTP_ENABLED";
@@ -35,6 +40,7 @@ const MOBILE_VERSION_POLICY_CONFIG_IDS: [&str; 9] = [
     WEB_OTP_ENABLED,
 ];
 const MOBILE_VERSION_POLICY_ERROR: &str = "Failed to evaluate mobile version policy";
+const MOBILE_VERSION_POLICIES_LOAD_ERROR: &str = "Failed to load mobile version policies";
 const OTP_SETTINGS_ERROR: &str = "Failed to load OTP settings";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -75,6 +81,13 @@ struct MobileVersionPolicies {
     web_otp_enabled: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MobileVersionAdminAuthError {
+    Forbidden,
+    Internal,
+    Unauthorized,
+}
+
 #[derive(Deserialize)]
 struct WorkspaceConfigRow {
     id: String,
@@ -84,6 +97,23 @@ struct WorkspaceConfigRow {
 #[derive(Deserialize)]
 struct WorkspaceConfigValueRow {
     value: Value,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MobilePlatformVersionPolicyResponse {
+    effective_version: Option<String>,
+    minimum_version: Option<String>,
+    otp_enabled: bool,
+    store_url: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MobileVersionPoliciesResponse {
+    ios: MobilePlatformVersionPolicyResponse,
+    android: MobilePlatformVersionPolicyResponse,
+    web_otp_enabled: bool,
 }
 
 #[derive(Serialize)]
@@ -100,12 +130,22 @@ struct MobileVersionCheckResponse {
     requires_update: bool,
 }
 
+#[derive(Serialize)]
+struct HasWorkspacePermissionRequest<'a> {
+    p_permission: &'a str,
+    p_user_id: &'a str,
+    p_ws_id: &'a str,
+}
+
 pub(crate) async fn handle_mobile_version_route(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
     match (request.method, request.path) {
+        ("GET", INFRASTRUCTURE_MOBILE_VERSIONS_PATH) => {
+            Some(infrastructure_mobile_versions_response(config, request, outbound).await)
+        }
         ("GET", OTP_SETTINGS_PATH) => Some(otp_settings_response(config, request, outbound).await),
         ("OPTIONS", OTP_SETTINGS_PATH) => None,
         (method, OTP_SETTINGS_PATH) => Some(method_not_allowed(method, "GET, OPTIONS")),
@@ -115,6 +155,115 @@ pub(crate) async fn handle_mobile_version_route(
         ("OPTIONS", MOBILE_VERSION_CHECK_PATH) => None,
         (method, MOBILE_VERSION_CHECK_PATH) => Some(method_not_allowed(method, "GET, OPTIONS")),
         _ => None,
+    }
+}
+
+async fn infrastructure_mobile_versions_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    if let Err(error) = authorize_mobile_version_admin(config, request, outbound).await {
+        return mobile_version_admin_auth_error_response(error);
+    }
+
+    match get_mobile_version_policies(config, outbound).await {
+        Ok(policies) => no_store_response(json_response(
+            200,
+            mobile_version_policies_response(policies),
+        )),
+        Err(()) => no_store_response(json_response(
+            500,
+            json!({ "message": MOBILE_VERSION_POLICIES_LOAD_ERROR }),
+        )),
+    }
+}
+
+async fn authorize_mobile_version_admin(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> Result<(), MobileVersionAdminAuthError> {
+    let contact_data = &config.contact_data;
+
+    if !contact_data.configured() {
+        return Err(MobileVersionAdminAuthError::Internal);
+    }
+
+    let Some(access_token) = supabase_auth::request_access_token(request) else {
+        return Err(MobileVersionAdminAuthError::Unauthorized);
+    };
+    let Some(user) =
+        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
+    else {
+        return Err(MobileVersionAdminAuthError::Unauthorized);
+    };
+    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
+        return Err(MobileVersionAdminAuthError::Unauthorized);
+    };
+
+    match has_root_workspace_permission(
+        contact_data,
+        outbound,
+        &user_id,
+        MANAGE_WORKSPACE_ROLES_PERMISSION,
+    )
+    .await
+    {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(MobileVersionAdminAuthError::Forbidden),
+        Err(()) => Err(MobileVersionAdminAuthError::Internal),
+    }
+}
+
+async fn has_root_workspace_permission(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    user_id: &str,
+    permission: &str,
+) -> Result<bool, ()> {
+    let rpc_url = contact_data
+        .rpc_url(HAS_WORKSPACE_PERMISSION_RPC)
+        .ok_or(())?;
+    let service_role_key = contact_data.service_role_key().ok_or(())?;
+    let body = serde_json::to_string(&HasWorkspacePermissionRequest {
+        p_permission: permission,
+        p_user_id: user_id,
+        p_ws_id: ROOT_WORKSPACE_ID,
+    })
+    .map_err(|_| ())?;
+    let authorization = format!("Bearer {service_role_key}");
+    let response = outbound
+        .send(
+            OutboundRequest::new(OutboundMethod::Post, &rpc_url)
+                .with_header("Accept", APPLICATION_JSON)
+                .with_header("Authorization", &authorization)
+                .with_header("apikey", service_role_key)
+                .with_header("Content-Type", APPLICATION_JSON)
+                .with_body(&body),
+        )
+        .await
+        .map_err(|_| ())?;
+
+    if !is_success_status(response.status) {
+        return Err(());
+    }
+
+    response.json::<bool>().map_err(|_| ())
+}
+
+fn mobile_version_admin_auth_error_response(error: MobileVersionAdminAuthError) -> BackendResponse {
+    match error {
+        MobileVersionAdminAuthError::Unauthorized => {
+            no_store_response(json_response(401, json!({ "message": "Unauthorized" })))
+        }
+        MobileVersionAdminAuthError::Forbidden => {
+            no_store_response(json_response(403, json!({ "message": "Forbidden" })))
+        }
+        MobileVersionAdminAuthError::Internal => no_store_response(json_response(
+            500,
+            json!({ "message": MOBILE_VERSION_POLICIES_LOAD_ERROR }),
+        )),
     }
 }
 
@@ -488,6 +637,27 @@ fn evaluate_mobile_version_policy(
         status,
         should_update: status != "supported",
         requires_update: status == "update-required",
+    }
+}
+
+fn mobile_version_policies_response(
+    policies: MobileVersionPolicies,
+) -> MobileVersionPoliciesResponse {
+    MobileVersionPoliciesResponse {
+        ios: mobile_platform_version_policy_response(policies.ios),
+        android: mobile_platform_version_policy_response(policies.android),
+        web_otp_enabled: policies.web_otp_enabled,
+    }
+}
+
+fn mobile_platform_version_policy_response(
+    policy: MobilePlatformVersionPolicy,
+) -> MobilePlatformVersionPolicyResponse {
+    MobilePlatformVersionPolicyResponse {
+        effective_version: policy.effective_version,
+        minimum_version: policy.minimum_version,
+        otp_enabled: policy.otp_enabled,
+        store_url: policy.store_url,
     }
 }
 

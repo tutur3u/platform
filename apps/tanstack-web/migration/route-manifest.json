@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 964,
-        "migrated": 76,
-        "percentComplete": 14.16,
+        "migrated": 77,
+        "percentComplete": 14.23,
         "remaining": 964,
-        "terminal": 159,
-        "total": 1123,
+        "terminal": 160,
+        "total": 1124,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 982,
-        "migrated": 81,
-        "percentComplete": 14.31,
+        "migrated": 82,
+        "percentComplete": 14.39,
         "remaining": 982,
-        "terminal": 164,
-        "total": 1146,
+        "terminal": 165,
+        "total": 1147,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1158,
-      "migrated": 283,
-      "percentComplete": 24.02,
+      "migrated": 284,
+      "percentComplete": 24.07,
       "remaining": 1158,
-      "terminal": 366,
-      "total": 1524,
+      "terminal": 367,
+      "total": 1525,
       "unknownStatus": 0
     }
   },
@@ -3445,13 +3445,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts",
       "kind": "api",
-      "methods": ["GET", "PUT"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/mobile-versions",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts"
+    },
+    {
+      "id": "api:PUT:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts",
+      "kind": "api",
+      "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/mobile-versions",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "PUT",
+      "parentId": "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/monitoring/blue-green:apps/web/src/app/api/v1/infrastructure/monitoring/blue-green/route.ts",
@@ -14141,11 +14154,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1123,
+    "apiRoutes": 1124,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1146,
+    "routeHandlers": 1147,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14155,6 +14168,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1524
+    "total": 1525
   }
 }
