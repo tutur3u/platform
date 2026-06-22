@@ -123,6 +123,7 @@ import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/m
 import { Route as LocaleWsIdInventoryWarehousesRouteImport } from './routes/$locale/$wsId/inventory/warehouses';
 import { Route as LocaleWsIdInventoryUnitsRouteImport } from './routes/$locale/$wsId/inventory/units';
 import { Route as LocaleWsIdInventorySuppliersRouteImport } from './routes/$locale/$wsId/inventory/suppliers';
+import { Route as LocaleWsIdInventoryStorefrontsRouteImport } from './routes/$locale/$wsId/inventory/storefronts';
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
@@ -136,12 +137,14 @@ import { Route as LocaleWsIdFinanceDebtsRouteImport } from './routes/$locale/$ws
 import { Route as LocaleWsIdFinanceCategoriesRouteImport } from './routes/$locale/$wsId/finance/categories';
 import { Route as LocaleWsIdFinanceBudgetsRouteImport } from './routes/$locale/$wsId/finance/budgets';
 import { Route as LocaleWsIdFinanceAnalyticsRouteImport } from './routes/$locale/$wsId/finance/analytics';
+import { Route as LocaleWsIdEducationValseaRouteImport } from './routes/$locale/$wsId/education/valsea';
 import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale/$wsId/education/quizzes';
 import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$locale/$wsId/education/quiz-sets';
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library';
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards';
 import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
+import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
 import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
@@ -764,6 +767,12 @@ const LocaleWsIdInventorySuppliersRoute =
     path: '/$wsId/inventory/suppliers',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInventoryStorefrontsRoute =
+  LocaleWsIdInventoryStorefrontsRouteImport.update({
+    id: '/$wsId/inventory/storefronts',
+    path: '/$wsId/inventory/storefronts',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInventoryManufacturersRoute =
   LocaleWsIdInventoryManufacturersRouteImport.update({
     id: '/$wsId/inventory/manufacturers',
@@ -840,6 +849,12 @@ const LocaleWsIdFinanceAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => LocaleWsIdFinanceRoute,
   } as any);
+const LocaleWsIdEducationValseaRoute =
+  LocaleWsIdEducationValseaRouteImport.update({
+    id: '/$wsId/education/valsea',
+    path: '/$wsId/education/valsea',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdEducationQuizzesRoute =
   LocaleWsIdEducationQuizzesRouteImport.update({
     id: '/$wsId/education/quizzes',
@@ -875,6 +890,12 @@ const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
   path: '/$wsId/ai-chat/new',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdAiChatChatbotsRoute =
+  LocaleWsIdAiChatChatbotsRouteImport.update({
+    id: '/$wsId/ai-chat/chatbots',
+    path: '/$wsId/ai-chat/chatbots',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdTasksBoardsIndexRoute =
   LocaleWsIdTasksBoardsIndexRouteImport.update({
     id: '/$wsId/tasks/boards/',
@@ -1096,12 +1117,14 @@ export interface FileRoutesByFullPath {
   '/$locale/ui/setup': typeof LocaleUiSetupRoute;
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui/': typeof LocaleUiIndexRoute;
+  '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
+  '/$locale/$wsId/education/valsea': typeof LocaleWsIdEducationValseaRoute;
   '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute;
   '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute;
   '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute;
@@ -1115,6 +1138,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
   '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
   '/$locale/$wsId/inventory/warehouses': typeof LocaleWsIdInventoryWarehousesRoute;
@@ -1252,12 +1276,14 @@ export interface FileRoutesByTo {
   '/$locale/ui/setup': typeof LocaleUiSetupRoute;
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui': typeof LocaleUiIndexRoute;
+  '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
+  '/$locale/$wsId/education/valsea': typeof LocaleWsIdEducationValseaRoute;
   '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute;
   '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute;
   '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute;
@@ -1271,6 +1297,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
   '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
   '/$locale/$wsId/inventory/warehouses': typeof LocaleWsIdInventoryWarehousesRoute;
@@ -1410,12 +1437,14 @@ export interface FileRoutesById {
   '/$locale/ui/setup': typeof LocaleUiSetupRoute;
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui/': typeof LocaleUiIndexRoute;
+  '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
+  '/$locale/$wsId/education/valsea': typeof LocaleWsIdEducationValseaRoute;
   '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute;
   '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute;
   '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute;
@@ -1429,6 +1458,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
   '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
   '/$locale/$wsId/inventory/warehouses': typeof LocaleWsIdInventoryWarehousesRoute;
@@ -1569,12 +1599,14 @@ export interface FileRouteTypes {
     | '/$locale/ui/setup'
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui/'
+    | '/$locale/$wsId/ai-chat/chatbots'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/education/valsea'
     | '/$locale/$wsId/finance/analytics'
     | '/$locale/$wsId/finance/budgets'
     | '/$locale/$wsId/finance/categories'
@@ -1588,6 +1620,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
     | '/$locale/$wsId/inventory/units'
     | '/$locale/$wsId/inventory/warehouses'
@@ -1725,12 +1758,14 @@ export interface FileRouteTypes {
     | '/$locale/ui/setup'
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui'
+    | '/$locale/$wsId/ai-chat/chatbots'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/education/valsea'
     | '/$locale/$wsId/finance/analytics'
     | '/$locale/$wsId/finance/budgets'
     | '/$locale/$wsId/finance/categories'
@@ -1744,6 +1779,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
     | '/$locale/$wsId/inventory/units'
     | '/$locale/$wsId/inventory/warehouses'
@@ -1882,12 +1918,14 @@ export interface FileRouteTypes {
     | '/$locale/ui/setup'
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui/'
+    | '/$locale/$wsId/ai-chat/chatbots'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
     | '/$locale/$wsId/education/quizzes'
+    | '/$locale/$wsId/education/valsea'
     | '/$locale/$wsId/finance/analytics'
     | '/$locale/$wsId/finance/budgets'
     | '/$locale/$wsId/finance/categories'
@@ -1901,6 +1939,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
     | '/$locale/$wsId/inventory/units'
     | '/$locale/$wsId/inventory/warehouses'
@@ -2763,6 +2802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInventorySuppliersRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/inventory/storefronts': {
+      id: '/$locale/$wsId/inventory/storefronts';
+      path: '/$wsId/inventory/storefronts';
+      fullPath: '/$locale/$wsId/inventory/storefronts';
+      preLoaderRoute: typeof LocaleWsIdInventoryStorefrontsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/inventory/manufacturers': {
       id: '/$locale/$wsId/inventory/manufacturers';
       path: '/$wsId/inventory/manufacturers';
@@ -2854,6 +2900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdFinanceAnalyticsRouteImport;
       parentRoute: typeof LocaleWsIdFinanceRoute;
     };
+    '/$locale/$wsId/education/valsea': {
+      id: '/$locale/$wsId/education/valsea';
+      path: '/$wsId/education/valsea';
+      fullPath: '/$locale/$wsId/education/valsea';
+      preLoaderRoute: typeof LocaleWsIdEducationValseaRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/education/quizzes': {
       id: '/$locale/$wsId/education/quizzes';
       path: '/$wsId/education/quizzes';
@@ -2894,6 +2947,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/ai-chat/new';
       fullPath: '/$locale/$wsId/ai-chat/new';
       preLoaderRoute: typeof LocaleWsIdAiChatNewRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/ai-chat/chatbots': {
+      id: '/$locale/$wsId/ai-chat/chatbots';
+      path: '/$wsId/ai-chat/chatbots';
+      fullPath: '/$locale/$wsId/ai-chat/chatbots';
+      preLoaderRoute: typeof LocaleWsIdAiChatChatbotsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/tasks/boards/': {
@@ -3392,15 +3452,18 @@ interface LocaleRouteRouteChildren {
   LocaleUiSetupRoute: typeof LocaleUiSetupRoute;
   LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute;
   LocaleUiIndexRoute: typeof LocaleUiIndexRoute;
+  LocaleWsIdAiChatChatbotsRoute: typeof LocaleWsIdAiChatChatbotsRoute;
   LocaleWsIdAiChatNewRoute: typeof LocaleWsIdAiChatNewRoute;
   LocaleWsIdBillingSuccessRoute: typeof LocaleWsIdBillingSuccessRoute;
   LocaleWsIdEducationFlashcardsRoute: typeof LocaleWsIdEducationFlashcardsRoute;
   LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute;
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute;
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
+  LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
+  LocaleWsIdInventoryStorefrontsRoute: typeof LocaleWsIdInventoryStorefrontsRoute;
   LocaleWsIdInventorySuppliersRoute: typeof LocaleWsIdInventorySuppliersRoute;
   LocaleWsIdInventoryUnitsRoute: typeof LocaleWsIdInventoryUnitsRoute;
   LocaleWsIdInventoryWarehousesRoute: typeof LocaleWsIdInventoryWarehousesRoute;
@@ -3513,15 +3576,18 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleUiSetupRoute: LocaleUiSetupRoute,
   LocaleVisualizationsHorseRacingRoute: LocaleVisualizationsHorseRacingRoute,
   LocaleUiIndexRoute: LocaleUiIndexRoute,
+  LocaleWsIdAiChatChatbotsRoute: LocaleWsIdAiChatChatbotsRoute,
   LocaleWsIdAiChatNewRoute: LocaleWsIdAiChatNewRoute,
   LocaleWsIdBillingSuccessRoute: LocaleWsIdBillingSuccessRoute,
   LocaleWsIdEducationFlashcardsRoute: LocaleWsIdEducationFlashcardsRoute,
   LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRoute,
   LocaleWsIdEducationQuizSetsRoute: LocaleWsIdEducationQuizSetsRoute,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
+  LocaleWsIdEducationValseaRoute: LocaleWsIdEducationValseaRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
+  LocaleWsIdInventoryStorefrontsRoute: LocaleWsIdInventoryStorefrontsRoute,
   LocaleWsIdInventorySuppliersRoute: LocaleWsIdInventorySuppliersRoute,
   LocaleWsIdInventoryUnitsRoute: LocaleWsIdInventoryUnitsRoute,
   LocaleWsIdInventoryWarehousesRoute: LocaleWsIdInventoryWarehousesRoute,
