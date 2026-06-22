@@ -77,6 +77,8 @@ const MAX_BIO_LENGTH: usize = 1000;
 const MAX_EMAIL_LENGTH: usize = 320;
 const MAX_SUPPORT_INQUIRY_LENGTH: usize = 5000;
 const MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH: usize = 255;
+const CLI_APP_SESSION_TARGETS: [&str; 1] = ["platform"];
+const CLI_APP_ACCESS_SCOPE: &str = "cli:access";
 pub(crate) const CONTACT_DATA_LAYER_NOT_READY_MESSAGE: &str =
     "Rust contact data persistence is not configured yet";
 const CONTACT_DATA_REQUEST_FAILED_MESSAGE: &str = "Rust contact data request failed";
@@ -240,6 +242,28 @@ pub(crate) fn resolve_app_session_identity(
             id: actor.claims.sub,
         })
         .map_err(|_| ())
+}
+
+pub(crate) fn resolve_cli_app_session_identity(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+) -> Result<AppSessionIdentity, ()> {
+    let actor =
+        session::resolve_app_session(config, request, &CLI_APP_SESSION_TARGETS).map_err(|_| ())?;
+
+    if !actor
+        .claims
+        .scopes
+        .iter()
+        .any(|scope| scope == CLI_APP_ACCESS_SCOPE)
+    {
+        return Err(());
+    }
+
+    Ok(AppSessionIdentity {
+        email: actor.claims.email,
+        id: actor.claims.sub,
+    })
 }
 
 #[derive(Serialize)]

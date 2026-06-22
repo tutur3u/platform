@@ -56,6 +56,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
 - `GET /api/v1/infrastructure/users/fields/types`: legacy-compatible static
   user field type metadata migrated from `apps/web`. The Rust route returns the
   deterministic ordered legacy payload without opening a Supabase admin client.
+- `GET /api/v1/devboxes/cache`: legacy-compatible devbox cache list route.
+  Rust accepts CLI app-session Bearer tokens for the platform target with the
+  `cli:access` scope or browser/non-app-session Supabase credentials, requires a
+  root workspace `MEMBER` row, and returns the current legacy `{ "caches": [] }`
+  payload. `/api/v1/devboxes/cache/prune` remains legacy-owned.
 - `GET /api/v1/infrastructure/ai/models`: legacy-compatible public AI model
   catalog backed by `private.ai_gateway_models`. Rust reads through the
   server-owned Supabase REST adapter with private-schema headers, keeps the

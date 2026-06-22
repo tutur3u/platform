@@ -149,6 +149,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/task-board-status-templates by preserving authenticated Supabase session access for browser cookies and non-app-session Bearer tokens, rejecting Tuturuuu app-session tokens without falling back to stale cookies, reading the global task_board_status_templates catalog through the server-owned Supabase REST adapter with legacy is_default.desc/name.asc ordering, and returning the raw legacy templates payload."
     },
+    "api:/api/v1/devboxes/cache:apps/web/src/app/api/v1/devboxes/cache/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/devboxes/cache by accepting CLI app-session Bearer tokens for the platform target with cli:access or browser/non-app-session Supabase credentials, requiring root workspace MEMBER access, and returning the legacy { caches: [] } body. Adjacent prune and mutation routes remain legacy-owned."
+    },
     "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

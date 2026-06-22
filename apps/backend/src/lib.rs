@@ -13,6 +13,7 @@ mod contact;
 mod crawlers;
 #[cfg(test)]
 mod cron_monitoring_test;
+mod devbox_cache;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
@@ -386,6 +387,11 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = devbox_cache::handle_devbox_cache_route(config, request, outbound).await
+    {
         return response;
     }
 
@@ -8991,6 +8997,184 @@ mod tests {
                 "display_name": "Ada",
             })
         );
+    }
+
+    #[tokio::test]
+    async fn devbox_cache_requires_authentication() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response =
+            handle_backend_request(&config, request("GET", "/api/v1/devboxes/cache"), &outbound)
+                .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn devbox_cache_accepts_cli_app_session_root_member() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(200, r#"{"type":"MEMBER"}"#);
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/devboxes/cache", valid_app_session_token()),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["caches"], json!([]));
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert!(
+            calls[0]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_members?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "select").as_deref(),
+            Some("type")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "ws_id").as_deref(),
+            Some("eq.00000000-0000-0000-0000-000000000000")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "user_id").as_deref(),
+            Some("eq.app-session-user-1")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "limit").as_deref(),
+            Some("1")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn devbox_cache_rejects_cli_app_session_without_cli_scope() {
+        let config = backend_config_with_contact_data();
+        let token = app_session_token(&app_session_claims(
+            "platform",
+            vec![APP_SESSION_SCOPE],
+            4_102_444_800,
+        ));
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/devboxes/cache", token),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn devbox_cache_accepts_browser_supabase_root_member() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"{"id":"browser-user-1","email":"member@example.com"}"#,
+            ),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "GET",
+                "/api/v1/devboxes/cache",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["caches"], json!([]));
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert!(
+            calls[1]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_members?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "user_id").as_deref(),
+            Some("eq.browser-user-1")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+    }
+
+    #[tokio::test]
+    async fn devbox_cache_rejects_root_workspace_guest() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(200, r#"{"type":"GUEST"}"#);
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer("GET", "/api/v1/devboxes/cache", valid_app_session_token()),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Forbidden");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn devbox_cache_rejects_unsupported_methods_without_claiming_prune() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let method_response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/devboxes/cache"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(method_response.status, 405);
+        assert_eq!(method_response.allow, Some("GET"));
+
+        let prune_response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/devboxes/cache/prune"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(prune_response.status, 404);
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[test]
