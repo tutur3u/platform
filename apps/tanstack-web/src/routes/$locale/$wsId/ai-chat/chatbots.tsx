@@ -4,13 +4,13 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'use-intl';
+import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
+import { createPageHead } from '../../../../lib/platform/head';
+import { resolveMessagesLocale } from '../../../../lib/platform/messages';
 // Import the next/link compat shim directly: the `next/link` vite alias is
 // runtime-only, and `next` is not a tanstack-web dependency, so a bare
 // `next/link` import fails tsc type-checking from app-local source.
 import { Link } from '../../../../lib/platform/next-link-shim';
-import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
-import { createPageHead } from '../../../../lib/platform/head';
-import { resolveMessagesLocale } from '../../../../lib/platform/messages';
 import {
   type ResolvedWorkspace,
   resolveWorkspace,
