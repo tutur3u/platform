@@ -3206,6 +3206,100 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/class-attendance:
+    get:
+      summary: Legacy-compatible class attendance export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/class-attendance/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy workspace_user_groups!user_group_attendance_group_id_fkey inner select and workspace_user_groups.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User group attendance rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User group attendance could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/class-members:
+    get:
+      summary: Legacy-compatible class member export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/class-members/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy workspace_user_groups!workspace_user_roles_users_role_id_fkey inner select and workspace_user_groups.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Workspace user group membership rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Workspace user group memberships could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
   /api/v1/infrastructure/class-packages:
     get:
       summary: Legacy-compatible class package export list

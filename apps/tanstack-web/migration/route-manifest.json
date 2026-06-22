@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 951,
-        "migrated": 94,
-        "percentComplete": 15.69,
-        "remaining": 951,
-        "terminal": 177,
+        "legacyNext": 949,
+        "migrated": 96,
+        "percentComplete": 15.87,
+        "remaining": 949,
+        "terminal": 179,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 969,
-        "migrated": 99,
-        "percentComplete": 15.81,
-        "remaining": 969,
-        "terminal": 182,
+        "legacyNext": 967,
+        "migrated": 101,
+        "percentComplete": 15.99,
+        "remaining": 967,
+        "terminal": 184,
         "total": 1151,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1145,
-      "migrated": 301,
-      "percentComplete": 25.11,
-      "remaining": 1145,
-      "terminal": 384,
+      "legacyNext": 1143,
+      "migrated": 303,
+      "percentComplete": 25.25,
+      "remaining": 1143,
+      "terminal": 386,
       "total": 1529,
       "unknownStatus": 0
     }
@@ -2687,7 +2687,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/class-attendance",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/class-attendance/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -2696,7 +2696,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/class-members",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/class-members/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {

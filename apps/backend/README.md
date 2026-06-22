@@ -205,6 +205,8 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   mutation batch.
 - `GET /api/v1/infrastructure/bill-coupons`,
   `GET /api/v1/infrastructure/bill-packages`,
+  `GET /api/v1/infrastructure/class-attendance`,
+  `GET /api/v1/infrastructure/class-members`,
   `GET /api/v1/infrastructure/class-packages`,
   `GET /api/v1/infrastructure/class-scores`,
   `GET /api/v1/infrastructure/package-stock-changes`, and

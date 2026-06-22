@@ -8,13 +8,15 @@ use crate::{
 
 const BILL_COUPONS_PATH: &str = "/api/v1/infrastructure/bill-coupons";
 const BILL_PACKAGES_PATH: &str = "/api/v1/infrastructure/bill-packages";
+const CLASS_ATTENDANCE_PATH: &str = "/api/v1/infrastructure/class-attendance";
+const CLASS_MEMBERS_PATH: &str = "/api/v1/infrastructure/class-members";
 const CLASS_PACKAGES_PATH: &str = "/api/v1/infrastructure/class-packages";
 const CLASS_SCORES_PATH: &str = "/api/v1/infrastructure/class-scores";
 const PACKAGE_STOCK_CHANGES_PATH: &str = "/api/v1/infrastructure/package-stock-changes";
 const STUDENT_FEEDBACKS_PATH: &str = "/api/v1/infrastructure/student-feedbacks";
 const MISSING_WS_ID_MESSAGE: &str = "Missing ws_id parameter";
 
-const RELATED_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 6] = [
+const RELATED_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 8] = [
     CallerTokenPaginatedListSpec {
         error_message: "Error fetching finance_invoice_promotions",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
@@ -30,6 +32,22 @@ const RELATED_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 6] = [
         select: "*, finance_invoices!inner(ws_id)",
         table: "finance_invoice_products",
         workspace_filter_column: "finance_invoices.ws_id",
+    },
+    CallerTokenPaginatedListSpec {
+        error_message: "Error fetching user_group_attendance",
+        missing_ws_id_message: MISSING_WS_ID_MESSAGE,
+        path: CLASS_ATTENDANCE_PATH,
+        select: "*, workspace_user_groups!user_group_attendance_group_id_fkey!inner(ws_id)",
+        table: "user_group_attendance",
+        workspace_filter_column: "workspace_user_groups.ws_id",
+    },
+    CallerTokenPaginatedListSpec {
+        error_message: "Error fetching workspace_user_groups_users",
+        missing_ws_id_message: MISSING_WS_ID_MESSAGE,
+        path: CLASS_MEMBERS_PATH,
+        select: "*, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)",
+        table: "workspace_user_groups_users",
+        workspace_filter_column: "workspace_user_groups.ws_id",
     },
     CallerTokenPaginatedListSpec {
         error_message: "Error fetching user_group_linked_products",
@@ -102,6 +120,20 @@ mod tests {
                 "*, finance_invoices!inner(ws_id)",
                 "finance_invoices.ws_id",
                 "Error fetching finance_invoice_products",
+            ),
+            (
+                CLASS_ATTENDANCE_PATH,
+                "user_group_attendance",
+                "*, workspace_user_groups!user_group_attendance_group_id_fkey!inner(ws_id)",
+                "workspace_user_groups.ws_id",
+                "Error fetching user_group_attendance",
+            ),
+            (
+                CLASS_MEMBERS_PATH,
+                "workspace_user_groups_users",
+                "*, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)",
+                "workspace_user_groups.ws_id",
+                "Error fetching workspace_user_groups_users",
             ),
             (
                 CLASS_PACKAGES_PATH,
