@@ -683,6 +683,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/inventory/manufacturers ports the legacy authenticated inventory manufacturers setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and manufacturer create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/manufacturers endpoint remains separately tracked backend migration work."
     },
+    "page:/:locale/:wsId/inventory/products:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/products ports the legacy authenticated products list page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory and stock permission parity, route metadata, localized access-denied state, and TanStack Query product table loading plus quick edit/delete flows through the internal-api inventory facades. The backing workspace inventory product APIs remain separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/products/:productId:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/[productId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/products/$productId ports the legacy authenticated product detail/new form page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory and stock permission parity, route metadata, localized access-denied state, and TanStack Query form loading/mutations through the internal-api inventory facades. The backing workspace inventory product APIs remain separately tracked backend migration work."
+    },
     "page:/:locale/:wsId/inventory/promotions:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
