@@ -5788,6 +5788,345 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn holidays_item_rejects_unsupported_methods_without_outbound_call() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/internal/holidays/holiday-1"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("PUT, DELETE"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn holidays_put_requires_authenticated_root_workspace_member() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PUT",
+                "/api/v1/internal/holidays/holiday-1",
+                r#"{"date":"2026-01-02"}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["message"], "Admin access required");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn holidays_put_validates_payload_after_membership_check() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/internal/holidays/holiday-1",
+                    r#"{"date":"2026/01/02","name":""}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid input");
+        assert!(response.body["errors"]["fieldErrors"]["date"].is_array());
+        assert!(response.body["errors"]["fieldErrors"]["name"].is_array());
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn holidays_put_rejects_empty_update_body() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body("PUT", "/api/v1/internal/holidays/holiday-1", r#"{}"#)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "No updates provided");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn holidays_put_returns_not_found_when_holiday_is_missing() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(
+                406,
+                r#"{
+                    "code":"PGRST116",
+                    "details":"The result contains 0 rows",
+                    "hint":null,
+                    "message":"JSON object requested, multiple (or no) rows returned"
+                }"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/internal/holidays/holiday-1",
+                    r#"{"name":"Updated"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["message"], "Holiday not found");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=id&id=eq.holiday-1&limit=1"
+        );
+    }
+
+    #[tokio::test]
+    async fn holidays_put_rejects_duplicate_dates() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(200, r#"{"id":"holiday-1"}"#),
+            outbound_response(200, r#"{"id":"holiday-existing"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/internal/holidays/holiday-1",
+                    r#"{"date":"2026-01-02"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 409);
+        assert_eq!(
+            response.body["message"],
+            "A holiday already exists for this date"
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(
+            calls[3].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=id&date=eq.2026-01-02&id=neq.holiday-1&limit=1"
+        );
+        assert_eq!(
+            recorded_header(&calls[3], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+    }
+
+    #[tokio::test]
+    async fn holidays_put_updates_holiday_with_user_token_rls() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(200, r#"{"id":"holiday-1"}"#),
+            outbound_response(
+                406,
+                r#"{
+                    "code":"PGRST116",
+                    "details":"The result contains 0 rows",
+                    "hint":null,
+                    "message":"JSON object requested, multiple (or no) rows returned"
+                }"#,
+            ),
+            outbound_response(
+                200,
+                r#"{"id":"holiday-1","date":"2026-01-02","name":"Updated","year":2026}"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "theme=dark; sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/internal/holidays/holiday-1",
+                    r#"{"date":"2026-01-02","name":"Updated","ignored":true}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["id"], "holiday-1");
+        assert_eq!(response.body["name"], "Updated");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 5);
+        assert_eq!(calls[4].method, OutboundMethod::Patch);
+        assert_eq!(
+            calls[4].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=*&id=eq.holiday-1"
+        );
+        assert_eq!(
+            recorded_header(&calls[4], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+        assert_eq!(
+            recorded_header(&calls[4], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[4], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[4], "Prefer"),
+            Some("return=representation")
+        );
+        assert_eq!(
+            recorded_header(&calls[4], "Content-Type"),
+            Some(APPLICATION_JSON)
+        );
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(
+                calls[4].body.as_ref().expect("update request body")
+            )
+            .expect("update request json"),
+            json!({
+                "date": "2026-01-02",
+                "name": "Updated",
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn holidays_delete_deletes_holiday_with_user_token_rls() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(204, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("DELETE", "/api/v1/internal/holidays/holiday-1")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Holiday deleted");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[2].method, OutboundMethod::Delete);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?id=eq.holiday-1"
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn holidays_delete_maps_supabase_errors_to_legacy_error() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(500, r#"{"message":"db unavailable"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("DELETE", "/api/v1/internal/holidays/holiday-1")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error deleting holiday");
+    }
+
+    #[tokio::test]
     async fn changelog_slug_get_reads_published_entry_from_supabase() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::with_response(
@@ -7283,6 +7622,10 @@ mod tests {
         }
 
         assert!(should_buffer_request_body(
+            "PUT",
+            "/api/v1/internal/holidays/holiday-1"
+        ));
+        assert!(should_buffer_request_body(
             "PATCH",
             CURRENT_USER_PROFILE_PATH
         ));
@@ -7296,7 +7639,7 @@ mod tests {
         ));
         assert!(!should_buffer_request_body(
             "PUT",
-            "/api/v1/internal/holidays/holiday-1"
+            "/api/v1/internal/holidays/bulk"
         ));
         assert!(!should_buffer_request_body("GET", ONBOARDING_PROGRESS_PATH));
         assert!(!should_buffer_request_body("PATCH", SUPPORT_INQUIRIES_PATH));
