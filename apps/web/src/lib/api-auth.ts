@@ -14,6 +14,7 @@ import {
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   type BlockInfo,
+  buildAbuseRiskSubjects,
   extractIPFromHeaders,
   isIPBlocked,
   recordApiAuthFailure,
@@ -22,6 +23,7 @@ import {
   cascadeBackendRateLimitToProxyBan,
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
+import { writeVerifiedSessionCacheForSubjects } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
@@ -56,6 +58,24 @@ function buildIpBlockResponse(blockInfo: BlockInfo) {
   );
 }
 
+function writeVerifiedSessionCacheForRequest(
+  request: Pick<NextRequest, 'headers'>,
+  userId: string
+) {
+  const subjects = buildAbuseRiskSubjects({
+    headers: request.headers,
+    ipAddress: extractIPFromHeaders(request.headers),
+    userId,
+  });
+  const sessionSubjectKeys = subjects
+    .filter((subject) => subject.subject_type === 'session')
+    .map((subject) => subject.subject_key);
+
+  if (sessionSubjectKeys.length > 0) {
+    void writeVerifiedSessionCacheForSubjects(sessionSubjectKeys);
+  }
+}
+
 /**
  * @deprecated Use `withSessionAuth` instead for new routes.
  * Kept for backward compatibility during migration.
@@ -87,6 +107,8 @@ export async function authorizeRequest(
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
+
+  writeVerifiedSessionCacheForRequest(request, user.id);
 
   return { data: { user, supabase }, error: null };
 }
@@ -343,6 +365,8 @@ export async function resolveSessionAuthContext(
         userId: appSessionUser.id,
       });
 
+      writeVerifiedSessionCacheForRequest(request, appSessionUser.id);
+
       return {
         ok: true,
         supabase: attachSupabaseAuthUser(
@@ -365,6 +389,8 @@ export async function resolveSessionAuthContext(
       response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
+
+  writeVerifiedSessionCacheForRequest(request, user.id);
 
   return {
     ok: true,

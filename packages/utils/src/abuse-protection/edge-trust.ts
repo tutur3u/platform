@@ -386,16 +386,25 @@ export async function writeVerifiedSessionCacheForSubjects(
       return;
     }
 
+    const existingEntries = await getCachedTrustEntries(sessionKeys);
     const verifiedEntry = serializeEntry({
       m: NEUTRAL_TRUST_MULTIPLIER,
       verified: true,
     });
     await Promise.all(
-      sessionKeys.map((subjectKey) =>
-        redis.set(buildTrustCacheKey(subjectKey), verifiedEntry, {
+      sessionKeys.map((subjectKey) => {
+        const existing = existingEntries.get(subjectKey);
+        if (
+          existing &&
+          (existing.mode != null || existing.abs != null || existing.m > 1)
+        ) {
+          return Promise.resolve();
+        }
+
+        return redis.set(buildTrustCacheKey(subjectKey), verifiedEntry, {
           ex: ttlSeconds,
-        })
-      )
+        });
+      })
     );
   } catch {
     // Cache writes must never block the protected request path.
