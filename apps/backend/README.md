@@ -80,6 +80,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   private-schema REST adapter, preserves `page`/`pageSize`/`q`,
   `created_at.desc` ordering, exact-count pagination, raw row lists, and keeps
   POST legacy-owned until whitelist writes move to Rust.
+- `DELETE /api/v1/infrastructure/ai/whitelist/{email}` and
+  `DELETE /api/v1/infrastructure/ai/whitelist/domain/{domain}`:
+  legacy-compatible protected AI whitelist delete routes. Rust revalidates the
+  same operator session boundary as the list routes, decodes the path segment,
+  deletes matching private whitelist rows through the service-role
+  private-schema REST adapter, preserves the legacy success and failure bodies,
+  and keeps paired PUT updates legacy-owned until body-validation parity moves
+  to Rust.
 - `GET /api/v1/infrastructure/post-email-queue`: legacy-compatible protected
   post email queue infrastructure summary. Rust revalidates a normal Supabase
   browser session or non-app-session Bearer token, requires root workspace

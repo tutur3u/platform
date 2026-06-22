@@ -2,7 +2,9 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
-    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
+    APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse,
+    ai_whitelist_delete::handle_ai_whitelist_delete_route,
+    contact,
     infrastructure_paginated_list::{parse_js_parse_int_prefix, total_count_from_content_range},
     json_response, method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
@@ -81,6 +83,10 @@ pub(crate) async fn handle_ai_whitelist_route(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
+    if let Some(response) = handle_ai_whitelist_delete_route(config, request, outbound).await {
+        return Some(response);
+    }
+
     match (request.method, request.path) {
         ("GET", AI_WHITELIST_ME_PATH) => {
             Some(ai_whitelist_me_response(config, request, outbound).await)
@@ -196,7 +202,7 @@ async fn authenticated_user(
     Ok(AuthenticatedAiWhitelistUser { email: user.email })
 }
 
-async fn authorize_ai_whitelist_infrastructure_access(
+pub(crate) async fn authorize_ai_whitelist_infrastructure_access(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,

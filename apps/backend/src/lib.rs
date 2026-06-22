@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod ai_models;
 mod ai_whitelist;
+mod ai_whitelist_delete;
 #[cfg(test)]
 mod ai_whitelist_test;
 mod aurora;

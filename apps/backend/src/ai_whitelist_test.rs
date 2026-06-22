@@ -10,6 +10,10 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 
 const AI_WHITELIST_DOMAINS_PATH: &str = "/api/v1/infrastructure/ai/whitelist/domains";
+const AI_WHITELIST_DOMAIN_DETAIL_PATH: &str =
+    "/api/v1/infrastructure/ai/whitelist/domain/example.com";
+const AI_WHITELIST_EMAIL_DETAIL_PATH: &str =
+    "/api/v1/infrastructure/ai/whitelist/member%40example.com";
 const AI_WHITELIST_EMAILS_PATH: &str = "/api/v1/infrastructure/ai/whitelist/emails";
 const SERVICE_ROLE_KEY: &str = "test-service-role-secret";
 
@@ -67,11 +71,19 @@ fn backend_config_with_contact_data() -> BackendConfig {
 }
 
 fn request_with_bearer(path: &'static str, url: &'static str) -> BackendRequest<'static> {
+    request_with_bearer_method(path, url, "GET")
+}
+
+fn request_with_bearer_method(
+    path: &'static str,
+    url: &'static str,
+    method: &'static str,
+) -> BackendRequest<'static> {
     BackendRequest {
         authorization: Some("Bearer browser-access-token"),
         body_text: None,
         cookie: None,
-        method: "GET",
+        method,
         origin: None,
         path,
         referer: None,
@@ -234,4 +246,125 @@ async fn ai_whitelist_domain_list_parses_js_style_pagination_and_rejects_non_com
     );
     assert!(query_value(data_call, "domain").is_none());
     assert_eq!(header(data_call, "Range"), Some("10-19"));
+}
+
+#[tokio::test]
+async fn ai_whitelist_email_delete_decodes_path_and_deletes_private_row() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(204, ""),
+    ]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_bearer_method(
+            AI_WHITELIST_EMAIL_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/member%40example.com",
+            "DELETE",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("email whitelist detail route should match");
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body, json!({ "success": true }));
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 2);
+    let delete_call = calls.last().expect("private whitelist email delete");
+    assert_eq!(delete_call.method, OutboundMethod::Delete);
+    assert!(delete_call.url.contains("/rest/v1/ai_whitelisted_emails?"));
+    assert_eq!(
+        query_value(delete_call, "email").as_deref(),
+        Some("eq.member@example.com")
+    );
+    assert_eq!(header(delete_call, "Accept-Profile"), Some("private"));
+    assert_eq!(header(delete_call, "Content-Profile"), Some("private"));
+    assert_eq!(
+        header(delete_call, "Authorization"),
+        Some("Bearer test-service-role-secret")
+    );
+}
+
+#[tokio::test]
+async fn ai_whitelist_email_delete_preserves_email_required_response() {
+    let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_bearer_method(
+            "/api/v1/infrastructure/ai/whitelist/",
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/",
+            "DELETE",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("email whitelist detail route should match");
+
+    assert_eq!(response.status, 400);
+    assert_eq!(response.body, json!({ "message": "Email is required" }));
+    assert_eq!(outbound.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn ai_whitelist_domain_delete_deletes_private_row() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(204, ""),
+    ]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_bearer_method(
+            AI_WHITELIST_DOMAIN_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domain/example.com",
+            "DELETE",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("domain whitelist detail route should match");
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body, json!({ "success": true }));
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 2);
+    let delete_call = calls.last().expect("private whitelist domain delete");
+    assert_eq!(delete_call.method, OutboundMethod::Delete);
+    assert!(delete_call.url.contains("/rest/v1/ai_whitelisted_domains?"));
+    assert_eq!(
+        query_value(delete_call, "domain").as_deref(),
+        Some("eq.example.com")
+    );
+    assert_eq!(header(delete_call, "Accept-Profile"), Some("private"));
+    assert_eq!(header(delete_call, "Content-Profile"), Some("private"));
+}
+
+#[tokio::test]
+async fn ai_whitelist_delete_rejects_non_company_users_before_delete() {
+    let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"member@example.com"}"#,
+    )]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_bearer_method(
+            AI_WHITELIST_DOMAIN_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domain/example.com",
+            "DELETE",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("domain whitelist detail route should match");
+
+    assert_eq!(response.status, 403);
+    assert_eq!(
+        response.body,
+        json!({ "message": "You are not allowed to perform this action" })
+    );
+    assert_eq!(outbound.calls().len(), 1);
 }
