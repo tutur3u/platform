@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
+const expectedTypeScriptVersion = '7.0.1-rc';
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
@@ -47,7 +48,7 @@ test('type-check workflow Bun version matches the repo packageManager pin', () =
   assert.equal(bunVersionMatch[1], expectedBunVersion);
 });
 
-test('workspace tsgo build type-check scripts use the cache-invalidation wrapper', () => {
+test('workspace tsc build type-check scripts use the cache-invalidation wrapper', () => {
   const invalidScripts = [];
 
   for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
@@ -59,7 +60,7 @@ test('workspace tsgo build type-check scripts use the cache-invalidation wrapper
     }
 
     if (
-      typeCheckScript !== 'node ../../scripts/run-tsgo-build.js --build' ||
+      typeCheckScript !== 'node ../../scripts/run-tsc-build.js --build' ||
       typeCheckScript.includes('--force')
     ) {
       invalidScripts.push({
@@ -72,7 +73,7 @@ test('workspace tsgo build type-check scripts use the cache-invalidation wrapper
   assert.deepEqual(invalidScripts, []);
 });
 
-test('workspace build and dev scripts use tsgo instead of legacy tsc', () => {
+test('workspace build and dev scripts do not use legacy tsgo', () => {
   const invalidScripts = [];
 
   for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
@@ -81,7 +82,7 @@ test('workspace build and dev scripts use tsgo instead of legacy tsc', () => {
     for (const scriptName of ['build', 'dev']) {
       const script = packageJson.scripts?.[scriptName];
 
-      if (typeof script === 'string' && /\btsc\b/.test(script)) {
+      if (typeof script === 'string' && /\btsgo\b/.test(script)) {
         invalidScripts.push({
           file: packageJsonPath,
           script: scriptName,
@@ -94,22 +95,132 @@ test('workspace build and dev scripts use tsgo instead of legacy tsc', () => {
   assert.deepEqual(invalidScripts, []);
 });
 
-test('workspace tsgo build scripts own the native preview binary', () => {
+test('workspace direct tsc scripts own the TypeScript 7 RC binary', () => {
   const invalidPackages = [];
 
   for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
     const packageJson = readJson(packageJsonPath);
-    const buildScript = packageJson.scripts?.build;
 
-    if (typeof buildScript !== 'string' || !/\btsgo\b/.test(buildScript)) {
-      continue;
+    for (const scriptName of ['build', 'dev', 'type-check']) {
+      const script = packageJson.scripts?.[scriptName];
+
+      if (
+        typeof script !== 'string' ||
+        !/\btsc\b/.test(script) ||
+        script.includes('run-tsc-build.js')
+      ) {
+        continue;
+      }
+
+      if (
+        packageJson.devDependencies?.typescript !== expectedTypeScriptVersion
+      ) {
+        invalidPackages.push({
+          file: packageJsonPath,
+          script: scriptName,
+          command: script,
+          version: packageJson.devDependencies?.typescript,
+        });
+      }
     }
+  }
 
-    if (!packageJson.devDependencies?.['@typescript/native-preview']) {
-      invalidPackages.push({
-        file: packageJsonPath,
-        script: buildScript,
-      });
+  assert.deepEqual(invalidPackages, []);
+});
+
+test('workspace TypeScript dependencies use the TypeScript 7 RC', () => {
+  const invalidPackages = [];
+
+  for (const packageJsonPath of [
+    'package.json',
+    ...getWorkspacePackageJsonPaths(),
+  ]) {
+    const packageJson = readJson(packageJsonPath);
+
+    for (const dependencyField of [
+      'dependencies',
+      'devDependencies',
+      'peerDependencies',
+      'optionalDependencies',
+    ]) {
+      const version = packageJson[dependencyField]?.typescript;
+
+      if (version && version !== expectedTypeScriptVersion) {
+        invalidPackages.push({
+          file: packageJsonPath,
+          dependencyField,
+          version,
+        });
+      }
+    }
+  }
+
+  assert.deepEqual(invalidPackages, []);
+});
+
+test('active workspace manifests do not declare native-preview TypeScript', () => {
+  const invalidPackages = [];
+
+  for (const packageJsonPath of [
+    'package.json',
+    ...getWorkspacePackageJsonPaths(),
+  ]) {
+    const packageJson = readJson(packageJsonPath);
+
+    for (const dependencyField of [
+      'dependencies',
+      'devDependencies',
+      'peerDependencies',
+      'optionalDependencies',
+    ]) {
+      const version =
+        packageJson[dependencyField]?.['@typescript/native-preview'];
+
+      if (version) {
+        invalidPackages.push({
+          file: packageJsonPath,
+          dependencyField,
+          version,
+        });
+      }
+    }
+  }
+
+  assert.deepEqual(invalidPackages, []);
+});
+
+test('TypeScript 6 API compatibility package stays scoped to database sort-types', () => {
+  const invalidPackages = [];
+
+  for (const packageJsonPath of [
+    'package.json',
+    ...getWorkspacePackageJsonPaths(),
+  ]) {
+    const packageJson = readJson(packageJsonPath);
+
+    for (const dependencyField of [
+      'dependencies',
+      'devDependencies',
+      'peerDependencies',
+      'optionalDependencies',
+    ]) {
+      const version = packageJson[dependencyField]?.['@typescript/typescript6'];
+
+      if (!version) {
+        continue;
+      }
+
+      if (
+        packageJsonPath !== 'apps/database/package.json' ||
+        dependencyField !== 'devDependencies' ||
+        version !== '6.0.1'
+      ) {
+        invalidPackages.push({
+          file: packageJsonPath,
+          dependencyField,
+          version,
+        });
+      }
     }
   }
 

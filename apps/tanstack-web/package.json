@@ -5,7 +5,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "type-check": "node ../../scripts/run-tsgo-build.js --noEmit -p tsconfig.json",
+    "type-check": "node ../../scripts/run-tsc-build.js --noEmit -p tsconfig.json",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vite dev --host 0.0.0.0 --port ${PORT:-7824}",
     "build": "vite build && bun type-check",
@@ -55,7 +55,7 @@
     "next-intl": "^4.13.0",
     "nitro": "^3.0.260610-beta",
     "tailwindcss": "^4.3.1",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.1-rc",
     "vite": "^8.0.16",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "4.1.8",

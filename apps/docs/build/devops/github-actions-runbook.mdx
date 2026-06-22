@@ -444,9 +444,11 @@ successful `vercel-production-platform` deployment marker for the same SHA
 before it can run production migrations.
 
 Filtered production Docker installs only include the selected app and the
-dependencies that app needs. Workspace packages with direct `tsgo` build scripts
-must declare `@typescript/native-preview` in their own `devDependencies`; do not
-rely on the root devDependency for production Docker builds.
+dependencies that app needs. Workspace packages with direct `tsc` build scripts
+must declare `typescript` in their own `devDependencies`; do not
+rely on the root devDependency for production Docker builds. Programmatic
+compiler API consumers should use `@typescript/typescript6` only as a
+narrow compatibility bridge until TypeScript 7 exposes a stable API.
 
 ### Newer-commit guards
 

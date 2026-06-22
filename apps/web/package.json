@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "test:e2e": "node ../../scripts/run-web-e2e-docker.js",
     "test:e2e:ui": "node ../../scripts/run-web-e2e-docker.js --ui",
-    "type-check": "node ../../scripts/run-tsgo-build.js --build",
+    "type-check": "node ../../scripts/run-tsc-build.js --build",
     "stop": "cd ../database && bun sb:stop",
     "sb:status": "cd ../database && bun sb:status",
     "sb:start": "cd ../database && bun sb:start",
@@ -209,7 +209,7 @@
     "postcss": "^8.5.14",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.1-rc",
     "undici": "^8.4.1",
     "vitest": "^4.1.8"
   },
