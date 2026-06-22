@@ -6,11 +6,13 @@ on:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"
       - "apps/backend/**"
+      - "apps/tanstack-web/**"
       - "apps/*/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "bun.lock"
       - "docker-bake.web.prod.hcl"
+      - "docker-compose.tanstack-dual.yml"
       - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
@@ -29,11 +31,13 @@ on:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"
       - "apps/backend/**"
+      - "apps/tanstack-web/**"
       - "apps/*/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "bun.lock"
       - "docker-bake.web.prod.hcl"
+      - "docker-compose.tanstack-dual.yml"
       - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
@@ -119,6 +123,7 @@ jobs:
           docker compose -f docker-compose.web.yml --profile redis config > /tmp/docker-compose.web.redis.yml
           docker compose -f docker-compose.web.prod.yml config > /tmp/docker-compose.web.prod.yml
           docker compose -f docker-compose.web.prod.yml --profile redis config > /tmp/docker-compose.web.prod.redis.yml
+          docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml
 
       - name: Build web dev image
         run: docker build --target dev -f apps/web/Dockerfile .

@@ -24,6 +24,7 @@ const {
   CRON_RUNNER_DOCKERFILE_PATH,
   CHAT_REALTIME_DOCKERFILE_PATH,
   DOCKER_BAKE_WEB_PROD_PATH,
+  DOCKER_SETUP_WORKFLOW_PATH,
   DOCKERIGNORE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_DOCKERFILE_PATH,
@@ -34,6 +35,7 @@ const {
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   ROOT_DIR,
   SUPERMEMORY_DOCKERFILE_PATH,
+  TANSTACK_DUAL_COMPOSE_FILE_PATH,
   TANSTACK_WEB_DOCKERFILE_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
@@ -47,6 +49,7 @@ const {
   validateBackendDockerfile,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
+  validateDockerSetupWorkflow,
   validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
@@ -59,6 +62,7 @@ const {
   validateMeetRealtimeDockerfile,
   validateNativeWebRunnerDockerfile,
   validateSupermemoryDockerfile,
+  validateTanstackDualCompose,
   validateTanstackWebDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
@@ -123,6 +127,23 @@ test('validateDockerfile accepts the current web Dockerfile', () => {
       workspacePackageJsonPaths,
     }),
     []
+  );
+});
+
+test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
+  const workflowContent = fs.readFileSync(DOCKER_SETUP_WORKFLOW_PATH, 'utf8');
+
+  assert.deepEqual(validateDockerSetupWorkflow(workflowContent), []);
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent
+        .replaceAll('      - "apps/tanstack-web/**"\n', '')
+        .replace(
+          'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
+          ''
+        )
+    ).join('\n'),
+    /apps\/tanstack-web|docker-compose\.tanstack-dual\.yml/
   );
 });
 
@@ -598,6 +619,30 @@ test('validateDockerCompose accepts the current compose file', () => {
   const composeContent = fs.readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8');
 
   assert.deepEqual(validateDockerCompose(composeContent), []);
+});
+
+test('validateTanstackDualCompose accepts the current dual compose file', () => {
+  const composeContent = fs.readFileSync(
+    TANSTACK_DUAL_COMPOSE_FILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateTanstackDualCompose(composeContent), []);
+});
+
+test('validateTanstackDualCompose reports missing runner and health gate wiring', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      target: runner', '      target: dev')
+    .replace(
+      '        condition: service_healthy',
+      '        condition: service_started'
+    );
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /target: runner/);
+  assert.match(errors, /condition: service_healthy/);
 });
 
 test('validateDockerCompose reports public local Redis port mappings', () => {
@@ -1120,6 +1165,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
   );
 
   try {
+    fs.mkdirSync(path.join(tempDir, '.github', 'workflows'), {
+      recursive: true,
+    });
     fs.mkdirSync(path.join(tempDir, 'apps', 'web', 'docker'), {
       recursive: true,
     });
@@ -1226,8 +1274,16 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
       path.join(tempDir, 'docker-compose.web.prod.yml'),
       'services:\n'
     );
+    fs.writeFileSync(
+      path.join(tempDir, 'docker-compose.tanstack-dual.yml'),
+      'services:\n'
+    );
     fs.writeFileSync(path.join(tempDir, 'docker-bake.web.prod.hcl'), '');
     fs.writeFileSync(path.join(tempDir, '.dockerignore'), '');
+    fs.writeFileSync(
+      path.join(tempDir, '.github', 'workflows', 'docker-setup-check.yaml'),
+      ''
+    );
 
     const errors = checkDockerWebSetup({
       rootDir: tempDir,

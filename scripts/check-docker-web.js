@@ -20,6 +20,12 @@ const TANSTACK_WEB_DOCKERFILE_PATH = path.join(
   'tanstack-web',
   'Dockerfile'
 );
+const DOCKER_SETUP_WORKFLOW_PATH = path.join(
+  ROOT_DIR,
+  '.github',
+  'workflows',
+  'docker-setup-check.yaml'
+);
 const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
 const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -92,6 +98,10 @@ const WEB_PROD_COMPOSE_FILE_PATH = path.join(
   ROOT_DIR,
   'docker-compose.web.prod.yml'
 );
+const TANSTACK_DUAL_COMPOSE_FILE_PATH = path.join(
+  ROOT_DIR,
+  'docker-compose.tanstack-dual.yml'
+);
 const DOCKER_BAKE_WEB_PROD_PATH = path.join(
   ROOT_DIR,
   'docker-bake.web.prod.hcl'
@@ -128,6 +138,10 @@ const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
   'apps/mobile/build',
   'apps/mobile/build/**',
 ];
+
+function countOccurrences(content, snippet) {
+  return content.split(snippet).length - 1;
+}
 
 function getRetryWrappedBunInstallSnippets(installCommand) {
   return [
@@ -575,6 +589,36 @@ function validateDockerignore(dockerignoreContent) {
   return errors;
 }
 
+function validateDockerSetupWorkflow(workflowContent) {
+  const errors = [];
+  const requiredPathFilterSnippets = [
+    '- "apps/tanstack-web/**"',
+    '- "docker-compose.tanstack-dual.yml"',
+  ];
+  const requiredSnippets = [
+    'run: node scripts/check-docker-web.js',
+    'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
+  ];
+
+  for (const snippet of requiredPathFilterSnippets) {
+    if (countOccurrences(workflowContent, snippet) < 2) {
+      errors.push(
+        `.github/workflows/docker-setup-check.yaml must include ${snippet} in both pull_request and push path filters.`
+      );
+    }
+  }
+
+  for (const snippet of requiredSnippets) {
+    if (!workflowContent.includes(snippet)) {
+      errors.push(
+        `.github/workflows/docker-setup-check.yaml is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateDockerCompose(
   composeContent,
   { workspacePackageJsonPaths = listWorkspacePackageJsonPaths() } = {}
@@ -697,6 +741,60 @@ function validateDockerCompose(
     if (!composeContent.includes(snippet)) {
       errors.push(
         `docker-compose.web.yml is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateTanstackDualCompose(composeContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'x-tanstack-dual-env-file: &tanstack-dual-env-file',
+    'services:',
+    '  backend:',
+    '    container_name: backend-dual',
+    '      dockerfile: apps/backend/Dockerfile',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - PORT=${' + 'BACKEND_PORT:-7820' + '}',
+    '      test: ["CMD", "/app/backend", "healthcheck"]',
+    '      - "127.0.0.1:${' +
+      'BACKEND_PORT:-7820' +
+      '}:${' +
+      'BACKEND_PORT:-7820' +
+      '}"',
+    '  tanstack-web:',
+    '    container_name: tanstack-web-dual',
+    '      dockerfile: apps/tanstack-web/Dockerfile',
+    '      target: runner',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
+    '      - BACKEND_PUBLIC_ORIGIN=${' +
+      'BACKEND_PUBLIC_ORIGIN:-http://backend:7820' +
+      '}',
+    '      - PORT=${' + 'TANSTACK_WEB_PORT:-7824' + '}',
+    "body.includes(''Backend reachable'')",
+    '      - "127.0.0.1:${' +
+      'TANSTACK_WEB_PORT:-7824' +
+      '}:${' +
+      'TANSTACK_WEB_PORT:-7824' +
+      '}"',
+    '      backend:\n        condition: service_healthy',
+    'networks:\n  tanstack-dual:',
+    '    name: ${' + 'COMPOSE_PROJECT_NAME:-tuturuuu' + '}-tanstack-dual',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!composeContent.includes(snippet)) {
+      errors.push(
+        `docker-compose.tanstack-dual.yml is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -1632,6 +1730,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'backend', 'Dockerfile'),
     'utf8'
   ),
+  dockerSetupWorkflowContent = fsImpl.readFileSync(
+    path.join(rootDir, '.github', 'workflows', 'docker-setup-check.yaml'),
+    'utf8'
+  ),
   tanstackWebDockerfileContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'tanstack-web', 'Dockerfile'),
     'utf8'
@@ -1641,6 +1743,10 @@ function checkDockerWebSetup({
     'utf8'
   ),
   prodComposeContent = readDockerProdComposeMergedText(rootDir, fsImpl),
+  tanstackDualComposeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'docker-compose.tanstack-dual.yml'),
+    'utf8'
+  ),
   dockerBakeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-bake.web.prod.hcl'),
     'utf8'
@@ -1715,8 +1821,10 @@ function checkDockerWebSetup({
       workspacePackageJsonPaths,
     }),
     ...validateBackendDockerfile(backendDockerfileContent),
+    ...validateDockerSetupWorkflow(dockerSetupWorkflowContent),
     ...validateTanstackWebDockerfile(tanstackWebDockerfileContent),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
+    ...validateTanstackDualCompose(tanstackDualComposeContent),
     ...validateDockerProdCompose(prodComposeContent),
     ...validateDockerBakeFile(dockerBakeContent),
     ...validateDockerignore(dockerignoreContent),
@@ -1773,6 +1881,7 @@ if (require.main === module) {
 module.exports = {
   ROOT_DIR,
   BACKEND_DOCKERFILE_PATH,
+  DOCKER_SETUP_WORKFLOW_PATH,
   TANSTACK_WEB_DOCKERFILE_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
@@ -1790,6 +1899,7 @@ module.exports = {
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   WEB_PROD_COMPOSE_FILE_PATH,
+  TANSTACK_DUAL_COMPOSE_FILE_PATH,
   checkDockerWebSetup,
   getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
@@ -1800,6 +1910,8 @@ module.exports = {
   validateTanstackWebDockerfile,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
+  validateDockerSetupWorkflow,
+  validateTanstackDualCompose,
   validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
