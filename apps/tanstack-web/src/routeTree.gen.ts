@@ -96,6 +96,7 @@ import { Route as LocaleWsIdCalendarRouteImport } from './routes/$locale/$wsId/c
 import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index';
 import { Route as LocaleWsIdTasksIndexRouteImport } from './routes/$locale/$wsId/tasks/index';
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index';
+import { Route as LocaleWsIdInventoryIndexRouteImport } from './routes/$locale/$wsId/inventory/index';
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId';
 import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code';
 import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode';
@@ -605,6 +606,12 @@ const LocaleWsIdMailIndexRoute = LocaleWsIdMailIndexRouteImport.update({
   path: '/$wsId/mail/',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdInventoryIndexRoute =
+  LocaleWsIdInventoryIndexRouteImport.update({
+    id: '/$wsId/inventory/',
+    path: '/$wsId/inventory/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleUiComponentsComponentIdRoute =
   LocaleUiComponentsComponentIdRouteImport.update({
     id: '/ui/components/$componentId',
@@ -1071,6 +1078,7 @@ export interface FileRoutesByFullPath {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
+  '/$locale/$wsId/inventory/': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks/': typeof LocaleWsIdTasksIndexRoute;
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
@@ -1218,6 +1226,7 @@ export interface FileRoutesByTo {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
+  '/$locale/$wsId/inventory': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks': typeof LocaleWsIdTasksIndexRoute;
   '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute;
@@ -1367,6 +1376,7 @@ export interface FileRoutesById {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
+  '/$locale/$wsId/inventory/': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks/': typeof LocaleWsIdTasksIndexRoute;
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
@@ -1517,6 +1527,7 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
+    | '/$locale/$wsId/inventory/'
     | '/$locale/$wsId/mail/'
     | '/$locale/$wsId/tasks/'
     | '/$locale/ui/components/'
@@ -1664,6 +1675,7 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
+    | '/$locale/$wsId/inventory'
     | '/$locale/$wsId/mail'
     | '/$locale/$wsId/tasks'
     | '/$locale/ui/components'
@@ -1812,6 +1824,7 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
+    | '/$locale/$wsId/inventory/'
     | '/$locale/$wsId/mail/'
     | '/$locale/$wsId/tasks/'
     | '/$locale/ui/components/'
@@ -2457,6 +2470,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/mail';
       fullPath: '/$locale/$wsId/mail/';
       preLoaderRoute: typeof LocaleWsIdMailIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/inventory/': {
+      id: '/$locale/$wsId/inventory/';
+      path: '/$wsId/inventory';
+      fullPath: '/$locale/$wsId/inventory/';
+      preLoaderRoute: typeof LocaleWsIdInventoryIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/ui/components/$componentId': {
@@ -3237,6 +3257,7 @@ interface LocaleRouteRouteChildren {
   LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute;
   LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute;
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute;
+  LocaleWsIdInventoryIndexRoute: typeof LocaleWsIdInventoryIndexRoute;
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute;
   LocaleWsIdTasksIndexRoute: typeof LocaleWsIdTasksIndexRoute;
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute;
@@ -3351,6 +3372,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleSharedTaskShareCodeRoute: LocaleSharedTaskShareCodeRoute,
   LocaleSharedUserProfileCodeRoute: LocaleSharedUserProfileCodeRoute,
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
+  LocaleWsIdInventoryIndexRoute: LocaleWsIdInventoryIndexRoute,
   LocaleWsIdMailIndexRoute: LocaleWsIdMailIndexRoute,
   LocaleWsIdTasksIndexRoute: LocaleWsIdTasksIndexRoute,
   LocaleUiComponentsIndexRoute: LocaleUiComponentsIndexRoute,

@@ -658,6 +658,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/billing/success preserves the legacy billing checkout success page with fail-closed current-user auth, forwarded-auth workspace resolution, checkoutId validation, not-found mapping for missing Polar checkouts, normalized server-side Polar checkout data, localized success content, and legacy billing/invoice/dashboard links. The payment checkout/read APIs remain separately tracked backend work."
     },
+    "page:/:locale/:wsId/inventory:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/(dashboard)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory preserves the legacy inventory dashboard shell with fail-closed current-user auth, forwarded-auth workspace resolution, view_inventory permission handling, localized access-denied state, statistic-card loading/error states, and inventory statistics loaded through the internal-api facade. The backing /api/v1/workspaces/:wsId/inventory/statistics endpoint and deeper inventory management pages remain separately tracked backend/frontend migration work."
+    },
     "page:/:locale/:wsId/meet:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
