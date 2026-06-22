@@ -2032,7 +2032,14 @@ paths:
         description: Legacy workspace path segment. The legacy Next.js route ignored this value, and the Rust migration preserves that behavior until crawler workspace ownership is redesigned.
     get:
       summary: Get crawled URL status
-      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/crawlers/status/route.ts. Validates the required `url` query parameter, reads the exact `crawled_urls.url` row through the server-owned Supabase REST adapter, and returns the raw `crawledUrl` plus raw `crawled_url_next_urls` rows ordered by `created_at.desc`. Missing crawled URLs return `crawledUrl: null` and `relatedUrls: []`.
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/crawlers/status/route.ts.
+        Validates the required `url` query parameter, reads the exact
+        `crawled_urls.url` row through the server-owned Supabase REST adapter,
+        and returns the raw `crawledUrl` plus raw `crawled_url_next_urls` rows
+        ordered by `created_at.desc`. Missing crawled URLs return `crawledUrl:
+        null` and `relatedUrls: []`.
       parameters:
         - name: url
           in: query
@@ -3902,7 +3909,14 @@ paths:
                   - GET, PATCH
     patch:
       summary: Update current user default workspace
-      description: Migrated replacement for apps/web/src/app/api/v1/users/me/default-workspace/route.ts PATCH. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, accepts `{ workspaceId: uuid | null }`, verifies workspace membership before setting a UUID, clears the default workspace when the value is null, and writes user_private_details with the caller token so RLS stays active.
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/users/me/default-workspace/route.ts PATCH. The
+        Rust backend revalidates the browser Supabase session cookie or
+        non-app-session Bearer token with Supabase Auth, accepts `{ workspaceId:
+        uuid | null }`, verifies workspace membership before setting a UUID,
+        clears the default workspace when the value is null, and writes
+        user_private_details with the caller token so RLS stays active.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -4452,7 +4466,16 @@ paths:
   /api/v1/workspaces/{wsId}/posts/permissions:
     get:
       summary: Workspace post permissions
-      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts GET. The Rust backend keeps the legacy quiet-failure contract by returning `{ canApprovePosts: false, canForceSendPosts: false }` for missing auth, inaccessible workspaces, permission RPC failures, or missing permissions. When a Supabase browser session or non-app-session Bearer token resolves, it calls the server-owned `has_workspace_permission` RPC for the workspace `approve_posts` permission and the root workspace `manage_workspace_roles` permission.
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts
+        GET. The Rust backend keeps the legacy quiet-failure contract by
+        returning `{ canApprovePosts: false, canForceSendPosts: false }` for
+        missing auth, inaccessible workspaces, permission RPC failures, or
+        missing permissions. When a Supabase browser session or non-app-session
+        Bearer token resolves, it calls the server-owned
+        `has_workspace_permission` RPC for the workspace `approve_posts`
+        permission and the root workspace `manage_workspace_roles` permission.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
