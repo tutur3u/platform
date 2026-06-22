@@ -49,6 +49,9 @@ uncommitted work; read it when the task spans more than one checkout.
   commands, and a no-stage/no-commit boundary unless the worker explicitly owns
   a commit. Keep a parent coordination note that records lane names, owned
   paths, coordinator-owned generated files, and integration risks.
+- For Codex subagents, choose either a typed worker/explorer role with explicit
+  lane context in the prompt or a full-history fork without a role override; the
+  harness rejects full-history forks that also set an explicit agent role.
 - Treat each lane as a contract: owner, mode, owned paths, excluded paths,
   generated outputs, validation, handoff shape, and commit authority. Read-only
   lanes should return evidence and risks without taking path ownership.

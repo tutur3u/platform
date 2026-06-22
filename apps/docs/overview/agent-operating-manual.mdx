@@ -102,7 +102,10 @@ needs a narrow owned path set, forbidden overlap, validation commands, and a
 handoff contract; workers should not stage or commit unless that is their
 explicit lane. Make the lane contract explicit: owner, mode, owned paths,
 excluded paths, generated outputs, validation, handoff shape, and commit
-authority. The coordinator owns integration: review worker diffs, regenerate
+authority. In Codex, use either a typed worker/explorer prompt with explicit
+lane context or a full-history fork without a role override; combining both is
+rejected by the subagent harness. The coordinator owns integration: review
+worker diffs, regenerate
 shared artifacts such as route trees, route manifests, route overrides, OpenAPI
 snapshots, docs navigation, sorted translations, or generated DB types after
 inputs are stable, then stage exact paths. After each integrated slice, refresh

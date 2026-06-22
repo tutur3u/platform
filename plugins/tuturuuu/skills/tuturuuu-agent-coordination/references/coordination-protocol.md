@@ -162,6 +162,11 @@ Worker prompts should say that the worker is not alone in the codebase, must run
 `git status --short`, must create its own coordination note before editing, must
 not revert other changes, and must not stage or commit unless the lane explicitly
 owns a commit. Include exact owned paths and forbidden paths in the prompt.
+When using Codex subagents, do not combine a full-history fork with an explicit
+agent role override; that spawn shape is rejected by the harness. If the role is
+important, spawn the typed worker or explorer with the lane context in the
+prompt. If the full thread history is more important, omit the role override and
+state the expected mode in the prompt.
 
 Workers should hand off with:
 
