@@ -12,6 +12,7 @@ use crate::{
 const MANAGE_EXTERNAL_MIGRATIONS_PERMISSION: &str = "manage_external_migrations";
 const MISSING_WS_ID_MESSAGE: &str = "Missing ws_id parameter";
 const PRIVATE_SCHEMA: &str = "private";
+const COUPONS_PATH: &str = "/api/v1/infrastructure/coupons";
 const USER_MONTHLY_REPORT_LOGS_PATH: &str = "/api/v1/infrastructure/user-monthly-report-logs";
 const USER_MONTHLY_REPORTS_PATH: &str = "/api/v1/infrastructure/user-monthly-reports";
 
@@ -23,7 +24,13 @@ struct MigrationExportSpec {
     workspace_filter_column: &'static str,
 }
 
-const MIGRATION_EXPORT_SPECS: [MigrationExportSpec; 2] = [
+const MIGRATION_EXPORT_SPECS: [MigrationExportSpec; 3] = [
+    MigrationExportSpec {
+        error_message: "Error fetching workspace promotions",
+        path: COUPONS_PATH,
+        table: "workspace_promotions",
+        workspace_filter_column: "ws_id",
+    },
     MigrationExportSpec {
         error_message: "Error fetching external_user_monthly_report_logs",
         path: USER_MONTHLY_REPORT_LOGS_PATH,
@@ -321,6 +328,12 @@ mod tests {
         assert_eq!(
             MIGRATION_EXPORT_SPECS,
             [
+                MigrationExportSpec {
+                    error_message: "Error fetching workspace promotions",
+                    path: "/api/v1/infrastructure/coupons",
+                    table: "workspace_promotions",
+                    workspace_filter_column: "ws_id",
+                },
                 MigrationExportSpec {
                     error_message: "Error fetching external_user_monthly_report_logs",
                     path: "/api/v1/infrastructure/user-monthly-report-logs",
