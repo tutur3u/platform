@@ -252,15 +252,17 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   REST adapter ordered by `suspended_at`, and returns the legacy raw row array.
   POST and detail DELETE remain legacy-owned until suspension mutations move to
   Rust.
-- `GET /api/v1/infrastructure/email-blacklist` and
-  `GET /api/v1/infrastructure/email-blacklist/:entryId`: legacy-compatible
-  root-workspace email blacklist reads. Rust revalidates the browser Supabase
-  session cookie or non-app-session Bearer token, checks root workspace
-  membership with the caller token, reads `email_blacklist` through Supabase
-  REST so RLS remains active, preserves the collection ordering, preserves the
-  detail route's non-root `401` quirk, and maps `PGRST116` detail misses to the
-  legacy `404` body. Writes remain legacy-owned until a dedicated blacklist
-  mutation batch.
+- `GET /api/v1/infrastructure/email-blacklist`, `GET
+  /api/v1/infrastructure/email-blacklist/:entryId`, and `DELETE
+  /api/v1/infrastructure/email-blacklist/:entryId`: legacy-compatible
+  root-workspace email blacklist reads and detail deletion. Rust revalidates the
+  browser Supabase session cookie or non-app-session Bearer token, checks root
+  workspace membership with the caller token, reads and deletes
+  `email_blacklist` through Supabase REST so RLS remains active, preserves the
+  collection ordering, preserves the detail GET non-root `401` quirk, maps
+  `PGRST116` detail GET misses to the legacy `404` body, and preserves DELETE
+  prefetch/not-found and success bodies. POST and PUT remain legacy-owned until
+  a dedicated blacklist mutation batch.
 - `GET /api/v1/infrastructure/bill-coupons`,
   `GET /api/v1/infrastructure/bill-packages`,
   `GET /api/v1/infrastructure/class-attendance`,

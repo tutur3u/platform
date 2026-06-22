@@ -18,6 +18,8 @@ mod cron_monitoring_test;
 mod current_user_default_workspace;
 mod devbox_cache;
 mod email_blacklist;
+#[cfg(test)]
+mod email_blacklist_test;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;

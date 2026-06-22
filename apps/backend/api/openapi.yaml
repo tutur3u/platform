@@ -3625,7 +3625,7 @@ paths:
   /api/v1/infrastructure/email-blacklist/{entryId}:
     get:
       summary: Legacy-compatible email blacklist detail
-      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reads the singular email_blacklist row with caller-token Supabase REST, maps PostgREST PGRST116 to the legacy 404 body, and leaves PUT/DELETE legacy-owned until blacklist writes move behind Rust.
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reads the singular email_blacklist row with caller-token Supabase REST, maps PostgREST PGRST116 to the legacy 404 body, and leaves PUT legacy-owned until blacklist update body validation moves behind Rust.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -3694,6 +3694,96 @@ paths:
                     type: string
                     examples:
                       - Error fetching email blacklist entry
+    delete:
+      summary: Legacy-compatible email blacklist detail deletion
+      description: Migrated replacement for the DELETE export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 with the Unauthorized body, prefetches the singular email_blacklist row with caller-token Supabase REST, maps prefetch misses and errors to the legacy not-found body, deletes the row with the caller token, and leaves PUT legacy-owned until blacklist update body validation moves behind Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Email blacklist row identifier.
+      responses:
+        "200":
+          description: Email blacklist row was deleted.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Entry deleted successfully
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "403":
+          description: Authenticated caller is not linked to the root workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "404":
+          description: Email blacklist row was not found before deletion.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Email blacklist entry not found
+        "500":
+          description: Email blacklist row could not be deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Error deleting email blacklist entry
   /api/v1/infrastructure/bill-coupons:
     get:
       summary: Legacy-compatible invoice promotion export list

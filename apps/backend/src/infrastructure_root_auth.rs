@@ -51,6 +51,25 @@ pub(crate) async fn send_caller_token_get(
     access_token: &str,
     accept: &str,
 ) -> Result<OutboundResponse, ()> {
+    send_caller_token_request(
+        contact_data,
+        outbound,
+        OutboundMethod::Get,
+        url,
+        access_token,
+        accept,
+    )
+    .await
+}
+
+pub(crate) async fn send_caller_token_request(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    method: OutboundMethod,
+    url: &str,
+    access_token: &str,
+    accept: &str,
+) -> Result<OutboundResponse, ()> {
     let Some(service_role_key) = contact_data.service_role_key() else {
         return Err(());
     };
@@ -58,7 +77,7 @@ pub(crate) async fn send_caller_token_get(
 
     outbound
         .send(
-            OutboundRequest::new(OutboundMethod::Get, url)
+            OutboundRequest::new(method, url)
                 .with_header("Accept", accept)
                 .with_header("Authorization", &authorization)
                 .with_header("apikey", service_role_key),
