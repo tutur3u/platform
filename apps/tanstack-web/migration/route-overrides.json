@@ -688,6 +688,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/$taskId preserves the legacy authenticated task-detail recovery page by gating the current user and resolving the task through the internal API facade before redirecting to the canonical board-backed task URL. Parent dashboard layout/session and task data APIs remain separately owned."
     },
+    "page:/:locale/:wsId/tasks/boards:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/boards preserves the legacy authenticated boards index shell with FeatureSummary, Suspense skeleton, and shared WorkspaceProjectsClientPage. The page self-loads workspace, permissions, and boards through internal-api facades under TanStack Query; backing task-board API ownership remains separately tracked."
+    },
+    "page:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/boards/$boardId preserves the legacy authenticated board detail flow by authorizing the board through the forwarded-auth internal API, mapping 400/401/403/404 to notFound, resolving the canonical workspace for member access, using the legacy guest workspace shell for guest board access, and rendering the shared BoardClient. The legacy Mira idle chat island remains legacy-only until its local Next.js API/UI dependencies are moved behind shared TanStack/Rust facades."
+    },
     "page:/:locale/:wsId/tasks/estimates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/estimates/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

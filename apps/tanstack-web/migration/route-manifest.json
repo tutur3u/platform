@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 188,
-        "migrated": 118,
-        "percentComplete": 38.56,
-        "remaining": 188,
-        "terminal": 118,
+        "legacyNext": 186,
+        "migrated": 120,
+        "percentComplete": 39.22,
+        "remaining": 186,
+        "terminal": 120,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 209,
-        "migrated": 169,
-        "percentComplete": 44.71,
-        "remaining": 209,
-        "terminal": 169,
+        "legacyNext": 207,
+        "migrated": 171,
+        "percentComplete": 45.24,
+        "remaining": 207,
+        "terminal": 171,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1194,
-      "migrated": 247,
-      "percentComplete": 21.65,
-      "remaining": 1194,
-      "terminal": 330,
+      "legacyNext": 1192,
+      "migrated": 249,
+      "percentComplete": 21.78,
+      "remaining": 1192,
+      "terminal": 332,
       "total": 1524,
       "unknownStatus": 0
     }
@@ -12966,7 +12966,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/boards",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12975,7 +12975,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/boards/:boardId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

@@ -131,6 +131,7 @@ import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$local
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library';
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards';
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
+import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
 import { Route as LocaleWsIdTasksTemplatesMarketplaceRouteImport } from './routes/$locale/$wsId/tasks/templates/marketplace';
@@ -800,6 +801,12 @@ const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
   path: '/$wsId/ai-chat/new',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdTasksBoardsIndexRoute =
+  LocaleWsIdTasksBoardsIndexRouteImport.update({
+    id: '/$wsId/tasks/boards/',
+    path: '/$wsId/tasks/boards/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdUsersReportsReportIdRoute =
   LocaleWsIdUsersReportsReportIdRouteImport.update({
     id: '/$wsId/users/reports/$reportId',
@@ -1071,6 +1078,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/tasks/templates/marketplace': typeof LocaleWsIdTasksTemplatesMarketplaceRoute;
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
 }
@@ -1215,6 +1223,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/tasks/templates/marketplace': typeof LocaleWsIdTasksTemplatesMarketplaceRoute;
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
 }
@@ -1361,6 +1370,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/tasks/templates/marketplace': typeof LocaleWsIdTasksTemplatesMarketplaceRoute;
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
 }
@@ -1508,6 +1518,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates/marketplace'
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/tasks/boards/'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
   fileRoutesByTo: FileRoutesByTo;
@@ -1652,6 +1663,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates/marketplace'
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/tasks/boards'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
   id:
@@ -1797,6 +1809,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates/marketplace'
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/tasks/boards/'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
   fileRoutesById: FileRoutesById;
@@ -2666,6 +2679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdAiChatNewRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/tasks/boards/': {
+      id: '/$locale/$wsId/tasks/boards/';
+      path: '/$wsId/tasks/boards';
+      fullPath: '/$locale/$wsId/tasks/boards/';
+      preLoaderRoute: typeof LocaleWsIdTasksBoardsIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/users/reports/$reportId': {
       id: '/$locale/$wsId/users/reports/$reportId';
       path: '/$wsId/users/reports/$reportId';
@@ -3185,6 +3205,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute;
   LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
   LocaleWsIdUsersReportsReportIdRoute: typeof LocaleWsIdUsersReportsReportIdRoute;
+  LocaleWsIdTasksBoardsIndexRoute: typeof LocaleWsIdTasksBoardsIndexRoute;
 }
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
@@ -3298,6 +3319,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,
   LocaleWsIdUsersGroupsGroupIdRoute: LocaleWsIdUsersGroupsGroupIdRoute,
   LocaleWsIdUsersReportsReportIdRoute: LocaleWsIdUsersReportsReportIdRoute,
+  LocaleWsIdTasksBoardsIndexRoute: LocaleWsIdTasksBoardsIndexRoute,
 };
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
