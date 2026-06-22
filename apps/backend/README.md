@@ -114,13 +114,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   Supabase Auth, requires a `tuturuuu.com` or `xwf.tuturuuu.com` user email,
   reads exact task counts through the server-owned Supabase REST adapter, and
   returns only derived coverage statistics.
-- `GET` / `POST` `/api/v1/internal/holidays` and `PUT` / `DELETE`
+- `GET` / `POST` `/api/v1/internal/holidays`, `POST`
+  `/api/v1/internal/holidays/bulk`, and `PUT` / `DELETE`
   `/api/v1/internal/holidays/:holidayId`: legacy-compatible Vietnamese holiday
   routes. GET reads the public holiday list through the server-owned Supabase
-  REST adapter with optional parseInt-style year filtering. POST and item
-  mutations revalidate the caller's Supabase browser cookie or Bearer token,
-  require a root workspace `MEMBER` row, and use that caller token for duplicate
-  checks and writes so `vietnamese_holidays` RLS remains active.
+  REST adapter with optional parseInt-style year filtering. Mutations revalidate
+  the caller's Supabase browser cookie or Bearer token, require a root workspace
+  `MEMBER` row, and use that caller token for duplicate checks, bulk upserts,
+  and writes so `vietnamese_holidays` RLS remains active.
 - `GET /api/v1/mobile/version-check`: public mobile update-policy route. Rust
   validates `platform=ios|android` and strict `version=x.y.z`, reads the fixed
   root workspace mobile policy config IDs through the server-owned Supabase REST

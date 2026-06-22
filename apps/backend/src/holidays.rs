@@ -9,6 +9,7 @@ use crate::{
 };
 
 const HOLIDAYS_PATH: &str = "/api/v1/internal/holidays";
+const HOLIDAYS_BULK_PATH: &str = "/api/v1/internal/holidays/bulk";
 const HOLIDAYS_ITEM_PATH_PREFIX: &str = "/api/v1/internal/holidays/";
 const HOLIDAYS_TABLE: &str = "vietnamese_holidays";
 const WORKSPACE_MEMBERS_TABLE: &str = "workspace_members";
@@ -16,6 +17,9 @@ const HOLIDAYS_ERROR_MESSAGE: &str = "Error fetching holidays";
 const HOLIDAY_CREATE_ERROR_MESSAGE: &str = "Error creating holiday";
 const HOLIDAY_UPDATE_ERROR_MESSAGE: &str = "Error updating holiday";
 const HOLIDAY_DELETE_ERROR_MESSAGE: &str = "Error deleting holiday";
+const HOLIDAY_BULK_DELETE_ERROR_MESSAGE: &str = "Error deleting existing holidays";
+const HOLIDAY_BULK_INSERT_ERROR_MESSAGE: &str = "Error inserting holidays";
+const HOLIDAY_BULK_SUCCESS_MESSAGE: &str = "Holidays imported successfully";
 const HOLIDAY_NOT_FOUND_MESSAGE: &str = "Holiday not found";
 const HOLIDAY_NO_UPDATES_MESSAGE: &str = "No updates provided";
 const HOLIDAY_DUPLICATE_MESSAGE: &str = "A holiday already exists for this date";
@@ -28,6 +32,18 @@ const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
 struct CreateHolidayInput {
     date: String,
     name: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct BulkHolidayInput {
+    date: String,
+    name: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct BulkHolidaysInput {
+    holidays: Vec<BulkHolidayInput>,
+    replace_existing: bool,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -75,6 +91,13 @@ pub(crate) async fn handle_holidays_route(
         });
     }
 
+    if request.path == HOLIDAYS_BULK_PATH {
+        return Some(match request.method {
+            "POST" => bulk_import_holidays_response(&config.contact_data, request, outbound).await,
+            method => method_not_allowed(method, "POST"),
+        });
+    }
+
     let holiday_id = holiday_item_id(request.path)?;
 
     Some(match request.method {
@@ -88,6 +111,7 @@ pub(crate) async fn handle_holidays_route(
 
 pub(crate) fn should_buffer_request_body(method: &str, path: &str) -> bool {
     matches!((method, path), ("POST", HOLIDAYS_PATH))
+        || matches!((method, path), ("POST", HOLIDAYS_BULK_PATH))
         || (method == "PUT" && holiday_item_id(path).is_some())
 }
 
@@ -194,6 +218,109 @@ async fn create_holiday_response(
         Ok(body) => no_store_response(json_response(201, body)),
         Err(_) => create_holiday_error_response(),
     }
+}
+
+async fn bulk_import_holidays_response(
+    contact_data: &contact::ContactDataConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let Some(access_token) = request_holidays_admin_access(contact_data, request, outbound).await
+    else {
+        return admin_access_required_response();
+    };
+
+    let input = match bulk_holidays_input_from_body(request.body_text) {
+        Ok(input) => input,
+        Err(response) => return response,
+    };
+    let years_affected = unique_holiday_years(&input.holidays);
+
+    if input.replace_existing && !years_affected.is_empty() {
+        let Some(url) = contact_data.rest_url(
+            HOLIDAYS_TABLE,
+            &[("year", postgrest_in_filter(&years_affected))],
+        ) else {
+            return bulk_delete_holidays_error_response();
+        };
+        let Ok(response) = send_holidays_authenticated_request(
+            contact_data,
+            outbound,
+            OutboundMethod::Delete,
+            &url,
+            APPLICATION_JSON,
+            &access_token,
+            None,
+            None,
+        )
+        .await
+        else {
+            return bulk_delete_holidays_error_response();
+        };
+
+        if !(200..300).contains(&response.status) {
+            return bulk_delete_holidays_error_response();
+        }
+    }
+
+    let Some(url) = contact_data.rest_url(
+        HOLIDAYS_TABLE,
+        &[
+            ("on_conflict", "date".to_owned()),
+            ("select", "*".to_owned()),
+        ],
+    ) else {
+        return bulk_insert_holidays_error_response();
+    };
+    let rows: Vec<_> = input
+        .holidays
+        .iter()
+        .map(|holiday| CreateHolidayRequest {
+            date: &holiday.date,
+            name: &holiday.name,
+        })
+        .collect();
+    let Ok(body) = serde_json::to_string(&rows) else {
+        return bulk_insert_holidays_error_response();
+    };
+    let prefer = if input.replace_existing {
+        "resolution=merge-duplicates,return=representation"
+    } else {
+        "resolution=ignore-duplicates,return=representation"
+    };
+    let Ok(response) = send_holidays_authenticated_request(
+        contact_data,
+        outbound,
+        OutboundMethod::Post,
+        &url,
+        APPLICATION_JSON,
+        &access_token,
+        Some(prefer),
+        Some(&body),
+    )
+    .await
+    else {
+        return bulk_insert_holidays_error_response();
+    };
+
+    if !(200..300).contains(&response.status) {
+        return bulk_insert_holidays_error_response();
+    }
+
+    let imported = response
+        .json::<Value>()
+        .ok()
+        .and_then(|body| body.as_array().map(Vec::len))
+        .unwrap_or(0);
+
+    no_store_response(json_response(
+        201,
+        json!({
+            "message": HOLIDAY_BULK_SUCCESS_MESSAGE,
+            "imported": imported,
+            "yearsAffected": years_affected,
+        }),
+    ))
 }
 
 async fn update_holiday_response(
@@ -599,6 +726,124 @@ fn create_holiday_input_from_body(
     }
 }
 
+fn bulk_holidays_input_from_body(
+    body_text: Option<&str>,
+) -> Result<BulkHolidaysInput, BackendResponse> {
+    let Ok(value) = serde_json::from_str::<Value>(body_text.unwrap_or_default()) else {
+        return Err(invalid_input_response(json!({
+            "body": ["Expected a JSON object"],
+        })));
+    };
+    let Some(object) = value.as_object() else {
+        return Err(invalid_input_response(json!({
+            "body": ["Expected a JSON object"],
+        })));
+    };
+    let mut field_errors = Map::new();
+
+    let replace_existing = match object.get("replaceExisting") {
+        Some(Value::Bool(value)) => *value,
+        Some(_) => {
+            push_field_error(&mut field_errors, "replaceExisting", "Expected boolean");
+            false
+        }
+        None => false,
+    };
+    let holidays = match object.get("holidays") {
+        Some(Value::Array(values)) if values.is_empty() => {
+            push_field_error(&mut field_errors, "holidays", "Expected at least 1 holiday");
+            Vec::new()
+        }
+        Some(Value::Array(values)) if values.len() > 100 => {
+            push_field_error(
+                &mut field_errors,
+                "holidays",
+                "Expected at most 100 holidays",
+            );
+            Vec::new()
+        }
+        Some(Value::Array(values)) => values
+            .iter()
+            .enumerate()
+            .filter_map(|(index, value)| {
+                bulk_holiday_input_from_value(value, index, &mut field_errors)
+            })
+            .collect(),
+        Some(_) => {
+            push_field_error(&mut field_errors, "holidays", "Expected array");
+            Vec::new()
+        }
+        None => {
+            push_field_error(&mut field_errors, "holidays", "Expected array");
+            Vec::new()
+        }
+    };
+
+    if field_errors.is_empty() {
+        Ok(BulkHolidaysInput {
+            holidays,
+            replace_existing,
+        })
+    } else {
+        Err(invalid_input_response(Value::Object(field_errors)))
+    }
+}
+
+fn bulk_holiday_input_from_value(
+    value: &Value,
+    index: usize,
+    field_errors: &mut Map<String, Value>,
+) -> Option<BulkHolidayInput> {
+    let Some(object) = value.as_object() else {
+        push_indexed_holidays_error(field_errors, index, "Expected object");
+        return None;
+    };
+
+    let date = match object.get("date").and_then(Value::as_str) {
+        Some(date) if legacy_date_string(date) => Some(date.to_owned()),
+        Some(_) => {
+            push_indexed_holidays_error(
+                field_errors,
+                index,
+                "Expected date formatted as YYYY-MM-DD",
+            );
+            None
+        }
+        None => {
+            push_indexed_holidays_error(field_errors, index, "Expected date string");
+            None
+        }
+    };
+    let name = match object.get("name").and_then(Value::as_str) {
+        Some(name) if !name.is_empty() && name.chars().count() <= 100 => Some(name.to_owned()),
+        Some(name) if name.is_empty() => {
+            push_indexed_holidays_error(
+                field_errors,
+                index,
+                "Expected name with at least 1 character",
+            );
+            None
+        }
+        Some(_) => {
+            push_indexed_holidays_error(
+                field_errors,
+                index,
+                "Expected name with at most 100 characters",
+            );
+            None
+        }
+        None => {
+            push_indexed_holidays_error(field_errors, index, "Expected name string");
+            None
+        }
+    };
+
+    match (date, name) {
+        (Some(date), Some(name)) => Some(BulkHolidayInput { date, name }),
+        _ => None,
+    }
+}
+
 fn update_holiday_input_from_body(
     body_text: Option<&str>,
 ) -> Result<UpdateHolidayInput, BackendResponse> {
@@ -725,6 +970,50 @@ fn legacy_date_string(value: &str) -> bool {
         && bytes[9].is_ascii_digit()
 }
 
+fn unique_holiday_years(holidays: &[BulkHolidayInput]) -> Vec<i64> {
+    let mut years = Vec::new();
+
+    for holiday in holidays {
+        let Ok(year) = holiday.date[..4].parse::<i64>() else {
+            continue;
+        };
+
+        if !years.contains(&year) {
+            years.push(year);
+        }
+    }
+
+    years
+}
+
+fn postgrest_in_filter(years: &[i64]) -> String {
+    let values = years
+        .iter()
+        .map(i64::to_string)
+        .collect::<Vec<_>>()
+        .join(",");
+
+    format!("in.({values})")
+}
+
+fn push_indexed_holidays_error(field_errors: &mut Map<String, Value>, index: usize, message: &str) {
+    push_field_error(
+        field_errors,
+        "holidays",
+        &format!("Holiday {}: {message}", index + 1),
+    );
+}
+
+fn push_field_error(field_errors: &mut Map<String, Value>, field: &str, message: &str) {
+    let entry = field_errors
+        .entry(field.to_owned())
+        .or_insert_with(|| Value::Array(Vec::new()));
+
+    if let Value::Array(errors) = entry {
+        errors.push(Value::String(message.to_owned()));
+    }
+}
+
 fn holidays_error_response() -> BackendResponse {
     no_store_response(json_response(
         500,
@@ -757,6 +1046,24 @@ fn delete_holiday_error_response() -> BackendResponse {
         500,
         json!({
             "message": HOLIDAY_DELETE_ERROR_MESSAGE,
+        }),
+    ))
+}
+
+fn bulk_delete_holidays_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({
+            "message": HOLIDAY_BULK_DELETE_ERROR_MESSAGE,
+        }),
+    ))
+}
+
+fn bulk_insert_holidays_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({
+            "message": HOLIDAY_BULK_INSERT_ERROR_MESSAGE,
         }),
     ))
 }

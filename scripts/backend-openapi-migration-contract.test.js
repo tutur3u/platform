@@ -17,6 +17,7 @@ const BUFFERED_JSON_OPERATIONS = [
   ['POST', '/api/v1/infrastructure/sidebar'],
   ['POST', '/api/v1/infrastructure/sidebar/sizes'],
   ['POST', '/api/v1/internal/holidays'],
+  ['POST', '/api/v1/internal/holidays/bulk'],
   ['PUT', '/api/v1/internal/holidays/{holidayId}'],
 ];
 
