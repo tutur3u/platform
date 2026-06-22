@@ -1643,6 +1643,11 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
     },
+    "page:/:locale/shared/task/:shareCode:apps/web/src/app/[locale]/shared/task/[shareCode]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/shared/task/$shareCode ports the legacy authenticated shared-task page with fail-closed current-user resolution before task data fetch, 307 login redirect preserving nextUrl, noindex head metadata, unavailable shell for revoked or missing links, and shared TaskEditDialog rendering through SharedTaskContent. The page forwards authenticated cookies to the legacy /api/v1/shared/tasks/:shareCode endpoint, so that API artifact remains separately legacy-owned."
+    },
     "page:/:locale/shared/user-profile/:code:apps/web/src/app/[locale]/shared/user-profile/[code]/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
