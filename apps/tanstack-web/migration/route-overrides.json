@@ -572,6 +572,11 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/lessons:apps/web/src/app/api/v1/infrastructure/lessons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/lessons by preserving the legacy no-auth service-role export contract, reading private.user_group_posts with the workspace_user_groups inner ws_id filter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and Error fetching user_group_posts body."
+    },
     "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts": {
       "methods": {
         "GET": {
@@ -580,6 +585,11 @@
           "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/mobile-versions by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading the fixed root workspace mobile policy config IDs through the server-owned Supabase REST adapter, validating legacy policy invariants, and returning the legacy admin policy snapshot. PUT remains legacy-owned until policy writes move to Rust."
         }
       }
+    },
+    "api:/api/v1/infrastructure/packages:apps/web/src/app/api/v1/infrastructure/packages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/packages by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring the view_inventory workspace permission through the shared workspace permission resolver, reading workspace_products through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
     },
     "api:/api/v1/infrastructure/product-categories:apps/web/src/app/api/v1/infrastructure/product-categories/route.ts": {
       "methods": {

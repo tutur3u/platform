@@ -22,6 +22,9 @@ mod holidays;
 mod infrastructure_abuse_events;
 mod infrastructure_blocked_ips;
 mod infrastructure_catalog_exports;
+mod infrastructure_content_exports;
+#[cfg(test)]
+mod infrastructure_content_exports_test;
 mod infrastructure_finance_exports;
 mod infrastructure_migration_exports;
 mod infrastructure_paginated_list;
@@ -532,6 +535,12 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         infrastructure_catalog_exports::handle_catalog_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_content_exports::handle_content_export_route(config, request, outbound).await
     {
         return response;
     }

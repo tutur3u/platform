@@ -4213,6 +4213,52 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/lessons:
+    get:
+      summary: Legacy-compatible lesson export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/lessons/route.ts. The Rust backend preserves the legacy no-auth service-role export contract, reads private.user_group_posts with the workspace_user_groups inner ws_id filter, and preserves the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy error body.
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User group post rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User group posts could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/mobile-versions:
     get:
       summary: Legacy-compatible protected mobile version policies
@@ -4256,6 +4302,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MobileVersionPoliciesMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/infrastructure/packages:
+    get:
+      summary: Legacy-compatible package export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/packages/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, normalizes the requested workspace, requires the view_inventory workspace permission through the shared workspace permission resolver, reads workspace_products through the service-role Supabase REST adapter, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Workspace product rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "403":
+          description: Caller does not have view_inventory.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Workspace products could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
         "405":
           description: Unsupported HTTP method.
           headers:

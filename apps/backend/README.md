@@ -186,6 +186,16 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   so RLS remains active while preserving the required `ws_id`, parseInt-style
   `limit`/`offset`, exact-count pagination, raw row lists, and legacy error
   bodies.
+- `GET /api/v1/infrastructure/lessons` and
+  `GET /api/v1/infrastructure/packages`: legacy-compatible content export
+  lists for `private.user_group_posts` and `workspace_products`. Lessons
+  preserves the legacy no-auth service-role private-schema export with the
+  `workspace_user_groups.ws_id` inner filter. Packages revalidates the browser
+  Supabase session cookie or non-app-session Bearer token, normalizes workspace
+  identifiers, requires `view_inventory`, and reads `workspace_products` through
+  the service-role Supabase REST adapter. Both preserve the required `ws_id`,
+  parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
+  legacy error bodies.
 - `GET /api/v1/infrastructure/bills`,
   `GET /api/v1/infrastructure/roles`, and
   `GET /api/v1/infrastructure/transaction-categories`: legacy-compatible
