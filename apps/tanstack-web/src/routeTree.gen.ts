@@ -124,6 +124,7 @@ import { Route as LocaleWsIdInventoryWarehousesRouteImport } from './routes/$loc
 import { Route as LocaleWsIdInventoryUnitsRouteImport } from './routes/$locale/$wsId/inventory/units';
 import { Route as LocaleWsIdInventorySuppliersRouteImport } from './routes/$locale/$wsId/inventory/suppliers';
 import { Route as LocaleWsIdInventoryStorefrontsRouteImport } from './routes/$locale/$wsId/inventory/storefronts';
+import { Route as LocaleWsIdInventoryPromotionsRouteImport } from './routes/$locale/$wsId/inventory/promotions';
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
@@ -773,6 +774,12 @@ const LocaleWsIdInventoryStorefrontsRoute =
     path: '/$wsId/inventory/storefronts',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInventoryPromotionsRoute =
+  LocaleWsIdInventoryPromotionsRouteImport.update({
+    id: '/$wsId/inventory/promotions',
+    path: '/$wsId/inventory/promotions',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInventoryManufacturersRoute =
   LocaleWsIdInventoryManufacturersRouteImport.update({
     id: '/$wsId/inventory/manufacturers',
@@ -1138,6 +1145,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
   '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
   '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
@@ -1297,6 +1305,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
   '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
   '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
@@ -1458,6 +1467,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
   '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
   '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
@@ -1620,6 +1630,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/promotions'
     | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
     | '/$locale/$wsId/inventory/units'
@@ -1779,6 +1790,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/promotions'
     | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
     | '/$locale/$wsId/inventory/units'
@@ -1939,6 +1951,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/promotions'
     | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
     | '/$locale/$wsId/inventory/units'
@@ -2809,6 +2822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInventoryStorefrontsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/inventory/promotions': {
+      id: '/$locale/$wsId/inventory/promotions';
+      path: '/$wsId/inventory/promotions';
+      fullPath: '/$locale/$wsId/inventory/promotions';
+      preLoaderRoute: typeof LocaleWsIdInventoryPromotionsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/inventory/manufacturers': {
       id: '/$locale/$wsId/inventory/manufacturers';
       path: '/$wsId/inventory/manufacturers';
@@ -3463,6 +3483,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
+  LocaleWsIdInventoryPromotionsRoute: typeof LocaleWsIdInventoryPromotionsRoute;
   LocaleWsIdInventoryStorefrontsRoute: typeof LocaleWsIdInventoryStorefrontsRoute;
   LocaleWsIdInventorySuppliersRoute: typeof LocaleWsIdInventorySuppliersRoute;
   LocaleWsIdInventoryUnitsRoute: typeof LocaleWsIdInventoryUnitsRoute;
@@ -3587,6 +3608,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
+  LocaleWsIdInventoryPromotionsRoute: LocaleWsIdInventoryPromotionsRoute,
   LocaleWsIdInventoryStorefrontsRoute: LocaleWsIdInventoryStorefrontsRoute,
   LocaleWsIdInventorySuppliersRoute: LocaleWsIdInventorySuppliersRoute,
   LocaleWsIdInventoryUnitsRoute: LocaleWsIdInventoryUnitsRoute,

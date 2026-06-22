@@ -994,6 +994,7 @@ export {
 export {
   type CreatedWorkspacePromotion,
   createWorkspacePromotion,
+  deleteWorkspacePromotion,
   listWorkspacePromotions,
   listWorkspaceUserLinkedPromotions,
   listWorkspaceUserReferralDiscounts,
