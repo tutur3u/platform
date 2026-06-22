@@ -10,9 +10,17 @@ import { ContributorsList } from './contributors-list';
 import { SectionIntro } from './contributors-primitives';
 import { ContributorsStats } from './contributors-stats';
 import { contributorsQuery, repositoryUrl } from './github';
+import type { ContributorsData } from './types';
 
-export function ContributorsPage() {
-  const contributorsResult = useQuery(contributorsQuery);
+export function ContributorsPage({
+  initialData,
+}: {
+  initialData?: ContributorsData;
+}) {
+  const contributorsResult = useQuery({
+    ...contributorsQuery,
+    initialData,
+  });
   const githubData = contributorsResult.data;
 
   if (contributorsResult.isPending) {

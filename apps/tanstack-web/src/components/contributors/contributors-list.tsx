@@ -43,13 +43,13 @@ export function ContributorsList({
                 <div className="mb-4 flex items-center justify-between">
                   <div className="relative">
                     <div className="absolute -inset-0.5 rounded-full bg-linear-to-r from-primary to-dynamic-purple opacity-75 blur-sm group-hover:opacity-100" />
-                    <img
-                      alt={contributor.login}
-                      className="relative h-16 w-16 rounded-full border-2 border-background object-cover"
-                      height={64}
-                      src={contributor.avatar_url}
-                      width={64}
-                    />
+                    <div
+                      aria-label={contributor.login}
+                      className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-background bg-primary/10 font-bold text-primary text-xl"
+                      role="img"
+                    >
+                      {getContributorInitials(contributor)}
+                    </div>
                     {index < 3 ? (
                       <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-amber font-bold text-[10px] text-background">
                         #{index + 1}
@@ -94,4 +94,17 @@ export function ContributorsList({
       </div>
     </section>
   );
+}
+
+function getContributorInitials(contributor: GitHubContributor) {
+  const displayName = contributor.userDetails?.name || contributor.login;
+  const words = displayName
+    .split(/[\s._-]+/u)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  return (words.length > 1 ? words : [displayName])
+    .slice(0, 2)
+    .map((word) => word.at(0)?.toUpperCase() ?? '')
+    .join('');
 }

@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
+import { createServerFn } from '@tanstack/react-start';
 import { GITHUB_OWNER, GITHUB_REPO } from '@tuturuuu/utils/constants';
 import type {
   ContributorsData,
@@ -58,7 +59,7 @@ async function fetchPullRequests() {
   return searchData?.total_count ?? 0;
 }
 
-export async function loadContributorsData(): Promise<ContributorsData> {
+async function loadContributorsDataFromGitHub(): Promise<ContributorsData> {
   try {
     const [repo, contributors] = await Promise.all([
       fetchGitHubRepo(),
@@ -100,6 +101,10 @@ export async function loadContributorsData(): Promise<ContributorsData> {
     };
   }
 }
+
+export const loadContributorsData = createServerFn({ method: 'GET' }).handler(
+  loadContributorsDataFromGitHub
+);
 
 export const contributorsQuery = queryOptions({
   queryFn: loadContributorsData,
