@@ -6,7 +6,7 @@ use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, json_response,
     method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
-    parse_json_body, url_origin,
+    parse_json_body, supabase_auth, url_origin,
 };
 
 mod session;
@@ -24,6 +24,7 @@ pub(crate) use session::{
 
 pub(crate) const CURRENT_USER_PROFILE_PATH: &str = "/api/v1/users/me/profile";
 pub(crate) const SUPPORT_INQUIRIES_PATH: &str = "/api/v1/inquiries";
+const SUPPORT_INQUIRY_PATH_PREFIX: &str = "/api/v1/inquiries/";
 pub(crate) const SUPABASE_URL_KEYS: [&str; 4] = [
     "SUPABASE_SERVER_URL",
     "SUPABASE_URL",
@@ -298,6 +299,11 @@ struct SupportInquiryInsert<'a> {
     inquiry_type: &'a str,
 }
 
+enum SupportInquiryRoute<'a> {
+    Detail { id: &'a str },
+    MediaUrls,
+}
+
 pub(crate) async fn handle_contact_route(
     config: &BackendConfig,
     request: BackendRequest<'_>,
@@ -315,7 +321,16 @@ pub(crate) async fn handle_contact_route(
             Some(support_inquiry_data_post_response(config, request, outbound).await)
         }
         (method, SUPPORT_INQUIRIES_PATH) => Some(method_not_allowed(method, "POST")),
-        _ => None,
+        ("PATCH", path) => match support_inquiry_route(path)? {
+            SupportInquiryRoute::Detail { id } => {
+                Some(support_inquiry_data_patch_response(config, request, id, outbound).await)
+            }
+            SupportInquiryRoute::MediaUrls => None,
+        },
+        (method, path) => match support_inquiry_route(path)? {
+            SupportInquiryRoute::Detail { .. } => Some(method_not_allowed(method, "PATCH")),
+            SupportInquiryRoute::MediaUrls => None,
+        },
     }
 }
 
@@ -710,10 +725,80 @@ async fn support_inquiry_data_post_response(
     ))
 }
 
+async fn support_inquiry_data_patch_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    id: &str,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    let updates = match support_inquiry_patch_updates(request.body_text) {
+        Ok(updates) => updates,
+        Err(response) => return no_store_response(response),
+    };
+
+    if !config.contact_data.configured() {
+        return contact_data_layer_not_ready_response(request);
+    }
+
+    let Some(access_token) = supabase_auth::request_access_token(request) else {
+        return support_inquiry_admin_unauthorized_response();
+    };
+    let Some(user) =
+        supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)
+            .await
+    else {
+        return support_inquiry_admin_unauthorized_response();
+    };
+
+    if !supabase_auth::is_valid_tuturuuu_email(user.email.as_deref()) {
+        return support_inquiry_admin_unauthorized_response();
+    }
+
+    let Some(inquiry_url) = config
+        .contact_data
+        .rest_url("support_inquiries", &[("id", format!("eq.{id}"))])
+    else {
+        return contact_data_layer_not_ready_response(request);
+    };
+    let body = match serde_json::to_string(&updates) {
+        Ok(body) => body,
+        Err(_) => return support_inquiry_internal_server_error_response(),
+    };
+
+    let response = match send_contact_data_request(
+        &config.contact_data,
+        outbound,
+        OutboundMethod::Patch,
+        &inquiry_url,
+        Some(&body),
+        Some("return=representation"),
+    )
+    .await
+    {
+        Ok(response) if is_success_status(response.status) => response,
+        Ok(_) | Err(_) => return support_inquiry_update_failed_response(),
+    };
+
+    let data = match decode_first_row::<serde_json::Value>(&response) {
+        Ok(Some(row)) => row,
+        Ok(None) | Err(_) => return support_inquiry_update_failed_response(),
+    };
+
+    no_store_response(json_response(
+        200,
+        json!({
+            "data": data,
+        }),
+    ))
+}
+
 pub(crate) fn should_buffer_request_body(method: &str, path: &str) -> bool {
     matches!(
         (method, path),
         ("PATCH", CURRENT_USER_PROFILE_PATH) | ("POST", SUPPORT_INQUIRIES_PATH)
+    ) || matches!(
+        (method, support_inquiry_route(path)),
+        ("PATCH", Some(SupportInquiryRoute::Detail { .. }))
     )
 }
 
@@ -771,6 +856,26 @@ fn contact_data_layer_request_failed_response() -> BackendResponse {
             "message": CONTACT_DATA_REQUEST_FAILED_MESSAGE,
         }),
     ))
+}
+
+fn support_inquiry_route(path: &str) -> Option<SupportInquiryRoute<'_>> {
+    let id = path.strip_prefix(SUPPORT_INQUIRY_PATH_PREFIX)?;
+
+    if let Some(id) = id.strip_suffix("/media-urls")
+        && valid_support_inquiry_id_segment(id)
+    {
+        return Some(SupportInquiryRoute::MediaUrls);
+    }
+
+    if !valid_support_inquiry_id_segment(id) {
+        return None;
+    }
+
+    Some(SupportInquiryRoute::Detail { id })
+}
+
+fn valid_support_inquiry_id_segment(id: &str) -> bool {
+    !id.is_empty() && !id.contains('/')
 }
 
 fn decode_first_row<T: for<'de> Deserialize<'de>>(
@@ -873,6 +978,78 @@ fn invalid_contact_request_body_response(errors: Vec<String>) -> BackendResponse
             "message": "Invalid request body",
         }),
     )
+}
+
+fn support_inquiry_patch_updates(
+    body_text: Option<&str>,
+) -> Result<serde_json::Value, BackendResponse> {
+    let Some(body) = parse_json_body(body_text) else {
+        return Err(support_inquiry_internal_server_error_response());
+    };
+    let Some(body) = body.as_object() else {
+        return Err(invalid_support_inquiry_update_response(vec![json!({
+            "path": [],
+            "message": "Expected object",
+        })]));
+    };
+    let mut updates = serde_json::Map::new();
+    let mut errors = Vec::new();
+
+    for field in ["is_read", "is_resolved"] {
+        match body.get(field) {
+            Some(value) if value.is_boolean() => {
+                updates.insert(field.to_owned(), value.clone());
+            }
+            Some(_) => errors.push(json!({
+                "path": [field],
+                "message": "Expected boolean",
+            })),
+            None => {}
+        }
+    }
+
+    if !errors.is_empty() {
+        return Err(invalid_support_inquiry_update_response(errors));
+    }
+
+    Ok(serde_json::Value::Object(updates))
+}
+
+fn invalid_support_inquiry_update_response(details: Vec<serde_json::Value>) -> BackendResponse {
+    json_response(
+        400,
+        json!({
+            "details": details,
+            "error": "Invalid request body",
+        }),
+    )
+}
+
+fn support_inquiry_admin_unauthorized_response() -> BackendResponse {
+    no_store_response(json_response(
+        401,
+        json!({
+            "error": "Unauthorized. Only Tuturuuu accounts can update inquiries.",
+        }),
+    ))
+}
+
+fn support_inquiry_update_failed_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({
+            "error": "Failed to update inquiry",
+        }),
+    ))
+}
+
+fn support_inquiry_internal_server_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({
+            "error": "Internal server error",
+        }),
+    ))
 }
 
 fn validate_support_inquiry_payload(payload: &SupportInquiryRequest) -> Vec<String> {

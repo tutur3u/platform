@@ -105,10 +105,15 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   Cookie-authenticated requests require same-origin `Origin` or `Referer`
   confirmation, then Rust validates and persists `display_name`, `bio`, and
   `avatar_url` updates to the `users` row through Supabase REST.
-- `POST /api/v1/inquiries`: authenticated support-inquiry route. It verifies
-  app-session JWTs, requires same-origin confirmation for cookie auth, validates
-  the legacy inquiry JSON shape and field limits, then inserts
-  `support_inquiries` with `creator_id` from the resolved user.
+- `POST /api/v1/inquiries` and `PATCH /api/v1/inquiries/:id`:
+  authenticated support-inquiry routes. Inquiry creation verifies app-session
+  JWTs, requires same-origin confirmation for cookie auth, validates the legacy
+  inquiry JSON shape and field limits, then inserts `support_inquiries` with
+  `creator_id` from the resolved user. Inquiry updates revalidate the browser
+  Supabase session, require a `tuturuuu.com` or `xwf.tuturuuu.com` user email,
+  validate the legacy `is_read` and `is_resolved` flags, and patch
+  `support_inquiries` through the server-owned Supabase REST adapter. Media
+  signed URLs remain legacy-owned until storage handling moves behind Rust.
 - `GET /api/admin/tasks/embeddings/stats`: legacy-compatible admin task
   embedding statistics route. Rust validates browser Supabase auth cookies with
   Supabase Auth, requires a `tuturuuu.com` or `xwf.tuturuuu.com` user email,

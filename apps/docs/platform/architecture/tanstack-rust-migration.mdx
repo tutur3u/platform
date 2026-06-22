@@ -338,7 +338,7 @@ Current inventory:
 - `1,139` route handler artifacts
 - `19` cron handlers
 - `1,518` total tracked route artifacts
-- `225` migrated artifacts, `308` terminal artifacts, and `1,210` remaining
+- `226` migrated artifacts, `309` terminal artifacts, and `1,209` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -597,9 +597,12 @@ contract used by TanStack contact: `GET /api/v1/users/me/profile`,
 `PATCH /api/v1/users/me/profile`, and `POST /api/v1/inquiries` verify
 `ttr_app_` app-session JWTs, enforce same-origin mutation checks for cookie
 auth, validate request bodies, call Supabase REST through the server-owned Rust
-outbound adapter, and have mocked native/Worker persistence tests. Broader
-Supabase session revalidation remains part of the dedicated auth migration
-milestone, so route notes must stay explicit about the app-session boundary.
+outbound adapter, and have mocked native/Worker persistence tests.
+`PATCH /api/v1/inquiries/:id` separately revalidates the browser Supabase
+session, requires a Tuturuuu/XWF email domain, and updates the inquiry admin
+flags through the same Rust Supabase REST adapter. Broader Supabase session
+revalidation remains part of the dedicated auth migration milestone, so route
+notes must stay explicit about the app-session versus browser-session boundary.
 
 `scripts/backend-openapi-migration-contract.test.js` compares the migrated
 Rust-owned route artifacts in `apps/tanstack-web/migration/route-manifest.json`
@@ -718,6 +721,7 @@ consumed by the TanStack shell through a Start server function:
 | `GET /api/v1/users/me/profile`                                                                                                                                | App-session current-user profile route. It verifies `ttr_app_` JWTs, reads `users` and `user_private_details` through the server-owned Supabase REST adapter, and returns the legacy profile shape with no-store headers.     |
 | `PATCH /api/v1/users/me/profile`                                                                                                                              | App-session profile mutation route. It enforces same-origin confirmation for cookie auth, validates `display_name`, `bio`, and `avatar_url`, and persists the allowed fields to the `users` row through Supabase REST.        |
 | `POST /api/v1/inquiries`                                                                                                                                      | App-session support-inquiry route. It enforces same-origin confirmation for cookie auth, validates the legacy payload and field limits, and inserts `support_inquiries` with `creator_id` from the resolved app-session user. |
+| `PATCH /api/v1/inquiries/:id`                                                                                                                                 | Browser-session inquiry admin update route. It validates the legacy `is_read` and `is_resolved` flags, requires a Tuturuuu/XWF email domain, and patches `support_inquiries` through the server-owned Supabase REST adapter. |
 | `OPTIONS /api/v1/auth/{password-login,otp/send,otp/verify}` and `GET` / `OPTIONS` `/api/v1/auth/otp/settings`                                                 | Legacy-compatible shared wildcard CORS preflights plus public OTP availability lookup backed by the root workspace OTP config reads. Paired OTP send/verify and password auth methods remain legacy-owned.                    |
 | `OPTIONS /api/v1/auth/mobile/{password-login,send-otp,verify-otp}`                                                                                            | Method-level legacy-compatible shared wildcard CORS `204` preflights; paired mobile auth methods remain legacy-owned.                                                                                                         |
 | `GET` / `OPTIONS` `/api/v1/mobile/version-check`                                                                                                              | Legacy-compatible public mobile version policy evaluation and shared wildcard CORS preflight backed by fixed root workspace policy config IDs read through the Rust backend Supabase REST adapter.                            |

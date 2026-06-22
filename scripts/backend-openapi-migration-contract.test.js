@@ -13,6 +13,7 @@ const BACKEND_ROUTE_KINDS = new Set(['api', 'cron', 'route-handler', 'trpc']);
 const BUFFERED_JSON_OPERATIONS = [
   ['PATCH', '/api/v1/users/me/profile'],
   ['POST', '/api/v1/inquiries'],
+  ['PATCH', '/api/v1/inquiries/{id}'],
   ['POST', '/api/v1/infrastructure/languages'],
   ['POST', '/api/v1/infrastructure/changelog'],
   ['PUT', '/api/v1/infrastructure/changelog/{id}'],

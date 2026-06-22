@@ -342,7 +342,12 @@
     "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request verifies app-session auth, enforces same-origin mutation confirmation for cookie auth, validates the legacy support inquiry payload, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. Adjacent inquiry item and media-url routes remain legacy-owned."
+      "note": "Rust backend handle_backend_request verifies app-session auth, enforces same-origin mutation confirmation for cookie auth, validates the legacy support inquiry payload, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. Adjacent inquiry media-url route remains legacy-owned."
+    },
+    "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles PATCH /api/v1/inquiries/:id by validating the legacy is_read/is_resolved payload, revalidating the browser Supabase session, requiring a Tuturuuu or XWF email domain, patching support_inquiries through the server-owned Supabase REST adapter, and preserving the legacy { data } success body plus 400/401/500 error bodies. The adjacent media-url storage route remains legacy-owned."
     },
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",

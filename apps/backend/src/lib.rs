@@ -8182,6 +8182,10 @@ mod tests {
         ));
         assert!(should_buffer_request_body(
             "PATCH",
+            "/api/v1/inquiries/inquiry-1"
+        ));
+        assert!(should_buffer_request_body(
+            "PATCH",
             ONBOARDING_PROGRESS_PATH
         ));
         assert!(!should_buffer_request_body(
@@ -8199,6 +8203,10 @@ mod tests {
         assert!(!should_buffer_request_body(
             "POST",
             "/api/v1/infrastructure/changelog/upload"
+        ));
+        assert!(!should_buffer_request_body(
+            "POST",
+            "/api/v1/inquiries/inquiry-1/media-urls"
         ));
         assert!(!should_buffer_request_body("GET", ONBOARDING_PROGRESS_PATH));
         assert!(!should_buffer_request_body("PATCH", SUPPORT_INQUIRIES_PATH));
@@ -9136,21 +9144,140 @@ mod tests {
         );
     }
 
-    #[test]
-    fn contact_api_routes_reject_unsupported_methods() {
-        let profile_response = route_request(
-            &BackendConfig::new("test", "backend"),
-            request("POST", CURRENT_USER_PROFILE_PATH),
+    #[tokio::test]
+    async fn support_inquiry_patch_validates_body_before_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PATCH",
+                "/api/v1/inquiries/inquiry-1",
+                r#"{"is_read":"yes"}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["error"], "Invalid request body");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn support_inquiry_patch_requires_tuturuuu_admin_email() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("member-access-token");
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-1","email":"member@example.com"}"#,
         );
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PATCH",
+                    "/api/v1/inquiries/inquiry-1",
+                    r#"{"is_read":true}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(
+            response.body["error"],
+            "Unauthorized. Only Tuturuuu accounts can update inquiries."
+        );
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn support_inquiry_patch_updates_row_with_service_role() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"ops@tuturuuu.com"}"#),
+            outbound_response(
+                200,
+                r#"[{"id":"inquiry-1","is_read":true,"is_resolved":false}]"#,
+            ),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PATCH",
+                    "/api/v1/inquiries/inquiry-1",
+                    r#"{"is_read":true,"is_resolved":false,"ignored":"value"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["data"]["id"], "inquiry-1");
+        assert_eq!(response.body["data"]["is_read"], true);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[1].method, OutboundMethod::Patch);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/support_inquiries?id=eq.inquiry-1"
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "prefer"),
+            Some("return=representation")
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[1].body.as_deref().unwrap()).unwrap(),
+            json!({
+                "is_read": true,
+                "is_resolved": false,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn contact_api_routes_reject_unsupported_methods() {
+        let config = BackendConfig::new("test", "backend");
+        let outbound = RecordingOutboundClient::default();
+        let profile_response = handle_backend_request(
+            &config,
+            request("POST", CURRENT_USER_PROFILE_PATH),
+            &outbound,
+        )
+        .await;
         assert_eq!(profile_response.status, 405);
         assert_eq!(profile_response.allow, Some("GET, PATCH"));
 
-        let inquiry_response = route_request(
-            &BackendConfig::new("test", "backend"),
-            request("GET", SUPPORT_INQUIRIES_PATH),
-        );
+        let inquiry_response =
+            handle_backend_request(&config, request("GET", SUPPORT_INQUIRIES_PATH), &outbound)
+                .await;
         assert_eq!(inquiry_response.status, 405);
         assert_eq!(inquiry_response.allow, Some("POST"));
+
+        let inquiry_detail_response = handle_backend_request(
+            &config,
+            request("GET", "/api/v1/inquiries/inquiry-1"),
+            &outbound,
+        )
+        .await;
+        assert_eq!(inquiry_detail_response.status, 405);
+        assert_eq!(inquiry_detail_response.allow, Some("PATCH"));
     }
 
     #[test]

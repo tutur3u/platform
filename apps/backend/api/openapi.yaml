@@ -3860,6 +3860,75 @@ paths:
                 type: string
                 examples:
                   - POST
+  /api/v1/inquiries/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Support inquiry identifier.
+    patch:
+      summary: Update support inquiry flags
+      description: >
+        Migrated replacement for apps/web/src/app/api/v1/inquiries/[id]/route.ts.
+        The Rust backend validates the legacy `is_read` and `is_resolved`
+        boolean update payload, revalidates the browser Supabase session,
+        requires a Tuturuuu or XWF email domain, and updates support_inquiries
+        through the server-owned Supabase REST adapter with service-role
+        authority.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSupportInquiryRequest"
+      responses:
+        "200":
+          description: Support inquiry updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateSupportInquiryResponse"
+        "400":
+          description: Invalid inquiry update payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportInquiryUpdateValidationError"
+        "401":
+          description: Caller is missing a valid Tuturuuu or XWF Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportInquiryAdminUnauthorized"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Support inquiry could not be updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportInquiryUpdateError"
+        "503":
+          description: Contact data adapter configuration is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactDataLayerNotReady"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - PATCH
   /api/v1/infrastructure/languages:
     post:
       summary: Set locale preference cookie
@@ -5904,6 +5973,73 @@ components:
           type: string
           examples:
             - support-inquiry-123
+    UpdateSupportInquiryRequest:
+      type: object
+      properties:
+        is_read:
+          type: boolean
+        is_resolved:
+          type: boolean
+    UpdateSupportInquiryResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+          properties:
+            id:
+              type: string
+            is_read:
+              type:
+                - boolean
+                - "null"
+            is_resolved:
+              type:
+                - boolean
+                - "null"
+    SupportInquiryUpdateValidationError:
+      type: object
+      required:
+        - error
+        - details
+      properties:
+        error:
+          type: string
+          examples:
+            - Invalid request body
+        details:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              path:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+    SupportInquiryAdminUnauthorized:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized. Only Tuturuuu accounts can update inquiries.
+    SupportInquiryUpdateError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Failed to update inquiry
+            - Internal server error
     ContactUnauthorized:
       type: object
       required:
