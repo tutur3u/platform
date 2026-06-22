@@ -134,6 +134,24 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/ai/whitelist/me by preserving the legacy app-session-first auth behavior for satellite app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only the enabled flag for the authenticated email from private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the derived legacy email/enabled payload."
     },
+    "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body. POST remains legacy-owned until whitelist writes move to Rust."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body. POST remains legacy-owned until whitelist writes move to Rust."
+        }
+      }
+    },
     "api:/api/v1/users/me/hive-access:apps/web/src/app/api/v1/users/me/hive-access/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

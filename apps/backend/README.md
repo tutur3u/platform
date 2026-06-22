@@ -72,6 +72,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   falls back to browser Supabase cookies only when no app-session token is
   present, reads only `enabled` from `private.ai_whitelisted_emails`, and
   returns the derived `{ email, enabled }` payload.
+- `GET /api/v1/infrastructure/ai/whitelist/emails` and
+  `GET /api/v1/infrastructure/ai/whitelist/domains`: legacy-compatible
+  infrastructure AI whitelist list routes. Rust revalidates a normal Supabase
+  browser session or non-app-session Bearer token, requires a `@tuturuuu.com`
+  operator email, reads the private whitelist tables through the server-owned
+  private-schema REST adapter, preserves `page`/`pageSize`/`q`,
+  `created_at.desc` ordering, exact-count pagination, raw row lists, and keeps
+  POST legacy-owned until whitelist writes move to Rust.
 - `GET /api/v1/workspaces/limits`: legacy-compatible workspace creation limit
   check. Rust validates browser Supabase auth cookies with Supabase Auth,
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise

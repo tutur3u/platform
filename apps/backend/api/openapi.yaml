@@ -531,6 +531,136 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/ai/whitelist/domains:
+    get:
+      summary: Legacy-compatible AI whitelist domain list
+      description: >-
+        Migrated replacement for the GET method in
+        apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires a caller email ending in
+        @tuturuuu.com, reads private.ai_whitelisted_domains through the
+        server-owned private-schema REST adapter, and preserves the legacy
+        page/pageSize/q query behavior, created_at descending order,
+        exact-count pagination, raw row list response, 403 denial body, and
+        plain-text 500 body. POST remains legacy-owned until whitelist writes
+        move to Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: string
+          description: Positive integer page number. Defaults to 1.
+        - name: pageSize
+          in: query
+          schema:
+            type: string
+          description: Positive integer page size. Defaults to 10.
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Optional trimmed domain substring search.
+      responses:
+        "200":
+          description: Whitelisted domain rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "403":
+          description: Caller is not an allowed Tuturuuu operator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Whitelist domains could not be loaded.
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Internal Server Error
+  /api/v1/infrastructure/ai/whitelist/emails:
+    get:
+      summary: Legacy-compatible AI whitelist email list
+      description: >-
+        Migrated replacement for the GET method in
+        apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires a caller email ending in
+        @tuturuuu.com, reads private.ai_whitelisted_emails through the
+        server-owned private-schema REST adapter, and preserves the legacy
+        page/pageSize/q query behavior, created_at descending order,
+        exact-count pagination, raw row list response, 403 denial body, and
+        plain-text 500 body. POST remains legacy-owned until whitelist writes
+        move to Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: string
+          description: Positive integer page number. Defaults to 1.
+        - name: pageSize
+          in: query
+          schema:
+            type: string
+          description: Positive integer page size. Defaults to 10.
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Optional trimmed email substring search.
+      responses:
+        "200":
+          description: Whitelisted email rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "403":
+          description: Caller is not an allowed Tuturuuu operator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Whitelist emails could not be loaded.
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Internal Server Error
   /api/v1/nova/me/team:
     get:
       summary: Current user Nova team

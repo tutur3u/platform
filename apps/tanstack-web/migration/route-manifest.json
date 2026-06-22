@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 938,
-        "migrated": 110,
-        "percentComplete": 17.06,
+        "migrated": 112,
+        "percentComplete": 17.21,
         "remaining": 938,
-        "terminal": 193,
-        "total": 1131,
+        "terminal": 195,
+        "total": 1133,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 956,
-        "migrated": 115,
-        "percentComplete": 17.16,
+        "migrated": 117,
+        "percentComplete": 17.3,
         "remaining": 956,
-        "terminal": 198,
-        "total": 1154,
+        "terminal": 200,
+        "total": 1156,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1132,
-      "migrated": 317,
-      "percentComplete": 26.11,
+      "migrated": 319,
+      "percentComplete": 26.21,
       "remaining": 1132,
-      "terminal": 400,
-      "total": 1532,
+      "terminal": 402,
+      "total": 1534,
       "unknownStatus": 0
     }
   },
@@ -2535,22 +2535,48 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/ai/whitelist/domains",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/ai/whitelist/domains",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts"
     },
     {
-      "id": "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/ai/whitelist/emails",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/ai/whitelist/emails",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/app-coordination:apps/web/src/app/api/v1/infrastructure/app-coordination/route.ts",
@@ -14257,11 +14283,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1131,
+    "apiRoutes": 1133,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1154,
+    "routeHandlers": 1156,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14271,6 +14297,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1532
+    "total": 1534
   }
 }

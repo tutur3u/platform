@@ -5,6 +5,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod ai_models;
 mod ai_whitelist;
+#[cfg(test)]
+mod ai_whitelist_test;
 mod aurora;
 mod auth_me;
 mod auth_mfa;
