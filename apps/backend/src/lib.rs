@@ -5285,6 +5285,248 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn crawler_status_requires_non_empty_url_query() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        for request_url in [
+            None,
+            Some("https://tuturuuu.localhost/api/v1/workspaces/ws-ignored/crawlers/status"),
+            Some("https://tuturuuu.localhost/api/v1/workspaces/ws-ignored/crawlers/status?url="),
+        ] {
+            let response = handle_backend_request(
+                &config,
+                BackendRequest {
+                    url: request_url,
+                    ..request("GET", "/api/v1/workspaces/ws-ignored/crawlers/status")
+                },
+                &outbound,
+            )
+            .await;
+
+            assert_eq!(response.status, 400);
+            assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+            assert_eq!(
+                response.body,
+                json!({ "message": "Missing required parameter: url" })
+            );
+        }
+
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn crawler_status_returns_null_payload_when_crawled_url_is_missing() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(200, "[]");
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/workspaces/workspace-a/crawlers/status?url=https%3A%2F%2Fexample.com%2Fmissing",
+                ),
+                ..request("GET", "/api/v1/workspaces/workspace-a/crawlers/status")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(
+            response.body,
+            json!({
+                "crawledUrl": null,
+                "relatedUrls": [],
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "select").as_deref(),
+            Some("*")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "url").as_deref(),
+            Some("eq.https://example.com/missing")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "limit").as_deref(),
+            Some("1")
+        );
+        assert_eq!(recorded_header(&calls[0], "Accept"), Some(APPLICATION_JSON));
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[0], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn crawler_status_returns_raw_crawled_url_and_related_urls() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r##"[
+                    {
+                        "id": "crawl-1",
+                        "url": "https://example.com/docs?x=1&y=2",
+                        "markdown": "# Raw",
+                        "html": "<main>Raw</main>",
+                        "metadata": {"depth": 2}
+                    }
+                ]"##,
+            ),
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "id": "next-2",
+                        "origin_id": "crawl-1",
+                        "url": "https://example.com/b",
+                        "created_at": "2026-01-03T00:00:00Z"
+                    },
+                    {
+                        "id": "next-1",
+                        "origin_id": "crawl-1",
+                        "url": "https://example.com/a",
+                        "created_at": "2026-01-02T00:00:00Z"
+                    }
+                ]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/workspaces/ignored-workspace/crawlers/status?url=https%3A%2F%2Fexample.com%2Fdocs%3Fx%3D1%26y%3D2",
+                ),
+                ..request("GET", "/api/v1/workspaces/ignored-workspace/crawlers/status")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "crawledUrl": {
+                    "id": "crawl-1",
+                    "url": "https://example.com/docs?x=1&y=2",
+                    "markdown": "# Raw",
+                    "html": "<main>Raw</main>",
+                    "metadata": {"depth": 2},
+                },
+                "relatedUrls": [
+                    {
+                        "id": "next-2",
+                        "origin_id": "crawl-1",
+                        "url": "https://example.com/b",
+                        "created_at": "2026-01-03T00:00:00Z",
+                    },
+                    {
+                        "id": "next-1",
+                        "origin_id": "crawl-1",
+                        "url": "https://example.com/a",
+                        "created_at": "2026-01-02T00:00:00Z",
+                    },
+                ],
+            })
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert!(
+            calls[0]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/crawled_urls?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[0].url, "url").as_deref(),
+            Some("eq.https://example.com/docs?x=1&y=2")
+        );
+        assert!(
+            calls[1]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/crawled_url_next_urls?")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "select").as_deref(),
+            Some("*")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "origin_id").as_deref(),
+            Some("eq.crawl-1")
+        );
+        assert_eq!(
+            decoded_query_value(&calls[1].url, "order").as_deref(),
+            Some("created_at.desc")
+        );
+    }
+
+    #[tokio::test]
+    async fn crawler_status_maps_crawled_url_query_failure_to_legacy_message() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_response(500, r#"{"error":"failed"}"#);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/workspaces/ws-a/crawlers/status?url=https%3A%2F%2Fexample.com",
+                ),
+                ..request("GET", "/api/v1/workspaces/ws-a/crawlers/status")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body,
+            json!({ "message": "Error fetching crawled URL" })
+        );
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn crawler_status_maps_related_url_query_failure_to_legacy_message() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[{"id":"crawl-1","url":"https://example.com"}]"#),
+            outbound_response(500, r#"{"error":"failed"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                url: Some(
+                    "https://tuturuuu.localhost/api/v1/workspaces/ws-a/crawlers/status?url=https%3A%2F%2Fexample.com",
+                ),
+                ..request("GET", "/api/v1/workspaces/ws-a/crawlers/status")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body,
+            json!({ "message": "Error fetching related URLs" })
+        );
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
     async fn crawler_list_requires_tuturuuu_session_before_admin_read() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::default();
@@ -5433,6 +5675,7 @@ mod tests {
             "/api/personal/crawlers/domains",
             "/api/personal/crawlers/list",
             "/api/personal/crawlers/uncrawled",
+            "/api/v1/workspaces/ws-a/crawlers/status",
         ] {
             let response = handle_backend_request(&config, request("POST", path), &outbound).await;
 
@@ -5452,11 +5695,29 @@ mod tests {
             "/api/personal/crawlers/domains",
             "/api/personal/crawlers/list",
             "/api/personal/crawlers/uncrawled",
+            "/api/v1/workspaces/ws-a/crawlers/status",
         ] {
-            let response = handle_backend_request(&config, request("GET", path), &outbound).await;
+            let request = if path.ends_with("/status") {
+                BackendRequest {
+                    url: Some(
+                        "https://tuturuuu.localhost/api/v1/workspaces/ws-a/crawlers/status?url=https%3A%2F%2Fexample.com",
+                    ),
+                    ..request("GET", path)
+                }
+            } else {
+                request("GET", path)
+            };
+            let response = handle_backend_request(&config, request, &outbound).await;
 
             assert_eq!(response.status, 500, "{path}");
-            assert_eq!(response.body["error"], "Internal Server Error", "{path}");
+            if path.ends_with("/status") {
+                assert_eq!(
+                    response.body["message"], "Error fetching crawled URL",
+                    "{path}"
+                );
+            } else {
+                assert_eq!(response.body["error"], "Internal Server Error", "{path}");
+            }
         }
         assert_eq!(outbound.calls().len(), 0);
     }

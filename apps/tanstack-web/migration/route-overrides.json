@@ -59,6 +59,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/uncrawled by reading non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, preserving the legacy domain/search URL filters and pagination shape, removing URLs already present in crawled_urls, and returning uncrawledUrls, groupedUrls, and pagination. The legacy route ignored wsId and auth; this migration preserves that behavior until crawler workspace ownership is redesigned."
     },
+    "api:/api/v1/workspaces/:wsId/crawlers/status:apps/web/src/app/api/v1/workspaces/[wsId]/crawlers/status/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/crawlers/status by preserving the legacy workspace-agnostic URL status lookup, validating the required url query parameter, reading the exact crawled_urls.url row through the server-owned Supabase REST adapter, then returning raw crawledUrl and crawled_url_next_urls rows ordered by created_at.desc. Missing crawled URLs still return crawledUrl null and relatedUrls []."
+    },
     "api:/api/auth/me/session:apps/web/src/app/api/auth/me/session/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",

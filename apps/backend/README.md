@@ -84,6 +84,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   identifiers, requires workspace access, and returns the derived
   `{ "hasPermission": boolean }` result from role, default, creator, and admin
   permission context.
+- `GET /api/v1/workspaces/:wsId/crawlers/status`: legacy-compatible crawler
+  status lookup. Rust preserves the legacy workspace-agnostic behavior,
+  validates the required `url` query parameter, reads the exact `crawled_urls`
+  row through the server-owned Supabase REST adapter, and returns the raw
+  `crawledUrl` with raw `crawled_url_next_urls` rows ordered by
+  `created_at.desc`; missing crawled URLs return `{ "crawledUrl": null,
+  "relatedUrls": [] }`.
 - `GET /api/auth/me`: legacy-compatible current browser session route. Rust
   revalidates the Supabase browser cookie or non-app-session Bearer token with
   Supabase Auth and returns the raw legacy `{ user }` payload, or the legacy

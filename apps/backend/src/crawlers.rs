@@ -9,6 +9,7 @@ use crate::{
     supabase_auth,
 };
 
+mod status;
 mod uncrawled;
 
 const SUPABASE_MAX_ROWS: usize = 1000;
@@ -24,6 +25,7 @@ struct CrawlerUrlRow {
 enum CrawlerRoute {
     Domains,
     List,
+    Status,
     Uncrawled,
 }
 
@@ -40,6 +42,9 @@ pub(crate) async fn handle_crawler_route(
         }
         ("GET", CrawlerRoute::List) => {
             crawler_list_response(&config.contact_data, request, outbound).await
+        }
+        ("GET", CrawlerRoute::Status) => {
+            status::crawler_status_response(&config.contact_data, request, outbound).await
         }
         ("GET", CrawlerRoute::Uncrawled) => {
             uncrawled::crawler_uncrawled_response(&config.contact_data, request, outbound).await
@@ -327,10 +332,37 @@ fn hostname_from_url(raw_url: &str) -> Option<String> {
 fn crawler_route(path: &str) -> Option<CrawlerRoute> {
     let mut segments = path.trim_start_matches('/').split('/');
 
-    if !matches!(segments.next(), Some("api"))
-        || segments.next().is_none_or(|segment| segment.is_empty())
-        || !matches!(segments.next(), Some("crawlers"))
-    {
+    if !matches!(segments.next(), Some("api")) {
+        return None;
+    }
+
+    let scope = segments.next()?;
+    if scope.is_empty() {
+        return None;
+    }
+
+    if scope == "v1" {
+        let mut workspace_segments = segments.clone();
+
+        if matches!(workspace_segments.next(), Some("workspaces")) {
+            if workspace_segments
+                .next()
+                .is_none_or(|segment| segment.is_empty())
+                || !matches!(workspace_segments.next(), Some("crawlers"))
+            {
+                return None;
+            }
+
+            let route = match workspace_segments.next() {
+                Some("status") => CrawlerRoute::Status,
+                _ => return None,
+            };
+
+            return workspace_segments.next().is_none().then_some(route);
+        }
+    }
+
+    if !matches!(segments.next(), Some("crawlers")) {
         return None;
     }
 

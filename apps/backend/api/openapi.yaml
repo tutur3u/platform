@@ -2022,6 +2022,80 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/crawlers/status:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Legacy workspace path segment. The legacy Next.js route ignored this value, and the Rust migration preserves that behavior until crawler workspace ownership is redesigned.
+    get:
+      summary: Get crawled URL status
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/crawlers/status/route.ts. Validates the required `url` query parameter, reads the exact `crawled_urls.url` row through the server-owned Supabase REST adapter, and returns the raw `crawledUrl` plus raw `crawled_url_next_urls` rows ordered by `created_at.desc`. Missing crawled URLs return `crawledUrl: null` and `relatedUrls: []`.
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Exact crawled URL to look up.
+      responses:
+        "200":
+          description: Crawled URL status and related next URLs.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - crawledUrl
+                  - relatedUrls
+                properties:
+                  crawledUrl:
+                    type:
+                      - object
+                      - "null"
+                    additionalProperties: true
+                  relatedUrls:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        "400":
+          description: Required URL query parameter is missing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - "Missing required parameter: url"
+        "500":
+          description: Supabase crawler data access is not configured or failed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Error fetching crawled URL
+                      - Error fetching related URLs
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /.well-known/{slug}:
     get:
       summary: Blocked well-known probe path
