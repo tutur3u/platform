@@ -99,6 +99,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise
   reads only an exact count of non-deleted workspaces created by the
   authenticated user, and returns the derived legacy limit payload.
+- `GET /api/v1/workspaces/:wsId/education/access`: legacy-compatible education
+  feature access probe. Rust revalidates a normal Supabase browser session or
+  non-app-session Bearer token, resolves workspace access and the `ai_lab`
+  permission with the shared workspace permission helper, reads
+  `ENABLE_EDUCATION` from `workspace_secrets` through the server-owned Supabase
+  REST adapter, and preserves the legacy `{ "enabled": false }` response for
+  workspace, feature-flag, permission, or lookup failures.
 - `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
   legacy-compatible workspace permission check route. Rust revalidates a normal
   Supabase browser session or non-app-session Bearer token, ignores app-session

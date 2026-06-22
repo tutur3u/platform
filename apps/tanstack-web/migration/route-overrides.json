@@ -890,6 +890,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
     },
+    "api:/api/v1/workspaces/:wsId/education/access:apps/web/src/app/api/v1/workspaces/[wsId]/education/access/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/education/access by preserving the legacy access-probe contract: missing or invalid Supabase sessions return 401, while invalid workspaces, missing workspace access, disabled ENABLE_EDUCATION workspace secrets, missing ai_lab permission, permission lookup failures, and secret lookup failures all return HTTP 200 with enabled=false. Enabled workspaces require a normal Supabase browser session or non-app-session Bearer token, getPermissions-compatible workspace permission resolution, and a server-owned workspace_secrets ENABLE_EDUCATION=true read."
+    },
     "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

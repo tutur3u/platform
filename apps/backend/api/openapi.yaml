@@ -7993,6 +7993,56 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/education/access:
+    get:
+      summary: Workspace education access
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/education/access/route.ts
+        GET. The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, mirrors getPermissions-compatible
+        workspace permission resolution for `ai_lab`, reads the
+        `ENABLE_EDUCATION` workspace secret through the server-owned Supabase
+        REST adapter, and preserves the legacy access-probe contract: invalid
+        workspaces, missing workspace access, disabled education secrets,
+        missing permission, permission lookup failures, and secret lookup
+        failures all return `{ enabled: false }` with HTTP 200.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Education feature access result for the authenticated workspace caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceEducationAccessResponse"
+        "401":
+          description: Missing or invalid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/settings/permissions/check:
     get:
       summary: Workspace setting permission check
@@ -8816,6 +8866,23 @@ components:
         canForceSendPosts:
           type: boolean
           description: Whether the authenticated caller has the root workspace manage_workspace_roles permission. False is also returned for unauthenticated or unresolved callers.
+    WorkspaceEducationAccessResponse:
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the authenticated caller can access education features for the workspace. Legacy workspace, feature-flag, permission, and lookup failures return false.
+    UnauthorizedError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
     WorkspacePermissionCheckResponse:
       type: object
       required:
