@@ -131,6 +131,7 @@ import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale
 import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$locale/$wsId/education/quiz-sets';
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library';
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards';
+import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
 import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
@@ -802,6 +803,12 @@ const LocaleWsIdEducationFlashcardsRoute =
     path: '/$wsId/education/flashcards',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdBillingSuccessRoute =
+  LocaleWsIdBillingSuccessRouteImport.update({
+    id: '/$wsId/billing/success',
+    path: '/$wsId/billing/success',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
   id: '/$wsId/ai-chat/new',
   path: '/$wsId/ai-chat/new',
@@ -1028,6 +1035,7 @@ export interface FileRoutesByFullPath {
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui/': typeof LocaleUiIndexRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
+  '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
@@ -1174,6 +1182,7 @@ export interface FileRoutesByTo {
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui': typeof LocaleUiIndexRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
+  '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
@@ -1322,6 +1331,7 @@ export interface FileRoutesById {
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui/': typeof LocaleUiIndexRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
+  '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
@@ -1471,6 +1481,7 @@ export interface FileRouteTypes {
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui/'
     | '/$locale/$wsId/ai-chat/new'
+    | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
@@ -1617,6 +1628,7 @@ export interface FileRouteTypes {
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui'
     | '/$locale/$wsId/ai-chat/new'
+    | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
@@ -1764,6 +1776,7 @@ export interface FileRouteTypes {
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui/'
     | '/$locale/$wsId/ai-chat/new'
+    | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
@@ -2691,6 +2704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationFlashcardsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/billing/success': {
+      id: '/$locale/$wsId/billing/success';
+      path: '/$wsId/billing/success';
+      fullPath: '/$locale/$wsId/billing/success';
+      preLoaderRoute: typeof LocaleWsIdBillingSuccessRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/ai-chat/new': {
       id: '/$locale/$wsId/ai-chat/new';
       path: '/$wsId/ai-chat/new';
@@ -3194,6 +3214,7 @@ interface LocaleRouteRouteChildren {
   LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute;
   LocaleUiIndexRoute: typeof LocaleUiIndexRoute;
   LocaleWsIdAiChatNewRoute: typeof LocaleWsIdAiChatNewRoute;
+  LocaleWsIdBillingSuccessRoute: typeof LocaleWsIdBillingSuccessRoute;
   LocaleWsIdEducationFlashcardsRoute: typeof LocaleWsIdEducationFlashcardsRoute;
   LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute;
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute;
@@ -3305,6 +3326,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleVisualizationsHorseRacingRoute: LocaleVisualizationsHorseRacingRoute,
   LocaleUiIndexRoute: LocaleUiIndexRoute,
   LocaleWsIdAiChatNewRoute: LocaleWsIdAiChatNewRoute,
+  LocaleWsIdBillingSuccessRoute: LocaleWsIdBillingSuccessRoute,
   LocaleWsIdEducationFlashcardsRoute: LocaleWsIdEducationFlashcardsRoute,
   LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRoute,
   LocaleWsIdEducationQuizSetsRoute: LocaleWsIdEducationQuizSetsRoute,

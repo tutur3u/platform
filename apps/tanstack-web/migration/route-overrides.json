@@ -653,6 +653,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/ai-chat/my-chatbots/new ports the legacy client-only chatbot form with the same local validation and submit toast behavior, without adding protected data access. Parent dashboard and AI chat session/provider ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/billing/success:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/billing/success preserves the legacy billing checkout success page with fail-closed current-user auth, forwarded-auth workspace resolution, checkoutId validation, not-found mapping for missing Polar checkouts, normalized server-side Polar checkout data, localized success content, and legacy billing/invoice/dashboard links. The payment checkout/read APIs remain separately tracked backend work."
+    },
     "page:/:locale/:wsId/meet:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
