@@ -16,6 +16,14 @@ const nextNavigationShim = fileURLToPath(
   new URL('./src/lib/platform/next-navigation-shim.tsx', import.meta.url)
 );
 
+// Runtime alias: shared @tuturuuu/ui clients import the default `Link` from
+// `next/link` (51 files). Resolve it to a TanStack Router-backed shim that
+// renders the identical `<a href>` (so SSR/prerender output is unchanged) but
+// upgrades plain internal left-clicks to real SPA navigation. Runtime-only.
+const nextLinkShim = fileURLToPath(
+  new URL('./src/lib/platform/next-link-shim.tsx', import.meta.url)
+);
+
 const port = Number.parseInt(process.env.PORT ?? '7824', 10);
 const prerenderLocales = ['en', 'vi'] as const;
 const staticPublicRouteSegments = [
@@ -108,6 +116,7 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
+        'next/link': nextLinkShim,
         'next/navigation': nextNavigationShim,
       },
     },
