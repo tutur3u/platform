@@ -683,6 +683,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/inventory/manufacturers ports the legacy authenticated inventory manufacturers setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and manufacturer create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/manufacturers endpoint remains separately tracked backend migration work."
     },
+    "page:/:locale/:wsId/inventory/promotions:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/promotions ports the legacy authenticated inventory promotions page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission context, route metadata, and TanStack Query CRUD through the internal-api promotion facades. The underlying workspace promotion API routes remain separately tracked backend migration work."
+    },
     "page:/:locale/:wsId/inventory/suppliers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
