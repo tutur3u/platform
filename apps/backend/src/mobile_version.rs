@@ -43,6 +43,8 @@ const MOBILE_VERSION_POLICY_ERROR: &str = "Failed to evaluate mobile version pol
 const MOBILE_VERSION_POLICIES_LOAD_ERROR: &str = "Failed to load mobile version policies";
 const OTP_SETTINGS_ERROR: &str = "Failed to load OTP settings";
 
+mod write;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum MobilePlatform {
     Ios,
@@ -145,6 +147,12 @@ pub(crate) async fn handle_mobile_version_route(
     match (request.method, request.path) {
         ("GET", INFRASTRUCTURE_MOBILE_VERSIONS_PATH) => {
             Some(infrastructure_mobile_versions_response(config, request, outbound).await)
+        }
+        ("PUT", INFRASTRUCTURE_MOBILE_VERSIONS_PATH) => Some(
+            write::infrastructure_mobile_versions_update_response(config, request, outbound).await,
+        ),
+        (method, INFRASTRUCTURE_MOBILE_VERSIONS_PATH) => {
+            Some(method_not_allowed(method, "GET, PUT"))
         }
         ("GET", OTP_SETTINGS_PATH) => Some(otp_settings_response(config, request, outbound).await),
         ("OPTIONS", OTP_SETTINGS_PATH) => None,
@@ -568,18 +576,26 @@ fn normalize_config_bool(value: Option<&Value>) -> bool {
     }
 }
 
-fn validate_mobile_version_policies(policies: &MobileVersionPolicies) -> Result<(), ()> {
-    for policy in [&policies.ios, &policies.android] {
+fn validate_mobile_version_policies(policies: &MobileVersionPolicies) -> Result<(), Vec<String>> {
+    let mut errors = Vec::new();
+
+    for (platform, policy) in [("ios", &policies.ios), ("android", &policies.android)] {
         if policy
             .effective_version
             .as_deref()
             .is_some_and(|value| !is_strict_semver(value))
-            || policy
-                .minimum_version
-                .as_deref()
-                .is_some_and(|value| !is_strict_semver(value))
         {
-            return Err(());
+            errors.push(format!(
+                "{platform}: effective version must use x.y.z format"
+            ));
+        }
+
+        if policy
+            .minimum_version
+            .as_deref()
+            .is_some_and(|value| !is_strict_semver(value))
+        {
+            errors.push(format!("{platform}: minimum version must use x.y.z format"));
         }
 
         if let (Some(effective), Some(minimum)) = (
@@ -587,19 +603,27 @@ fn validate_mobile_version_policies(policies: &MobileVersionPolicies) -> Result<
             policy.minimum_version.as_deref(),
         ) && compare_strict_semver(effective, minimum) < 0
         {
-            return Err(());
+            errors.push(format!(
+                "{platform}: effective version must be greater than or equal to minimum version"
+            ));
         }
 
         if (policy.effective_version.is_some() || policy.minimum_version.is_some())
             && policy.store_url.is_none()
         {
-            return Err(());
+            errors.push(format!(
+                "{platform}: store URL is required when a version is set"
+            ));
         }
     }
 
     let _ = policies.web_otp_enabled;
 
-    Ok(())
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors)
+    }
 }
 
 fn evaluate_mobile_version_policy(

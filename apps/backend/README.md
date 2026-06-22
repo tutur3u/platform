@@ -174,13 +174,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   root workspace mobile policy config IDs through the server-owned Supabase REST
   adapter, and returns the legacy `supported` / `update-recommended` /
   `update-required` payload with wildcard CORS headers.
-- `GET /api/v1/infrastructure/mobile-versions`: protected admin mobile policy
-  snapshot. Rust revalidates the browser Supabase session cookie or
-  non-app-session Bearer token, requires root workspace `manage_workspace_roles`
-  through `has_workspace_permission`, reads and validates the fixed root
-  workspace mobile policy config IDs, and returns the legacy
-  `{ ios, android, webOtpEnabled }` body. `PUT` remains legacy-owned until
-  policy writes move behind Rust.
+- `GET` / `PUT` `/api/v1/infrastructure/mobile-versions`: protected admin
+  mobile policy route. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, requires root workspace
+  `manage_workspace_roles` through `has_workspace_permission`, reads and
+  validates the fixed root workspace mobile policy config IDs for snapshots,
+  and upserts the nine root workspace policy config rows for writes while
+  preserving the legacy `{ ios, android, webOtpEnabled }` and success/error
+  bodies.
 - `GET /api/v1/infrastructure/timezones`: protected infrastructure timezone
   list. Rust revalidates the browser Supabase session cookie or non-app-session
   Bearer token, requires root workspace `manage_workspace_roles`, reads

@@ -8476,6 +8476,242 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn infrastructure_mobile_versions_put_rejects_missing_auth_before_body_validation() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PUT",
+                mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                r#"{"ios":null}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_upserts_normalized_policy_rows() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{
+                        "ios": {
+                            "effectiveVersion": " 2.0.0 ",
+                            "minimumVersion": "1.5.0",
+                            "otpEnabled": true,
+                            "storeUrl": " https://apps.apple.com/app/id1 "
+                        },
+                        "android": {
+                            "effectiveVersion": null,
+                            "minimumVersion": null,
+                            "otpEnabled": false,
+                            "storeUrl": ""
+                        },
+                        "webOtpEnabled": true
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+        assert_eq!(response.body["data"]["ios"]["effectiveVersion"], "2.0.0");
+        assert_eq!(response.body["data"]["ios"]["minimumVersion"], "1.5.0");
+        assert_eq!(response.body["data"]["ios"]["otpEnabled"], true);
+        assert_eq!(
+            response.body["data"]["ios"]["storeUrl"],
+            "https://apps.apple.com/app/id1"
+        );
+        assert_eq!(
+            response.body["data"]["android"]["effectiveVersion"],
+            Value::Null
+        );
+        assert_eq!(
+            response.body["data"]["android"]["minimumVersion"],
+            Value::Null
+        );
+        assert_eq!(response.body["data"]["android"]["otpEnabled"], false);
+        assert_eq!(response.body["data"]["android"]["storeUrl"], Value::Null);
+        assert_eq!(response.body["data"]["webOtpEnabled"], true);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let upsert_call = &calls[2];
+        assert_eq!(upsert_call.method, OutboundMethod::Post);
+        assert!(
+            upsert_call
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_configs?")
+        );
+        assert!(upsert_call.url.contains("on_conflict=ws_id%2Cid"));
+        assert_eq!(
+            recorded_header(upsert_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(upsert_call, "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(upsert_call, "Content-Type"),
+            Some(APPLICATION_JSON)
+        );
+        assert_eq!(
+            recorded_header(upsert_call, "Prefer"),
+            Some("resolution=merge-duplicates,return=minimal")
+        );
+
+        let rows: Vec<Value> = serde_json::from_str(upsert_call.body.as_deref().unwrap()).unwrap();
+        assert_eq!(rows.len(), 9);
+        assert_mobile_version_policy_row(&rows, "MOBILE_IOS_EFFECTIVE_VERSION", "2.0.0");
+        assert_mobile_version_policy_row(&rows, "MOBILE_IOS_MINIMUM_VERSION", "1.5.0");
+        assert_mobile_version_policy_row(&rows, "MOBILE_IOS_OTP_ENABLED", "true");
+        assert_mobile_version_policy_row(
+            &rows,
+            "MOBILE_IOS_STORE_URL",
+            "https://apps.apple.com/app/id1",
+        );
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_EFFECTIVE_VERSION", "");
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_MINIMUM_VERSION", "");
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_OTP_ENABLED", "false");
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_STORE_URL", "");
+        assert_mobile_version_policy_row(&rows, "WEB_OTP_ENABLED", "true");
+        assert!(rows.iter().all(|row| {
+            row["ws_id"] == "00000000-0000-0000-0000-000000000000"
+                && row["updated_at"]
+                    .as_str()
+                    .is_some_and(|value| value.ends_with('Z'))
+        }));
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_returns_invalid_body_errors_after_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{"ios":{},"android":{"otpEnabled":"yes"}}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid request body");
+        assert_eq!(response.body["errors"][0]["path"][0], "otpEnabled");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_returns_policy_validation_errors() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{
+                        "ios": {
+                            "effectiveVersion": "1.0",
+                            "minimumVersion": "2.0.0"
+                        },
+                        "android": {
+                            "effectiveVersion": "1.0.0"
+                        }
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid mobile version policy");
+        assert!(
+            response.body["errors"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|error| error == "ios: effective version must use x.y.z format")
+        );
+        assert!(
+            response.body["errors"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|error| error == "android: store URL is required when a version is set")
+        );
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_returns_legacy_save_error() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{
+                        "ios": {},
+                        "android": {},
+                        "webOtpEnabled": false
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body["message"],
+            "Failed to save mobile version policies"
+        );
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
     async fn infrastructure_mobile_versions_returns_legacy_load_error_after_auth() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::with_responses(vec![
@@ -9144,6 +9380,15 @@ mod tests {
             .iter()
             .find(|(name, _)| name.eq_ignore_ascii_case(header))
             .map(|(_, value)| value.as_str())
+    }
+
+    fn assert_mobile_version_policy_row(rows: &[Value], id: &str, value: &str) {
+        let row = rows
+            .iter()
+            .find(|row| row["id"] == id)
+            .unwrap_or_else(|| panic!("missing mobile version policy row {id}"));
+
+        assert_eq!(row["value"], value);
     }
 
     fn sha256_hex_for_test(value: &str) -> String {

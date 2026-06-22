@@ -4981,7 +4981,7 @@ paths:
   /api/v1/infrastructure/mobile-versions:
     get:
       summary: Legacy-compatible protected mobile version policies
-      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, requires the root workspace manage_workspace_roles permission through the server-owned has_workspace_permission RPC, reads the fixed root workspace mobile policy config IDs through the server-owned Supabase REST adapter, validates the same policy invariants as the legacy helper, and returns the legacy admin policy snapshot. PUT remains legacy-owned until mobile policy writes are migrated.
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, requires the root workspace manage_workspace_roles permission through the server-owned has_workspace_permission RPC, reads the fixed root workspace mobile policy config IDs through the server-owned Supabase REST adapter, validates the same policy invariants as the legacy helper, and returns the legacy admin policy snapshot. PUT is also Rust-owned for policy writes.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -5028,7 +5028,69 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, PUT
+    put:
+      summary: Legacy-compatible protected mobile version policy write
+      description: Migrated replacement for the PUT export in apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, requires the root workspace manage_workspace_roles permission through the server-owned has_workspace_permission RPC, validates and normalizes the legacy mobile policy payload, upserts the nine root workspace policy config rows through the server-owned Supabase REST adapter, and returns the legacy success, invalid body, invalid policy, and save failure bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileVersionPoliciesUpdateRequest"
+      responses:
+        "200":
+          description: Mobile version policies were saved.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileVersionPoliciesUpdateResponse"
+        "400":
+          description: Request body or normalized mobile policy is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileVersionPoliciesValidationMessage"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileVersionPoliciesMessage"
+        "403":
+          description: Authenticated caller lacks the root workspace manage_workspace_roles permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileVersionPoliciesMessage"
+        "500":
+          description: Mobile version policies could not be saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileVersionPoliciesMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PUT
   /api/v1/infrastructure/packages:
     get:
       summary: Legacy-compatible package export list
@@ -10167,6 +10229,68 @@ components:
             - Unauthorized
             - Forbidden
             - Failed to load mobile version policies
+            - Failed to save mobile version policies
+    MobileVersionPoliciesUpdateRequest:
+      type: object
+      required:
+        - ios
+        - android
+      properties:
+        ios:
+          $ref: "#/components/schemas/MobilePlatformVersionPolicyUpdate"
+        android:
+          $ref: "#/components/schemas/MobilePlatformVersionPolicyUpdate"
+        webOtpEnabled:
+          type: boolean
+    MobilePlatformVersionPolicyUpdate:
+      type: object
+      properties:
+        effectiveVersion:
+          type:
+            - string
+            - "null"
+          examples:
+            - 1.3.0
+        minimumVersion:
+          type:
+            - string
+            - "null"
+          examples:
+            - 1.1.0
+        otpEnabled:
+          type: boolean
+        storeUrl:
+          type:
+            - string
+            - "null"
+          examples:
+            - https://play.google.com/store/apps/details?id=example.app
+    MobileVersionPoliciesUpdateResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+          enum:
+            - success
+        data:
+          $ref: "#/components/schemas/MobileVersionPolicies"
+    MobileVersionPoliciesValidationMessage:
+      type: object
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+          examples:
+            - Invalid request body
+            - Invalid mobile version policy
+        errors:
+          type: array
+          items: {}
     MobileVersionCheck:
       type: object
       required:
