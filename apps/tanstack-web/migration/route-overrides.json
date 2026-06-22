@@ -34,6 +34,11 @@
         }
       }
     },
+    "api:/api/v1/internal/holidays/:holidayId:apps/web/src/app/api/v1/internal/holidays/[holidayId]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles PUT and DELETE /api/v1/internal/holidays/:holidayId by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access like the legacy admin check, validating optional update fields, checking item existence and date conflicts for PUT, and mutating with the caller's Supabase token so vietnamese_holidays RLS remains active. DELETE preserves the legacy behavior of returning the success message for any successful Supabase delete response without a separate existence check."
+    },
     "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
