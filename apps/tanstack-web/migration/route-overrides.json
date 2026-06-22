@@ -678,6 +678,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/roles preserves the legacy 307 redirect to /:wsId/members?tab=roles. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/members:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/members preserves the legacy workspace access page with fail-closed auth, full-workspace resolution, personal-workspace/settings redirect, manage_workspace_members gating, manage_workspace_roles context, tab search validation, page metadata, and the shared StandardWorkspaceAccessPage client. The route intentionally defaults disableInvite to false until a Rust/internal-api workspace secret reader lands for the DISABLE_INVITE flag; invite-link creation remains protected by the existing server API check."
+    },
     "page:/:locale/:wsId/tasks/habits:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/habits/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

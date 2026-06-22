@@ -81,6 +81,7 @@ import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/poll
 import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind';
 import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics';
 import { Route as LocaleWsIdMemoriesRouteImport } from './routes/$locale/$wsId/memories';
+import { Route as LocaleWsIdMembersRouteImport } from './routes/$locale/$wsId/members';
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet';
 import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations';
 import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive';
@@ -525,6 +526,11 @@ const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
 const LocaleWsIdMemoriesRoute = LocaleWsIdMemoriesRouteImport.update({
   id: '/$wsId/memories',
   path: '/$wsId/memories',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdMembersRoute = LocaleWsIdMembersRouteImport.update({
+  id: '/$wsId/members',
+  path: '/$wsId/members',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
@@ -978,6 +984,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
+  '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
@@ -1123,6 +1130,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
+  '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
@@ -1270,6 +1278,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
+  '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
@@ -1418,6 +1427,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/members'
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/mind'
@@ -1563,6 +1573,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/members'
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/mind'
@@ -1709,6 +1720,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
+    | '/$locale/$wsId/members'
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/mind'
@@ -2327,6 +2339,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/memories';
       fullPath: '/$locale/$wsId/memories';
       preLoaderRoute: typeof LocaleWsIdMemoriesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/members': {
+      id: '/$locale/$wsId/members';
+      path: '/$wsId/members';
+      fullPath: '/$locale/$wsId/members';
+      preLoaderRoute: typeof LocaleWsIdMembersRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/meet': {
@@ -3134,6 +3153,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren;
   LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute;
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRouteWithChildren;
+  LocaleWsIdMembersRoute: typeof LocaleWsIdMembersRoute;
   LocaleWsIdMemoriesRoute: typeof LocaleWsIdMemoriesRoute;
   LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute;
   LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren;
@@ -3244,6 +3264,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdHiveRoute: LocaleWsIdHiveRouteWithChildren,
   LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,
   LocaleWsIdMeetRoute: LocaleWsIdMeetRouteWithChildren,
+  LocaleWsIdMembersRoute: LocaleWsIdMembersRoute,
   LocaleWsIdMemoriesRoute: LocaleWsIdMemoriesRoute,
   LocaleWsIdMetricsRoute: LocaleWsIdMetricsRoute,
   LocaleWsIdMindRoute: LocaleWsIdMindRouteWithChildren,
