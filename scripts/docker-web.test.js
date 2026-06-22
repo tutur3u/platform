@@ -133,6 +133,35 @@ function healthyLogDrainPostgresResult(command, args) {
   return null;
 }
 
+function createHealthyLogDrainPostgresResponder() {
+  let started = false;
+
+  return (command, args) => {
+    if (command !== 'docker') {
+      return null;
+    }
+
+    if (
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.at(-1) === 'log-drain-postgres'
+    ) {
+      started = true;
+      return createCommandResult('');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'log-drain-postgres') {
+      return createCommandResult(started ? 'log-drain-postgres-123\n' : '');
+    }
+
+    if (args[0] === 'inspect' && args.at(-1) === 'log-drain-postgres-123') {
+      return createCommandResult('healthy\n');
+    }
+
+    return null;
+  };
+}
+
 test('ensureLogDrainPostgresReady skips startup when log-drain Postgres is healthy', async () => {
   const calls = [];
 
@@ -3197,6 +3226,7 @@ test('runDockerWebWorkflow forwards Docker memory limit into build env', async (
   const fsStub = createFsStub({
     envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
   });
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
 
   await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
     env: LOCAL_SUPABASE_TEST_ENV,
@@ -3222,6 +3252,9 @@ test('runDockerWebWorkflow forwards Docker memory limit into build env', async (
         };
       }
 
+      const logDrainResult = logDrainPostgresResult(command, args);
+      if (logDrainResult) return logDrainResult;
+
       if (args.includes('ps')) {
         return { code: 0, signal: null, stderr: '', stdout: '' };
       }
@@ -3241,12 +3274,16 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
   const fsStub = createFsStub({
     envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
   });
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
   const runCommand = async (command, args, options = {}) => {
     calls.push({
       args,
       command,
       stdio: options.stdio ?? 'inherit',
     });
+
+    const logDrainResult = logDrainPostgresResult(command, args);
+    if (logDrainResult) return logDrainResult;
 
     if (args.includes('ps')) {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -3278,6 +3315,50 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
     command: 'docker',
     stdio: 'inherit',
   });
+});
+
+test('runDockerWebWorkflow starts log-drain explicitly for in-place prod deploys', async () => {
+  const calls = [];
+  const fsStub = createFsStub({
+    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+  });
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
+
+  await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+    env: LOCAL_SUPABASE_TEST_ENV,
+    fsImpl: fsStub,
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+
+      const logDrainResult = logDrainPostgresResult(command, args);
+      if (logDrainResult) return logDrainResult;
+
+      if (args.includes('ps')) {
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  const logDrainUpIndex = calls.findIndex(
+    ({ args, command }) =>
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.includes('log-drain-postgres')
+  );
+  const webUpIndex = calls.findIndex(
+    ({ args, command }) =>
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.includes('web')
+  );
+
+  assert.notEqual(logDrainUpIndex, -1);
+  assert.notEqual(webUpIndex, -1);
+  assert.ok(logDrainUpIndex < webUpIndex);
 });
 
 test('runDockerWebWorkflow can exclude Supabase services during start', async () => {
@@ -3420,6 +3501,7 @@ test('runDockerWebWorkflow prefers root env for production serving despite inher
       'SUPABASE_SERVER_URL=https://root.supabase.co',
     ].join('\n')
   );
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
 
   try {
     await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
@@ -3432,6 +3514,8 @@ test('runDockerWebWorkflow prefers root env for production serving despite inher
       rootDir: tempDir,
       runCommand: async (command, args, options = {}) => {
         calls.push({ args, command, env: options.env });
+        const logDrainResult = logDrainPostgresResult(command, args);
+        if (logDrainResult) return logDrainResult;
         return { code: 0, signal: null, stderr: '', stdout: '' };
       },
     });
@@ -3466,6 +3550,7 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
     envFilePath,
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
 
   try {
     await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
@@ -3474,6 +3559,9 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
       rootDir: tempDir,
       runCommand: async (command, args, options = {}) => {
         calls.push({ args, command, env: options.env });
+
+        const logDrainResult = logDrainPostgresResult(command, args);
+        if (logDrainResult) return logDrainResult;
 
         if (args.includes('ps')) {
           return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -3506,6 +3594,201 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
       );
       assert.equal(call.env.SRH_TOKEN, token);
     }
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow continues blue-green deploys with log-drain disabled after unhealthy retry', async () => {
+  const calls = [];
+  const watcherStarts = [];
+  const stderr = [];
+  let proxyStarted = false;
+  let logDrainUpAttempts = 0;
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-log-drain-degraded-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+
+  const runCommand = async (command, args, options = {}) => {
+    calls.push({ args, command, env: options.env });
+
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('up') &&
+      args.at(-1) === 'log-drain-postgres'
+    ) {
+      logDrainUpAttempts += 1;
+      return createCommandResult('');
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('rm') &&
+      args.at(-1) === 'log-drain-postgres'
+    ) {
+      return createCommandResult('');
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('logs') &&
+      args.at(-1) === 'log-drain-postgres'
+    ) {
+      return createCommandResult(
+        'FATAL: database files are incompatible with server\n'
+      );
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('ps') &&
+      args.includes('--all') &&
+      args.at(-1) === 'log-drain-postgres'
+    ) {
+      return createCommandResult(
+        'NAME STATUS\ntuturuuu-log-drain-postgres-1 unhealthy\n'
+      );
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'compose' &&
+      args.includes('ps') &&
+      args.at(-1) === 'log-drain-postgres'
+    ) {
+      return createCommandResult('log-drain-unhealthy\n');
+    }
+
+    if (
+      command === 'docker' &&
+      args[0] === 'inspect' &&
+      args.at(-1) === 'log-drain-unhealthy'
+    ) {
+      if (args.includes('{{json .State}}')) {
+        return createCommandResult(
+          '{"Status":"running","Health":{"Status":"unhealthy"}}\n'
+        );
+      }
+
+      return createCommandResult('unhealthy\n');
+    }
+
+    if (command === 'docker' && args[0] === 'volume') {
+      return createCommandResult('tuturuuu_platform-log-drain-postgres\n');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return createCommandResult('');
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      return createCommandResult(proxyStarted ? 'proxy-123\n' : '');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'buildkit') {
+      return createCommandResult('buildkit-id\n');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return createCommandResult('container-blue\n');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'hive-db-migrate') {
+      return createCommandResult('hive-db-migrate-123\n');
+    }
+
+    if (
+      args.includes('ps') &&
+      BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
+    ) {
+      return createCommandResult(`container-${args.at(-1)}\n`);
+    }
+
+    if (args[0] === 'inspect') {
+      return createCommandResult('healthy\n');
+    }
+
+    if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      proxyStarted = true;
+      return createCommandResult('');
+    }
+
+    if (args.includes('exec') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      return {
+        code: proxyStarted ? 0 : 1,
+        signal: null,
+        stderr: proxyStarted ? '' : 'service "web-proxy" is not running\n',
+        stdout: '',
+      };
+    }
+
+    return createCommandResult('');
+  };
+
+  try {
+    await runDockerWebWorkflow(
+      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      {
+        env: LOCAL_SUPABASE_TEST_ENV,
+        envFilePath,
+        healthPollMs: 1,
+        healthTimeoutMs: 1,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+        startWatcherContainer: async (argv, options = {}) => {
+          watcherStarts.push({
+            argv,
+            env: options.env,
+            rootDir: options.rootDir,
+          });
+        },
+        stderr: {
+          write(message) {
+            stderr.push(message);
+          },
+        },
+      }
+    );
+
+    assert.equal(logDrainUpAttempts, 2);
+    assert.match(stderr.join(''), /PLATFORM_LOG_DRAIN_ENABLED=false/u);
+    assert.ok(
+      calls.some(
+        ({ args, command, env }) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('up') &&
+          args.includes('web-blue') &&
+          env.PLATFORM_LOG_DRAIN_ENABLED === 'false'
+      )
+    );
+    assert.ok(
+      watcherStarts.some(
+        (start) => start.env.PLATFORM_LOG_DRAIN_ENABLED === 'false'
+      )
+    );
+    assert.equal(
+      calls.some(
+        ({ args, command }) =>
+          command === 'docker' && args[0] === 'volume' && args.includes('rm')
+      ),
+      false
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

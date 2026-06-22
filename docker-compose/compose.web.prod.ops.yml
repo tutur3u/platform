@@ -52,10 +52,6 @@ services:
       - SUPERMEMORY_TIMEOUT_MS=${SUPERMEMORY_TIMEOUT_MS:-1500}
       - UPSTASH_REDIS_REST_TOKEN
       - UPSTASH_REDIS_REST_URL
-    depends_on:
-      log-drain-postgres:
-        condition: service_started
-        required: false
     healthcheck:
       test: ["CMD-SHELL", "ps | grep -q '[w]atch-blue-green-deploy.js'"]
       interval: 30s

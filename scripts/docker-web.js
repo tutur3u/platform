@@ -1265,7 +1265,10 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         composeGlobalArgs: parsed.composeGlobalArgs,
         env: workflowBaseEnv,
         fsImpl,
+        healthPollMs: options.healthPollMs,
+        healthTimeoutMs: options.healthTimeoutMs,
         runCommand: run,
+        stderr: options.stderr ?? process.stderr,
       });
       workflowEnvWithoutLock = logDrainPostgresState?.env ?? workflowBaseEnv;
       workflowEnv = blueGreenBuildLock
@@ -1417,6 +1420,18 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   }
 
   if (parsed.mode === 'prod') {
+    const logDrainPostgresState = await ensureLogDrainPostgresReady({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: composeEnv,
+      fsImpl,
+      healthPollMs: options.healthPollMs,
+      healthTimeoutMs: options.healthTimeoutMs,
+      runCommand: run,
+      stderr: options.stderr ?? process.stderr,
+    });
+    composeEnv = logDrainPostgresState?.env ?? composeEnv;
+
     await stopComposeServicesIfPresent(
       [
         BLUE_GREEN_PROXY_SERVICE,

@@ -205,8 +205,11 @@ If `bun serve:web:docker:bg` fails with
 `dependency failed to start: container ...-log-drain-postgres-1 exited (1)`,
 the deploy helper now starts `log-drain-postgres` before promoting the web lane
 and retries once after removing only the exited service container. The
-`platform-log-drain-postgres` volume is intentionally left intact. In current
-deploys, a failed retry is not a hard promotion blocker unless
+`platform-log-drain-postgres` volume is intentionally left intact. Web and
+watcher services do not declare Compose `depends_on` for this optional
+Postgres service, so a failed retry is not reintroduced as a later dependency
+startup failure. In current deploys, a failed retry is not a hard promotion
+blocker unless
 `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` is set; the rollout continues for that run with
 `PLATFORM_LOG_DRAIN_ENABLED=false`, so traffic can serve while persisted
 request/server logs and Infrastructure monitoring are degraded. Inspect the

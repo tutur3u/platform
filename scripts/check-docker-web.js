@@ -143,6 +143,44 @@ function countOccurrences(content, snippet) {
   return content.split(snippet).length - 1;
 }
 
+function hasComposeDependsOnService(composeContent, serviceName) {
+  const lines = composeContent.split(/\r?\n/u);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const dependsOnMatch = lines[index].match(/^(\s*)depends_on:\s*$/u);
+
+    if (!dependsOnMatch) {
+      continue;
+    }
+
+    const dependsOnIndent = dependsOnMatch[1].length;
+
+    for (
+      let childIndex = index + 1;
+      childIndex < lines.length;
+      childIndex += 1
+    ) {
+      const line = lines[childIndex];
+
+      if (line.trim().length === 0) {
+        continue;
+      }
+
+      const lineIndent = line.match(/^(\s*)/u)?.[1].length ?? 0;
+
+      if (lineIndent <= dependsOnIndent) {
+        break;
+      }
+
+      if (new RegExp(`^\\s+${serviceName}:\\s*$`, 'u').test(line)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function getRetryWrappedBunInstallSnippets(installCommand) {
   return [
     'set -eu;',
@@ -1148,15 +1186,9 @@ function validateDockerProdCompose(composeContent) {
     );
   }
 
-  const logDrainDependencyCount = [
-    ...composeContent.matchAll(
-      /log-drain-postgres:\n\s+condition: service_started\n\s+required: false/giu
-    ),
-  ].length;
-
-  if (logDrainDependencyCount < 2) {
+  if (hasComposeDependsOnService(composeContent, 'log-drain-postgres')) {
     errors.push(
-      'docker-compose.web.prod.yml web and watcher services must depend on log-drain-postgres with condition: service_started and required: false so unhealthy telemetry Postgres does not block blue/green promotion.'
+      'docker-compose.web.prod.yml services must not depend_on log-drain-postgres; scripts/docker-web.js owns the optional start/check/degrade flow so incompatible or corrupt log-drain volumes cannot block web or watcher startup.'
     );
   }
 

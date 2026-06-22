@@ -993,18 +993,23 @@ test('validateDockerProdCompose reports missing watcher project registry wiring'
   assert.match(errors.join('\n'), /PLATFORM_LOG_DRAIN_DATABASE_URL/);
 });
 
-test('validateDockerProdCompose reports hard-gated log-drain dependencies', () => {
-  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
-    '    log-drain-postgres:\n      condition: service_started\n      required: false',
-    '    log-drain-postgres:\n      condition: service_healthy'
+test('validateDockerProdCompose rejects log-drain dependencies on runtime services', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '  healthcheck:\n    test:\n      [',
+    [
+      '  depends_on:',
+      '    log-drain-postgres:',
+      '      condition: service_started',
+      '      required: false',
+      '  healthcheck:',
+      '    test:',
+      '      [',
+    ].join('\n')
   );
 
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
-  assert.match(errors, /log-drain-postgres/u);
-  assert.match(errors, /service_started/u);
-  assert.match(errors, /required: false/u);
-  assert.match(errors, /service_healthy/u);
+  assert.match(errors, /must not depend_on log-drain-postgres/u);
 });
 
 test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
