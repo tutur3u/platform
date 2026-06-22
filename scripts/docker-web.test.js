@@ -57,6 +57,10 @@ const {
 } = require('./docker-web.js');
 const {
   buildBlueGreenServices,
+  getBlueGreenDirectServiceName,
+  getBlueGreenFrontend,
+  getBlueGreenFrontendPort,
+  getBlueGreenServiceName,
   getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
   getBlueGreenDeploymentBuildServices,
@@ -2112,6 +2116,29 @@ test('getComposeFile resolves the expected compose file for each mode', () => {
   assert.equal(getComposeFile('prod'), PROD_COMPOSE_FILE);
 });
 
+test('blue-green frontend selector resolves legacy and TanStack service names', () => {
+  assert.equal(getBlueGreenFrontend({}), 'next');
+  assert.equal(getBlueGreenServiceName('green'), 'web-green');
+  assert.equal(getBlueGreenDirectServiceName({}), 'web');
+  assert.equal(getBlueGreenFrontendPort({}), '7803');
+  assert.equal(
+    getBlueGreenServiceName('green', { DOCKER_WEB_FRONTEND: 'tanstack' }),
+    'tanstack-web-green'
+  );
+  assert.equal(
+    getBlueGreenDirectServiceName({ DOCKER_WEB_FRONTEND: 'tanstack' }),
+    'tanstack-web'
+  );
+  assert.equal(
+    getBlueGreenFrontendPort({ DOCKER_WEB_FRONTEND: 'tanstack' }),
+    '7824'
+  );
+  assert.throws(
+    () => getBlueGreenServiceName('blue', { DOCKER_WEB_FRONTEND: 'bogus' }),
+    /Unsupported Docker web frontend/
+  );
+});
+
 test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   const config = renderBlueGreenProxyConfig('green', {
     deploymentStamp: 'deploy-2026-04-18T12-30-00Z',
@@ -2245,6 +2272,26 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
     /proxy_set_header X-Forwarded-Host \$http_host;/u
   );
   assert.doesNotMatch(config, /proxy_set_header X-Forwarded-Proto \$scheme;/u);
+});
+
+test('renderBlueGreenProxyConfig routes selected TanStack frontend upstreams', () => {
+  const config = renderBlueGreenProxyConfig('green', {
+    deploymentStamp: 'deploy-2026-04-18T12-30-00Z',
+    frontend: 'tanstack',
+    standbyColor: 'blue',
+  });
+
+  assert.match(
+    config,
+    /server tanstack-web-green:7824 resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(
+    config,
+    /server tanstack-web-blue:7824 backup resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(config, /set \$platform_upstream_service "tanstack-web-green";/);
+  assert.match(config, /"frontend":"tanstack"/);
+  assert.doesNotMatch(config, /server web-green:7803 resolve/u);
 });
 
 test('writeBlueGreenActiveColor persists the selected color', () => {

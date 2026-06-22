@@ -902,6 +902,7 @@ test('production watcher service does not keep BuildKit running while idle', () 
   );
   assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_BUILD_MEMORY$/mu);
   assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_BUILD_CPUS$/mu);
+  assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_FRONTEND$/mu);
   assert.match(
     watcherServiceBlock,
     /^\s+- DOCKER_WEB_BUILD_MAX_PARALLELISM$/mu
@@ -923,6 +924,19 @@ test('validateDockerProdCompose reports missing watcher build env wiring', () =>
 
   assert.match(errors.join('\n'), /DOCKER_WEB_BUILD_MEMORY/);
   assert.match(errors.join('\n'), /DOCKER_WEB_NEXT_BUILD_CPUS/);
+});
+
+test('validateDockerProdCompose reports missing frontend selector env wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
+    '      - DOCKER_WEB_FRONTEND\n',
+    ''
+  );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /DOCKER_WEB_FRONTEND/);
+  assert.match(errors.join('\n'), /web-blue-green-watcher/);
+  assert.match(errors.join('\n'), /web-cron-runner/);
 });
 
 test('validateDockerProdCompose reports missing cron runner wiring', () => {

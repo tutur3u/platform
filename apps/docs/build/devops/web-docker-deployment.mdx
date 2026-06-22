@@ -158,7 +158,13 @@ parallel `apps/tanstack-web` migration runtime.
   readiness page to include `Backend reachable`, so a status-only shell cannot
   satisfy Docker cutover readiness when the Rust backend is unreachable.
   Use `DOCKER_WEB_FRONTEND=next|tanstack` to select the default web frontend in
-  migration-aware scripts. Cloudflare preview deploys use
+  migration-aware scripts. The default is still `next`; setting `tanstack`
+  keeps nginx on the public `web-proxy:7803` listener but routes the active
+  upstream to `tanstack-web-blue:7824` or `tanstack-web-green:7824`. Set the
+  variable in the host/root deployment env before creating
+  `web-blue-green-watcher` or `web-cron-runner`, because both containers inherit
+  it for status probes, cached recovery, and watcher recreation. Cloudflare
+  preview deploys use
   `apps/tanstack-web/wrangler.jsonc` plus the app-local
   `deploy:cloudflare`, `deploy:cloudflare:dry-run`, `preview:cloudflare`, and
   `cf-typegen` scripts, so incremental TanStack route ports can be validated on
@@ -1134,8 +1140,9 @@ deployment kind, and a re-entrant token for nested helper calls).
   as a stale PID reuse. On **macOS and Windows**, the same age-based stale window
   (`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`, default eight hours) still clears
   abandoned locks because `/proc` validation is unavailable. When no `web-proxy`
-  / `web-blue` / `web-green` containers exist, the auto-deploy watcher also runs
-  the same stale-lock sweep before cached recovery.
+  / `web-blue` / `web-green` / `tanstack-web-blue` / `tanstack-web-green`
+  containers exist, the auto-deploy watcher also runs the same stale-lock sweep
+  before cached recovery.
 - **`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`**: optional override for the
   default eight-hour window used when `/proc` is unreadable but `kill(pid, 0)`
   still reports a process (for example permission quirks). Set to `0` to
@@ -1841,11 +1848,12 @@ Dashboard details:
   deployment stamp and blue/green color. That lets the watcher link requests
   back to the correct deployment instead of only estimating by time window.
 - For each newly drained proxy request, the watcher also reads recent
-  `web-blue` and `web-green` container stdout/stderr and stores up to 20 route
-  console lines that fall inside the request latency window. Those captured
-  lines are persisted on the request-log record itself so the request explorer
-  can show request-scoped server console output after the live Docker logs have
-  moved on.
+  stdout/stderr from the selected frontend lanes (`web-blue` / `web-green` for
+  `DOCKER_WEB_FRONTEND=next`, or `tanstack-web-blue` / `tanstack-web-green` for
+  `DOCKER_WEB_FRONTEND=tanstack`) and stores up to 20 route console lines that
+  fall inside the request latency window. Those captured lines are persisted on
+  the request-log record itself so the request explorer can show request-scoped
+  server console output after the live Docker logs have moved on.
 - The watcher retains up to 10,000 deployment history entries and up to
   100,000,000 recent drained request-log records on disk, bounded by a 256 MiB
   durable request-log byte cap by default. When the next request record would

@@ -918,6 +918,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD',
     '      - DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD',
     '      - DOCKER_WEB_DOCKER_MEMORY_LIMIT',
+    '      - DOCKER_WEB_FRONTEND',
     '      - DOCKER_WEB_NATIVE_BUILD',
     '      - DOCKER_WEB_NATIVE_BUILD_MEMORY',
     '      - DOCKER_WEB_NEXT_APP_ONLY',
@@ -964,6 +965,7 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}',
+    '      - DOCKER_WEB_FRONTEND',
     '      - ..:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
     '      - platform-bun-install:/root/.bun/install/cache',
@@ -1131,6 +1133,16 @@ function validateDockerProdCompose(composeContent) {
         `docker-compose.web.prod.yml is missing the expected snippet: ${snippet}`
       );
     }
+  }
+
+  const frontendSelectorEnvCount = [
+    ...composeContent.matchAll(/^\s+- DOCKER_WEB_FRONTEND$/gmu),
+  ].length;
+
+  if (frontendSelectorEnvCount < 2) {
+    errors.push(
+      'docker-compose.web.prod.yml must pass DOCKER_WEB_FRONTEND to both web-blue-green-watcher and web-cron-runner so TanStack production selection survives container recreation.'
+    );
   }
 
   const logDrainDependencyCount = [

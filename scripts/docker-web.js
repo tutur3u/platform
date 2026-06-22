@@ -17,6 +17,8 @@ const {
   clearBlueGreenRuntime,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   ensureBlueGreenRuntime,
+  getBlueGreenAllDirectWebServiceNames,
+  getBlueGreenAllWebServiceNames,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenHiveServiceName,
   getBlueGreenPaths,
@@ -1418,8 +1420,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     await stopComposeServicesIfPresent(
       [
         BLUE_GREEN_PROXY_SERVICE,
-        getBlueGreenServiceName('blue'),
-        getBlueGreenServiceName('green'),
+        ...getBlueGreenAllDirectWebServiceNames(),
+        ...getBlueGreenAllWebServiceNames(),
       ],
       {
         composeFile,

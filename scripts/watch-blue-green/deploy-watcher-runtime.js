@@ -2,6 +2,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const {
+  getBlueGreenFrontend,
+  getBlueGreenServiceName,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
 } = require('../docker-web/blue-green.js');
@@ -25,6 +27,14 @@ const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
+
+function getBlueGreenColorFromServiceName(serviceName) {
+  const match = String(serviceName ?? '').match(
+    /^(?:web|tanstack-web)-(blue|green)$/u
+  );
+
+  return match?.[1] ?? null;
+}
 
 function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
@@ -142,6 +152,13 @@ async function resolveCurrentBlueGreenStatus({
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  getBlueGreenFrontend(composeEnv);
   const activeColor =
     readBlueGreenActiveColor(paths.blueGreen, fsImpl) ??
     readBlueGreenProxyActiveColor(paths.blueGreen, fsImpl);
@@ -151,7 +168,7 @@ async function resolveCurrentBlueGreenStatus({
     const proxyContainerId = await getProdComposeServiceContainerId(
       BLUE_GREEN_PROXY_SERVICE,
       {
-        env,
+        env: composeEnv,
         envFilePath,
         fsImpl,
         rootDir,
@@ -168,10 +185,11 @@ async function resolveCurrentBlueGreenStatus({
     }
 
     for (const color of BLUE_GREEN_COLORS) {
+      const serviceName = getBlueGreenServiceName(color, composeEnv);
       serviceStates[color] = await getProdComposeServiceContainerId(
-        `web-${color}`,
+        serviceName,
         {
-          env,
+          env: composeEnv,
           envFilePath,
           fsImpl,
           rootDir,
@@ -217,8 +235,8 @@ async function resolveCurrentBlueGreenStatus({
       proxyRunning,
       serviceContainers: {
         proxy: proxyContainerId,
-        'web-blue': serviceStates.blue,
-        'web-green': serviceStates.green,
+        [getBlueGreenServiceName('blue', composeEnv)]: serviceStates.blue,
+        [getBlueGreenServiceName('green', composeEnv)]: serviceStates.green,
       },
       standbyColor,
       state:
@@ -402,19 +420,9 @@ async function collectDockerResources(
     .map(([serviceName, containerId]) => ({
       containerId,
       label:
-        serviceName === 'web-green'
-          ? 'green'
-          : serviceName === 'web-blue'
-            ? 'blue'
-            : serviceName === 'proxy'
-              ? 'proxy'
-              : serviceName,
-      color:
-        serviceName === 'web-green'
-          ? 'green'
-          : serviceName === 'web-blue'
-            ? 'blue'
-            : 'cyan',
+        getBlueGreenColorFromServiceName(serviceName) ??
+        (serviceName === 'proxy' ? 'proxy' : serviceName),
+      color: getBlueGreenColorFromServiceName(serviceName) ?? 'cyan',
       serviceName,
     }));
 
@@ -604,10 +612,17 @@ async function collectDeploymentTraffic(
   }
 
   try {
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: env,
+      envFilePath,
+      fsImpl,
+      rootDir,
+    });
+    getBlueGreenFrontend(composeEnv);
     const containerId = await getProdComposeServiceContainerId(
       BLUE_GREEN_PROXY_SERVICE,
       {
-        env,
+        env: composeEnv,
         envFilePath,
         fsImpl,
         rootDir,
@@ -619,9 +634,9 @@ async function collectDeploymentTraffic(
           await Promise.all(
             ['blue', 'green'].map(async (deploymentColor) => ({
               containerId: await getProdComposeServiceContainerId(
-                `web-${deploymentColor}`,
+                getBlueGreenServiceName(deploymentColor, composeEnv),
                 {
-                  env,
+                  env: composeEnv,
                   envFilePath,
                   fsImpl,
                   rootDir,
@@ -638,7 +653,7 @@ async function collectDeploymentTraffic(
       await syncProxyTrafficStore(deployments, {
         appContainers,
         containerId,
-        env,
+        env: composeEnv,
         fsImpl,
         now,
         paths,

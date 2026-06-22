@@ -610,6 +610,19 @@ function getComposeEnvironment({
       baseEnv.DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
       envFile.DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
     ]) ?? DOCKER_WEB_NEXT_PRIVATE_ORIGIN;
+  const dockerWebFrontend = preferEnvFilePath
+    ? getFirstNonBlank([
+        envFile.DOCKER_WEB_FRONTEND,
+        baseEnv.DOCKER_WEB_FRONTEND,
+      ])
+    : getFirstNonBlank([
+        baseEnv.DOCKER_WEB_FRONTEND,
+        envFile.DOCKER_WEB_FRONTEND,
+      ]);
+
+  if (dockerWebFrontend) {
+    composeEnv.DOCKER_WEB_FRONTEND = dockerWebFrontend.trim();
+  }
 
   if (dockerInternalSupabaseUrl) {
     composeEnv.SUPABASE_URL = dockerInternalSupabaseUrl;
