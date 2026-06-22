@@ -205,16 +205,24 @@ If `bun serve:web:docker:bg` fails with
 `dependency failed to start: container ...-log-drain-postgres-1 exited (1)`,
 the deploy helper now starts `log-drain-postgres` before promoting the web lane
 and retries once after removing only the exited service container. The
-`platform-log-drain-postgres` volume is intentionally left intact. If the retry
-still fails, inspect the Postgres logs:
+`platform-log-drain-postgres` volume is intentionally left intact. In current
+deploys, a failed retry is not a hard promotion blocker unless
+`DOCKER_WEB_LOG_DRAIN_REQUIRED=1` is set; the rollout continues for that run with
+`PLATFORM_LOG_DRAIN_ENABLED=false`, so traffic can serve while persisted
+request/server logs and Infrastructure monitoring are degraded. Inspect the
+Postgres logs before deciding whether the volume needs migration or a reset:
 
 ```bash
+docker compose -f docker-compose.web.prod.yml --profile redis ps --all log-drain-postgres
 docker compose -f docker-compose.web.prod.yml --profile redis logs --tail 200 log-drain-postgres
+docker volume ls --filter label=com.docker.compose.volume=platform-log-drain-postgres
 ```
 
 When the logs mention incompatible database files, a corrupted data directory,
 or another persistent storage problem, back up or migrate the
 `platform-log-drain-postgres` volume before retrying. Do not remove that volume
 unless losing local observability history is an explicit operator decision.
+Set `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` only when blocking a rollout is preferable
+to serving without persisted log-drain telemetry.
 
 If logs are missing only for cron jobs, verify the cron route is wrapped with `withCronLogDrain(...)` and the cron runner is calling the expected web origin.
