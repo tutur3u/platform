@@ -543,8 +543,7 @@ paths:
         server-owned private-schema REST adapter, and preserves the legacy
         page/pageSize/q query behavior, created_at descending order,
         exact-count pagination, raw row list response, 403 denial body, and
-        plain-text 500 body. POST remains legacy-owned until whitelist writes
-        move to Rust.
+        plain-text 500 body.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -590,6 +589,65 @@ paths:
                 $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
         "500":
           description: Whitelist domains could not be loaded.
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Internal Server Error
+    post:
+      summary: Legacy-compatible AI whitelist domain creation
+      description: >-
+        Migrated replacement for the POST method in
+        apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires a caller email ending in
+        @tuturuuu.com, preserves the legacy invalid-payload validation body,
+        trims the domain and optional description fields, defaults `enabled` to
+        true, inserts private.ai_whitelisted_domains through the service-role
+        private-schema REST adapter, and returns the legacy 201 `{ data }`
+        wrapper or plain-text 500 body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiWhitelistDomainCreate"
+      responses:
+        "201":
+          description: Whitelist domain created.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistCreatedResponse"
+        "400":
+          description: Invalid whitelist domain payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistMessage"
+        "403":
+          description: Caller is not an allowed Tuturuuu operator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Whitelist domain could not be created.
           content:
             text/plain:
               schema:
@@ -721,8 +779,7 @@ paths:
         server-owned private-schema REST adapter, and preserves the legacy
         page/pageSize/q query behavior, created_at descending order,
         exact-count pagination, raw row list response, 403 denial body, and
-        plain-text 500 body. POST remains legacy-owned until whitelist writes
-        move to Rust.
+        plain-text 500 body.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -768,6 +825,64 @@ paths:
                 $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
         "500":
           description: Whitelist emails could not be loaded.
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Internal Server Error
+    post:
+      summary: Legacy-compatible AI whitelist email creation
+      description: >-
+        Migrated replacement for the POST method in
+        apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires a caller email ending in
+        @tuturuuu.com, preserves the legacy invalid-payload validation body,
+        defaults `enabled` to true, inserts private.ai_whitelisted_emails
+        through the service-role private-schema REST adapter, and returns the
+        legacy 201 `{ data }` wrapper or plain-text 500 body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiWhitelistEmailCreate"
+      responses:
+        "201":
+          description: Whitelist email created.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistCreatedResponse"
+        "400":
+          description: Invalid whitelist email payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistMessage"
+        "403":
+          description: Caller is not an allowed Tuturuuu operator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Whitelist email could not be created.
           content:
             text/plain:
               schema:
@@ -8838,6 +8953,43 @@ components:
       properties:
         enabled:
           description: Legacy Boolean(enabled) truthiness is applied by the Rust route.
+    AiWhitelistDomainCreate:
+      type: object
+      required:
+        - domain
+      properties:
+        description:
+          type:
+            - string
+            - "null"
+          description: Optional domain description. The Rust route trims strings before insert.
+        domain:
+          type: string
+          minLength: 1
+          maxLength: 253
+          description: Domain to add to the AI whitelist. The Rust route trims strings before validation and insert.
+        enabled:
+          type: boolean
+          default: true
+    AiWhitelistEmailCreate:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+        enabled:
+          type: boolean
+          default: true
+    AiWhitelistCreatedResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          additionalProperties: true
     AiWhitelistSuccess:
       type: object
       required:
@@ -8856,6 +9008,8 @@ components:
           type: string
           examples:
             - Email is required
+            - Invalid whitelist email payload
+            - Invalid whitelist domain payload
             - Error updating AI whitelist email
             - Error deleting AI whitelist email
     NovaCurrentTeamResponse:

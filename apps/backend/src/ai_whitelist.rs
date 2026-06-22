@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse,
@@ -18,6 +18,7 @@ const INFRASTRUCTURE_AI_WHITELIST_DOMAINS_PATH: &str =
     "/api/v1/infrastructure/ai/whitelist/domains";
 const INFRASTRUCTURE_AI_WHITELIST_EMAILS_PATH: &str = "/api/v1/infrastructure/ai/whitelist/emails";
 const PRIVATE_SCHEMA: &str = "private";
+const POSTGREST_SINGLE_JSON: &str = "application/vnd.pgrst.object+json";
 const INTERNAL_SERVER_ERROR_MESSAGE: &str = "Internal server error";
 const INTERNAL_SERVER_ERROR_TEXT: &str = "Internal Server Error";
 const AI_WHITELIST_ACCESS_DOMAIN: &str = "@tuturuuu.com";
@@ -66,6 +67,31 @@ struct AiWhitelistListSpec {
     table: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AiWhitelistCreateTarget {
+    Domain,
+    Email,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum AiWhitelistCreateInput {
+    Domain {
+        description: Option<String>,
+        domain: String,
+        enabled: bool,
+    },
+    Email {
+        email: String,
+        enabled: bool,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AiWhitelistCreateBodyError {
+    Internal,
+    Invalid,
+}
+
 const AI_WHITELIST_DOMAINS_LIST_SPEC: AiWhitelistListSpec = AiWhitelistListSpec {
     search_column: "domain",
     select: "domain,description,enabled,created_at",
@@ -96,8 +122,21 @@ pub(crate) async fn handle_ai_whitelist_route(
             ai_whitelist_list_response(config, request, outbound, AI_WHITELIST_DOMAINS_LIST_SPEC)
                 .await,
         ),
+        ("POST", INFRASTRUCTURE_AI_WHITELIST_DOMAINS_PATH) => Some(
+            ai_whitelist_create_response(
+                config,
+                request,
+                outbound,
+                AiWhitelistCreateTarget::Domain,
+            )
+            .await,
+        ),
         ("GET", INFRASTRUCTURE_AI_WHITELIST_EMAILS_PATH) => Some(
             ai_whitelist_list_response(config, request, outbound, AI_WHITELIST_EMAILS_LIST_SPEC)
+                .await,
+        ),
+        ("POST", INFRASTRUCTURE_AI_WHITELIST_EMAILS_PATH) => Some(
+            ai_whitelist_create_response(config, request, outbound, AiWhitelistCreateTarget::Email)
                 .await,
         ),
         _ => None,
@@ -168,6 +207,49 @@ async fn ai_whitelist_list_response(
         json!({
             "data": rows,
             "count": count,
+        }),
+    ))
+}
+
+async fn ai_whitelist_create_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+    target: AiWhitelistCreateTarget,
+) -> BackendResponse {
+    if authorize_ai_whitelist_infrastructure_access(config, request, outbound)
+        .await
+        .is_err()
+    {
+        return forbidden_response();
+    }
+
+    let input = match ai_whitelist_create_input_from_body(request.body_text, target) {
+        Ok(input) => input,
+        Err(AiWhitelistCreateBodyError::Invalid) => {
+            return invalid_ai_whitelist_create_payload_response(target);
+        }
+        Err(AiWhitelistCreateBodyError::Internal) => return internal_server_error_text_response(),
+    };
+
+    let response = match insert_ai_whitelist_row(&config.contact_data, outbound, &input).await {
+        Ok(response) => response,
+        Err(()) => return internal_server_error_text_response(),
+    };
+
+    if !(200..300).contains(&response.status) {
+        return internal_server_error_text_response();
+    }
+
+    let row = match response.json::<Value>() {
+        Ok(row) => row,
+        Err(_) => return internal_server_error_text_response(),
+    };
+
+    no_store_response(json_response(
+        201,
+        json!({
+            "data": row,
         }),
     ))
 }
@@ -306,6 +388,36 @@ async fn fetch_ai_whitelist_list(
     Ok(response)
 }
 
+async fn insert_ai_whitelist_row(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    input: &AiWhitelistCreateInput,
+) -> Result<OutboundResponse, ()> {
+    let Some(url) = contact_data.rest_url(input.table(), &[("select", "*".to_owned())]) else {
+        return Err(());
+    };
+    let body = input.insert_body()?;
+    let Some(service_role_key) = contact_data.service_role_key() else {
+        return Err(());
+    };
+    let authorization = format!("Bearer {service_role_key}");
+
+    outbound
+        .send(
+            OutboundRequest::new(OutboundMethod::Post, &url)
+                .with_header("Accept", POSTGREST_SINGLE_JSON)
+                .with_header("Accept-Profile", PRIVATE_SCHEMA)
+                .with_header("Content-Profile", PRIVATE_SCHEMA)
+                .with_header("Authorization", &authorization)
+                .with_header("apikey", service_role_key)
+                .with_header("Content-Type", APPLICATION_JSON)
+                .with_header("Prefer", "return=representation")
+                .with_body(&body),
+        )
+        .await
+        .map_err(|_| ())
+}
+
 fn ai_whitelist_list_query_from_url(request_url: Option<&str>) -> AiWhitelistListQuery {
     let mut query = AiWhitelistListQuery {
         page: 1,
@@ -355,6 +467,127 @@ fn ai_whitelist_list_range(query: &AiWhitelistListQuery) -> String {
     format!("{offset}-{}", offset + query.page_size - 1)
 }
 
+fn ai_whitelist_create_input_from_body(
+    body_text: Option<&str>,
+    target: AiWhitelistCreateTarget,
+) -> Result<AiWhitelistCreateInput, AiWhitelistCreateBodyError> {
+    let body = serde_json::from_str::<Value>(body_text.unwrap_or_default())
+        .map_err(|_| AiWhitelistCreateBodyError::Internal)?;
+    let Some(object) = body.as_object() else {
+        return Err(AiWhitelistCreateBodyError::Invalid);
+    };
+    let enabled = optional_enabled_field(object)?;
+
+    match target {
+        AiWhitelistCreateTarget::Email => {
+            let Some(email) = object.get("email").and_then(Value::as_str) else {
+                return Err(AiWhitelistCreateBodyError::Invalid);
+            };
+            if !is_valid_ai_whitelist_email(email) {
+                return Err(AiWhitelistCreateBodyError::Invalid);
+            }
+
+            Ok(AiWhitelistCreateInput::Email {
+                email: email.to_owned(),
+                enabled,
+            })
+        }
+        AiWhitelistCreateTarget::Domain => {
+            let Some(domain) = object.get("domain").and_then(Value::as_str) else {
+                return Err(AiWhitelistCreateBodyError::Invalid);
+            };
+            let domain = domain.trim().to_owned();
+            if domain.is_empty() || domain.chars().count() > 253 {
+                return Err(AiWhitelistCreateBodyError::Invalid);
+            }
+            let description = match object.get("description") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(description)) => Some(description.trim().to_owned()),
+                Some(_) => return Err(AiWhitelistCreateBodyError::Invalid),
+            };
+
+            Ok(AiWhitelistCreateInput::Domain {
+                description,
+                domain,
+                enabled,
+            })
+        }
+    }
+}
+
+fn optional_enabled_field(object: &Map<String, Value>) -> Result<bool, AiWhitelistCreateBodyError> {
+    match object.get("enabled") {
+        None => Ok(true),
+        Some(Value::Bool(enabled)) => Ok(*enabled),
+        Some(_) => Err(AiWhitelistCreateBodyError::Invalid),
+    }
+}
+
+fn is_valid_ai_whitelist_email(value: &str) -> bool {
+    if value.trim() != value || value.chars().count() > 254 {
+        return false;
+    }
+    let Some((local_part, domain)) = value.split_once('@') else {
+        return false;
+    };
+    if domain.contains('@') || local_part.is_empty() || local_part.len() > 64 {
+        return false;
+    }
+
+    local_part.bytes().all(is_email_local_byte) && is_valid_email_domain(domain)
+}
+
+fn is_valid_email_domain(value: &str) -> bool {
+    let labels = value.split('.').collect::<Vec<_>>();
+
+    labels.len() >= 2 && labels.into_iter().all(is_valid_email_domain_label)
+}
+
+fn is_valid_email_domain_label(label: &str) -> bool {
+    let bytes = label.as_bytes();
+
+    !bytes.is_empty()
+        && bytes.len() <= 63
+        && bytes[0].is_ascii_alphanumeric()
+        && bytes[bytes.len() - 1].is_ascii_alphanumeric()
+        && bytes
+            .iter()
+            .all(|byte| byte.is_ascii_alphanumeric() || *byte == b'-')
+}
+
+fn is_email_local_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'%' | b'+' | b'-')
+}
+
+impl AiWhitelistCreateInput {
+    fn table(&self) -> &'static str {
+        match self {
+            Self::Domain { .. } => AI_WHITELIST_DOMAINS_TABLE,
+            Self::Email { .. } => AI_WHITELIST_EMAILS_TABLE,
+        }
+    }
+
+    fn insert_body(&self) -> Result<String, ()> {
+        match self {
+            Self::Domain {
+                description,
+                domain,
+                enabled,
+            } => serde_json::to_string(&json!({
+                "description": description,
+                "domain": domain,
+                "enabled": enabled,
+            }))
+            .map_err(|_| ()),
+            Self::Email { email, enabled } => serde_json::to_string(&json!({
+                "email": email,
+                "enabled": enabled,
+            }))
+            .map_err(|_| ()),
+        }
+    }
+}
+
 fn unauthorized_response() -> BackendResponse {
     no_store_response(json_response(
         401,
@@ -369,6 +602,22 @@ fn forbidden_response() -> BackendResponse {
         403,
         json!({
             "message": FORBIDDEN_ACTION_MESSAGE,
+        }),
+    ))
+}
+
+fn invalid_ai_whitelist_create_payload_response(
+    target: AiWhitelistCreateTarget,
+) -> BackendResponse {
+    let message = match target {
+        AiWhitelistCreateTarget::Domain => "Invalid whitelist domain payload",
+        AiWhitelistCreateTarget::Email => "Invalid whitelist email payload",
+    };
+
+    no_store_response(json_response(
+        400,
+        json!({
+            "message": message,
         }),
     ))
 }

@@ -139,7 +139,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body. POST remains legacy-owned until whitelist writes move to Rust."
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, preserving the legacy Zod-style payload validation message, trimming domain and optional description fields, defaulting enabled to true, inserting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and returning the legacy 201 data wrapper or plain-text 500 body."
         }
       }
     },
@@ -162,7 +167,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body. POST remains legacy-owned until whitelist writes move to Rust."
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, preserving the legacy Zod-style payload validation message, defaulting enabled to true, inserting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the legacy 201 data wrapper or plain-text 500 body."
         }
       }
     },

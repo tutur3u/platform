@@ -5,7 +5,7 @@ use crate::{
         OutboundResponse,
     },
 };
-use serde_json::json;
+use serde_json::{Value, json};
 use std::cell::RefCell;
 use std::collections::VecDeque;
 
@@ -145,6 +145,10 @@ fn query_value(request: &RecordedOutboundRequest, key: &str) -> Option<String> {
         .map(|(_, value)| value.into_owned())
 }
 
+fn request_body(request: &RecordedOutboundRequest) -> Value {
+    serde_json::from_str(request.body.as_deref().expect("request body")).expect("JSON body")
+}
+
 #[tokio::test]
 async fn ai_whitelist_email_list_requires_tuturuuu_user_and_queries_private_rows() {
     let outbound = RecordingOutboundClient::with_responses(vec![
@@ -260,6 +264,251 @@ async fn ai_whitelist_domain_list_parses_js_style_pagination_and_rejects_non_com
     );
     assert!(query_value(data_call, "domain").is_none());
     assert_eq!(header(data_call, "Range"), Some("10-19"));
+}
+
+#[tokio::test]
+async fn ai_whitelist_email_post_creates_private_row_with_default_enabled() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(
+            201,
+            r#"{"email":"member@example.com","enabled":true,"created_at":"2026-01-01T00:00:00Z"}"#,
+        ),
+    ]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAILS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/emails",
+            "POST",
+            r#"{"email":"member@example.com"}"#,
+        ),
+        &outbound,
+    )
+    .await
+    .expect("email whitelist collection route should match");
+
+    assert_eq!(response.status, 201);
+    assert_eq!(
+        response.body,
+        json!({
+            "data": {
+                "email": "member@example.com",
+                "enabled": true,
+                "created_at": "2026-01-01T00:00:00Z",
+            }
+        })
+    );
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 2);
+    let insert_call = calls.last().expect("private whitelist email insert");
+    assert_eq!(insert_call.method, OutboundMethod::Post);
+    assert!(insert_call.url.contains("/rest/v1/ai_whitelisted_emails?"));
+    assert_eq!(query_value(insert_call, "select").as_deref(), Some("*"));
+    assert_eq!(
+        header(insert_call, "Accept"),
+        Some("application/vnd.pgrst.object+json")
+    );
+    assert_eq!(header(insert_call, "Accept-Profile"), Some("private"));
+    assert_eq!(header(insert_call, "Content-Profile"), Some("private"));
+    assert_eq!(header(insert_call, "Content-Type"), Some(APPLICATION_JSON));
+    assert_eq!(header(insert_call, "Prefer"), Some("return=representation"));
+    assert_eq!(
+        header(insert_call, "Authorization"),
+        Some("Bearer test-service-role-secret")
+    );
+    assert_eq!(
+        request_body(insert_call),
+        json!({
+            "email": "member@example.com",
+            "enabled": true,
+        })
+    );
+}
+
+#[tokio::test]
+async fn ai_whitelist_domain_post_trims_payload_and_creates_private_row() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(
+            201,
+            r#"{"domain":"example.com","description":"Example domain","enabled":false,"created_at":"2026-01-01T00:00:00Z"}"#,
+        ),
+    ]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAINS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domains",
+            "POST",
+            r#"{"domain":" example.com ","description":" Example domain ","enabled":false}"#,
+        ),
+        &outbound,
+    )
+    .await
+    .expect("domain whitelist collection route should match");
+
+    assert_eq!(response.status, 201);
+    assert_eq!(
+        response.body,
+        json!({
+            "data": {
+                "domain": "example.com",
+                "description": "Example domain",
+                "enabled": false,
+                "created_at": "2026-01-01T00:00:00Z",
+            }
+        })
+    );
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 2);
+    let insert_call = calls.last().expect("private whitelist domain insert");
+    assert_eq!(insert_call.method, OutboundMethod::Post);
+    assert!(insert_call.url.contains("/rest/v1/ai_whitelisted_domains?"));
+    assert_eq!(query_value(insert_call, "select").as_deref(), Some("*"));
+    assert_eq!(
+        header(insert_call, "Accept"),
+        Some("application/vnd.pgrst.object+json")
+    );
+    assert_eq!(header(insert_call, "Accept-Profile"), Some("private"));
+    assert_eq!(header(insert_call, "Content-Profile"), Some("private"));
+    assert_eq!(header(insert_call, "Content-Type"), Some(APPLICATION_JSON));
+    assert_eq!(header(insert_call, "Prefer"), Some("return=representation"));
+    assert_eq!(
+        request_body(insert_call),
+        json!({
+            "description": "Example domain",
+            "domain": "example.com",
+            "enabled": false,
+        })
+    );
+}
+
+#[tokio::test]
+async fn ai_whitelist_post_rejects_non_company_users_before_body_parse() {
+    let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"member@example.com"}"#,
+    )]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAILS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/emails",
+            "POST",
+            "not json",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("email whitelist collection route should match");
+
+    assert_eq!(response.status, 403);
+    assert_eq!(
+        response.body,
+        json!({ "message": "You are not allowed to perform this action" })
+    );
+    assert_eq!(outbound.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn ai_whitelist_post_preserves_collection_failure_bodies() {
+    let invalid_email_outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let invalid_email_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAILS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/emails",
+            "POST",
+            r#"{"email":"not an email","enabled":"true"}"#,
+        ),
+        &invalid_email_outbound,
+    )
+    .await
+    .expect("email whitelist collection route should match");
+
+    assert_eq!(invalid_email_response.status, 400);
+    assert_eq!(
+        invalid_email_response.body,
+        json!({ "message": "Invalid whitelist email payload" })
+    );
+    assert_eq!(invalid_email_outbound.calls().len(), 1);
+
+    let invalid_domain_outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let invalid_domain_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAINS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domains",
+            "POST",
+            r#"{"domain":"   "}"#,
+        ),
+        &invalid_domain_outbound,
+    )
+    .await
+    .expect("domain whitelist collection route should match");
+
+    assert_eq!(invalid_domain_response.status, 400);
+    assert_eq!(
+        invalid_domain_response.body,
+        json!({ "message": "Invalid whitelist domain payload" })
+    );
+    assert_eq!(invalid_domain_outbound.calls().len(), 1);
+
+    let invalid_json_outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let invalid_json_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAINS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domains",
+            "POST",
+            "not json",
+        ),
+        &invalid_json_outbound,
+    )
+    .await
+    .expect("domain whitelist collection route should match");
+
+    assert_eq!(invalid_json_response.status, 500);
+    assert_eq!(
+        invalid_json_response.body_text.as_deref(),
+        Some("Internal Server Error")
+    );
+    assert_eq!(invalid_json_outbound.calls().len(), 1);
+
+    let insert_outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(500, r#"{"message":"failed"}"#),
+    ]);
+    let insert_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAILS_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/emails",
+            "POST",
+            r#"{"email":"member@example.com"}"#,
+        ),
+        &insert_outbound,
+    )
+    .await
+    .expect("email whitelist collection route should match");
+
+    assert_eq!(insert_response.status, 500);
+    assert_eq!(
+        insert_response.body_text.as_deref(),
+        Some("Internal Server Error")
+    );
 }
 
 #[tokio::test]

@@ -72,22 +72,22 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   falls back to browser Supabase cookies only when no app-session token is
   present, reads only `enabled` from `private.ai_whitelisted_emails`, and
   returns the derived `{ email, enabled }` payload.
-- `GET /api/v1/infrastructure/ai/whitelist/emails` and
-  `GET /api/v1/infrastructure/ai/whitelist/domains`: legacy-compatible
-  infrastructure AI whitelist list routes. Rust revalidates a normal Supabase
-  browser session or non-app-session Bearer token, requires a `@tuturuuu.com`
-  operator email, reads the private whitelist tables through the server-owned
-  private-schema REST adapter, preserves `page`/`pageSize`/`q`,
-  `created_at.desc` ordering, exact-count pagination, raw row lists, and keeps
-  POST legacy-owned until whitelist writes move to Rust.
+- `GET` / `POST` `/api/v1/infrastructure/ai/whitelist/emails` and
+  `GET` / `POST` `/api/v1/infrastructure/ai/whitelist/domains`:
+  legacy-compatible infrastructure AI whitelist collection routes. Rust
+  revalidates a normal Supabase browser session or non-app-session Bearer
+  token, requires a `@tuturuuu.com` operator email, reads and inserts private
+  whitelist table rows through the server-owned private-schema REST adapter,
+  preserves `page`/`pageSize`/`q`, `created_at.desc` ordering, exact-count
+  pagination, raw row lists, Zod-style create validation messages, `enabled`
+  defaults, 201 create wrappers, and plain-text collection failure bodies.
 - `PUT` / `DELETE` `/api/v1/infrastructure/ai/whitelist/{email}` and
   `PUT` / `DELETE` `/api/v1/infrastructure/ai/whitelist/domain/{domain}`:
   legacy-compatible protected AI whitelist detail routes. Rust revalidates the
   same operator session boundary as the list routes, decodes the path segment,
   patches or deletes matching private whitelist rows through the service-role
-  private-schema REST adapter, preserves the legacy success and failure bodies,
-  and keeps collection `POST` routes legacy-owned until create body parity moves
-  to Rust.
+  private-schema REST adapter, and preserves the legacy success and failure
+  bodies.
 - `GET /api/v1/infrastructure/post-email-queue`: legacy-compatible protected
   post email queue infrastructure summary. Rust revalidates a normal Supabase
   browser session or non-app-session Bearer token, requires root workspace
