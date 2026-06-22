@@ -364,6 +364,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles PATCH /api/v1/users/me/full-name by revalidating the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, requiring a JSON full_name string with trimmed length 1..100, and upserting user_private_details with user_id fixed to the authenticated user through Supabase REST using the caller token and on_conflict=user_id."
     },
+    "api:/api/v1/users/me/default-workspace:apps/web/src/app/api/v1/users/me/default-workspace/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token."
+    },
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

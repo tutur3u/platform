@@ -13,6 +13,7 @@ mod contact;
 mod crawlers;
 #[cfg(test)]
 mod cron_monitoring_test;
+mod current_user_default_workspace;
 mod devbox_cache;
 mod hive_access;
 mod hive_ai_models;
@@ -382,6 +383,15 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = user_profile::handle_user_profile_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        current_user_default_workspace::handle_current_user_default_workspace_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }
@@ -1196,6 +1206,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
         || holidays::should_buffer_request_body(method, path)
         || auth_mfa::should_buffer_request_body(method, path)
         || user_profile::should_buffer_request_body(method, path)
+        || current_user_default_workspace::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
 }
 
@@ -8192,6 +8203,10 @@ mod tests {
         ));
         assert!(should_buffer_request_body(
             "PATCH",
+            current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH
+        ));
+        assert!(should_buffer_request_body(
+            "PATCH",
             "/api/v1/inquiries/inquiry-1"
         ));
         assert!(should_buffer_request_body(
@@ -8232,6 +8247,10 @@ mod tests {
             ("POST", "/~recover-browser-state"),
             ("POST", "/internal/jobs/noop"),
             ("GET", CURRENT_USER_PROFILE_PATH),
+            (
+                "GET",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+            ),
         ] {
             assert!(!should_buffer_request_body(method, path), "{method} {path}");
         }
@@ -8779,6 +8798,306 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
         assert_eq!(response.body["error"], "method not allowed");
+    }
+
+    #[tokio::test]
+    async fn default_workspace_get_requires_auth() {
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request(
+                "GET",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["error"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn default_workspace_get_returns_default_for_supabase_session() {
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(
+                200,
+                r#"[{"default_workspace_id":"00000000-0000-0000-0000-000000000001"}]"#,
+            ),
+            outbound_response(
+                200,
+                r#"[{"id":"00000000-0000-0000-0000-000000000001","name":"Team","personal":false,"workspace_members":[{"user_id":"user-1"}]}]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request_with_bearer(
+                "GET",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.cache_control,
+            Some("private, max-age=300, stale-while-revalidate=60")
+        );
+        assert_eq!(
+            response.body,
+            json!({"id":"00000000-0000-0000-0000-000000000001","name":"Team","personal":false})
+        );
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(
+            recorded_header(&calls[1], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert!(calls[2].url.contains("workspace_members%21inner"));
+    }
+
+    #[tokio::test]
+    async fn default_workspace_get_accepts_app_session_and_falls_back_to_personal() {
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(
+                200,
+                r#"[{"default_workspace_id":"00000000-0000-0000-0000-000000000002"}]"#,
+            ),
+            outbound_response(200, "[]"),
+            outbound_response(
+                200,
+                r#"[{"id":"00000000-0000-0000-0000-000000000003","name":"Personal","personal":true}]"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request_with_bearer(
+                "GET",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                valid_app_session_token(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({"id":"00000000-0000-0000-0000-000000000003","name":"Personal","personal":true})
+        );
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert!(
+            calls
+                .iter()
+                .all(|call| recorded_header(call, "Authorization")
+                    == Some("Bearer test-service-role-secret"))
+        );
+        assert!(calls[2].url.contains("personal=eq.true"));
+    }
+
+    #[tokio::test]
+    async fn default_workspace_get_returns_null_on_data_failure() {
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(500, r#"{"message":"database unavailable"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request_with_bearer(
+                "GET",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, Value::Null);
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn default_workspace_patch_requires_normal_auth_and_valid_body() {
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request_with_bearer(
+                "PATCH",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                valid_app_session_token(),
+            ),
+            &RecordingOutboundClient::default(),
+        )
+        .await;
+        assert_eq!(response.status, 401);
+
+        let outbound = RecordingOutboundClient::with_response(200, r#"{"id":"user-1"}"#);
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            BackendRequest {
+                body_text: Some(r#"{"workspaceId":"not-a-uuid"}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["error"], "Invalid request data");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn default_workspace_patch_clears_default_workspace() {
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(204, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            BackendRequest {
+                body_text: Some(r#"{"workspaceId":null}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, json!({"success": true}));
+        let calls = outbound.calls();
+        assert_eq!(calls[1].method, OutboundMethod::Patch);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/user_private_details?user_id=eq.user-1"
+        );
+        assert_eq!(recorded_header(&calls[1], "Prefer"), Some("return=minimal"));
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[1].body.as_deref().unwrap()).unwrap()["default_workspace_id"],
+            Value::Null
+        );
+    }
+
+    #[tokio::test]
+    async fn default_workspace_patch_sets_workspace_after_membership() {
+        let workspace_id = "00000000-0000-0000-0000-000000000004";
+        let body = format!(r#"{{"workspaceId":"{workspace_id}"}}"#);
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"[{"ws_id":"00000000-0000-0000-0000-000000000004"}]"#),
+            outbound_response(204, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            BackendRequest {
+                body_text: Some(&body),
+                ..request_with_bearer(
+                    "PATCH",
+                    current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        let calls = outbound.calls();
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert!(calls[1].url.contains("workspace_members?select=ws_id"));
+        assert_eq!(calls[2].method, OutboundMethod::Patch);
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[2].body.as_deref().unwrap()).unwrap()["default_workspace_id"],
+            workspace_id
+        );
+    }
+
+    #[tokio::test]
+    async fn default_workspace_patch_returns_400_for_membership_and_update_failures() {
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "[]"),
+        ]);
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            BackendRequest {
+                body_text: Some(r#"{"workspaceId":"00000000-0000-0000-0000-000000000005"}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+        assert_eq!(response.status, 400);
+        assert_eq!(
+            response.body["error"],
+            "Workspace not found or access denied"
+        );
+        assert_eq!(outbound.calls().len(), 2);
+
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(500, r#"{"message":"cannot update"}"#),
+        ]);
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            BackendRequest {
+                body_text: Some(r#"{"workspaceId":null}"#),
+                ..request_with_bearer(
+                    "PATCH",
+                    current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+                    "browser-access-token".to_owned(),
+                )
+            },
+            &outbound,
+        )
+        .await;
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["error"], "cannot update");
+    }
+
+    #[tokio::test]
+    async fn default_workspace_route_rejects_unsupported_methods() {
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &backend_config_with_contact_data(),
+            request(
+                "POST",
+                current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET, PATCH"));
+        assert_eq!(response.body["error"], "method not allowed");
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[test]
