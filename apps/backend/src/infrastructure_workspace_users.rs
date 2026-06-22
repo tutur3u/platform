@@ -12,6 +12,7 @@ const WORKSPACE_USERS_SPEC: CallerTokenPaginatedListSpec = CallerTokenPaginatedL
     error_message: "Error fetching workspace users",
     missing_ws_id_message: "Missing ws_id parameter",
     path: INFRASTRUCTURE_WORKSPACE_USERS_PATH,
+    select: "*",
     table: "workspace_users",
     workspace_filter_column: "ws_id",
 };
@@ -45,6 +46,7 @@ mod tests {
             "Missing ws_id parameter"
         );
         assert_eq!(WORKSPACE_USERS_SPEC.table, "workspace_users");
+        assert_eq!(WORKSPACE_USERS_SPEC.select, "*");
         assert_eq!(WORKSPACE_USERS_SPEC.workspace_filter_column, "ws_id");
         assert_eq!(WORKSPACE_USERS_SPEC.path, "/api/v1/infrastructure/users");
     }

@@ -16,6 +16,7 @@ const WORKSPACE_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 3] = [
         error_message: "Error fetching finance invoices",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
         path: BILLS_PATH,
+        select: "*",
         table: "finance_invoices",
         workspace_filter_column: "ws_id",
     },
@@ -23,6 +24,7 @@ const WORKSPACE_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 3] = [
         error_message: "Error fetching workspace_user_groups",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
         path: ROLES_PATH,
+        select: "*",
         table: "workspace_user_groups",
         workspace_filter_column: "ws_id",
     },
@@ -30,6 +32,7 @@ const WORKSPACE_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 3] = [
         error_message: "Error fetching transaction_categories",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
         path: TRANSACTION_CATEGORIES_PATH,
+        select: "*",
         table: "transaction_categories",
         workspace_filter_column: "ws_id",
     },
@@ -81,6 +84,7 @@ mod tests {
 
         for spec in WORKSPACE_EXPORT_SPECS {
             assert_eq!(spec.missing_ws_id_message, MISSING_WS_ID_MESSAGE);
+            assert_eq!(spec.select, "*");
             assert_eq!(spec.workspace_filter_column, "ws_id");
         }
     }

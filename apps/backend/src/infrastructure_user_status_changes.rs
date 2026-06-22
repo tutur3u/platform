@@ -13,6 +13,7 @@ const USER_STATUS_CHANGES_SPEC: CallerTokenPaginatedListSpec = CallerTokenPagina
     error_message: "Error fetching workspace_user_status_changes",
     missing_ws_id_message: "Missing ws_id parameter",
     path: INFRASTRUCTURE_USER_STATUS_CHANGES_PATH,
+    select: "*",
     table: "workspace_user_status_changes",
     workspace_filter_column: "ws_id",
 };
@@ -49,6 +50,7 @@ mod tests {
             USER_STATUS_CHANGES_SPEC.table,
             "workspace_user_status_changes"
         );
+        assert_eq!(USER_STATUS_CHANGES_SPEC.select, "*");
         assert_eq!(USER_STATUS_CHANGES_SPEC.workspace_filter_column, "ws_id");
         assert_eq!(
             USER_STATUS_CHANGES_SPEC.path,

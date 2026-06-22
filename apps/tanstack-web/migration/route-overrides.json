@@ -621,6 +621,36 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/bill-coupons:apps/web/src/app/api/v1/infrastructure/bill-coupons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bill-coupons through the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/bill-packages:apps/web/src/app/api/v1/infrastructure/bill-packages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bill-packages through the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/class-packages:apps/web/src/app/api/v1/infrastructure/class-packages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-packages through the shared caller-token paginated export helper with the legacy workspace_user_groups inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/class-scores:apps/web/src/app/api/v1/infrastructure/class-scores/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-scores through the shared caller-token paginated export helper with the legacy workspace_users!user_indicators_user_id_fkey inner select and workspace_users.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/package-stock-changes:apps/web/src/app/api/v1/infrastructure/package-stock-changes/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/package-stock-changes through the shared caller-token paginated export helper with the legacy workspace_products!product_id inner select and workspace_products.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/student-feedbacks:apps/web/src/app/api/v1/infrastructure/student-feedbacks/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/student-feedbacks through the shared caller-token paginated export helper with the legacy workspace_users!user_feedbacks_user_id_fkey inner select and workspace_users.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
     "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
       "methods": {
         "GET": {

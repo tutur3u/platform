@@ -16,6 +16,7 @@ const CATALOG_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 3] = [
         error_message: "Error fetching workspace user groups",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
         path: CLASSES_PATH,
+        select: "*",
         table: "workspace_user_groups",
         workspace_filter_column: "ws_id",
     },
@@ -23,6 +24,7 @@ const CATALOG_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 3] = [
         error_message: "Error fetching product_categories",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
         path: PRODUCT_CATEGORIES_PATH,
+        select: "*",
         table: "product_categories",
         workspace_filter_column: "ws_id",
     },
@@ -30,6 +32,7 @@ const CATALOG_EXPORT_SPECS: [CallerTokenPaginatedListSpec; 3] = [
         error_message: "Error fetching user_group_metrics",
         missing_ws_id_message: MISSING_WS_ID_MESSAGE,
         path: SCORE_NAMES_PATH,
+        select: "*",
         table: "user_group_metrics",
         workspace_filter_column: "ws_id",
     },
@@ -81,6 +84,7 @@ mod tests {
 
         for spec in CATALOG_EXPORT_SPECS {
             assert_eq!(spec.missing_ws_id_message, MISSING_WS_ID_MESSAGE);
+            assert_eq!(spec.select, "*");
             assert_eq!(spec.workspace_filter_column, "ws_id");
         }
     }

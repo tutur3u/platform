@@ -12,6 +12,7 @@ pub(crate) struct CallerTokenPaginatedListSpec {
     pub(crate) error_message: &'static str,
     pub(crate) missing_ws_id_message: &'static str,
     pub(crate) path: &'static str,
+    pub(crate) select: &'static str,
     pub(crate) table: &'static str,
     pub(crate) workspace_filter_column: &'static str,
 }
@@ -99,7 +100,7 @@ async fn fetch_paginated_list(
     let Some(url) = contact_data.rest_url(
         spec.table,
         &[
-            ("select", "*".to_owned()),
+            ("select", spec.select.to_owned()),
             (spec.workspace_filter_column, format!("eq.{ws_id}")),
         ],
     ) else {
@@ -228,6 +229,7 @@ mod tests {
         error_message: "Error fetching test rows",
         missing_ws_id_message: "Missing ws_id parameter",
         path: TEST_PATH,
+        select: "*",
         table: "test_rows",
         workspace_filter_column: "ws_id",
     };

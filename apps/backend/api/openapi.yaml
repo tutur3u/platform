@@ -3112,6 +3112,288 @@ paths:
                     type: string
                     examples:
                       - Error fetching email blacklist entry
+  /api/v1/infrastructure/bill-coupons:
+    get:
+      summary: Legacy-compatible invoice promotion export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/bill-coupons/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Finance invoice promotion rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Finance invoice promotions could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/bill-packages:
+    get:
+      summary: Legacy-compatible invoice product export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/bill-packages/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Finance invoice product rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Finance invoice products could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/class-packages:
+    get:
+      summary: Legacy-compatible class package export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/class-packages/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy workspace_user_groups inner select and workspace_user_groups.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User group linked product rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User group linked products could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/class-scores:
+    get:
+      summary: Legacy-compatible class score export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/class-scores/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy workspace_users!user_indicators_user_id_fkey inner select and workspace_users.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User indicator rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User indicators could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/package-stock-changes:
+    get:
+      summary: Legacy-compatible package stock change export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/package-stock-changes/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy workspace_products!product_id inner select and workspace_products.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Product stock change rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Product stock changes could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/student-feedbacks:
+    get:
+      summary: Legacy-compatible student feedback export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/student-feedbacks/route.ts. The Rust backend uses the shared caller-token paginated export helper with the legacy workspace_users!user_feedbacks_user_id_fkey inner select and workspace_users.ws_id filter, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User feedback rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User feedbacks could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
   /api/v1/infrastructure/bills:
     get:
       summary: Legacy-compatible finance invoice export list

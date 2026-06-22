@@ -21,6 +21,7 @@ mod hive_ai_models;
 mod holidays;
 mod infrastructure_catalog_exports;
 mod infrastructure_paginated_list;
+mod infrastructure_related_exports;
 mod infrastructure_user_status_changes;
 mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
@@ -532,6 +533,12 @@ pub(crate) async fn handle_backend_request(
     if let Some(response) =
         infrastructure_workspace_exports::handle_workspace_export_route(config, request, outbound)
             .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_related_exports::handle_related_export_route(config, request, outbound).await
     {
         return response;
     }

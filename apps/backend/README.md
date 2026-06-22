@@ -203,6 +203,18 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   detail route's non-root `401` quirk, and maps `PGRST116` detail misses to the
   legacy `404` body. Writes remain legacy-owned until a dedicated blacklist
   mutation batch.
+- `GET /api/v1/infrastructure/bill-coupons`,
+  `GET /api/v1/infrastructure/bill-packages`,
+  `GET /api/v1/infrastructure/class-packages`,
+  `GET /api/v1/infrastructure/class-scores`,
+  `GET /api/v1/infrastructure/package-stock-changes`, and
+  `GET /api/v1/infrastructure/student-feedbacks`: legacy-compatible
+  related-filter export lists. Rust reuses the caller-token paginated list
+  helper with route-specific embedded select strings and related-table
+  workspace filters such as `finance_invoices.ws_id`,
+  `workspace_user_groups.ws_id`, `workspace_products.ws_id`, and
+  `workspace_users.ws_id`, preserving Supabase RLS, exact-count pagination, raw
+  row list responses, and legacy error bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates
