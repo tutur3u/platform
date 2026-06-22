@@ -194,6 +194,15 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   helper so RLS remains active while preserving the required `ws_id`,
   parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
   legacy error bodies.
+- `GET /api/v1/infrastructure/email-blacklist` and
+  `GET /api/v1/infrastructure/email-blacklist/:entryId`: legacy-compatible
+  root-workspace email blacklist reads. Rust revalidates the browser Supabase
+  session cookie or non-app-session Bearer token, checks root workspace
+  membership with the caller token, reads `email_blacklist` through Supabase
+  REST so RLS remains active, preserves the collection ordering, preserves the
+  detail route's non-root `401` quirk, and maps `PGRST116` detail misses to the
+  legacy `404` body. Writes remain legacy-owned until a dedicated blacklist
+  mutation batch.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

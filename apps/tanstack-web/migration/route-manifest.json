@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 956,
-        "migrated": 86,
-        "percentComplete": 15.02,
-        "remaining": 956,
-        "terminal": 169,
-        "total": 1125,
+        "legacyNext": 957,
+        "migrated": 88,
+        "percentComplete": 15.16,
+        "remaining": 957,
+        "terminal": 171,
+        "total": 1128,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 974,
-        "migrated": 91,
-        "percentComplete": 15.16,
-        "remaining": 974,
-        "terminal": 174,
-        "total": 1148,
+        "legacyNext": 975,
+        "migrated": 93,
+        "percentComplete": 15.29,
+        "remaining": 975,
+        "terminal": 176,
+        "total": 1151,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1150,
-      "migrated": 293,
-      "percentComplete": 24.64,
-      "remaining": 1150,
-      "terminal": 376,
-      "total": 1526,
+      "legacyNext": 1151,
+      "migrated": 295,
+      "percentComplete": 24.72,
+      "remaining": 1151,
+      "terminal": 378,
+      "total": 1529,
       "unknownStatus": 0
     }
   },
@@ -2738,22 +2738,59 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/email-blacklist",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/email-blacklist",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts"
     },
     {
-      "id": "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
       "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/email-blacklist/:entryId",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts"
+    },
+    {
+      "id": "api:PUT:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
+      "kind": "api",
+      "methods": ["PUT"],
       "routePath": "/api/v1/infrastructure/email-blacklist/:entryId",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "PUT",
+      "parentId": "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts"
+    },
+    {
+      "id": "api:DELETE:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
+      "kind": "api",
+      "methods": ["DELETE"],
+      "routePath": "/api/v1/infrastructure/email-blacklist/:entryId",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "DELETE",
+      "parentId": "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/external-apps:apps/web/src/app/api/v1/infrastructure/external-apps/route.ts",
@@ -14183,11 +14220,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1125,
+    "apiRoutes": 1128,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1148,
+    "routeHandlers": 1151,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14197,6 +14234,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1526
+    "total": 1529
   }
 }
