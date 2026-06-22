@@ -930,6 +930,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
+        "nuqs": "^2.8.9",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "use-intl": "^4.13.0",

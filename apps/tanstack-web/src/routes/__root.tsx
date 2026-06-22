@@ -8,6 +8,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import type { ReactNode } from 'react';
 import {
   LegacyErrorShell,
@@ -71,9 +72,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Outlet />
-      </TooltipProvider>
+      <NuqsAdapter>
+        <TooltipProvider>
+          <Outlet />
+        </TooltipProvider>
+      </NuqsAdapter>
     </QueryClientProvider>
   );
 }
