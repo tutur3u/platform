@@ -493,6 +493,8 @@ function validateTanstackWebViteConfig(viteConfigContent) {
   const cloudflarePluginSpreadIndex = viteConfigContent.indexOf(
     '...cloudflarePlugins'
   );
+  const vitestModeSkipIndex =
+    /mode\s*===\s*['"]test['"]/u.exec(viteConfigContent)?.index ?? -1;
   const tanstackStartIndex =
     /\btanstackStart\s*\(/u.exec(viteConfigContent)?.index ?? -1;
 
@@ -502,7 +504,7 @@ function validateTanstackWebViteConfig(viteConfigContent) {
     );
   }
 
-  if (!viteConfigContent.includes("mode === 'test' ? []")) {
+  if (vitestModeSkipIndex === -1) {
     errors.push(
       'apps/tanstack-web/vite.config.ts must skip the Cloudflare Vite plugin in Vitest mode because the plugin rejects Vitest resolve.external options.'
     );

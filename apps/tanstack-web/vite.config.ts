@@ -36,7 +36,6 @@ const staticPublicRouteSegments = [
   '/products/inventory',
   '/products/lms',
   '/products/mail',
-  '/products/meet-together',
   '/products/tasks',
   '/products/workflows',
   '/solutions/construction',
@@ -70,7 +69,11 @@ function normalizePrerenderPath(path: string) {
 
 export default defineConfig(({ mode }) => {
   const cloudflarePlugins =
-    mode === 'test' ? [] : [cloudflare({ viteEnvironment: { name: 'ssr' } })];
+    mode === 'test'
+      ? []
+      : process.env.TANSTACK_WEB_RUNTIME === 'node'
+        ? []
+        : [cloudflare({ viteEnvironment: { name: 'ssr' } })];
 
   return {
     plugins: [

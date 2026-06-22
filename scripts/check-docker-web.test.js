@@ -187,6 +187,24 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
+        'COPY packages/offline/package.json ./packages/offline/package.json\n',
+        ''
+      )
+    ).join('\n'),
+    /apps\/tanstack-web\/Dockerfile deps stage is missing workspace package manifests: packages\/offline\/package\.json/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs\n',
+        ''
+      )
+    ).join('\n'),
+    /docker\/server\.mjs/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
         'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web',
         'bun install --frozen-lockfile'
       )
@@ -661,6 +679,16 @@ test('validateTanstackDualCompose reports missing runner and health gate wiring'
 
   assert.match(errors, /target: runner/);
   assert.match(errors, /condition: service_healthy/);
+});
+
+test('validateTanstackDualCompose requires the Node runner healthcheck', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('          "node",', '          "bun",');
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /"node"/);
 });
 
 test('validateDockerCompose reports public local Redis port mappings', () => {

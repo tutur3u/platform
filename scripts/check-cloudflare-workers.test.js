@@ -616,7 +616,7 @@ test('TanStack Vite config keeps Cloudflare plugin before TanStack Start', () =>
   );
   assert.match(
     validateTanstackWebViteConfig(
-      viteConfig.replace("mode === 'test' ? []", 'false ? []')
+      viteConfig.replace(/mode\s*===\s*['"]test['"]/u, 'false')
     ).join('\n'),
     /Vitest mode/
   );

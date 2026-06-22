@@ -21,11 +21,12 @@
 # docker-compose.web.yml) needs the FULL monorepo bind-mounted at /workspace
 # (context: ., volumes: .:/workspace) plus the shared node_modules/dist volumes,
 # because dev:app resolves workspace packages live. The compiled runner target
-# used here bakes the build at image time and ships only apps/tanstack-web/.output,
-# so it needs no workspace mount. If you switch a service below to `target: dev`
-# with the dev:app command, you MUST also add `context: .`, `.:/workspace`, and
-# the package node_modules/dist volumes from docker-compose.web.yml or the dev
-# server will fail to resolve workspace packages.
+# used here bakes the build at image time and ships apps/tanstack-web/dist with
+# a Node runtime adapter, so it needs no workspace mount. If you switch a service
+# below to `target: dev` with the dev:app command, you MUST also add
+# `context: .`, `.:/workspace`, and the package node_modules/dist volumes from
+# docker-compose.web.yml or the dev server will fail to resolve workspace
+# packages.
 #
 # Ports are env-overridable (defaults match scripts/benchmark-web-setups.js and
 # the prod anchors): TANSTACK_WEB_PORT=7824, BACKEND_PORT=7820. Container names
@@ -97,8 +98,10 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          'bun -e "fetch(''http://127.0.0.1:'' + (process.env.PORT || 7824) + ''/'').then(async (response) => { const body = await response.text(); process.exit(response.status < 500 && body.includes(''Backend reachable'') ? 0 : 1); }).catch(() => process.exit(1))"',
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:' + (process.env.PORT || 7824) + '/').then(async (response) => { const body = await response.text(); process.exit(response.status < 500 && body.includes('Backend reachable') ? 0 : 1); }).catch(() => process.exit(1))",
         ]
       interval: 30s
       timeout: 5s

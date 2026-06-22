@@ -821,7 +821,8 @@ function validateTanstackDualCompose(composeContent) {
       'BACKEND_PUBLIC_ORIGIN:-http://backend:7820' +
       '}',
     '      - PORT=${' + 'TANSTACK_WEB_PORT:-7824' + '}',
-    "body.includes(''Backend reachable'')",
+    '          "node",',
+    "body.includes('Backend reachable')",
     '      - "127.0.0.1:${' +
       'TANSTACK_WEB_PORT:-7824' +
       '}:${' +
@@ -1347,13 +1348,26 @@ function validateBackendDockerfile(dockerfileContent) {
   return errors;
 }
 
-function validateTanstackWebDockerfile(dockerfileContent) {
-  const errors = [];
+function validateTanstackWebDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/tanstack-web/Dockerfile',
+      workspacePackageJsonPaths,
+      fileDependencyPaths,
+    }),
+  ];
   const requiredSnippets = [
     'FROM oven/bun:1.3.14 AS deps',
     'FROM oven/bun:1.3.14 AS dev',
-    'FROM oven/bun:1.3.14 AS builder',
-    'FROM oven/bun:1.3.14-alpine AS runner',
+    'FROM node:26-bookworm-slim AS builder',
+    'FROM node:26-bookworm-slim AS runner',
     'COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json',
     'COPY packages/internal-api/package.json ./packages/internal-api/package.json',
     'COPY packages/ui/package.json ./packages/ui/package.json',
@@ -1361,10 +1375,17 @@ function validateTanstackWebDockerfile(dockerfileContent) {
     ...getRetryWrappedBunInstallSnippets(
       'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
     ),
-    'bun run --filter @tuturuuu/tanstack-web build',
+    'node node_modules/vite/bin/vite.js build',
+    'node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json',
     'ENV PORT=7824',
+    'ENV TANSTACK_WEB_RUNTIME=node',
+    'COPY --from=builder /workspace/node_modules/.bun /app/node_modules/.bun',
+    'COPY --from=builder /workspace/apps/tanstack-web/node_modules ./node_modules',
+    'COPY --from=builder /workspace/packages /app/packages',
+    'COPY --from=builder /workspace/apps/tanstack-web/dist ./dist',
+    'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs',
     "body.includes('Backend reachable')",
-    'CMD ["bun", ".output/server/index.mjs"]',
+    'CMD ["node", "docker/server.mjs"]',
   ];
 
   for (const snippet of requiredSnippets) {
@@ -1869,7 +1890,10 @@ function checkDockerWebSetup({
     }),
     ...validateBackendDockerfile(backendDockerfileContent),
     ...validateDockerSetupWorkflow(dockerSetupWorkflowContent),
-    ...validateTanstackWebDockerfile(tanstackWebDockerfileContent),
+    ...validateTanstackWebDockerfile(tanstackWebDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateTanstackDualCompose(tanstackDualComposeContent),
     ...validateDockerProdCompose(prodComposeContent),
