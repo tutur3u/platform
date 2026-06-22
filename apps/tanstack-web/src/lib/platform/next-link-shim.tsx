@@ -28,7 +28,12 @@ import {
   type ReactNode,
 } from 'react';
 
-type NextHref = string | { pathname?: string; query?: unknown; hash?: string };
+type QueryValue = string | number | boolean | null | undefined;
+type QueryRecord = Record<string, QueryValue | readonly QueryValue[]>;
+type NextQuery = string | URLSearchParams | QueryRecord;
+type NextHref =
+  | string
+  | { pathname?: string; query?: NextQuery; hash?: string };
 
 export interface NextLinkProps
   extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
@@ -49,8 +54,36 @@ export function resolveHref(href: NextHref): string {
     return href;
   }
   const pathname = href.pathname ?? '';
+  const query = stringifyQuery(href.query);
+  const queryPrefix = query ? (pathname.includes('?') ? '&' : '?') : '';
   const hash = href.hash ? `#${href.hash.replace(/^#/u, '')}` : '';
-  return `${pathname}${hash}`;
+  return `${pathname}${queryPrefix}${query}${hash}`;
+}
+
+function stringifyQuery(query?: NextQuery): string {
+  if (!query) {
+    return '';
+  }
+
+  if (typeof query === 'string') {
+    return query.replace(/^\?/u, '');
+  }
+
+  if (query instanceof URLSearchParams) {
+    return query.toString();
+  }
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    const values = Array.isArray(value) ? value : [value];
+    for (const item of values) {
+      if (item != null) {
+        params.append(key, String(item));
+      }
+    }
+  }
+
+  return params.toString();
 }
 
 /** True for hrefs that must use native navigation (external origin or scheme). */

@@ -19,6 +19,33 @@ describe('resolveHref', () => {
     );
     expect(resolveHref({ pathname: '/en/ws' })).toBe('/en/ws');
   });
+
+  it('preserves object query values before the hash', () => {
+    expect(
+      resolveHref({
+        pathname: '/en/ws',
+        query: {
+          enabled: true,
+          page: 2,
+          q: 'task search',
+          tag: ['alpha', 'beta'],
+          unset: undefined,
+        },
+        hash: 'results',
+      })
+    ).toBe(
+      '/en/ws?enabled=true&page=2&q=task+search&tag=alpha&tag=beta#results'
+    );
+  });
+
+  it('appends query values when pathname already includes a query string', () => {
+    expect(
+      resolveHref({
+        pathname: '/en/ws?view=list',
+        query: new URLSearchParams({ page: '2' }),
+      })
+    ).toBe('/en/ws?view=list&page=2');
+  });
 });
 
 describe('isExternalHref', () => {
