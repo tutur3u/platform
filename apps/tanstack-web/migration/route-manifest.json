@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 198,
-        "migrated": 109,
-        "percentComplete": 35.5,
-        "remaining": 198,
-        "terminal": 109,
+        "legacyNext": 195,
+        "migrated": 112,
+        "percentComplete": 36.48,
+        "remaining": 195,
+        "terminal": 112,
         "total": 307,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 224,
-        "migrated": 155,
-        "percentComplete": 40.9,
-        "remaining": 224,
-        "terminal": 155,
+        "legacyNext": 221,
+        "migrated": 158,
+        "percentComplete": 41.69,
+        "remaining": 221,
+        "terminal": 158,
         "total": 379,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1209,
-      "migrated": 226,
-      "percentComplete": 20.36,
-      "remaining": 1209,
-      "terminal": 309,
+      "legacyNext": 1206,
+      "migrated": 229,
+      "percentComplete": 20.55,
+      "remaining": 1206,
+      "terminal": 312,
       "total": 1518,
       "unknownStatus": 0
     }
@@ -12939,7 +12939,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/estimates",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/estimates/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12966,7 +12966,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/labels",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/labels/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12984,7 +12984,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/notes",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/notes/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
