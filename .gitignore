@@ -24,6 +24,8 @@ tmp
 temp
 .swc
 .vercel
+.wrangler
+**/.wrangler/
 .zshrc
 
 # Exception: docs build folder contains documentation, not build artifacts

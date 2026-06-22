@@ -738,10 +738,20 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/projects preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized project copy, and the shared TaskProjectsClient with an empty initial project set. Project data APIs remain separately tracked because the client self-loads after mount."
     },
+    "page:/:locale/:wsId/tasks/projects/:projectId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/[projectId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/projects/$projectId preserves the legacy authenticated project detail flow with full workspace resolution, manage_projects permission gating, forwarded-auth internal-api loading for the project and related tasks, notFound mapping on data failures, and the shared TaskProjectDetailPageClient. This is a data-backed migration rather than a shell-only handoff."
+    },
     "page:/:locale/:wsId/tasks/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/templates preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized template gallery header/action, and the shared TemplatesClient with an empty initial template set. Template data APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/tasks/templates/:templateId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/[templateId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/templates/$templateId preserves the legacy authenticated template detail flow with UUID validation, workspace not-found handling, manage_projects permission gating, forwarded-auth internal-api loading for the template and signed background URL, notFound mapping on missing template data, and the shared TaskTemplateDetailPageClient. This is a data-backed migration rather than a shell-only handoff."
     },
     "page:/:locale/:wsId/tasks/templates/marketplace:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/marketplace/page.tsx": {
       "status": "migrated",
