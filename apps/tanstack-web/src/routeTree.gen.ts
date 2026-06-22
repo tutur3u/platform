@@ -106,6 +106,7 @@ import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$l
 import { Route as LocaleWsIdUsersTutoringRouteImport } from './routes/$locale/$wsId/users/tutoring';
 import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements';
 import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure';
+import { Route as LocaleWsIdUsersFeedbacksRouteImport } from './routes/$locale/$wsId/users/feedbacks';
 import { Route as LocaleWsIdTasksTemplatesRouteImport } from './routes/$locale/$wsId/tasks/templates';
 import { Route as LocaleWsIdTasksProjectsRouteImport } from './routes/$locale/$wsId/tasks/projects';
 import { Route as LocaleWsIdTasksNotesRouteImport } from './routes/$locale/$wsId/tasks/notes';
@@ -676,6 +677,12 @@ const LocaleWsIdUsersStructureRoute =
     path: '/$wsId/users/structure',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdUsersFeedbacksRoute =
+  LocaleWsIdUsersFeedbacksRouteImport.update({
+    id: '/$wsId/users/feedbacks',
+    path: '/$wsId/users/feedbacks',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdTasksTemplatesRoute =
   LocaleWsIdTasksTemplatesRouteImport.update({
     id: '/$wsId/tasks/templates',
@@ -1164,6 +1171,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/tasks/notes': typeof LocaleWsIdTasksNotesRoute;
   '/$locale/$wsId/tasks/projects': typeof LocaleWsIdTasksProjectsRouteWithChildren;
   '/$locale/$wsId/tasks/templates': typeof LocaleWsIdTasksTemplatesRouteWithChildren;
+  '/$locale/$wsId/users/feedbacks': typeof LocaleWsIdUsersFeedbacksRoute;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
   '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
@@ -1324,6 +1332,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/tasks/notes': typeof LocaleWsIdTasksNotesRoute;
   '/$locale/$wsId/tasks/projects': typeof LocaleWsIdTasksProjectsRouteWithChildren;
   '/$locale/$wsId/tasks/templates': typeof LocaleWsIdTasksTemplatesRouteWithChildren;
+  '/$locale/$wsId/users/feedbacks': typeof LocaleWsIdUsersFeedbacksRoute;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
   '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
@@ -1486,6 +1495,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/tasks/notes': typeof LocaleWsIdTasksNotesRoute;
   '/$locale/$wsId/tasks/projects': typeof LocaleWsIdTasksProjectsRouteWithChildren;
   '/$locale/$wsId/tasks/templates': typeof LocaleWsIdTasksTemplatesRouteWithChildren;
+  '/$locale/$wsId/users/feedbacks': typeof LocaleWsIdUsersFeedbacksRoute;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
   '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
@@ -1649,6 +1659,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/notes'
     | '/$locale/$wsId/tasks/projects'
     | '/$locale/$wsId/tasks/templates'
+    | '/$locale/$wsId/users/feedbacks'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/$wsId/users/tutoring'
@@ -1809,6 +1820,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/notes'
     | '/$locale/$wsId/tasks/projects'
     | '/$locale/$wsId/tasks/templates'
+    | '/$locale/$wsId/users/feedbacks'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/$wsId/users/tutoring'
@@ -1970,6 +1982,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/notes'
     | '/$locale/$wsId/tasks/projects'
     | '/$locale/$wsId/tasks/templates'
+    | '/$locale/$wsId/users/feedbacks'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/$wsId/users/tutoring'
@@ -2694,6 +2707,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/users/structure';
       fullPath: '/$locale/$wsId/users/structure';
       preLoaderRoute: typeof LocaleWsIdUsersStructureRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/users/feedbacks': {
+      id: '/$locale/$wsId/users/feedbacks';
+      path: '/$wsId/users/feedbacks';
+      fullPath: '/$locale/$wsId/users/feedbacks';
+      preLoaderRoute: typeof LocaleWsIdUsersFeedbacksRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/tasks/templates': {
@@ -3500,6 +3520,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdTasksNotesRoute: typeof LocaleWsIdTasksNotesRoute;
   LocaleWsIdTasksProjectsRoute: typeof LocaleWsIdTasksProjectsRouteWithChildren;
   LocaleWsIdTasksTemplatesRoute: typeof LocaleWsIdTasksTemplatesRouteWithChildren;
+  LocaleWsIdUsersFeedbacksRoute: typeof LocaleWsIdUsersFeedbacksRoute;
   LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute;
   LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
   LocaleWsIdUsersTutoringRoute: typeof LocaleWsIdUsersTutoringRoute;
@@ -3626,6 +3647,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdTasksNotesRoute: LocaleWsIdTasksNotesRoute,
   LocaleWsIdTasksProjectsRoute: LocaleWsIdTasksProjectsRouteWithChildren,
   LocaleWsIdTasksTemplatesRoute: LocaleWsIdTasksTemplatesRouteWithChildren,
+  LocaleWsIdUsersFeedbacksRoute: LocaleWsIdUsersFeedbacksRoute,
   LocaleWsIdUsersStructureRoute: LocaleWsIdUsersStructureRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
     LocaleWsIdUsersTopicAnnouncementsRoute,

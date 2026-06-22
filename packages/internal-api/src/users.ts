@@ -587,6 +587,20 @@ export async function listWorkspaceBasicUsers(
   );
 }
 
+export async function getWorkspaceUser(
+  workspaceId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceBasicUserRecord>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listWorkspaceUserReferralCandidates(
   workspaceId: string,
   userId: string,

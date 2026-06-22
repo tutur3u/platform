@@ -931,6 +931,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
+        "date-fns": "4.4.0",
         "moment": "^2.30.1",
         "nuqs": "^2.8.9",
         "react": "^19.2.7",

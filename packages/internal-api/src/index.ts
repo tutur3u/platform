@@ -1421,6 +1421,7 @@ export {
   getUserCalendarSettings,
   getUserConfig,
   getUserWorkspaceConfig,
+  getWorkspaceUser,
   type ListWorkspaceBasicUsersResponse,
   type ListWorkspaceUserReferralsResponse,
   listWorkspaceAttendanceExportRecords,
