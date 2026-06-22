@@ -1,4 +1,4 @@
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse,
@@ -19,7 +19,7 @@ const INTERNAL_SERVER_ERROR_TEXT: &str = "Internal Server Error";
 const FORBIDDEN_ACTION_MESSAGE: &str = "You are not allowed to perform this action";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum AiWhitelistDeleteTarget {
+enum AiWhitelistDetailTarget {
     Domain(String),
     Email(String),
 }
@@ -29,19 +29,20 @@ pub(crate) async fn handle_ai_whitelist_delete_route(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
-    let target = ai_whitelist_delete_target(request.path)?;
+    let target = ai_whitelist_detail_target(request.path)?;
 
     match request.method {
+        "PUT" => Some(ai_whitelist_update_response(config, request, outbound, target).await),
         "DELETE" => Some(ai_whitelist_delete_response(config, request, outbound, target).await),
         _ => None,
     }
 }
 
-async fn ai_whitelist_delete_response(
+async fn ai_whitelist_update_response(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
-    target: AiWhitelistDeleteTarget,
+    target: AiWhitelistDetailTarget,
 ) -> BackendResponse {
     if authorize_ai_whitelist_infrastructure_access(config, request, outbound)
         .await
@@ -51,7 +52,76 @@ async fn ai_whitelist_delete_response(
     }
 
     match target {
-        AiWhitelistDeleteTarget::Email(email) => {
+        AiWhitelistDetailTarget::Email(email) => {
+            if email.is_empty() {
+                return no_store_response(json_response(
+                    400,
+                    json!({ "message": "Email is required" }),
+                ));
+            }
+            let Ok(enabled) = enabled_from_body(request.body_text) else {
+                return no_store_response(json_response(
+                    500,
+                    json!({ "message": "Error updating AI whitelist email" }),
+                ));
+            };
+
+            if update_ai_whitelist_enabled(
+                &config.contact_data,
+                outbound,
+                AI_WHITELIST_EMAILS_TABLE,
+                "email",
+                &email,
+                enabled,
+            )
+            .await
+            .is_err()
+            {
+                return no_store_response(json_response(
+                    500,
+                    json!({ "message": "Error updating AI whitelist email" }),
+                ));
+            }
+        }
+        AiWhitelistDetailTarget::Domain(domain) => {
+            let Ok(enabled) = enabled_from_body(request.body_text) else {
+                return internal_server_error_text_response();
+            };
+
+            if update_ai_whitelist_enabled(
+                &config.contact_data,
+                outbound,
+                AI_WHITELIST_DOMAINS_TABLE,
+                "domain",
+                &domain,
+                enabled,
+            )
+            .await
+            .is_err()
+            {
+                return internal_server_error_text_response();
+            }
+        }
+    }
+
+    no_store_response(json_response(200, json!({ "success": true })))
+}
+
+async fn ai_whitelist_delete_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+    target: AiWhitelistDetailTarget,
+) -> BackendResponse {
+    if authorize_ai_whitelist_infrastructure_access(config, request, outbound)
+        .await
+        .is_err()
+    {
+        return forbidden_response();
+    }
+
+    match target {
+        AiWhitelistDetailTarget::Email(email) => {
             if email.is_empty() {
                 return no_store_response(json_response(
                     400,
@@ -75,7 +145,7 @@ async fn ai_whitelist_delete_response(
                 ));
             }
         }
-        AiWhitelistDeleteTarget::Domain(domain) => {
+        AiWhitelistDetailTarget::Domain(domain) => {
             if delete_ai_whitelist_row(
                 &config.contact_data,
                 outbound,
@@ -92,6 +162,45 @@ async fn ai_whitelist_delete_response(
     }
 
     no_store_response(json_response(200, json!({ "success": true })))
+}
+
+async fn update_ai_whitelist_enabled(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    table: &str,
+    filter_column: &str,
+    filter_value: &str,
+    enabled: bool,
+) -> Result<(), ()> {
+    let Some(url) = contact_data.rest_url(table, &[(filter_column, format!("eq.{filter_value}"))])
+    else {
+        return Err(());
+    };
+    let body = json!({ "enabled": enabled }).to_string();
+    let Some(service_role_key) = contact_data.service_role_key() else {
+        return Err(());
+    };
+    let authorization = format!("Bearer {service_role_key}");
+    let response = outbound
+        .send(
+            OutboundRequest::new(OutboundMethod::Patch, &url)
+                .with_header("Accept", APPLICATION_JSON)
+                .with_header("Accept-Profile", PRIVATE_SCHEMA)
+                .with_header("Content-Profile", PRIVATE_SCHEMA)
+                .with_header("Authorization", &authorization)
+                .with_header("apikey", service_role_key)
+                .with_header("Content-Type", APPLICATION_JSON)
+                .with_header("Prefer", "return=minimal")
+                .with_body(&body),
+        )
+        .await
+        .map_err(|_| ())?;
+
+    if !(200..300).contains(&response.status) {
+        return Err(());
+    }
+
+    Ok(())
 }
 
 async fn delete_ai_whitelist_row(
@@ -128,13 +237,13 @@ async fn delete_ai_whitelist_row(
     Ok(())
 }
 
-fn ai_whitelist_delete_target(path: &str) -> Option<AiWhitelistDeleteTarget> {
+fn ai_whitelist_detail_target(path: &str) -> Option<AiWhitelistDetailTarget> {
     if let Some(domain) = path.strip_prefix(INFRASTRUCTURE_AI_WHITELIST_DOMAIN_DETAIL_PREFIX) {
         if domain.contains('/') {
             return None;
         }
 
-        return Some(AiWhitelistDeleteTarget::Domain(decode_path_segment(domain)));
+        return Some(AiWhitelistDetailTarget::Domain(decode_path_segment(domain)));
     }
 
     let email = path.strip_prefix(INFRASTRUCTURE_AI_WHITELIST_EMAIL_DETAIL_PREFIX)?;
@@ -142,7 +251,33 @@ fn ai_whitelist_delete_target(path: &str) -> Option<AiWhitelistDeleteTarget> {
         return None;
     }
 
-    Some(AiWhitelistDeleteTarget::Email(decode_path_segment(email)))
+    Some(AiWhitelistDetailTarget::Email(decode_path_segment(email)))
+}
+
+fn enabled_from_body(body_text: Option<&str>) -> Result<bool, ()> {
+    let body = body_text
+        .and_then(|body_text| serde_json::from_str::<Value>(body_text).ok())
+        .ok_or(())?;
+
+    if body.is_null() {
+        return Err(());
+    }
+
+    let value = body.get("enabled").cloned().unwrap_or(Value::Null);
+
+    Ok(js_truthy(&value))
+}
+
+fn js_truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(value) => *value,
+        Value::Number(value) => value
+            .as_f64()
+            .is_none_or(|value| value != 0.0 && !value.is_nan()),
+        Value::String(value) => !value.is_empty(),
+        Value::Array(_) | Value::Object(_) => true,
+    }
 }
 
 fn decode_path_segment(value: &str) -> String {

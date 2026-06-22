@@ -597,6 +597,65 @@ paths:
                 examples:
                   - Internal Server Error
   /api/v1/infrastructure/ai/whitelist/domain/{domain}:
+    put:
+      summary: Legacy-compatible AI whitelist domain update
+      description: >-
+        Migrated replacement for the PUT method in
+        apps/web/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires a caller email ending in
+        @tuturuuu.com, decodes the domain path segment, applies the legacy
+        Boolean(enabled) truthiness rule, patches private.ai_whitelisted_domains
+        through the service-role private-schema REST adapter, and preserves the
+        legacy success body, 403 denial body, and plain-text 500 body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            type: string
+          description: URL-encoded whitelist domain to update.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiWhitelistEnabledUpdate"
+      responses:
+        "200":
+          description: Whitelist domain updated.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistSuccess"
+        "403":
+          description: Caller is not an allowed Tuturuuu operator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Whitelist domain could not be updated.
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Internal Server Error
     delete:
       summary: Legacy-compatible AI whitelist domain deletion
       description: >-
@@ -607,8 +666,7 @@ paths:
         @tuturuuu.com, decodes the domain path segment, deletes the matching
         row from private.ai_whitelisted_domains through the service-role
         private-schema REST adapter, and preserves the legacy success body, 403
-        denial body, and plain-text 500 body. PUT remains legacy-owned until
-        whitelist updates move to Rust.
+        denial body, and plain-text 500 body.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -636,14 +694,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - success
-                properties:
-                  success:
-                    type: boolean
-                    examples:
-                      - true
+                $ref: "#/components/schemas/AiWhitelistSuccess"
         "403":
           description: Caller is not an allowed Tuturuuu operator.
           content:
@@ -724,6 +775,70 @@ paths:
                 examples:
                   - Internal Server Error
   /api/v1/infrastructure/ai/whitelist/{email}:
+    put:
+      summary: Legacy-compatible AI whitelist email update
+      description: >-
+        Migrated replacement for the PUT method in
+        apps/web/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires a caller email ending in
+        @tuturuuu.com, decodes the email path segment, applies the legacy
+        Boolean(enabled) truthiness rule, patches private.ai_whitelisted_emails
+        through the service-role private-schema REST adapter, and preserves the
+        legacy success body, empty-email validation body, 403 denial body, and
+        JSON 500 body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+          description: URL-encoded whitelist email address to update.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiWhitelistEnabledUpdate"
+      responses:
+        "200":
+          description: Whitelist email updated.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistSuccess"
+        "400":
+          description: Missing email path segment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistMessage"
+        "403":
+          description: Caller is not an allowed Tuturuuu operator.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Whitelist email could not be updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistMessage"
     delete:
       summary: Legacy-compatible AI whitelist email deletion
       description: >-
@@ -734,8 +849,7 @@ paths:
         @tuturuuu.com, decodes the email path segment, deletes the matching row
         from private.ai_whitelisted_emails through the service-role
         private-schema REST adapter, and preserves the legacy success body,
-        empty-email validation body, 403 denial body, and JSON 500 body. PUT
-        remains legacy-owned until whitelist updates move to Rust.
+        empty-email validation body, 403 denial body, and JSON 500 body.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -763,27 +877,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - success
-                properties:
-                  success:
-                    type: boolean
-                    examples:
-                      - true
+                $ref: "#/components/schemas/AiWhitelistSuccess"
         "400":
           description: Missing email path segment.
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
-                    examples:
-                      - Email is required
+                $ref: "#/components/schemas/AiWhitelistMessage"
         "403":
           description: Caller is not an allowed Tuturuuu operator.
           content:
@@ -795,14 +895,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
-                    examples:
-                      - Error deleting AI whitelist email
+                $ref: "#/components/schemas/AiWhitelistMessage"
   /api/v1/infrastructure/post-email-queue:
     get:
       summary: Legacy-compatible post email queue infrastructure summary
@@ -8740,6 +8833,31 @@ components:
           type: string
           examples:
             - Unauthorized
+    AiWhitelistEnabledUpdate:
+      type: object
+      properties:
+        enabled:
+          description: Legacy Boolean(enabled) truthiness is applied by the Rust route.
+    AiWhitelistSuccess:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          examples:
+            - true
+    AiWhitelistMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Email is required
+            - Error updating AI whitelist email
+            - Error deleting AI whitelist email
     NovaCurrentTeamResponse:
       type: object
       required:

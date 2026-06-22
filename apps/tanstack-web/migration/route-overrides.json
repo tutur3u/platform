@@ -145,10 +145,15 @@
     },
     "api:/api/v1/infrastructure/ai/whitelist/domain/:domain:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts": {
       "methods": {
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, applying legacy Boolean(enabled) truthiness, patching private.ai_whitelisted_domains.enabled through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body."
+        },
         "DELETE": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, deleting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body. PUT remains legacy-owned until whitelist update body handling moves to Rust."
+          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, deleting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body."
         }
       }
     },
@@ -163,10 +168,15 @@
     },
     "api:/api/v1/infrastructure/ai/whitelist/:email:apps/web/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts": {
       "methods": {
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, applying legacy Boolean(enabled) truthiness, patching private.ai_whitelisted_emails.enabled through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body."
+        },
         "DELETE": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, deleting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body. PUT remains legacy-owned until whitelist update body handling moves to Rust."
+          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, deleting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body."
         }
       }
     },

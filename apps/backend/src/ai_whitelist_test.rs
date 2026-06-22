@@ -19,6 +19,7 @@ const SERVICE_ROLE_KEY: &str = "test-service-role-secret";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct RecordedOutboundRequest {
+    body: Option<String>,
     headers: Vec<(String, String)>,
     method: OutboundMethod,
     url: String,
@@ -45,6 +46,7 @@ impl RecordingOutboundClient {
 impl OutboundHttpClient for RecordingOutboundClient {
     fn send<'a>(&'a self, request: OutboundRequest<'a>) -> OutboundFuture<'a> {
         self.calls.borrow_mut().push(RecordedOutboundRequest {
+            body: request.body.map(str::to_owned),
             headers: request
                 .headers
                 .iter()
@@ -89,6 +91,18 @@ fn request_with_bearer_method(
         referer: None,
         request_id: None,
         url: Some(url),
+    }
+}
+
+fn request_with_body(
+    path: &'static str,
+    url: &'static str,
+    method: &'static str,
+    body_text: &'static str,
+) -> BackendRequest<'static> {
+    BackendRequest {
+        body_text: Some(body_text),
+        ..request_with_bearer_method(path, url, method)
     }
 }
 
@@ -287,6 +301,48 @@ async fn ai_whitelist_email_delete_decodes_path_and_deletes_private_row() {
 }
 
 #[tokio::test]
+async fn ai_whitelist_email_put_decodes_path_and_patches_enabled() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(204, ""),
+    ]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAIL_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/member%40example.com",
+            "PUT",
+            r#"{"enabled":false}"#,
+        ),
+        &outbound,
+    )
+    .await
+    .expect("email whitelist detail route should match");
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body, json!({ "success": true }));
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 2);
+    let update_call = calls.last().expect("private whitelist email update");
+    assert_eq!(update_call.method, OutboundMethod::Patch);
+    assert!(update_call.url.contains("/rest/v1/ai_whitelisted_emails?"));
+    assert_eq!(
+        query_value(update_call, "email").as_deref(),
+        Some("eq.member@example.com")
+    );
+    assert_eq!(update_call.body.as_deref(), Some(r#"{"enabled":false}"#));
+    assert_eq!(header(update_call, "Accept-Profile"), Some("private"));
+    assert_eq!(header(update_call, "Content-Profile"), Some("private"));
+    assert_eq!(header(update_call, "Content-Type"), Some(APPLICATION_JSON));
+    assert_eq!(header(update_call, "Prefer"), Some("return=minimal"));
+    assert_eq!(
+        header(update_call, "Authorization"),
+        Some("Bearer test-service-role-secret")
+    );
+}
+
+#[tokio::test]
 async fn ai_whitelist_email_delete_preserves_email_required_response() {
     let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
         200,
@@ -298,6 +354,30 @@ async fn ai_whitelist_email_delete_preserves_email_required_response() {
             "/api/v1/infrastructure/ai/whitelist/",
             "https://backend.test/api/v1/infrastructure/ai/whitelist/",
             "DELETE",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("email whitelist detail route should match");
+
+    assert_eq!(response.status, 400);
+    assert_eq!(response.body, json!({ "message": "Email is required" }));
+    assert_eq!(outbound.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn ai_whitelist_email_put_preserves_email_required_response() {
+    let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            "/api/v1/infrastructure/ai/whitelist/",
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/",
+            "PUT",
+            r#"{"enabled":true}"#,
         ),
         &outbound,
     )
@@ -344,6 +424,44 @@ async fn ai_whitelist_domain_delete_deletes_private_row() {
 }
 
 #[tokio::test]
+async fn ai_whitelist_domain_put_patches_private_row_with_js_truthy_enabled() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(204, ""),
+    ]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAIN_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domain/example.com",
+            "PUT",
+            r#"{"enabled":"false"}"#,
+        ),
+        &outbound,
+    )
+    .await
+    .expect("domain whitelist detail route should match");
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body, json!({ "success": true }));
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 2);
+    let update_call = calls.last().expect("private whitelist domain update");
+    assert_eq!(update_call.method, OutboundMethod::Patch);
+    assert!(update_call.url.contains("/rest/v1/ai_whitelisted_domains?"));
+    assert_eq!(
+        query_value(update_call, "domain").as_deref(),
+        Some("eq.example.com")
+    );
+    assert_eq!(update_call.body.as_deref(), Some(r#"{"enabled":true}"#));
+    assert_eq!(header(update_call, "Accept-Profile"), Some("private"));
+    assert_eq!(header(update_call, "Content-Profile"), Some("private"));
+    assert_eq!(header(update_call, "Content-Type"), Some(APPLICATION_JSON));
+    assert_eq!(header(update_call, "Prefer"), Some("return=minimal"));
+}
+
+#[tokio::test]
 async fn ai_whitelist_delete_rejects_non_company_users_before_delete() {
     let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
         200,
@@ -367,4 +485,132 @@ async fn ai_whitelist_delete_rejects_non_company_users_before_delete() {
         json!({ "message": "You are not allowed to perform this action" })
     );
     assert_eq!(outbound.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn ai_whitelist_put_rejects_non_company_users_before_body_parse() {
+    let outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"member@example.com"}"#,
+    )]);
+    let response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAIN_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domain/example.com",
+            "PUT",
+            "not json",
+        ),
+        &outbound,
+    )
+    .await
+    .expect("domain whitelist detail route should match");
+
+    assert_eq!(response.status, 403);
+    assert_eq!(
+        response.body,
+        json!({ "message": "You are not allowed to perform this action" })
+    );
+    assert_eq!(outbound.calls().len(), 1);
+}
+
+#[tokio::test]
+async fn ai_whitelist_put_preserves_method_specific_failure_bodies() {
+    let invalid_email_outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let invalid_email_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAIL_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/member%40example.com",
+            "PUT",
+            "not json",
+        ),
+        &invalid_email_outbound,
+    )
+    .await
+    .expect("email whitelist detail route should match");
+
+    assert_eq!(invalid_email_response.status, 500);
+    assert_eq!(
+        invalid_email_response.body,
+        json!({ "message": "Error updating AI whitelist email" })
+    );
+    assert_eq!(invalid_email_outbound.calls().len(), 1);
+
+    let invalid_domain_outbound = RecordingOutboundClient::with_responses(vec![outbound_response(
+        200,
+        r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#,
+    )]);
+    let invalid_domain_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAIN_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domain/example.com",
+            "PUT",
+            "null",
+        ),
+        &invalid_domain_outbound,
+    )
+    .await
+    .expect("domain whitelist detail route should match");
+
+    assert_eq!(invalid_domain_response.status, 500);
+    assert_eq!(
+        invalid_domain_response.body_text.as_deref(),
+        Some("Internal Server Error")
+    );
+    assert_eq!(invalid_domain_outbound.calls().len(), 1);
+
+    let email_outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(500, r#"{"message":"failed"}"#),
+    ]);
+    let email_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_EMAIL_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/member%40example.com",
+            "PUT",
+            r#"{"enabled":true}"#,
+        ),
+        &email_outbound,
+    )
+    .await
+    .expect("email whitelist detail route should match");
+
+    assert_eq!(email_response.status, 500);
+    assert_eq!(
+        email_response.body,
+        json!({ "message": "Error updating AI whitelist email" })
+    );
+
+    let domain_outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1","email":"admin@tuturuuu.com"}"#),
+        outbound_response(500, r#"{"message":"failed"}"#),
+    ]);
+    let domain_response = ai_whitelist::handle_ai_whitelist_route(
+        &backend_config_with_contact_data(),
+        request_with_body(
+            AI_WHITELIST_DOMAIN_DETAIL_PATH,
+            "https://backend.test/api/v1/infrastructure/ai/whitelist/domain/example.com",
+            "PUT",
+            r#"{"enabled":true}"#,
+        ),
+        &domain_outbound,
+    )
+    .await
+    .expect("domain whitelist detail route should match");
+
+    assert_eq!(domain_response.status, 500);
+    assert_eq!(
+        domain_response.body_text.as_deref(),
+        Some("Internal Server Error")
+    );
+    assert_eq!(
+        domain_response.content_type,
+        Some("text/plain;charset=UTF-8")
+    );
 }
