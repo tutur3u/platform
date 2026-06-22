@@ -3116,6 +3116,137 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/blocked-ips:
+    get:
+      summary: Legacy-compatible blocked IP list
+      description: >
+        Method-level migrated replacement for the GET export in
+        apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts. The Rust
+        backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, preserves the legacy root workspace
+        membership gate through caller-token Supabase REST reads, queries
+        blocked_ips with the legacy unblocked_by_user embed and caller token so
+        RLS remains active, and preserves the legacy status/ip filters,
+        page/pageSize parseInt-style range behavior, exact-count pagination,
+        raw row list response shape, and auth/error bodies. POST and DELETE
+        remain legacy-owned until Redis cache mutation parity moves to Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            default: active
+          description: Optional blocked IP status filter; `all` disables the status filter.
+        - name: ip
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional substring filter for `ip_address`.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Legacy parseInt-style one-based page number.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Legacy parseInt-style page size.
+      responses:
+        "200":
+          description: Raw blocked IP rows plus the legacy pagination envelope.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - count
+                  - page
+                  - pageSize
+                  - totalPages
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  count:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 0
+                  page:
+                    type:
+                      - integer
+                      - "null"
+                  pageSize:
+                    type:
+                      - integer
+                      - "null"
+                  totalPages:
+                    type:
+                      - integer
+                      - "null"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "403":
+          description: Authenticated caller is not linked to the root workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Forbidden
+        "500":
+          description: Blocked IP rows could not be fetched.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Error fetching blocked IPs
   /api/v1/infrastructure/email-blacklist:
     get:
       summary: Legacy-compatible email blacklist list

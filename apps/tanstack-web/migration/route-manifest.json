@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 942,
-        "migrated": 103,
-        "percentComplete": 16.49,
-        "remaining": 942,
-        "terminal": 186,
-        "total": 1128,
+        "legacyNext": 943,
+        "migrated": 104,
+        "percentComplete": 16.55,
+        "remaining": 943,
+        "terminal": 187,
+        "total": 1130,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 960,
-        "migrated": 108,
-        "percentComplete": 16.59,
-        "remaining": 960,
-        "terminal": 191,
-        "total": 1151,
+        "legacyNext": 961,
+        "migrated": 109,
+        "percentComplete": 16.65,
+        "remaining": 961,
+        "terminal": 192,
+        "total": 1153,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1136,
-      "migrated": 310,
-      "percentComplete": 25.7,
-      "remaining": 1136,
-      "terminal": 393,
-      "total": 1529,
+      "legacyNext": 1137,
+      "migrated": 311,
+      "percentComplete": 25.73,
+      "remaining": 1137,
+      "terminal": 394,
+      "total": 1531,
       "unknownStatus": 0
     }
   },
@@ -2591,13 +2591,37 @@
       "parentId": "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts"
     },
     {
-      "id": "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST", "DELETE"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/blocked-ips",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/blocked-ips",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts"
+    },
+    {
+      "id": "api:DELETE:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
+      "kind": "api",
+      "methods": ["DELETE"],
+      "routePath": "/api/v1/infrastructure/blocked-ips",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "DELETE",
+      "parentId": "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts"
     },
     {
       "id": "api:GET:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts",
@@ -14220,11 +14244,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1128,
+    "apiRoutes": 1130,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1151,
+    "routeHandlers": 1153,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14234,6 +14258,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1529
+    "total": 1531
   }
 }

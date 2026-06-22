@@ -201,6 +201,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   active, and preserves the legacy `ip`, `type`, `success`, `page`, and
   `pageSize` query behavior plus the `{ data, count, page, pageSize,
   totalPages }` response envelope.
+- `GET /api/v1/infrastructure/blocked-ips`: legacy-compatible root-workspace
+  blocked IP list. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, checks root workspace membership with the caller
+  token, reads `blocked_ips` with the legacy `unblocked_by_user` embed through
+  Supabase REST so RLS remains active, and preserves the legacy `status`, `ip`,
+  `page`, and `pageSize` query behavior plus the `{ data, count, page,
+  pageSize, totalPages }` response envelope. POST/DELETE remain legacy-owned
+  until Redis cache mutation parity moves to Rust.
 - `GET /api/v1/infrastructure/email-blacklist` and
   `GET /api/v1/infrastructure/email-blacklist/:entryId`: legacy-compatible
   root-workspace email blacklist reads. Rust revalidates the browser Supabase

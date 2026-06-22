@@ -20,6 +20,7 @@ mod hive_access;
 mod hive_ai_models;
 mod holidays;
 mod infrastructure_abuse_events;
+mod infrastructure_blocked_ips;
 mod infrastructure_catalog_exports;
 mod infrastructure_finance_exports;
 mod infrastructure_migration_exports;
@@ -564,6 +565,12 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         infrastructure_abuse_events::handle_abuse_events_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_blocked_ips::handle_blocked_ips_route(config, request, outbound).await
     {
         return response;
     }
