@@ -7,7 +7,7 @@ test('renders the migration shell', async ({ page }) => {
     page.getByRole('heading', { name: 'TanStack Start + Rust readiness' })
   ).toBeVisible();
   await expect(page.getByText('Cutover gates')).toBeVisible();
-  await expect(page.getByText('Benchmark report')).toBeVisible();
+  await expect(page.getByText('Benchmark compare')).toBeVisible();
 
   if (process.env.TANSTACK_EXPECT_BACKEND_REACHABLE === '1') {
     await expect(page.getByText('Backend reachable')).toBeVisible();

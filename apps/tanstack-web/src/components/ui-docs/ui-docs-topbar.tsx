@@ -1,6 +1,5 @@
 import { ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { DOCS_URL } from './links';
 
@@ -16,7 +15,7 @@ export function UiDocsTopbar({ locale }: { locale: string }) {
             src={TUTURUUU_LOCAL_LOGO_URL}
             width={32}
           />
-          <LogoTitle />
+          <span className="font-bold text-2xl">Tuturuuu</span>
         </a>
         <nav className="flex items-center gap-1 text-sm">
           <Button asChild size="sm" variant="ghost">

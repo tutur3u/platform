@@ -1,4 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Outlet,
+  useRouterState,
+} from '@tanstack/react-router';
 import {
   AlertTriangle,
   ArrowRight,
@@ -29,7 +33,7 @@ import {
 import { createPageHead } from '../../lib/platform/head';
 
 export const Route = createFileRoute('/$locale/security')({
-  component: SecurityPage,
+  component: SecurityRoute,
   head: () =>
     createPageHead({
       description:
@@ -37,6 +41,20 @@ export const Route = createFileRoute('/$locale/security')({
       title: 'Security at Tuturuuu',
     }),
 });
+
+const securityChildRouteIds = new Set([
+  '/$locale/security/bug-bounty',
+  '/$locale/security/policy',
+]);
+
+function SecurityRoute() {
+  const hasChildMatch = useRouterState({
+    select: (state) =>
+      state.matches.some((match) => securityChildRouteIds.has(match.routeId)),
+  });
+
+  return hasChildMatch ? <Outlet /> : <SecurityPage />;
+}
 
 interface SecurityFeature {
   color: SecurityTone;
