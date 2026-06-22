@@ -18,6 +18,11 @@ const START_REGISTRATION_FOOTER = Object.freeze([
   '  }',
   '}',
 ]);
+const START_REGISTRATION_FOOTER_BLOCK = START_REGISTRATION_FOOTER.join('\n');
+
+function getStartRegistrationFooter() {
+  return [START_REGISTRATION_FOOTER_BLOCK];
+}
 
 function resolveRouterGeneratorImportPath({
   fsImpl = fs,
@@ -85,7 +90,7 @@ async function generateTanstackRouteTree({
     await import(resolvedImportPath)
   );
   const config = getConfig(
-    { routeTreeFileFooter: [...START_REGISTRATION_FOOTER] },
+    { routeTreeFileFooter: getStartRegistrationFooter },
     appDir
   );
   const generator = new Generator({ config, root: rootDir });
@@ -147,8 +152,10 @@ module.exports = {
   ROOT_DIR,
   ROUTER_GENERATOR_PACKAGE,
   START_REGISTRATION_FOOTER,
+  START_REGISTRATION_FOOTER_BLOCK,
   generateTanstackRouteTree,
   getRouterGeneratorExports,
+  getStartRegistrationFooter,
   parseArgs,
   resolveRouterGeneratorImportPath,
 };

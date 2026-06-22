@@ -7,7 +7,9 @@ const {
   ROOT_DIR,
   ROUTER_GENERATOR_PACKAGE,
   START_REGISTRATION_FOOTER,
+  START_REGISTRATION_FOOTER_BLOCK,
   getRouterGeneratorExports,
+  getStartRegistrationFooter,
   parseArgs,
   resolveRouterGeneratorImportPath,
 } = require('./generate-tanstack-route-tree.js');
@@ -15,10 +17,18 @@ const {
 test('Start registration footer preserves Cloudflare-compatible TanStack Start types', () => {
   const footer = START_REGISTRATION_FOOTER.join('\n');
 
+  assert.equal(footer, START_REGISTRATION_FOOTER_BLOCK);
   assert.match(footer, /import type \{ getRouter \} from '\.\/router\.tsx'/u);
   assert.match(footer, /import type \{ createStart \}/u);
   assert.match(footer, /declare module '@tanstack\/react-start'/u);
   assert.match(footer, /router: Awaited<ReturnType<typeof getRouter>>/u);
+});
+
+test('Start registration footer is emitted as one formatted block', () => {
+  assert.deepEqual(getStartRegistrationFooter(), [
+    START_REGISTRATION_FOOTER_BLOCK,
+  ]);
+  assert.doesNotMatch(START_REGISTRATION_FOOTER_BLOCK, /\n\n/u);
 });
 
 test('resolveRouterGeneratorImportPath prefers normal package resolution', () => {
