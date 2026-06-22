@@ -1186,6 +1186,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
             | ("POST", "/api/v1/infrastructure/sidebar")
             | ("POST", "/api/v1/infrastructure/sidebar/sizes")
     ) || contact::should_buffer_request_body(method, path)
+        || changelog::should_buffer_request_body(method, path)
         || holidays::should_buffer_request_body(method, path)
         || auth_mfa::should_buffer_request_body(method, path)
         || user_profile::should_buffer_request_body(method, path)
@@ -6717,6 +6718,309 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn changelog_post_creates_entry_with_caller_token_and_normalized_slug() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(
+                201,
+                r#"{
+                    "id":"entry-1",
+                    "title":"Platform release",
+                    "slug":"platform-release",
+                    "creator_id":"user-1"
+                }"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/infrastructure/changelog",
+                    r#"{
+                        "title":"Platform release",
+                        "slug":"Platform Release!",
+                        "content":{"type":"doc","content":[]},
+                        "summary":"A shipped update",
+                        "category":"feature",
+                        "version":"2026.6",
+                        "cover_image_url":"https://example.com/cover.png"
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 201);
+        assert_eq!(response.body["slug"], "platform-release");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[2].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/changelog_entries?select=*"
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Prefer"),
+            Some("return=representation")
+        );
+        let body = serde_json::from_str::<serde_json::Value>(
+            calls[2].body.as_ref().expect("create request body"),
+        )
+        .expect("create request json");
+        assert_eq!(body["slug"], "platform-release");
+        assert_eq!(body["creator_id"], "user-1");
+        assert_eq!(body["content"], json!({"type":"doc","content":[]}));
+    }
+
+    #[tokio::test]
+    async fn changelog_post_maps_duplicate_slug_to_conflict() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(409, r#"{"code":"23505","message":"duplicate key"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/infrastructure/changelog",
+                    r#"{
+                        "title":"Platform release",
+                        "slug":"platform-release",
+                        "content":{"type":"doc"},
+                        "category":"feature"
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 409);
+        assert_eq!(
+            response.body["message"],
+            "A changelog entry with this slug already exists"
+        );
+    }
+
+    #[tokio::test]
+    async fn changelog_put_returns_not_found_before_update_when_entry_is_missing() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(406, r#"{"code":"PGRST116"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/infrastructure/changelog/missing-entry",
+                    r#"{"slug":"Updated Slug","summary":null}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["message"], "Changelog entry not found");
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn changelog_publish_maps_prefetch_errors_to_legacy_not_found() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"temporary database failure"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/infrastructure/changelog/entry-1/publish",
+                    r#"{"is_published":true}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 404);
+        assert_eq!(response.body["message"], "Changelog entry not found");
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn changelog_publish_keeps_existing_published_timestamp() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(
+                200,
+                r#"{"id":"entry-1","published_at":"2026-06-01T00:00:00Z"}"#,
+            ),
+            outbound_response(
+                200,
+                r#"{"id":"entry-1","is_published":true,"published_at":"2026-06-01T00:00:00Z"}"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/infrastructure/changelog/entry-1/publish",
+                    r#"{"is_published":true}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["is_published"], true);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[3].method, OutboundMethod::Patch);
+        let body = serde_json::from_str::<serde_json::Value>(
+            calls[3].body.as_ref().expect("publish request body"),
+        )
+        .expect("publish request json");
+        assert_eq!(body["is_published"], true);
+        assert_eq!(body["published_at"], "2026-06-01T00:00:00Z");
+    }
+
+    #[tokio::test]
+    async fn changelog_delete_removes_existing_entry() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(200, r#"{"id":"entry-1"}"#),
+            outbound_response(204, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("DELETE", "/api/v1/infrastructure/changelog/entry-1")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body["message"],
+            "Changelog entry deleted successfully"
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[3].method, OutboundMethod::Delete);
+        assert_eq!(
+            calls[3].url,
+            "https://project-ref.supabase.co/rest/v1/changelog_entries?id=eq.entry-1"
+        );
+    }
+
+    #[tokio::test]
+    async fn changelog_writes_require_manage_changelog_permission() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "POST",
+                "/api/v1/infrastructure/changelog",
+                r#"{"title":"A","slug":"a","content":{"type":"doc"},"category":"feature"}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(outbound.calls().len(), 0);
+
+        let cookie_value = supabase_auth_cookie_value("member-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-2"}"#),
+            outbound_response(200, "false"),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/infrastructure/changelog",
+                    r#"{"title":"A","slug":"a","content":{"type":"doc"},"category":"feature"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
     async fn admin_task_embedding_stats_requires_tuturuuu_admin_before_task_counts() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::default();
@@ -7849,6 +8153,7 @@ mod tests {
     fn body_buffering_is_limited_to_routes_that_parse_json_payloads() {
         for path in [
             "/api/v1/infrastructure/languages",
+            "/api/v1/infrastructure/changelog",
             "/api/v1/infrastructure/sidebar",
             "/api/v1/infrastructure/sidebar/sizes",
             "/api/v1/internal/holidays",
@@ -7859,6 +8164,14 @@ mod tests {
             assert!(should_buffer_request_body("POST", path), "{path}");
         }
 
+        assert!(should_buffer_request_body(
+            "POST",
+            "/api/v1/infrastructure/changelog/entry-1/publish"
+        ));
+        assert!(should_buffer_request_body(
+            "PUT",
+            "/api/v1/infrastructure/changelog/entry-1"
+        ));
         assert!(should_buffer_request_body(
             "PUT",
             "/api/v1/internal/holidays/holiday-1"
@@ -7878,6 +8191,14 @@ mod tests {
         assert!(!should_buffer_request_body(
             "PUT",
             "/api/v1/internal/holidays/bulk"
+        ));
+        assert!(!should_buffer_request_body(
+            "DELETE",
+            "/api/v1/infrastructure/changelog/entry-1"
+        ));
+        assert!(!should_buffer_request_body(
+            "POST",
+            "/api/v1/infrastructure/changelog/upload"
         ));
         assert!(!should_buffer_request_body("GET", ONBOARDING_PROGRESS_PATH));
         assert!(!should_buffer_request_body("PATCH", SUPPORT_INQUIRIES_PATH));

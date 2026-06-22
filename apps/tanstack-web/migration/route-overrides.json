@@ -191,7 +191,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, published/category filters, published_at/created_at ordering, exact-count pagination, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned until changelog writes move behind Rust."
+          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, published/category filters, published_at/created_at ordering, exact-count pagination, no-store JSON responses, and the legacy 500 error body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles POST /api/v1/infrastructure/changelog through the caller-token Supabase REST adapter, preserving manage_changelog authorization, Zod-compatible payload validation, slug normalization, duplicate-slug 409 mapping, creator_id assignment, no-store JSON responses, and the legacy create/error response bodies."
         }
       }
     },
@@ -200,9 +205,24 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/:id through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, singular PostgREST response handling, PGRST116-to-404 mapping, no-store JSON responses, and the legacy 404/500 JSON error body. PUT and DELETE remain legacy-owned until changelog writes move behind Rust."
+          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/:id through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, singular PostgREST response handling, PGRST116-to-404 mapping, no-store JSON responses, and the legacy 404/500 JSON error body."
+        },
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles PUT /api/v1/infrastructure/changelog/:id through the caller-token Supabase REST adapter, preserving manage_changelog authorization, existing-entry lookup before update, optional-field validation, slug normalization, duplicate-slug 409 mapping, no-store JSON responses, and the legacy update/error response bodies."
+        },
+        "DELETE": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles DELETE /api/v1/infrastructure/changelog/:id through the caller-token Supabase REST adapter, preserving manage_changelog authorization, existing-entry lookup before delete, no-store JSON responses, and the legacy delete success/not-found/error bodies."
         }
       }
+    },
+    "api:/api/v1/infrastructure/changelog/:id/publish:apps/web/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles POST /api/v1/infrastructure/changelog/:id/publish through the caller-token Supabase REST adapter, preserving manage_changelog authorization, is_published validation, existing-entry lookup before update, published_at preservation for already-published entries, unpublish nulling, no-store JSON responses, and the legacy publish/error response bodies."
     },
     "api:/api/v1/infrastructure/changelog/slug/:slug:apps/web/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts": {
       "status": "migrated",

@@ -1273,7 +1273,7 @@ paths:
   /api/v1/infrastructure/changelog:
     get:
       summary: Legacy-compatible changelog list
-      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/route.ts GET. The Rust backend reads changelog_entries through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace manage_changelog through has_workspace_permission, falls back to published-only public reads for anonymous or unauthorized callers, preserves published/category filters, published_at/created_at ordering, exact-count pagination, and the legacy 500 JSON body. POST remains legacy-owned until changelog writes move behind Rust.
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/route.ts GET. The Rust backend reads changelog_entries through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace manage_changelog through has_workspace_permission, falls back to published-only public reads for anonymous or unauthorized callers, preserves published/category filters, published_at/created_at ordering, exact-count pagination, and the legacy 500 JSON body.
       parameters:
         - name: published
           in: query
@@ -1333,7 +1333,79 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, POST
+    post:
+      summary: Legacy-compatible changelog creation
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/route.ts POST. The Rust backend buffers the JSON body, revalidates the browser Supabase session, requires root workspace manage_changelog, normalizes the slug, inserts with the caller's Supabase token so changelog_entries RLS remains active, maps duplicate slugs to the legacy 409 body, and preserves the legacy validation and error response bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangelogEntryCreateRequest"
+      responses:
+        "201":
+          description: Changelog entry created.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntry"
+        "400":
+          description: Invalid changelog create payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogInputError"
+        "401":
+          description: Browser Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "403":
+          description: Caller lacks manage_changelog on the root workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "409":
+          description: A changelog entry already uses the normalized slug.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Changelog entry could not be created or write authorization could not be verified.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
   /api/v1/infrastructure/changelog/{id}:
     parameters:
       - name: id
@@ -1344,7 +1416,7 @@ paths:
         description: Changelog entry identifier.
     get:
       summary: Legacy-compatible changelog lookup by id
-      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts GET. The Rust backend reads changelog_entries through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace manage_changelog through has_workspace_permission, falls back to published-only public reads for anonymous or unauthorized callers, requests the PostgREST singular object response used by the legacy Supabase single() call, and maps PGRST116 to the legacy 404 JSON body. PUT and DELETE remain legacy-owned until changelog writes move behind Rust.
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts GET. The Rust backend reads changelog_entries through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace manage_changelog through has_workspace_permission, falls back to published-only public reads for anonymous or unauthorized callers, requests the PostgREST singular object response used by the legacy Supabase single() call, and maps PGRST116 to the legacy 404 JSON body.
       responses:
         "200":
           description: Changelog entry row.
@@ -1382,7 +1454,221 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, PUT, DELETE
+    put:
+      summary: Legacy-compatible changelog update
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts PUT. The Rust backend buffers the JSON body, revalidates the browser Supabase session, requires root workspace manage_changelog, checks the entry exists before updating, normalizes an updated slug, writes with the caller's Supabase token so changelog_entries RLS remains active, maps duplicate slugs to the legacy 409 body, and preserves legacy validation, not-found, and error bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangelogEntryUpdateRequest"
+      responses:
+        "200":
+          description: Changelog entry updated.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntry"
+        "400":
+          description: Invalid changelog update payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogInputError"
+        "401":
+          description: Browser Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "403":
+          description: Caller lacks manage_changelog on the root workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "404":
+          description: No changelog entry matched the id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryLookupError"
+        "409":
+          description: A changelog entry already uses the normalized slug.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Changelog entry could not be updated or write authorization could not be verified.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PUT, DELETE
+    delete:
+      summary: Legacy-compatible changelog delete
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts DELETE. The Rust backend revalidates the browser Supabase session, requires root workspace manage_changelog, checks the entry exists before deleting, deletes with the caller's Supabase token so changelog_entries RLS remains active, and preserves the legacy success, not-found, and error bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Changelog entry deleted.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogDeleteResponse"
+        "401":
+          description: Browser Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "403":
+          description: Caller lacks manage_changelog on the root workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "404":
+          description: No changelog entry matched the id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryLookupError"
+        "500":
+          description: Changelog entry could not be deleted or write authorization could not be verified.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PUT, DELETE
+  /api/v1/infrastructure/changelog/{id}/publish:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Changelog entry identifier.
+    post:
+      summary: Legacy-compatible changelog publish toggle
+      description: Migrated replacement for apps/web/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts POST. The Rust backend buffers the JSON body, revalidates the browser Supabase session, requires root workspace manage_changelog, checks the entry exists before updating, preserves the existing published_at timestamp when publishing an already-published entry, sets published_at to the current UTC timestamp for first publish, nulls it when unpublishing, and writes with the caller's Supabase token so changelog_entries RLS remains active.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangelogPublishRequest"
+      responses:
+        "200":
+          description: Changelog publish state updated.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntry"
+        "400":
+          description: Invalid publish payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogInputError"
+        "401":
+          description: Browser Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "403":
+          description: Caller lacks manage_changelog on the root workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "404":
+          description: No changelog entry matched the id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntryLookupError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Changelog publish state could not be updated or write authorization could not be verified.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogMutationError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST
   /api/v1/infrastructure/changelog/slug/{slug}:
     parameters:
       - name: slug
@@ -5051,6 +5337,95 @@ components:
             - string
             - "null"
           format: date-time
+    ChangelogEditorDocument:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: doc
+        content:
+          type: array
+          items: {}
+      additionalProperties: true
+    ChangelogEntryCreateRequest:
+      type: object
+      required:
+        - title
+        - slug
+        - content
+        - category
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          $ref: "#/components/schemas/ChangelogEditorDocument"
+        summary:
+          type: string
+          maxLength: 500
+        category:
+          $ref: "#/components/schemas/ChangelogEntryCategory"
+        version:
+          type: string
+          maxLength: 50
+        cover_image_url:
+          type:
+            - string
+            - "null"
+          format: uri
+    ChangelogEntryUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          $ref: "#/components/schemas/ChangelogEditorDocument"
+        summary:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        category:
+          $ref: "#/components/schemas/ChangelogEntryCategory"
+        version:
+          type:
+            - string
+            - "null"
+          maxLength: 50
+        cover_image_url:
+          type:
+            - string
+            - "null"
+          format: uri
+    ChangelogEntryCategory:
+      type: string
+      enum:
+        - feature
+        - improvement
+        - bugfix
+        - breaking
+        - security
+        - performance
+    ChangelogPublishRequest:
+      type: object
+      required:
+        - is_published
+      properties:
+        is_published:
+          type: boolean
     ChangelogEntryListResponse:
       type: object
       required:
@@ -5102,6 +5477,48 @@ components:
           type: string
           examples:
             - Changelog entry not found
+    ChangelogInputError:
+      type: object
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+          examples:
+            - Invalid request data
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              path:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+    ChangelogMutationError:
+      type: object
+      properties:
+        message:
+          type: string
+          examples:
+            - Error updating changelog entry
+        error:
+          type: string
+          examples:
+            - Failed to verify workspace membership
+    ChangelogDeleteResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Changelog entry deleted successfully
     VietnameseHoliday:
       type: object
       additionalProperties: true
