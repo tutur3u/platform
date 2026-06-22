@@ -189,15 +189,15 @@ describe('BoardHeader', () => {
     navigationMocks.replace.mockReset();
   });
 
-  it('renders the board menu trigger with compact outline header styling', () => {
+  it('renders a direct board settings button with compact outline header styling', () => {
     renderBoardHeader();
 
-    const menuTrigger = screen.getByRole('button', {
-      name: 'Open board menu',
+    const settingsButton = screen.getByRole('button', {
+      name: 'ws-task-boards.actions.board_settings',
     });
 
-    expect(menuTrigger).toHaveClass('border', 'h-7', 'px-1.5');
-    expect(menuTrigger).toHaveClass('sm:h-8', 'sm:px-2');
+    expect(settingsButton).toHaveClass('border', 'h-7', 'px-1.5');
+    expect(settingsButton).toHaveClass('sm:h-8', 'sm:px-2');
   });
 
   it('opens contextual board settings through query state', () => {
@@ -205,10 +205,9 @@ describe('BoardHeader', () => {
 
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'Open board menu',
+        name: 'ws-task-boards.actions.board_settings',
       })
     );
-    fireEvent.click(screen.getByText('ws-task-boards.actions.board_settings'));
 
     expect(navigationMocks.replace).toHaveBeenCalledWith(
       '/ws-1/tasks/boards/board-1?existing=1&settingsDialog=open&settingsTab=task_board&settingsBoardId=board-1',

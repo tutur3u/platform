@@ -8,11 +8,10 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import IconPicker from '@tuturuuu/ui/custom/icon-picker';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -35,15 +34,19 @@ export function BoardDetailsSettings({
 }) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const [boardName, setBoardName] = useState(board.name ?? '');
+  const [boardIcon, setBoardIcon] = useState<string | null>(board.icon ?? null);
   const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix ?? '');
   const [defaultListId, setDefaultListId] = useState(
     board.default_list_id ?? NO_DEFAULT_LIST
   );
 
   useEffect(() => {
+    setBoardName(board.name ?? '');
+    setBoardIcon(board.icon ?? null);
     setTicketPrefix(board.ticket_prefix ?? '');
     setDefaultListId(board.default_list_id ?? NO_DEFAULT_LIST);
-  }, [board.default_list_id, board.ticket_prefix]);
+  }, [board.default_list_id, board.icon, board.name, board.ticket_prefix]);
 
   const listOptions = useMemo(
     () => [
@@ -62,15 +65,27 @@ export function BoardDetailsSettings({
     [board.task_lists, t]
   );
 
-  const updatePreferencesMutation = useMutation({
+  const normalizedBoardName =
+    boardName.trim() || t('ws-task-boards.unnamed_board');
+  const normalizedTicketPrefix = ticketPrefix.trim().toUpperCase() || null;
+  const normalizedDefaultListId =
+    defaultListId === NO_DEFAULT_LIST ? null : defaultListId;
+  const isDirty =
+    normalizedBoardName !== (board.name || t('ws-task-boards.unnamed_board')) ||
+    (boardIcon ?? null) !== (board.icon ?? null) ||
+    normalizedTicketPrefix !== (board.ticket_prefix ?? null) ||
+    normalizedDefaultListId !== (board.default_list_id ?? null);
+
+  const updateBoardMutation = useMutation({
     mutationFn: () =>
       updateWorkspaceTaskBoard(
         wsId,
         board.id,
         {
-          default_list_id:
-            defaultListId === NO_DEFAULT_LIST ? null : defaultListId,
-          ticket_prefix: ticketPrefix.trim().toUpperCase() || null,
+          default_list_id: normalizedDefaultListId,
+          icon: boardIcon as WorkspaceTaskBoardDetail['icon'],
+          name: normalizedBoardName,
+          ticket_prefix: normalizedTicketPrefix,
         },
         getBrowserInternalApiOptions()
       ),
@@ -85,6 +100,12 @@ export function BoardDetailsSettings({
         }),
         queryClient.invalidateQueries({
           queryKey: ['task-board-settings', wsId, board.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['other-boards', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['boards', wsId],
         }),
       ]);
       onRefresh();
@@ -105,59 +126,86 @@ export function BoardDetailsSettings({
         </p>
       </div>
 
-      <TaskBoardForm
-        data={{
-          icon: board.icon,
-          id: board.id,
-          name: board.name ?? undefined,
-        }}
-        onFinish={onRefresh}
-        showCancel={false}
-        wsId={wsId}
-      />
+      <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+              {t('ws-task-boards.icon_label')}
+            </Label>
+            <IconPicker
+              ariaLabel={t('ws-task-boards.icon_picker.title')}
+              clearLabel={t('ws-task-boards.icon_picker.clear')}
+              description={t('ws-task-boards.icon_picker.description')}
+              onValueChange={setBoardIcon}
+              searchPlaceholder={t(
+                'ws-task-boards.icon_picker.search_placeholder'
+              )}
+              title={t('ws-task-boards.icon_picker.title')}
+              value={boardIcon}
+            />
+          </div>
 
-      <Separator />
-
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-        <div className="space-y-2">
-          <Label htmlFor="board-ticket-prefix">
-            {t('settings.tasks.ticket_prefix')}
-          </Label>
-          <Input
-            id="board-ticket-prefix"
-            maxLength={12}
-            onChange={(event) => setTicketPrefix(event.target.value)}
-            placeholder={t('settings.tasks.ticket_prefix_placeholder')}
-            value={ticketPrefix}
-          />
+          <div className="space-y-2">
+            <Label
+              className="font-semibold text-muted-foreground text-xs uppercase tracking-wider"
+              htmlFor="board-name"
+            >
+              {t('ws-task-boards.name')}
+            </Label>
+            <Input
+              autoComplete="off"
+              id="board-name"
+              onChange={(event) => setBoardName(event.target.value)}
+              placeholder={t('ws-task-boards.unnamed_board')}
+              value={boardName}
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>{t('settings.tasks.default_list')}</Label>
-          <Combobox
-            mode="single"
-            onChange={(value) => {
-              if (typeof value === 'string') setDefaultListId(value);
-            }}
-            options={listOptions}
-            placeholder={t('settings.tasks.no_default_list')}
-            searchPlaceholder={t('common.search_tasks')}
-            selected={defaultListId}
-          />
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <Label htmlFor="board-ticket-prefix">
+              {t('settings.tasks.ticket_prefix')}
+            </Label>
+            <Input
+              id="board-ticket-prefix"
+              maxLength={12}
+              onChange={(event) => setTicketPrefix(event.target.value)}
+              placeholder={t('settings.tasks.ticket_prefix_placeholder')}
+              value={ticketPrefix}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t('settings.tasks.default_list')}</Label>
+            <Combobox
+              contentWidth="md"
+              mode="single"
+              onChange={(value) => {
+                if (typeof value === 'string') setDefaultListId(value);
+              }}
+              options={listOptions}
+              placeholder={t('settings.tasks.no_default_list')}
+              searchPlaceholder={t('common.search_tasks')}
+              selected={defaultListId}
+            />
+          </div>
         </div>
 
-        <Button
-          disabled={updatePreferencesMutation.isPending}
-          onClick={() => updatePreferencesMutation.mutate()}
-          type="button"
-        >
-          {updatePreferencesMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          {t('settings.tasks.save_board_preferences')}
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            disabled={updateBoardMutation.isPending || !isDirty}
+            onClick={() => updateBoardMutation.mutate()}
+            type="button"
+          >
+            {updateBoardMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {t('common.save_changes')}
+          </Button>
+        </div>
       </div>
     </div>
   );

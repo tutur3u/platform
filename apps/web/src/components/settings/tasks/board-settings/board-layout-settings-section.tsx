@@ -1,12 +1,10 @@
 'use client';
 
-import { Columns3Cog } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoardDetail } from '@tuturuuu/internal-api/tasks';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Button } from '@tuturuuu/ui/button';
-import { BoardLayoutSettings } from '@tuturuuu/ui/tu-do/shared/board-layout-settings';
+import { BoardLayoutSettingsContent } from '@tuturuuu/ui/tu-do/shared/board-layout-settings';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 function toTaskList(
   list: NonNullable<WorkspaceTaskBoardDetail['task_lists']>[number],
@@ -36,7 +34,6 @@ export function BoardLayoutSettingsSection({
   wsId: string;
 }) {
   const t = useTranslations();
-  const [layoutOpen, setLayoutOpen] = useState(false);
   const lists = useMemo(
     () => (board.task_lists ?? []).map((list) => toTaskList(list, board.id)),
     [board.id, board.task_lists]
@@ -51,22 +48,11 @@ export function BoardLayoutSettingsSection({
         </p>
       </div>
 
-      <Button
-        className="gap-2"
-        onClick={() => setLayoutOpen(true)}
-        type="button"
-        variant="outline"
-      >
-        <Columns3Cog className="h-4 w-4" />
-        {t('settings.tasks.open_board_layout')}
-      </Button>
-
-      <BoardLayoutSettings
+      <BoardLayoutSettingsContent
         boardId={board.id}
         lists={lists}
-        onOpenChange={setLayoutOpen}
         onUpdate={onRefresh}
-        open={layoutOpen}
+        scrollAreaClassName="h-[min(52rem,calc(100dvh-18rem))] pr-4"
         wsId={wsId}
       />
     </div>

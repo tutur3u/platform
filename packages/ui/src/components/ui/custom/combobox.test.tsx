@@ -162,4 +162,67 @@ describe('Combobox', () => {
 
     expect(screen.getByTestId('alpha-option-icon')).toBeInTheDocument();
   });
+
+  it('supports compact accessible triggers with wider popover content', () => {
+    render(
+      <Combobox
+        ariaLabel="Compact picker"
+        contentWidth="md"
+        label={<span>Alpha compact</span>}
+        options={[
+          {
+            label: 'Alpha',
+            value: 'alpha',
+            icon: <span data-testid="alpha-compact-icon">A</span>,
+          },
+        ]}
+        placeholder="Pick item"
+        selected="alpha"
+        showChevron={false}
+        triggerMode="compact"
+      />
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: 'Compact picker' })
+    ).toHaveTextContent('Alpha compact');
+    expect(screen.getByTestId('alpha-compact-icon')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Compact picker' }));
+
+    expect(document.querySelector('[data-slot="popover-content"]')).toHaveClass(
+      'w-80'
+    );
+  });
+
+  it('renders grouped options and non-clipped descriptions', () => {
+    render(
+      <Combobox
+        options={[
+          {
+            description: 'Detailed board view with enough room to wrap.',
+            group: 'Views',
+            label: 'Kanban board',
+            value: 'kanban',
+          },
+          {
+            description: 'Sort by due date from earliest to latest.',
+            group: 'Sorting',
+            label: 'Soonest first',
+            value: 'due-date-asc',
+          },
+        ]}
+        placeholder="Pick item"
+        selected="kanban"
+      />
+    );
+
+    openCombobox();
+
+    expect(screen.getByText('Views')).toBeInTheDocument();
+    expect(screen.getByText('Sorting')).toBeInTheDocument();
+    expect(
+      screen.getByText('Detailed board view with enough room to wrap.')
+    ).toHaveClass('whitespace-normal', 'break-words');
+  });
 });

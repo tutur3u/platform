@@ -11,7 +11,6 @@ import {
   LayoutGrid,
   List,
   Loader2,
-  MoreHorizontal,
   Pencil,
   Play,
   Search,
@@ -25,13 +24,8 @@ import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -81,6 +75,21 @@ interface Props {
   titlePrefix?: ReactNode;
 }
 
+function ToolbarTooltip({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <Tooltip delayDuration={350}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function BoardHeader({
   workspaceId,
   board,
@@ -107,7 +116,6 @@ export function BoardHeader({
   const [isLoading, setIsLoading] = useState(false);
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
-  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
@@ -376,6 +384,16 @@ export function BoardHeader({
       icon: <Gauge className="h-3.5 w-3.5 text-dynamic-cyan" />,
     },
   ];
+  const selectedListStatusOption =
+    listStatusOptions.find((option) => option.value === listStatusFilter) ??
+    listStatusOptions[0];
+  const selectedViewOption =
+    viewComboboxOptions.find((option) => option.value === activeView) ??
+    viewComboboxOptions[0];
+  const selectedSortOption =
+    sortOptions.find(
+      (option) => option.value === (filters.sortBy ?? '__none__')
+    ) ?? sortOptions[0];
   // Create metadata for presence tracking (excludes search query for stability)
   const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
     const { searchQuery: _, ...filtersWithoutSearch } = filters;
@@ -466,52 +484,62 @@ export function BoardHeader({
 
           {/* Smart Focus Button */}
           {interactiveControlsVisible && (
-            <Button
-              variant={isSmartFocusActive ? 'secondary' : 'outline'}
-              size="xs"
-              onClick={handleSmartFocus}
-              disabled={isLoading}
-              className={cn(
-                'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
-                isSmartFocusActive
-                  ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
-                  : 'text-muted-foreground hover:text-dynamic-yellow'
-              )}
-              title={
+            <ToolbarTooltip
+              label={
                 isSmartFocusActive
                   ? t('common.clear_smart_focus')
                   : t('common.smart_focus')
               }
             >
-              <Zap
+              <Button
+                variant={isSmartFocusActive ? 'secondary' : 'outline'}
+                size="xs"
+                onClick={handleSmartFocus}
+                disabled={isLoading}
                 className={cn(
-                  'h-3.5 w-3.5',
-                  isSmartFocusActive && 'fill-current'
+                  'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
+                  isSmartFocusActive
+                    ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
+                    : 'text-muted-foreground hover:text-dynamic-yellow'
                 )}
-              />
-            </Button>
+                aria-label={
+                  isSmartFocusActive
+                    ? t('common.clear_smart_focus')
+                    : t('common.smart_focus')
+                }
+              >
+                <Zap
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    isSmartFocusActive && 'fill-current'
+                  )}
+                />
+              </Button>
+            </ToolbarTooltip>
           )}
 
           {/* Multi-select Toggle */}
           {interactiveControlsVisible && (
-            <Button
-              variant={isMultiSelectMode ? 'secondary' : 'outline'}
-              size="xs"
-              onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
-              className={cn(
-                'h-7 px-1.5 sm:h-8 sm:px-2',
-                isMultiSelectMode &&
-                  'bg-primary/10 text-primary hover:bg-primary/20'
-              )}
-              title={t('common.choose_tasks')}
-            >
-              <CopyCheck
+            <ToolbarTooltip label={t('common.choose_tasks')}>
+              <Button
+                variant={isMultiSelectMode ? 'secondary' : 'outline'}
+                size="xs"
+                onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
                 className={cn(
-                  'h-3.5 w-3.5',
-                  isMultiSelectMode && 'text-primary'
+                  'h-7 px-1.5 sm:h-8 sm:px-2',
+                  isMultiSelectMode &&
+                    'bg-primary/10 text-primary hover:bg-primary/20'
                 )}
-              />
-            </Button>
+                aria-label={t('common.choose_tasks')}
+              >
+                <CopyCheck
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    isMultiSelectMode && 'text-primary'
+                  )}
+                />
+              </Button>
+            </ToolbarTooltip>
           )}
 
           {/* List Status Filter */}
@@ -522,10 +550,19 @@ export function BoardHeader({
             onChange={(value) =>
               onListStatusFilterChange(value as ListStatusFilter)
             }
+            ariaLabel={selectedListStatusOption?.label ?? t('common.all')}
+            contentWidth="sm"
+            label={
+              <span className="hidden max-w-20 truncate text-[10px] sm:text-xs lg:inline">
+                {selectedListStatusOption?.label ?? t('common.all')}
+              </span>
+            }
             placeholder={t('common.all')}
             searchPlaceholder={t('common.search_tasks')}
+            showChevron={false}
+            triggerMode="compact"
             className={cn(
-              'w-24 sm:w-28 [&_button]:h-7 [&_button]:px-2 [&_button]:text-[10px] sm:[&_button]:h-8 sm:[&_button]:text-xs',
+              'w-auto [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 sm:[&_button]:h-8 sm:[&_button]:min-w-8 sm:[&_button]:px-2',
               listStatusFilter !== 'all' &&
                 '[&_button]:border-primary/50 [&_button]:bg-primary/5'
             )}
@@ -537,9 +574,20 @@ export function BoardHeader({
             options={viewComboboxOptions}
             selected={activeView}
             onChange={(value) => onViewChange(value as ViewType)}
+            ariaLabel={
+              selectedViewOption?.label ?? viewConfig[activeView].label
+            }
+            contentWidth="md"
+            label={
+              <span className="hidden max-w-24 truncate text-[10px] sm:text-xs xl:inline">
+                {selectedViewOption?.label ?? viewConfig[activeView].label}
+              </span>
+            }
             placeholder={viewConfig[activeView].label}
             searchPlaceholder={t('common.search_tasks')}
-            className="w-28 sm:w-32 [&_button]:h-7 [&_button]:px-2 [&_button]:text-[10px] sm:[&_button]:h-8 sm:[&_button]:text-xs"
+            showChevron={false}
+            triggerMode="compact"
+            className="w-auto [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 sm:[&_button]:h-8 sm:[&_button]:min-w-8 sm:[&_button]:px-2"
           />
 
           {/* Task Filter */}
@@ -564,73 +612,75 @@ export function BoardHeader({
                   : (value as TaskFilters['sortBy'])
               )
             }
+            ariaLabel={selectedSortOption?.label ?? t('common.sort')}
+            contentWidth="md"
+            label={
+              <span className="hidden max-w-24 truncate text-[10px] sm:text-xs xl:inline">
+                {selectedSortOption?.label ?? t('common.sort')}
+              </span>
+            }
             placeholder={t('common.sort')}
             searchPlaceholder={t('common.search_tasks')}
+            showChevron={false}
+            triggerMode="compact"
             className={cn(
-              'w-24 sm:w-30 [&_button]:h-7 [&_button]:px-2 [&_button]:text-[10px] sm:[&_button]:h-8 sm:[&_button]:text-xs',
+              'w-auto [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 sm:[&_button]:h-8 sm:[&_button]:min-w-8 sm:[&_button]:px-2',
               filters.sortBy &&
                 '[&_button]:border-primary/50 [&_button]:bg-primary/5'
             )}
           />
 
           {plannerVisible && (
-            <Button
-              type="button"
-              size="xs"
-              variant="outline"
-              onClick={() => setPlannerOpen(true)}
-              title={t('ws-task-plans.planner')}
-              aria-label={t('ws-task-plans.planner')}
-            >
-              <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span className="hidden text-[10px] sm:text-xs md:inline">
-                {t('ws-task-plans.planner')}
-              </span>
-            </Button>
+            <ToolbarTooltip label={t('ws-task-plans.planner')}>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => setPlannerOpen(true)}
+                aria-label={t('ws-task-plans.planner')}
+              >
+                <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden text-[10px] sm:text-xs md:inline">
+                  {t('ws-task-plans.planner')}
+                </span>
+              </Button>
+            </ToolbarTooltip>
           )}
 
           {managerControlsVisible && (
-            <Button
-              type="button"
-              size="xs"
-              variant="outline"
-              onClick={() => setShareBoardOpen(true)}
-              title={t('ws-task-boards.share.action')}
-              aria-label={t('ws-task-boards.share.action')}
-            >
-              <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span className="hidden text-[10px] sm:text-xs md:inline">
-                {t('common.share')}
-              </span>
-            </Button>
+            <ToolbarTooltip label={t('ws-task-boards.share.action')}>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => setShareBoardOpen(true)}
+                aria-label={t('ws-task-boards.share.action')}
+              >
+                <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden text-[10px] sm:text-xs md:inline">
+                  {t('common.share')}
+                </span>
+              </Button>
+            </ToolbarTooltip>
           )}
 
-          {/* Board Actions Menu */}
+          {/* Board Settings */}
           {managerControlsVisible && (
-            <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  className="h-7 px-1.5 text-muted-foreground sm:h-8 sm:px-2"
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                  <span className="sr-only">Open board menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-50">
-                <DropdownMenuItem
-                  onClick={() => {
-                    openBoardSettings();
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
+            <ToolbarTooltip label={t('ws-task-boards.actions.board_settings')}>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                className="h-7 px-1.5 text-muted-foreground sm:h-8 sm:px-2"
+                onClick={openBoardSettings}
+                aria-label={t('ws-task-boards.actions.board_settings')}
+              >
+                <Settings className="h-3.5 w-3.5" />
+                <span className="hidden text-[10px] sm:text-xs xl:inline">
                   {t('ws-task-boards.actions.board_settings')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </span>
+              </Button>
+            </ToolbarTooltip>
           )}
         </div>
       </div>

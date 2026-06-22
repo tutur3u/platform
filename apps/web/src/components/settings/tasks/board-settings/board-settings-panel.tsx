@@ -1,10 +1,31 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Loader2 } from '@tuturuuu/icons';
-import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
+import {
+  AlertCircle,
+  Archive,
+  CheckCircle2,
+  LayoutGrid,
+  Loader2,
+  Trash2,
+} from '@tuturuuu/icons';
+import {
+  getWorkspaceTaskBoard,
+  listWorkspaceTaskBoards,
+  type WorkspaceTaskBoardDetail,
+  type WorkspaceTaskBoardListItem,
+} from '@tuturuuu/internal-api/tasks';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import {
+  getIconComponentByKey,
+  type PlatformIconKey,
+} from '@tuturuuu/ui/custom/icon-picker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryStates } from 'nuqs';
+import { useCallback, useMemo } from 'react';
 import { BoardActivitySettings } from './board-activity-settings';
 import { BoardCriticalActionsSettings } from './board-critical-actions-settings';
 import { BoardDetailsSettings } from './board-details-settings';
@@ -15,6 +36,195 @@ function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'
     ? { baseUrl: window.location.origin }
     : undefined;
+}
+
+type BoardSwitcherItem = Pick<
+  WorkspaceTaskBoardListItem,
+  'archived_at' | 'deleted_at' | 'icon' | 'id' | 'name'
+>;
+
+function getBoardStatus(
+  board: Pick<BoardSwitcherItem, 'archived_at' | 'deleted_at'>
+) {
+  if (board.deleted_at) return 'deleted';
+  if (board.archived_at) return 'archived';
+  return 'active';
+}
+
+function BoardSettingsBoardSwitcher({
+  board,
+  wsId,
+}: {
+  board: WorkspaceTaskBoardDetail;
+  wsId: string;
+}) {
+  const t = useTranslations();
+  const [, setSettingsQuery] = useQueryStates(
+    {
+      settingsBoardId: parseAsString,
+    },
+    {
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    }
+  );
+  const { data, isLoading } = useQuery({
+    queryKey: ['task-board-settings-switcher', wsId],
+    queryFn: () =>
+      listWorkspaceTaskBoards(
+        wsId,
+        { pageSize: 100, status: 'all' },
+        getBrowserInternalApiOptions()
+      ),
+    enabled: Boolean(wsId),
+  });
+
+  const translateBoardName = useCallback(
+    (name: string | null | undefined) => {
+      if (!name) return t('common.untitled');
+      if (name.toLowerCase() === 'tasks') return t('common.tasks');
+      return name;
+    },
+    [t]
+  );
+
+  const boardOptions = useMemo(() => {
+    const byId = new Map<string, BoardSwitcherItem>();
+
+    for (const item of data?.boards ?? []) {
+      byId.set(item.id, item);
+    }
+
+    if (!byId.has(board.id)) {
+      byId.set(board.id, {
+        archived_at: board.archived_at ?? null,
+        deleted_at: board.deleted_at ?? null,
+        icon: board.icon ?? null,
+        id: board.id,
+        name: board.name ?? null,
+      });
+    }
+
+    const groupLabels = {
+      active: t('common.active_boards'),
+      archived: t('common.archived_boards'),
+      deleted: t('common.deleted_boards'),
+    };
+    const statusLabels = {
+      active: t('common.active'),
+      archived: t('common.archived'),
+      deleted: t('common.deleted'),
+    };
+    const statusWeight = { active: 0, archived: 1, deleted: 2 };
+
+    return [...byId.values()]
+      .sort((a, b) => {
+        const aStatus = getBoardStatus(a);
+        const bStatus = getBoardStatus(b);
+        const statusDelta = statusWeight[aStatus] - statusWeight[bStatus];
+        if (statusDelta !== 0) return statusDelta;
+        return translateBoardName(a.name).localeCompare(
+          translateBoardName(b.name)
+        );
+      })
+      .map((item): ComboboxOption => {
+        const BoardIcon =
+          getIconComponentByKey(item.icon as PlatformIconKey | null) ??
+          LayoutGrid;
+        const status = getBoardStatus(item);
+        const statusLabel = statusLabels[status];
+        const groupLabel = groupLabels[status];
+
+        return {
+          value: item.id,
+          label: translateBoardName(item.name),
+          group: groupLabel,
+          searchValue: `${translateBoardName(item.name)} ${statusLabel} ${groupLabel}`,
+          description: groupLabel,
+          icon: <BoardIcon className="h-4 w-4" />,
+          muted: status !== 'active',
+          badge: (
+            <Badge
+              className={cn(
+                'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
+                status === 'deleted' && 'bg-dynamic-red/10 text-dynamic-red',
+                status === 'archived' && 'bg-muted text-foreground',
+                status === 'active' && 'bg-dynamic-green/10 text-dynamic-green'
+              )}
+            >
+              {status === 'deleted' ? (
+                <Trash2 className="h-3 w-3 text-dynamic-red/50" />
+              ) : status === 'archived' ? (
+                <Archive className="h-3 w-3 text-foreground/50" />
+              ) : (
+                <CheckCircle2 className="h-3 w-3 text-dynamic-green/50" />
+              )}
+              {statusLabel}
+            </Badge>
+          ),
+        };
+      });
+  }, [
+    board.archived_at,
+    board.deleted_at,
+    board.icon,
+    board.id,
+    board.name,
+    data?.boards,
+    t,
+    translateBoardName,
+  ]);
+
+  const selectedBoardName = translateBoardName(board.name);
+  const CurrentBoardIcon =
+    getIconComponentByKey(board.icon as PlatformIconKey | null) ?? LayoutGrid;
+
+  return (
+    <div className="rounded-lg border bg-background p-3">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted/30">
+            <CurrentBoardIcon className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-sm">{selectedBoardName}</p>
+            <p className="text-muted-foreground text-xs">
+              {getBoardStatus(board) === 'deleted'
+                ? t('common.deleted')
+                : getBoardStatus(board) === 'archived'
+                  ? t('common.archived')
+                  : t('common.active')}
+            </p>
+          </div>
+        </div>
+
+        <Combobox
+          ariaLabel={t('common.search_boards')}
+          className="w-full md:w-80"
+          contentWidth="lg"
+          disabled={isLoading}
+          emptyText={
+            isLoading ? t('common.loading') : t('common.no_other_boards')
+          }
+          label={
+            <span className="truncate text-left font-medium text-sm">
+              {selectedBoardName}
+            </span>
+          }
+          onChange={(value) => {
+            const nextBoardId = Array.isArray(value) ? value[0] : value;
+            if (!nextBoardId || nextBoardId === board.id) return;
+            void setSettingsQuery({ settingsBoardId: nextBoardId });
+          }}
+          options={boardOptions}
+          placeholder={selectedBoardName}
+          searchPlaceholder={t('common.search_boards')}
+          selected={board.id}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function BoardSettingsPanel({
@@ -82,6 +292,8 @@ export function BoardSettingsPanel({
           {board.name || t('common.untitled')}
         </p>
       </div>
+
+      <BoardSettingsBoardSwitcher board={board} wsId={wsId} />
 
       <Tabs defaultValue="details" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
