@@ -16,11 +16,27 @@ pub(crate) enum RootWorkspaceReadAuthError {
     Forbidden,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct RootWorkspaceReadAccess {
+    pub(crate) access_token: String,
+    pub(crate) user_id: String,
+}
+
 pub(crate) async fn authorize_root_workspace_read(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Result<String, RootWorkspaceReadAuthError> {
+    authorize_root_workspace_read_access(config, request, outbound)
+        .await
+        .map(|access| access.access_token)
+}
+
+pub(crate) async fn authorize_root_workspace_read_access(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> Result<RootWorkspaceReadAccess, RootWorkspaceReadAuthError> {
     let contact_data = &config.contact_data;
     let Some(access_token) = supabase_auth::request_access_token(request) else {
         return Err(RootWorkspaceReadAuthError::Unauthorized);
@@ -38,7 +54,10 @@ pub(crate) async fn authorize_root_workspace_read(
         .await
         .unwrap_or(false)
     {
-        Ok(access_token)
+        Ok(RootWorkspaceReadAccess {
+            access_token,
+            user_id,
+        })
     } else {
         Err(RootWorkspaceReadAuthError::Forbidden)
     }

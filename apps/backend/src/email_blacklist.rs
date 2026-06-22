@@ -2,6 +2,7 @@ use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
+    email_blacklist_write::{email_blacklist_create_response, email_blacklist_update_response},
     infrastructure_root_auth::{
         RootWorkspaceReadAuthError, authorize_root_workspace_read, send_caller_token_get,
         send_caller_token_request,
@@ -12,7 +13,7 @@ use crate::{
 
 pub(crate) const EMAIL_BLACKLIST_PATH: &str = "/api/v1/infrastructure/email-blacklist";
 
-const EMAIL_BLACKLIST_TABLE: &str = "email_blacklist";
+pub(crate) const EMAIL_BLACKLIST_TABLE: &str = "email_blacklist";
 pub(crate) const POSTGREST_SINGLE_JSON: &str = "application/vnd.pgrst.object+json";
 const POSTGREST_SINGULAR_RESPONSE_ERROR_CODE: &str = "PGRST116";
 
@@ -31,6 +32,12 @@ pub(crate) async fn handle_email_blacklist_route(
 
     match (&route, request.method) {
         (_, "GET") => Some(email_blacklist_get_response(config, request, outbound, route).await),
+        (EmailBlacklistRoute::Collection, "POST") => {
+            Some(email_blacklist_create_response(config, request, outbound).await)
+        }
+        (EmailBlacklistRoute::Entry { entry_id }, "PUT") => {
+            Some(email_blacklist_update_response(config, request, outbound, entry_id).await)
+        }
         (EmailBlacklistRoute::Entry { entry_id }, "DELETE") => {
             Some(email_blacklist_delete_response(config, request, outbound, entry_id).await)
         }
@@ -69,7 +76,7 @@ async fn email_blacklist_get_response(
     }
 }
 
-async fn authorize_email_blacklist_read(
+pub(crate) async fn authorize_email_blacklist_read(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
@@ -190,7 +197,7 @@ async fn email_blacklist_entry_response(
     }
 }
 
-async fn email_blacklist_entry_exists(
+pub(crate) async fn email_blacklist_entry_exists(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
     access_token: &str,
@@ -277,6 +284,6 @@ pub(crate) fn is_postgrest_single_not_found(response: &OutboundResponse) -> bool
         == Some(POSTGREST_SINGULAR_RESPONSE_ERROR_CODE)
 }
 
-fn is_success_status(status: u16) -> bool {
+pub(crate) fn is_success_status(status: u16) -> bool {
     (200..300).contains(&status)
 }

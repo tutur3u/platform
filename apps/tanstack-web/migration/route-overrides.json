@@ -697,7 +697,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, returning the legacy ordered email_blacklist row array, and keeping POST legacy-owned until blacklist writes move to Rust."
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, and returning the legacy ordered email_blacklist row array."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 Forbidden, validating the legacy Zod-shaped entry_type/value/reason payload, preserving the shared email/domain blacklist regex behavior, inserting email_blacklist rows with added_by_user_id from the revalidated caller through caller-token Supabase REST, mapping PostgREST 23505 duplicates to 409, and returning the inserted raw row with status 201."
         }
       }
     },
@@ -706,7 +711,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reading the singular email_blacklist row with caller-token Supabase REST, mapping PGRST116 to the legacy 404 body, and keeping PUT legacy-owned until blacklist update validation moves to Rust."
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reading the singular email_blacklist row with caller-token Supabase REST, and mapping PGRST116 to the legacy 404 body."
+        },
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 Unauthorized, validating the legacy Zod-shaped optional reason payload, prefetching the singular email_blacklist row before update, mapping prefetch misses and errors to the legacy Email blacklist entry not found body, updating with the caller token, and returning the updated raw row."
         },
         "DELETE": {
           "status": "migrated",

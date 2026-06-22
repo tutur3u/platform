@@ -3700,7 +3700,7 @@ paths:
   /api/v1/infrastructure/email-blacklist:
     get:
       summary: Legacy-compatible email blacklist list
-      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy root workspace membership gate through caller-token Supabase REST reads, returns the raw email_blacklist rows ordered by created_at descending, and leaves POST legacy-owned until blacklist writes move behind Rust.
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy root workspace membership gate through caller-token Supabase REST reads, and returns the raw email_blacklist rows ordered by created_at descending.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -3764,10 +3764,141 @@ paths:
                     type: string
                     examples:
                       - Error fetching email blacklist entries
+    post:
+      summary: Legacy-compatible email blacklist creation
+      description: >-
+        Migrated replacement for the POST export in
+        apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts. The
+        Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, preserves the legacy root workspace
+        membership gate where unauthenticated callers receive 401 and
+        authenticated non-root callers receive 403 with the Forbidden body,
+        validates the legacy Zod-shaped entry_type/value/reason payload,
+        preserves the shared email/domain blacklist regex behavior, inserts
+        email_blacklist rows with added_by_user_id from the revalidated caller,
+        writes with the caller token so RLS remains active, maps PostgREST
+        23505 duplicates to 409, and returns the inserted row with status 201.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - entry_type
+                - value
+              properties:
+                entry_type:
+                  type: string
+                  enum:
+                    - email
+                    - domain
+                value:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        "201":
+          description: Raw inserted email blacklist row.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          description: Request body failed legacy Zod-style validation or blacklist format validation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Invalid request data
+                      - Invalid email address format
+                      - Invalid domain format
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "403":
+          description: Authenticated caller is not linked to the root workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Forbidden
+        "409":
+          description: Email blacklist entry already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - This entry already exists in the blacklist
+        "500":
+          description: Email blacklist entry could not be created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Error creating email blacklist entry
+                      - Internal server error
   /api/v1/infrastructure/email-blacklist/{entryId}:
     get:
       summary: Legacy-compatible email blacklist detail
-      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reads the singular email_blacklist row with caller-token Supabase REST, maps PostgREST PGRST116 to the legacy 404 body, and leaves PUT legacy-owned until blacklist update body validation moves behind Rust.
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reads the singular email_blacklist row with caller-token Supabase REST, and maps PostgREST PGRST116 to the legacy 404 body.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -3836,9 +3967,133 @@ paths:
                     type: string
                     examples:
                       - Error fetching email blacklist entry
+    put:
+      summary: Legacy-compatible email blacklist detail update
+      description: >-
+        Migrated replacement for the PUT export in
+        apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, preserves the legacy detail-route root
+        workspace gate where unauthenticated callers receive 401 and
+        authenticated non-root callers receive 403 with the Unauthorized body,
+        validates the legacy Zod-shaped optional reason payload, prefetches the
+        singular email_blacklist row before updating, maps prefetch misses and
+        errors to the legacy not-found body, updates with the caller token so
+        RLS remains active, and returns the updated raw row.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Email blacklist row identifier.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        "200":
+          description: Raw updated email blacklist row.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400":
+          description: Request body failed legacy Zod-style validation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - errors
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Invalid request data
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "403":
+          description: Authenticated caller is not linked to the root workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Unauthorized
+        "404":
+          description: Email blacklist row was not found before update.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Email blacklist entry not found
+        "500":
+          description: Email blacklist row could not be updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - Error updating email blacklist entry
+                      - Internal server error
     delete:
       summary: Legacy-compatible email blacklist detail deletion
-      description: Migrated replacement for the DELETE export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 with the Unauthorized body, prefetches the singular email_blacklist row with caller-token Supabase REST, maps prefetch misses and errors to the legacy not-found body, deletes the row with the caller token, and leaves PUT legacy-owned until blacklist update body validation moves behind Rust.
+      description: Migrated replacement for the DELETE export in apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, preserves the legacy root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 with the Unauthorized body, prefetches the singular email_blacklist row with caller-token Supabase REST, maps prefetch misses and errors to the legacy not-found body, and deletes the row with the caller token.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []

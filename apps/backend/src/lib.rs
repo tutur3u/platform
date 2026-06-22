@@ -21,6 +21,10 @@ mod devbox_cache;
 mod email_blacklist;
 #[cfg(test)]
 mod email_blacklist_test;
+mod email_blacklist_validation;
+mod email_blacklist_write;
+#[cfg(test)]
+mod email_blacklist_write_test;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
