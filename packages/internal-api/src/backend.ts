@@ -40,6 +40,27 @@ export type BackendCreateSupportInquiryResponse = {
   success: true;
 };
 
+export type BackendWorkspacePostPermissions = {
+  canApprovePosts: boolean;
+  canForceSendPosts: boolean;
+};
+
+export type BackendWorkspacePermissionCheck = {
+  hasPermission: boolean;
+};
+
+export type BackendWorkspaceCrawlerStatus = {
+  crawledUrl: Record<string, unknown> | null;
+  relatedUrls: Record<string, unknown>[];
+};
+
+export type BackendWorkspaceLimits = {
+  canCreate: boolean;
+  currentCount: number;
+  limit: number;
+  remaining: number | null;
+};
+
 export type BackendRouteManifestSummary = {
   apiRoutes: number;
   cronRoutes: number;
@@ -381,6 +402,10 @@ function withBackendSameOriginMutationHeaders(
   return requestHeaders;
 }
 
+function workspacePathSegment(wsId: string) {
+  return encodeURIComponent(wsId);
+}
+
 export function getBackendLegacyHealth(options: BackendApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendLegacyHealth>(
     '/api/health',
@@ -395,6 +420,59 @@ export function getBackendCurrentUserProfile(
 ) {
   return createBackendApiClient(options).json<CurrentUserProfileResponse>(
     '/api/v1/users/me/profile',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendWorkspacePostPermissions(
+  wsId: string,
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendWorkspacePostPermissions>(
+    `/api/v1/workspaces/${workspacePathSegment(wsId)}/posts/permissions`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function checkBackendWorkspacePermission(
+  wsId: string,
+  permission: string,
+  options: BackendApiClientOptions = {}
+) {
+  const searchParams = new URLSearchParams({ permission });
+
+  return createBackendApiClient(options).json<BackendWorkspacePermissionCheck>(
+    `/api/v1/workspaces/${workspacePathSegment(wsId)}/settings/permissions/check?${searchParams}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendWorkspaceCrawlerStatus(
+  wsId: string,
+  url: string,
+  options: BackendApiClientOptions = {}
+) {
+  const searchParams = new URLSearchParams({ url });
+
+  return createBackendApiClient(options).json<BackendWorkspaceCrawlerStatus>(
+    `/api/v1/workspaces/${workspacePathSegment(wsId)}/crawlers/status?${searchParams}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendWorkspaceLimits(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendWorkspaceLimits>(
+    '/api/v1/workspaces/limits',
     {
       cache: 'no-store',
     }

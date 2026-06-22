@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  checkBackendWorkspacePermission,
   createBackendApiClient,
   createBackendSupportInquiry,
   getBackendCurrentUserProfile,
@@ -8,6 +9,9 @@ import {
   getBackendMigrationManifest,
   getBackendMigrationProgress,
   getBackendMigrationStatus,
+  getBackendWorkspaceCrawlerStatus,
+  getBackendWorkspaceLimits,
+  getBackendWorkspacePostPermissions,
   getConfiguredBackendApiBaseUrl,
   withBackendServiceBinding,
   withForwardedBackendApiAuth,
@@ -236,6 +240,120 @@ describe('backend API client', () => {
       })
     );
     expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('reads Rust-owned workspace post permission flags', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        canApprovePosts: true,
+        canForceSendPosts: false,
+      }),
+    });
+
+    const permissions = await getBackendWorkspacePostPermissions('ws-1', {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(permissions.canApprovePosts).toBe(true);
+    expect(permissions.canForceSendPosts).toBe(false);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/workspaces/ws-1/posts/permissions',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('checks a Rust-owned workspace setting permission with encoded inputs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        hasPermission: true,
+      }),
+    });
+
+    const result = await checkBackendWorkspacePermission(
+      'personal workspace',
+      'manage workspace settings',
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(result.hasPermission).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/workspaces/personal%20workspace/settings/permissions/check?permission=manage+workspace+settings',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned crawler status with an encoded target URL', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        crawledUrl: {
+          status: 'completed',
+          url: 'https://example.com/docs?x=1&y=2',
+        },
+        relatedUrls: [{ url: 'https://example.com/docs/next' }],
+      }),
+    });
+
+    const status = await getBackendWorkspaceCrawlerStatus(
+      'ws-1',
+      'https://example.com/docs?x=1&y=2',
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(status.crawledUrl?.url).toBe('https://example.com/docs?x=1&y=2');
+    expect(status.relatedUrls).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/workspaces/ws-1/crawlers/status?url=https%3A%2F%2Fexample.com%2Fdocs%3Fx%3D1%26y%3D2',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned workspace creation limits', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        canCreate: true,
+        currentCount: 0,
+        limit: 0,
+        remaining: null,
+      }),
+    });
+
+    const limits = await getBackendWorkspaceLimits({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(limits.remaining).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/workspaces/limits',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it('creates Rust-owned support inquiries without backend internal auth', async () => {
