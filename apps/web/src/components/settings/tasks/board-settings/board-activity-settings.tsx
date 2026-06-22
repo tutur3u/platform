@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   CalendarDays,
@@ -10,20 +10,29 @@ import {
   Flag,
   FolderKanban,
   History,
+  horseHead,
+  Icon,
   Layers,
   Loader2,
   Plus,
+  Rabbit,
   RefreshCw,
   Search,
   Tag,
   Target,
+  Turtle,
   UserMinus,
   UserPlus,
+  unicornHead,
 } from '@tuturuuu/icons';
 import {
   listWorkspaceTaskHistory,
   type WorkspaceTaskHistoryEntry,
 } from '@tuturuuu/internal-api/tasks';
+import {
+  isTaskPriority,
+  type TaskPriority,
+} from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -33,7 +42,60 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useMemo, useState } from 'react';
+import React, {
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+const ACTIVITY_PAGE_SIZE = 20;
+
+type TaskListNameSummary = {
+  id: string;
+  name: string | null;
+};
+
+const PRIORITY_BADGE_COLORS: Record<TaskPriority, string> = {
+  critical:
+    'bg-dynamic-red/20 border-dynamic-red/50 text-dynamic-red shadow-sm shadow-dynamic-red/50',
+  high: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
+  normal: 'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
+  low: 'bg-dynamic-blue/10 border-dynamic-blue/30 text-dynamic-blue',
+};
+
+const PRIORITY_ICONS: Record<TaskPriority, React.ReactElement> = {
+  critical: <Icon iconNode={unicornHead} />,
+  high: <Icon iconNode={horseHead} />,
+  normal: <Rabbit />,
+  low: <Turtle />,
+};
+
+function getPriorityIcon(
+  priority: TaskPriority,
+  className?: string
+): React.ReactNode {
+  const icon = PRIORITY_ICONS[priority];
+  return React.cloneElement(icon, { className } as any);
+}
+
+function ActivityPriorityBadge({ priority }: { priority: TaskPriority }) {
+  const t = useTranslations();
+
+  return (
+    <Badge
+      variant="secondary"
+      className={cn(
+        'inline-flex h-5 gap-1 px-1.5 py-0 text-[10px]',
+        PRIORITY_BADGE_COLORS[priority]
+      )}
+    >
+      {getPriorityIcon(priority, 'h-3 w-3')}
+      {t(`tasks.priority_${priority}` as any)}
+    </Badge>
+  );
+}
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'
@@ -52,8 +114,72 @@ function formatActivityToken(
   );
 }
 
-function formatActivityValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') return 'None';
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function looksLikeUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
+
+function formatListActivityValue({
+  listNameById,
+  unknownListLabel,
+  value,
+}: {
+  listNameById: Map<string, string>;
+  unknownListLabel: string;
+  value: unknown;
+}) {
+  if (value === null || value === undefined || value === '') {
+    return unknownListLabel;
+  }
+
+  if (typeof value === 'string') {
+    return (
+      listNameById.get(value) ??
+      (looksLikeUuid(value) ? unknownListLabel : value)
+    );
+  }
+
+  if (isRecord(value)) {
+    const name = value.name;
+    if (typeof name === 'string' && name.trim()) return name;
+
+    const id = value.id;
+    if (typeof id === 'string') {
+      return listNameById.get(id) ?? unknownListLabel;
+    }
+  }
+
+  return unknownListLabel;
+}
+
+function formatActivityValue(
+  value: unknown,
+  {
+    fieldName,
+    listNameById,
+    noneLabel,
+    unknownListLabel,
+  }: {
+    fieldName?: string | null;
+    listNameById?: Map<string, string>;
+    noneLabel: string;
+    unknownListLabel: string;
+  }
+): string {
+  if (fieldName === 'list_id' && listNameById) {
+    return formatListActivityValue({
+      listNameById,
+      unknownListLabel,
+      value,
+    });
+  }
+
+  if (value === null || value === undefined || value === '') return noneLabel;
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
@@ -61,7 +187,14 @@ function formatActivityValue(value: unknown): string {
 
   if (Array.isArray(value)) {
     return value
-      .map((item) => formatActivityValue(item))
+      .map((item) =>
+        formatActivityValue(item, {
+          fieldName,
+          listNameById,
+          noneLabel,
+          unknownListLabel,
+        })
+      )
       .filter(Boolean)
       .join(', ');
   }
@@ -75,6 +208,33 @@ function formatActivityValue(value: unknown): string {
   }
 
   return String(value);
+}
+
+function ActivityFieldValue({
+  entry,
+  listNameById,
+  value,
+}: {
+  entry: WorkspaceTaskHistoryEntry;
+  listNameById: Map<string, string>;
+  value: unknown;
+}) {
+  const t = useTranslations();
+
+  if (entry.field_name === 'priority' && isTaskPriority(value)) {
+    return <ActivityPriorityBadge priority={value} />;
+  }
+
+  return (
+    <span className="min-w-0 truncate text-muted-foreground">
+      {formatActivityValue(value, {
+        fieldName: entry.field_name,
+        listNameById,
+        noneLabel: t('tasks.priority_none'),
+        unknownListLabel: t('common.unknown_list'),
+      })}
+    </span>
+  );
 }
 
 function getActivityVisual(entry: WorkspaceTaskHistoryEntry): {
@@ -173,8 +333,10 @@ function getActivityVisual(entry: WorkspaceTaskHistoryEntry): {
 
 function ActivityTimelineEntry({
   entry,
+  listNameById,
 }: {
   entry: WorkspaceTaskHistoryEntry;
+  listNameById: Map<string, string>;
 }) {
   const t = useTranslations();
   const { icon, tone } = getActivityVisual(entry);
@@ -183,8 +345,6 @@ function ActivityTimelineEntry({
   const fieldLabel = entry.field_name
     ? formatActivityToken(entry.field_name, entry.field_name)
     : null;
-  const oldValue = formatActivityValue(entry.old_value);
-  const newValue = formatActivityValue(entry.new_value);
 
   return (
     <div className="group grid grid-cols-[auto_1fr] gap-3 rounded-md p-2 transition-colors hover:bg-muted/40">
@@ -239,10 +399,18 @@ function ActivityTimelineEntry({
               {fieldLabel}
             </Badge>
             {entry.change_type === 'field_updated' && (
-              <span className="min-w-0 truncate text-muted-foreground">
-                {oldValue}
-                {' -> '}
-                {newValue}
+              <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <ActivityFieldValue
+                  entry={entry}
+                  listNameById={listNameById}
+                  value={entry.old_value}
+                />
+                <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <ActivityFieldValue
+                  entry={entry}
+                  listNameById={listNameById}
+                  value={entry.new_value}
+                />
               </span>
             )}
           </div>
@@ -254,14 +422,17 @@ function ActivityTimelineEntry({
 
 export function BoardActivitySettings({
   boardId,
+  taskLists = [],
   wsId,
 }: {
   boardId: string;
+  taskLists?: TaskListNameSummary[];
   wsId: string;
 }) {
   const t = useTranslations();
   const [changeType, setChangeType] = useState('all');
   const [search, setSearch] = useState('');
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const changeTypeOptions = useMemo(
     () =>
       [
@@ -281,7 +452,27 @@ export function BoardActivitySettings({
       })),
     [t]
   );
-  const { data, error, isFetching, isLoading, refetch } = useQuery({
+
+  const listNameById = useMemo(() => {
+    const map = new Map<string, string>();
+
+    for (const list of taskLists) {
+      if (list.name) map.set(list.id, list.name);
+    }
+
+    return map;
+  }, [taskLists]);
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
     queryKey: [
       'task-board-settings-activity',
       wsId,
@@ -289,23 +480,37 @@ export function BoardActivitySettings({
       changeType,
       search,
     ],
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       listWorkspaceTaskHistory(
         wsId,
         {
           boardId,
           changeType: changeType === 'all' ? undefined : changeType,
-          page: 1,
-          pageSize: 12,
+          page: pageParam,
+          pageSize: ACTIVITY_PAGE_SIZE,
           search: search.trim() || undefined,
         },
         getBrowserInternalApiOptions()
       ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
+
+      return loaded < lastPage.count ? lastPage.page + 1 : undefined;
+    },
     enabled: Boolean(wsId && boardId),
     staleTime: 30_000,
   });
 
-  const entries = data?.data ?? [];
+  const entries = useMemo(
+    () => data?.pages.flatMap((page) => page.data) ?? [],
+    [data?.pages]
+  );
+  const totalCount = data?.pages[0]?.count ?? 0;
+  const loadedCount = entries.length;
   const mostCommonChangeType = useMemo(() => {
     const counts = new Map<string, number>();
     for (const entry of entries) {
@@ -321,6 +526,31 @@ export function BoardActivitySettings({
         timeStyle: 'short',
       }).format(new Date(entries[0].changed_at))
     : null;
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (
+      !node ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (observedEntries) => {
+        if (observedEntries.some((entry) => entry.isIntersecting)) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: '120px' }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
     <div className="space-y-4 rounded-lg border bg-background p-4">
@@ -361,7 +591,12 @@ export function BoardActivitySettings({
           <div className="text-muted-foreground text-xs">
             {t('settings.tasks.board_activity')}
           </div>
-          <div className="font-medium text-sm">{data?.count ?? 0}</div>
+          <div className="font-medium text-sm">{totalCount}</div>
+          {totalCount > 0 && (
+            <div className="text-[10px] text-muted-foreground">
+              {loadedCount}/{totalCount}
+            </div>
+          )}
         </div>
         <div className="rounded-md border bg-muted/20 p-2">
           <div className="text-muted-foreground text-xs">
@@ -410,9 +645,20 @@ export function BoardActivitySettings({
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : error ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-destructive text-sm">
-          {t('settings.tasks.activity_load_failed')}
-        </p>
+        <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+          <p className="text-destructive text-sm">
+            {t('settings.tasks.activity_load_failed')}
+          </p>
+          <Button
+            className="h-8 shrink-0"
+            onClick={() => void refetch()}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {t('common.refresh')}
+          </Button>
+        </div>
       ) : entries.length === 0 ? (
         <p className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
           {t('settings.tasks.no_board_activity')}
@@ -420,8 +666,35 @@ export function BoardActivitySettings({
       ) : (
         <div className="rounded-md border p-2">
           {entries.map((entry) => (
-            <ActivityTimelineEntry entry={entry} key={entry.id} />
+            <ActivityTimelineEntry
+              entry={entry}
+              key={entry.id}
+              listNameById={listNameById}
+            />
           ))}
+          <div ref={loadMoreRef} className="flex justify-center px-2 pt-2">
+            {hasNextPage ? (
+              <Button
+                className="h-8"
+                disabled={isFetchingNextPage}
+                onClick={() => void fetchNextPage()}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                {isFetchingNextPage ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                {isFetchingNextPage
+                  ? t('common.loading')
+                  : t('common.load_more')}
+              </Button>
+            ) : (
+              <span className="py-1 text-muted-foreground text-xs">
+                {t('settings.tasks.board_activity_end')}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>

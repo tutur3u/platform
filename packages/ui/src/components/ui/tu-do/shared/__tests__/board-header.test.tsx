@@ -46,20 +46,26 @@ vi.mock('@tuturuuu/ui/hooks/use-board-actions', () => ({
 vi.mock('@tuturuuu/ui/custom/combobox', () => ({
   Combobox: ({
     ariaLabel,
+    className,
+    colorizeTriggerIcon,
     disabled,
     hideTriggerLabel,
     onChange,
     options,
     placeholder,
     selected,
+    triggerTooltip,
   }: {
     ariaLabel?: string;
+    className?: string;
+    colorizeTriggerIcon?: boolean;
     disabled?: boolean;
     hideTriggerLabel?: boolean;
     onChange?: (value: string) => void;
     options: { label: string; value: string }[];
     placeholder?: string;
     selected: string;
+    triggerTooltip?: React.ReactNode;
   }) => (
     <select
       aria-label={
@@ -69,6 +75,11 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
           : placeholder)
       }
       disabled={disabled}
+      className={className}
+      data-colorize-trigger-icon={String(colorizeTriggerIcon)}
+      data-trigger-tooltip={
+        typeof triggerTooltip === 'string' ? triggerTooltip : undefined
+      }
       value={selected}
       onChange={(event) => onChange?.(event.target.value)}
     >
@@ -243,6 +254,20 @@ describe('BoardHeader', () => {
     });
   });
 
+  it('calls the board settings intent hook before opening the dialog', () => {
+    const onBoardSettingsIntent = vi.fn();
+
+    renderBoardHeader({ onBoardSettingsIntent });
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', {
+        name: 'ws-task-boards.actions.board_settings',
+      })
+    );
+
+    expect(onBoardSettingsIntent).toHaveBeenCalledTimes(1);
+  });
+
   it('opens contextual board settings through query state', () => {
     renderBoardHeader();
 
@@ -362,5 +387,31 @@ describe('BoardHeader', () => {
     expect(onFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ sortBy: 'priority-high' })
     );
+  });
+
+  it('passes instant tooltip labels and monochrome trigger mode to toolbar comboboxes', () => {
+    renderBoardHeader();
+
+    const status = screen.getByLabelText('common.all');
+    const view = screen.getByLabelText('ws-task-boards.views.kanban');
+    const sort = screen.getByLabelText('common.sort');
+
+    expect(status).toHaveAttribute(
+      'data-trigger-tooltip',
+      'common.status: common.all'
+    );
+    expect(view).toHaveAttribute(
+      'data-trigger-tooltip',
+      'common.view: ws-task-boards.views.kanban'
+    );
+    expect(sort).toHaveAttribute(
+      'data-trigger-tooltip',
+      'common.sort: common.sort'
+    );
+
+    for (const control of [status, view, sort]) {
+      expect(control).toHaveAttribute('data-colorize-trigger-icon', 'false');
+      expect(control.className).toContain('[&_button_svg]:text-current');
+    }
   });
 });

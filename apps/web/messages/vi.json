@@ -11687,6 +11687,7 @@
       "board_actions_description": "Nhân bản, tạo mẫu, lưu trữ hoặc xoá bảng này.",
       "board_activity": "Hoạt động",
       "board_activity_description": "Các thay đổi công việc gần đây được lọc theo bảng này.",
+      "board_activity_end": "Đã hết lịch sử hoạt động.",
       "board_default_list": "Danh sách mặc định cho nhiệm vụ mới",
       "board_default_list_description": "Chọn danh sách mà nhiệm vụ mới sẽ vào cho từng bảng. Áp dụng cho phím tắt tạo nhiệm vụ và nút thêm nhanh ở cấp bảng; các nút theo cột vẫn dùng danh sách của riêng chúng.",
       "board_default_list_empty": "Chưa có bảng nào trong không gian làm việc này.",

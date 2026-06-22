@@ -11687,6 +11687,7 @@
       "board_actions_description": "Duplicate, template, archive, or delete this board.",
       "board_activity": "Activity",
       "board_activity_description": "Recent task changes filtered to this board.",
+      "board_activity_end": "End of activity history.",
       "board_default_list": "Default list for new tasks",
       "board_default_list_description": "Choose which list new tasks start in for each board. Used by the create-task shortcut and board-level quick add; per-column buttons still use their own list.",
       "board_default_list_empty": "No boards in this workspace yet.",

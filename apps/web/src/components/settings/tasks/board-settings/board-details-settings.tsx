@@ -127,22 +127,24 @@ export function BoardDetailsSettings({
       </div>
 
       <div className="grid gap-4">
-        <div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)]">
+        <div className="grid gap-4 md:grid-cols-[8rem_minmax(0,1fr)]">
           <div className="space-y-2">
             <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
               {t('ws-task-boards.icon_label')}
             </Label>
-            <IconPicker
-              ariaLabel={t('ws-task-boards.icon_picker.title')}
-              clearLabel={t('ws-task-boards.icon_picker.clear')}
-              description={t('ws-task-boards.icon_picker.description')}
-              onValueChange={setBoardIcon}
-              searchPlaceholder={t(
-                'ws-task-boards.icon_picker.search_placeholder'
-              )}
-              title={t('ws-task-boards.icon_picker.title')}
-              value={boardIcon}
-            />
+            <div className="flex">
+              <IconPicker
+                ariaLabel={t('ws-task-boards.icon_picker.title')}
+                clearLabel={t('ws-task-boards.icon_picker.clear')}
+                description={t('ws-task-boards.icon_picker.description')}
+                onValueChange={setBoardIcon}
+                searchPlaceholder={t(
+                  'ws-task-boards.icon_picker.search_placeholder'
+                )}
+                title={t('ws-task-boards.icon_picker.title')}
+                value={boardIcon}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

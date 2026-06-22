@@ -119,11 +119,15 @@ const LazyWorkspaceBreakTypesSettings = lazy(() =>
     default: module.WorkspaceBreakTypesSettings,
   }))
 );
-const LazyBoardSettingsPanel = lazy(() =>
+const loadBoardSettingsPanel = () =>
   import('./tasks/board-settings/board-settings-panel').then((module) => ({
     default: module.BoardSettingsPanel,
-  }))
-);
+  }));
+const LazyBoardSettingsPanel = lazy(loadBoardSettingsPanel);
+
+export function preloadBoardSettingsPanel() {
+  void loadBoardSettingsPanel();
+}
 const LazyTaskInitiativesSettings = lazy(() =>
   import('./tasks/task-initiatives-settings').then((module) => ({
     default: module.TaskInitiativesSettings,

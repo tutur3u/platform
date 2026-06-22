@@ -196,6 +196,59 @@ describe('Combobox', () => {
     );
   });
 
+  it('shows trigger tooltips instantly for compact controls', async () => {
+    render(
+      <Combobox
+        ariaLabel="Compact picker"
+        hideTriggerLabel
+        options={options}
+        placeholder="Pick item"
+        selected="alpha"
+        showChevron={false}
+        triggerMode="compact"
+        triggerTooltip="Current: Alpha"
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Compact picker' });
+    fireEvent.focus(trigger);
+
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute('data-state', 'instant-open');
+    });
+    expect(screen.getAllByText('Current: Alpha').length).toBeGreaterThan(0);
+  });
+
+  it('can keep compact trigger icons monochrome while option rows keep semantic colors', () => {
+    render(
+      <Combobox
+        ariaLabel="Priority picker"
+        colorizeTriggerIcon={false}
+        hideTriggerLabel
+        options={[
+          {
+            color: '#f97316',
+            icon: <span data-testid="priority-icon">P</span>,
+            label: 'High priority',
+            value: 'high',
+          },
+        ]}
+        placeholder="Pick item"
+        selected="high"
+        showChevron={false}
+        triggerMode="compact"
+      />
+    );
+
+    const triggerIcon = screen.getByTestId('priority-icon');
+    expect(triggerIcon).not.toHaveAttribute('style');
+
+    openCombobox();
+
+    const [, optionIcon] = screen.getAllByTestId('priority-icon');
+    expect(optionIcon).toHaveStyle({ color: '#f97316' });
+  });
+
   it('reports popover open changes when the trigger opens and a single option closes it', async () => {
     const onChange = vi.fn();
     const onOpenChange = vi.fn();

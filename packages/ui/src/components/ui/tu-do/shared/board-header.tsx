@@ -75,6 +75,7 @@ interface Props {
   publicView?: boolean;
   readOnly?: boolean;
   titlePrefix?: ReactNode;
+  onBoardSettingsIntent?: () => void;
 }
 
 function ToolbarTooltip({
@@ -94,6 +95,9 @@ function ToolbarTooltip({
 
 const toolbarButtonClass =
   'h-7 w-7 px-0 text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:w-8';
+const toolbarComboboxClass =
+  'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 [&_button]:text-muted-foreground [&_button]:transition-colors hover:[&_button]:text-foreground [&_button_svg]:text-current sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8';
+const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'
@@ -122,6 +126,7 @@ export function BoardHeader({
   publicView = false,
   readOnly = false,
   titlePrefix,
+  onBoardSettingsIntent,
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -219,6 +224,11 @@ export function BoardHeader({
 
   function prefetchBoardSettings() {
     if (!managerControlsVisible) return;
+
+    onBoardSettingsIntent?.();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(BOARD_SETTINGS_PRELOAD_EVENT));
+    }
 
     void queryClient.prefetchQuery({
       queryKey: ['task-board-settings', workspaceId, board.id],
@@ -581,8 +591,10 @@ export function BoardHeader({
             searchPlaceholder={t('common.search_tasks')}
             showChevron={false}
             triggerMode="compact"
+            triggerTooltip={`${t('common.status')}: ${selectedListStatusOption?.label ?? t('common.all')}`}
+            colorizeTriggerIcon={false}
             className={cn(
-              'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8',
+              toolbarComboboxClass,
               listStatusFilter !== 'all' &&
                 '[&_button]:border-primary/50 [&_button]:bg-primary/5'
             )}
@@ -603,7 +615,11 @@ export function BoardHeader({
             searchPlaceholder={t('common.search_tasks')}
             showChevron={false}
             triggerMode="compact"
-            className="w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8"
+            triggerTooltip={`${t('common.view')}: ${
+              selectedViewOption?.label ?? viewConfig[activeView].label
+            }`}
+            colorizeTriggerIcon={false}
+            className={toolbarComboboxClass}
           />
 
           {/* Task Filter */}
@@ -635,8 +651,14 @@ export function BoardHeader({
             searchPlaceholder={t('common.search_tasks')}
             showChevron={false}
             triggerMode="compact"
+            triggerTooltip={`${t('common.sort')}: ${
+              selectedSortOption?.value === '__none__'
+                ? t('common.sort')
+                : (selectedSortOption?.label ?? t('common.sort'))
+            }`}
+            colorizeTriggerIcon={false}
             className={cn(
-              'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8',
+              toolbarComboboxClass,
               filters.sortBy &&
                 '[&_button]:border-primary/50 [&_button]:bg-primary/5'
             )}

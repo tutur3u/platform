@@ -168,6 +168,11 @@ export interface WorkspaceTaskHistoryEntry {
   } | null;
 }
 
+export interface WorkspaceTaskHistoryListValue {
+  id: string;
+  name: string | null;
+}
+
 export interface WorkspaceTaskHistoryResponse {
   data: WorkspaceTaskHistoryEntry[];
   count: number;

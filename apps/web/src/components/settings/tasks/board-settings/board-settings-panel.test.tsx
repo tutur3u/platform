@@ -272,12 +272,25 @@ describe('BoardSettingsPanel', () => {
     });
   });
 
+  it('renders a compact board settings loading shell while the board query resolves', () => {
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+
+    renderBoardSettingsPanel();
+
+    expect(
+      screen.getByTestId('board-settings-loading-state')
+    ).toBeInTheDocument();
+  });
+
   it('uses a current-board details form instead of the generic board form', async () => {
     renderBoardSettingsPanel();
 
     expect(await screen.findByLabelText('ws-task-boards.name')).toHaveValue(
       'Roadmap'
     );
+    expect(
+      screen.getByText('ws-task-boards.icon_label').parentElement
+    ).toHaveTextContent('icon-picker:ListTodo');
     expect(screen.getByLabelText('settings.tasks.ticket_prefix')).toHaveValue(
       'RD'
     );

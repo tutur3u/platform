@@ -14,6 +14,7 @@ import {
   CommandSeparator,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 
 export type ComboboxOption = {
   value: string;
@@ -80,6 +81,10 @@ interface ComboboxProps {
   triggerMode?: ComboboxTriggerMode;
   /** Hide the visible trigger label while preserving the accessible label */
   hideTriggerLabel?: boolean;
+  /** Tooltip rendered for compact/icon-only triggers */
+  triggerTooltip?: React.ReactNode;
+  /** Whether selected option colors should be applied to the trigger icon/text */
+  colorizeTriggerIcon?: boolean;
   /** Width preset for the popover content */
   contentWidth?: ComboboxContentWidth;
   /** Additional class name for the popover content */
@@ -131,6 +136,8 @@ export function Combobox({
   showChevron = true,
   triggerMode = 'default',
   hideTriggerLabel = false,
+  triggerTooltip,
+  colorizeTriggerIcon = true,
   contentWidth = 'trigger',
   contentClassName,
   className,
@@ -420,91 +427,105 @@ export function Combobox({
     }
   }, [commitCreatedValue, handleOpenChange, onCreate, trimmedQuery]);
 
+  const triggerButton = (
+    <Button
+      type="button"
+      variant="outline"
+      role="combobox"
+      aria-label={ariaLabel}
+      aria-expanded={open}
+      className={cn(
+        'min-w-0 overflow-hidden',
+        triggerMode === 'compact'
+          ? 'w-auto justify-center gap-1.5'
+          : 'w-full justify-between',
+        hideTriggerLabel && 'aspect-square px-0',
+        !selectedLabel && 'text-muted-foreground'
+      )}
+      disabled={disabled}
+    >
+      <span
+        className={cn(
+          'flex min-w-0 items-center gap-2',
+          !selectedLabel && 'text-muted-foreground'
+        )}
+      >
+        {showSelectedIcon && selectedOption?.icon && (
+          <span className="flex shrink-0 items-center justify-center">
+            {React.isValidElement(selectedOption.icon)
+              ? React.cloneElement(
+                  selectedOption.icon as React.ReactElement<{
+                    style?: React.CSSProperties;
+                  }>,
+                  {
+                    style:
+                      colorizeTriggerIcon && selectedOption.color
+                        ? {
+                            ...((
+                              selectedOption.icon as React.ReactElement<{
+                                style?: React.CSSProperties;
+                              }>
+                            ).props?.style || {}),
+                            color: selectedOption.color,
+                          }
+                        : (
+                            selectedOption.icon as React.ReactElement<{
+                              style?: React.CSSProperties;
+                            }>
+                          ).props?.style,
+                  }
+                )
+              : selectedOption.icon}
+          </span>
+        )}
+        {hideTriggerLabel ? (
+          <span className="sr-only">{selectedLabel ?? placeholder}</span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate text-left">
+            {label ? (
+              label
+            ) : (
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className={cn(
+                    'truncate',
+                    selectedOption?.muted && 'text-muted-foreground'
+                  )}
+                  style={
+                    colorizeTriggerIcon && selectedOption?.color
+                      ? { color: selectedOption.color }
+                      : undefined
+                  }
+                >
+                  {selectedLabel ?? placeholder}
+                </span>
+                {selectedOption?.badge}
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+      {showChevron && (
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      )}
+    </Button>
+  );
+
+  const trigger = triggerTooltip ? (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+      </TooltipTrigger>
+      <TooltipContent>{triggerTooltip}</TooltipContent>
+    </Tooltip>
+  ) : (
+    <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+  );
+
   return (
     <div className={cn('block min-w-0', className)}>
       <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            role="combobox"
-            aria-label={ariaLabel}
-            aria-expanded={open}
-            className={cn(
-              'min-w-0 overflow-hidden',
-              triggerMode === 'compact'
-                ? 'w-auto justify-center gap-1.5'
-                : 'w-full justify-between',
-              hideTriggerLabel && 'aspect-square px-0',
-              !selectedLabel && 'text-muted-foreground'
-            )}
-            disabled={disabled}
-          >
-            <span
-              className={cn(
-                'flex min-w-0 items-center gap-2',
-                !selectedLabel && 'text-muted-foreground'
-              )}
-            >
-              {showSelectedIcon && selectedOption?.icon && (
-                <span className="flex shrink-0 items-center justify-center">
-                  {React.isValidElement(selectedOption.icon)
-                    ? React.cloneElement(
-                        selectedOption.icon as React.ReactElement<{
-                          style?: React.CSSProperties;
-                        }>,
-                        {
-                          style: selectedOption.color
-                            ? {
-                                ...((
-                                  selectedOption.icon as React.ReactElement<{
-                                    style?: React.CSSProperties;
-                                  }>
-                                ).props?.style || {}),
-                                color: selectedOption.color,
-                              }
-                            : (
-                                selectedOption.icon as React.ReactElement<{
-                                  style?: React.CSSProperties;
-                                }>
-                              ).props?.style,
-                        }
-                      )
-                    : selectedOption.icon}
-                </span>
-              )}
-              {hideTriggerLabel ? (
-                <span className="sr-only">{selectedLabel ?? placeholder}</span>
-              ) : (
-                <span className="min-w-0 flex-1 truncate text-left">
-                  {label ? (
-                    label
-                  ) : (
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span
-                        className={cn(
-                          'truncate',
-                          selectedOption?.muted && 'text-muted-foreground'
-                        )}
-                        style={
-                          selectedOption?.color
-                            ? { color: selectedOption.color }
-                            : undefined
-                        }
-                      >
-                        {selectedLabel ?? placeholder}
-                      </span>
-                      {selectedOption?.badge}
-                    </span>
-                  )}
-                </span>
-              )}
-            </span>
-            {showChevron && (
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            )}
-          </Button>
-        </PopoverTrigger>
+        {trigger}
         <PopoverContent
           className={cn(
             'z-9999 max-w-[calc(100vw-2rem)] p-0',

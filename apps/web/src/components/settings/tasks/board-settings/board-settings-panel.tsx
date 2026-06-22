@@ -6,7 +6,6 @@ import {
   Archive,
   CheckCircle2,
   LayoutGrid,
-  Loader2,
   Trash2,
 } from '@tuturuuu/icons';
 import {
@@ -249,6 +248,36 @@ function BoardSettingsBoardSwitcher({
   );
 }
 
+function BoardSettingsLoadingState() {
+  return (
+    <div className="space-y-4" data-testid="board-settings-loading-state">
+      <div className="rounded-lg border bg-background p-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="h-9 w-9 shrink-0 animate-pulse rounded-md bg-muted" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+          <div className="hidden h-9 w-64 animate-pulse rounded-md bg-muted md:block" />
+        </div>
+      </div>
+      <div className="h-10 animate-pulse rounded-md bg-muted" />
+      <div className="rounded-lg border bg-background p-4">
+        <div className="space-y-3">
+          <div className="h-5 w-28 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-72 max-w-full animate-pulse rounded bg-muted" />
+          <div className="grid gap-4 pt-2 md:grid-cols-[8rem_minmax(0,1fr)]">
+            <div className="h-16 animate-pulse rounded-md bg-muted" />
+            <div className="h-16 animate-pulse rounded-md bg-muted" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BoardSettingsPanel({
   boardId,
   wsId,
@@ -277,14 +306,11 @@ export function BoardSettingsPanel({
       return payload.board;
     },
     enabled: Boolean(wsId && boardId),
+    staleTime: 30_000,
   });
 
   if (isLoading) {
-    return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <BoardSettingsLoadingState />;
   }
 
   if (error || !board) {
@@ -374,7 +400,11 @@ export function BoardSettingsPanel({
         </TabsContent>
         <TabsContent value="activity">
           {activeTab === 'activity' && (
-            <BoardActivitySettings boardId={board.id} wsId={wsId} />
+            <BoardActivitySettings
+              boardId={board.id}
+              taskLists={board.task_lists ?? []}
+              wsId={wsId}
+            />
           )}
         </TabsContent>
         <TabsContent value="actions">

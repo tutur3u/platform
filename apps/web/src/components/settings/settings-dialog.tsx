@@ -81,6 +81,7 @@ import {
   InvoiceVisibilitySettings,
   MiraMemorySettings,
   MiraPersonalitySettings,
+  preloadBoardSettingsPanel,
   ReportDefaultTitleSettings,
   RequireAttentionColorSettings,
   TaskInitiativesSettings,
@@ -115,6 +116,8 @@ interface SettingsDialogProps {
   linkedProvider?: string;
 }
 
+const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
+
 function normalizeSettingsTab(tab: string) {
   return tab === 'sidebar' ? 'navigation' : tab;
 }
@@ -128,6 +131,22 @@ export function SettingsDialog({
   linkedProvider,
 }: SettingsDialogProps) {
   const t = useTranslations();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    window.addEventListener(
+      BOARD_SETTINGS_PRELOAD_EVENT,
+      preloadBoardSettingsPanel
+    );
+
+    return () => {
+      window.removeEventListener(
+        BOARD_SETTINGS_PRELOAD_EVENT,
+        preloadBoardSettingsPanel
+      );
+    };
+  }, []);
   const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
   const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
   const {
