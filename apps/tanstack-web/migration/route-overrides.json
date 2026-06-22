@@ -1018,6 +1018,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/changelog ports the legacy public changelog index through a Start loader/server function, TanStack Query hydration, ISR-style CDN headers, and @tuturuuu/internal-api backend facades backed by the Rust-owned /api/v1/infrastructure/changelog GET endpoint. Browser code does not call protected app APIs or Supabase directly."
     },
+    "page:/:locale/changelog/:slug:apps/web/src/app/[locale]/(marketing)/changelog/[slug]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/changelog/$slug ports the legacy public changelog detail page through a Start loader/server function, TanStack Query hydration, ISR-style CDN headers, localized copy, and @tuturuuu/internal-api backend facades backed by the Rust-owned /api/v1/infrastructure/changelog/slug/:slug GET endpoint plus the Rust-owned public changelog list for adjacent navigation. Browser code does not call protected app APIs or Supabase directly."
+    },
     "page:/:locale/tools/random:apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

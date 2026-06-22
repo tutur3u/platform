@@ -203,6 +203,12 @@ const staticMarketingRoutes = [
   },
 ];
 
+const dynamicNotFoundRoutes = [
+  {
+    path: `/${DEFAULT_LOCALE}/changelog/__e2e_missing_changelog_slug__`,
+  },
+];
+
 const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
 
 const qrAppRedirectLocation =
@@ -318,6 +324,19 @@ test.describe('Public migrated marketing routes', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }).first()
       ).toBeVisible({ timeout: 30_000 });
+      await expectNoPublicRouteRuntimeError(page);
+    });
+  }
+
+  for (const route of dynamicNotFoundRoutes) {
+    test(`preserves public dynamic not-found route ${route.path}`, async ({
+      page,
+    }) => {
+      const response = await page.goto(route.path, {
+        waitUntil: 'domcontentloaded',
+      });
+
+      expect(response?.status()).toBe(404);
       await expectNoPublicRouteRuntimeError(page);
     });
   }
