@@ -179,7 +179,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Aurora forecast GET through the server-owned Supabase REST adapter, preserving statistical_forecast and ml_forecast table reads, date ascending ordering, YYYY-MM-DD date normalization, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts forecast rows."
+          "note": "Rust backend handle_backend_request handles the public Aurora forecast GET through the server-owned Supabase REST adapter, preserving statistical_forecast and ml_forecast table reads, date ascending ordering, YYYY-MM-DD date normalization, no-store JSON responses, and the legacy 500 error body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles protected POST /api/v1/aurora/forecast by preserving the legacy AURORA_EXTERNAL_URL and AURORA_EXTERNAL_WSID config checks, validating the browser Supabase session with Supabase Auth, enforcing the exact @tuturuuu.com email-domain gate, fetching AURORA_EXTERNAL_URL/forecast, inserting normalized statistical and ML forecast rows with the caller token, and returning the legacy success and error JSON bodies."
         }
       }
     },
@@ -188,7 +193,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Aurora ML metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts metric rows."
+          "note": "Rust backend handle_backend_request handles the public Aurora ML metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles protected POST /api/v1/aurora/ml-metrics by preserving the legacy Aurora config checks, Supabase session auth, exact @tuturuuu.com email-domain gate, AURORA_EXTERNAL_URL/ml_metrics fetch, normalized metric-row insert with the caller token, and legacy success and error JSON bodies."
         }
       }
     },
@@ -197,7 +207,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Aurora statistical metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts metric rows."
+          "note": "Rust backend handle_backend_request handles the public Aurora statistical metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles protected POST /api/v1/aurora/statistical-metrics by preserving the legacy Aurora config checks, Supabase session auth, exact @tuturuuu.com email-domain gate, AURORA_EXTERNAL_URL/statistical_metrics fetch, normalized scaled and unscaled metric-row inserts with the caller token, and legacy success and error JSON bodies."
         }
       }
     },

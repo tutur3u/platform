@@ -1010,7 +1010,7 @@ paths:
   /api/v1/aurora/forecast:
     get:
       summary: Legacy-compatible Aurora forecast response
-      description: Migrated replacement for apps/web/src/app/api/v1/aurora/forecast/route.ts GET. The Rust backend reads the public Aurora statistical and ML forecast tables through the server-owned Supabase REST adapter, preserves date-ascending ordering, normalizes forecast date fields to the legacy YYYY-MM-DD response shape, and returns the legacy combined object. POST remains legacy-owned until external Aurora forecast ingestion and write authorization move behind Rust.
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/forecast/route.ts GET. The Rust backend reads the public Aurora statistical and ML forecast tables through the server-owned Supabase REST adapter, preserves date-ascending ordering, normalizes forecast date fields to the legacy YYYY-MM-DD response shape, and returns the legacy combined object.
       responses:
         "200":
           description: Aurora statistical and ML forecast rows.
@@ -1042,7 +1042,57 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, POST
+    post:
+      summary: Legacy-compatible protected Aurora forecast ingestion
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/forecast/route.ts POST. The Rust backend preserves the legacy `AURORA_EXTERNAL_URL` and `AURORA_EXTERNAL_WSID` config checks, revalidates the caller's Supabase session, keeps the exact `@tuturuuu.com` email-domain gate, fetches `AURORA_EXTERNAL_URL/forecast`, inserts statistical and ML forecast rows into Supabase with the caller token, and returns the legacy `{ message, data }` success body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Aurora external forecast data was fetched and stored.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraIngestResponse"
+        "401":
+          description: Caller is missing a valid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthUnauthorized"
+        "403":
+          description: Authenticated caller does not have the legacy Tuturuuu email domain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthForbidden"
+        "500":
+          description: Aurora forecast ingestion failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraIngestMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
   /api/v1/aurora/health:
     post:
       summary: Legacy-compatible protected Aurora health probe
@@ -1097,7 +1147,7 @@ paths:
   /api/v1/aurora/ml-metrics:
     get:
       summary: Legacy-compatible Aurora ML metrics list
-      description: Migrated replacement for apps/web/src/app/api/v1/aurora/ml-metrics/route.ts GET. The Rust backend reads public Aurora ML metric rows through the server-owned Supabase REST adapter and returns the raw legacy row array. POST remains legacy-owned until external Aurora metric ingestion and write authorization move behind Rust.
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/ml-metrics/route.ts GET. The Rust backend reads public Aurora ML metric rows through the server-owned Supabase REST adapter and returns the raw legacy row array.
       responses:
         "200":
           description: Aurora ML metric rows.
@@ -1131,11 +1181,61 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, POST
+    post:
+      summary: Legacy-compatible protected Aurora ML metrics ingestion
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/ml-metrics/route.ts POST. The Rust backend preserves the legacy Aurora config checks, Supabase session auth, exact `@tuturuuu.com` email-domain gate, external `AURORA_EXTERNAL_URL/ml_metrics` fetch, normalized metric-row inserts into Supabase with the caller token, and the legacy `{ message, data }` success body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Aurora external ML metric data was fetched and stored.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraIngestResponse"
+        "401":
+          description: Caller is missing a valid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthUnauthorized"
+        "403":
+          description: Authenticated caller does not have the legacy Tuturuuu email domain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthForbidden"
+        "500":
+          description: Aurora ML metrics ingestion failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraIngestMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
   /api/v1/aurora/statistical-metrics:
     get:
       summary: Legacy-compatible Aurora statistical metrics list
-      description: Migrated replacement for apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts GET. The Rust backend reads public Aurora statistical metric rows through the server-owned Supabase REST adapter and returns the raw legacy row array. POST remains legacy-owned until external Aurora metric ingestion and write authorization move behind Rust.
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts GET. The Rust backend reads public Aurora statistical metric rows through the server-owned Supabase REST adapter and returns the raw legacy row array.
       responses:
         "200":
           description: Aurora statistical metric rows.
@@ -1169,7 +1269,57 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, POST
+    post:
+      summary: Legacy-compatible protected Aurora statistical metrics ingestion
+      description: Migrated replacement for apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts POST. The Rust backend preserves the legacy Aurora config checks, Supabase session auth, exact `@tuturuuu.com` email-domain gate, external `AURORA_EXTERNAL_URL/statistical_metrics` fetch, normalized scaled/unscaled metric-row inserts into Supabase with the caller token, and the legacy `{ message, data }` success body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Aurora external statistical metric data was fetched and stored.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraIngestResponse"
+        "401":
+          description: Caller is missing a valid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthUnauthorized"
+        "403":
+          description: Authenticated caller does not have the legacy Tuturuuu email domain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraHealthForbidden"
+        "500":
+          description: Aurora statistical metrics ingestion failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuroraIngestMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, POST
   /api/v1/infrastructure/ai/models:
     get:
       summary: Legacy-compatible public AI model catalog
@@ -5856,6 +6006,31 @@ components:
           type: string
           examples:
             - Error fetching health
+    AuroraIngestResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+          examples:
+            - Success
+        data:
+          type: object
+          additionalProperties: true
+    AuroraIngestMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Aurora API URL not configured
+            - Aurora workspace ID not configured
+            - Error fetching forecast
+            - Error saving ML metrics
     AuroraMetricsError:
       type: object
       required:

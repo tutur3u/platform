@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-22"
+updatedAt: "2026-06-23"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -127,6 +127,7 @@ bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler
 bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put AURORA_EXTERNAL_WSID --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
@@ -136,9 +137,11 @@ bun wrangler deploy --config apps/backend/wrangler.jsonc
 routes can verify Tuturuuu `ttr_app_` app-session tokens in production-like
 Cloudflare environments. `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are
 required before the Rust-owned Discord cron proxy routes can call the Discord
-app. `AURORA_EXTERNAL_URL` is required before the Rust-owned Aurora health probe
-can call the Aurora service. Wrangler prompts for values; do not place those
-values in `wrangler.jsonc`, `vars`, docs, or shell history.
+app. `AURORA_EXTERNAL_URL` is required before the Rust-owned Aurora health and
+ingest routes can call the Aurora service, and `AURORA_EXTERNAL_WSID` is
+required before Aurora ingest routes can write rows. Wrangler prompts for
+values; do not place those values in `wrangler.jsonc`, `vars`, docs, or shell
+history.
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required backend Worker
 secrets for the Rust-owned contact/profile APIs. They stay server-only: the
@@ -338,7 +341,7 @@ Current inventory:
 - `1,146` route handler artifacts
 - `19` cron handlers
 - `1,524` total tracked route artifacts
-- `280` migrated artifacts, `363` terminal artifacts, and `1,161` remaining
+- `283` migrated artifacts, `366` terminal artifacts, and `1,158` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -456,7 +459,7 @@ First migrated ownership:
 | `GET` / `PATCH` `/api/v1/users/me/default-workspace`                                                                                                                     | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust accepts current-user app-session tokens or revalidated browser Supabase sessions for reads, preserves the legacy `null` fallback when workspace data cannot be resolved, falls back from an inaccessible saved default to the caller's personal workspace, and updates `user_private_details.default_workspace_id` only after validating `{ workspaceId: uuid | null }` and verifying workspace membership with the caller token.                                                                 |
 | `PATCH /api/v1/users/me/full-name`                                                                                                                                       | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust revalidates the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, validates `full_name` as a required JSON string with trimmed length `1..100`, and upserts `user_private_details` with `user_id` fixed to the authenticated user through Supabase REST using the caller token and `on_conflict=user_id`.                                                                                                                                                         |
 | `POST /api/v1/aurora/health`                                                                                                                                             | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust validates the browser Supabase session with Supabase Auth, preserves the exact `@tuturuuu.com` email-domain gate, calls `AURORA_EXTERNAL_URL/health`, and returns the legacy success, auth, forbidden, and upstream-failure JSON bodies.                                                                                                                                                                                                                                                             |
-| `GET /api/v1/aurora/forecast`, `GET /api/v1/aurora/ml-metrics`, `GET /api/v1/aurora/statistical-metrics`                                                                 | `apps/backend` Rust route dispatcher | `route-overrides.json` marks only the read-only `GET` method artifacts `migrated`; Rust reads the public Aurora forecast and metric tables through the server-owned Supabase REST adapter. Forecast reads preserve the legacy combined `{ statistical_forecast, ml_forecast }` object, `date.asc` table ordering, and `YYYY-MM-DD` date shape, while metric reads return the raw legacy row arrays. The external ingest `POST` methods remain `legacy-next`.                                                                                              |
+| `GET` / `POST` `/api/v1/aurora/forecast`, `GET` / `POST` `/api/v1/aurora/ml-metrics`, `GET` / `POST` `/api/v1/aurora/statistical-metrics`                                 | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the Aurora forecast and metrics method artifacts `migrated`; Rust reads public Aurora forecast and metric tables through the server-owned Supabase REST adapter for GET. POST ingest routes preserve the legacy `AURORA_EXTERNAL_URL` and `AURORA_EXTERNAL_WSID` checks, Supabase session revalidation, exact `@tuturuuu.com` email-domain gate, external Aurora fetches, normalized Supabase inserts with the caller token, and legacy success/error JSON bodies.                                                         |
 | `GET /api/v1/infrastructure/changelog`, `GET /api/v1/infrastructure/changelog/:id`, `GET /api/v1/infrastructure/changelog/slug/:slug`                                    | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the list/id `GET` methods and slug route `migrated`; Rust reads `changelog_entries` through the server-owned Supabase REST adapter, validates browser Supabase auth cookies with Supabase Auth before checking root workspace `manage_changelog`, falls back to published-only public reads for anonymous or unauthorized sessions, preserves exact-count list pagination and singular PostgREST detail/slug lookups, and maps `PGRST116` to the legacy `404` body. Changelog writes, publish, and upload remain legacy-owned. |
 | `GET /api/v1/inventory/storefronts/:slug`, `GET /api/v1/inventory/orders/:publicToken`                                                                                    | `apps/backend` Rust route dispatcher | `route-overrides.json` marks both public inventory read endpoints `migrated`; Rust keeps storefront/order data behind private inventory RPCs and service-role private-schema metadata reads, preserves public storefront CDN cache headers, private storefront/order app-session and browser-session membership checks, simulated HMAC order tokens, private no-store cache headers, and legacy `401`/`403`/`404`/`500` JSON bodies. Storefront checkout creation, analytics events, Polar webhooks, and workspace inventory management remain legacy-owned.         |
 | `GET /api/v1/topic-announcement-verifications/:token`                                                                                                                    | `apps/backend` Rust route dispatcher | `route-overrides.json` marks the route `migrated`; Rust decodes the token path segment, hashes it with SHA-256, reads and updates `private.topic_announcement_contact_verifications` through the server-owned Supabase REST adapter, and returns the legacy public HTML pages for verified, unavailable/already-used, expired, and failed links. Workspace Topic Announcements management APIs remain legacy-owned.                                                                                                                                         |
@@ -743,7 +746,7 @@ consumed by the TanStack shell through a Start server function:
 | `GET` / `DELETE` `/api/auth/mfa/totp/factors/:factorId`                                                                                                        | Legacy-compatible Supabase TOTP factor detail/unenrollment routes backed by Auth JS-compatible factor listing and Supabase Auth REST unenrollment.                                                                            |
 | `GET /api/v1/calendar/mock`                                                                                                                                   | Legacy-compatible deterministic mock calendar events migrated from `apps/web` to Rust.                                                                                                                                        |
 | `GET /api/v1/devboxes/cache` and `POST /api/v1/devboxes/cache/prune`                                                                                          | Legacy-compatible devbox cache routes accepting platform CLI app-session access tokens or browser Supabase sessions, requiring root workspace `MEMBER` access, returning the current empty cache list body, and acknowledging prune requests without private devbox table mutations. |
-| `GET /api/v1/aurora/{forecast,ml-metrics,statistical-metrics}`                                                                                                | Legacy-compatible public Aurora forecast and metric readers backed by the Rust server-owned Supabase REST adapter. External Aurora ingest `POST` methods remain legacy-owned.                                                |
+| `GET` / `POST` `/api/v1/aurora/{forecast,ml-metrics,statistical-metrics}`                                                                                      | Legacy-compatible Aurora forecast and metric readers plus protected ingest routes backed by Supabase Auth, the legacy Tuturuuu email-domain gate, external Aurora fetches, and caller-token Supabase inserts.                 |
 | `POST` / `DELETE` `/api/v1/infrastructure/languages`                                                                                                          | Legacy-compatible locale preference cookie route for `NEXT_LOCALE`.                                                                                                                                                           |
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar`                                                                                                            | Legacy-compatible sidebar collapsed preference cookie route for `sidebar-collapsed`.                                                                                                                                          |
 | `POST` / `DELETE` `/api/v1/infrastructure/sidebar/sizes`                                                                                                      | Legacy-compatible sidebar sizing preference cookie route for `sidebar-size` and `main-content-size`.                                                                                                                          |
