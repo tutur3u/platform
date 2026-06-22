@@ -61,7 +61,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.14.2",
     "@tiptap/core": "3.26.1",
-    "@tiptap/extension-collaboration": "3.26.1",
+    "@tiptap/extension-collaboration": "3.27.1",
     "@tiptap/extension-collaboration-caret": "3.26.1",
     "@tiptap/extension-color": "3.26.1",
     "@tiptap/extension-drag-handle-react": "3.26.1",
