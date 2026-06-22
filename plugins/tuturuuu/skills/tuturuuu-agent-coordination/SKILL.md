@@ -57,6 +57,10 @@ uncommitted work; read it when the task spans more than one checkout.
   commands, and a no-stage/no-commit boundary unless the worker explicitly owns
   a commit. Keep a parent coordination note that records lane names, owned
   paths, coordinator-owned generated files, and integration risks.
+- Use read-only audit lanes for discovery and implementation lanes for patches.
+  If two workers need the same file, make one read-only or wait for a recorded
+  handoff before continuing; do not run two active writers against the same
+  unresolved file.
 - Track each lane lifecycle as `pending`, `active`, `handoff`, `integrated`, or
   `closed`. Do not overlap implementation worker write paths unless the parent
   note records an explicit takeover or continuation.
@@ -66,6 +70,10 @@ uncommitted work; read it when the task spans more than one checkout.
 - Treat each lane as a contract: owner, mode, owned paths, excluded paths,
   generated outputs, validation, handoff shape, and commit authority. Read-only
   lanes should return evidence and risks without taking path ownership.
+- Require worker handoffs to include changed files, validation results,
+  generated files intentionally left for the coordinator, unrelated blockers,
+  parity gaps or follow-up risks, and a statement that nothing was staged or
+  committed unless that lane explicitly owned commit authority.
 - For broad migrations, checkpoint after each integrated slice: refresh status,
   close completed subagents in the harness, mark their lanes integrated or
   closed in the parent note, list validation and unrelated blockers, and choose
@@ -137,6 +145,9 @@ uncommitted work; read it when the task spans more than one checkout.
   permission to edit another agent's note.
 - If files are already staged, `claim` and `wait` require `--allow-staged`.
   Inspect the staged scope first and preserve other agents' staged work.
+- Before committing, inspect staged paths and confirm no
+  `tmp/agent-coordination/` or `tmp/agent-coordination/archive/` files are
+  staged. Coordination notes are workflow state, not deliverables.
 
 ## Archiving
 

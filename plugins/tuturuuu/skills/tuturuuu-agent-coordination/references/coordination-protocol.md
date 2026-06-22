@@ -156,6 +156,25 @@ Every delegated lane should have a written contract before the worker starts:
 - `Commit authority`: default `none`; only one lane may own staging/commit
   authority for a checkpoint.
 
+Use these concrete lane patterns:
+
+- **Read-only audit lane.** Owns no files. It may inspect status, source,
+  tests, and active notes, then returns evidence, recommended owned paths, risk,
+  and validation commands. Use this before assigning a risky implementation
+  lane or when another note already owns nearby files.
+- **Implementation lane.** Owns exact source files or a narrow directory. It may
+  edit only those paths and must leave generated fan-in files to the
+  coordinator unless the prompt explicitly assigns them too. Default commit
+  authority is `none`.
+- **Generator lane.** Runs a known generator after all relevant input lanes are
+  stable. It owns both the generator input set and output artifact list, records
+  dirty-input checks, and reports any output that includes unrelated or
+  untracked files instead of committing it silently.
+- **Integration lane.** Usually the coordinator. It reviews worker diffs,
+  applies or rejects handoffs, owns shared generated artifacts, runs combined
+  validation, and is the only lane allowed to claim a commit checkpoint unless a
+  different lane was explicitly assigned commit authority.
+
 Do not assign two implementation workers to overlapping write paths while both
 lanes are active. If a worker is continuing a previous lane, record that explicit
 takeover or continuation in the parent note and mark the previous lane
@@ -185,6 +204,28 @@ important, spawn the typed worker or explorer with the lane context in the
 prompt. If the full thread history is more important, omit the role override and
 state the expected mode in the prompt.
 
+### Disjoint Write Ownership Patterns
+
+Write ownership must be disjoint enough that two workers can make progress
+without guessing which diff wins:
+
+- **Exact-file lane.** Prefer for single API routes, docs pages, scripts, and
+  skill references. The lane may edit only the listed files. If it discovers a
+  needed adjacent file, it asks for a lane update instead of taking it.
+- **Directory lane with exclusions.** Use only when the directory is cohesive
+  and no active note owns files inside it. List excluded generated files,
+  message bundles, lockfiles, and active-note paths explicitly.
+- **Single-file contention.** If two workers need the same file, make one
+  read-only, serialize them through a `handoff`, or have the coordinator apply
+  both changes manually. Do not let two active implementation lanes patch the
+  same file in parallel.
+- **Shared generated output.** Treat fan-in artifacts as coordinator-owned by
+  default. Workers update source inputs and leave `Needs: Coordinator
+  regenerate <artifact>` in their note or handoff.
+- **Staged-file boundary.** A staged path belongs to the staging agent or
+  coordinator until reassigned. Other workers may keep editing disjoint
+  unstaged files but must not stage, unstage, amend, or commit.
+
 Workers should hand off with:
 
 - changed files
@@ -193,6 +234,32 @@ Workers should hand off with:
 - unrelated failures that blocked broader validation
 - known parity gaps or follow-up risks
 - confirmation that nothing was staged or committed
+
+Use this integration handoff format for worker final messages or `handoff`
+notes:
+
+```md
+Status: handoff
+Changed paths:
+- <path>
+Generated/integration paths:
+- <artifact left unchanged for coordinator, or None>
+Validation:
+- `<command>`: pass | fail | blocked (<short reason>)
+Unrelated blockers:
+- <dirty path or failing check outside lane, or None>
+Coordinator needs:
+- <regenerate/review/commit action, or None>
+Risks:
+- <parity gap, race, or follow-up risk, or None>
+Staging/commit:
+- Nothing staged or committed.
+```
+
+If a worker did stage or commit because its prompt explicitly granted commit
+authority, replace the last line with the staged path list, commit hash, and
+commit-window release confirmation. Otherwise, "nothing staged or committed" is
+mandatory.
 
 The coordinator reviews worker diffs before staging. If a worker's handoff
 requires generated artifacts, the coordinator either owns that regeneration or
@@ -445,6 +512,30 @@ parent note before moving on:
 - commit-window release confirmation
 - remaining dirty-path summary and owner assumptions
 
+### Commit-Window Closeout Pattern
+
+Use this sequence for any commit or staged-set change in a shared checkout:
+
+1. Refresh `git status --short` and confirm your owned paths still match the
+   active notes.
+2. Inspect any existing staged files with `git diff --cached --name-only`. If
+   they are not yours, do not proceed unless the owner reassigned them.
+3. Claim or wait for the commit window immediately before touching the index.
+4. Stage only exact deliverable paths. Never use a broad add command from the
+   repo root in a dirty shared checkout.
+5. Re-inspect staged paths and verify no `tmp/agent-coordination/` or
+   `tmp/agent-coordination/archive/` files are staged.
+6. Run the intended commit command or abort if validation/staged ownership is
+   wrong.
+7. Release the commit window immediately after commit success, hook failure, or
+   abort.
+8. Update the coordination note with the closeout packet and remaining dirty
+   owner assumptions.
+
+If a coordination note is accidentally staged while you hold the window, unstage
+that exact note before committing. If you notice it outside a claimed window,
+claim or wait first because unstaging changes the shared index.
+
 Useful operations:
 
 ```bash
@@ -477,7 +568,14 @@ coordination notes.
 - Claim or wait for the commit window before changing the staged set or creating
   commits in a shared checkout.
 - Stage explicit paths only.
-- Inspect staged paths before committing.
+- Inspect staged paths before committing, including:
+
+  ```bash
+  git diff --cached --name-only
+  git diff --cached --name-only -- tmp/agent-coordination
+  ```
+
+  The second command must print nothing for a deliverable commit.
 - Release the commit window after the commit operation completes or aborts.
 - If checks fail on unrelated dirty files, do not fix them for convenience.
   Report the blocker and keep your diff scoped.
@@ -488,3 +586,6 @@ coordination notes.
   with exact-path proof for the staged set. Other workers' dirty files are not
   proof that your staged paths are safe.
 - Never stage `tmp/agent-coordination/` or its `archive/` subtree.
+- Do not include coordination notes in PR patches, release commits, or docs
+  commits. Notes should be marked `done` or `handoff` and, when complete,
+  archived as local workflow state outside the staged deliverable set.
