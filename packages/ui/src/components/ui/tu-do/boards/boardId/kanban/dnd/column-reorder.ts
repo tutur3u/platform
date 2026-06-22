@@ -39,7 +39,10 @@ export function getColumnReorderUpdates(
   }
 
   const statusColumns = [...columns]
-    .filter((column) => column.status === activeColumn.status)
+    .filter(
+      (column) =>
+        column.status === activeColumn.status && !column.is_external_staging
+    )
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
   const activeIndex = statusColumns.findIndex(

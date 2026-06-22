@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/utils/task-list-status';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
+import { invalidateKanbanDeadlineTasks } from '../components/ui/tu-do/boards/boardId/kanban/data/kanban-deadline-query';
 import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
 import {
   dispatchTaskSoundCue,
@@ -81,6 +82,9 @@ export function useTaskActions({
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
+  const invalidateDeadlineTasks = useCallback(() => {
+    void invalidateKanbanDeadlineTasks(queryClient, boardId);
+  }, [boardId, queryClient]);
 
   const resolveWorkspaceIdForTask = useCallback(
     async (taskRecord?: Task) => {
@@ -272,6 +276,7 @@ export function useTaskActions({
           description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
         });
         dispatchTaskActionSound('complete');
+        invalidateDeadlineTasks();
       } catch (error) {
         console.error('Failed to complete external task:', error);
         toast.error('Error', {
@@ -337,6 +342,7 @@ export function useTaskActions({
             closed_at: movedTask?.closed_at,
           },
         });
+        invalidateDeadlineTasks();
 
         toast.success('Task completed', {
           description: `Task marked as done and moved to ${targetCompletionList.name}`,
@@ -395,6 +401,7 @@ export function useTaskActions({
           },
         });
         dispatchTaskActionSound(newClosedState ? 'complete' : 'update');
+        invalidateDeadlineTasks();
       } catch (error) {
         // Rollback on error
         if (previousTasks) {
@@ -422,6 +429,7 @@ export function useTaskActions({
     getWorkspaceId,
     markLocallyMutatedTask,
     mergeLocallyMutatedTask,
+    invalidateDeadlineTasks,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -452,6 +460,7 @@ export function useTaskActions({
           description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
         });
         dispatchTaskActionSound('complete');
+        invalidateDeadlineTasks();
         return;
       }
 
@@ -514,6 +523,7 @@ export function useTaskActions({
         }
       }
       if (successCount === 0) throw new Error('Failed to move any tasks');
+      invalidateDeadlineTasks();
 
       if (failedTaskIds.length > 0) {
         toast.warning('Partial completion update', {
@@ -561,6 +571,7 @@ export function useTaskActions({
     getWorkspaceId,
     markLocallyMutatedTask,
     rollbackTaskIds,
+    invalidateDeadlineTasks,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -590,6 +601,7 @@ export function useTaskActions({
           description: 'Task marked as closed',
         });
         dispatchTaskActionSound('complete');
+        invalidateDeadlineTasks();
         return;
       }
 
@@ -648,6 +660,7 @@ export function useTaskActions({
         }
       }
       if (successCount === 0) throw new Error('Failed to move any tasks');
+      invalidateDeadlineTasks();
 
       if (failedTaskIds.length > 0) {
         toast.warning('Partial close update', {
@@ -692,6 +705,7 @@ export function useTaskActions({
     getWorkspaceId,
     markLocallyMutatedTask,
     rollbackTaskIds,
+    invalidateDeadlineTasks,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -764,6 +778,7 @@ export function useTaskActions({
       }
 
       if (successCount === 0) throw new Error('Failed to delete any tasks');
+      invalidateDeadlineTasks();
 
       if (failedTaskIds.length > 0) {
         toast.warning('Partial delete update', {
@@ -812,6 +827,7 @@ export function useTaskActions({
     broadcast,
     getWorkspaceId,
     restoreDeletedTaskIds,
+    invalidateDeadlineTasks,
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
@@ -1010,6 +1026,7 @@ export function useTaskActions({
             description: `Task moved to ${targetList.name || 'selected list'}`,
           });
           dispatchTaskActionSound(getMoveSoundCue(targetList));
+          invalidateDeadlineTasks();
         } catch (error) {
           console.error('Failed to move external task:', error);
           toast.error('Error', {
@@ -1115,6 +1132,7 @@ export function useTaskActions({
           }
         }
         if (successCount === 0) throw new Error('Failed to move any tasks');
+        invalidateDeadlineTasks();
 
         if (failedTaskIds.length > 0) {
           toast.warning('Partial move update', {
@@ -1161,6 +1179,7 @@ export function useTaskActions({
       markLocallyMutatedTask,
       resolveWorkspaceIdForTask,
       rollbackTaskIds,
+      invalidateDeadlineTasks,
     ]
   );
 
@@ -1243,6 +1262,7 @@ export function useTaskActions({
             task: { id: tid, end_date: newDate },
           });
         }
+        invalidateDeadlineTasks();
 
         if (failedTaskIds.length > 0) {
           toast.warning('Partial due date update', {
@@ -1283,6 +1303,7 @@ export function useTaskActions({
       boardId,
       task,
       broadcast,
+      invalidateDeadlineTasks,
     ]
   );
 
@@ -1575,6 +1596,7 @@ export function useTaskActions({
         // Use the centralized bulk update function from useBulkOperations
         try {
           await bulkUpdateCustomDueDate(date || null);
+          invalidateDeadlineTasks();
         } catch (error) {
           console.error('Bulk custom date update failed', error);
           toast.error('Failed to update due date for selected tasks');
@@ -1610,6 +1632,7 @@ export function useTaskActions({
           broadcast?.('task:upsert', {
             task: { id: task.id, end_date: newDate },
           });
+          invalidateDeadlineTasks();
 
           toast.success('Due date updated', {
             description: newDate
@@ -1639,6 +1662,7 @@ export function useTaskActions({
       queryClient,
       boardId,
       broadcast,
+      invalidateDeadlineTasks,
     ]
   );
 

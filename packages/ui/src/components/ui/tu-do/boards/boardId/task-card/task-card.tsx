@@ -69,7 +69,7 @@ import {
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistance } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -116,6 +116,7 @@ import {
 import { formatSmartDate } from '../../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
 import { sortByDisplayName } from '../board-text-utils';
+import { invalidateKanbanDeadlineTasks } from '../kanban/data/kanban-deadline-query';
 import {
   TaskAssigneesMenu,
   TaskBlockingMenu,
@@ -170,6 +171,8 @@ export interface TaskCardProps {
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
+  deadlineContext?: 'overdue' | 'upcoming';
+  deadlineNow?: number;
   readOnly?: boolean;
 }
 
@@ -312,6 +315,8 @@ function TaskCardInner({
   optimisticUpdateInProgress,
   selectedTasks,
   bulkUpdateCustomDueDate,
+  deadlineContext,
+  deadlineNow,
 }: TaskCardProps) {
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
@@ -889,7 +894,7 @@ function TaskCardInner({
     opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
   };
 
-  const now = new Date();
+  const now = useMemo(() => new Date(deadlineNow ?? Date.now()), [deadlineNow]);
   const shouldRenderDueDate = shouldShowTaskDueDate({
     completedAt: task.completed_at,
     closedAt: task.closed_at,
@@ -909,6 +914,18 @@ function TaskCardInner({
   const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
+  const upcomingDeadlineCountdown =
+    deadlineContext === 'upcoming' && endDate
+      ? formatDistance(endDate, now, {
+          addSuffix: true,
+          locale: dateLocale,
+        })
+      : null;
+  const upcomingDeadlineExactDate = endDate
+    ? format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+        locale: dateLocale,
+      })
+    : null;
   const selectionCheckboxClassName = cn(
     getTaskCardSelectionCheckboxToneClasses(taskList?.color as SupportedColor),
     isOverdue &&
@@ -1145,6 +1162,7 @@ function TaskCardInner({
         )
       );
 
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
       toast.success(tTasks('moved_to_external_tasks'));
     } catch (error) {
       console.error('Failed to move task to external staging:', error);
@@ -1165,6 +1183,7 @@ function TaskCardInner({
         old?.filter((candidate) => candidate.id !== task.id)
       );
 
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
       toast.success(tTasks('removed_from_personal_board'));
     } catch (error) {
       console.error('Failed to remove task from personal board:', error);
@@ -2385,11 +2404,24 @@ function TaskCardInner({
                   <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
                     {t('overdue')}
                   </Badge>
+                ) : upcomingDeadlineCountdown && upcomingDeadlineExactDate ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-4 gap-1 px-1 font-semibold text-[9px]"
+                      >
+                        <Timer className="h-2.5 w-2.5" />
+                        {upcomingDeadlineCountdown}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {upcomingDeadlineExactDate}
+                    </TooltipContent>
+                  </Tooltip>
                 ) : (
                   <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                    {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
-                      locale: dateLocale,
-                    })}
+                    {upcomingDeadlineExactDate}
                   </span>
                 )}
               </div>
@@ -2413,7 +2445,7 @@ function TaskCardInner({
                   <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
                     {t('completed')}{' '}
-                    {formatDistanceToNow(new Date(task.completed_at), {
+                    {formatDistance(new Date(task.completed_at), now, {
                       addSuffix: true,
                       locale: dateLocale,
                     })}
@@ -2437,7 +2469,7 @@ function TaskCardInner({
                   <CircleSlash className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
                     {t('closed')}{' '}
-                    {formatDistanceToNow(new Date(task.closed_at), {
+                    {formatDistance(new Date(task.closed_at), now, {
                       addSuffix: true,
                       locale: dateLocale,
                     })}

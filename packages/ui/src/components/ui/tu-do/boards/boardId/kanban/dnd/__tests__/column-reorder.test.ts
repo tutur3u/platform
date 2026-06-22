@@ -43,6 +43,23 @@ describe('getColumnReorderUpdates', () => {
     expect(getColumnReorderUpdates(columns, 'todo', 'doing')).toBeNull();
   });
 
+  it('excludes synthetic external staging lanes from persisted position repairs', () => {
+    const externalLane = {
+      ...makeList('external', 'not_started', -1),
+      is_external_staging: true,
+    };
+    const columns = [
+      externalLane,
+      makeList('todo', 'not_started', 0),
+      makeList('backlog', 'not_started', 1),
+    ];
+
+    expect(getColumnReorderUpdates(columns, 'backlog', 'todo')).toEqual([
+      { listId: 'backlog', newPosition: 0 },
+      { listId: 'todo', newPosition: 1 },
+    ]);
+  });
+
   it('sorts columns in the same order they are rendered in Kanban', () => {
     const columns = [
       makeList('closed', 'closed', 0),

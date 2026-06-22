@@ -1,7 +1,30 @@
+import type { QueryClient } from '@tanstack/react-query';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
 const KANBAN_DEADLINE_TASK_PAGE_SIZE = 200;
+export const KANBAN_DEADLINE_TASKS_QUERY_KEY = 'kanban-deadline-tasks';
+
+export function getKanbanDeadlineTasksQueryKey(
+  workspaceId: string,
+  boardId: string | null | undefined
+) {
+  return [KANBAN_DEADLINE_TASKS_QUERY_KEY, workspaceId, boardId] as const;
+}
+
+export function invalidateKanbanDeadlineTasks(
+  queryClient: QueryClient,
+  boardId?: string | null
+) {
+  return queryClient.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey;
+      if (!Array.isArray(queryKey)) return false;
+      if (queryKey[0] !== KANBAN_DEADLINE_TASKS_QUERY_KEY) return false;
+      return !boardId || queryKey[2] === boardId;
+    },
+  });
+}
 
 interface ListKanbanDeadlineTasksOptions {
   boardId: string;
