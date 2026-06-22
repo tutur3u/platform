@@ -34,14 +34,17 @@ const WS_ID = 'personal';
 // backend. Keep this list in sync as more routes migrate — it is the regression
 // guard that the fail-closed gate stays wired across the migrated surface.
 const GATED_ROUTES = [
+  'ai-chat/chatbots',
   'calendar',
   'changelog',
   'chat',
   'cron',
+  'education/valsea',
   'inventory',
   'inventory/batches',
   'inventory/categories',
   'inventory/manufacturers',
+  'inventory/storefronts',
   'inventory/suppliers',
   'inventory/units',
   'inventory/warehouses',
