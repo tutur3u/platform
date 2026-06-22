@@ -1587,6 +1587,11 @@
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+    },
+    "page:/:locale/shared/user-profile/:code:apps/web/src/app/[locale]/shared/user-profile/[code]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start owns the public shared user-profile fill page at /:locale/shared/user-profile/:code. The route ports the legacy profile-link loader, noindex head metadata, fail-closed auth redirect for requires_auth links, unavailable shell for 404/410 links, localized form shell, TanStack Query mutations through packages/internal-api facades, and allowlist-scoped prefill behavior. Submit/avatar API endpoints remain separate Rust-backend migration work."
     }
   }
 }
