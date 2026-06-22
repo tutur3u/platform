@@ -66,7 +66,8 @@ export function BoardPublicLinkSection({
   const publicLinkQuery = useQuery({
     queryKey,
     queryFn: () => getWorkspaceTaskBoardPublicLink(wsId, boardId),
-    enabled: open && sectionOpen,
+    enabled: open,
+    staleTime: 60_000,
   });
 
   const enableMutation = useMutation({
@@ -94,6 +95,20 @@ export function BoardPublicLinkSection({
   const publicLink = publicLinkQuery.data?.publicLink ?? null;
   const publicUrl = buildPublicBoardUrl(locale, publicLink);
   const isMutating = enableMutation.isPending || disableMutation.isPending;
+  const statusBadge = publicLinkQuery.isLoading ? (
+    <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      {t('common.loading')}
+    </Badge>
+  ) : publicLink ? (
+    <Badge className="bg-dynamic-green/10 px-2 py-0.5 text-[10px] text-dynamic-green">
+      {t('common.enabled')}
+    </Badge>
+  ) : (
+    <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
+      {t('common.disabled')}
+    </Badge>
+  );
 
   async function copyPublicUrl() {
     if (!publicUrl) return;
@@ -127,11 +142,7 @@ export function BoardPublicLinkSection({
             <span className="min-w-0 flex-1 truncate font-medium text-sm">
               {t('ws-task-boards.share.public.title')}
             </span>
-            {publicLink && (
-              <Badge variant="secondary">
-                {t('ws-task-boards.share.public.active')}
-              </Badge>
-            )}
+            {statusBadge}
             <ChevronDown
               className={cn(
                 'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
@@ -140,7 +151,7 @@ export function BoardPublicLinkSection({
             />
           </button>
         </CollapsibleTrigger>
-        <TooltipProvider delayDuration={500} skipDelayDuration={300}>
+        <TooltipProvider delayDuration={0} skipDelayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
               <button

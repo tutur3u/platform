@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryStates } from 'nuqs';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { BoardActivitySettings } from './board-activity-settings';
 import { BoardCriticalActionsSettings } from './board-critical-actions-settings';
 import { BoardDetailsSettings } from './board-details-settings';
@@ -59,6 +59,7 @@ function BoardSettingsBoardSwitcher({
   wsId: string;
 }) {
   const t = useTranslations();
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [, setSettingsQuery] = useQueryStates(
     {
       settingsBoardId: parseAsString,
@@ -77,7 +78,8 @@ function BoardSettingsBoardSwitcher({
         { pageSize: 100, status: 'all' },
         getBrowserInternalApiOptions()
       ),
-    enabled: Boolean(wsId),
+    enabled: Boolean(wsId && switcherOpen),
+    staleTime: 60_000,
   });
 
   const translateBoardName = useCallback(
@@ -179,22 +181,41 @@ function BoardSettingsBoardSwitcher({
   const selectedBoardName = translateBoardName(board.name);
   const CurrentBoardIcon =
     getIconComponentByKey(board.icon as PlatformIconKey | null) ?? LayoutGrid;
+  const currentStatus = getBoardStatus(board);
+  const statusLabel =
+    currentStatus === 'deleted'
+      ? t('common.deleted')
+      : currentStatus === 'archived'
+        ? t('common.archived')
+        : t('common.active');
 
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-lg border bg-background p-2.5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted/30">
-            <CurrentBoardIcon className="h-5 w-5 text-muted-foreground" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-muted/30">
+            <CurrentBoardIcon className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="min-w-0">
-            <p className="truncate font-medium text-sm">{selectedBoardName}</p>
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate font-medium text-sm">
+                {selectedBoardName}
+              </p>
+              <Badge
+                className={cn(
+                  'shrink-0 px-2 py-0.5 text-[10px]',
+                  currentStatus === 'deleted' &&
+                    'bg-dynamic-red/10 text-dynamic-red',
+                  currentStatus === 'archived' && 'bg-muted text-foreground',
+                  currentStatus === 'active' &&
+                    'bg-dynamic-green/10 text-dynamic-green'
+                )}
+              >
+                {statusLabel}
+              </Badge>
+            </div>
             <p className="text-muted-foreground text-xs">
-              {getBoardStatus(board) === 'deleted'
-                ? t('common.deleted')
-                : getBoardStatus(board) === 'archived'
-                  ? t('common.archived')
-                  : t('common.active')}
+              {t('settings.tasks.board')}
             </p>
           </div>
         </div>
@@ -217,6 +238,7 @@ function BoardSettingsBoardSwitcher({
             if (!nextBoardId || nextBoardId === board.id) return;
             void setSettingsQuery({ settingsBoardId: nextBoardId });
           }}
+          onOpenChange={setSwitcherOpen}
           options={boardOptions}
           placeholder={selectedBoardName}
           searchPlaceholder={t('common.search_boards')}
@@ -235,6 +257,9 @@ export function BoardSettingsPanel({
   wsId: string;
 }) {
   const t = useTranslations();
+  const [activeTab, setActiveTab] = useState<
+    'actions' | 'activity' | 'details' | 'estimation' | 'layout'
+  >('details');
 
   const {
     data: board,
@@ -286,16 +311,22 @@ export function BoardSettingsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <h2 className="font-semibold text-lg">{t('settings.tasks.board')}</h2>
-        <p className="text-muted-foreground text-sm">
-          {board.name || t('common.untitled')}
-        </p>
-      </div>
-
       <BoardSettingsBoardSwitcher board={board} wsId={wsId} />
 
-      <Tabs defaultValue="details" className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) =>
+          setActiveTab(
+            value as
+              | 'actions'
+              | 'activity'
+              | 'details'
+              | 'estimation'
+              | 'layout'
+          )
+        }
+        className="space-y-4"
+      >
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="details">
             {t('settings.tasks.board_details')}
@@ -315,35 +346,45 @@ export function BoardSettingsPanel({
         </TabsList>
 
         <TabsContent value="details">
-          <BoardDetailsSettings
-            board={board}
-            onRefresh={refreshBoard}
-            wsId={wsId}
-          />
+          {activeTab === 'details' && (
+            <BoardDetailsSettings
+              board={board}
+              onRefresh={refreshBoard}
+              wsId={wsId}
+            />
+          )}
         </TabsContent>
         <TabsContent value="layout">
-          <BoardLayoutSettingsSection
-            board={board}
-            onRefresh={refreshBoard}
-            wsId={wsId}
-          />
+          {activeTab === 'layout' && (
+            <BoardLayoutSettingsSection
+              board={board}
+              onRefresh={refreshBoard}
+              wsId={wsId}
+            />
+          )}
         </TabsContent>
         <TabsContent value="estimation">
-          <BoardEstimationSettings
-            board={board}
-            onRefresh={refreshBoard}
-            wsId={wsId}
-          />
+          {activeTab === 'estimation' && (
+            <BoardEstimationSettings
+              board={board}
+              onRefresh={refreshBoard}
+              wsId={wsId}
+            />
+          )}
         </TabsContent>
         <TabsContent value="activity">
-          <BoardActivitySettings boardId={board.id} wsId={wsId} />
+          {activeTab === 'activity' && (
+            <BoardActivitySettings boardId={board.id} wsId={wsId} />
+          )}
         </TabsContent>
         <TabsContent value="actions">
-          <BoardCriticalActionsSettings
-            board={board}
-            onRefresh={refreshBoard}
-            wsId={wsId}
-          />
+          {activeTab === 'actions' && (
+            <BoardCriticalActionsSettings
+              board={board}
+              onRefresh={refreshBoard}
+              wsId={wsId}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -1,12 +1,15 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardHeader } from '../board-header';
 
 const navigationMocks = vi.hoisted(() => ({
   replace: vi.fn(),
+}));
+const internalApiMocks = vi.hoisted(() => ({
+  getWorkspaceTaskBoard: vi.fn(),
 }));
 
 vi.mock('next-intl', () => ({
@@ -42,20 +45,29 @@ vi.mock('@tuturuuu/ui/hooks/use-board-actions', () => ({
 
 vi.mock('@tuturuuu/ui/custom/combobox', () => ({
   Combobox: ({
+    ariaLabel,
     disabled,
+    hideTriggerLabel,
     onChange,
     options,
     placeholder,
     selected,
   }: {
+    ariaLabel?: string;
     disabled?: boolean;
+    hideTriggerLabel?: boolean;
     onChange?: (value: string) => void;
     options: { label: string; value: string }[];
     placeholder?: string;
     selected: string;
   }) => (
     <select
-      aria-label={placeholder}
+      aria-label={
+        ariaLabel ??
+        (hideTriggerLabel
+          ? options.find((option) => option.value === selected)?.label
+          : placeholder)
+      }
       disabled={disabled}
       value={selected}
       onChange={(event) => onChange?.(event.target.value)}
@@ -67,6 +79,12 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
       ))}
     </select>
   ),
+}));
+
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  getWorkspaceTaskBoard: (
+    ...args: Parameters<typeof internalApiMocks.getWorkspaceTaskBoard>
+  ) => internalApiMocks.getWorkspaceTaskBoard(...args),
 }));
 
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
@@ -187,6 +205,10 @@ function renderBoardHeader(
 describe('BoardHeader', () => {
   beforeEach(() => {
     navigationMocks.replace.mockReset();
+    internalApiMocks.getWorkspaceTaskBoard.mockReset();
+    internalApiMocks.getWorkspaceTaskBoard.mockResolvedValue({
+      board: mockBoard,
+    });
   });
 
   it('renders a direct board settings button with compact outline header styling', () => {
@@ -196,8 +218,29 @@ describe('BoardHeader', () => {
       name: 'ws-task-boards.actions.board_settings',
     });
 
-    expect(settingsButton).toHaveClass('border', 'h-7', 'px-1.5');
-    expect(settingsButton).toHaveClass('sm:h-8', 'sm:px-2');
+    expect(settingsButton).toHaveClass('border', 'h-7', 'w-7', 'px-0');
+    expect(settingsButton).toHaveClass('sm:h-8', 'sm:w-8');
+    expect(settingsButton).not.toHaveTextContent(
+      'ws-task-boards.actions.board_settings'
+    );
+  });
+
+  it('prefetches current board settings before opening the dialog', async () => {
+    renderBoardHeader();
+
+    fireEvent.mouseEnter(
+      screen.getByRole('button', {
+        name: 'ws-task-boards.actions.board_settings',
+      })
+    );
+
+    await waitFor(() => {
+      expect(internalApiMocks.getWorkspaceTaskBoard).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1',
+        expect.objectContaining({ baseUrl: expect.any(String) })
+      );
+    });
   });
 
   it('opens contextual board settings through query state', () => {

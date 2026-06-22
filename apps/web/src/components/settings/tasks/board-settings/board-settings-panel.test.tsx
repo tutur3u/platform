@@ -35,11 +35,21 @@ vi.mock('@tuturuuu/ui/tabs', async () => {
     Tabs: ({
       children,
       defaultValue,
+      onValueChange,
+      value,
     }: {
       children: ReactNode;
-      defaultValue: string;
+      defaultValue?: string;
+      onValueChange?: (value: string) => void;
+      value?: string;
     }) => {
-      const [activeValue, setActiveValue] = React.useState(defaultValue);
+      const [uncontrolledValue, setUncontrolledValue] =
+        React.useState(defaultValue);
+      const activeValue = value ?? uncontrolledValue ?? '';
+      const setActiveValue = (nextValue: string) => {
+        setUncontrolledValue(nextValue);
+        onValueChange?.(nextValue);
+      };
 
       return (
         <TabsContext.Provider value={{ activeValue, setActiveValue }}>
@@ -101,6 +111,7 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
     disabled,
     label,
     onChange,
+    onOpenChange,
     options,
     placeholder,
     selected,
@@ -109,12 +120,20 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
     disabled?: boolean;
     label?: ReactNode;
     onChange?: (value: string) => void;
+    onOpenChange?: (open: boolean) => void;
     options: { label: string; value: string }[];
     placeholder?: string;
     selected: string;
   }) => (
     <label>
       <span>{label ?? placeholder}</span>
+      <button
+        aria-label={`open ${ariaLabel ?? placeholder ?? 'combobox'}`}
+        onClick={() => onOpenChange?.(true)}
+        type="button"
+      >
+        open {ariaLabel ?? placeholder ?? 'combobox'}
+      </button>
       <select
         aria-label={ariaLabel ?? placeholder}
         disabled={disabled}
@@ -228,6 +247,19 @@ describe('BoardSettingsPanel', () => {
     renderBoardSettingsPanel();
 
     expect((await screen.findAllByText('Roadmap')).length).toBeGreaterThan(0);
+    expect(listWorkspaceTaskBoardsMock).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'open common.search_boards' })
+    );
+
+    await waitFor(() => {
+      expect(listWorkspaceTaskBoardsMock).toHaveBeenCalledWith(
+        'ws-1',
+        { pageSize: 100, status: 'all' },
+        expect.objectContaining({ baseUrl: expect.any(String) })
+      );
+    });
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'select Launch' })
@@ -256,8 +288,14 @@ describe('BoardSettingsPanel', () => {
   it('renders board layout controls inline in the layout tab', async () => {
     renderBoardSettingsPanel();
 
+    await screen.findByLabelText('ws-task-boards.name');
+
+    expect(
+      screen.queryByTestId('board-layout-settings-content')
+    ).not.toBeInTheDocument();
+
     fireEvent.click(
-      await screen.findByRole('tab', {
+      screen.getByRole('tab', {
         name: 'settings.tasks.board_layout',
       })
     );

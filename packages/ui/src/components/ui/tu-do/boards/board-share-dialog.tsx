@@ -72,7 +72,6 @@ export function BoardShareDialog({
     useState<WorkspaceTaskBoardSharePermission>('view');
   const [membersOpen, setMembersOpen] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
-  const [sharedWithOpen, setSharedWithOpen] = useState(false);
   const initialFocusRef = useRef<HTMLDivElement>(null);
 
   const queryKey = ['task-board-shares', wsId, board.id] as const;
@@ -138,6 +137,35 @@ export function BoardShareDialog({
   });
 
   const shares = sharesQuery.data?.shares ?? [];
+  const membersCount = viewableMembersQuery.data?.members.length;
+  const membersStatusBadge = viewableMembersQuery.isLoading ? (
+    <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      {t('common.loading')}
+    </Badge>
+  ) : typeof membersCount === 'number' ? (
+    <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
+      {membersCount}
+    </Badge>
+  ) : (
+    <Badge variant="outline" className="px-2 py-0.5 text-[10px]">
+      {t('common.workspace')}
+    </Badge>
+  );
+  const guestsStatusBadge = sharesQuery.isLoading ? (
+    <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      {t('common.loading')}
+    </Badge>
+  ) : shares.length ? (
+    <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
+      {shares.length}
+    </Badge>
+  ) : (
+    <Badge variant="outline" className="px-2 py-0.5 text-[10px]">
+      {t('common.none')}
+    </Badge>
+  );
   const canSubmit =
     email.trim().length > 0 &&
     !createMutation.isPending &&
@@ -187,13 +215,7 @@ export function BoardShareDialog({
             title={t('ws-task-boards.share.workspace_members.title')}
             tooltip={t('ws-task-boards.share.workspace_members.tooltip')}
             icon={<Users className="h-4 w-4 text-muted-foreground" />}
-            badge={
-              viewableMembersQuery.data?.members.length ? (
-                <Badge variant="secondary">
-                  {viewableMembersQuery.data.members.length}
-                </Badge>
-              ) : null
-            }
+            statusBadge={membersStatusBadge}
           >
             {viewableMembersQuery.isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -254,124 +276,109 @@ export function BoardShareDialog({
             title={t('ws-task-boards.share.guests.title')}
             tooltip={t('ws-task-boards.share.guests.tooltip')}
             icon={<Users className="h-4 w-4 text-muted-foreground" />}
-            badge={
-              shares.length ? (
-                <Badge variant="secondary">{shares.length}</Badge>
-              ) : null
-            }
+            statusBadge={guestsStatusBadge}
           >
-            <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
-              <Input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder={t('ws-task-boards.share.email_placeholder')}
-              />
-              <Combobox
-                mode="single"
-                options={permissionOptions}
-                selected={permission}
-                onChange={(value) =>
-                  setPermission(value as WorkspaceTaskBoardSharePermission)
-                }
-                placeholder={t('ws-task-boards.share.permission.view')}
-                searchPlaceholder={t('common.search_members')}
-                className="[&_button]:h-9"
-              />
-              <Button
-                type="button"
-                onClick={() => createMutation.mutate()}
-                disabled={!canSubmit}
-              >
-                {createMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  t('common.share')
-                )}
-              </Button>
-            </div>
-          </ShareSection>
+            <div className="space-y-3">
+              <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder={t('ws-task-boards.share.email_placeholder')}
+                />
+                <Combobox
+                  mode="single"
+                  options={permissionOptions}
+                  selected={permission}
+                  onChange={(value) =>
+                    setPermission(value as WorkspaceTaskBoardSharePermission)
+                  }
+                  placeholder={t('ws-task-boards.share.permission.view')}
+                  searchPlaceholder={t('common.search_members')}
+                  className="[&_button]:h-9"
+                />
+                <Button
+                  type="button"
+                  onClick={() => createMutation.mutate()}
+                  disabled={!canSubmit}
+                >
+                  {createMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    t('common.share')
+                  )}
+                </Button>
+              </div>
 
-          <ShareSection
-            open={sharedWithOpen}
-            onOpenChange={setSharedWithOpen}
-            title={t('ws-task-boards.share.shared_with')}
-            tooltip={t('ws-task-boards.share.guests.tooltip')}
-            icon={<Users className="h-4 w-4 text-muted-foreground" />}
-            badge={
-              shares.length ? (
-                <Badge variant="secondary">{shares.length}</Badge>
-              ) : null
-            }
-          >
-            {sharesQuery.isLoading ? (
-              <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-                {t('common.loading')}
-              </div>
-            ) : shares.length === 0 ? (
-              <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-                {t('ws-task-boards.share.empty')}
-              </div>
-            ) : (
-              <div className="divide-y rounded-md border">
-                {shares.map((share) => (
-                  <div
-                    key={share.id}
-                    className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={share.user?.avatar_url ?? undefined}
-                        />
-                        <AvatarFallback>
-                          {getInitials(shareDisplayName(share))}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <div className="truncate font-medium text-sm">
-                          {shareDisplayName(share)}
-                        </div>
-                        <div className="truncate text-muted-foreground text-xs">
-                          {share.email || share.user_id}
+              {sharesQuery.isLoading ? (
+                <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
+                  {t('common.loading')}
+                </div>
+              ) : shares.length === 0 ? (
+                <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
+                  {t('ws-task-boards.share.empty')}
+                </div>
+              ) : (
+                <div className="divide-y rounded-md border">
+                  {shares.map((share) => (
+                    <div
+                      key={share.id}
+                      className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={share.user?.avatar_url ?? undefined}
+                          />
+                          <AvatarFallback>
+                            {getInitials(shareDisplayName(share))}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="truncate font-medium text-sm">
+                            {shareDisplayName(share)}
+                          </div>
+                          <div className="truncate text-muted-foreground text-xs">
+                            {share.email || share.user_id}
+                          </div>
                         </div>
                       </div>
+
+                      <Badge variant="outline" className="w-fit">
+                        {t('common.guest_access')}
+                      </Badge>
+
+                      <Combobox
+                        mode="single"
+                        options={permissionOptions}
+                        selected={share.permission}
+                        onChange={(value) =>
+                          updateMutation.mutate({
+                            shareId: share.id,
+                            nextPermission:
+                              value as WorkspaceTaskBoardSharePermission,
+                          })
+                        }
+                        placeholder={t('ws-task-boards.share.permission.view')}
+                        searchPlaceholder={t('common.search_members')}
+                        className="w-28 [&_button]:h-9"
+                      />
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteMutation.mutate(share.id)}
+                        disabled={deleteMutation.isPending}
+                        aria-label={t('common.remove')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-
-                    <Badge variant="outline" className="w-fit">
-                      {t('common.guest_access')}
-                    </Badge>
-
-                    <Combobox
-                      mode="single"
-                      options={permissionOptions}
-                      selected={share.permission}
-                      onChange={(value) =>
-                        updateMutation.mutate({
-                          shareId: share.id,
-                          nextPermission:
-                            value as WorkspaceTaskBoardSharePermission,
-                        })
-                      }
-                      placeholder={t('ws-task-boards.share.permission.view')}
-                      searchPlaceholder={t('common.search_members')}
-                      className="w-28 [&_button]:h-9"
-                    />
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteMutation.mutate(share.id)}
-                      disabled={deleteMutation.isPending}
-                      aria-label={t('common.remove')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </ShareSection>
         </div>
 

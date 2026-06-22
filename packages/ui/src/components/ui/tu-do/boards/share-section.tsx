@@ -24,7 +24,7 @@ function ShareInfoTooltip({
   label: string;
 }) {
   return (
-    <TooltipProvider delayDuration={500} skipDelayDuration={300}>
+    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -42,21 +42,21 @@ function ShareInfoTooltip({
 }
 
 interface ShareSectionProps {
-  badge?: ReactNode;
   children: ReactNode;
   icon: ReactNode;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  statusBadge: ReactNode;
   title: string;
   tooltip: string;
 }
 
 export function ShareSection({
-  badge,
   children,
   icon,
   onOpenChange,
   open,
+  statusBadge,
   title,
   tooltip,
 }: ShareSectionProps) {
@@ -78,7 +78,7 @@ export function ShareSection({
             <span className="min-w-0 flex-1 truncate font-medium text-sm">
               {title}
             </span>
-            {badge}
+            {statusBadge}
             <ChevronDown
               className={cn(
                 'h-4 w-4 shrink-0 text-muted-foreground transition-transform',

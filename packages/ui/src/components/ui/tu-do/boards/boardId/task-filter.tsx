@@ -29,12 +29,13 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
+import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
@@ -181,6 +182,32 @@ const PRIORITIES: { value: TaskPriority; labelKey: string; color: string }[] = [
   },
   { value: 'low', labelKey: 'tasks.priority_low', color: 'text-dynamic-gray' },
 ];
+
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+  }).format(date);
+}
+
+function formatDateInputValue(date: Date | undefined) {
+  if (!date) return '';
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInputValue(value: string) {
+  if (!value) return undefined;
+
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+
+  return new Date(year, month - 1, day);
+}
 
 function FilterPickerField({
   badge,
@@ -541,36 +568,55 @@ export function TaskFilter({
           selectedSourceWorkspaceIds.length + selectedSourceBoardIds.length
         )
       : 0);
+  const dueDateSummary = filters.dueDateRange
+    ? [
+        filters.dueDateRange.from
+          ? formatShortDate(filters.dueDateRange.from)
+          : null,
+        filters.dueDateRange.to
+          ? formatShortDate(filters.dueDateRange.to)
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' - ') || t('common.due_date')
+    : t('common.due_date');
 
   return (
     <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            size="xs"
-            variant="outline"
-            className={cn(
-              'text-[10px] sm:text-xs',
-              hasFilters && 'border-primary/50 bg-primary/5'
-            )}
-          >
-            <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span className="hidden sm:inline">{t('common.filters')}</span>
-            {hasFilters && (
-              <Badge
-                variant="secondary"
-                className="h-3.5 px-1 text-[9px] sm:h-4 sm:text-[10px]"
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                size="xs"
+                variant="outline"
+                aria-label={t('common.filters')}
+                className={cn(
+                  'relative h-7 w-7 px-0 text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:w-8',
+                  hasFilters && 'border-primary/50 bg-primary/5 text-foreground'
+                )}
               >
-                {filterCount}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
+                <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                {hasFilters && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -top-1 -right-1 h-4 min-w-4 justify-center px-1 text-[9px]"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{t('common.filters')}</TooltipContent>
+        </Tooltip>
         <PopoverContent
-          className="w-[min(22rem,calc(100vw-1rem))] p-0"
+          className="max-h-[min(82dvh,40rem)] w-[min(22rem,calc(100vw-1rem))] overflow-hidden p-0"
           align="end"
+          collisionPadding={8}
+          sideOffset={6}
         >
-          <ScrollArea className="max-h-[min(70dvh,34rem)]">
+          <ScrollArea className="h-[min(76dvh,36rem)]">
             <div className="space-y-3 p-3">
               {currentUserId && (
                 <div className="space-y-1 rounded-md border p-2">
@@ -814,28 +860,67 @@ export function TaskFilter({
                   ) : null
                 }
               >
-                <div className="rounded-md border">
-                  <Calendar
-                    mode="range"
-                    selected={
-                      filters.dueDateRange
-                        ? {
-                            from: filters.dueDateRange.from,
-                            to: filters.dueDateRange.to,
-                          }
-                        : undefined
-                    }
-                    onSelect={(range) =>
-                      onFiltersChange({
-                        ...filters,
-                        dueDateRange: range
-                          ? { from: range.from, to: range.to }
-                          : null,
-                      })
-                    }
-                    numberOfMonths={1}
-                    className="rounded-md border-0"
-                  />
+                <div className="space-y-2">
+                  <div className="flex min-w-0 items-center gap-2 rounded-md border bg-muted/20 px-2 py-1.5 text-muted-foreground text-xs">
+                    <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 truncate">{dueDateSummary}</span>
+                  </div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
+                    <Input
+                      aria-label={t('common.from')}
+                      className="h-9 min-w-0"
+                      type="date"
+                      value={formatDateInputValue(filters.dueDateRange?.from)}
+                      onChange={(event) => {
+                        const nextFrom = parseDateInputValue(
+                          event.target.value
+                        );
+                        const nextTo = filters.dueDateRange?.to;
+
+                        onFiltersChange({
+                          ...filters,
+                          dueDateRange:
+                            nextFrom || nextTo
+                              ? { from: nextFrom, to: nextTo }
+                              : null,
+                        });
+                      }}
+                    />
+                    <Input
+                      aria-label={t('common.to')}
+                      className="h-9 min-w-0"
+                      type="date"
+                      value={formatDateInputValue(filters.dueDateRange?.to)}
+                      onChange={(event) => {
+                        const nextFrom = filters.dueDateRange?.from;
+                        const nextTo = parseDateInputValue(event.target.value);
+
+                        onFiltersChange({
+                          ...filters,
+                          dueDateRange:
+                            nextFrom || nextTo
+                              ? { from: nextFrom, to: nextTo }
+                              : null,
+                        });
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      aria-label={t('common.clear')}
+                      onClick={() =>
+                        onFiltersChange({
+                          ...filters,
+                          dueDateRange: null,
+                        })
+                      }
+                      disabled={!filters.dueDateRange}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </FilterPickerField>
 

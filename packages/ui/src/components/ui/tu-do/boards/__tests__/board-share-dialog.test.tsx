@@ -133,14 +133,13 @@ describe('BoardShareDialog', () => {
     });
   });
 
-  it('starts compact with all sections collapsed and tooltip copy hidden', () => {
+  it('starts compact with all sections collapsed and tooltip copy hidden', async () => {
     renderBoardShareDialog();
 
     for (const title of [
       'ws-task-boards.share.public.title',
       'ws-task-boards.share.workspace_members.title',
       'ws-task-boards.share.guests.title',
-      'ws-task-boards.share.shared_with',
     ]) {
       expect(
         screen.getByRole('button', { name: new RegExp(title) })
@@ -159,8 +158,22 @@ describe('BoardShareDialog', () => {
     expect(
       screen.queryByText('ws-task-boards.share.guests.description')
     ).not.toBeInTheDocument();
-    expect(getWorkspaceTaskBoardPublicLinkMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(getWorkspaceTaskBoardPublicLinkMock).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1'
+      );
+    });
     expect(listWorkspaceTaskBoardViewableMembersMock).not.toHaveBeenCalled();
+
+    expect(await screen.findByText('common.disabled')).toBeInTheDocument();
+    expect(screen.getByText('common.workspace')).toBeInTheDocument();
+    expect(screen.getByText('common.none')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: /ws-task-boards.share.shared_with/,
+      })
+    ).not.toBeInTheDocument();
   });
 
   it('fetches viewable members only when the workspace section opens', async () => {
@@ -202,6 +215,13 @@ describe('BoardShareDialog', () => {
         'board-1'
       );
     });
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', {
+          name: /ws-task-boards.share.guests.title/,
+        })
+      ).toHaveTextContent('1');
+    });
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -224,11 +244,6 @@ describe('BoardShareDialog', () => {
       );
     });
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: /ws-task-boards.share.shared_with/,
-      })
-    );
     expect(await screen.findAllByText('guest@example.com')).toHaveLength(2);
 
     fireEvent.change(

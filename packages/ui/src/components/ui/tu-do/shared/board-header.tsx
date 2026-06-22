@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownAZ,
   ArrowLeft,
@@ -20,6 +21,7 @@ import {
   X,
   Zap,
 } from '@tuturuuu/icons';
+import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -83,11 +85,20 @@ function ToolbarTooltip({
   label: string;
 }) {
   return (
-    <Tooltip delayDuration={350}>
+    <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+const toolbarButtonClass =
+  'h-7 w-7 px-0 text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:w-8';
+
+function getBrowserInternalApiOptions() {
+  return typeof window !== 'undefined'
+    ? { baseUrl: window.location.origin }
+    : undefined;
 }
 
 export function BoardHeader({
@@ -113,6 +124,7 @@ export function BoardHeader({
   titlePrefix,
 }: Props) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
@@ -205,6 +217,23 @@ export function BoardHeader({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  function prefetchBoardSettings() {
+    if (!managerControlsVisible) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: ['task-board-settings', workspaceId, board.id],
+      queryFn: async () => {
+        const payload = await getWorkspaceTaskBoard(
+          workspaceId,
+          board.id,
+          getBrowserInternalApiOptions()
+        );
+        return payload.board;
+      },
+      staleTime: 30_000,
+    });
+  }
+
   function handleSmartFocus() {
     setIsLoading(true);
 
@@ -284,17 +313,17 @@ export function BoardHeader({
     {
       value: 'all',
       label: t('common.all'),
-      icon: <LayoutGrid className="h-3.5 w-3.5 text-foreground" />,
+      icon: <LayoutGrid className="h-3.5 w-3.5" />,
     },
     {
       value: 'active',
       label: t('common.active'),
-      icon: <Play className="h-3.5 w-3.5 text-dynamic-green" />,
+      icon: <Play className="h-3.5 w-3.5" />,
     },
     {
       value: 'not_started',
       label: t('common.backlog'),
-      icon: <Clock className="h-3.5 w-3.5 text-dynamic-orange" />,
+      icon: <Clock className="h-3.5 w-3.5" />,
     },
   ];
   const viewComboboxOptions = viewOptions.map(([view, config]) => {
@@ -318,7 +347,7 @@ export function BoardHeader({
       description: filters.sortBy
         ? t('ws-task-boards.filters.sort_options.clear_sorting')
         : undefined,
-      icon: <ArrowUpAZ className="h-3.5 w-3.5 text-muted-foreground" />,
+      icon: <ArrowUpAZ className="h-3.5 w-3.5" />,
       muted: !filters.sortBy,
     },
     {
@@ -326,62 +355,62 @@ export function BoardHeader({
       label: `${t('ws-task-boards.filters.sort.name')} · ${t(
         'ws-task-boards.filters.sort_order.asc'
       )}`,
-      icon: <ArrowUpAZ className="h-3.5 w-3.5 text-dynamic-blue" />,
+      icon: <ArrowUpAZ className="h-3.5 w-3.5" />,
     },
     {
       value: 'name-desc',
       label: `${t('ws-task-boards.filters.sort.name')} · ${t(
         'ws-task-boards.filters.sort_order.desc'
       )}`,
-      icon: <ArrowDownAZ className="h-3.5 w-3.5 text-dynamic-purple" />,
+      icon: <ArrowDownAZ className="h-3.5 w-3.5" />,
     },
     {
       value: 'priority-high',
       label: t('ws-task-boards.filters.sort_options.high_to_low'),
       description: t('ws-task-boards.filters.sort_options.priority'),
-      icon: <Flag className="h-3.5 w-3.5 text-dynamic-red" />,
+      icon: <Flag className="h-3.5 w-3.5" />,
     },
     {
       value: 'priority-low',
       label: t('ws-task-boards.filters.sort_options.low_to_high'),
       description: t('ws-task-boards.filters.sort_options.priority'),
-      icon: <Flag className="h-3.5 w-3.5 text-dynamic-gray" />,
+      icon: <Flag className="h-3.5 w-3.5" />,
     },
     {
       value: 'due-date-asc',
       label: t('ws-task-boards.filters.sort_options.soonest_first'),
       description: t('ws-task-boards.filters.sort_options.due_date'),
-      icon: <CalendarDays className="h-3.5 w-3.5 text-dynamic-orange" />,
+      icon: <CalendarDays className="h-3.5 w-3.5" />,
     },
     {
       value: 'due-date-desc',
       label: t('ws-task-boards.filters.sort_options.latest_first'),
       description: t('ws-task-boards.filters.sort_options.due_date'),
-      icon: <CalendarDays className="h-3.5 w-3.5 text-dynamic-blue" />,
+      icon: <CalendarDays className="h-3.5 w-3.5" />,
     },
     {
       value: 'created-date-desc',
       label: t('ws-task-boards.filters.sort_options.newest_first'),
       description: t('ws-task-boards.filters.sort.created_at'),
-      icon: <Clock className="h-3.5 w-3.5 text-dynamic-green" />,
+      icon: <Clock className="h-3.5 w-3.5" />,
     },
     {
       value: 'created-date-asc',
       label: t('ws-task-boards.filters.sort_options.oldest_first'),
       description: t('ws-task-boards.filters.sort.created_at'),
-      icon: <Clock className="h-3.5 w-3.5 text-muted-foreground" />,
+      icon: <Clock className="h-3.5 w-3.5" />,
     },
     {
       value: 'estimation-high',
       label: t('ws-task-boards.filters.sort_options.highest_first'),
       description: t('ws-task-boards.filters.sort_options.estimate'),
-      icon: <Gauge className="h-3.5 w-3.5 text-dynamic-purple" />,
+      icon: <Gauge className="h-3.5 w-3.5" />,
     },
     {
       value: 'estimation-low',
       label: t('ws-task-boards.filters.sort_options.lowest_first'),
       description: t('ws-task-boards.filters.sort_options.estimate'),
-      icon: <Gauge className="h-3.5 w-3.5 text-dynamic-cyan" />,
+      icon: <Gauge className="h-3.5 w-3.5" />,
     },
   ];
   const selectedListStatusOption =
@@ -497,10 +526,10 @@ export function BoardHeader({
                 onClick={handleSmartFocus}
                 disabled={isLoading}
                 className={cn(
-                  'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
+                  toolbarButtonClass,
                   isSmartFocusActive
-                    ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
-                    : 'text-muted-foreground hover:text-dynamic-yellow'
+                    ? 'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10'
+                    : 'hover:bg-accent'
                 )}
                 aria-label={
                   isSmartFocusActive
@@ -511,7 +540,7 @@ export function BoardHeader({
                 <Zap
                   className={cn(
                     'h-3.5 w-3.5',
-                    isSmartFocusActive && 'fill-current'
+                    isSmartFocusActive && 'fill-current text-foreground'
                   )}
                 />
               </Button>
@@ -526,18 +555,13 @@ export function BoardHeader({
                 size="xs"
                 onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
                 className={cn(
-                  'h-7 px-1.5 sm:h-8 sm:px-2',
+                  toolbarButtonClass,
                   isMultiSelectMode &&
-                    'bg-primary/10 text-primary hover:bg-primary/20'
+                    'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10'
                 )}
                 aria-label={t('common.choose_tasks')}
               >
-                <CopyCheck
-                  className={cn(
-                    'h-3.5 w-3.5',
-                    isMultiSelectMode && 'text-primary'
-                  )}
-                />
+                <CopyCheck className="h-3.5 w-3.5" />
               </Button>
             </ToolbarTooltip>
           )}
@@ -552,17 +576,13 @@ export function BoardHeader({
             }
             ariaLabel={selectedListStatusOption?.label ?? t('common.all')}
             contentWidth="sm"
-            label={
-              <span className="hidden max-w-20 truncate text-[10px] sm:text-xs lg:inline">
-                {selectedListStatusOption?.label ?? t('common.all')}
-              </span>
-            }
+            hideTriggerLabel
             placeholder={t('common.all')}
             searchPlaceholder={t('common.search_tasks')}
             showChevron={false}
             triggerMode="compact"
             className={cn(
-              'w-auto [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 sm:[&_button]:h-8 sm:[&_button]:min-w-8 sm:[&_button]:px-2',
+              'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8',
               listStatusFilter !== 'all' &&
                 '[&_button]:border-primary/50 [&_button]:bg-primary/5'
             )}
@@ -578,16 +598,12 @@ export function BoardHeader({
               selectedViewOption?.label ?? viewConfig[activeView].label
             }
             contentWidth="md"
-            label={
-              <span className="hidden max-w-24 truncate text-[10px] sm:text-xs xl:inline">
-                {selectedViewOption?.label ?? viewConfig[activeView].label}
-              </span>
-            }
+            hideTriggerLabel
             placeholder={viewConfig[activeView].label}
             searchPlaceholder={t('common.search_tasks')}
             showChevron={false}
             triggerMode="compact"
-            className="w-auto [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 sm:[&_button]:h-8 sm:[&_button]:min-w-8 sm:[&_button]:px-2"
+            className="w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8"
           />
 
           {/* Task Filter */}
@@ -614,17 +630,13 @@ export function BoardHeader({
             }
             ariaLabel={selectedSortOption?.label ?? t('common.sort')}
             contentWidth="md"
-            label={
-              <span className="hidden max-w-24 truncate text-[10px] sm:text-xs xl:inline">
-                {selectedSortOption?.label ?? t('common.sort')}
-              </span>
-            }
+            hideTriggerLabel
             placeholder={t('common.sort')}
             searchPlaceholder={t('common.search_tasks')}
             showChevron={false}
             triggerMode="compact"
             className={cn(
-              'w-auto [&_button]:h-7 [&_button]:min-w-7 [&_button]:px-1.5 sm:[&_button]:h-8 sm:[&_button]:min-w-8 sm:[&_button]:px-2',
+              'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8',
               filters.sortBy &&
                 '[&_button]:border-primary/50 [&_button]:bg-primary/5'
             )}
@@ -636,13 +648,11 @@ export function BoardHeader({
                 type="button"
                 size="xs"
                 variant="outline"
+                className={toolbarButtonClass}
                 onClick={() => setPlannerOpen(true)}
                 aria-label={t('ws-task-plans.planner')}
               >
                 <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span className="hidden text-[10px] sm:text-xs md:inline">
-                  {t('ws-task-plans.planner')}
-                </span>
               </Button>
             </ToolbarTooltip>
           )}
@@ -653,13 +663,11 @@ export function BoardHeader({
                 type="button"
                 size="xs"
                 variant="outline"
+                className={toolbarButtonClass}
                 onClick={() => setShareBoardOpen(true)}
                 aria-label={t('ws-task-boards.share.action')}
               >
                 <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span className="hidden text-[10px] sm:text-xs md:inline">
-                  {t('common.share')}
-                </span>
               </Button>
             </ToolbarTooltip>
           )}
@@ -671,14 +679,14 @@ export function BoardHeader({
                 type="button"
                 variant="outline"
                 size="xs"
-                className="h-7 px-1.5 text-muted-foreground sm:h-8 sm:px-2"
+                className={toolbarButtonClass}
+                onFocus={prefetchBoardSettings}
+                onMouseEnter={prefetchBoardSettings}
                 onClick={openBoardSettings}
+                onPointerDown={prefetchBoardSettings}
                 aria-label={t('ws-task-boards.actions.board_settings')}
               >
                 <Settings className="h-3.5 w-3.5" />
-                <span className="hidden text-[10px] sm:text-xs xl:inline">
-                  {t('ws-task-boards.actions.board_settings')}
-                </span>
               </Button>
             </ToolbarTooltip>
           )}

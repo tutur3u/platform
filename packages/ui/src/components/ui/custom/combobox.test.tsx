@@ -163,11 +163,12 @@ describe('Combobox', () => {
     expect(screen.getByTestId('alpha-option-icon')).toBeInTheDocument();
   });
 
-  it('supports compact accessible triggers with wider popover content', () => {
+  it('supports compact accessible icon-only triggers with wider popover content', () => {
     render(
       <Combobox
         ariaLabel="Compact picker"
         contentWidth="md"
+        hideTriggerLabel
         label={<span>Alpha compact</span>}
         options={[
           {
@@ -183,16 +184,42 @@ describe('Combobox', () => {
       />
     );
 
-    expect(
-      screen.getByRole('combobox', { name: 'Compact picker' })
-    ).toHaveTextContent('Alpha compact');
+    const trigger = screen.getByRole('combobox', { name: 'Compact picker' });
+    expect(trigger).toHaveClass('aspect-square', 'px-0');
+    expect(screen.queryByText('Alpha compact')).not.toBeInTheDocument();
     expect(screen.getByTestId('alpha-compact-icon')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('combobox', { name: 'Compact picker' }));
+    fireEvent.click(trigger);
 
     expect(document.querySelector('[data-slot="popover-content"]')).toHaveClass(
       'w-80'
     );
+  });
+
+  it('reports popover open changes when the trigger opens and a single option closes it', async () => {
+    const onChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <Combobox
+        onChange={onChange}
+        onOpenChange={onOpenChange}
+        options={options}
+        placeholder="Pick item"
+        selected=""
+      />
+    );
+
+    openCombobox();
+
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+
+    fireEvent.click(screen.getByText('Beta'));
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith('beta');
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
   });
 
   it('renders grouped options and non-clipped descriptions', () => {

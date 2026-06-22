@@ -78,6 +78,8 @@ interface ComboboxProps {
   showChevron?: boolean;
   /** Trigger layout mode */
   triggerMode?: ComboboxTriggerMode;
+  /** Hide the visible trigger label while preserving the accessible label */
+  hideTriggerLabel?: boolean;
   /** Width preset for the popover content */
   contentWidth?: ComboboxContentWidth;
   /** Additional class name for the popover content */
@@ -92,6 +94,8 @@ interface ComboboxProps {
   onCreate?: (value: string) => unknown | Promise<unknown>;
   /** Callback when search input changes */
   onSearchChange?: (value: string) => void;
+  /** Callback when the popover opens or closes */
+  onOpenChange?: (open: boolean) => void;
   /** Whether there are more options to load */
   hasMore?: boolean;
   /** Callback when the options list scrolls near the end */
@@ -126,6 +130,7 @@ export function Combobox({
   showSelectedIcon = true,
   showChevron = true,
   triggerMode = 'default',
+  hideTriggerLabel = false,
   contentWidth = 'trigger',
   contentClassName,
   className,
@@ -133,6 +138,7 @@ export function Combobox({
   useFirstValueAsDefault = false,
   onCreate,
   onSearchChange,
+  onOpenChange,
   hasMore = false,
   onLoadMore,
   loadingMore = false,
@@ -195,6 +201,14 @@ export function Combobox({
     }
   }, [open]);
 
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      onOpenChange?.(nextOpen);
+    },
+    [onOpenChange]
+  );
+
   const handleListScroll = React.useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
       if (!hasMore || loadingMore || !onLoadMore) return;
@@ -256,7 +270,7 @@ export function Combobox({
             disabled={action.disabled}
             onSelect={() => {
               action.onSelect();
-              setOpen(false);
+              handleOpenChange(false);
               setQuery('');
             }}
             className="font-medium text-primary [&_svg]:text-primary"
@@ -287,7 +301,7 @@ export function Combobox({
           }
         }
         if (mode === 'single') {
-          setOpen(false);
+          handleOpenChange(false);
         }
       }}
     >
@@ -396,7 +410,7 @@ export function Combobox({
     try {
       const result = await onCreate(trimmedQuery);
       commitCreatedValue(result);
-      setOpen(false);
+      handleOpenChange(false);
       setQuery('');
     } catch {
       // Keep the popover open so callers can surface their own error UI.
@@ -404,11 +418,11 @@ export function Combobox({
       createInFlightRef.current = false;
       setCreating(false);
     }
-  }, [commitCreatedValue, onCreate, trimmedQuery]);
+  }, [commitCreatedValue, handleOpenChange, onCreate, trimmedQuery]);
 
   return (
     <div className={cn('block min-w-0', className)}>
-      <Popover open={open} onOpenChange={setOpen} modal={true}>
+      <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -421,6 +435,7 @@ export function Combobox({
               triggerMode === 'compact'
                 ? 'w-auto justify-center gap-1.5'
                 : 'w-full justify-between',
+              hideTriggerLabel && 'aspect-square px-0',
               !selectedLabel && 'text-muted-foreground'
             )}
             disabled={disabled}
@@ -458,28 +473,32 @@ export function Combobox({
                     : selectedOption.icon}
                 </span>
               )}
-              <span className="min-w-0 flex-1 truncate text-left">
-                {label ? (
-                  label
-                ) : (
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        'truncate',
-                        selectedOption?.muted && 'text-muted-foreground'
-                      )}
-                      style={
-                        selectedOption?.color
-                          ? { color: selectedOption.color }
-                          : undefined
-                      }
-                    >
-                      {selectedLabel ?? placeholder}
+              {hideTriggerLabel ? (
+                <span className="sr-only">{selectedLabel ?? placeholder}</span>
+              ) : (
+                <span className="min-w-0 flex-1 truncate text-left">
+                  {label ? (
+                    label
+                  ) : (
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          'truncate',
+                          selectedOption?.muted && 'text-muted-foreground'
+                        )}
+                        style={
+                          selectedOption?.color
+                            ? { color: selectedOption.color }
+                            : undefined
+                        }
+                      >
+                        {selectedLabel ?? placeholder}
+                      </span>
+                      {selectedOption?.badge}
                     </span>
-                    {selectedOption?.badge}
-                  </span>
-                )}
-              </span>
+                  )}
+                </span>
+              )}
             </span>
             {showChevron && (
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
