@@ -530,6 +530,42 @@ describe('BoardViews', () => {
     });
   });
 
+  it('persists deadline section collapse state per board and section', async () => {
+    window.localStorage.setItem(
+      'task-board-deadline-section-collapsed:board-1:overdue',
+      'true'
+    );
+
+    renderBoardViews();
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: true,
+          upcoming: false,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('upcoming', true);
+    });
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem(
+          'task-board-deadline-section-collapsed:board-1:upcoming'
+        )
+      ).toBe('true');
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: true,
+          upcoming: true,
+        })
+      );
+    });
+  });
+
   it('excludes deleted lists from active board views and create shortcuts', () => {
     const listsWithDeletedFirst: TaskList[] = [
       {

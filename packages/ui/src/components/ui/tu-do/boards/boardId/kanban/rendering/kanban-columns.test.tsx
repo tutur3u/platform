@@ -403,6 +403,115 @@ describe('KanbanColumns', () => {
     expect(
       externalCardProps.availableLists.map((list: TaskList) => list.id)
     ).toEqual(['list-1', 'list-2']);
+    expect(externalCardProps).toEqual(
+      expect.objectContaining({
+        deadlineContext: 'upcoming',
+      })
+    );
+  });
+
+  it('renders collapsed deadline sections with counts and expand labels', () => {
+    render(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+        deadlineLabels={{
+          expandSection: (name) => `Expand ${name}`,
+          overdue: 'Overdue',
+          upcoming: 'Upcoming',
+        }}
+        deadlineSections={{
+          overdue: [
+            task({
+              end_date: '2026-05-06T00:00:00.000Z',
+              id: 'overdue-task',
+              list_id: 'list-1',
+              name: 'Overdue task',
+            }),
+          ],
+          upcoming: [],
+        }}
+        deadlineSectionsCollapsed={{ overdue: true }}
+      />
+    );
+
+    const collapsedOverdue = screen.getByTestId(
+      'kanban-deadline-section-overdue-collapsed'
+    );
+
+    expect(collapsedOverdue).toHaveTextContent('Overdue');
+    expect(collapsedOverdue).toHaveTextContent('1');
+    expect(
+      screen.getByRole('button', { name: 'Expand Overdue' })
+    ).toBeInTheDocument();
+  });
+
+  it('passes deadline tick props to upcoming deadline cards', () => {
+    render(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+        deadlineLabels={{
+          overdue: 'Overdue',
+          upcoming: 'Upcoming',
+        }}
+        deadlineNow={1_779_840_000_000}
+        deadlineSections={{
+          overdue: [],
+          upcoming: [
+            task({
+              end_date: '2026-06-01T00:00:00.000Z',
+              id: 'upcoming-task',
+              list_id: 'list-1',
+              name: 'Upcoming task',
+            }),
+          ],
+        }}
+      />
+    );
+
+    const upcomingCardProps = taskCardMock.mock.calls.find(
+      ([props]) => props.task.id === 'upcoming-task'
+    )?.[0];
+
+    expect(upcomingCardProps).toEqual(
+      expect.objectContaining({
+        deadlineContext: 'upcoming',
+        deadlineNow: 1_779_840_000_000,
+      })
+    );
   });
 
   it('omits deadline panels when both deadline sections are empty', () => {

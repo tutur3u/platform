@@ -32,6 +32,10 @@ import {
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
+import type {
+  KanbanDeadlineCollapsedState,
+  KanbanDeadlineSection,
+} from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { useTaskDialog } from '../hooks/useTaskDialog';
@@ -50,6 +54,8 @@ const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
   'personal-board-external-tasks-collapsed';
 const CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
   'task-board-closed-list-collapsed';
+const DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX =
+  'task-board-deadline-section-collapsed';
 const DEFAULT_TASK_FILTERS: TaskFilters = {
   labels: [],
   assignees: [],
@@ -77,6 +83,13 @@ function hasAssignedExternalTasks(tasks: Task[], boardId: string) {
 
 function getClosedTaskListCollapsedStorageKey(boardId: string, listId: string) {
   return `${CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
+}
+
+function getDeadlineSectionCollapsedStorageKey(
+  boardId: string,
+  section: KanbanDeadlineSection
+) {
+  return `${DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX}:${boardId}:${section}`;
 }
 
 function taskMatchesLocalFilters(
@@ -246,6 +259,8 @@ export function BoardViews({
   const [closedTaskListsCollapsed, setClosedTaskListsCollapsed] = useState<
     Record<string, boolean>
   >({});
+  const [deadlineSectionsCollapsed, setDeadlineSectionsCollapsed] =
+    useState<KanbanDeadlineCollapsedState>({});
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
@@ -522,6 +537,45 @@ export function BoardViews({
     [board.id]
   );
 
+  useEffect(() => {
+    setDeadlineSectionsCollapsed((previous) => {
+      const next: KanbanDeadlineCollapsedState = {};
+
+      for (const section of ['overdue', 'upcoming'] as const) {
+        const storedValue =
+          typeof window === 'undefined'
+            ? null
+            : window.localStorage.getItem(
+                getDeadlineSectionCollapsedStorageKey(board.id, section)
+              );
+
+        next[section] =
+          storedValue === null
+            ? (previous[section] ?? false)
+            : storedValue === 'true';
+      }
+
+      return next;
+    });
+  }, [board.id]);
+
+  const handleDeadlineSectionCollapsedChange = useCallback(
+    (section: KanbanDeadlineSection, collapsed: boolean) => {
+      setDeadlineSectionsCollapsed((previous) => ({
+        ...previous,
+        [section]: collapsed,
+      }));
+
+      if (typeof window === 'undefined') return;
+
+      window.localStorage.setItem(
+        getDeadlineSectionCollapsedStorageKey(board.id, section),
+        String(collapsed)
+      );
+    },
+    [board.id]
+  );
+
   const externalStagingList = useMemo<TaskList | null>(() => {
     if (!workspace.personal) return null;
 
@@ -789,6 +843,10 @@ export function BoardViews({
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
+            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            onDeadlineSectionCollapsedChange={
+              handleDeadlineSectionCollapsedChange
+            }
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
             readOnly={readOnly}
           />
@@ -833,6 +891,10 @@ export function BoardViews({
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
+            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            onDeadlineSectionCollapsedChange={
+              handleDeadlineSectionCollapsedChange
+            }
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
             readOnly={readOnly}
           />

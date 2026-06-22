@@ -33,7 +33,10 @@ import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
 import { BulkDeleteDialog } from './kanban/bulk/bulk-delete-dialog';
 import { useBulkOperations } from './kanban/bulk/bulk-operations';
-import { listKanbanDeadlineTasks } from './kanban/data/kanban-deadline-query';
+import {
+  getKanbanDeadlineTasksQueryKey,
+  listKanbanDeadlineTasks,
+} from './kanban/data/kanban-deadline-query';
 import { useAppliedSets } from './kanban/data/use-applied-sets';
 import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
@@ -42,6 +45,10 @@ import { DragPreview } from './kanban/dnd/drag-preview';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
+import type {
+  KanbanDeadlineCollapsedState,
+  KanbanDeadlineSection,
+} from './kanban/rendering/kanban-deadline-panels';
 import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-tasks';
 import { KanbanSkeleton } from './kanban/rendering/kanban-skeleton';
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
@@ -61,6 +68,8 @@ const kanbanCollisionDetection: CollisionDetection = (args) => {
   return closestCenter(args);
 };
 
+const DEADLINE_REFRESH_INTERVAL_MS = 60_000;
+
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
@@ -76,6 +85,11 @@ interface Props {
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
+  deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
+  onDeadlineSectionCollapsedChange?: (
+    section: KanbanDeadlineSection,
+    collapsed: boolean
+  ) => void;
   onBulkSelectionActiveChange?: (active: boolean) => void;
   readOnly?: boolean;
 }
@@ -94,6 +108,8 @@ export function KanbanBoard({
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
+  deadlineSectionsCollapsed,
+  onDeadlineSectionCollapsedChange,
   onBulkSelectionActiveChange,
   readOnly = false,
 }: Props) {
@@ -106,6 +122,7 @@ export function KanbanBoard({
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCustomDateOpen, setBulkCustomDateOpen] = useState(false);
+  const [deadlineNow, setDeadlineNow] = useState(() => Date.now());
 
   // Search state
   const [labelSearchQuery, setLabelSearchQuery] = useState('');
@@ -141,7 +158,7 @@ export function KanbanBoard({
         boardId: boardId ?? '',
         workspaceId,
       }),
-    queryKey: ['kanban-deadline-tasks', workspaceId, boardId],
+    queryKey: getKanbanDeadlineTasksQueryKey(workspaceId, boardId),
     staleTime: 30_000,
   });
   const persistListPositions = useCallback(
@@ -165,7 +182,17 @@ export function KanbanBoard({
     title: list.name,
   }));
 
-  const orderedColumns = useMemo(() => sortKanbanColumns(columns), [columns]);
+  const orderedColumns = useMemo(() => {
+    const sortedColumns = sortKanbanColumns(columns);
+    const externalColumns = sortedColumns.filter(
+      (column) => column.is_external_staging
+    );
+    const realColumns = sortedColumns.filter(
+      (column) => !column.is_external_staging
+    );
+
+    return [...externalColumns, ...realColumns];
+  }, [columns]);
   const orderedRealColumns = useMemo(
     () => orderedColumns.filter((column) => !column.is_external_staging),
     [orderedColumns]
@@ -179,12 +206,15 @@ export function KanbanBoard({
       buildKanbanDeadlineSections({
         deadlineTasks,
         lists: orderedColumns,
+        now: new Date(deadlineNow),
         visibleTasks: tasks,
       }),
-    [deadlineTasks, orderedColumns, tasks]
+    [deadlineNow, deadlineTasks, orderedColumns, tasks]
   );
   const deadlineLabels = useMemo(
     () => ({
+      collapseSection: (name: string) => tTasks('collapse_task_list', { name }),
+      expandSection: (name: string) => tTasks('expand_task_list', { name }),
       overdue: tTasks('overdue'),
       upcoming: tTasks('upcoming'),
     }),
@@ -201,6 +231,16 @@ export function KanbanBoard({
   useEffect(() => {
     onBulkSelectionActiveChange?.(selectedTasks.size > 0);
   }, [onBulkSelectionActiveChange, selectedTasks.size]);
+
+  useEffect(() => {
+    if (readOnly) return;
+
+    const interval = window.setInterval(() => {
+      setDeadlineNow(Date.now());
+    }, DEADLINE_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [readOnly]);
 
   useEffect(
     () => () => {
@@ -460,6 +500,9 @@ export function KanbanBoard({
             columnsId={columnsId}
             deadlineLabels={deadlineLabels}
             deadlineSections={deadlineSections}
+            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            deadlineNow={deadlineNow}
+            onDeadlineSectionCollapsedChange={onDeadlineSectionCollapsedChange}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
             onTaskListCollapsedChange={onTaskListCollapsedChange}
             readOnly={readOnly}

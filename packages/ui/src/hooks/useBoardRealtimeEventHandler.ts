@@ -188,6 +188,16 @@ function invalidateTaskMembershipQueries(
   void queryClient.invalidateQueries({
     queryKey: ['task-list-counts', boardId],
   });
+  void queryClient.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey;
+      return (
+        Array.isArray(queryKey) &&
+        queryKey[0] === 'kanban-deadline-tasks' &&
+        queryKey[2] === boardId
+      );
+    },
+  });
   void queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
   void queryClient.invalidateQueries({ queryKey: ['my-completed-tasks'] });
 }
@@ -342,6 +352,7 @@ export function useBoardRealtimeEventHandler({
         patchMyTasksCaches(queryClient, taskData);
         if (
           'list_id' in taskData ||
+          'end_date' in taskData ||
           'completed' in taskData ||
           'completed_at' in taskData ||
           'closed_at' in taskData ||

@@ -3,17 +3,27 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import type { DragCacheSnapshot, TaskSortKeyRepair } from './task-drag-types';
+import { getEffectiveTaskSortKey } from './task-sort-key';
 
 const SORT_KEY_BASE_UNIT = 1_000_000;
 const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
 const SORT_KEY_MIN_GAP = 1000;
+
+type SortKeyPlanTask = Pick<
+  Task,
+  | 'id'
+  | 'is_personal_external'
+  | 'is_personal_external_default'
+  | 'personal_sort_key'
+  | 'sort_key'
+>;
 
 function getTaskSortKeyInsertionContext({
   activeTaskId,
   orderedTasks,
 }: {
   activeTaskId: string;
-  orderedTasks: Pick<Task, 'id' | 'sort_key'>[];
+  orderedTasks: SortKeyPlanTask[];
 }) {
   const activeIndex = orderedTasks.findIndex(
     (task) => task.id === activeTaskId
@@ -26,10 +36,15 @@ function getTaskSortKeyInsertionContext({
     };
   }
 
+  const nextTask = orderedTasks[activeIndex + 1];
+  const previousTask = orderedTasks[activeIndex - 1];
+
   return {
     activeIndex,
-    nextSortKey: orderedTasks[activeIndex + 1]?.sort_key ?? null,
-    previousSortKey: orderedTasks[activeIndex - 1]?.sort_key ?? null,
+    nextSortKey: nextTask ? getEffectiveTaskSortKey(nextTask) : null,
+    previousSortKey: previousTask
+      ? getEffectiveTaskSortKey(previousTask)
+      : null,
   };
 }
 
@@ -94,7 +109,7 @@ function getPreviewSortKeyPlan({
   targetListId,
 }: {
   activeTaskId: string;
-  orderedTasks: Pick<Task, 'id' | 'sort_key'>[];
+  orderedTasks: SortKeyPlanTask[];
   targetListId: string;
 }): {
   previewSortKey: number;
@@ -119,10 +134,14 @@ function getPreviewSortKeyPlan({
   });
   const effectiveOrderedTasks = orderedTasks.map((task) => ({
     ...task,
-    sort_key: task.id === activeTaskId ? previewSortKey : task.sort_key,
+    effective_sort_key:
+      task.id === activeTaskId ? previewSortKey : getEffectiveTaskSortKey(task),
   }));
   const orderNeedsRepair = effectiveOrderedTasks.some((task, index) => {
-    if (typeof task.sort_key !== 'number' || !Number.isFinite(task.sort_key)) {
+    if (
+      typeof task.effective_sort_key !== 'number' ||
+      !Number.isFinite(task.effective_sort_key)
+    ) {
       return true;
     }
 
@@ -130,13 +149,16 @@ function getPreviewSortKeyPlan({
     if (!previousTask) return false;
 
     if (
-      typeof previousTask.sort_key !== 'number' ||
-      !Number.isFinite(previousTask.sort_key)
+      typeof previousTask.effective_sort_key !== 'number' ||
+      !Number.isFinite(previousTask.effective_sort_key)
     ) {
       return true;
     }
 
-    return task.sort_key - previousTask.sort_key < SORT_KEY_MIN_GAP;
+    return (
+      task.effective_sort_key - previousTask.effective_sort_key <
+      SORT_KEY_MIN_GAP
+    );
   });
 
   if (
@@ -197,6 +219,9 @@ export function getTaskDropPreviewCacheTasks({
             ...task,
             list_id: targetListId,
             sort_key: previewSortKey,
+            personal_sort_key: task.is_personal_external
+              ? previewSortKey
+              : task.personal_sort_key,
             completed: targetIsCompleted,
             completed_at: targetIsCompleted
               ? (task.completed_at ?? mutationTimestamp)
@@ -210,6 +235,10 @@ export function getTaskDropPreviewCacheTasks({
           ? ({
               ...task,
               sort_key: repairedSortKeysByTaskId.get(task.id) ?? task.sort_key,
+              personal_sort_key: task.is_personal_external
+                ? (repairedSortKeysByTaskId.get(task.id) ??
+                  task.personal_sort_key)
+                : task.personal_sort_key,
               _localMutationAt: localMutationAt,
             } as Task & { _localMutationAt: number })
           : task
