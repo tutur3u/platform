@@ -45,6 +45,7 @@ import { sortKanbanColumns } from './kanban/dnd/column-reorder';
 import { DragPreview } from './kanban/dnd/drag-preview';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
+import { KanbanPlannerIsland } from './kanban/planner/kanban-planner-island';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
 import type {
   KanbanDeadlineCollapsedState,
@@ -434,6 +435,14 @@ export function KanbanBoard({
 
   return (
     <div className="flex h-full flex-col">
+      {!readOnly && workspace.personal && (
+        <KanbanPlannerIsland
+          workspaceId={workspaceId}
+          boardId={boardId}
+          isPersonalWorkspace={workspace.personal}
+        />
+      )}
+
       {!readOnly && (
         <BulkActionsIsland
           selectedCount={selectedTasks.size}

@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 967,
+        "legacyNext": 973,
         "migrated": 66,
-        "percentComplete": 13.35,
-        "remaining": 967,
+        "percentComplete": 13.28,
+        "remaining": 973,
         "terminal": 149,
-        "total": 1116,
+        "total": 1122,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 985,
+        "legacyNext": 991,
         "migrated": 71,
-        "percentComplete": 13.52,
-        "remaining": 985,
+        "percentComplete": 13.45,
+        "remaining": 991,
         "terminal": 154,
-        "total": 1139,
+        "total": 1145,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1205,
+      "legacyNext": 1211,
       "migrated": 230,
-      "percentComplete": 20.62,
-      "remaining": 1205,
+      "percentComplete": 20.54,
+      "remaining": 1211,
       "terminal": 313,
-      "total": 1518,
+      "total": 1524,
       "unknownStatus": 0
     }
   },
@@ -8164,6 +8164,60 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/task-plans:apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-plans",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-plans/:planId:apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-plans/:planId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-plans/:planId/digest:apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/digest/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/task-plans/:planId/digest",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/digest/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-plans/:planId/items:apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/items/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST", "PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-plans/:planId/items",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/items/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-plans/:planId/shares:apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/shares/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST", "PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-plans/:planId/shares",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/shares/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-plans/:planId/workspaces:apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/workspaces/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-plans/:planId/workspaces",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/workspaces/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/task-projects:apps/web/src/app/api/v1/workspaces/[wsId]/task-projects/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -14087,20 +14141,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1116,
+    "apiRoutes": 1122,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 307,
-    "routeHandlers": 1139,
+    "routeHandlers": 1145,
     "methodCounts": {
-      "GET": 638,
+      "GET": 644,
       "HEAD": 1,
-      "POST": 505,
+      "POST": 509,
       "PUT": 173,
-      "PATCH": 122,
-      "DELETE": 194,
+      "PATCH": 125,
+      "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1518
+    "total": 1524
   }
 }

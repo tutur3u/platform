@@ -20954,6 +20954,448 @@ export type Database = {
           },
         ];
       };
+      task_plan_items: {
+        Row: {
+          created_at: string;
+          created_by_user_id: string;
+          id: string;
+          notes: string | null;
+          plan_id: string;
+          planned_end: string | null;
+          planned_start: string | null;
+          snapshot_title: string | null;
+          sort_key: number;
+          status: string;
+          target_board_id: string | null;
+          target_list_id: string | null;
+          target_ws_id: string | null;
+          task_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by_user_id: string;
+          id?: string;
+          notes?: string | null;
+          plan_id: string;
+          planned_end?: string | null;
+          planned_start?: string | null;
+          snapshot_title?: string | null;
+          sort_key?: number;
+          status?: string;
+          target_board_id?: string | null;
+          target_list_id?: string | null;
+          target_ws_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by_user_id?: string;
+          id?: string;
+          notes?: string | null;
+          plan_id?: string;
+          planned_end?: string | null;
+          planned_start?: string | null;
+          snapshot_title?: string | null;
+          sort_key?: number;
+          status?: string;
+          target_board_id?: string | null;
+          target_list_id?: string | null;
+          target_ws_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plan_items_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_board_id_fkey';
+            columns: ['target_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_list_id_fkey';
+            columns: ['target_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plan_shares: {
+        Row: {
+          created_at: string;
+          id: string;
+          permission: string;
+          plan_id: string;
+          shared_by_user_id: string;
+          shared_with_email: string | null;
+          shared_with_user_id: string | null;
+          shared_with_ws_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          permission?: string;
+          plan_id: string;
+          shared_by_user_id: string;
+          shared_with_email?: string | null;
+          shared_with_user_id?: string | null;
+          shared_with_ws_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          permission?: string;
+          plan_id?: string;
+          shared_by_user_id?: string;
+          shared_with_email?: string | null;
+          shared_with_user_id?: string | null;
+          shared_with_ws_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plan_shares_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plan_workspaces: {
+        Row: {
+          added_by_user_id: string;
+          created_at: string;
+          plan_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          added_by_user_id: string;
+          created_at?: string;
+          plan_id: string;
+          ws_id: string;
+        };
+        Update: {
+          added_by_user_id?: string;
+          created_at?: string;
+          plan_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plan_workspaces_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plans: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          default_target_board_id: string | null;
+          default_target_list_id: string | null;
+          default_target_ws_id: string | null;
+          id: string;
+          owner_id: string;
+          period_end: string;
+          period_start: string;
+          period_type: string;
+          personal_ws_id: string;
+          status: string;
+          timezone: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          default_target_board_id?: string | null;
+          default_target_list_id?: string | null;
+          default_target_ws_id?: string | null;
+          id?: string;
+          owner_id: string;
+          period_end: string;
+          period_start: string;
+          period_type: string;
+          personal_ws_id: string;
+          status?: string;
+          timezone?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          default_target_board_id?: string | null;
+          default_target_list_id?: string | null;
+          default_target_ws_id?: string | null;
+          id?: string;
+          owner_id?: string;
+          period_end?: string;
+          period_start?: string;
+          period_type?: string;
+          personal_ws_id?: string;
+          status?: string;
+          timezone?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plans_default_target_board_id_fkey';
+            columns: ['default_target_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_list_id_fkey';
+            columns: ['default_target_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_project_initiatives: {
         Row: {
           created_at: string | null;
@@ -33009,6 +33451,14 @@ export type Database = {
         Args: { p_is_personal: boolean; p_user_id: string; p_ws_id: string };
         Returns: number;
       };
+      can_access_task_plan: {
+        Args: {
+          p_plan_id: string;
+          p_required_permission?: string;
+          p_user_id?: string;
+        };
+        Returns: boolean;
+      };
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
       can_manage_indicator: {
         Args: { p_indicator_id: string };
@@ -35526,6 +35976,18 @@ export type Database = {
       };
       is_task_board_workspace_member: {
         Args: { p_board_id: string };
+        Returns: boolean;
+      };
+      is_task_plan_intended_workspace: {
+        Args: { p_plan_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      is_task_plan_personal_workspace: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      is_task_plan_workspace_member: {
+        Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
       };
       is_task_sharing_enabled: {
