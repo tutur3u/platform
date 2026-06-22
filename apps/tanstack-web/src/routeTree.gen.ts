@@ -92,6 +92,7 @@ import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/driv
 import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet';
 import { Route as LocaleWsIdCronRouteImport } from './routes/$locale/$wsId/cron';
 import { Route as LocaleWsIdChatRouteImport } from './routes/$locale/$wsId/chat';
+import { Route as LocaleWsIdChangelogRouteImport } from './routes/$locale/$wsId/changelog';
 import { Route as LocaleWsIdCalendarRouteImport } from './routes/$locale/$wsId/calendar';
 import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index';
 import { Route as LocaleWsIdTasksIndexRouteImport } from './routes/$locale/$wsId/tasks/index';
@@ -593,6 +594,11 @@ const LocaleWsIdChatRoute = LocaleWsIdChatRouteImport.update({
   path: '/$wsId/chat',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdChangelogRoute = LocaleWsIdChangelogRouteImport.update({
+  id: '/$wsId/changelog',
+  path: '/$wsId/changelog',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleWsIdCalendarRoute = LocaleWsIdCalendarRouteImport.update({
   id: '/$wsId/calendar',
   path: '/$wsId/calendar',
@@ -1036,6 +1042,7 @@ export interface FileRoutesByFullPath {
   '/products/meet-together': typeof ProductsMeetTogetherRoute;
   '/$locale/': typeof LocaleIndexRoute;
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
+  '/$locale/$wsId/changelog': typeof LocaleWsIdChangelogRoute;
   '/$locale/$wsId/chat': typeof LocaleWsIdChatRoute;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
@@ -1191,6 +1198,7 @@ export interface FileRoutesByTo {
   '/products/meet-together': typeof ProductsMeetTogetherRoute;
   '/$locale': typeof LocaleIndexRoute;
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
+  '/$locale/$wsId/changelog': typeof LocaleWsIdChangelogRoute;
   '/$locale/$wsId/chat': typeof LocaleWsIdChatRoute;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
@@ -1348,6 +1356,7 @@ export interface FileRoutesById {
   '/products/meet-together': typeof ProductsMeetTogetherRoute;
   '/$locale/': typeof LocaleIndexRoute;
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
+  '/$locale/$wsId/changelog': typeof LocaleWsIdChangelogRoute;
   '/$locale/$wsId/chat': typeof LocaleWsIdChatRoute;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
@@ -1506,6 +1515,7 @@ export interface FileRouteTypes {
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/$wsId/calendar'
+    | '/$locale/$wsId/changelog'
     | '/$locale/$wsId/chat'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
@@ -1661,6 +1671,7 @@ export interface FileRouteTypes {
     | '/products/meet-together'
     | '/$locale'
     | '/$locale/$wsId/calendar'
+    | '/$locale/$wsId/changelog'
     | '/$locale/$wsId/chat'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
@@ -1817,6 +1828,7 @@ export interface FileRouteTypes {
     | '/products/meet-together'
     | '/$locale/'
     | '/$locale/$wsId/calendar'
+    | '/$locale/$wsId/changelog'
     | '/$locale/$wsId/chat'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
@@ -2532,6 +2544,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/chat';
       fullPath: '/$locale/$wsId/chat';
       preLoaderRoute: typeof LocaleWsIdChatRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/changelog': {
+      id: '/$locale/$wsId/changelog';
+      path: '/$wsId/changelog';
+      fullPath: '/$locale/$wsId/changelog';
+      preLoaderRoute: typeof LocaleWsIdChangelogRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/calendar': {
@@ -3322,6 +3341,7 @@ interface LocaleRouteRouteChildren {
   LocaleWomenInTechRoute: typeof LocaleWomenInTechRoute;
   LocaleIndexRoute: typeof LocaleIndexRoute;
   LocaleWsIdCalendarRoute: typeof LocaleWsIdCalendarRoute;
+  LocaleWsIdChangelogRoute: typeof LocaleWsIdChangelogRoute;
   LocaleWsIdChatRoute: typeof LocaleWsIdChatRoute;
   LocaleWsIdCronRoute: typeof LocaleWsIdCronRoute;
   LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute;
@@ -3442,6 +3462,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWomenInTechRoute: LocaleWomenInTechRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleWsIdCalendarRoute: LocaleWsIdCalendarRoute,
+  LocaleWsIdChangelogRoute: LocaleWsIdChangelogRoute,
   LocaleWsIdChatRoute: LocaleWsIdChatRoute,
   LocaleWsIdCronRoute: LocaleWsIdCronRoute,
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,

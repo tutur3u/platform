@@ -1018,6 +1018,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/changelog ports the legacy authenticated dashboard changelog leaf as a dynamic no-store workspace route with fail-closed auth, workspace resolution, TanStack Query hydration, and changelog data loaded through the Rust-owned /api/v1/infrastructure/changelog backend facade instead of direct Supabase reads."
+    },
     "page:/:locale/:wsId/users/topic-announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
