@@ -1,0 +1,155 @@
+---
+title: "TanStack/Rust Migration Plan"
+description: "Phased plan for replacing apps/web with apps/tanstack-web and apps/backend."
+updatedAt: "2026-06-22"
+---
+
+This page is the discoverable docs copy of the root migration plan for replacing
+the legacy Next.js platform app with a dedicated TanStack Start frontend and a
+Rust backend.
+
+Use the architecture contract at
+`platform/architecture/tanstack-rust-migration` for route ownership rules and
+implementation patterns. Use the operational runbook at
+`build/devops/tanstack-rust-cutover-runbook` for dual-stack bring-up and final
+cutover evidence. Use this page for sequencing, verification gates, and
+agent-lane planning.
+
+## Current Snapshot
+
+The route manifest at `apps/tanstack-web/migration/route-manifest.json` is the
+source of truth. The latest local snapshot on 2026-06-22 is:
+
+| Status | Count |
+| --- | ---: |
+| `legacy-next` | 1197 |
+| `migrated` | 244 |
+| `accepted-removal` | 83 |
+| Total tracked artifacts | 1524 |
+
+Remaining legacy artifacts are concentrated in API/backend ownership:
+
+| Kind | Remaining legacy artifacts |
+| --- | ---: |
+| API | 967 |
+| Cron | 17 |
+| tRPC | 1 |
+| Page | 191 |
+| Layout | 21 |
+
+The production target is:
+
+- `apps/tanstack-web` as the user-facing frontend.
+- `apps/backend` as the Rust-owned API/backend runtime.
+- `apps/web` kept only as a rollback fallback until terminal cutover gates are
+  green.
+
+## First Verification Gap Closure
+
+Before accelerating route waves, keep the verification layer green and visible:
+
+- Expose the dual-stack Docker E2E runner through the root package scripts.
+- Keep `scripts/run-tanstack-e2e-docker.test.js` inside `test:scripts`.
+- Run actual CI coverage for the minimal TanStack/Rust dual-stack compose stack.
+- Run CI compare-mode coverage against a focused public no-auth Playwright
+  smoke before broader cutover rehearsals.
+- Keep the migration plan and cutover runbook discoverable from `apps/docs`.
+
+The root commands are:
+
+```bash
+bun test:e2e:tanstack:docker -- -- --project=chromium
+bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth
+```
+
+The double separator in the first command is intentional when invoking through
+Bun: the first `--` separates Bun args, and the second is forwarded to the
+TanStack runner so Playwright receives the project flag.
+
+## Backend Waves
+
+Backend migration is the primary bottleneck. Batch Rust routes by domain and
+keep each batch independently revertible:
+
+1. Auth, session, account identity, and current-user profile.
+2. Workspace core, membership, limits, and permissions/navigation prerequisites.
+3. High-density `/api/v1/workspaces/*` domains that unblock authenticated pages.
+4. Cron, tRPC, and remaining low-frequency API compatibility routes.
+
+Each backend wave must update focused Rust tests, route helper abstractions when
+patterns harden, `apps/backend/README.md` when runtime behavior changes, and the
+OpenAPI contract through the coordinator-owned `apps/backend/api/openapi.yaml`.
+
+## Frontend Waves
+
+Frontend work should follow backend readiness rather than reintroduce protected
+raw API calls:
+
+1. Dashboard shell, providers, navigation, auth gate, and workspace permission
+   parity.
+2. Authenticated dashboard pages whose data APIs are Rust-owned.
+3. Module and settings pages in domain batches.
+4. Public/static pages that still have legacy route artifacts.
+5. Decommission-only accepted removals.
+
+Use TanStack Router loaders, `createServerFn`, TanStack Query, and the existing
+`auth-gate`, `workspace`, and `workspace-permission` helpers. Shared UI and the
+TanStack app must call typed internal-api/backend facades, not protected raw
+Supabase reads or raw `/api/*` endpoints.
+
+Every terminal route must be classified as one of:
+
+- static prerender
+- ISR/CDN cache
+- dynamic no-store
+- redirect
+- accepted removal
+
+## Coordinator-Owned Artifacts
+
+Only the migration coordinator should edit generated or contract artifacts:
+
+- `apps/tanstack-web/src/routeTree.gen.ts`
+- `apps/tanstack-web/migration/route-manifest.json`
+- `apps/tanstack-web/migration/route-overrides.json`
+- `apps/backend/api/openapi.yaml`
+- `apps/docs/platform/architecture/tanstack-rust-migration.mdx`
+
+Workers should own disjoint route/API/domain lanes and leave coordinator-owned
+files for integration.
+
+## Required Gates
+
+Per backend wave:
+
+- `cargo fmt --check`
+- focused `cargo test --locked <module>`
+- `cargo clippy --locked --all-targets --features native -- -D warnings`
+- OpenAPI contract tests
+- `bun migration:tanstack:check`
+
+Per frontend wave:
+
+- `bun --filter @tuturuuu/tanstack-web type-check`
+- `bun --filter @tuturuuu/tanstack-web test`
+- route-tree generator tests when route files change
+- `bun migration:tanstack:check`
+- TanStack API access checks
+- focused Playwright when route behavior changes
+
+Final cutover requires:
+
+- `bun migration:tanstack:cutover-check`
+- `bun migration:tanstack:gates`
+- dual-stack Docker E2E evidence
+- compare-mode Docker E2E evidence
+- benchmark evidence
+- Cloudflare smoke evidence
+- final `bun check`
+
+## Commit Cadence
+
+Commit after each independently revertible lane or small batch. In a shared
+checkout, claim the commit window immediately before exact-path staging, inspect
+the staged files, commit with a Conventional Commit subject, then release the
+window. Do not run `bun git-sync` or push unless explicitly requested.

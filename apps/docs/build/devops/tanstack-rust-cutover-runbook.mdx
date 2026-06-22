@@ -1,0 +1,110 @@
+---
+title: "TanStack/Rust Cutover Runbook"
+description: "Bring up, verify, and gate the dual-stack TanStack frontend and Rust backend before cutover."
+updatedAt: "2026-06-22"
+---
+
+This runbook is the discoverable docs copy of the root cutover runbook for the
+TanStack Start plus Rust backend migration. It focuses on operational checks and
+does not replace the route ownership contract at
+`platform/architecture/tanstack-rust-migration`.
+
+## Purpose
+
+Use this runbook when proving the new production target is ready:
+
+- `apps/tanstack-web` serves the frontend.
+- `apps/backend` serves Rust-owned backend routes.
+- the dual stack runs from production Docker artifacts.
+- compare mode proves the legacy and new frontend paths can pass the same smoke
+  suite before traffic moves.
+
+## Local Dual-Stack Commands
+
+Validate the compose file without starting anything:
+
+```bash
+docker compose -f docker-compose.tanstack-dual.yml config
+```
+
+Run the minimal dual-stack TanStack/Rust E2E suite:
+
+```bash
+bun test:e2e:tanstack:docker -- -- --project=chromium
+```
+
+The command starts `docker-compose.tanstack-dual.yml`, waits for `backend-dual`
+and `tanstack-web-dual` to become healthy, runs Playwright in
+`apps/tanstack-web`, and tears the stack down unless `--keep-up` is passed to
+the runner.
+
+Run the focused compare smoke used by CI:
+
+```bash
+bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth
+```
+
+Run a broader compare rehearsal by omitting the spec filter, but expect a much
+longer full-stack run:
+
+```bash
+bun test:e2e:web:docker:compare -- --project=chromium-no-auth
+```
+
+## Services And Ports
+
+`docker-compose.tanstack-dual.yml` exposes only loopback ports by default:
+
+| Service | Container | Default port |
+| --- | --- | ---: |
+| Rust backend | `backend-dual` | `7820` |
+| TanStack frontend | `tanstack-web-dual` | `7824` |
+
+The frontend healthcheck must prove the root page renders and can reach the
+backend. Keep real secret values in ignored env files or CI secrets; docs and
+workflow files should reference environment variable names only.
+
+## CI Coverage
+
+The E2E workflow includes a migration matrix:
+
+- `tanstack-dual-stack` runs the minimal dual-stack compose runner against
+  `apps/tanstack-web/e2e`.
+- `compare-smoke` runs `scripts/run-web-e2e-docker.js --frontend compare`
+  against a focused public no-auth spec.
+
+Both jobs upload Playwright and `tmp/e2e` artifacts for failure triage.
+
+## Evidence For Gates
+
+The final cutover gate consumes fresh evidence reports:
+
+```bash
+bun migration:tanstack:gates -- \
+  --benchmark-report <path/to/benchmark-report.json> \
+  --e2e-report <path/to/e2e-compare-report.json> \
+  --cloudflare-smoke-report <path/to/cloudflare-smoke-report.json> \
+  --output tmp/tanstack-cutover-gates.json
+```
+
+Use diagnostic mode while legacy routes remain:
+
+```bash
+bun migration:tanstack:gates -- --allow-legacy --skip-benchmark --skip-e2e --skip-cloudflare-smoke
+```
+
+For terminal cutover, do not pass any `--skip-*` evidence flags.
+
+## Final Checklist
+
+- `bun migration:tanstack:cutover-check` passes with zero `legacy-next`
+  artifacts.
+- dual-stack Docker E2E passes against `docker-compose.tanstack-dual.yml`.
+- compare-mode Docker E2E passes for both Next and TanStack frontends.
+- benchmark compare evidence is fresh and within thresholds.
+- Cloudflare smoke probes pass for backend and TanStack origins.
+- `bun migration:tanstack:gates` exits `0` with all evidence present.
+- final `bun check` passes or has only documented unrelated blockers.
+
+Keep `apps/web` available as rollback fallback until the cutover window is
+complete and the post-cutover smoke has stayed green.

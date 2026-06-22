@@ -728,6 +728,78 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
 });
 
+test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
+    'utf8'
+  );
+  const migrationJob = readWorkflowJobBlock('e2e-tests.yaml', 'migration-e2e');
+  const cleanupIndex = migrationJob.indexOf(
+    'Free runner disk for Dockerized migration E2E'
+  );
+  const installIndex = migrationJob.indexOf('Install dependencies');
+  const runIndex = migrationJob.indexOf('Run migration E2E');
+  const uploadIndex = migrationJob.indexOf('Upload migration E2E artifacts');
+  const stopIndex = migrationJob.indexOf('Stop migration E2E stacks');
+
+  assert.match(workflow, /\n {2}workflow_dispatch:\n/u);
+  assert.match(migrationJob, /needs: \[check-ci\]/u);
+  assert.match(
+    migrationJob,
+    /github\.ref != 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/u
+  );
+  assert.match(migrationJob, /mode: tanstack-dual-stack/u);
+  assert.match(
+    migrationJob,
+    /command: bun test:e2e:tanstack:docker -- -- --project=chromium/u,
+    'TanStack runner needs a literal -- before Playwright args'
+  );
+  assert.match(migrationJob, /playwright_workdir: apps\/tanstack-web/u);
+  assert.match(migrationJob, /setup_supabase: "false"/u);
+  assert.match(migrationJob, /mode: compare-smoke/u);
+  assert.match(
+    migrationJob,
+    /command: bun test:e2e:web:docker:compare -- public-marketing-routes\.noauth\.spec\.ts --project=chromium-no-auth/u
+  );
+  assert.match(migrationJob, /playwright_workdir: apps\/web/u);
+  assert.match(migrationJob, /setup_supabase: "true"/u);
+  assert.match(migrationJob, /if: matrix\.setup_supabase == 'true'/u);
+  assert.match(
+    migrationJob,
+    /uses: \.\/\.github\/actions\/setup-supabase-cli-with-retry/u
+  );
+  assert.match(
+    migrationJob,
+    /working-directory: \$\{\{ matrix\.playwright_workdir \}\}/u
+  );
+  assert.match(migrationJob, /run: \$\{\{ matrix\.command \}\}/u);
+  assert.match(migrationJob, /name: migration-e2e-\$\{\{ matrix\.mode \}\}/u);
+  assert.match(
+    migrationJob,
+    /path: \|\n {12}apps\/tanstack-web\/playwright-report\//u
+  );
+  assert.match(migrationJob, /tmp\/e2e\//u);
+  assert.match(migrationJob, /if-no-files-found: ignore/u);
+  assert.match(
+    migrationJob,
+    /docker compose -f docker-compose\.tanstack-dual\.yml down \|\| true/u
+  );
+  assert.match(
+    migrationJob,
+    /node scripts\/docker-web\.js down --mode prod --strategy blue-green --env-file tmp\/e2e\/web\.env \|\| true/u
+  );
+  assert.match(migrationJob, /bun sb:stop \|\| true/u);
+  assert.notEqual(cleanupIndex, -1);
+  assert.notEqual(installIndex, -1);
+  assert.notEqual(runIndex, -1);
+  assert.notEqual(uploadIndex, -1);
+  assert.notEqual(stopIndex, -1);
+  assert.ok(cleanupIndex < installIndex);
+  assert.ok(installIndex < runIndex);
+  assert.ok(runIndex < uploadIndex);
+  assert.ok(runIndex < stopIndex);
+});
+
 test('Supabase production migration requires production platform deploy and successful staged SHA', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
