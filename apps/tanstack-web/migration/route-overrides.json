@@ -798,6 +798,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content ports the legacy Extra Reading placeholder with localized title and disabled AI action. This marks only the page artifact migrated; parent dashboard/course/module data ownership remains legacy-owned."
     },
+    "layout:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start routes /$locale/$wsId/hive and /$locale/$wsId/hive/not-whitelisted already redirect to the standalone Hive app while preserving query parameters. The legacy Hive route layout only imported @xyflow/react styles and returned children, so this marks only the route-specific layout metadata artifact migrated; Hive APIs and parent dashboard/session ownership remain legacy-owned."
+    },
     "page:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
