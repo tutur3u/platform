@@ -21,6 +21,7 @@ mod holidays;
 mod infrastructure_catalog_exports;
 mod infrastructure_paginated_list;
 mod infrastructure_user_status_changes;
+mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
 mod inventory;
 mod mobile_version;
@@ -523,6 +524,13 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         infrastructure_catalog_exports::handle_catalog_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_workspace_exports::handle_workspace_export_route(config, request, outbound)
+            .await
     {
         return response;
     }

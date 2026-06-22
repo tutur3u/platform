@@ -2973,6 +2973,61 @@ paths:
       responses:
         "204":
           description: Empty bare preflight response with no CORS, cache, content-type, or security headers.
+  /api/v1/infrastructure/bills:
+    get:
+      summary: Legacy-compatible finance invoice export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/bills/route.ts. The Rust backend uses the shared caller-token paginated export helper, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so finance_invoices row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Finance invoice rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Finance invoices could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/classes:
     get:
       summary: Legacy-compatible class export list
@@ -3134,6 +3189,61 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/roles:
+    get:
+      summary: Legacy-compatible role export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/roles/route.ts. The Rust backend uses the shared caller-token paginated export helper, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Workspace user group rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Workspace user groups could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/score-names:
     get:
       summary: Legacy-compatible score name export list
@@ -3177,6 +3287,61 @@ paths:
                 $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
         "500":
           description: User group metrics could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/infrastructure/transaction-categories:
+    get:
+      summary: Legacy-compatible transaction category export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts. The Rust backend uses the shared caller-token paginated export helper, forwards a normal Supabase browser session or non-app-session Bearer token to Supabase REST so transaction_categories row-level security remains active, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Transaction category rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Transaction categories could not be fetched.
           content:
             application/json:
               schema:

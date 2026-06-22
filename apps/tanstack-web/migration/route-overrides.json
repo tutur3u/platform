@@ -576,6 +576,33 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bills through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so finance_invoices RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/roles through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/transaction-categories through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so transaction_categories RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
     "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
       "methods": {
         "GET": {

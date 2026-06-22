@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 959,
-        "migrated": 83,
-        "percentComplete": 14.76,
-        "remaining": 959,
-        "terminal": 166,
+        "legacyNext": 956,
+        "migrated": 86,
+        "percentComplete": 15.02,
+        "remaining": 956,
+        "terminal": 169,
         "total": 1125,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 977,
-        "migrated": 88,
-        "percentComplete": 14.9,
-        "remaining": 977,
-        "terminal": 171,
+        "legacyNext": 974,
+        "migrated": 91,
+        "percentComplete": 15.16,
+        "remaining": 974,
+        "terminal": 174,
         "total": 1148,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1153,
-      "migrated": 290,
-      "percentComplete": 24.44,
-      "remaining": 1153,
-      "terminal": 373,
+      "legacyNext": 1150,
+      "migrated": 293,
+      "percentComplete": 24.64,
+      "remaining": 1150,
+      "terminal": 376,
       "total": 1526,
       "unknownStatus": 0
     }
@@ -2580,13 +2580,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/bills",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/bills/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts",
@@ -3831,13 +3833,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/roles",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/roles/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts"
     },
     {
       "id": "api:GET:/api/v1/infrastructure/score-names:apps/web/src/app/api/v1/infrastructure/score-names/route.ts",
@@ -3927,13 +3931,15 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/transaction-categories",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/user-coupons:apps/web/src/app/api/v1/infrastructure/user-coupons/route.ts",
