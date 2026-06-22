@@ -106,6 +106,18 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
+      workflow.replace("github.ref == 'refs/heads/main'", '')
+    ).join('\n'),
+    /refs\/heads\/main/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replaceAll('TRUSTED_CLOUDFLARE_DEPLOY_ACTORS', '')
+    ).join('\n'),
+    /TRUSTED_CLOUDFLARE_DEPLOY_ACTORS/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
       workflow.replace('post-deploy-smoke:', '')
     ).join('\n'),
     /post-deploy-smoke/
@@ -503,6 +515,23 @@ test('GitHub Actions runbook documents Cloudflare deployment env and warning gui
       workflow
     ).join('\n'),
     /Cloudflare deployment skipped/
+  );
+  assert.match(
+    validateCloudflareActionsRunbook(
+      runbook.replace(
+        'Cloudflare deploy credentials must not be exposed to arbitrary branch code',
+        'Cloudflare deploy credentials are environment-scoped'
+      ),
+      workflow
+    ).join('\n'),
+    /arbitrary branch code/
+  );
+  assert.match(
+    validateCloudflareActionsRunbook(
+      runbook.replaceAll('TRUSTED_CLOUDFLARE_DEPLOY_ACTORS', ''),
+      workflow
+    ).join('\n'),
+    /TRUSTED_CLOUDFLARE_DEPLOY_ACTORS/
   );
   assert.match(
     validateCloudflareActionsRunbook(

@@ -225,6 +225,9 @@ function validateRustBackendWorkflow(workflowContent) {
     'deploy_target:',
     'deployment_mode:',
     'cloudflare-deployment-preflight:',
+    "github.event_name == 'workflow_dispatch'",
+    "github.ref == 'refs/heads/main'",
+    "contains(format(',{0},', vars.TRUSTED_CLOUDFLARE_DEPLOY_ACTORS), format(',{0},', github.actor))",
     'environment: cloudflare-workers-preview',
     'CLOUDFLARE_API_TOKEN',
     'CLOUDFLARE_ACCOUNT_ID',
@@ -748,6 +751,8 @@ function validateCloudflareActionsRunbook(
   const requiredSnippets = [
     'rust-backend.yml',
     'cloudflare-workers-preview',
+    'TRUSTED_CLOUDFLARE_DEPLOY_ACTORS',
+    'Cloudflare deploy credentials must not be exposed to arbitrary branch code',
     'Cloudflare deployment skipped',
     'Worker runtime secrets live in Cloudflare, not GitHub',
     'wrangler secret list',
