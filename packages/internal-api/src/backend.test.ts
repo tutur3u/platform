@@ -6,7 +6,9 @@ import {
   getBackendAiWhitelistMe,
   getBackendAuthMe,
   getBackendAuthMfaAssuranceLevel,
+  getBackendAuthMfaTotpFactors,
   getBackendCalendarMock,
+  getBackendCurrentUserDefaultWorkspace,
   getBackendCurrentUserProfile,
   getBackendHiveAccess,
   getBackendLegacyHealth,
@@ -15,6 +17,8 @@ import {
   getBackendMigrationProgress,
   getBackendMigrationStatus,
   getBackendNovaCurrentTeam,
+  getBackendOnboardingProgress,
+  getBackendOtpSettings,
   getBackendTaskBoardStatusTemplates,
   getBackendUserFieldTypes,
   getBackendWorkspaceCrawlerStatus,
@@ -288,6 +292,42 @@ describe('backend API client', () => {
     );
   });
 
+  it('reads the Rust-owned MFA TOTP factor list', async () => {
+    vi.stubEnv('BACKEND_INTERNAL_TOKEN', 'server-token');
+    const factor = {
+      factor_type: 'totp',
+      friendly_name: 'Authenticator',
+      id: 'factor-123',
+      status: 'verified',
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        all: [factor],
+        phone: [],
+        totp: [factor],
+        webauthn: [],
+      }),
+    });
+
+    const factors = await getBackendAuthMfaTotpFactors({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(factors.all[0]?.id).toBe('factor-123');
+    expect(factors.totp).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/auth/mfa/totp/factors',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
   it('reads the Rust-owned deterministic calendar mock route', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -312,6 +352,110 @@ describe('backend API client', () => {
     expect(calendar.data[0]?.title).toBe('Event 1');
     expect(fetchMock).toHaveBeenCalledWith(
       'http://backend:7820/api/v1/calendar/mock',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads the Rust-owned current user default workspace including null fallback', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: '00000000-0000-0000-0000-000000000001',
+          name: 'Personal',
+          personal: true,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => null,
+      });
+
+    const workspace = await getBackendCurrentUserDefaultWorkspace({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    const missingWorkspace = await getBackendCurrentUserDefaultWorkspace({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(workspace?.name).toBe('Personal');
+    expect(missingWorkspace).toBeNull();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://backend:7820/api/v1/users/me/default-workspace',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://backend:7820/api/v1/users/me/default-workspace',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned public OTP settings with exact query parameters', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        otpEnabled: true,
+      }),
+    });
+
+    const settings = await getBackendOtpSettings(
+      { client: 'mobile', platform: 'ios' },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(settings.otpEnabled).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/auth/otp/settings?client=mobile&platform=ios',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned onboarding progress rows', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        completed_steps: ['profile'],
+        current_step: 'invite',
+        id: 'progress-1',
+        notifications_enabled: true,
+        user_id: 'user-1',
+        workspace_name: 'Core Team',
+      }),
+    });
+
+    const progress = await getBackendOnboardingProgress({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(progress?.current_step).toBe('invite');
+    expect(progress?.completed_steps).toEqual(['profile']);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/user/onboarding-progress',
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),

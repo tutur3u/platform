@@ -1,3 +1,8 @@
+import type {
+  InternalOtpClient,
+  InternalOtpPlatform,
+  OtpSettingsResponse,
+} from './auth';
 import {
   createInternalApiClient,
   type InternalApiClientOptions,
@@ -6,6 +11,7 @@ import {
 } from './client';
 import type {
   CreateSupportInquiryPayload,
+  CurrentUserDefaultWorkspaceResponse,
   CurrentUserProfileResponse,
 } from './users';
 
@@ -52,6 +58,21 @@ export type BackendAuthMfaAssuranceLevel = {
   currentAuthenticationMethods: Record<string, unknown>[];
   currentLevel: string | null;
   nextLevel: string | null;
+};
+
+export type BackendAuthMfaFactor = {
+  factor_type: string;
+  friendly_name?: string | null;
+  id: string;
+  status: string;
+  [key: string]: unknown;
+};
+
+export type BackendAuthMfaFactorsResponse = {
+  all: BackendAuthMfaFactor[];
+  phone: BackendAuthMfaFactor[];
+  totp: BackendAuthMfaFactor[];
+  webauthn: BackendAuthMfaFactor[];
 };
 
 export type BackendCalendarMockEvent = {
@@ -121,6 +142,40 @@ export type BackendTaskBoardStatusTemplate = {
 export type BackendTaskBoardStatusTemplatesResponse = {
   templates: BackendTaskBoardStatusTemplate[];
 };
+
+export type BackendOtpSettingsRequest = {
+  client: InternalOtpClient;
+  platform?: InternalOtpPlatform;
+};
+
+export type BackendOtpSettingsResponse = OtpSettingsResponse;
+
+export type BackendOnboardingProgress = {
+  completed_at?: string | null;
+  completed_steps?: string[];
+  current_step?: string;
+  flow_type?: string | null;
+  id?: string;
+  invited_emails?: string[];
+  language_preference?: string | null;
+  notifications_enabled?: boolean;
+  profile_completed?: boolean;
+  team_workspace_id?: string | null;
+  theme_preference?: string | null;
+  tour_completed?: boolean;
+  use_case?: string | null;
+  user_id?: string;
+  workspace_avatar_url?: string | null;
+  workspace_description?: string | null;
+  workspace_name?: string | null;
+  [key: string]: unknown;
+};
+
+export type BackendOnboardingProgressResponse =
+  BackendOnboardingProgress | null;
+
+export type BackendCurrentUserDefaultWorkspaceResponse =
+  CurrentUserDefaultWorkspaceResponse;
 
 export type BackendCreateSupportInquiryResponse = {
   inquiryId: string;
@@ -522,6 +577,17 @@ export function getBackendAuthMfaAssuranceLevel(
   );
 }
 
+export function getBackendAuthMfaTotpFactors(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendAuthMfaFactorsResponse>(
+    '/api/auth/mfa/totp/factors',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export function getBackendCurrentUserProfile(
   options: BackendApiClientOptions = {}
 ) {
@@ -533,9 +599,48 @@ export function getBackendCurrentUserProfile(
   );
 }
 
+export function getBackendCurrentUserDefaultWorkspace(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendCurrentUserDefaultWorkspaceResponse>(
+    '/api/v1/users/me/default-workspace',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export function getBackendCalendarMock(options: BackendApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendCalendarMockResponse>(
     '/api/v1/calendar/mock',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendOtpSettings(
+  payload: BackendOtpSettingsRequest,
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendOtpSettingsResponse>(
+    '/api/v1/auth/otp/settings',
+    {
+      cache: 'no-store',
+      query: payload,
+    }
+  );
+}
+
+export function getBackendOnboardingProgress(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendOnboardingProgressResponse>(
+    '/api/v1/user/onboarding-progress',
     {
       cache: 'no-store',
     }
