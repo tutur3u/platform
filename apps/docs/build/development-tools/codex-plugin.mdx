@@ -271,6 +271,14 @@ When a generator can see dirty or untracked files owned by another lane,
 regenerate from a clean worktree or an explicit input set and copy back only the
 intended artifact.
 
+Write a lane contract before spawning: owner, mode, owned paths, excluded paths,
+generated outputs, validation, handoff shape, and commit authority. Read-only
+lanes return evidence and risks without taking ownership. After integrating a
+slice, checkpoint before dispatching more work: refresh status, close completed
+subagents, update the parent note with the commit or handoff state, list
+validation and unrelated blockers, and choose the next lane from the current
+worktree state.
+
 The normal scoped commit path still lets Git hooks run. Agents may use
 `git commit --no-verify` only when they can produce a proof packet for their
 exact staged paths: reviewed status and staged diff output, path ownership,

@@ -100,12 +100,17 @@ If two agents need the same file set, do not race. Reply in `tmp/agent-coordinat
 For parallel subagent work, split lanes before spawning workers. Each worker
 needs a narrow owned path set, forbidden overlap, validation commands, and a
 handoff contract; workers should not stage or commit unless that is their
-explicit lane. The coordinator owns integration: review worker diffs,
-regenerate shared artifacts such as route trees, route manifests, route
-overrides, OpenAPI snapshots, docs navigation, sorted translations, or generated
-DB types after inputs are stable, then stage exact paths. Existing staged files
-belong to the staging agent or coordinator until explicitly reassigned; if a
-path is `MM`, review both staged and unstaged portions before committing.
+explicit lane. Make the lane contract explicit: owner, mode, owned paths,
+excluded paths, generated outputs, validation, handoff shape, and commit
+authority. The coordinator owns integration: review worker diffs, regenerate
+shared artifacts such as route trees, route manifests, route overrides, OpenAPI
+snapshots, docs navigation, sorted translations, or generated DB types after
+inputs are stable, then stage exact paths. After each integrated slice, refresh
+status, close completed subagents, update the parent note with commit or handoff
+state, list validation and unrelated blockers, and choose the next lane from
+current worktree state. Existing staged files belong to the staging agent or
+coordinator until explicitly reassigned; if a path is `MM`, review both staged
+and unstaged portions before committing.
 
 ### Git Commit Window
 

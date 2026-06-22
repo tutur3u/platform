@@ -49,6 +49,13 @@ uncommitted work; read it when the task spans more than one checkout.
   commands, and a no-stage/no-commit boundary unless the worker explicitly owns
   a commit. Keep a parent coordination note that records lane names, owned
   paths, coordinator-owned generated files, and integration risks.
+- Treat each lane as a contract: owner, mode, owned paths, excluded paths,
+  generated outputs, validation, handoff shape, and commit authority. Read-only
+  lanes should return evidence and risks without taking path ownership.
+- For broad migrations, checkpoint after each integrated slice: refresh status,
+  close completed subagents, update the parent note with commit or handoff
+  state, list validation and unrelated blockers, and choose the next
+  non-overlapping lane from current worktree state.
 - Create a note before editing when the worktree is dirty, active notes touch a
   nearby area, the task is long-running, or the requested change modifies
   coordination rules, plugin skills, docs, scripts, migrations, or broad app

@@ -127,6 +127,23 @@ a clear handoff shape. Do not delegate two workers to the same unresolved files
 unless one is read-only or the second worker is explicitly continuing a
 completed handoff.
 
+Every delegated lane should have a written contract before the worker starts:
+
+- `Owner`: worker/session id or `read-only explorer` when no files may change.
+- `Mode`: read-only audit, implementation, generator/integration, or
+  verification.
+- `Owned paths`: exact files/directories the worker may edit.
+- `Excluded paths`: generated artifacts, active-note paths, or dirty files the
+  worker must not touch.
+- `Generated outputs`: who regenerates route trees, manifests, OpenAPI,
+  sorted translations, docs navigation, or DB types.
+- `Validation`: focused commands the worker should run, plus any repo-wide
+  checks the coordinator will run later.
+- `Handoff`: expected final shape: changed files, validation results, blockers,
+  generated drift, parity gaps, and whether anything was staged.
+- `Commit authority`: default `none`; only one lane may own staging/commit
+  authority for a checkpoint.
+
 Before spawning workers, the coordinator should create or update a parent note
 that lists each lane:
 
@@ -158,6 +175,24 @@ Workers should hand off with:
 The coordinator reviews worker diffs before staging. If a worker's handoff
 requires generated artifacts, the coordinator either owns that regeneration or
 spawns a dedicated generator lane after all inputs are stable.
+
+### Coordinator Checkpoints
+
+For broad migrations, checkpoint after each integrated slice before spawning or
+merging more lanes. A checkpoint is a short state update, not a planning essay:
+
+- refresh `git status --short`
+- close or mark completed subagents so stale lanes do not consume concurrency
+- update the parent note with commit hash or handoff status
+- list validation that passed and any repo-wide blockers outside the staged set
+- list remaining unrelated dirty paths the coordinator will not touch
+- decide the next non-overlapping lane from current status, not from stale
+  assumptions
+
+If a checkpoint commits, stage exact paths only and keep the commit window just
+for staging/commit. If a hook fails because of unrelated worker files, record
+the proof for the staged set before using `--no-verify`; otherwise release the
+window and report the blocker.
 
 ## When To Create A Note
 
