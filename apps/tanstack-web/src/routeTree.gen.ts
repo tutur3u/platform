@@ -102,6 +102,7 @@ import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$local
 import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode';
 import { Route as LocaleShareTypeResourceIdRouteImport } from './routes/$locale/share/$type/$resourceId';
 import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$';
+import { Route as LocaleWsIdUsersTutoringRouteImport } from './routes/$locale/$wsId/users/tutoring';
 import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements';
 import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure';
 import { Route as LocaleWsIdTasksTemplatesRouteImport } from './routes/$locale/$wsId/tasks/templates';
@@ -648,6 +649,11 @@ const LocaleCalendarMeetTogetherSplatRoute =
     path: '/$',
     getParentRoute: () => LocaleCalendarMeetTogetherRoute,
   } as any);
+const LocaleWsIdUsersTutoringRoute = LocaleWsIdUsersTutoringRouteImport.update({
+  id: '/$wsId/users/tutoring',
+  path: '/$wsId/users/tutoring',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleWsIdUsersTopicAnnouncementsRoute =
   LocaleWsIdUsersTopicAnnouncementsRouteImport.update({
     id: '/$wsId/users/topic-announcements',
@@ -1121,6 +1127,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/tasks/templates': typeof LocaleWsIdTasksTemplatesRouteWithChildren;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute;
   '/$locale/share/$type/$resourceId': typeof LocaleShareTypeResourceIdRouteWithChildren;
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
@@ -1275,6 +1282,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/tasks/templates': typeof LocaleWsIdTasksTemplatesRouteWithChildren;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute;
   '/$locale/share/$type/$resourceId': typeof LocaleShareTypeResourceIdRouteWithChildren;
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
@@ -1431,6 +1439,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/tasks/templates': typeof LocaleWsIdTasksTemplatesRouteWithChildren;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute;
   '/$locale/share/$type/$resourceId': typeof LocaleShareTypeResourceIdRouteWithChildren;
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
@@ -1588,6 +1597,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
+    | '/$locale/$wsId/users/tutoring'
     | '/$locale/calendar/meet-together/$'
     | '/$locale/share/$type/$resourceId'
     | '/$locale/shared/task/$shareCode'
@@ -1742,6 +1752,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
+    | '/$locale/$wsId/users/tutoring'
     | '/$locale/calendar/meet-together/$'
     | '/$locale/share/$type/$resourceId'
     | '/$locale/shared/task/$shareCode'
@@ -1897,6 +1908,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates'
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
+    | '/$locale/$wsId/users/tutoring'
     | '/$locale/calendar/meet-together/$'
     | '/$locale/share/$type/$resourceId'
     | '/$locale/shared/task/$shareCode'
@@ -2591,6 +2603,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/calendar/meet-together/$';
       preLoaderRoute: typeof LocaleCalendarMeetTogetherSplatRouteImport;
       parentRoute: typeof LocaleCalendarMeetTogetherRoute;
+    };
+    '/$locale/$wsId/users/tutoring': {
+      id: '/$locale/$wsId/users/tutoring';
+      path: '/$wsId/users/tutoring';
+      fullPath: '/$locale/$wsId/users/tutoring';
+      preLoaderRoute: typeof LocaleWsIdUsersTutoringRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/users/topic-announcements': {
       id: '/$locale/$wsId/users/topic-announcements';
@@ -3379,6 +3398,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdTasksTemplatesRoute: typeof LocaleWsIdTasksTemplatesRouteWithChildren;
   LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute;
   LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  LocaleWsIdUsersTutoringRoute: typeof LocaleWsIdUsersTutoringRoute;
   LocaleShareTypeResourceIdRoute: typeof LocaleShareTypeResourceIdRouteWithChildren;
   LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute;
   LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute;
@@ -3500,6 +3520,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdUsersStructureRoute: LocaleWsIdUsersStructureRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
     LocaleWsIdUsersTopicAnnouncementsRoute,
+  LocaleWsIdUsersTutoringRoute: LocaleWsIdUsersTutoringRoute,
   LocaleShareTypeResourceIdRoute: LocaleShareTypeResourceIdRouteWithChildren,
   LocaleSharedTaskShareCodeRoute: LocaleSharedTaskShareCodeRoute,
   LocaleSharedUserProfileCodeRoute: LocaleSharedUserProfileCodeRoute,
