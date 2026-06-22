@@ -166,6 +166,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   adapter ordered by `value`, and returns the legacy raw timezone row array.
   `POST` plus detail `PUT`/`DELETE` remain legacy-owned until timezone writes
   move behind Rust.
+- `GET /api/v1/infrastructure/user-status-changes`: legacy-compatible
+  workspace user status change list. Rust requires a normal Supabase browser
+  session cookie or non-app-session Bearer token, forwards that caller token to
+  Supabase REST so `workspace_user_status_changes` RLS remains active, preserves
+  the required `ws_id` query parameter, parseInt-style `limit`/`offset` range
+  behavior, exact-count pagination, and legacy
+  `{ data, count }` / error-response bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

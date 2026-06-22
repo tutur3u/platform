@@ -558,6 +558,15 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/user-status-changes:apps/web/src/app/api/v1/infrastructure/user-status-changes/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-status-changes by requiring a normal Supabase browser session or non-app-session Bearer token, forwarding that caller token to Supabase REST so workspace_user_status_changes RLS remains active, preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
     "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
       "methods": {
         "GET": {
