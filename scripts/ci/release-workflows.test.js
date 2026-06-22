@@ -347,6 +347,55 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
   );
 });
 
+test('Rust backend workflow validates TanStack route tree generator changes', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'rust-backend.yml'),
+    'utf8'
+  );
+  const verifyTanstackJob = readWorkflowJobBlock(
+    'rust-backend.yml',
+    'verify-tanstack-web'
+  );
+
+  assert.match(workflow, /scripts\/generate-tanstack-route-tree\.js/u);
+  assert.match(workflow, /scripts\/generate-tanstack-route-tree\.test\.js/u);
+  assert.match(
+    verifyTanstackJob,
+    /node --test scripts\/generate-tanstack-route-tree\.test\.js/u
+  );
+  assert.ok(
+    verifyTanstackJob.indexOf('Check TanStack route tree generator') <
+      verifyTanstackJob.indexOf('Type-check TanStack Start app'),
+    'route tree generator validation should run before TanStack type-check'
+  );
+});
+
+test('Rust backend Cloudflare deploys require trusted main dispatches', () => {
+  const preflightJob = readWorkflowJobBlock(
+    'rust-backend.yml',
+    'cloudflare-deployment-preflight'
+  );
+  const credentialsIndex = preflightJob.indexOf('CLOUDFLARE_API_TOKEN');
+  const trustedActorIndex = preflightJob.indexOf(
+    'TRUSTED_CLOUDFLARE_DEPLOY_ACTORS'
+  );
+
+  assert.match(preflightJob, /github\.event_name == 'workflow_dispatch'/u);
+  assert.match(preflightJob, /github\.ref == 'refs\/heads\/main'/u);
+  assert.match(
+    preflightJob,
+    /contains\(format\(',\{0\},', vars\.TRUSTED_CLOUDFLARE_DEPLOY_ACTORS\), format\(',\{0\},', github\.actor\)\)/u
+  );
+  assert.match(preflightJob, /inputs\.deploy_target != 'none'/u);
+  assert.match(preflightJob, /needs\.check-ci\.outputs\.should_run == 'true'/u);
+  assert.ok(
+    trustedActorIndex > -1 &&
+      credentialsIndex > -1 &&
+      trustedActorIndex < credentialsIndex,
+    'Cloudflare deploy actor allowlist should be checked before loading credentials'
+  );
+});
+
 test('Supabase staging migration includes every local migration when pushing', () => {
   const deployJob = readWorkflowJobBlock('supabase-staging.yaml', 'deploy');
 

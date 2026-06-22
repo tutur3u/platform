@@ -77,6 +77,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise
   reads only an exact count of non-deleted workspaces created by the
   authenticated user, and returns the derived legacy limit payload.
+- `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
+  legacy-compatible workspace permission check route. Rust revalidates a normal
+  Supabase browser session or non-app-session Bearer token, ignores app-session
+  tokens and the legacy `userId` query parameter, resolves personal/workspace
+  identifiers, requires workspace access, and returns the derived
+  `{ "hasPermission": boolean }` result from role, default, creator, and admin
+  permission context.
 - `GET /api/auth/me`: legacy-compatible current browser session route. Rust
   revalidates the Supabase browser cookie or non-app-session Bearer token with
   Supabase Auth and returns the raw legacy `{ user }` payload, or the legacy

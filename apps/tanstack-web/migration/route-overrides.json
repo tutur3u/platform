@@ -553,6 +553,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
     },
+    "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions/check by revalidating a normal Supabase browser session or non-app-session Bearer token, ignoring app-session tokens and the legacy userId query, resolving personal/workspace identifiers, requiring workspace membership, and mirroring getPermissions role/default/creator/admin behavior before returning hasPermission."
+    },
     "api:/api/v1/workspaces/:wsId/slides:apps/web/src/app/api/v1/workspaces/[wsId]/slides/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

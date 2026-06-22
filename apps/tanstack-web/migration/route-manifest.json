@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 968,
-        "migrated": 71,
-        "percentComplete": 13.73,
+        "migrated": 72,
+        "percentComplete": 13.8,
         "remaining": 968,
-        "terminal": 154,
-        "total": 1122,
+        "terminal": 155,
+        "total": 1123,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 986,
-        "migrated": 76,
-        "percentComplete": 13.89,
+        "migrated": 77,
+        "percentComplete": 13.96,
         "remaining": 986,
-        "terminal": 159,
-        "total": 1145,
+        "terminal": 160,
+        "total": 1146,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1200,
-      "migrated": 241,
-      "percentComplete": 21.26,
+      "migrated": 242,
+      "percentComplete": 21.31,
       "remaining": 1200,
-      "terminal": 324,
-      "total": 1524,
+      "terminal": 325,
+      "total": 1525,
       "unknownStatus": 0
     }
   },
@@ -7836,7 +7836,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/settings/permissions/check",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -8592,6 +8592,15 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/teach/users",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/users/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/templates:apps/web/src/app/api/v1/workspaces/[wsId]/templates/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/templates",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -14141,13 +14150,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1122,
+    "apiRoutes": 1123,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 307,
-    "routeHandlers": 1145,
+    "routeHandlers": 1146,
     "methodCounts": {
-      "GET": 644,
+      "GET": 645,
       "HEAD": 1,
       "POST": 509,
       "PUT": 173,
@@ -14155,6 +14164,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1524
+    "total": 1525
   }
 }

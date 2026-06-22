@@ -168,7 +168,10 @@ compose files, or Docker helper scripts change. `rust-backend.yml` owns the
 `apps/backend` Rust service checks and the migration Cloudflare checks:
 formatting, locked dependency fetch, Clippy, tests, Cloudflare Worker target
 validation, smoke reporter unit tests, native binary build, Docker image build,
-and `apps/tanstack-web` type-check/test validation.
+`apps/tanstack-web` type-check/test validation, and the TanStack route-tree
+generator/formatter unit test. Keep `scripts/generate-tanstack-route-tree.*`
+in this workflow's path filters so route-tree generation changes run before
+TanStack/Rust deployment handoff.
 
 ### TanStack/Rust Cloudflare deployment
 
@@ -191,6 +194,14 @@ Manual dispatch inputs:
 - `deploy_target`: `none`, `backend`, `tanstack-web`, or `all`.
 - `deployment_mode`: `dry-run` or `deploy`. Keep the default `dry-run` for the
   first run in a new account or environment.
+
+Run `rust-backend.yml` from `main` for Cloudflare deployments. The deployment
+preflight requires the dispatch ref to be `refs/heads/main` and `github.actor`
+to be listed in the comma-delimited `TRUSTED_CLOUDFLARE_DEPLOY_ACTORS`
+repository variable before it loads `CLOUDFLARE_API_TOKEN`. Keep that allowlist
+limited to maintainers who can approve secret-backed Worker deployments.
+Cloudflare deploy credentials must not be exposed to arbitrary branch code;
+review or merge deployment changes before dispatching a secret-backed run.
 
 The deploy jobs are bound to the `cloudflare-workers-preview` GitHub
 Environment. Configure these GitHub values there before expecting deployment
@@ -310,6 +321,12 @@ provide the branch, tag, or SHA in `preview_ref`, and keep
 secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
+
+Cloudflare Worker manual deployments follow the same trust boundary: run
+`rust-backend.yml` from `main`, keep `TRUSTED_CLOUDFLARE_DEPLOY_ACTORS` limited
+to trusted maintainers, and avoid exposing `CLOUDFLARE_API_TOKEN` to unreviewed
+branch code. The workflow checks the protected dispatch ref and actor allowlist
+before loading Cloudflare credentials or running Worker deploy steps.
 
 `vercel-preview-platform.yaml` also runs on protected `main` pushes. Keep that
 exception narrow: `supabase-staging.yaml` is triggered by the platform preview

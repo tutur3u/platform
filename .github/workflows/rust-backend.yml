@@ -16,6 +16,8 @@ on:
       - "package.json"
       - "scripts/check-cloudflare-workers.js"
       - "scripts/check-cloudflare-workers.test.js"
+      - "scripts/generate-tanstack-route-tree.js"
+      - "scripts/generate-tanstack-route-tree.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
       - "tuturuuu.ts"
@@ -35,6 +37,8 @@ on:
       - "package.json"
       - "scripts/check-cloudflare-workers.js"
       - "scripts/check-cloudflare-workers.test.js"
+      - "scripts/generate-tanstack-route-tree.js"
+      - "scripts/generate-tanstack-route-tree.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
       - "tuturuuu.ts"
@@ -151,6 +155,9 @@ jobs:
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
 
+      - name: Check TanStack route tree generator
+        run: node --test scripts/generate-tanstack-route-tree.test.js
+
       - name: Type-check TanStack Start app
         run: bun type-check:tanstack-web
 
@@ -175,7 +182,12 @@ jobs:
   cloudflare-deployment-preflight:
     name: Cloudflare deployment preflight
     needs: [check-ci, verify, verify-tanstack-web]
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_target != 'none' && needs.check-ci.outputs.should_run == 'true'
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      contains(format(',{0},', vars.TRUSTED_CLOUDFLARE_DEPLOY_ACTORS), format(',{0},', github.actor)) &&
+      inputs.deploy_target != 'none' &&
+      needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     environment: cloudflare-workers-preview
     permissions:

@@ -4409,6 +4409,64 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/settings/permissions/check:
+    get:
+      summary: Workspace setting permission check
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts GET. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, ignores app-session tokens and the legacy userId query parameter, resolves personal and workspace handles, verifies workspace access, and mirrors getPermissions-style role/default/creator/admin behavior before returning `{ hasPermission }`.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Workspace permission identifier to check.
+      responses:
+        "200":
+          description: Permission check result for the authenticated workspace caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePermissionCheckResponse"
+        "400":
+          description: Missing permission query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePermissionCheckError"
+        "403":
+          description: Workspace access denied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePermissionCheckError"
+        "500":
+          description: Internal permission check error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePermissionCheckError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/user-groups/{groupId}/group-checks/{postId}/email:
     post:
       summary: Removed direct group-check email sender
@@ -5150,6 +5208,25 @@ components:
         canForceSendPosts:
           type: boolean
           description: Whether the authenticated caller has the root workspace manage_workspace_roles permission. False is also returned for unauthenticated or unresolved callers.
+    WorkspacePermissionCheckResponse:
+      type: object
+      required:
+        - hasPermission
+      properties:
+        hasPermission:
+          type: boolean
+          description: Whether the authenticated workspace caller has the requested permission. Workspace creators and callers with admin permission follow the legacy all-permission shortcut.
+    WorkspacePermissionCheckError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Missing permission
+            - Workspace access denied
+            - Internal server error
     OnboardingProgress:
       type: object
       additionalProperties: true
