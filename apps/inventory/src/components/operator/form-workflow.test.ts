@@ -94,6 +94,7 @@ describe('Inventory operator form workflows', () => {
 
   it('supports direct creation for simple setup-backed combobox fields', () => {
     const productSource = source('product-create-dialog.tsx');
+    const productStockSource = source('product-stock-editor.tsx');
     const setupBatchSource = source('setup-batch-section.tsx');
     const costingSource = source('costing-profile-dialog.tsx');
 
@@ -102,6 +103,8 @@ describe('Inventory operator form workflows', () => {
     expect(productSource).toContain('createInventoryManufacturer');
     expect(productSource).toContain('createInventoryUnit');
     expect(productSource).toContain('createInventoryWarehouse');
+    expect(productStockSource).toContain('createInventoryUnit');
+    expect(productStockSource).toContain('createInventoryWarehouse');
     expect(setupBatchSource).toContain('createInventorySupplier');
     expect(setupBatchSource).toContain('createInventoryWarehouse');
     expect(costingSource).toContain('createInventoryProductCategory');
@@ -218,17 +221,21 @@ describe('Inventory operator form workflows', () => {
   it('creates product stock rows only when stock is explicit and supports unlimited stock', () => {
     const productSource = source('product-create-dialog.tsx');
     const rowActionsSource = source('product-row-actions.tsx');
+    const stockEditorSource = source('product-stock-editor.tsx');
 
     expect(productSource).toContain('shouldCreateStockRow');
     expect(productSource).toContain(
       'amount: form.unlimitedStock ? null : Number(amountValue || 0)'
     );
     expect(productSource).toContain('disabled={form.unlimitedStock}');
-    expect(rowActionsSource).toContain(
-      'amount: unlimitedStock ? null : Number(amount || 0)'
+    expect(rowActionsSource).toContain('stockSaveState.shouldSave');
+    expect(rowActionsSource).toContain('inventory: stockSaveState.inventory');
+    expect(stockEditorSource).toContain('getInitialProductStockRows');
+    expect(stockEditorSource).toContain('getProductStockSaveState');
+    expect(stockEditorSource).toContain(
+      'amount: row.unlimitedStock ? null : Number(row.amount || 0)'
     );
-    expect(rowActionsSource).toContain('disabled={unlimitedStock}');
-    expect(rowActionsSource).toContain('stockAmount === null');
+    expect(stockEditorSource).toContain('disabled={row.unlimitedStock}');
     expect(source('products-table.tsx')).toContain('stockState.isUnlimited');
   });
 
@@ -263,6 +270,15 @@ describe('Inventory operator form workflows', () => {
       'inventory.operator.columns.visibility',
       'inventory.operator.forms.costingCoverageMissing',
       'inventory.operator.forms.costingCoverageReady',
+      'inventory.operator.forms.addStockRow',
+      'inventory.operator.forms.duplicateStockTargetHint',
+      'inventory.operator.forms.removeStockRow',
+      'inventory.operator.forms.stockRowDescription',
+      'inventory.operator.forms.stockRowTitle',
+      'inventory.operator.stockWorkspace.tabs.stock',
+      'inventory.operator.stockWorkspace.tabs.warehouses',
+      'inventory.operator.stockWorkspace.warehousesDescription',
+      'inventory.operator.stockWorkspace.warehousesTitle',
     ];
 
     for (const locale of ['en', 'vi'] as const) {
@@ -281,6 +297,7 @@ describe('Inventory operator form workflows', () => {
     const rowsSource = source('simple-rows.tsx');
 
     expect(productsSource).toContain("view === 'stock'");
+    expect(productsSource).toContain('toStockTableRows');
     expect(productsSource).toContain("t('columns.readiness')");
     expect(productsSource).toContain("t('columns.coverage')");
     expect(productsSource).toContain("t('columns.available')");

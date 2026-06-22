@@ -37,6 +37,7 @@ import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
+import { StockWorkspacePanel } from './stock-workspace-panel';
 import { StorefrontAnalyticsPanel } from './storefront-analytics-panel';
 import { StorefrontListingsPanel } from './storefront-listings-panel';
 import { useInventoryData } from './use-inventory-data';
@@ -300,14 +301,20 @@ export function InventoryOperatorClient({
               />
             </>
           ) : null}
-          {!isLoading &&
-          !isError &&
-          (view === 'catalog' || view === 'stock') ? (
+          {!isLoading && !isError && view === 'catalog' ? (
             <ProductsTable
               costingProfiles={data.costingProfiles.data?.data ?? []}
               formOptions={data.formOptions.data}
               rows={products}
               view={view}
+              wsId={wsId}
+            />
+          ) : null}
+          {!isLoading && !isError && view === 'stock' ? (
+            <StockWorkspacePanel
+              costingProfiles={data.costingProfiles.data?.data ?? []}
+              formOptions={data.formOptions.data}
+              products={products}
               wsId={wsId}
             />
           ) : null}

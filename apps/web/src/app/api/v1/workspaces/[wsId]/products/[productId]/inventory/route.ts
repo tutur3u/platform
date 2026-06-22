@@ -17,6 +17,8 @@ const InventoryItemSchema = z.object({
 const BodySchema = z.object({
   inventory: z.array(InventoryItemSchema).default([]),
 });
+type InventoryItem = z.infer<typeof InventoryItemSchema>;
+type InventoryItemKeyTarget = Pick<InventoryItem, 'unit_id' | 'warehouse_id'>;
 
 interface Params {
   params: Promise<{
@@ -39,6 +41,10 @@ const getWorkspaceUserId = async (
 
   return workspaceUser?.virtual_user_id ?? null;
 };
+
+function createInventoryKey(item: InventoryItemKeyTarget) {
+  return `${item.warehouse_id}:${item.unit_id}`;
+}
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
@@ -70,7 +76,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const inventoryKeys = new Set<string>();
   for (const item of inventory) {
-    const key = `${item.warehouse_id}-${item.unit_id}`;
+    const key = createInventoryKey(item);
     if (inventoryKeys.has(key)) {
       return NextResponse.json(
         { message: 'Invalid payload', errors: ['duplicate_inventory_key'] },
@@ -195,7 +201,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const inventoryKeys = new Set<string>();
   for (const item of inventory) {
-    const key = `${item.warehouse_id}-${item.unit_id}`;
+    const key = createInventoryKey(item);
     if (inventoryKeys.has(key)) {
       return NextResponse.json(
         { message: 'Invalid payload', errors: ['duplicate_inventory_key'] },
@@ -293,26 +299,27 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Inventory cleared' });
   }
 
-  // Create a key for comparison (warehouse_id + unit_id combination)
-  const createKey = (item: any) => `${item.warehouse_id}-${item.unit_id}`;
-
   const existingMap = new Map(
-    (existingInventory || []).map((item) => [createKey(item), item])
+    (existingInventory || []).map((item) => [createInventoryKey(item), item])
   );
 
-  const newMap = new Map(inventory.map((item) => [createKey(item), item]));
+  const newMap = new Map(
+    inventory.map((item) => [createInventoryKey(item), item])
+  );
 
   // Find items to delete (exist in current but not in new)
-  const toDelete = [...existingMap.keys()].filter((key) => !newMap.has(key));
+  const toDelete = [...existingMap.entries()]
+    .filter(([key]) => !newMap.has(key))
+    .map(([, item]) => item);
 
   // Find items to insert (exist in new but not in current)
   const toInsert = inventory.filter(
-    (item) => !existingMap.has(createKey(item))
+    (item) => !existingMap.has(createInventoryKey(item))
   );
 
   // Find items to update (exist in both but with different values)
   const toUpdate = inventory.filter((item) => {
-    const key = createKey(item);
+    const key = createInventoryKey(item);
     const existing = existingMap.get(key);
     if (!existing) return false;
 
@@ -325,8 +332,8 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Perform deletions
   if (toDelete.length > 0) {
-    for (const key of toDelete) {
-      const [warehouse_id, unit_id] = key.split('-');
+    for (const item of toDelete) {
+      const { unit_id, warehouse_id } = item;
       if (!warehouse_id || !unit_id) {
         serverLogger.warn('Invalid product inventory key', {
           warehouse_id,
@@ -340,8 +347,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
       // Log stock change for deletion (negative amount)
       if (workspaceUserId) {
-        const existingItem = existingMap.get(key);
-        const difference = getStockChangeAmount(existingItem?.amount, null);
+        const difference = getStockChangeAmount(item.amount, null);
 
         if (difference != null) {
           await sbAdmin.from('product_stock_changes').insert({
@@ -428,7 +434,7 @@ export async function PATCH(req: Request, { params }: Params) {
   // Perform updates
   if (toUpdate.length > 0) {
     for (const item of toUpdate) {
-      const existing = existingMap.get(createKey(item));
+      const existing = existingMap.get(createInventoryKey(item));
 
       if (existing && workspaceUserId) {
         const stockDifference = getStockChangeAmount(

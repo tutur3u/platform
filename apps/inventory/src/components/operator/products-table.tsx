@@ -46,6 +46,7 @@ type OperatorTranslator = (
 
 type ProductTableRow = {
   badges: ProductBadge[];
+  id: string;
   inventory: Record<string, unknown>;
   isLowStock: boolean;
   product: InventoryProductSummary;
@@ -74,9 +75,10 @@ export function ProductsTable({
 
   if (rows.length === 0) return <EmptyRow label={t('empty')} />;
 
-  const tableRows = rows.map((product) =>
-    toProductTableRow(product, costingProfiles, t)
-  );
+  const tableRows =
+    view === 'stock'
+      ? rows.flatMap((product) => toStockTableRows(product, costingProfiles, t))
+      : rows.map((product) => toProductTableRow(product, costingProfiles, t));
   const columns = getProductTableColumns({
     currencyCode: wsCurrency,
     onEdit: setEditing,
@@ -94,7 +96,7 @@ export function ProductsTable({
         getRowClassName={(row) =>
           view === 'stock' && row.isLowStock ? 'bg-destructive/5' : undefined
         }
-        getRowId={(row) => row.product.id}
+        getRowId={(row) => row.id}
         minWidth={view === 'stock' ? 'min-w-[860px]' : 'min-w-[920px]'}
         onRowActivate={(row) => setEditing(row.product)}
         rowActivateLabel={(row) => `${formsText('edit')}: ${row.product.name}`}
@@ -268,10 +270,18 @@ function getProductTableColumns({
 function toProductTableRow(
   product: InventoryProductSummary,
   costingProfiles: InventoryCostProfile[],
-  t: OperatorTranslator
+  t: OperatorTranslator,
+  options?: {
+    inventory?: Record<string, unknown>;
+    rowId?: string;
+    stock?: Record<string, unknown>;
+  }
 ): ProductTableRow {
-  const inventory = product.inventory?.[0] ?? {};
-  const amount = stockAmountFromRecords(inventory, product.stock?.[0]);
+  const inventory = options?.inventory ?? product.inventory?.[0] ?? {};
+  const amount = stockAmountFromRecords(
+    inventory,
+    options?.stock ?? product.stock?.[0]
+  );
   const stockState = getInventoryStockState({
     amount,
     minAmount: inventory.min_amount ?? product.min_amount,
@@ -324,11 +334,33 @@ function toProductTableRow(
         tone: hasCosting ? 'ready' : 'missing',
       },
     ],
+    id: options?.rowId ?? product.id,
     inventory,
     isLowStock,
     product,
     stockState,
   };
+}
+
+function toStockTableRows(
+  product: InventoryProductSummary,
+  costingProfiles: InventoryCostProfile[],
+  t: OperatorTranslator
+) {
+  const inventoryRows = product.inventory?.length ? product.inventory : [{}];
+
+  return inventoryRows.map((inventory, index) =>
+    toProductTableRow(product, costingProfiles, t, {
+      inventory,
+      rowId: [
+        product.id,
+        stringField(inventory, 'warehouse_id') ?? 'missing-warehouse',
+        stringField(inventory, 'unit_id') ?? 'missing-unit',
+        index,
+      ].join(':'),
+      stock: product.stock?.[index],
+    })
+  );
 }
 
 function StockAmount({ row }: { row: ProductTableRow }) {

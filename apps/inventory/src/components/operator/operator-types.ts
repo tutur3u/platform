@@ -12,6 +12,8 @@ export type InventoryOperatorView =
 
 export type InventoryCommerceTab = 'checkouts' | 'promotions' | 'sales';
 
+export type InventoryStockTab = 'stock' | 'warehouses';
+
 export type InventoryFilters = {
   q: string;
   status: string;
