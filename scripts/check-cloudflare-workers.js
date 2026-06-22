@@ -19,6 +19,14 @@ const RUST_BACKEND_WORKFLOW_PATH = path.join(
   'workflows',
   'rust-backend.yml'
 );
+const GITHUB_ACTIONS_RUNBOOK_DOC_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'docs',
+  'build',
+  'devops',
+  'github-actions-runbook.mdx'
+);
 const WEB_DOCKER_DEPLOYMENT_DOC_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -111,6 +119,28 @@ const REQUIRED_CLOUDFLARE_SECRET_IGNORE_RULES = [
   '**/.dev.vars*',
   '.env.preview*',
   '**/.env.preview*',
+];
+const CLOUDFLARE_GITHUB_ENVIRONMENT_VALUES = [
+  {
+    name: 'CLOUDFLARE_API_TOKEN',
+    storage: 'Environment secret',
+  },
+  {
+    name: 'CLOUDFLARE_ACCOUNT_ID',
+    storage: 'Environment variable',
+  },
+  {
+    name: 'BACKEND_WORKER_ORIGIN',
+    storage: 'Environment variable',
+  },
+  {
+    name: 'TANSTACK_WEB_WORKER_ORIGIN',
+    storage: 'Environment variable',
+  },
+  {
+    name: 'CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN',
+    storage: 'Environment secret',
+  },
 ];
 
 function readJson(filePath, fsImpl = fs) {
@@ -709,6 +739,67 @@ function validateCloudflarePreviewRunbook(
   return errors;
 }
 
+function validateCloudflareActionsRunbook(
+  runbookContent,
+  workflowContent,
+  runbookPath = 'apps/docs/build/devops/github-actions-runbook.mdx'
+) {
+  const errors = [];
+  const requiredSnippets = [
+    'rust-backend.yml',
+    'cloudflare-workers-preview',
+    'Cloudflare deployment skipped',
+    'Worker runtime secrets live in Cloudflare, not GitHub',
+    'wrangler secret list',
+    'reads only secret names, never secret values',
+    'Missing Worker secrets',
+    'Cloudflare smoke inputs missing',
+    'Cloudflare smoke verification blocked',
+    'bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"',
+  ];
+
+  for (const { name, storage } of CLOUDFLARE_GITHUB_ENVIRONMENT_VALUES) {
+    if (!workflowContent.includes(name)) {
+      errors.push(
+        `rust-backend.yml must reference ${name} in the Cloudflare deployment workflow.`
+      );
+    }
+
+    if (!runbookContent.includes(`\`${name}\``)) {
+      errors.push(
+        `${runbookPath} must document Cloudflare GitHub Environment value ${name}.`
+      );
+    }
+
+    if (!runbookContent.includes(storage)) {
+      errors.push(
+        `${runbookPath} must document Cloudflare GitHub Environment storage type ${storage}.`
+      );
+    }
+  }
+
+  for (const secretName of [
+    ...BACKEND_REQUIRED_SECRETS,
+    ...TANSTACK_WEB_REQUIRED_SECRETS,
+  ]) {
+    if (!runbookContent.includes(`\`${secretName}\``)) {
+      errors.push(
+        `${runbookPath} must list required Cloudflare Worker secret ${secretName}.`
+      );
+    }
+  }
+
+  for (const snippet of requiredSnippets) {
+    if (!runbookContent.includes(snippet)) {
+      errors.push(
+        `${runbookPath} must document Cloudflare workflow guidance: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateBackendReadmeCloudflareSecrets(
   readmeContent,
   readmePath = 'apps/backend/README.md'
@@ -769,6 +860,17 @@ function checkCloudflareWorkersSetup({
     ),
     'utf8'
   ),
+  githubActionsRunbookContent = fsImpl.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'docs',
+      'build',
+      'devops',
+      'github-actions-runbook.mdx'
+    ),
+    'utf8'
+  ),
   webDockerDeploymentDocContent = fsImpl.readFileSync(
     path.join(
       rootDir,
@@ -808,6 +910,10 @@ function checkCloudflareWorkersSetup({
     ...validateTanstackWebRouteTree(tanstackWebRouteTreeContent),
     ...validateTanstackWebWranglerConfig(tanstackWebWranglerConfig),
     ...validateBackendReadmeCloudflareSecrets(backendReadmeContent),
+    ...validateCloudflareActionsRunbook(
+      githubActionsRunbookContent,
+      rustBackendWorkflowContent
+    ),
     ...validateCloudflarePreviewRunbook(
       webDockerDeploymentDocContent,
       'apps/docs/build/devops/web-docker-deployment.mdx'
@@ -834,6 +940,7 @@ module.exports = {
   BACKEND_README_PATH,
   BACKEND_WRANGLER_PATH,
   GITIGNORE_PATH,
+  GITHUB_ACTIONS_RUNBOOK_DOC_PATH,
   ROOT_DIR,
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
@@ -845,6 +952,7 @@ module.exports = {
   TANSTACK_WEB_WRANGLER_PATH,
   WEB_DOCKER_DEPLOYMENT_DOC_PATH,
   checkCloudflareWorkersSetup,
+  validateCloudflareActionsRunbook,
   validateBackendReadmeCloudflareSecrets,
   validateBackendWranglerConfig,
   validateCloudflarePreviewRunbook,

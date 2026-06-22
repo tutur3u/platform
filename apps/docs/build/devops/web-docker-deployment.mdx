@@ -2120,11 +2120,15 @@ Operational notes:
 - `docker compose -f docker-compose.web.prod.yml config`
 - `docker compose -f docker-compose.web.prod.yml --profile redis config`
 - `docker compose -f docker-compose.web.prod.yml --profile cloudflared config`
+- `docker compose -f docker-compose.tanstack-dual.yml config`
 - `docker build -f apps/backend/Dockerfile .`
 - `docker build --target dev -f apps/web/Dockerfile .`
-- `docker build --target runner --secret id=web_env,src=.env.local -f apps/web/Dockerfile .`
+- `docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .`
+- `docker build --target runner -f apps/tanstack-web/Dockerfile .`
 
-That means Docker CI now covers both the dev image and the real production path.
+That means Docker CI now covers the dev image, the Next.js production image,
+the TanStack production image, the dual-stack compose file, and the optional
+Cloudflare Tunnel profile rendering.
 
 For focused watcher-script checks, run the root Node test file directly, for
 example `node --test --test-name-pattern "pullTrackedBranch"

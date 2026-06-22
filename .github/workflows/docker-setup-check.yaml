@@ -121,8 +121,10 @@ jobs:
         run: |
           docker compose -f docker-compose.web.yml config > /tmp/docker-compose.web.yml
           docker compose -f docker-compose.web.yml --profile redis config > /tmp/docker-compose.web.redis.yml
+          docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml
           docker compose -f docker-compose.web.prod.yml config > /tmp/docker-compose.web.prod.yml
           docker compose -f docker-compose.web.prod.yml --profile redis config > /tmp/docker-compose.web.prod.redis.yml
+          docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml
           docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml
 
       - name: Build web dev image
@@ -130,6 +132,9 @@ jobs:
 
       - name: Build web prod image
         run: docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .
+
+      - name: Build TanStack web prod image
+        run: docker build --target runner -f apps/tanstack-web/Dockerfile .
 
       - name: Build storage unzip proxy image
         run: docker build -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy

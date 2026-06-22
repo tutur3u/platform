@@ -206,17 +206,21 @@ jobs to run:
 
 If either value is missing, the workflow emits a
 `Cloudflare deployment skipped` warning, records setup guidance in the job
-summary, and skips deploy jobs after CI validation has completed. A non-empty
+summary, and skips deploy jobs after CI validation has completed. The warning
+names only the missing GitHub Environment keys, not their values. A non-empty
 but invalid or under-scoped token normally surfaces as a Worker secret preflight
 skip or a Wrangler failure before upload.
 
 Worker runtime secrets live in Cloudflare, not GitHub. After the GitHub
 credential preflight passes, a dedicated Worker secret preflight checks the
-selected Workers with `wrangler secret list`. It reads only secret names, never
-secret values. If Wrangler cannot list names, or if any required name is
+selected Workers with `wrangler secret list`.
+It reads only secret names, never secret values. If Wrangler cannot list names,
+or if any required name is
 missing, the workflow emits a warning, writes setup commands to the job summary,
 and skips the selected deploy job instead of failing later inside a deploy
-step.
+step. Missing-secret warnings use the `Missing Worker secrets` wording and list
+only secret names plus `bun wrangler secret put ...` commands; they never print
+or infer secret values.
 
 | Worker                   | Required Cloudflare Worker secrets                                                                                                                  |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -254,7 +258,9 @@ When `deploy_target=all` and `deployment_mode=deploy`, the
 requires `BACKEND_WORKER_ORIGIN`, `TANSTACK_WEB_WORKER_ORIGIN`, and
 `CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN`; missing values fail the full deploy
 workflow with a warning, an error, and setup guidance in the step summary
-instead of silently skipping runtime verification. The job runs:
+instead of silently skipping runtime verification. The warning title is
+`Cloudflare smoke inputs missing`, and the error title is
+`Cloudflare smoke verification blocked`. The job runs:
 
 ```sh
 bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"

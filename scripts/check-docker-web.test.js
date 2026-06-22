@@ -145,6 +145,24 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
     ).join('\n'),
     /apps\/tanstack-web|docker-compose\.tanstack-dual\.yml/
   );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
+        'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
+        ''
+      )
+    ).join('\n'),
+    /cloudflared/
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
+        'docker build --target runner -f apps/tanstack-web/Dockerfile .',
+        ''
+      )
+    ).join('\n'),
+    /apps\/tanstack-web\/Dockerfile/
+  );
 });
 
 test('validateDockerignore accepts the current Docker context excludes', () => {

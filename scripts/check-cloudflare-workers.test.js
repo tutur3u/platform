@@ -6,6 +6,7 @@ const {
   BACKEND_README_PATH,
   BACKEND_WRANGLER_PATH,
   GITIGNORE_PATH,
+  GITHUB_ACTIONS_RUNBOOK_DOC_PATH,
   ROOT_PACKAGE_JSON_PATH,
   RUST_BACKEND_WORKFLOW_PATH,
   TANSTACK_RUST_MIGRATION_DOC_PATH,
@@ -18,6 +19,7 @@ const {
   checkCloudflareWorkersSetup,
   validateBackendReadmeCloudflareSecrets,
   validateBackendWranglerConfig,
+  validateCloudflareActionsRunbook,
   validateCloudflarePreviewRunbook,
   validateCloudflareSecretIgnoreRules,
   validateRootPackageJson,
@@ -481,6 +483,44 @@ test('Cloudflare preview runbook documents required Worker secrets', () => {
       /BACKEND_INTERNAL_TOKEN/
     );
   }
+});
+
+test('GitHub Actions runbook documents Cloudflare deployment env and warning guidance', () => {
+  const runbook = fs.readFileSync(GITHUB_ACTIONS_RUNBOOK_DOC_PATH, 'utf8');
+  const workflow = fs.readFileSync(RUST_BACKEND_WORKFLOW_PATH, 'utf8');
+
+  assert.deepEqual(validateCloudflareActionsRunbook(runbook, workflow), []);
+  assert.match(
+    validateCloudflareActionsRunbook(
+      runbook.replace('`CLOUDFLARE_ACCOUNT_ID`', '`CLOUDFLARE_ACCOUNT`'),
+      workflow
+    ).join('\n'),
+    /CLOUDFLARE_ACCOUNT_ID/
+  );
+  assert.match(
+    validateCloudflareActionsRunbook(
+      runbook.replace('Cloudflare deployment skipped', 'Deployment skipped'),
+      workflow
+    ).join('\n'),
+    /Cloudflare deployment skipped/
+  );
+  assert.match(
+    validateCloudflareActionsRunbook(
+      runbook.replace(
+        'reads only secret names, never secret values',
+        'checks configured secrets'
+      ),
+      workflow
+    ).join('\n'),
+    /secret names/
+  );
+  assert.match(
+    validateCloudflareActionsRunbook(
+      runbook.replace('Cloudflare smoke verification blocked', 'Smoke blocked'),
+      workflow
+    ).join('\n'),
+    /Cloudflare smoke verification blocked/
+  );
 });
 
 test('Wrangler vars reject secret names and secret-looking values', () => {

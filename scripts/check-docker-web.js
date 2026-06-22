@@ -597,7 +597,10 @@ function validateDockerSetupWorkflow(workflowContent) {
   ];
   const requiredSnippets = [
     'run: node scripts/check-docker-web.js',
+    'docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml',
+    'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
     'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
+    'docker build --target runner -f apps/tanstack-web/Dockerfile .',
   ];
 
   for (const snippet of requiredPathFilterSnippets) {
