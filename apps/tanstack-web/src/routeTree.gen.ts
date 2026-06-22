@@ -823,7 +823,7 @@ const LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute =
       id: '/modules/$moduleId/extra-content',
       path: '/modules/$moduleId/extra-content',
       getParentRoute: () => LocaleWsIdEducationCoursesCourseIdRoute,
-    } as any
+    } as any,
   );
 
 export interface FileRoutesByFullPath {
@@ -2514,7 +2514,7 @@ const LocaleChangelogRouteChildren: LocaleChangelogRouteChildren = {
 };
 
 const LocaleChangelogRouteWithChildren = LocaleChangelogRoute._addFileChildren(
-  LocaleChangelogRouteChildren
+  LocaleChangelogRouteChildren,
 );
 
 interface LocaleSecurityRouteChildren {
@@ -2528,7 +2528,7 @@ const LocaleSecurityRouteChildren: LocaleSecurityRouteChildren = {
 };
 
 const LocaleSecurityRouteWithChildren = LocaleSecurityRoute._addFileChildren(
-  LocaleSecurityRouteChildren
+  LocaleSecurityRouteChildren,
 );
 
 interface LocaleWsIdEpmRouteChildren {
@@ -2543,7 +2543,7 @@ const LocaleWsIdEpmRouteChildren: LocaleWsIdEpmRouteChildren = {
 };
 
 const LocaleWsIdEpmRouteWithChildren = LocaleWsIdEpmRoute._addFileChildren(
-  LocaleWsIdEpmRouteChildren
+  LocaleWsIdEpmRouteChildren,
 );
 
 interface LocaleWsIdFinanceDebtsRouteChildren {
@@ -2557,7 +2557,7 @@ const LocaleWsIdFinanceDebtsRouteChildren: LocaleWsIdFinanceDebtsRouteChildren =
 
 const LocaleWsIdFinanceDebtsRouteWithChildren =
   LocaleWsIdFinanceDebtsRoute._addFileChildren(
-    LocaleWsIdFinanceDebtsRouteChildren
+    LocaleWsIdFinanceDebtsRouteChildren,
   );
 
 interface LocaleWsIdFinanceInvoicesRouteChildren {
@@ -2574,7 +2574,7 @@ const LocaleWsIdFinanceInvoicesRouteChildren: LocaleWsIdFinanceInvoicesRouteChil
 
 const LocaleWsIdFinanceInvoicesRouteWithChildren =
   LocaleWsIdFinanceInvoicesRoute._addFileChildren(
-    LocaleWsIdFinanceInvoicesRouteChildren
+    LocaleWsIdFinanceInvoicesRouteChildren,
   );
 
 interface LocaleWsIdFinanceTransactionsRouteChildren {
@@ -2592,7 +2592,7 @@ const LocaleWsIdFinanceTransactionsRouteChildren: LocaleWsIdFinanceTransactionsR
 
 const LocaleWsIdFinanceTransactionsRouteWithChildren =
   LocaleWsIdFinanceTransactionsRoute._addFileChildren(
-    LocaleWsIdFinanceTransactionsRouteChildren
+    LocaleWsIdFinanceTransactionsRouteChildren,
   );
 
 interface LocaleWsIdFinanceWalletsRouteChildren {
@@ -2607,7 +2607,7 @@ const LocaleWsIdFinanceWalletsRouteChildren: LocaleWsIdFinanceWalletsRouteChildr
 
 const LocaleWsIdFinanceWalletsRouteWithChildren =
   LocaleWsIdFinanceWalletsRoute._addFileChildren(
-    LocaleWsIdFinanceWalletsRouteChildren
+    LocaleWsIdFinanceWalletsRouteChildren,
   );
 
 interface LocaleWsIdFinanceRouteChildren {
@@ -2647,7 +2647,7 @@ const LocaleWsIdHiveRouteChildren: LocaleWsIdHiveRouteChildren = {
 };
 
 const LocaleWsIdHiveRouteWithChildren = LocaleWsIdHiveRoute._addFileChildren(
-  LocaleWsIdHiveRouteChildren
+  LocaleWsIdHiveRouteChildren,
 );
 
 interface LocaleWsIdMeetMeetingsRouteChildren {
@@ -2661,7 +2661,7 @@ const LocaleWsIdMeetMeetingsRouteChildren: LocaleWsIdMeetMeetingsRouteChildren =
 
 const LocaleWsIdMeetMeetingsRouteWithChildren =
   LocaleWsIdMeetMeetingsRoute._addFileChildren(
-    LocaleWsIdMeetMeetingsRouteChildren
+    LocaleWsIdMeetMeetingsRouteChildren,
   );
 
 interface LocaleWsIdMeetRouteChildren {
@@ -2675,7 +2675,7 @@ const LocaleWsIdMeetRouteChildren: LocaleWsIdMeetRouteChildren = {
 };
 
 const LocaleWsIdMeetRouteWithChildren = LocaleWsIdMeetRoute._addFileChildren(
-  LocaleWsIdMeetRouteChildren
+  LocaleWsIdMeetRouteChildren,
 );
 
 interface LocaleWsIdMindRouteChildren {
@@ -2687,7 +2687,7 @@ const LocaleWsIdMindRouteChildren: LocaleWsIdMindRouteChildren = {
 };
 
 const LocaleWsIdMindRouteWithChildren = LocaleWsIdMindRoute._addFileChildren(
-  LocaleWsIdMindRouteChildren
+  LocaleWsIdMindRouteChildren,
 );
 
 interface LocaleCalendarMeetTogetherRouteChildren {
@@ -2701,7 +2701,7 @@ const LocaleCalendarMeetTogetherRouteChildren: LocaleCalendarMeetTogetherRouteCh
 
 const LocaleCalendarMeetTogetherRouteWithChildren =
   LocaleCalendarMeetTogetherRoute._addFileChildren(
-    LocaleCalendarMeetTogetherRouteChildren
+    LocaleCalendarMeetTogetherRouteChildren,
   );
 
 interface LocaleWsIdEducationCoursesCourseIdRouteChildren {
@@ -2716,7 +2716,7 @@ const LocaleWsIdEducationCoursesCourseIdRouteChildren: LocaleWsIdEducationCourse
 
 const LocaleWsIdEducationCoursesCourseIdRouteWithChildren =
   LocaleWsIdEducationCoursesCourseIdRoute._addFileChildren(
-    LocaleWsIdEducationCoursesCourseIdRouteChildren
+    LocaleWsIdEducationCoursesCourseIdRouteChildren,
   );
 
 interface LocaleRouteRouteChildren {
@@ -2918,7 +2918,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
 };
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
-  LocaleRouteRouteChildren
+  LocaleRouteRouteChildren,
 );
 
 const rootRouteChildren: RootRouteChildren = {

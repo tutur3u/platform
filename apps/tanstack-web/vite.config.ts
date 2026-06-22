@@ -84,6 +84,10 @@ export default defineConfig(({ mode }) => {
           filter: (page) =>
             staticPrerenderRouteSet.has(normalizePrerenderPath(page.path)),
         },
+        router: {
+          quoteStyle: 'single',
+          semicolons: true,
+        },
       }),
       viteReact(),
       tailwindcss(),

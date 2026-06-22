@@ -33,7 +33,7 @@ const ROUTE_TREE_FORMATTER_CONFIG = Object.freeze({
     formatter: {
       quoteStyle: 'single',
       semicolons: 'always',
-      trailingCommas: 'es5',
+      trailingCommas: 'all',
     },
   },
 });
@@ -175,7 +175,11 @@ async function generateTanstackRouteTree({
     await import(resolvedImportPath)
   );
   const config = getConfig(
-    { routeTreeFileFooter: getStartRegistrationFooter },
+    {
+      quoteStyle: 'single',
+      routeTreeFileFooter: getStartRegistrationFooter,
+      semicolons: true,
+    },
     appDir
   );
   const generator = new Generator({ config, root: rootDir });

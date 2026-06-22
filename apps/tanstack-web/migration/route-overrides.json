@@ -923,6 +923,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/integrations ports the legacy integrations catalog, SePay query-result alerts, and workspace existence guard through the shared internal API facade. This marks only the catalog page artifact migrated; the Discord integration detail page and underlying workspace API remain separately tracked as legacy-owned."
     },
+    "layout:/:locale/:wsId/documents/:documentId:apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start can own the static Document Details metadata for /$locale/$wsId/documents/$documentId. The legacy layout only exports static title/description metadata and returns children, so this marks only the metadata layout artifact migrated; the document detail page, workspace dashboard/session ownership, and document data/API routes remain legacy-owned."
+    },
     "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",

@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
@@ -125,6 +126,7 @@ test('formatGeneratedRouteTree formats ignored generated output with an isolated
   assert.equal(path.basename(writes[0].filePath), 'biome.json');
   assert.match(writes[0].content, /"semicolons": "always"/u);
   assert.match(writes[0].content, /"quoteStyle": "single"/u);
+  assert.match(writes[0].content, /"trailingCommas": "all"/u);
   assert.deepEqual(runs, [
     {
       command: 'bunx',
@@ -166,6 +168,7 @@ test('generateTanstackRouteTree formats the generated route tree after generator
       }
     }
     export function getConfig(options, appDir) {
+      globalThis[${JSON.stringify(globalKey)}].configOptions = options;
       globalThis[${JSON.stringify(globalKey)}].footer = options.routeTreeFileFooter();
       globalThis[${JSON.stringify(globalKey)}].appDir = appDir;
       return { generatedRouteTree: ${JSON.stringify(generatedRouteTree)} };
@@ -190,6 +193,8 @@ test('generateTanstackRouteTree formats the generated route tree after generator
     assert.deepEqual(globalThis[globalKey].footer, [
       START_REGISTRATION_FOOTER_BLOCK,
     ]);
+    assert.equal(globalThis[globalKey].configOptions.quoteStyle, 'single');
+    assert.equal(globalThis[globalKey].configOptions.semicolons, true);
     assert.equal(globalThis[globalKey].constructorArgs.root, ROOT_DIR);
     assert.deepEqual(formatterCalls, [
       {
@@ -202,6 +207,17 @@ test('generateTanstackRouteTree formats the generated route tree after generator
   } finally {
     delete globalThis[globalKey];
   }
+});
+
+test('TanStack Start Vite generation uses the same route tree format', () => {
+  const viteConfig = fs.readFileSync(
+    path.join(ROOT_DIR, 'apps', 'tanstack-web', 'vite.config.ts'),
+    'utf8'
+  );
+
+  assert.match(viteConfig, /\btanstackStart\s*\(\{/u);
+  assert.match(viteConfig, /router:\s*\{[\s\S]*quoteStyle:\s*'single'/u);
+  assert.match(viteConfig, /router:\s*\{[\s\S]*semicolons:\s*true/u);
 });
 
 test('parseArgs resolves optional root and app directories', () => {
