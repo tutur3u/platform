@@ -688,6 +688,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/$taskId preserves the legacy authenticated task-detail recovery page by gating the current user and resolving the task through the internal API facade before redirecting to the canonical board-backed task URL. Parent dashboard layout/session and task data APIs remain separately owned."
     },
+    "page:/:locale/:wsId/tasks:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks preserves the legacy authenticated My Tasks shell by resolving the current user, loading the full workspace row for personal-workspace behavior, and rendering the shared MyTasksContent client. The client self-loads task data through existing internal-api/UI hooks, so backing task APIs remain separately tracked."
+    },
     "page:/:locale/:wsId/tasks/boards:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -698,20 +703,70 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/boards/$boardId preserves the legacy authenticated board detail flow by authorizing the board through the forwarded-auth internal API, mapping 400/401/403/404 to notFound, resolving the canonical workspace for member access, using the legacy guest workspace shell for guest board access, and rendering the shared BoardClient. The legacy Mira idle chat island remains legacy-only until its local Next.js API/UI dependencies are moved behind shared TanStack/Rust facades."
     },
+    "page:/:locale/:wsId/tasks/cycles:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/cycles/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/cycles preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, route metadata, and the shared TaskCyclesClient with an empty initial cycle set. Cycle data APIs remain separately tracked because the client self-loads after mount."
+    },
     "page:/:locale/:wsId/tasks/estimates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/estimates/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/estimates preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized task-estimates copy, and the shared TaskEstimatesClient. Parent dashboard layout/session and backing task estimate APIs remain separately owned."
+    },
+    "page:/:locale/:wsId/tasks/initiatives:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/initiatives/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/initiatives preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, route metadata, and the shared TaskInitiativesClient with an empty initial initiative set. Initiative data APIs remain separately tracked because the client self-loads after mount."
     },
     "page:/:locale/:wsId/tasks/labels:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/labels/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/labels preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, and the shared TaskLabelsClient. Server-prefetched initial labels are intentionally not preserved yet because the client self-loads data and the task label data-origin/API ownership remains separately owned."
     },
+    "page:/:locale/:wsId/tasks/logs:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/logs/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/logs preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, route metadata, and the shared LogsClient shell. The legacy server-prefetched board/filter data is represented by empty initial filter state while log data APIs remain separately tracked."
+    },
     "page:/:locale/:wsId/tasks/notes:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/notes/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/tasks/notes preserves the legacy authenticated workspace page with getWorkspace-style not-found handling and renders the shared NotesContent under the locale layout's next-intl provider. Parent dashboard layout/session and notes data APIs remain separately owned."
+    },
+    "page:/:locale/:wsId/tasks/projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/projects preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized project copy, and the shared TaskProjectsClient with an empty initial project set. Project data APIs remain separately tracked because the client self-loads after mount."
+    },
+    "page:/:locale/:wsId/tasks/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/templates preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized template gallery header/action, and the shared TemplatesClient with an empty initial template set. Template data APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/tasks/templates/marketplace:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/marketplace/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/tasks/templates/marketplace preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized marketplace header/back link, and the shared MarketplaceClient with an empty initial public template set. Template marketplace data APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/calendar preserves the legacy authenticated calendar shell by loading the full workspace row, enforcing manage_calendar through the forwarded-auth internal permission check, and rendering the shared CalendarPageShell. Calendar connections and Google token data are empty first-load state until their protected data APIs move behind shared TanStack/Rust facades."
+    },
+    "page:/:locale/:wsId/chat:apps/web/src/app/[locale]/(dashboard)/[wsId]/chat/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/chat preserves the legacy authenticated chat shell by resolving the current user, enforcing view_chat through the forwarded-auth internal permission check, and rendering the shared ChatWorkspace client. Conversation and message APIs remain separately tracked because the client self-loads after mount."
+    },
+    "page:/:locale/:wsId/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/cron preserves the legacy authenticated cron shell with ai_lab permission gating and the shared FeatureSummary/Separator header. The legacy statistic cards are intentionally omitted until cron job/execution count readers move behind shared internal-api or Rust facades."
+    },
+    "page:/:locale/:wsId/memories:apps/web/src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/memories preserves the legacy authenticated memories shell with ai_lab permission gating and the shared FeatureSummary/Separator header. The interactive app-local MemoriesClient remains a Phase-2 follow-up until it is shared and backed by internal-api/Rust facades."
     },
     "page:/:locale/:wsId/qr-generator:apps/web/src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.tsx": {
       "status": "migrated",

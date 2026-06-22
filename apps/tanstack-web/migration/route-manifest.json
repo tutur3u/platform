@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 186,
-        "migrated": 120,
-        "percentComplete": 39.22,
-        "remaining": 186,
-        "terminal": 120,
+        "legacyNext": 175,
+        "migrated": 131,
+        "percentComplete": 42.81,
+        "remaining": 175,
+        "terminal": 131,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 207,
-        "migrated": 171,
-        "percentComplete": 45.24,
-        "remaining": 207,
-        "terminal": 171,
+        "legacyNext": 196,
+        "migrated": 182,
+        "percentComplete": 48.15,
+        "remaining": 196,
+        "terminal": 182,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1192,
-      "migrated": 249,
-      "percentComplete": 21.78,
-      "remaining": 1192,
-      "terminal": 332,
+      "legacyNext": 1181,
+      "migrated": 260,
+      "percentComplete": 22.51,
+      "remaining": 1181,
+      "terminal": 343,
       "total": 1524,
       "unknownStatus": 0
     }
@@ -11490,7 +11490,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/calendar",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11517,7 +11517,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/chat",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/chat/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11553,7 +11553,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/cron",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12732,7 +12732,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/memories",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12948,7 +12948,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12984,7 +12984,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/cycles",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/cycles/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13011,7 +13011,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/initiatives",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/initiatives/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13029,7 +13029,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/logs",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/logs/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13047,7 +13047,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/projects",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13065,7 +13065,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/templates",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13083,7 +13083,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/templates/marketplace",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/marketplace/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
