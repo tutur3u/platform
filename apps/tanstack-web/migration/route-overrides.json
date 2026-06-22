@@ -668,10 +668,25 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/inventory/batches ports the legacy authenticated inventory batches dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, view_inventory permission handling, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and protected data access only through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/batches endpoint remains separately tracked backend migration work."
     },
+    "page:/:locale/:wsId/inventory/categories:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/categories/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/categories ports the legacy authenticated inventory categories dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission booleans, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and category create/update/delete actions routed through the internal-api inventory facade instead of raw product-categories fetches. The backing /api/v1/workspaces/:wsId/inventory/categories and product-categories compatibility APIs remain separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/manufacturers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/manufacturers/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/manufacturers ports the legacy authenticated inventory manufacturers setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and manufacturer create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/manufacturers endpoint remains separately tracked backend migration work."
+    },
     "page:/:locale/:wsId/inventory/suppliers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/inventory/suppliers ports the legacy authenticated inventory suppliers dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission booleans, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and supplier create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/suppliers and product-suppliers compatibility APIs remain separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/units:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/units/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/units ports the legacy authenticated inventory units setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and unit create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/units and product-units compatibility APIs remain separately tracked backend migration work."
     },
     "page:/:locale/:wsId/inventory/warehouses:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/warehouses/page.tsx": {
       "status": "migrated",

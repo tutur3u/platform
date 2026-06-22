@@ -10,7 +10,10 @@ import {
   type InventoryListResponse,
   type InventoryNamedListQuery,
   listInventoryBatches,
+  listInventoryManufacturersPage,
+  listInventoryProductCategories,
   listInventorySuppliers,
+  listInventoryUnitsPage,
   listInventoryWarehouses,
 } from '@tuturuuu/internal-api/inventory';
 import {
@@ -20,7 +23,13 @@ import {
 import { useCallback } from 'react';
 import { useTranslations } from 'use-intl';
 
-export type InventoryTableResource = 'batches' | 'suppliers' | 'warehouses';
+export type InventoryTableResource =
+  | 'batches'
+  | 'categories'
+  | 'manufacturers'
+  | 'suppliers'
+  | 'units'
+  | 'warehouses';
 
 export type InventoryTableSearch = {
   page: number;
@@ -50,7 +59,10 @@ type InventoryDataTableClientProps<TData, TValue> = Omit<
 
 const resourceLoaders = {
   batches: listInventoryBatches,
+  categories: listInventoryProductCategories,
+  manufacturers: listInventoryManufacturersPage,
   suppliers: listInventorySuppliers,
+  units: listInventoryUnitsPage,
   warehouses: listInventoryWarehouses,
 } satisfies Record<
   InventoryTableResource,

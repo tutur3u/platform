@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 167,
-        "migrated": 139,
-        "percentComplete": 45.42,
-        "remaining": 167,
-        "terminal": 139,
+        "legacyNext": 164,
+        "migrated": 142,
+        "percentComplete": 46.41,
+        "remaining": 164,
+        "terminal": 142,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 188,
-        "migrated": 190,
-        "percentComplete": 50.26,
-        "remaining": 188,
-        "terminal": 190,
+        "legacyNext": 185,
+        "migrated": 193,
+        "percentComplete": 51.06,
+        "remaining": 185,
+        "terminal": 193,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1173,
-      "migrated": 268,
-      "percentComplete": 23.03,
-      "remaining": 1173,
-      "terminal": 351,
+      "legacyNext": 1170,
+      "migrated": 271,
+      "percentComplete": 23.23,
+      "remaining": 1170,
+      "terminal": 354,
       "total": 1524,
       "unknownStatus": 0
     }
@@ -12570,7 +12570,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/inventory/categories",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/categories/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12579,7 +12579,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/inventory/manufacturers",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/manufacturers/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12633,7 +12633,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/inventory/units",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/units/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
