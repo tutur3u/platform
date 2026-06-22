@@ -1,7 +1,4 @@
 import { ArrowRight, Sparkles } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { TrustBadges } from './trust-badges';
 import { VideoHero } from './video-hero';
@@ -48,13 +45,10 @@ export function HeroSection() {
         <div className="mb-8 text-center sm:mb-10">
           {/* Badge */}
           <div>
-            <Badge
-              variant="secondary"
-              className="mb-4 gap-1.5 border-foreground/10 bg-foreground/5 px-3 py-1.5 text-foreground/70 backdrop-blur-sm"
-            >
+            <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/5 px-3 py-1.5 font-medium text-foreground/70 text-xs backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
               {t('badge')}
-            </Badge>
+            </span>
           </div>
 
           {/* Headline */}
@@ -72,16 +66,13 @@ export function HeroSection() {
 
           {/* CTAs */}
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <Button
-              size="lg"
-              className="group w-full bg-gradient-to-r from-dynamic-purple to-dynamic-blue px-8 font-medium text-white shadow-dynamic-purple/25 shadow-lg transition-all hover:shadow-dynamic-purple/30 hover:shadow-xl sm:w-auto"
-              asChild
+            <a
+              href="/onboarding"
+              className="group inline-flex h-11 w-full items-center justify-center rounded-md bg-gradient-to-r from-dynamic-purple to-dynamic-blue px-8 font-medium text-white shadow-dynamic-purple/25 shadow-lg transition-all hover:shadow-dynamic-purple/30 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
             >
-              <Link href="/onboarding">
-                {t('cta.primary')}
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </Button>
+              {t('cta.primary')}
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
           </div>
         </div>
 

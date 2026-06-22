@@ -14,6 +14,7 @@ function sale(paid: number, qty: number): InventorySaleSummary {
     id: `s-${paid}-${qty}`,
     items_count: 1,
     paid_amount: paid,
+    source: 'checkout_session',
     total_quantity: qty,
   };
 }

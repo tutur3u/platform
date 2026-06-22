@@ -1,5 +1,7 @@
 export const LOCAL_E2E_PORTLESS_PORT = '1355';
 export const LOCAL_E2E_BASE_URL = `https://tuturuuu.localhost:${LOCAL_E2E_PORTLESS_PORT}`;
+export const LOCAL_E2E_TANSTACK_BASE_URL = `https://tanstack.tuturuuu.localhost:${LOCAL_E2E_PORTLESS_PORT}`;
+export const LOCAL_E2E_TANSTACK_DIRECT_URL = 'http://127.0.0.1:7824';
 export const LOCAL_E2E_SUPABASE_URL = 'http://127.0.0.1:8001';
 export const LOCAL_E2E_DOCKER_SUPABASE_URL = 'http://host.docker.internal:8001';
 export const LOCAL_E2E_SUPABASE_PUBLISHABLE_KEY =
@@ -11,6 +13,10 @@ export const LOCAL_E2E_APP_COORDINATION_SECRET =
 export const LOCAL_E2E_CRON_SECRET = 'local-e2e-cron-secret';
 
 export const SAFE_LOCAL_WEB_ORIGINS = new Set([
+  'http://127.0.0.1:7824',
+  'http://localhost:7824',
+  'https://tanstack.tuturuuu.localhost',
+  `https://tanstack.tuturuuu.localhost:${LOCAL_E2E_PORTLESS_PORT}`,
   'http://127.0.0.1:7803',
   'http://localhost:7803',
   'https://tuturuuu.localhost',

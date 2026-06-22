@@ -1,10 +1,15 @@
 ---
 title: "API Route Patterns"
 description: "Implementing and organizing API routes in the Tuturuuu platform"
-updatedAt: "2026-04-19"
+updatedAt: "2026-06-21"
 ---
 
 The Tuturuuu platform uses Next.js App Router API routes with consistent patterns for versioning, authentication, error handling, and workspace isolation.
+
+During the TanStack Start migration, new backend API ownership should move to
+`apps/backend` instead of adding more long-lived `apps/web` route handlers. See
+`platform/architecture/tanstack-rust-migration` for the route manifest, OpenAPI,
+Docker, E2E, and benchmark gates.
 
 ## Route Organization
 
@@ -47,63 +52,68 @@ dispatchers with `UND_ERR_INVALID_ARG` / `invalid onRequestStart method`. Keep
 custom transport configuration on the direct Undici request instead of passing
 it through `fetch`.
 
+## Authentication Wrappers
+
+`apps/web` routes do not hand-roll `try/catch` + `supabase.auth.getUser()`
+membership checks. Two wrappers in `apps/web/src/lib` centralize IP blocking,
+pre-auth rate limiting, payload-size limits, suspension checks, and adaptive
+abuse controls so handlers only contain business logic.
+
+| Wrapper | Module | Auth source | Handler context |
+| --- | --- | --- | --- |
+| `withSessionAuth` | `@/lib/api-auth` | Signed-in Supabase session (cookie/Bearer JWT, optional AI temp auth / app-session) | `{ user, supabase }` |
+| `withApiAuth` | `@/lib/api-middleware` | Workspace API key (`Authorization: Bearer ttr_...`) | `{ context, params }` where `context` is the `WorkspaceContext` |
+
+Both wrappers receive route params as a **Promise** (Next.js App Router
+behavior) and resolve them before invoking the handler. The session wrapper
+exposes a `TypedSupabaseClient` already scoped to the authenticated user, so
+RLS stays intact.
+
+> The older `authorizeRequest`/`authorize` helpers in `@/lib/api-auth` are
+> `@deprecated`. Prefer `withSessionAuth` for new routes.
+
 ## Versioned Public API
 
 ### Pattern: `/api/v1/*`
 
-Use for public-facing APIs that external clients consume.
+Use for product and public-facing APIs. For session-authenticated dashboard
+surfaces, wrap the handler with `withSessionAuth`. The wrapper provides the
+authenticated `user` and a request-scoped `supabase` client; the third handler
+argument is the resolved route params.
 
 ```typescript
 // app/api/v1/workspaces/route.ts
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 // GET /api/v1/workspaces
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createClient();
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Fetch user's workspaces
-    const { data: workspaces, error } = await supabase
-      .from('workspace_members')
-      .select(
-        `
-        ws_id,
-        role,
-        workspaces (
-          id,
-          name,
-          logo_url
-        )
+export const GET = withSessionAuth(async (_request, { user, supabase }) => {
+  // Fetch the caller's workspaces (RLS-scoped via `supabase`)
+  const { data: workspaces, error } = await supabase
+    .from('workspace_members')
+    .select(
       `
+      ws_id,
+      role,
+      workspaces (
+        id,
+        name,
+        logo_url
       )
-      .eq('user_id', user.id)
-      .eq('pending', false);
+    `
+    )
+    .eq('user_id', user.id)
+    .eq('pending', false);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      data: workspaces?.map((w) => w.workspaces),
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-}
+
+  return NextResponse.json({
+    data: workspaces?.map((w) => w.workspaces),
+  });
+});
 
 // POST /api/v1/workspaces
 const createWorkspaceSchema = z.object({
@@ -111,105 +121,95 @@ const createWorkspaceSchema = z.object({
   logo_url: z.url().optional(),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createClient();
+export const POST = withSessionAuth(async (request, { user, supabase }) => {
+  // Validate request body
+  const body = await request.json();
+  const parsed = createWorkspaceSchema.safeParse(body);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Validate request body
-    const body = await request.json();
-    const parsed = createWorkspaceSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    // Create workspace
-    const { data: workspace, error } = await supabase
-      .from('workspaces')
-      .insert({
-        name: parsed.data.name,
-        logo_url: parsed.data.logo_url,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // Add creator as owner
-    await supabase.from('workspace_members').insert({
-      ws_id: workspace.id,
-      user_id: user.id,
-      role: 'owner',
-    });
-
-    return NextResponse.json({ data: workspace }, { status: 201 });
-  } catch (error) {
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Invalid input', details: parsed.error.issues },
+      { status: 400 }
     );
   }
-}
+
+  // Create workspace
+  const { data: workspace, error } = await supabase
+    .from('workspaces')
+    .insert({
+      name: parsed.data.name,
+      logo_url: parsed.data.logo_url,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Add creator as owner
+  await supabase.from('workspace_members').insert({
+    ws_id: workspace.id,
+    user_id: user.id,
+    role: 'owner',
+  });
+
+  return NextResponse.json({ data: workspace }, { status: 201 });
+});
 ```
+
+> When you do need a Supabase client outside a wrapper (Server Components,
+> background jobs), remember the factory async-ness in
+> `@tuturuuu/supabase/next/server`: `createClient()` and `createDynamicClient()`
+> are async and must be awaited; `createAdminClient()` is synchronous (do not
+> `await` it unless you pass it through another async helper).
 
 ## Workspace-Scoped API
 
-### Pattern: `/api/[wsId]/*`
+### Pattern: `/api/v1/workspaces/[wsId]/*`
 
-Use for workspace-specific operations with automatic workspace context.
+Use for workspace-scoped operations. Route params are a Promise; the wrapper
+resolves them and passes them as the third handler argument. Authorize with the
+workspace helpers from `@tuturuuu/utils/workspace-helper`:
+
+- `normalizeWorkspaceId(wsId, supabase)` — resolves `personal`/handle aliases to
+  a concrete UUID.
+- `getPermissions({ wsId, user })` — returns a `PermissionsResult` with
+  `containsPermission(permissionId)` / `withoutPermission(permissionId)`. It
+  returns `null` when the caller is not a member, which doubles as the
+  membership check.
 
 ```typescript
-// app/api/[wsId]/tasks/route.ts
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { hasPermission } from '@/lib/permissions';
-import { NextRequest, NextResponse } from 'next/server';
+// app/api/v1/workspaces/[wsId]/tasks/route.ts
+import { withSessionAuth } from '@/lib/api-auth';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// GET /api/[wsId]/tasks
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { wsId: string } }
-) {
-  try {
-    const supabase = createClient();
+type Params = { wsId: string };
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+// GET /api/v1/workspaces/[wsId]/tasks
+export const GET = withSessionAuth<Params>(
+  async (request, { user, supabase }, { wsId }) => {
+    const workspaceId = await normalizeWorkspaceId(wsId, supabase);
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check workspace membership
-    const isMember = await isWorkspaceMember(user.id, params.wsId);
-    if (!isMember) {
+    // getPermissions returns null for non-members → 403
+    const permissions = await getPermissions({ wsId: workspaceId, user });
+    if (!permissions) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Parse query parameters
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = new URL(request.url).searchParams;
     const listId = searchParams.get('listId');
     const completed = searchParams.get('completed');
 
-    // Build query
     let query = supabase
       .from('workspace_tasks')
       .select('*')
-      .eq('ws_id', params.wsId);
+      .eq('ws_id', workspaceId);
 
     if (listId) query = query.eq('list_id', listId);
     if (completed !== null) query = query.eq('completed', completed === 'true');
@@ -221,15 +221,10 @@ export async function GET(
     }
 
     return NextResponse.json({ data: tasks });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-}
+);
 
-// POST /api/[wsId]/tasks
+// POST /api/v1/workspaces/[wsId]/tasks
 const createTaskSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
@@ -238,28 +233,15 @@ const createTaskSchema = z.object({
   dueDate: z.string().datetime().optional(),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { wsId: string } }
-) {
-  try {
-    const supabase = createClient();
+export const POST = withSessionAuth<Params>(
+  async (request, { user, supabase }, { wsId }) => {
+    const workspaceId = await normalizeWorkspaceId(wsId, supabase);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check permission
-    const canCreate = await hasPermission(user.id, params.wsId, 'manage_tasks');
-    if (!canCreate) {
+    const permissions = await getPermissions({ wsId: workspaceId, user });
+    if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Validate input
     const body = await request.json();
     const parsed = createTaskSchema.safeParse(body);
 
@@ -270,17 +252,15 @@ export async function POST(
       );
     }
 
-    // Create task
     const { data: task, error } = await supabase
       .from('workspace_tasks')
       .insert({
-        ws_id: params.wsId,
         name: parsed.data.name,
         description: parsed.data.description,
         list_id: parsed.data.listId,
         priority: parsed.data.priority,
-        due_date: parsed.data.dueDate,
-        created_by: user.id,
+        end_date: parsed.data.dueDate,
+        creator_id: user.id,
       })
       .select()
       .single();
@@ -290,54 +270,17 @@ export async function POST(
     }
 
     return NextResponse.json({ data: task }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-}
-
-// DELETE /api/[wsId]/tasks/[taskId]
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { wsId: string; taskId: string } }
-) {
-  try {
-    const supabase = createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const canDelete = await hasPermission(user.id, params.wsId, 'manage_tasks');
-    if (!canDelete) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { error } = await supabase
-      .from('workspace_tasks')
-      .delete()
-      .eq('id', params.taskId)
-      .eq('ws_id', params.wsId); // Ensure workspace isolation
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+);
 ```
+
+> Real task-board routes (for example
+> `apps/web/src/app/api/v1/workspaces/[wsId]/tasks/route.ts`) keep handler logic
+> in `@tuturuuu/apis/tu-do/tasks/route` and only wire the wrapper in the route
+> file. Extract shared handler logic the same way when a route grows past a
+> simple CRUD shape. Use `containsPermission()` with a real `PermissionId` (such
+> as `'manage_projects'`); there is no `manage_tasks` permission and no
+> `@/lib/permissions` module.
 
 ## AI Endpoints
 
@@ -345,15 +288,22 @@ export async function DELETE(
 
 Use for AI-specific operations with model selection and token tracking.
 
+The repo uses **AI SDK v6** (`ai` ^6.x, `@ai-sdk/google` ^3.x). On v6,
+`streamText` results expose `result.toUIMessageStreamResponse()` (the v4/v5
+`toDataStreamResponse()` no longer exists), and `onFinish` usage is reported as
+`usage.inputTokens` / `usage.outputTokens` (not `promptTokens` /
+`completionTokens`). Wrap the route with `withSessionAuth` and pass
+`allowAiTempAuth` if the endpoint must accept short-lived AI temp tokens.
+
 ```typescript
 // app/api/ai/chat/route.ts
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { streamText } from 'ai';
+import { withSessionAuth } from '@/lib/api-auth';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { NextRequest } from 'next/server';
+import { streamText } from 'ai';
 import { z } from 'zod';
 
 const chatRequestSchema = z.object({
+  wsId: z.string(),
   messages: z.array(
     z.object({
       role: z.enum(['user', 'assistant', 'system']),
@@ -363,84 +313,54 @@ const chatRequestSchema = z.object({
   model: z.string().optional(),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createClient();
+export const POST = withSessionAuth(async (request, { supabase }) => {
+  // Validate input
+  const body = await request.json();
+  const parsed = chatRequestSchema.safeParse(body);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
-    // Validate input
-    const body = await request.json();
-    const parsed = chatRequestSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return new Response('Invalid input', { status: 400 });
-    }
-
-    // Check AI feature flag
-    const { data: workspace } = await supabase
-      .from('workspace_secrets')
-      .select('value')
-      .eq('ws_id', body.wsId)
-      .eq('name', 'ENABLE_AI')
-      .single();
-
-    if (workspace?.value !== 'true') {
-      return new Response('AI not enabled for workspace', { status: 403 });
-    }
-
-    const google = createGoogleGenerativeAI({
-      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    });
-
-    const model = parsed.data.model || 'gemini-2.0-flash-exp';
-
-    const result = streamText({
-      model: google(model),
-      messages: parsed.data.messages,
-      onFinish: async ({ usage }) => {
-        // Track token usage
-        await supabase.from('workspace_ai_executions').insert({
-          ws_id: body.wsId,
-          model,
-          input_tokens: usage.promptTokens,
-          output_tokens: usage.completionTokens,
-          total_cost: calculateCost(model, usage),
-        });
-      },
-    });
-
-    return result.toDataStreamResponse();
-  } catch (error) {
-    console.error('AI chat error:', error);
-    return new Response('Internal server error', { status: 500 });
+  if (!parsed.success) {
+    return new Response('Invalid input', { status: 400 });
   }
-}
 
-function calculateCost(
-  model: string,
-  usage: { promptTokens: number; completionTokens: number }
-): number {
-  // Pricing per million tokens
-  const pricing: Record<string, { input: number; output: number }> = {
-    'gemini-2.0-flash-exp': { input: 0, output: 0 }, // Free tier
-    'gemini-2.0-pro-exp': { input: 0, output: 0 }, // Free tier
-  };
+  // Check AI feature flag
+  const { data: secret } = await supabase
+    .from('workspace_secrets')
+    .select('value')
+    .eq('ws_id', parsed.data.wsId)
+    .eq('name', 'ENABLE_AI')
+    .single();
 
-  const price = pricing[model] || { input: 0, output: 0 };
+  if (secret?.value !== 'true') {
+    return new Response('AI not enabled for workspace', { status: 403 });
+  }
 
-  return (
-    (usage.promptTokens / 1_000_000) * price.input +
-    (usage.completionTokens / 1_000_000) * price.output
-  );
-}
+  const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  });
+
+  const model = parsed.data.model || 'gemini-2.0-flash';
+
+  const result = streamText({
+    model: google(model),
+    messages: parsed.data.messages,
+    onFinish: async ({ usage }) => {
+      // Track token usage (AI SDK v6 field names)
+      await supabase.from('workspace_ai_executions').insert({
+        ws_id: parsed.data.wsId,
+        model,
+        input_tokens: usage.inputTokens ?? 0,
+        output_tokens: usage.outputTokens ?? 0,
+      });
+    },
+  });
+
+  return result.toUIMessageStreamResponse();
+});
 ```
+
+Token-usage persistence across the live AI routes (chat, task journal,
+suggestions, quizzes) consistently reads `usage.inputTokens ?? 0` and
+`usage.outputTokens ?? 0` — mirror that when adding new AI endpoints.
 
 ## Authentication Endpoints
 
@@ -460,7 +380,7 @@ const otpRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const body = await request.json();
     const parsed = otpRequestSchema.safeParse(body);
@@ -543,62 +463,53 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-## Middleware Pattern
+## API-Key Authenticated Routes
 
-### Permission Middleware
+### Pattern: `withApiAuth`
 
-```typescript
-// lib/api/middleware.ts
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { hasPermission } from '@/lib/permissions';
-import { NextRequest, NextResponse } from 'next/server';
-
-type Handler = (
-  req: NextRequest,
-  context: { params: any; user: any }
-) => Promise<NextResponse>;
-
-export function withAuth(handler: Handler) {
-  return async (req: NextRequest, context: any) => {
-    const supabase = createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    return handler(req, { ...context, user });
-  };
-}
-
-export function withPermission(permission: string, handler: Handler) {
-  return withAuth(async (req, context) => {
-    const wsId = context.params.wsId;
-
-    const allowed = await hasPermission(context.user.id, wsId, permission);
-
-    if (!allowed) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return handler(req, context);
-  });
-}
-```
-
-### Usage
+External SDK clients authenticate with a workspace API key
+(`Authorization: Bearer ttr_...`) instead of a Supabase session. Wrap those
+routes with `withApiAuth` from `@/lib/api-middleware`. It validates the key,
+enforces IP blocks, applies pre-auth and adaptive rate limits, logs API key
+usage, optionally checks workspace permissions, and passes the resolved
+`WorkspaceContext` plus route params to the handler.
 
 ```typescript
-// app/api/[wsId]/tasks/route.ts
-import { withPermission } from '@/lib/api/middleware';
+// app/api/v1/workspaces/[wsId]/storage/route.ts
+import { withApiAuth } from '@/lib/api-middleware';
+import { NextResponse } from 'next/server';
 
-export const POST = withPermission('manage_tasks', async (req, { params, user }) => {
-  // Implementation with guaranteed permission
-});
+type Params = { wsId: string };
+
+export const GET = withApiAuth<Params>(
+  async (_request, { params, context }) => {
+    // `context.wsId` is the validated workspace from the API key
+    const { wsId } = context;
+    // params.wsId is the resolved (awaited) route segment
+    return NextResponse.json({ wsId, route: params.wsId });
+  },
+  {
+    permissions: ['manage_drive'], // checked via the API key's permission set
+    rateLimit: { windowMs: 60000, maxRequests: 100 },
+  }
+);
 ```
+
+Key points that differ from `withSessionAuth`:
+
+- Permissions are declared in the wrapper `options.permissions` (a
+  `PermissionId[]`) and checked against the API key's granted scopes via
+  `hasAnyPermission` / `hasAllPermissions`. Set `requireAll: true` to require
+  every listed permission.
+- The handler context is `{ context, params }` (not `{ user, supabase }`); the
+  API-key path does not hand you a session-scoped Supabase client.
+- Rate-limit defaults: GET/HEAD reads are open, mutations default to 100
+  req/min, and workspace-specific overrides from `workspace_secrets` take
+  precedence.
+
+The helper module also exports `validateQueryParams(request, schema)` and
+`validateRequestBody(request, schema, maxBytes)` for Zod-validated, byte-size-capped
+input handling.
 
 ## CORS Configuration
 
@@ -647,32 +558,34 @@ day, and can be tuned with
 `API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_HOUR`, and
 `API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_DAY`.
 
-### Trusted accounts and locations (read uplift)
+### Verified sessions and trusted read uplift
 
-Proxy read limits are keyed per-IP and treat every caller as anonymous, because
-auth headers and cookies are forgeable at the edge — their presence alone must
-never raise a budget. To give legitimate teams (often many people behind one
-office NAT/VPN IP) higher read throughput, the proxy consults a server-written
-**trust cache** in Redis, keyed by the same subject keys as the abuse-reputation
-system (`session:<hash>`, `cidr:<network>`, `ip:<addr>`):
+Proxy limits default to per-IP anonymous buckets because auth headers and
+cookies are forgeable at the edge — their presence alone must never raise a
+budget. To separate genuinely signed-in browser sessions and give legitimate
+teams (often many people behind one office NAT/VPN IP) higher read throughput,
+the proxy consults a server-written **trust cache** in Redis, keyed by the same
+subject keys as the abuse-reputation system (`session:<hash>`,
+`cidr:<network>`, `ip:<addr>`):
 
 - A genuinely trusted **session** (its key is a hash of the real auth cookie, so
-  it cannot be forged) gets its own per-session read bucket, so trusted
-  teammates behind one shared IP no longer collide.
+  it cannot be forged) gets its own per-session read and mutation buckets, so
+  signed-in teammates behind one shared IP no longer collide on the pre-auth
+  proxy budget.
 - A trusted **location** (office `cidr`/`ip`, learned automatically from organic
   reputation or set explicitly via an `abuse_trust_overrides` `cidr` entry in the
   abuse-intelligence admin API) uplifts the shared per-IP read limit for the
   whole team.
 
 Untrusted traffic keeps the legacy per-IP limits, preserving single-IP abuse
-caps. The cache only ever raises read limits (never lowers them — restrictive
-decisions stay server-side) and fails open to neutral when Redis is unavailable.
-It is populated by the session write-through in `recordResponseAbuseSignal` and
-reconciled every 10 minutes by the
-`/api/cron/infrastructure/sync-trust-cache` cron (which also propagates admin
-trusted-location overrides). Set `API_PROXY_EDGE_TRUST_ENABLED=0` to disable the
-uplift and fall back to per-IP read limiting; tune the cache lifetime with
-`EDGE_TRUST_CACHE_TTL_SECONDS`.
+caps. The cache only ever uplifts read limits (never mutation limits, and never
+lowers limits — restrictive decisions stay server-side) and fails open to
+neutral when Redis is unavailable. It is populated by the session write-through
+in `recordResponseAbuseSignal` and direct session-auth helpers, and reconciled
+every 10 minutes by the `/api/cron/infrastructure/sync-trust-cache` cron (which
+also propagates admin trusted-location overrides). Set
+`API_PROXY_EDGE_TRUST_ENABLED=0` to disable the edge trust cache and fall back to
+per-IP keying; tune the cache lifetime with `EDGE_TRUST_CACHE_TTL_SECONDS`.
 
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';
@@ -702,22 +615,27 @@ export async function POST(request: NextRequest) {
 
 ### ✅ DO
 
-1. **Always validate input**
+1. **Wrap handlers with the auth wrapper**
+   ```typescript
+   // Session routes: getUser/membership/rate limits handled for you
+   export const POST = withSessionAuth(async (request, { user, supabase }) => {
+     /* ... */
+   });
+   // API-key routes: key validation + permission scopes
+   export const GET = withApiAuth(handler, { permissions: ['manage_drive'] });
+   ```
+
+2. **Always validate input**
    ```typescript
    const parsed = schema.safeParse(body);
    if (!parsed.success) return error(400);
    ```
 
-2. **Check authentication first**
-   ```typescript
-   const { data: { user } } = await supabase.auth.getUser();
-   if (!user) return error(401);
-   ```
-
 3. **Verify workspace permissions**
    ```typescript
-   const allowed = await hasPermission(user.id, wsId, 'manage_tasks');
-   if (!allowed) return error(403);
+   const workspaceId = await normalizeWorkspaceId(wsId, supabase);
+   const permissions = await getPermissions({ wsId: workspaceId, user });
+   if (!permissions?.containsPermission('manage_projects')) return error(403);
    ```
 
 ### ❌ DON'T
@@ -737,11 +655,23 @@ export async function POST(request: NextRequest) {
    .delete().eq('id', taskId).eq('ws_id', wsId)
    ```
 
-3. **Don't use user client for mutations**
+3. **Don't reach for the admin client to skip authorization**
    ```typescript
-   // ❌ Bad: Bypasses RLS
-   const sbAdmin = await createAdminClient();
+   // ❌ Bad: bypasses RLS and the caller's permission set
+   const sbAdmin = createAdminClient(); // sync — do not await
+   await sbAdmin.from('workspace_tasks').delete().eq('id', taskId);
+
+   // ✅ Good: use the session-scoped `supabase` from withSessionAuth so RLS
+   //         and getPermissions() still gate the write
+   await supabase
+     .from('workspace_tasks')
+     .delete()
+     .eq('id', taskId)
+     .eq('ws_id', workspaceId);
    ```
+   Use the admin client only for trusted server-side work that has already
+   performed its own authorization (e.g. inside `getPermissions`), and remember
+   it is synchronous.
 
 ## Related Documentation
 

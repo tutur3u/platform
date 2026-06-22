@@ -1,7 +1,7 @@
 ---
 title: "Components"
 description: "Reusable UI components and utilities for the Tuturuuu platform"
-updatedAt: "2025-09-27"
+updatedAt: "2026-06-21"
 ---
 
 This section contains documentation for reusable components and utilities used across the Tuturuuu platform.
@@ -11,6 +11,11 @@ This section contains documentation for reusable components and utilities used a
 ### WorkspaceWrapper
 
 A standardized component for handling workspace ID resolution and validation across the application.
+
+The canonical implementation is shared from `packages/ui` at
+`packages/ui/src/components/ui/custom/workspace-wrapper.tsx` and is imported as
+`@tuturuuu/ui/custom/workspace-wrapper`. `apps/web/src/components/workspace-wrapper.tsx`
+is a thin re-export kept for backward compatibility with existing imports.
 
 - [WorkspaceWrapper Guide](./workspace-wrapper) - Complete documentation with examples
 - [Quick Reference](./workspace-wrapper-quick-reference) - Quick reference guide
@@ -26,20 +31,25 @@ Create a new component when:
 3. **Testing**: The component needs isolated testing
 4. **Maintenance**: The component has specific maintenance requirements
 
-### Component Structure
+### Where Components Live
 
-All components should follow this structure:
+Components belong in the narrowest home that fits their reuse:
 
-```
-components/
-├── component-name/
-│   ├── index.tsx          # Main component export
-│   ├── component-name.tsx # Component implementation
-│   ├── types.ts          # TypeScript types
-│   ├── hooks.ts          # Custom hooks (if needed)
-│   ├── utils.ts          # Utility functions
-│   └── __tests__/        # Test files
-```
+- **Shared / reusable components** (used across apps) live in `packages/ui` under
+  `packages/ui/src/components/ui/custom/`. For example, `WorkspaceWrapper` lives at
+  `packages/ui/src/components/ui/custom/workspace-wrapper.tsx` and is imported via
+  `@tuturuuu/ui/custom/workspace-wrapper`.
+- **App-specific components** live in that app's `components/` directory
+  (for example `apps/web/src/components/`).
+- When a shared component is promoted to `packages/ui`, keep the old app path stable
+  with a thin re-export so existing imports keep working — as
+  `apps/web/src/components/workspace-wrapper.tsx` does for `WorkspaceWrapper`.
+
+There is no enforced per-component folder scaffold. Most components are a single file
+(co-located types and small hooks are fine inline); split into multiple files only when
+size or complexity warrants it. Per the repo guidelines, split files over ~400 LOC and
+components/widgets over ~200 LOC, and keep import paths stable with thin re-exports when
+callers depend on them. Colocated tests live in `__tests__/` directories next to the code.
 
 ### Documentation Requirements
 
@@ -55,14 +65,15 @@ Each component must include:
 
 - **Components**: PascalCase (`WorkspaceWrapper`)
 - **Files**: kebab-case (`workspace-wrapper.mdx`)
-- **Props**: camelCase (`searchParams`)
+- **Props**: camelCase (`params`)
 - **Types**: PascalCase with descriptive suffixes (`WorkspaceWrapperProps`)
 
 ## Contributing
 
 When adding new components:
 
-1. Create the component in the appropriate app's `components/` directory
+1. Create the component in the narrowest home that fits its reuse — `packages/ui` for
+   shared/reusable components, or the app's `components/` directory for app-specific ones
 2. Add comprehensive documentation
 3. Include TypeScript types
 4. Add tests

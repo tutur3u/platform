@@ -28,8 +28,10 @@ const mockIsIPBlocked = vi.fn().mockResolvedValue(null);
 const mockRecordAuthFailure = vi.fn();
 const mockCascadeBackendRateLimit = vi.fn();
 const mockIsBackendRateLimitError = vi.fn();
+const mockBuildAbuseRiskSubjects = vi.fn();
 
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
+  buildAbuseRiskSubjects: (input: unknown) => mockBuildAbuseRiskSubjects(input),
   extractIPFromHeaders: (h: unknown) => mockExtractIP(h),
   isIPBlocked: (ip: unknown) => mockIsIPBlocked(ip),
   recordApiAuthFailure: (ip: unknown, endpoint: unknown) =>
@@ -43,6 +45,13 @@ vi.mock('@tuturuuu/utils/abuse-protection/backend-rate-limit', () => ({
   isBackendRateLimitError: (
     ...args: Parameters<typeof mockIsBackendRateLimitError>
   ) => mockIsBackendRateLimitError(...args),
+}));
+
+const mockWriteVerifiedSessionCacheForSubjects = vi.fn();
+
+vi.mock('@tuturuuu/utils/abuse-protection/edge-trust', () => ({
+  writeVerifiedSessionCacheForSubjects: (subjectKeys: unknown) =>
+    mockWriteVerifiedSessionCacheForSubjects(subjectKeys),
 }));
 
 const mockHasAuthenticatedApiSession = vi.fn().mockReturnValue(false);
@@ -150,6 +159,24 @@ describe('withSessionAuth', () => {
     mockCascadeBackendRateLimit.mockResolvedValue(null);
     mockIsBackendRateLimitError.mockReturnValue(false);
     mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
+    mockBuildAbuseRiskSubjects.mockImplementation((input: unknown) => {
+      const { headers, userId } = input as {
+        headers?: Headers;
+        userId?: string;
+      };
+      const subjects = userId
+        ? [{ subject_key: `user:${userId}`, subject_type: 'user' }]
+        : [];
+      const cookie = headers?.get?.('cookie');
+      return cookie?.includes('auth-token') ||
+        cookie?.includes(APP_SESSION_COOKIE_NAME)
+        ? [
+            ...subjects,
+            { subject_key: 'session:session-123', subject_type: 'session' },
+          ]
+        : subjects;
+    });
+    mockWriteVerifiedSessionCacheForSubjects.mockResolvedValue(undefined);
     mockResolveWebAbuseDecision.mockResolvedValue({
       confidenceScore: 10,
       decisionSource: 'default',
@@ -721,6 +748,63 @@ describe('withSessionAuth', () => {
     }
     expect(mockGetUser).not.toHaveBeenCalled();
     expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
+  it('writes a verified session marker after successful shared session auth', async () => {
+    const request = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/calendar/events/event-1',
+      {
+        headers: {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+        },
+        method: 'DELETE',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockBuildAbuseRiskSubjects).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: request.headers,
+        ipAddress: '192.168.1.1',
+        userId: fakeUser.id,
+      })
+    );
+    expect(mockWriteVerifiedSessionCacheForSubjects).toHaveBeenCalledWith([
+      'session:session-123',
+    ]);
+  });
+
+  it('does not write a verified session marker when shared session auth fails', async () => {
+    mockGetClaims.mockResolvedValue({
+      data: { claims: null },
+      error: new Error('claims unavailable'),
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: new Error('Invalid JWT'),
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/calendar/events/event-1',
+      {
+        headers: {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=expired-value; theme=dark',
+        },
+        method: 'DELETE',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(mockWriteVerifiedSessionCacheForSubjects).not.toHaveBeenCalled();
   });
 
   it('should bind storage APIs to the Drive app-session audience by default', async () => {

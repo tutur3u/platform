@@ -6,14 +6,18 @@ import {
   deleteWorkspaceLabel,
   deleteWorkspaceTaskBoard,
   deleteWorkspaceTaskProject,
+  disableWorkspaceTaskBoardPublicLink,
+  enableWorkspaceTaskBoardPublicLink,
   getTaskDialogHydration,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
+  getWorkspaceTaskBoardPublicLink,
   getWorkspaceTaskProjectTasks,
   linkWorkspaceTaskProjectTask,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
+  listWorkspaceTaskBoardViewableMembers,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjectDetails,
   listWorkspaceTasks,
@@ -275,6 +279,91 @@ describe('workspace board internal-api helpers', () => {
       3,
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1',
       expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
+  it('manages workspace task board public links', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          publicLink: {
+            board_id: 'board-1',
+            code: 'public-code',
+            enabled: true,
+            id: 'link-1',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          publicLink: {
+            board_id: 'board-1',
+            code: 'public-code',
+            enabled: true,
+            id: 'link-1',
+          },
+        })
+      )
+      .mockResolvedValueOnce(createJsonResponse({ success: true }));
+
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getWorkspaceTaskBoardPublicLink('ws-1', 'board-1', options);
+    await enableWorkspaceTaskBoardPublicLink('ws-1', 'board-1', options);
+    await disableWorkspaceTaskBoardPublicLink('ws-1', 'board-1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
+      expect.objectContaining({
+        method: 'DELETE',
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists workspace task board viewable members', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        members: [
+          {
+            display_name: 'Project Manager',
+            id: 'user-1',
+            user_id: 'user-1',
+          },
+        ],
+      })
+    );
+
+    await listWorkspaceTaskBoardViewableMembers('ws-1', 'board-1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/viewable-members',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
     );
   });
 

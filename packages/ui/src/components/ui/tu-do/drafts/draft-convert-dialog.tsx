@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  convertWorkspaceTaskDraft,
   listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
 } from '@tuturuuu/internal-api';
@@ -46,6 +47,10 @@ export function DraftConvertDialog({
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [isConverting, setIsConverting] = useState(false);
+  const internalApiOptions =
+    typeof window !== 'undefined'
+      ? { baseUrl: window.location.origin }
+      : undefined;
 
   // Sync selections when draft changes (useState initializer only runs on mount)
   useEffect(() => {
@@ -107,19 +112,12 @@ export function DraftConvertDialog({
 
     setIsConverting(true);
     try {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/task-drafts/${draft.id}/convert`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listId: selectedListId }),
-        }
+      await convertWorkspaceTaskDraft(
+        wsId,
+        draft.id,
+        { listId: selectedListId },
+        internalApiOptions
       );
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to convert draft');
-      }
 
       toast.success(t('converted_success'));
       onConverted();

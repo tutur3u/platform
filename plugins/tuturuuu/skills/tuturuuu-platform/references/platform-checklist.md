@@ -14,6 +14,10 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
   status, and needs.
 - Use `$tuturuuu-agent-coordination` for dirty worktrees, active overlap,
   archived context, handoff, or path-scoped staging decisions.
+- For subagent work, write lane contracts before spawning: owner, mode, owned
+  paths, excluded paths, generated outputs, validation, handoff shape, and
+  commit authority. Checkpoint after each integrated slice before dispatching
+  more work.
 - If a commit may be needed in a shared checkout, inspect
   `bun git-commit-window status` before committing and plan to claim or wait for
   the window immediately before changing the staged set. Claims default to 10

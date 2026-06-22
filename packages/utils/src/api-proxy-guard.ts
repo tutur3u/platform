@@ -31,10 +31,10 @@ function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
 }
 
 /**
- * Whether trusted accounts/locations get scaled read limits (and trusted
+ * Whether trusted accounts/locations get scaled read limits (and verified
  * sessions get their own per-session bucket) at the edge. Default on; set
  * `API_PROXY_EDGE_TRUST_ENABLED=0` to disable trust uplift and fall back to
- * legacy per-IP read limiting without a deploy.
+ * legacy per-IP keying without a deploy.
  */
 function edgeTrustEnabled(): boolean {
   return isEnvFlagEnabled('API_PROXY_EDGE_TRUST_ENABLED');
@@ -890,9 +890,10 @@ function getCallerClass(req: NextRequest): CallerClass {
   // Intentionally always 'anonymous'. Auth headers/cookies are forgeable at the
   // edge (we can't verify signatures cheaply here), so presence alone must never
   // grant an elevated proxy budget — real per-user enforcement happens
-  // downstream. Higher read throughput for genuinely trusted accounts/locations
-  // is granted instead via the server-written trust cache (see resolveProxyIdentity
-  // + getCachedTrustMultiplier), which cannot be forged.
+  // downstream. Per-session proxy buckets and higher read throughput for
+  // genuinely trusted accounts/locations are granted instead via the
+  // server-written trust cache (see resolveProxyIdentity +
+  // getCachedTrustEntries), which cannot be forged.
   void req;
   return 'anonymous';
 }
@@ -1263,40 +1264,46 @@ export async function guardApiProxyRequest(
     const routePolicy = getRoutePolicy(req, routePolicies);
     const isRead = req.method === 'GET' || req.method === 'HEAD';
 
-    // Resolve session verification/trust for reads only. Account trust
-    // (session key) and location trust (cidr/ip keys) are distinguished so that:
+    // Resolve server-verified session keying for reads and mutations, but apply
+    // trust uplift to read limits only. Account trust (session key) and location
+    // trust (cidr/ip keys) are distinguished so that:
     //   * a server-verified SESSION (cache entry keyed on the real cookie's
-    //     hash — unforgeable) gets its OWN per-session bucket, so authenticated
+    //     hash — unforgeable) gets its OWN per-session bucket, so signed-in
     //     teammates behind one NAT no longer collide; and
     //   * a trusted LOCATION (office cidr/ip) uplifts the shared per-IP bucket
     //     for the whole team without any per-request credential.
     // Untrusted traffic keeps legacy per-IP keying, preserving single-IP abuse
-    // caps. A forged cookie hashes to a key with no cache entry → no uplift,
-    // no per-session escape.
+    // caps. A forged cookie hashes to a key with no cache entry, so it cannot
+    // escape the shared IP bucket.
     let trustEntry: CachedTrustEntry | null = null;
     let sessionScoped = false;
-    if (isRead && edgeTrustEnabled()) {
+    if (edgeTrustEnabled()) {
       const lookupKeys = [
         identity.sessionKey,
-        identity.cidrKey,
-        identity.ipKey,
-        identity.workspaceKey,
+        ...(isRead
+          ? [identity.cidrKey, identity.ipKey, identity.workspaceKey]
+          : []),
       ].filter((key): key is string => key != null);
       const entries = await getCachedTrustEntries(lookupKeys);
 
       const sessionEntry = identity.sessionKey
         ? entries.get(identity.sessionKey)
         : undefined;
-      // Location/workspace trust applies to the shared per-IP bucket for the
-      // whole team; session trust applies to the per-session bucket.
-      const locationEntry = combineTrustEntries([
-        identity.cidrKey ? entries.get(identity.cidrKey) : undefined,
-        identity.ipKey ? entries.get(identity.ipKey) : undefined,
-        identity.workspaceKey ? entries.get(identity.workspaceKey) : undefined,
-      ]);
-
-      trustEntry = combineTrustEntries([sessionEntry, locationEntry]);
       sessionScoped = !!identity.sessionKey && !!sessionEntry;
+
+      if (isRead) {
+        // Location/workspace trust applies to the shared per-IP bucket for the
+        // whole team; session trust applies to the per-session bucket.
+        const locationEntry = combineTrustEntries([
+          identity.cidrKey ? entries.get(identity.cidrKey) : undefined,
+          identity.ipKey ? entries.get(identity.ipKey) : undefined,
+          identity.workspaceKey
+            ? entries.get(identity.workspaceKey)
+            : undefined,
+        ]);
+
+        trustEntry = combineTrustEntries([sessionEntry, locationEntry]);
+      }
     }
 
     // Server-verified sessions key per-session; everyone else keys per-IP.
@@ -1313,8 +1320,9 @@ export async function guardApiProxyRequest(
         routePolicy,
         effectiveCallerClass
       );
-      const { profile: rateLimits, suffix: trustSuffix } =
-        applyTrustEntryToReads(baseRateLimits, trustEntry);
+      const { profile: rateLimits, suffix: trustSuffix } = isRead
+        ? applyTrustEntryToReads(baseRateLimits, trustEntry)
+        : { profile: baseRateLimits, suffix: '' };
 
       const limiterPrefix = getRateLimitPrefix(
         options.prefixBase,

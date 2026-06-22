@@ -7,6 +7,7 @@ const { getCronSyncDiff, syncWebCrons } = require('./web-crons.js');
 const {
   getCronPaths,
   getDueScheduledJobs,
+  listWebContainers,
   processWatcherRecoveryRequest,
   runCronCycle,
 } = require('./watch-web-crons.js');
@@ -73,6 +74,60 @@ test('getDueScheduledJobs detects UTC schedules after the persisted run marker',
 
   assert.equal(due.length, 1);
   assert.equal(due[0].scheduledAt, Date.parse('2026-01-01T00:15:00.000Z'));
+});
+
+test('listWebContainers uses the selected TanStack frontend lanes', async () => {
+  const calls = [];
+  const containers = await listWebContainers({
+    env: {
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      PATH: 'test-path',
+    },
+    run: async (command, args, options) => {
+      const joined = [command, ...args].join(' ');
+      calls.push({ joined, options });
+
+      if (joined.includes('ps -q tanstack-web-blue')) {
+        return { code: 0, stderr: '', stdout: 'blue-123\n' };
+      }
+
+      if (joined.includes('ps -q tanstack-web-green')) {
+        return { code: 0, stderr: '', stdout: 'green-123\n' };
+      }
+
+      return { code: 1, stderr: 'unexpected command', stdout: '' };
+    },
+  });
+
+  assert.deepEqual(containers, [
+    { containerId: 'blue-123', deploymentColor: 'blue' },
+    { containerId: 'green-123', deploymentColor: 'green' },
+  ]);
+  assert.equal(
+    calls.some(({ joined }) => joined.includes('ps -q web-blue')),
+    false
+  );
+  assert.equal(calls[0].options.env.DOCKER_WEB_FRONTEND, 'tanstack');
+});
+
+test('listWebContainers rejects unknown frontend values before Docker probes', async () => {
+  let commandCount = 0;
+
+  await assert.rejects(
+    () =>
+      listWebContainers({
+        env: {
+          DOCKER_WEB_FRONTEND: 'bogus',
+          PATH: 'test-path',
+        },
+        run: async () => {
+          commandCount += 1;
+          return { code: 0, stderr: '', stdout: '' };
+        },
+      }),
+    /Unsupported Docker web frontend/
+  );
+  assert.equal(commandCount, 0);
 });
 
 test('runCronCycle records an execution with route console logs and advances state once', async () => {

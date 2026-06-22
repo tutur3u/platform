@@ -19,6 +19,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   getPersonalExternalStagingListId,
+  priorityCompare,
   type WorkspaceLabel,
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
@@ -31,15 +32,25 @@ import {
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
+import type {
+  KanbanDeadlineCollapsedState,
+  KanbanDeadlineSection,
+} from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
+import { DraftsPage } from '../drafts/drafts-page';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
-import { RecycleBinPanel } from '../shared/recycle-bin-panel';
+import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 
-export type ViewType = 'kanban' | 'list' | 'timeline';
+export type ViewType =
+  | 'kanban'
+  | 'list'
+  | 'timeline'
+  | 'drafts'
+  | 'recycle_bin';
 
 const HOTKEY_CREATE_TASK = 'C';
 const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
@@ -49,6 +60,8 @@ const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
   'personal-board-external-tasks-collapsed';
 const CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
   'task-board-closed-list-collapsed';
+const DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX =
+  'task-board-deadline-section-collapsed';
 const DEFAULT_TASK_FILTERS: TaskFilters = {
   labels: [],
   assignees: [],
@@ -78,6 +91,140 @@ function getClosedTaskListCollapsedStorageKey(boardId: string, listId: string) {
   return `${CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
 }
 
+function getDeadlineSectionCollapsedStorageKey(
+  boardId: string,
+  section: KanbanDeadlineSection
+) {
+  return `${DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX}:${boardId}:${section}`;
+}
+
+function taskMatchesLocalFilters(
+  task: Task,
+  filters: TaskFilters,
+  currentUserId?: string
+) {
+  const query = filters.searchQuery?.trim().toLowerCase();
+  if (query) {
+    const searchableText = [
+      task.name,
+      task.display_number ? String(task.display_number) : null,
+      ...(task.labels ?? []).map((label) => label.name),
+      ...(task.projects ?? []).map((project) => project.name),
+      ...(task.assignees ?? []).map(
+        (assignee) => assignee.display_name ?? assignee.email ?? assignee.handle
+      ),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    if (!searchableText.includes(query)) return false;
+  }
+
+  if (
+    filters.labels.length > 0 &&
+    !filters.labels.every((label) =>
+      task.labels?.some((taskLabel) => taskLabel.id === label.id)
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    filters.projects.length > 0 &&
+    !filters.projects.every((project) =>
+      task.projects?.some((taskProject) => taskProject.id === project.id)
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    filters.priorities.length > 0 &&
+    (!task.priority || !filters.priorities.includes(task.priority))
+  ) {
+    return false;
+  }
+
+  if (filters.assignees.length > 0) {
+    const assigneeIds = new Set(
+      filters.assignees.map((assignee) => assignee.id)
+    );
+    if (!task.assignees?.some((assignee) => assigneeIds.has(assignee.id))) {
+      return false;
+    }
+  }
+
+  if (
+    filters.includeMyTasks &&
+    currentUserId &&
+    !task.assignees?.some((assignee) => assignee.id === currentUserId)
+  ) {
+    return false;
+  }
+
+  if (filters.includeUnassigned && (task.assignees?.length ?? 0) > 0) {
+    return false;
+  }
+
+  if (filters.dueDateRange?.from || filters.dueDateRange?.to) {
+    if (!task.end_date) return false;
+    const dueTime = new Date(task.end_date).getTime();
+    const fromTime = filters.dueDateRange.from?.getTime() ?? -Infinity;
+    const toTime = filters.dueDateRange.to?.getTime() ?? Infinity;
+    if (dueTime < fromTime || dueTime > toTime) return false;
+  }
+
+  if (
+    typeof filters.estimationRange?.min === 'number' ||
+    typeof filters.estimationRange?.max === 'number'
+  ) {
+    const estimate = task.estimation_points ?? 0;
+    const min = filters.estimationRange.min ?? -Infinity;
+    const max = filters.estimationRange.max ?? Infinity;
+    if (estimate < min || estimate > max) return false;
+  }
+
+  return true;
+}
+
+function getTaskTimestamp(value: string | null | undefined) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+}
+
+function sortLocalTasks(tasks: Task[], sortBy: TaskFilters['sortBy']) {
+  if (!sortBy) return tasks;
+
+  return [...tasks].sort((a, b) => {
+    switch (sortBy) {
+      case 'name-asc':
+        return a.name.localeCompare(b.name);
+      case 'name-desc':
+        return b.name.localeCompare(a.name);
+      case 'priority-high':
+        return priorityCompare(a.priority ?? null, b.priority ?? null);
+      case 'priority-low':
+        return priorityCompare(b.priority ?? null, a.priority ?? null);
+      case 'due-date-asc':
+        return getTaskTimestamp(a.end_date) - getTaskTimestamp(b.end_date);
+      case 'due-date-desc':
+        return getTaskTimestamp(b.end_date) - getTaskTimestamp(a.end_date);
+      case 'created-date-asc':
+        return getTaskTimestamp(a.created_at) - getTaskTimestamp(b.created_at);
+      case 'created-date-desc':
+        return getTaskTimestamp(b.created_at) - getTaskTimestamp(a.created_at);
+      case 'estimation-high':
+        return (b.estimation_points ?? 0) - (a.estimation_points ?? 0);
+      case 'estimation-low':
+        return (a.estimation_points ?? 0) - (b.estimation_points ?? 0);
+      default:
+        return 0;
+    }
+  });
+}
+
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
@@ -85,9 +232,13 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   workspaceLabels: WorkspaceLabel[];
+  availableViews?: ViewType[];
   canManageBoard?: boolean;
   currentUserId?: string;
   idleBottomIsland?: ReactNode;
+  publicHeaderPrefix?: ReactNode;
+  publicView?: boolean;
+  readOnly?: boolean;
 }
 
 export function BoardViews({
@@ -96,9 +247,13 @@ export function BoardViews({
   board,
   tasks,
   lists,
+  availableViews,
   canManageBoard = true,
   currentUserId,
   idleBottomIsland,
+  publicHeaderPrefix,
+  publicView = false,
+  readOnly = false,
 }: Props) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -110,6 +265,8 @@ export function BoardViews({
   const [closedTaskListsCollapsed, setClosedTaskListsCollapsed] = useState<
     Record<string, boolean>
   >({});
+  const [deadlineSectionsCollapsed, setDeadlineSectionsCollapsed] =
+    useState<KanbanDeadlineCollapsedState>({});
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
@@ -117,11 +274,29 @@ export function BoardViews({
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
-  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [kanbanBulkSelectionActive, setKanbanBulkSelectionActive] =
     useState(false);
   const { createTask } = useTaskDialog();
+  const localTaskState = readOnly || publicView;
+  const enabledViews = useMemo(
+    () =>
+      availableViews ??
+      (publicView || readOnly
+        ? (['kanban', 'list', 'timeline'] as ViewType[])
+        : ([
+            'kanban',
+            'list',
+            'timeline',
+            'drafts',
+            'recycle_bin',
+          ] as ViewType[])),
+    [availableViews, publicView, readOnly]
+  );
+  const viewIsEnabled = useCallback(
+    (view: ViewType) => !enabledViews || enabledViews.includes(view),
+    [enabledViews]
+  );
   const sourceScope = filters.sourceScope ?? 'all_visible';
   const sourceWorkspaceIds = filters.sourceWorkspaceIds ?? [];
   const sourceBoardIds = filters.sourceBoardIds ?? [];
@@ -206,6 +381,13 @@ export function BoardViews({
       taskQueryOptions,
     ]
   );
+  const deadlineTaskQueryOptions = useMemo<ListWorkspaceTasksOptions>(() => {
+    const { sortBy: _sortBy, ...filterOptions } = taskQueryOptions;
+    return {
+      ...filterOptions,
+      listStatuses: listStatusesForQuery,
+    };
+  }, [listStatusesForQuery, taskQueryOptions]);
   const viewHotkeyLabels = useMemo(
     () => ({
       kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
@@ -228,6 +410,7 @@ export function BoardViews({
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
+      if (localTaskState) return;
       if (nextView !== 'list' && nextView !== 'timeline') return;
 
       void queryClient.prefetchQuery({
@@ -236,20 +419,21 @@ export function BoardViews({
         staleTime: 0,
       });
     },
-    [board.id, fetchBoardTasks, queryClient, taskFilterKey]
+    [board.id, fetchBoardTasks, localTaskState, queryClient, taskFilterKey]
   );
 
   const handleViewChange = useCallback(
     (nextView: ViewType) => {
+      if (!viewIsEnabled(nextView)) return;
       setCurrentView(nextView);
       primeFullTaskCache(nextView);
     },
-    [primeFullTaskCache]
+    [primeFullTaskCache, viewIsEnabled]
   );
 
   const { data: fullTasks = [], isFetching: isFullTasksFetching } = useQuery({
     queryKey: ['tasks-full', board.id, taskFilterKey],
-    enabled: shouldEagerLoadTasks,
+    enabled: !localTaskState && shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
     refetchOnMount: 'always',
     staleTime: 0,
@@ -273,21 +457,26 @@ export function BoardViews({
 
   useLayoutEffect(() => {
     const savedConfig = loadBoardConfig(board.id);
+    const defaultView = enabledViews?.[0] ?? 'kanban';
 
     if (!savedConfig) {
-      setCurrentView('kanban');
+      setCurrentView(defaultView);
       setFilters(DEFAULT_TASK_FILTERS);
       setListStatusFilter('all');
       return;
     }
 
-    setCurrentView(savedConfig.currentView);
+    setCurrentView(
+      viewIsEnabled(savedConfig.currentView)
+        ? savedConfig.currentView
+        : defaultView
+    );
     setFilters({
       ...DEFAULT_TASK_FILTERS,
       ...savedConfig.filters,
     });
     setListStatusFilter(savedConfig.listStatusFilter);
-  }, [board.id]);
+  }, [board.id, enabledViews, viewIsEnabled]);
 
   useEffect(() => {
     if (!workspace.personal || typeof window === 'undefined') {
@@ -368,6 +557,45 @@ export function BoardViews({
     [board.id]
   );
 
+  useEffect(() => {
+    setDeadlineSectionsCollapsed((previous) => {
+      const next: KanbanDeadlineCollapsedState = {};
+
+      for (const section of ['overdue', 'upcoming'] as const) {
+        const storedValue =
+          typeof window === 'undefined'
+            ? null
+            : window.localStorage.getItem(
+                getDeadlineSectionCollapsedStorageKey(board.id, section)
+              );
+
+        next[section] =
+          storedValue === null
+            ? (previous[section] ?? false)
+            : storedValue === 'true';
+      }
+
+      return next;
+    });
+  }, [board.id]);
+
+  const handleDeadlineSectionCollapsedChange = useCallback(
+    (section: KanbanDeadlineSection, collapsed: boolean) => {
+      setDeadlineSectionsCollapsed((previous) => ({
+        ...previous,
+        [section]: collapsed,
+      }));
+
+      if (typeof window === 'undefined') return;
+
+      window.localStorage.setItem(
+        getDeadlineSectionCollapsedStorageKey(board.id, section),
+        String(collapsed)
+      );
+    },
+    [board.id]
+  );
+
   const externalStagingList = useMemo<TaskList | null>(() => {
     if (!workspace.personal) return null;
 
@@ -412,7 +640,7 @@ export function BoardViews({
   const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =
     useQuery({
       queryKey: ['task-list-counts', board.id, taskFilterKey],
-      enabled: hasTaskFilters,
+      enabled: !localTaskState && hasTaskFilters,
       queryFn: async () => {
         const result = await listWorkspaceTasks(effectiveWorkspaceId, {
           ...taskQueryOptions,
@@ -427,6 +655,31 @@ export function BoardViews({
       staleTime: 30_000,
     });
 
+  const locallyFilteredTasks = useMemo(
+    () =>
+      sortLocalTasks(
+        tasks.filter((task) =>
+          taskMatchesLocalFilters(task, filters, currentUserId)
+        ),
+        filters.sortBy
+      ),
+    [currentUserId, filters, tasks]
+  );
+
+  const localListCounts = useMemo(() => {
+    if (!localTaskState || !hasTaskFilters) return null;
+
+    const counts = new Map<string, number>();
+    for (const task of locallyFilteredTasks) {
+      counts.set(task.list_id, (counts.get(task.list_id) ?? 0) + 1);
+    }
+
+    return [...counts.entries()].map(([list_id, count]) => ({
+      list_id,
+      count,
+    }));
+  }, [hasTaskFilters, localTaskState, locallyFilteredTasks]);
+
   // Filter lists based on selected status filter
   const statusFilteredLists = useMemo(() => {
     if (listStatusFilter === 'all') return activeLists;
@@ -439,18 +692,27 @@ export function BoardViews({
   }, [activeLists, listStatusFilter]);
 
   const filteredLists = useMemo(() => {
-    if (!hasTaskFilters || !filteredListCounts) return statusFilteredLists;
+    const listCounts = localTaskState ? localListCounts : filteredListCounts;
+    if (!hasTaskFilters || !listCounts) return statusFilteredLists;
 
     const countByListId = new Map(
-      filteredListCounts.map((entry) => [entry.list_id, entry.count] as const)
+      listCounts.map((entry) => [entry.list_id, entry.count] as const)
     );
 
     return statusFilteredLists.filter(
       (list) => (countByListId.get(list.id) ?? 0) > 0
     );
-  }, [filteredListCounts, hasTaskFilters, statusFilteredLists]);
+  }, [
+    filteredListCounts,
+    hasTaskFilters,
+    localListCounts,
+    localTaskState,
+    statusFilteredLists,
+  ]);
 
   const sourceTasks = useMemo(() => {
+    if (localTaskState) return locallyFilteredTasks;
+
     if (!shouldEagerLoadTasks) return tasks;
 
     if (fullTasks.length === 0) {
@@ -475,7 +737,15 @@ export function BoardViews({
     }
 
     return merged;
-  }, [fullTasks, hasServerTaskQuery, shouldEagerLoadTasks, sourceScope, tasks]);
+  }, [
+    fullTasks,
+    hasServerTaskQuery,
+    localTaskState,
+    locallyFilteredTasks,
+    shouldEagerLoadTasks,
+    sourceScope,
+    tasks,
+  ]);
 
   // Keep only tasks that belong to the server-visible lists/status scope.
   const filteredTasks = useMemo(() => {
@@ -531,7 +801,11 @@ export function BoardViews({
       createTask(board.id, targetList.id, selectableLists, filters);
     },
     {
-      enabled: filteredLists.some((list) => !list.is_external_staging),
+      enabled:
+        !readOnly &&
+        currentView !== 'drafts' &&
+        currentView !== 'recycle_bin' &&
+        filteredLists.some((list) => !list.is_external_staging),
       ignoreInputs: true,
       preventDefault: true,
     }
@@ -543,6 +817,7 @@ export function BoardViews({
       handleViewChange('kanban');
     },
     {
+      enabled: viewIsEnabled('kanban'),
       ignoreInputs: true,
       preventDefault: true,
     }
@@ -554,6 +829,7 @@ export function BoardViews({
       handleViewChange('list');
     },
     {
+      enabled: viewIsEnabled('list'),
       ignoreInputs: true,
       preventDefault: true,
     }
@@ -565,6 +841,7 @@ export function BoardViews({
       handleViewChange('timeline');
     },
     {
+      enabled: viewIsEnabled('timeline'),
       ignoreInputs: true,
       preventDefault: true,
     }
@@ -583,13 +860,19 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
-            isMultiSelectMode={isMultiSelectMode}
-            setIsMultiSelectMode={setIsMultiSelectMode}
+            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
+            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
+            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            onDeadlineSectionCollapsedChange={
+              handleDeadlineSectionCollapsedChange
+            }
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
+            readOnly={readOnly}
           />
         );
       case 'list':
@@ -602,6 +885,7 @@ export function BoardViews({
             isPersonalWorkspace={workspace.personal}
             preserveTaskOrder={!!filters.sortBy}
             searchQuery={filters.searchQuery}
+            readOnly={readOnly}
           />
         );
       case 'timeline':
@@ -612,6 +896,66 @@ export function BoardViews({
             tasks={effectiveTasks}
             lists={filteredLists}
             onTaskPartialUpdate={handleTaskPartialUpdate}
+          />
+        );
+      case 'drafts':
+        return (
+          <div className="h-full overflow-y-auto p-3 sm:p-4">
+            <DraftsPage
+              boardId={board.id}
+              includeUnassignedForBoard
+              wsId={effectiveWorkspaceId}
+            />
+          </div>
+        );
+      case 'recycle_bin':
+        return (
+          <RecycleBinContent
+            active
+            boardId={board.id}
+            className="h-full"
+            lists={boardLists}
+            translations={{
+              recycleBin: t('recycle_bin'),
+              recycleBinDescription: t('recycle_bin_description'),
+              noDeletedTasks: t('no_deleted_tasks'),
+              deletedTasksWillAppearHere: t('deleted_tasks_will_appear_here'),
+              selectedOfTotal: t('selected_of_total', {
+                selected: '{selected}',
+                total: '{total}',
+              }),
+              deletedTasksCount: t('deleted_tasks_count', { count: '{count}' }),
+              restore: t('restore'),
+              delete: t('delete'),
+              restoreTasksTitle: t('restore_tasks_title', { count: '{count}' }),
+              restoreTasksDescription: t('restore_tasks_description'),
+              cancel: t('cancel'),
+              restoring: t('restoring'),
+              permanentlyDeleteTitle: t('permanently_delete_title', {
+                count: '{count}',
+              }),
+              permanentlyDeleteDescription: t('permanently_delete_description'),
+              deleting: t('deleting'),
+              deletePermanently: t('delete_permanently'),
+              noListsAvailable: t('no_lists_available'),
+              restoredTasks: t('restored_tasks', { count: '{count}' }),
+              failedToRestore: t('failed_to_restore'),
+              permanentlyDeleted: t('permanently_deleted', {
+                count: '{count}',
+              }),
+              failedToDelete: t('failed_to_delete'),
+              deletedAgo: t('deleted_ago', { time: '{time}' }),
+              fromList: t('from_list', { list: '{list}' }),
+              nProjects: t('n_projects', { count: '{count}' }),
+              selectAllTasks: t('select_all_tasks'),
+              selectTask: t('select_task', { name: '{name}' }),
+              critical: tBoards('dialog.priority.critical'),
+              high: tBoards('dialog.priority.high'),
+              normal: tBoards('dialog.priority.normal'),
+              low: tBoards('dialog.priority.low'),
+              unknownList: t('unknown_list'),
+            }}
+            wsId={effectiveWorkspaceId}
           />
         );
       default:
@@ -625,19 +969,26 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
-            isMultiSelectMode={isMultiSelectMode}
-            setIsMultiSelectMode={setIsMultiSelectMode}
+            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
+            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
+            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            onDeadlineSectionCollapsedChange={
+              handleDeadlineSectionCollapsedChange
+            }
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
+            readOnly={readOnly}
           />
         );
     }
   };
 
   const showIdleBottomIsland =
+    !readOnly &&
     !!idleBottomIsland &&
     (currentView !== 'kanban' || !kanbanBulkSelectionActive);
 
@@ -655,62 +1006,22 @@ export function BoardViews({
         listStatusFilter={listStatusFilter}
         onListStatusFilterChange={setListStatusFilter}
         isPersonalWorkspace={workspace.personal}
-        isSearching={isFullTasksFetching || isFilteredListCountsFetching}
+        isSearching={
+          !localTaskState &&
+          (isFullTasksFetching || isFilteredListCountsFetching)
+        }
         lists={boardLists}
         onUpdate={handleUpdate}
-        onRecycleBinOpen={() => setRecycleBinOpen(true)}
-        isMultiSelectMode={isMultiSelectMode}
-        setIsMultiSelectMode={setIsMultiSelectMode}
-        hideActions={!canManageBoard}
+        isMultiSelectMode={readOnly ? false : isMultiSelectMode}
+        setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
+        availableViews={enabledViews ?? undefined}
+        hideActions={!canManageBoard || readOnly}
+        publicView={publicView}
+        readOnly={readOnly}
+        titlePrefix={publicHeaderPrefix}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
       {showIdleBottomIsland ? idleBottomIsland : null}
-
-      <RecycleBinPanel
-        open={recycleBinOpen}
-        onOpenChange={setRecycleBinOpen}
-        wsId={effectiveWorkspaceId}
-        boardId={board.id}
-        lists={boardLists}
-        translations={{
-          recycleBin: t('recycle_bin'),
-          recycleBinDescription: t('recycle_bin_description'),
-          noDeletedTasks: t('no_deleted_tasks'),
-          deletedTasksWillAppearHere: t('deleted_tasks_will_appear_here'),
-          selectedOfTotal: t('selected_of_total', {
-            selected: '{selected}',
-            total: '{total}',
-          }),
-          deletedTasksCount: t('deleted_tasks_count', { count: '{count}' }),
-          restore: t('restore'),
-          delete: t('delete'),
-          restoreTasksTitle: t('restore_tasks_title', { count: '{count}' }),
-          restoreTasksDescription: t('restore_tasks_description'),
-          cancel: t('cancel'),
-          restoring: t('restoring'),
-          permanentlyDeleteTitle: t('permanently_delete_title', {
-            count: '{count}',
-          }),
-          permanentlyDeleteDescription: t('permanently_delete_description'),
-          deleting: t('deleting'),
-          deletePermanently: t('delete_permanently'),
-          noListsAvailable: t('no_lists_available'),
-          restoredTasks: t('restored_tasks', { count: '{count}' }),
-          failedToRestore: t('failed_to_restore'),
-          permanentlyDeleted: t('permanently_deleted', { count: '{count}' }),
-          failedToDelete: t('failed_to_delete'),
-          deletedAgo: t('deleted_ago', { time: '{time}' }),
-          fromList: t('from_list', { list: '{list}' }),
-          nProjects: t('n_projects', { count: '{count}' }),
-          selectAllTasks: t('select_all_tasks'),
-          selectTask: t('select_task', { name: '{name}' }),
-          critical: tBoards('dialog.priority.critical'),
-          high: tBoards('dialog.priority.high'),
-          normal: tBoards('dialog.priority.normal'),
-          low: tBoards('dialog.priority.low'),
-          unknownList: t('unknown_list'),
-        }}
-      />
     </div>
   );
 }

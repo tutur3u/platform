@@ -1,5 +1,7 @@
 ---
-title: Generate AI Completion
+title: 'Generate AI Completion'
+description: 'Public Tuturuuu endpoint for generating text completions with supported Gemini models using a workspace API key.'
+updatedAt: '2026-06-21'
 ---
 
 # POST /api/ai/generate
@@ -34,7 +36,7 @@ Send a JSON object with the following fields:
 | Field             | Type    | Required | Default            | Description                                                            |
 | ----------------- | ------- | -------- | ------------------ | ---------------------------------------------------------------------- |
 | `wsId`            | string  | No       | ROOT_WORKSPACE_ID  | Workspace ID.                                                          |
-| `model`           | string  | No       | "gemini-2.0-flash" | The model to use (see Supported Models). Must be allowed for your key. |
+| `model`           | string  | No       | "gemini-2.0-flash-lite" | The model to use (see Supported Models). Must be allowed for your key. |
 | `systemPrompt`    | string  | No       | ""                 | (Optional) System instructions for the model.                          |
 | `thinkingBudget`  | number  | No       | 0                  | (Optional) Budget for model "thinking" (advanced).                     |
 | `includeThoughts` | boolean | No       | false              | (Optional) Include model "thoughts" in the response (advanced).        |

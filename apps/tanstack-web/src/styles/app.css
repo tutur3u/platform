@@ -1,0 +1,32 @@
+@import "@tuturuuu/ui/globals.css";
+@source "../**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+.migration-shell {
+  min-height: 100dvh;
+  background:
+    linear-gradient(
+      180deg,
+      hsl(var(--background) / 0.96),
+      hsl(var(--muted) / 0.42)
+    ),
+    var(--background);
+  color: var(--foreground);
+}
+
+.migration-status-dot {
+  background: var(--muted-foreground);
+}
+
+.migration-status-dot[data-status="ready"] {
+  background: var(--green);
+}
+
+.migration-status-dot[data-status="blocked"] {
+  background: var(--orange);
+}
+
+.migration-stat-card {
+  background: hsl(var(--card) / 0.92);
+  border-color: var(--border);
+}

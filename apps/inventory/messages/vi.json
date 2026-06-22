@@ -970,6 +970,10 @@
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "source": {
+          "checkout": "Checkout",
+          "finance": "Hóa đơn"
+        },
         "status": {
           "completed": "Hoàn tất",
           "expired": "Hết hạn",
@@ -1164,7 +1168,7 @@
         "audits": "Sự kiện kiểm toán sẽ xuất hiện sau các thay đổi checkout, tồn kho hoặc thiết lập.",
         "bundles": "Tạo combo rồi gắn sản phẩm thành phần để chuẩn bị listing cho chiến dịch.",
         "checkouts": "Các phiên checkout Polar đã giữ hàng hoặc hoàn tất sẽ xuất hiện tại đây.",
-        "sales": "Doanh số checkout đã hoàn tất và liên kết hóa đơn tài chính sẽ xuất hiện tại đây.",
+        "sales": "Doanh số checkout và hóa đơn đã hoàn tất sẽ xuất hiện tại đây.",
         "storefronts": "Tạo cửa hàng, tùy chỉnh giao diện rồi xuất bản listing cho người mua."
       },
       "forms": {
@@ -1173,6 +1177,7 @@
         "addComponent": "Thêm thành phần",
         "addOptionGroup": "Thêm tùy chọn",
         "addSection": "Thêm khu vực",
+        "addStockRow": "Thêm dòng tồn kho",
         "addVariant": "Thêm biến thể",
         "amount": "Số lượng",
         "analyticsEnabled": "Thu thập phân tích cửa hàng",
@@ -1248,6 +1253,7 @@
         "deleting": "Đang xóa...",
         "description": "Mô tả",
         "drivePath": "Đường dẫn Drive",
+        "duplicateStockTargetHint": "Mỗi dòng tồn kho cần một cặp đơn vị và kho riêng.",
         "edit": "Chỉnh sửa",
         "editBundleDescription": "Cập nhật thông tin combo, thành phần có tồn kho, hình ảnh, mức khả dụng và vòng đời.",
         "editBundleTitle": "Chỉnh sửa combo",
@@ -1425,6 +1431,8 @@
         "quantity": "Số lượng",
         "remove": "Xóa",
         "removeSection": "Xóa khu vực",
+        "removeStockRow": "Xóa dòng",
+        "retail": "Giá bán",
         "save": "Lưu",
         "saveAsTemplate": "Lưu thành mẫu",
         "saveError": "Không thể lưu thay đổi.",
@@ -1478,8 +1486,10 @@
           "storefrontIdentity": "Nhận diện",
           "storefrontIdentityDescription": "Đặt tên cửa hàng, giữ slug và mô tả trải nghiệm người mua."
         },
+        "stockRowDescription": "Chọn nơi lưu hàng, cách đếm hàng và số lượng đang có.",
+        "stockRowTitle": "Dòng tồn kho {index}",
         "stockTargetHint": "Chọn đơn vị và kho để lưu các giá trị tồn kho bạn đã nhập.",
-        "stockUnavailableDescription": "Sản phẩm này chưa có dòng tồn kho với kho và đơn vị. Thêm tồn kho ban đầu từ luồng tạo sản phẩm hoặc thiết lập tồn kho trong module Tồn kho.",
+        "stockUnavailableDescription": "Sản phẩm này chưa có dòng tồn kho với kho và đơn vị. Thêm dòng tồn kho tại đây hoặc quản lý kho trong không gian Tồn kho.",
         "storefront": "Cửa hàng",
         "storefrontStatus": {
           "draft": "Nháp",
@@ -1757,6 +1767,14 @@
         "reserved": "Đã giữ hàng"
       },
       "statusSearch": "Tìm trạng thái",
+      "stockWorkspace": {
+        "tabs": {
+          "stock": "Dòng tồn kho",
+          "warehouses": "Kho"
+        },
+        "warehousesDescription": "Tạo và đổi tên kho cùng đơn vị mà các dòng tồn kho của sản phẩm sử dụng.",
+        "warehousesTitle": "Thiết lập kho"
+      },
       "views": {
         "audits": {
           "description": "Truy vết tồn kho, checkout và tài chính trong một timeline kiểm toán.",

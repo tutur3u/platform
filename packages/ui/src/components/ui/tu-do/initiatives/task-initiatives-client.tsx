@@ -13,6 +13,15 @@ import {
   Trash2,
   User,
 } from '@tuturuuu/icons';
+import {
+  createWorkspaceTaskInitiative,
+  deleteWorkspaceTaskInitiative,
+  linkWorkspaceTaskInitiativeProject,
+  listWorkspaceTaskInitiatives,
+  listWorkspaceTaskProjects,
+  unlinkWorkspaceTaskInitiativeProject,
+  updateWorkspaceTaskInitiative,
+} from '@tuturuuu/internal-api/tasks';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -98,6 +107,12 @@ const STATUS_BADGE_CLASS: Record<InitiativeStatus, string> = {
   cancelled: 'bg-dynamic-red/15 text-dynamic-red border-transparent',
 };
 
+function getBrowserInternalApiOptions() {
+  return typeof window !== 'undefined'
+    ? { baseUrl: window.location.origin }
+    : undefined;
+}
+
 export function TaskInitiativesClient({
   wsId,
   initialInitiatives,
@@ -136,16 +151,8 @@ export function TaskInitiativesClient({
     refetch: refetchInitiatives,
   } = useQuery<TaskInitiative[]>({
     queryKey: ['workspace', wsId, 'task-initiatives'],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-initiatives`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) {
-        throw new Error(t('errors.fetch_initiatives'));
-      }
-      return response.json();
-    },
+    queryFn: () =>
+      listWorkspaceTaskInitiatives(wsId, getBrowserInternalApiOptions()),
     initialData: initialInitiatives,
     staleTime: 30_000,
   });
@@ -157,20 +164,12 @@ export function TaskInitiativesClient({
   } = useQuery<TaskProjectOption[]>({
     queryKey: ['workspace', wsId, 'task-projects-for-initiatives'],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-projects`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(t('errors.fetch_projects'));
-      }
-      const rawProjects = await response.json();
-      return (
-        rawProjects as Array<{
-          id: string;
-          name: string;
-          status?: string | null;
-        }>
-      ).map((project) => ({
+      const rawProjects = await listWorkspaceTaskProjects(
+        wsId,
+        getBrowserInternalApiOptions()
+      );
+
+      return rawProjects.map((project) => ({
         id: project.id,
         name: project.name,
         status: project.status ?? null,
@@ -218,19 +217,13 @@ export function TaskInitiativesClient({
       description?: string;
       status: InitiativeStatus;
     }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-initiatives`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description, status }),
-        }
+      const payload = { name, description: description ?? '', status };
+
+      return createWorkspaceTaskInitiative(
+        wsId,
+        payload,
+        getBrowserInternalApiOptions()
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.create_initiative'));
-      }
-      return response.json();
     },
     onSuccess: () => {
       toast.success(t('success.initiative_created'));
@@ -257,19 +250,14 @@ export function TaskInitiativesClient({
       description?: string;
       status: InitiativeStatus;
     }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-initiatives/${initiativeId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description, status }),
-        }
+      const payload = { name, description: description ?? '', status };
+
+      return updateWorkspaceTaskInitiative(
+        wsId,
+        initiativeId,
+        payload,
+        getBrowserInternalApiOptions()
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.update_initiative'));
-      }
-      return response.json();
     },
     onSuccess: () => {
       toast.success(t('success.initiative_updated'));
@@ -286,18 +274,12 @@ export function TaskInitiativesClient({
   });
 
   const deleteInitiativeMutation = useMutation({
-    mutationFn: async (initiativeId: string) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-initiatives/${initiativeId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.delete_initiative'));
-      }
-    },
+    mutationFn: (initiativeId: string) =>
+      deleteWorkspaceTaskInitiative(
+        wsId,
+        initiativeId,
+        getBrowserInternalApiOptions()
+      ),
     onSuccess: () => {
       toast.success(t('success.initiative_deleted'));
       refetchInitiatives();
@@ -314,21 +296,13 @@ export function TaskInitiativesClient({
     }: {
       initiativeId: string;
       projectId: string;
-    }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-initiatives/${initiativeId}/projects`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId }),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.link_project'));
-      }
-      return response.json();
-    },
+    }) =>
+      linkWorkspaceTaskInitiativeProject(
+        wsId,
+        initiativeId,
+        projectId,
+        getBrowserInternalApiOptions()
+      ),
     onSuccess: (_data, variables) => {
       toast.success(t('success.project_linked'));
       setProjectToLink('');
@@ -362,19 +336,13 @@ export function TaskInitiativesClient({
     }: {
       initiativeId: string;
       projectId: string;
-    }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-initiatives/${initiativeId}/projects/${projectId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.unlink_project'));
-      }
-      return response.json();
-    },
+    }) =>
+      unlinkWorkspaceTaskInitiativeProject(
+        wsId,
+        initiativeId,
+        projectId,
+        getBrowserInternalApiOptions()
+      ),
     onSuccess: (_data, variables) => {
       toast.success(t('success.project_unlinked'));
       if (variables) {

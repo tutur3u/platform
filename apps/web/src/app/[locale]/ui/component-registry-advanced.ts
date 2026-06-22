@@ -105,11 +105,11 @@ export const advancedComponentEntries: ComponentEntry[] = [
     category: 'advanced',
     importPath: '@tuturuuu/ui/report-problem-dialog',
     exports: ['ReportProblemDialog'],
-    customizationKeys: ['product', 'uploadLimit', 'mutation'],
+    customizationKeys: ['products', 'trigger', 'showTrigger'],
     usage: usage(
       '@tuturuuu/ui/report-problem-dialog',
       ['ReportProblemDialog'],
-      `<ReportProblemDialog product="web" />`
+      `<ReportProblemDialog />`
     ),
     safePreview: false,
   },

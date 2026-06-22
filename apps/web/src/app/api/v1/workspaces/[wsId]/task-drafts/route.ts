@@ -67,19 +67,24 @@ export async function GET(
     }
 
     const boardId = request.nextUrl.searchParams.get('boardId');
+    const includeUnassignedForBoard =
+      request.nextUrl.searchParams.get('includeUnassignedForBoard') === 'true';
 
     let query = sbAdmin
       .from('task_drafts')
       .select('*')
       .eq('ws_id', wsId)
-      .eq('creator_id', user.id)
-      .order('created_at', { ascending: false });
+      .eq('creator_id', user.id);
 
     if (boardId) {
-      query = query.eq('board_id', boardId);
+      query = includeUnassignedForBoard
+        ? query.or(`board_id.eq.${boardId},board_id.is.null`)
+        : query.eq('board_id', boardId);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.order('created_at', {
+      ascending: false,
+    });
 
     if (error) {
       console.error('Error fetching drafts:', error);

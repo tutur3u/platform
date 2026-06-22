@@ -1,3 +1,5 @@
+import '@mantine/charts/styles.layer.css';
+import '@mantine/core/styles.layer.css';
 import { MantineThemeProvider } from '@/components/mantine-theme-provider';
 import TimeTrackerHeader from './components/time-tracker-header';
 

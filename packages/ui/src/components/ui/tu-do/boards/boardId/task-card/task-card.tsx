@@ -69,7 +69,7 @@ import {
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistance } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -116,6 +116,7 @@ import {
 import { formatSmartDate } from '../../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
 import { sortByDisplayName } from '../board-text-utils';
+import { invalidateKanbanDeadlineTasks } from '../kanban/data/kanban-deadline-query';
 import {
   TaskAssigneesMenu,
   TaskBlockingMenu,
@@ -170,6 +171,128 @@ export interface TaskCardProps {
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
+  deadlineContext?: 'overdue' | 'upcoming';
+  deadlineNow?: number;
+  readOnly?: boolean;
+}
+
+function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
+  const t = useTranslations('common');
+  const publicBoardT = useTranslations('ws-task-boards.public');
+  const priorityT = useTranslations('ws-task-boards.dialog.priority');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
+  const ticketPrefix = (task as Task & { ticket_prefix?: string | null })
+    .ticket_prefix;
+  const ticketIdentifier =
+    typeof task.display_number === 'number' && task.display_number > 0
+      ? getTicketIdentifier(ticketPrefix, task.display_number)
+      : null;
+  const dueDate = task.end_date
+    ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
+    : null;
+
+  return (
+    <Card
+      className={cn(
+        'relative overflow-hidden rounded-lg border border-l-4 bg-background p-3 shadow-xs',
+        getCardColorClassesUtil(taskList, task.priority),
+        task.closed_at && 'opacity-60 saturate-50'
+      )}
+      data-task-card-id={task.id}
+      data-task-read-only="true"
+    >
+      <TaskCardIdentifierRow
+        externalSourceLabel=""
+        isMultiSelectMode={false}
+        isPersonalExternalTask={false}
+        isSelected={false}
+        selectTaskLabel={t('select_task', { name: task.name })}
+        taskListStatus={taskList?.status}
+        ticketBadgeClassName={getTicketBadgeColorClasses(
+          taskList,
+          task.priority
+        )}
+        ticketIdentifier={ticketIdentifier}
+        ticketTitle={ticketIdentifier ?? ''}
+      />
+
+      <div className="space-y-2">
+        <h3
+          className={cn(
+            'line-clamp-2 break-words font-medium text-sm leading-5',
+            (task.completed_at || task.closed_at) &&
+              'text-muted-foreground line-through'
+          )}
+        >
+          {task.name}
+        </h3>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {task.priority && (
+            <Badge variant="outline" className="h-5 px-1.5 font-normal text-xs">
+              {priorityT(task.priority)}
+            </Badge>
+          )}
+          {dueDate && (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 font-normal text-xs"
+            >
+              <Calendar className="h-3 w-3" />
+              {dueDate}
+            </Badge>
+          )}
+          {typeof task.estimation_points === 'number' && (
+            <Badge variant="outline" className="h-5 px-1.5 font-normal text-xs">
+              {publicBoardT('points', { count: task.estimation_points })}
+            </Badge>
+          )}
+        </div>
+
+        {(task.labels?.length ||
+          task.projects?.length ||
+          task.assignees?.length) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {task.labels?.map((label) => (
+              <Badge
+                key={label.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: label.color }}
+                />
+                {label.name}
+              </Badge>
+            ))}
+            {task.projects?.map((project) => (
+              <Badge
+                key={project.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <Box className="h-3 w-3" />
+                {project.name}
+              </Badge>
+            ))}
+            {task.assignees?.map((assignee) => (
+              <Badge
+                key={assignee.id}
+                variant="secondary"
+                className="h-5 px-1.5 font-normal text-xs"
+              >
+                {assignee.display_name ||
+                  (assignee.handle ? `@${assignee.handle}` : t('assignee'))}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
 }
 
 // Memoized full TaskCard
@@ -192,6 +315,8 @@ function TaskCardInner({
   optimisticUpdateInProgress,
   selectedTasks,
   bulkUpdateCustomDueDate,
+  deadlineContext,
+  deadlineNow,
 }: TaskCardProps) {
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
@@ -769,7 +894,7 @@ function TaskCardInner({
     opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
   };
 
-  const now = new Date();
+  const now = useMemo(() => new Date(deadlineNow ?? Date.now()), [deadlineNow]);
   const shouldRenderDueDate = shouldShowTaskDueDate({
     completedAt: task.completed_at,
     closedAt: task.closed_at,
@@ -789,6 +914,18 @@ function TaskCardInner({
   const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
+  const upcomingDeadlineCountdown =
+    deadlineContext === 'upcoming' && endDate
+      ? formatDistance(endDate, now, {
+          addSuffix: true,
+          locale: dateLocale,
+        })
+      : null;
+  const upcomingDeadlineExactDate = endDate
+    ? format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+        locale: dateLocale,
+      })
+    : null;
   const selectionCheckboxClassName = cn(
     getTaskCardSelectionCheckboxToneClasses(taskList?.color as SupportedColor),
     isOverdue &&
@@ -1025,6 +1162,7 @@ function TaskCardInner({
         )
       );
 
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
       toast.success(tTasks('moved_to_external_tasks'));
     } catch (error) {
       console.error('Failed to move task to external staging:', error);
@@ -1045,6 +1183,7 @@ function TaskCardInner({
         old?.filter((candidate) => candidate.id !== task.id)
       );
 
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
       toast.success(tTasks('removed_from_personal_board'));
     } catch (error) {
       console.error('Failed to remove task from personal board:', error);
@@ -2247,30 +2386,46 @@ function TaskCardInner({
                     : 'text-muted-foreground'
                 )}
               >
-                <Calendar className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">
-                  {t('due_at', {
-                    date: formatSmartDate(
-                      endDate,
-                      {
-                        today: t('today'),
-                        tomorrow: t('tomorrow'),
-                        yesterday: t('yesterday'),
-                      },
-                      dateLocale
-                    ),
-                  })}
-                </span>
-                {isOverdue && !task.closed_at ? (
-                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                    {t('overdue')}
-                  </Badge>
+                {upcomingDeadlineCountdown && upcomingDeadlineExactDate ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1 truncate font-medium">
+                        <Timer className="h-2.5 w-2.5" />
+                        <span className="truncate">
+                          {upcomingDeadlineCountdown}
+                        </span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {upcomingDeadlineExactDate}
+                    </TooltipContent>
+                  </Tooltip>
                 ) : (
-                  <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                    {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
-                      locale: dateLocale,
-                    })}
-                  </span>
+                  <>
+                    <Calendar className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">
+                      {t('due_at', {
+                        date: formatSmartDate(
+                          endDate,
+                          {
+                            today: t('today'),
+                            tomorrow: t('tomorrow'),
+                            yesterday: t('yesterday'),
+                          },
+                          dateLocale
+                        ),
+                      })}
+                    </span>
+                    {isOverdue && !task.closed_at ? (
+                      <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                        {t('overdue')}
+                      </Badge>
+                    ) : (
+                      <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                        {upcomingDeadlineExactDate}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -2293,7 +2448,7 @@ function TaskCardInner({
                   <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
                     {t('completed')}{' '}
-                    {formatDistanceToNow(new Date(task.completed_at), {
+                    {formatDistance(new Date(task.completed_at), now, {
                       addSuffix: true,
                       locale: dateLocale,
                     })}
@@ -2317,7 +2472,7 @@ function TaskCardInner({
                   <CircleSlash className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
                     {t('closed')}{' '}
-                    {formatDistanceToNow(new Date(task.closed_at), {
+                    {formatDistance(new Date(task.closed_at), now, {
                       addSuffix: true,
                       locale: dateLocale,
                     })}
@@ -2590,4 +2745,12 @@ function TaskCardInner({
   );
 }
 
-export const TaskCard = React.memo(TaskCardInner, areTaskCardPropsEqual);
+function TaskCardComponent(props: TaskCardProps) {
+  if (props.readOnly) {
+    return <ReadOnlyTaskCard {...props} />;
+  }
+
+  return <TaskCardInner {...props} />;
+}
+
+export const TaskCard = React.memo(TaskCardComponent, areTaskCardPropsEqual);

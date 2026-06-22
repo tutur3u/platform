@@ -18,10 +18,8 @@ import {
   TrendingUp,
   Users,
   Zap,
-} from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform } from 'framer-motion';
@@ -29,7 +27,41 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { type ComponentProps, useEffect, useMemo, useState } from 'react';
+
+function Badge({
+  className,
+  variant = 'secondary',
+  ...props
+}: ComponentProps<'span'> & { variant?: 'secondary' }) {
+  const variantClass =
+    variant === 'secondary'
+      ? 'border-transparent bg-secondary text-secondary-foreground'
+      : '';
+
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md border font-semibold transition-[color,box-shadow]',
+        variantClass,
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function Card({ className, ...props }: ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border bg-card text-card-foreground shadow-sm',
+        className
+      )}
+      {...props}
+    />
+  );
+}
 
 // Language Switcher Component
 function LanguageSwitcher({

@@ -1,4 +1,4 @@
-import { getSatelliteCurrentUser } from '@tuturuuu/satellite/auth';
+import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
 import { StorefrontClient } from '@/components/storefront/storefront-client';
 import { StorefrontHeaderActions } from '../../storefront-header-actions';
 
@@ -8,15 +8,13 @@ export default async function StorefrontCheckoutPage({
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
-  const user = await getSatelliteCurrentUser('storefront').catch(() => null);
+  const buyerDefaults = await getStorefrontBuyerDefaults();
 
   return (
     <StorefrontClient
-      buyerDefaults={{
-        email: user?.email,
-        name: user?.display_name ?? user?.full_name ?? user?.name,
-      }}
-      headerActions={<StorefrontHeaderActions />}
+      buyerDefaults={buyerDefaults}
+      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
+      initialCheckoutOpen
       mode="checkout"
       storeSlug={storeSlug}
     />

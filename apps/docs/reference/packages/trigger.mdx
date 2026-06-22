@@ -1,6 +1,7 @@
 ---
 title: "@tuturuuu/trigger"
 description: "Legacy and manual Trigger.dev task helpers"
+updatedAt: "2026-06-21"
 ---
 
 # @tuturuuu/trigger
@@ -14,6 +15,25 @@ Do not add recurring Calendar `schedules.task` jobs here. Calendar provider
 sync runs every 15 minutes through `/api/cron/calendar/provider-sync`, which
 calls the central workspace sync API with cron auth.
 
+<Note>
+  The package uses the **Trigger.dev v4 `task()` API** (`@trigger.dev/sdk`
+  `^4.4.5`). The v4 SDK is imported from the `@trigger.dev/sdk/v3` subpath, as
+  in `packages/trigger/src`. The legacy v2 API (`client.defineJob`,
+  `eventTrigger`, `io.runTask`, `io.sendEvent`) is not used anywhere in this
+  repo.
+</Note>
+
+<Warning>
+  `apps/web` (Next.js, port `7803`) is being migrated to `apps/tanstack-web`
+  (TanStack Start) plus `apps/backend` (Rust, port `7820`). See
+  [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration).
+  Calendar provider sync, the cron wrapper, and the `apps/web` workspace sync
+  API remain on `apps/web` for now and have **not** been ported to the Rust
+  backend. Only narrow calendar read endpoints (for example the legacy
+  `/api/v1/calendar/mock` route) have moved so far; recurring sync stays on
+  `apps/web` cron until the migration covers it.
+</Warning>
+
 ## Installation
 
 ```bash
@@ -22,6 +42,16 @@ import { googleCalendarSync } from '@tuturuuu/trigger';
 ```
 
 ## Available Jobs
+
+<Note>
+  The package's public surface (`packages/trigger/src/index.ts`) currently
+  exports `googleCalendarFullSync`, `googleCalendarFullSyncOrchestrator`,
+  `performFullSyncForWorkspace`, `unifiedScheduleTask`,
+  `unifiedScheduleManualTrigger`, and `unifiedScheduleHelper`. The incremental,
+  batch, and standalone task-scheduling tasks below are illustrative patterns
+  for how a `task()` is structured; confirm the exact export before importing
+  one in product code.
+</Note>
 
 ### Google Calendar Sync
 
@@ -176,14 +206,17 @@ await scheduleTasks.trigger({
 
 The package uses atomic sync state management to prevent concurrent syncs:
 
+Background jobs run without a user session, so use the admin client with
+`noCookie: true` (the same pattern as `packages/trigger/src`):
+
 ```typescript
-import { createClient } from "@tuturuuu/supabase/next/server";
+import { createAdminClient } from "@tuturuuu/supabase/next/server";
 
 async function acquireSyncLock(wsId: string): Promise<boolean> {
-  const supabase = createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   // Check if already syncing
-  const { data: state } = await supabase
+  const { data: state } = await sbAdmin
     .from("calendar_sync_states")
     .select("is_syncing")
     .eq("ws_id", wsId)
@@ -194,7 +227,7 @@ async function acquireSyncLock(wsId: string): Promise<boolean> {
   }
 
   // Acquire lock
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from("calendar_sync_states")
     .update({ is_syncing: true })
     .eq("ws_id", wsId);
@@ -203,9 +236,9 @@ async function acquireSyncLock(wsId: string): Promise<boolean> {
 }
 
 async function releaseSyncLock(wsId: string) {
-  const supabase = createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
-  await supabase
+  await sbAdmin
     .from("calendar_sync_states")
     .update({ is_syncing: false })
     .eq("ws_id", wsId);
@@ -223,7 +256,7 @@ export const googleCalendarFullSync = task({
   id: "google-calendar-full-sync",
   maxDuration: 300, // 5 minutes
   run: async (payload: { wsId: string; userId: string }) => {
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
     // Acquire sync lock
     const lockAcquired = await acquireSyncLock(payload.wsId);
@@ -233,7 +266,7 @@ export const googleCalendarFullSync = task({
 
     try {
       // Get OAuth tokens
-      const { data: tokens } = await supabase
+      const { data: tokens } = await sbAdmin
         .from("calendar_auth_tokens")
         .select("*")
         .eq("user_id", payload.userId)
@@ -261,7 +294,7 @@ export const googleCalendarFullSync = task({
       const events = response.data.items || [];
 
       // Log sync start
-      const { data: syncLog } = await supabase
+      const { data: syncLog } = await sbAdmin
         .from("workspace_calendar_sync_log")
         .insert({
           ws_id: payload.wsId,
@@ -275,7 +308,7 @@ export const googleCalendarFullSync = task({
       for (let i = 0; i < events.length; i += 100) {
         const batch = events.slice(i, i + 100);
 
-        await supabase.from("workspace_calendar_events").upsert(
+        await sbAdmin.from("workspace_calendar_events").upsert(
           batch.map((event) => ({
             ws_id: payload.wsId,
             google_event_id: event.id,
@@ -293,14 +326,14 @@ export const googleCalendarFullSync = task({
       }
 
       // Update sync token
-      await supabase.from("calendar_sync_states").upsert({
+      await sbAdmin.from("calendar_sync_states").upsert({
         ws_id: payload.wsId,
         sync_token: response.data.nextSyncToken,
         last_synced_at: new Date().toISOString(),
       });
 
       // Log sync completion
-      await supabase
+      await sbAdmin
         .from("workspace_calendar_sync_log")
         .update({
           completed_at: new Date().toISOString(),
@@ -313,7 +346,7 @@ export const googleCalendarFullSync = task({
       };
     } catch (error) {
       // Log error
-      await supabase.from("workspace_calendar_sync_log").update({
+      await sbAdmin.from("workspace_calendar_sync_log").update({
         completed_at: new Date().toISOString(),
         error: (error as Error).message,
       });
@@ -338,14 +371,14 @@ export const googleCalendarIncrementalSync = task({
   id: "google-calendar-incremental-sync",
   maxDuration: 60, // 1 minute
   run: async (payload: { wsId: string; userId: string }) => {
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
     const lockAcquired = await acquireSyncLock(payload.wsId);
     if (!lockAcquired) return { skipped: true };
 
     try {
       // Get sync token
-      const { data: syncState } = await supabase
+      const { data: syncState } = await sbAdmin
         .from("calendar_sync_states")
         .select("sync_token")
         .eq("ws_id", payload.wsId)
@@ -358,7 +391,7 @@ export const googleCalendarIncrementalSync = task({
       }
 
       // Get OAuth tokens
-      const { data: tokens } = await supabase
+      const { data: tokens } = await sbAdmin
         .from("calendar_auth_tokens")
         .select("*")
         .eq("user_id", payload.userId)
@@ -386,13 +419,13 @@ export const googleCalendarIncrementalSync = task({
       for (const event of events) {
         if (event.status === "cancelled") {
           // Delete event
-          await supabase
+          await sbAdmin
             .from("workspace_calendar_events")
             .delete()
             .eq("google_event_id", event.id);
         } else {
           // Upsert event
-          await supabase.from("workspace_calendar_events").upsert({
+          await sbAdmin.from("workspace_calendar_events").upsert({
             ws_id: payload.wsId,
             google_event_id: event.id,
             title: event.summary,
@@ -406,7 +439,7 @@ export const googleCalendarIncrementalSync = task({
       }
 
       // Update sync token
-      await supabase
+      await sbAdmin
         .from("calendar_sync_states")
         .update({
           sync_token: response.data.nextSyncToken,
@@ -436,27 +469,37 @@ export const googleCalendarIncrementalSync = task({
 
 ### Production Calendar Scheduling
 
-Recurring Calendar provider sync runs from `apps/web` cron, not Trigger.dev:
+Recurring Calendar work runs from `apps/web` cron, not Trigger.dev. The
+canonical definitions live in `apps/web/cron.config.json`:
 
 ```json
 {
   "id": "calendar-provider-sync",
   "path": "/api/cron/calendar/provider-sync",
   "schedule": "*/15 * * * *"
+},
+{
+  "id": "calendar-smart-schedule",
+  "path": "/api/cron/calendar/smart-schedule",
+  "schedule": "0 */6 * * *"
 }
 ```
 
 When cron definitions change, update `apps/web/cron.config.json` first and then
-sync Vercel cron definitions:
+sync the generated `apps/web/vercel.json` cron block:
 
 ```bash
+# Fail if vercel.json is out of sync with cron.config.json (used in CI)
 node scripts/sync-web-crons.js --check
+
+# Regenerate vercel.json crons from cron.config.json
 node scripts/sync-web-crons.js
 ```
 
 The cron wrapper calls `/api/v1/workspaces/:wsId/calendar/sync` with cron auth
 and `source: "cron"`. That workspace route owns provider fan-out, locks, and
-sync dashboard audit rows.
+sync dashboard audit rows. This calendar cron path stays on `apps/web` until
+the TanStack/Rust migration covers recurring sync (see the warning above).
 
 ## Development
 
@@ -556,7 +599,7 @@ export const myJob = task({
 3. **Log sync operations**
 
    ```typescript
-   await supabase.from("workspace_calendar_sync_log").insert({
+   await sbAdmin.from("workspace_calendar_sync_log").insert({
      ws_id: wsId,
      sync_type: "incremental",
      started_at: new Date().toISOString(),
@@ -585,14 +628,14 @@ export const myJob = task({
    // ❌ Bad: Concurrent syncs can corrupt data
    ```
 
-2. **Don't use user client for background jobs**
+2. **Don't use the user (cookie) client for background jobs**
 
    ```typescript
-   // ❌ Bad
-   const supabase = createClient();
+   // ❌ Bad: cookie-bound client has no session in a background task
+   const supabase = await createClient();
 
-   // ✅ Good
-   const sbAdmin = await createAdminClient();
+   // ✅ Good: admin client with noCookie for server-side jobs
+   const sbAdmin = await createAdminClient({ noCookie: true });
    ```
 
 3. **Don't ignore sync errors**

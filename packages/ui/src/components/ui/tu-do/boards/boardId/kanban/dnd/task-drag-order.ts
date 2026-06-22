@@ -1,7 +1,7 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import type { DragPreviewPosition, TaskDropPosition } from './task-drag-types';
+import { compareTasksByEffectiveSortKey } from './task-sort-key';
 
 export function getNeighborTaskIds(tasks: Task[], taskId: string) {
   const taskIndex = tasks.findIndex((task) => task.id === taskId);
@@ -142,13 +142,7 @@ export function sortTasksForList({
     }
 
     if (!disableSort) {
-      const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-      const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-      if (sortA !== sortB) return sortA - sortB;
-      if (!a.created_at || !b.created_at) return 0;
-      return (
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
+      return compareTasksByEffectiveSortKey(a, b);
     }
 
     return 0;

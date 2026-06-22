@@ -251,6 +251,12 @@ const checks = [
     parseOutput: () => 'Registered app auth surfaces use app sessions',
   },
   {
+    name: 'tanstack-api-access',
+    command: 'node',
+    args: ['scripts/check-tanstack-api-access.js'],
+    parseOutput: () => 'TanStack app uses server-owned API facades',
+  },
+  {
     name: 'platform-release-version',
     command: 'node',
     args: ['scripts/sync-platform-release-version.js', '--check'],

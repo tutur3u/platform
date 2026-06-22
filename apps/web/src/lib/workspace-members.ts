@@ -21,6 +21,7 @@ export type EnhancedWorkspaceMember = User & {
   is_creator: boolean;
   roles: WorkspaceMemberRole[];
   default_permissions: WorkspaceDefaultPermission[];
+  workspace_member_type?: string | null;
   workspace_user_id?: string | null;
   workspace_profile_display_name?: string | null;
 };

@@ -1,6 +1,9 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export type TaskBoardGuestPermission = 'view' | 'edit';
@@ -508,13 +511,20 @@ export async function resolveTaskBoardAccess({
   }
 
   if (memberCheck.ok) {
-    return {
-      ...context,
-      access: { mode: 'member', permission: 'edit' },
-      sbAdmin,
-      supabase,
+    const permissions = await getPermissions({
+      wsId: context.wsId,
       user,
-    };
+    });
+
+    if (permissions?.containsPermission('manage_projects')) {
+      return {
+        ...context,
+        access: { mode: 'member', permission: 'edit' },
+        sbAdmin,
+        supabase,
+        user,
+      };
+    }
   }
 
   const shares = await loadTaskBoardGuestSharesForBoard({

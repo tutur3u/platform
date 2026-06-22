@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
@@ -20,8 +20,9 @@ import {
 import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { type ReactNode, useMemo, useState } from 'react';
-import { Link } from '@/i18n/navigation';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { Link, useRouter } from '@/i18n/navigation';
+import { openHostedPolarCheckout } from './checkout-window';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -35,7 +36,9 @@ type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
 type StorefrontClientProps = {
   buyerDefaults?: StorefrontBuyerDefaults;
+  clearCartOnMount?: boolean;
   headerActions?: ReactNode;
+  initialCheckoutOpen?: boolean;
   initialStorefront?: InventoryPublicStorefrontResponse | null;
   listingId?: string;
   mode: StorefrontMode;
@@ -45,7 +48,9 @@ type StorefrontClientProps = {
 
 export function StorefrontClient({
   buyerDefaults,
+  clearCartOnMount = false,
   headerActions,
+  initialCheckoutOpen = false,
   initialStorefront,
   listingId,
   mode,
@@ -54,8 +59,13 @@ export function StorefrontClient({
 }: StorefrontClientProps) {
   const t = useTranslations('storefront');
   const cart = useCart(storeSlug);
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [detailListingId, setDetailListingId] = useQueryState('product');
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(
+    initialCheckoutOpen || mode === 'checkout'
+  );
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -65,6 +75,8 @@ export function StorefrontClient({
     initialData: initialStorefront ?? undefined,
     queryFn: () => getOptionalInventoryPublicStorefront(storeSlug),
     queryKey: ['storefront', storeSlug],
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const storefront = storefrontQuery.data?.storefront;
   const isDemoStorefront = isDemoStorefrontFixture(storefront);
@@ -84,6 +96,11 @@ export function StorefrontClient({
       publicToken,
       isDemoStorefront ? 'demo-fixture' : 'live',
     ],
+    refetchInterval: (query) => {
+      const order = query.state.data?.order;
+      if (!order || order.status === 'completed') return false;
+      return 2000;
+    },
   });
   const listings = storefrontQuery.data?.listings ?? [];
   const selectedListing = listings.find((listing) => listing.id === listingId);
@@ -111,6 +128,21 @@ export function StorefrontClient({
       Math.min(line.quantity, lineLimit(listing, variant)) > 0
   );
 
+  useEffect(() => {
+    if (mode !== 'order' || orderQuery.data?.order.status !== 'completed') {
+      return;
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ['storefront', storeSlug] });
+  }, [mode, orderQuery.data?.order.status, queryClient, storeSlug]);
+
+  useEffect(() => {
+    if (!clearCartOnMount) return;
+
+    cart.clear();
+    void queryClient.invalidateQueries({ queryKey: ['storefront', storeSlug] });
+  }, [cart.clear, clearCartOnMount, queryClient, storeSlug]);
+
   type CheckoutLineInput = {
     listingId: string;
     variantId?: string;
@@ -122,6 +154,37 @@ export function StorefrontClient({
     customerEmail?: string;
     customerPhone?: string | null;
     note?: string | null;
+  };
+
+  const navigateToCheckoutResult = (url: string) => {
+    let target: URL;
+    try {
+      target = new URL(url, window.location.origin);
+    } catch {
+      toast.error(t('checkoutError'));
+      return;
+    }
+
+    if (target.origin !== window.location.origin) {
+      toast.error(t('checkoutError'));
+      return;
+    }
+
+    router.push(`${target.pathname}${target.search}${target.hash}`);
+  };
+
+  const openPolarCheckoutWindow = (checkoutUrl: string) => {
+    setIsRedirecting(true);
+
+    const result = openHostedPolarCheckout(checkoutUrl);
+    if (result === 'new-tab') {
+      setIsCheckoutOpen(false);
+      setIsRedirecting(false);
+    }
+  };
+
+  const startCheckout = (input: CheckoutInput) => {
+    checkoutMutation.mutate(input);
   };
 
   const checkoutMutation = useMutation({
@@ -144,18 +207,21 @@ export function StorefrontClient({
           : t('checkoutError')
       );
     },
-    onSuccess: ({ checkoutUrl }) => {
+    onSuccess: async ({ checkoutUrl }) => {
       if (!checkoutUrl) {
         setIsRedirecting(false);
         toast.error(t('checkoutError'));
         return;
       }
 
-      // Keep the loading overlay visible across the redirect — the page is
-      // navigating away to the Polar-hosted checkout.
-      setIsRedirecting(true);
-      cart.clear();
-      window.location.assign(checkoutUrl);
+      if (isSimulatedCheckout) {
+        cart.clear();
+        setIsCheckoutOpen(false);
+        navigateToCheckoutResult(checkoutUrl);
+        return;
+      }
+
+      openPolarCheckoutWindow(checkoutUrl);
     },
   });
 
@@ -291,6 +357,7 @@ export function StorefrontClient({
   }
 
   const resolvedMode = mode === 'product' && !selectedListing ? 'store' : mode;
+  const surfaceMode = resolvedMode === 'checkout' ? 'cart' : resolvedMode;
   const surfaceLabels: Partial<StorefrontSurfaceLabels> = {
     add: t('add'),
     available: t('available'),
@@ -301,6 +368,7 @@ export function StorefrontClient({
     checkout: t('checkout'),
     checkoutDisabled: t('checkoutDisabled'),
     checkoutDisabledBadge: t('checkoutDisabledBadge'),
+    contactDetails: t('contactDetails'),
     demoBadge: t('demoBadge'),
     emptyCart: t('emptyCart'),
     emptyListingsDescription: t('emptyListingsDescription'),
@@ -308,6 +376,7 @@ export function StorefrontClient({
     fallbackDescription: t('fallbackDescription'),
     fromPrice: t('fromPrice'),
     instantCheckout: t('instantCheckout'),
+    orderSummary: t('orderSummary'),
     redirectingToCheckout: t('redirectingToCheckout'),
     selectOptions: t('selectOptions'),
     viewDetails: t('viewDetails'),
@@ -353,7 +422,7 @@ export function StorefrontClient({
       isSubmitting={checkoutMutation.isPending}
       labels={surfaceLabels}
       listings={listings}
-      mode={resolvedMode}
+      mode={surfaceMode}
       onBuyNow={(buyNowListingId, variantId) => {
         // Instant checkout for a single product, skipping the cart entirely.
         recordAnalyticsEvent({
@@ -361,7 +430,7 @@ export function StorefrontClient({
           listingId: buyNowListingId,
           metadata: { instant: true, lines: 1 },
         });
-        checkoutMutation.mutate({
+        startCheckout({
           customerEmail: buyerDefaults?.email ?? undefined,
           customerName: buyerDefaults?.name ?? undefined,
           lines: [
@@ -373,12 +442,13 @@ export function StorefrontClient({
           ],
         });
       }}
+      checkoutOpen={isCheckoutOpen}
       onCheckoutSubmit={(formData) => {
         recordAnalyticsEvent({
           eventType: 'checkout_started',
           metadata: { lines: checkoutListings.length },
         });
-        checkoutMutation.mutate({
+        startCheckout({
           customerEmail:
             String(formData.get('customerEmail') ?? '').trim() || undefined,
           customerName:
@@ -389,6 +459,8 @@ export function StorefrontClient({
           note: String(formData.get('note') ?? '') || null,
         });
       }}
+      onCheckoutOpen={() => setIsCheckoutOpen(true)}
+      onCheckoutOpenChange={setIsCheckoutOpen}
       onDecrement={(selectedListingId, variantId) => {
         cart.decrement(selectedListingId, variantId);
         recordAnalyticsEvent({
@@ -410,14 +482,14 @@ export function StorefrontClient({
         // One-click checkout from the cart: submit directly when we already know
         // the buyer, otherwise send them to the checkout form to fill details.
         if (!buyerDefaults?.email) {
-          window.location.assign(`/${storeSlug}/checkout`);
+          setIsCheckoutOpen(true);
           return;
         }
         recordAnalyticsEvent({
           eventType: 'checkout_started',
           metadata: { instant: true, lines: checkoutListings.length },
         });
-        checkoutMutation.mutate({
+        startCheckout({
           customerEmail: buyerDefaults.email,
           customerName: buyerDefaults.name ?? undefined,
           lines: cartCheckoutLines(),
@@ -436,14 +508,13 @@ function StorefrontSkeleton({ label }: { label: string }) {
   return (
     <main className="min-h-dvh bg-background" aria-busy="true">
       <span className="sr-only">{label}</span>
-      <div className="h-1 w-full bg-muted" />
       <header className="border-border border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
           <div className="h-6 w-40 animate-pulse rounded-md bg-muted" />
           <div className="h-11 w-16 animate-pulse rounded-2xl bg-muted" />
         </div>
       </header>
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="mx-auto max-w-7xl px-4 py-5">
         <div className="min-w-0">
           <div className="h-52 w-full animate-pulse rounded-2xl bg-muted" />
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -459,7 +530,6 @@ function StorefrontSkeleton({ label }: { label: string }) {
             ))}
           </div>
         </div>
-        <div className="hidden h-72 animate-pulse rounded-2xl bg-muted lg:block" />
       </section>
     </main>
   );

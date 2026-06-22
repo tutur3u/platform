@@ -1,25 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  Archive,
-  CheckCircle2,
-  ChevronsUpDown,
-  LayoutGrid,
-  Loader2,
-  Trash2,
-} from '@tuturuuu/icons';
+import { Archive, CheckCircle2, LayoutGrid, Trash2 } from '@tuturuuu/icons';
 import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
 import {
   getIconComponentByKey,
   type PlatformIconKey,
@@ -41,7 +28,7 @@ interface BoardSwitcherProps {
     archived?: string;
     deleted?: string;
     daysLeft?: string;
-    // Board name translations (case-insensitive matching)
+    searchBoards?: string;
     tasks?: string;
   };
 }
@@ -68,28 +55,29 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   const router = useRouter();
   const tasksHref = useTasksHref();
 
-  // Use provided translations or fall back to English defaults
   const t = {
     loadingBoards: translations?.loadingBoards ?? 'Loading boards...',
     noOtherBoards: translations?.noOtherBoards ?? 'No other boards',
-    activeBoards: translations?.activeBoards ?? 'Active Boards',
-    archivedBoards: translations?.archivedBoards ?? 'Archived Boards',
-    deletedBoards: translations?.deletedBoards ?? 'Deleted Boards',
+    activeBoards: translations?.activeBoards ?? 'Active boards',
+    archivedBoards: translations?.archivedBoards ?? 'Archived boards',
+    deletedBoards: translations?.deletedBoards ?? 'Deleted boards',
     untitled: translations?.untitled ?? 'Untitled',
     active: translations?.active ?? 'Active',
     archived: translations?.archived ?? 'Archived',
     deleted: translations?.deleted ?? 'Deleted',
     daysLeft: translations?.daysLeft ?? '{count} days left',
+    searchBoards: translations?.searchBoards ?? 'Search boards',
     tasks: translations?.tasks ?? 'Tasks',
   };
 
-  // Helper to translate board names (case-insensitive matching)
-  const translateBoardName = (name: string | null): string => {
-    if (!name) return t.untitled;
-    // Check if board name matches known translatable names
-    if (name.toLowerCase() === 'tasks') return t.tasks;
-    return name;
-  };
+  const translateBoardName = useCallback(
+    (name: string | null): string => {
+      if (!name) return t.untitled;
+      if (name.toLowerCase() === 'tasks') return t.tasks;
+      return name;
+    },
+    [t.tasks, t.untitled]
+  );
 
   const { data: boards = [], isLoading: isFetchingBoards } = useQuery({
     queryKey: ['other-boards', board.ws_id, board.id],
@@ -100,199 +88,127 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
     enabled: !!board.ws_id,
   });
 
-  // Separate boards by status
-  const activeBoards = boards.filter((b) => !b.archived_at && !b.deleted_at);
-  const archivedBoards = boards.filter((b) => b.archived_at && !b.deleted_at);
-  const deletedBoards = boards.filter((b) => b.deleted_at);
+  const boardOptions = useMemo(() => {
+    const byId = new Map<string, BoardWithStatus>();
+    for (const item of boards) byId.set(item.id, item);
+    if (!byId.has(board.id)) {
+      byId.set(board.id, {
+        id: board.id,
+        name: board.name ?? null,
+        icon: board.icon ?? null,
+        archived_at: null,
+        deleted_at: null,
+        created_at: null,
+      });
+    }
 
-  // Get current board's icon
-  const CurrentBoardIcon =
-    getIconComponentByKey(board.icon as PlatformIconKey | null) ?? LayoutGrid;
+    const orderedBoards = [...byId.values()].sort((a, b) => {
+      const statusWeight = (item: BoardWithStatus) =>
+        item.deleted_at ? 2 : item.archived_at ? 1 : 0;
+      const statusDelta = statusWeight(a) - statusWeight(b);
+      if (statusDelta !== 0) return statusDelta;
+      return translateBoardName(a.name).localeCompare(
+        translateBoardName(b.name)
+      );
+    });
+
+    return orderedBoards.map((item): ComboboxOption => {
+      const BoardIcon =
+        getIconComponentByKey(item.icon as PlatformIconKey | null) ??
+        LayoutGrid;
+      const isDeleted = Boolean(item.deleted_at);
+      const isArchived = Boolean(item.archived_at && !item.deleted_at);
+      const statusLabel = isDeleted
+        ? t.deleted
+        : isArchived
+          ? t.archived
+          : t.active;
+      const groupLabel = isDeleted
+        ? t.deletedBoards
+        : isArchived
+          ? t.archivedBoards
+          : t.activeBoards;
+      const daysRemaining =
+        item.deleted_at && getDaysRemaining(item.deleted_at);
+
+      return {
+        value: item.id,
+        label: translateBoardName(item.name),
+        searchValue: [
+          translateBoardName(item.name),
+          statusLabel,
+          groupLabel,
+          daysRemaining
+            ? t.daysLeft.replace('{count}', String(daysRemaining))
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+        description: daysRemaining
+          ? `${groupLabel} · ${t.daysLeft.replace(
+              '{count}',
+              String(daysRemaining)
+            )}`
+          : groupLabel,
+        icon: <BoardIcon className="h-4 w-4" />,
+        muted: isArchived || isDeleted,
+        badge: (
+          <Badge
+            className={cn(
+              'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
+              isDeleted && 'bg-dynamic-red/10 text-dynamic-red',
+              isArchived && 'bg-muted text-foreground',
+              !isDeleted &&
+                !isArchived &&
+                'bg-dynamic-green/10 text-dynamic-green'
+            )}
+          >
+            {isDeleted ? (
+              <Trash2 className="h-3 w-3 text-dynamic-red/50" />
+            ) : isArchived ? (
+              <Archive className="h-3 w-3 text-foreground/50" />
+            ) : (
+              <CheckCircle2 className="h-3 w-3 text-dynamic-green/50" />
+            )}
+            {statusLabel}
+          </Badge>
+        ),
+      };
+    });
+  }, [
+    board.icon,
+    board.id,
+    board.name,
+    boards,
+    t.active,
+    t.activeBoards,
+    t.archived,
+    t.archivedBoards,
+    t.daysLeft,
+    t.deleted,
+    t.deletedBoards,
+    translateBoardName,
+  ]);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div className="group flex cursor-pointer items-center gap-2 transition-colors hover:text-foreground">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-            <CurrentBoardIcon className="h-4 w-4" />
-          </div>
-          <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
-            {translateBoardName(board.name)}
-          </h1>
-          <ChevronsUpDown className="h-4 w-4 text-muted-foreground transition-transform group-hover:scale-110" />
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[320px]">
-        {isFetchingBoards ? (
-          <DropdownMenuItem disabled>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t.loadingBoards}
-          </DropdownMenuItem>
-        ) : boards.length === 0 ? (
-          <DropdownMenuItem disabled className="justify-center">
-            {t.noOtherBoards}
-          </DropdownMenuItem>
-        ) : (
-          <>
-            {/* Active Boards */}
-            {activeBoards.length > 0 && (
-              <>
-                <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  {t.activeBoards}
-                </DropdownMenuLabel>
-                {activeBoards.map((otherBoard) => {
-                  const isCurrentBoard = otherBoard.id === board.id;
-                  const BoardIcon =
-                    getIconComponentByKey(
-                      otherBoard.icon as PlatformIconKey | null
-                    ) ?? LayoutGrid;
-                  return (
-                    <DropdownMenuItem
-                      key={otherBoard.id}
-                      onClick={() =>
-                        router.push(
-                          `/${board.ws_id}${tasksHref(`/boards/${otherBoard.id}`)}`
-                        )
-                      }
-                      className={cn(
-                        'group/item cursor-pointer gap-3 py-2.5',
-                        isCurrentBoard && 'bg-dynamic-blue/10 text-dynamic-blue'
-                      )}
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
-                        <BoardIcon className="h-4 w-4" />
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="truncate font-medium text-sm leading-none">
-                          {translateBoardName(otherBoard.name)}
-                        </span>
-                      </div>
-                      <Badge
-                        className={cn(
-                          'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
-                          'bg-dynamic-green/10 text-dynamic-green'
-                        )}
-                      >
-                        <CheckCircle2 className="h-3 w-3 text-dynamic-green/50" />
-                        {t.active}
-                      </Badge>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </>
-            )}
-
-            {/* Archived Boards */}
-            {archivedBoards.length > 0 && (
-              <>
-                {activeBoards.length > 0 && <DropdownMenuSeparator />}
-                <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  {t.archivedBoards}
-                </DropdownMenuLabel>
-                {archivedBoards.map((otherBoard) => {
-                  const isCurrentBoard = otherBoard.id === board.id;
-                  const BoardIcon =
-                    getIconComponentByKey(
-                      otherBoard.icon as PlatformIconKey | null
-                    ) ?? LayoutGrid;
-                  return (
-                    <DropdownMenuItem
-                      key={otherBoard.id}
-                      onClick={() =>
-                        router.push(
-                          `/${board.ws_id}${tasksHref(`/boards/${otherBoard.id}`)}`
-                        )
-                      }
-                      className={cn(
-                        'group/item cursor-pointer gap-3 py-2.5 opacity-75 hover:opacity-100',
-                        isCurrentBoard &&
-                          'bg-dynamic-blue/10 text-dynamic-blue opacity-100'
-                      )}
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                        <BoardIcon className="h-4 w-4" />
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="truncate font-medium text-sm leading-none">
-                          {otherBoard.name || t.untitled}
-                        </span>
-                      </div>
-                      <Badge
-                        className={cn(
-                          'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
-                          'bg-muted text-foreground'
-                        )}
-                      >
-                        <Archive className="h-3 w-3 text-foreground/50" />
-                        {t.archived}
-                      </Badge>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </>
-            )}
-
-            {/* Deleted Boards */}
-            {deletedBoards.length > 0 && (
-              <>
-                {(activeBoards.length > 0 || archivedBoards.length > 0) && (
-                  <DropdownMenuSeparator />
-                )}
-                <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  {t.deletedBoards}
-                </DropdownMenuLabel>
-                {deletedBoards.map((otherBoard) => {
-                  const daysRemaining = getDaysRemaining(
-                    otherBoard.deleted_at ?? ''
-                  );
-                  const isCurrentBoard = otherBoard.id === board.id;
-                  const BoardIcon =
-                    getIconComponentByKey(
-                      otherBoard.icon as PlatformIconKey | null
-                    ) ?? LayoutGrid;
-
-                  return (
-                    <DropdownMenuItem
-                      key={otherBoard.id}
-                      onClick={() =>
-                        router.push(
-                          `/${board.ws_id}${tasksHref(`/boards/${otherBoard.id}`)}`
-                        )
-                      }
-                      className={cn(
-                        'group/item cursor-pointer gap-3 py-2.5 opacity-60 hover:opacity-100',
-                        isCurrentBoard &&
-                          'bg-dynamic-blue/10 text-dynamic-blue opacity-100'
-                      )}
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-destructive/10 text-destructive">
-                        <BoardIcon className="h-4 w-4" />
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="truncate font-medium text-sm leading-none">
-                          {otherBoard.name || t.untitled}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground leading-none">
-                          {t.daysLeft.replace('{count}', String(daysRemaining))}
-                        </span>
-                      </div>
-                      <Badge
-                        className={cn(
-                          'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
-                          'bg-dynamic-red/10 text-dynamic-red'
-                        )}
-                      >
-                        <Trash2 className="h-3 w-3 text-dynamic-red/50" />
-                        {t.deleted}
-                      </Badge>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </>
-            )}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Combobox
+      className="w-[min(22rem,70vw)]"
+      disabled={isFetchingBoards}
+      emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
+      label={
+        <span className="truncate font-semibold text-foreground text-sm">
+          {translateBoardName(board.name)}
+        </span>
+      }
+      onChange={(value) => {
+        const boardId = Array.isArray(value) ? value[0] : value;
+        if (!boardId || boardId === board.id) return;
+        router.push(`/${board.ws_id}${tasksHref(`/boards/${boardId}`)}`);
+      }}
+      options={boardOptions}
+      placeholder={translateBoardName(board.name)}
+      searchPlaceholder={t.searchBoards}
+      selected={board.id}
+    />
   );
 }

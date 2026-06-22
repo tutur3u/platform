@@ -11,7 +11,10 @@ import type { Product } from '@tuturuuu/payment/polar';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { after } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { resolveInventoryPolarContext } from './polar';
+import {
+  assertInventoryPolarWorkspace,
+  resolveInventoryPolarContext,
+} from './polar';
 
 type SupabaseErrorLike = { message?: string } | null;
 
@@ -403,7 +406,10 @@ export function scheduleVariantPolarSync(input: VariantPolarSyncInput) {
   schedulePush(() => syncVariantToPolar(input));
 }
 
-function getSyncMetadata(value: unknown): {
+function getSyncMetadata(
+  value: unknown,
+  expectedWsId?: string
+): {
   kind: SyncKind;
   rowId: string;
   wsId: string;
@@ -421,6 +427,10 @@ function getSyncMetadata(value: unknown): {
   if (typeof metadata.rowId !== 'string' || typeof metadata.wsId !== 'string') {
     return null;
   }
+  assertInventoryPolarWorkspace({
+    actualWsId: metadata.wsId,
+    expectedWsId,
+  });
   return { kind, rowId: metadata.rowId, wsId: metadata.wsId };
 }
 
@@ -450,9 +460,10 @@ function getFixedPriceAmount(product: Product): number | null {
  * product belonged to inventory (so the webhook can stop), false otherwise.
  */
 export async function applyPolarProductToInventory(
-  product: Product
+  product: Product,
+  expectedWsId?: string
 ): Promise<boolean> {
-  const metadata = getSyncMetadata(product.metadata);
+  const metadata = getSyncMetadata(product.metadata, expectedWsId);
   if (!metadata) return false;
 
   const table = syncTableForKind(metadata.kind);

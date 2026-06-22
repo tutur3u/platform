@@ -38,6 +38,7 @@ COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.js
 COPY apps/storefront/package.json ./apps/storefront/package.json
 COPY apps/supermemory/package.json ./apps/supermemory/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
+COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json

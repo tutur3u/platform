@@ -75,7 +75,28 @@ vi.mock('../board-header', () => ({
 }));
 
 vi.mock('../recycle-bin-panel', () => ({
-  RecycleBinPanel: () => null,
+  RecycleBinContent: () => <div data-testid="recycle-bin-view">Recycle</div>,
+}));
+
+vi.mock('../../drafts/drafts-page', () => ({
+  DraftsPage: ({
+    boardId,
+    includeUnassignedForBoard,
+    wsId,
+  }: {
+    boardId?: string;
+    includeUnassignedForBoard?: boolean;
+    wsId: string;
+  }) => (
+    <div
+      data-board-id={boardId}
+      data-include-unassigned={String(includeUnassignedForBoard)}
+      data-testid="drafts-view"
+      data-ws-id={wsId}
+    >
+      Drafts
+    </div>
+  ),
 }));
 
 vi.mock('../../boards/boardId/kanban', () => ({
@@ -170,6 +191,7 @@ function renderBoardViews(overrides?: {
   board?: Record<string, unknown>;
   idleBottomIsland?: React.ReactNode;
   lists?: TaskList[];
+  props?: Partial<React.ComponentProps<typeof BoardViews>>;
   tasks?: Task[];
   workspace?: { id: string; personal: boolean };
 }) {
@@ -192,6 +214,7 @@ function renderBoardViews(overrides?: {
           workspace={(overrides?.workspace ?? mockWorkspace) as any}
           workspaceLabels={mockWorkspaceLabels}
           idleBottomIsland={overrides?.idleBottomIsland}
+          {...overrides?.props}
         />
       </HotkeysProvider>
     </QueryClientProvider>
@@ -224,6 +247,62 @@ describe('BoardViews', () => {
       list: formatHotkeySequence(['G', 'L']),
       timeline: formatHotkeySequence(['G', 'T']),
     });
+  });
+
+  it('exposes drafts and recycle bin as editable board modes by default', () => {
+    renderBoardViews();
+
+    expect(boardHeaderProps?.availableViews).toEqual([
+      'kanban',
+      'list',
+      'timeline',
+      'drafts',
+      'recycle_bin',
+    ]);
+  });
+
+  it('passes explicit read-only public mode through shared board components', () => {
+    renderBoardViews({
+      props: {
+        availableViews: ['kanban', 'list'],
+        publicHeaderPrefix: <span data-testid="public-prefix" />,
+        publicView: true,
+        readOnly: true,
+      },
+    });
+
+    expect(boardHeaderProps).toMatchObject({
+      availableViews: ['kanban', 'list'],
+      publicView: true,
+      readOnly: true,
+    });
+    expect(boardHeaderProps?.titlePrefix).toBeDefined();
+    expect(kanbanBoardProps?.readOnly).toBe(true);
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+  });
+
+  it('renders board-scoped drafts and recycle bin views from the header mode switcher', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('drafts');
+    });
+
+    expect(screen.getByTestId('drafts-view')).toHaveAttribute(
+      'data-board-id',
+      'board-1'
+    );
+    expect(screen.getByTestId('drafts-view')).toHaveAttribute(
+      'data-include-unassigned',
+      'true'
+    );
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('recycle_bin');
+    });
+
+    expect(screen.getByTestId('recycle-bin-view')).toBeInTheDocument();
+    expect(createTaskMock).not.toHaveBeenCalled();
   });
 
   it('switches between kanban, list, and timeline using TanStack hotkey sequences', async () => {
@@ -508,6 +587,42 @@ describe('BoardViews', () => {
     });
   });
 
+  it('persists deadline section collapse state per board and section', async () => {
+    window.localStorage.setItem(
+      'task-board-deadline-section-collapsed:board-1:overdue',
+      'true'
+    );
+
+    renderBoardViews();
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: true,
+          upcoming: false,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('upcoming', true);
+    });
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem(
+          'task-board-deadline-section-collapsed:board-1:upcoming'
+        )
+      ).toBe('true');
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: true,
+          upcoming: true,
+        })
+      );
+    });
+  });
+
   it('excludes deleted lists from active board views and create shortcuts', () => {
     const listsWithDeletedFirst: TaskList[] = [
       {
@@ -648,6 +763,31 @@ describe('BoardViews', () => {
         })
       );
     });
+  });
+
+  it('passes board filter criteria into deadline task query options without global sort', async () => {
+    renderBoardViews();
+
+    act(() => {
+      boardHeaderProps?.onListStatusFilterChange('active');
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        labels: [{ color: 'BLUE', id: 'label-1', name: 'Urgent' } as any],
+        searchQuery: 'launch',
+        sortBy: 'name-asc',
+      });
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.deadlineTaskQueryOptions).toEqual(
+        expect.objectContaining({
+          labelIds: ['label-1'],
+          listStatuses: ['active'],
+          q: 'launch',
+        })
+      );
+    });
+    expect(kanbanBoardProps?.deadlineTaskQueryOptions?.sortBy).toBeUndefined();
   });
 
   it('uses server-side search counts to hide task lists without matching tasks', async () => {

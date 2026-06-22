@@ -314,10 +314,23 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'docker-setup-check.yaml'),
+    'utf8'
+  );
   const verifyJob = readWorkflowJobBlock('docker-setup-check.yaml', 'verify');
+  const checkCiJob = readWorkflowJobBlock(
+    'docker-setup-check.yaml',
+    'check-ci'
+  );
   const prePullIndex = verifyJob.indexOf('Pre-pull Docker BuildKit image');
   const setupBuildxIndex = verifyJob.indexOf('Setup Docker Buildx');
 
+  assert.match(workflow, /\npermissions:\n {2}contents: read\n/u);
+  assert.match(
+    checkCiJob,
+    /permissions:\n {6}contents: read\n {6}deployments: read/u
+  );
   assert.notEqual(prePullIndex, -1);
   assert.notEqual(setupBuildxIndex, -1);
   assert.ok(
@@ -326,6 +339,61 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
   );
   assert.match(verifyJob, /docker pull moby\/buildkit:buildx-stable-1/u);
   assert.match(verifyJob, /driver-opts: image=moby\/buildkit:buildx-stable-1/u);
+  assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.js/u);
+  assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.test\.js/u);
+  assert.match(
+    verifyJob,
+    /node --test scripts\/check-docker-web\.test\.js scripts\/docker-web\.test\.js scripts\/run-tanstack-e2e-docker\.test\.js/u
+  );
+});
+
+test('Rust backend workflow validates TanStack route tree generator changes', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'rust-backend.yml'),
+    'utf8'
+  );
+  const verifyTanstackJob = readWorkflowJobBlock(
+    'rust-backend.yml',
+    'verify-tanstack-web'
+  );
+
+  assert.match(workflow, /scripts\/generate-tanstack-route-tree\.js/u);
+  assert.match(workflow, /scripts\/generate-tanstack-route-tree\.test\.js/u);
+  assert.match(
+    verifyTanstackJob,
+    /node --test scripts\/generate-tanstack-route-tree\.test\.js/u
+  );
+  assert.ok(
+    verifyTanstackJob.indexOf('Check TanStack route tree generator') <
+      verifyTanstackJob.indexOf('Type-check TanStack Start app'),
+    'route tree generator validation should run before TanStack type-check'
+  );
+});
+
+test('Rust backend Cloudflare deploys require trusted main dispatches', () => {
+  const preflightJob = readWorkflowJobBlock(
+    'rust-backend.yml',
+    'cloudflare-deployment-preflight'
+  );
+  const credentialsIndex = preflightJob.indexOf('CLOUDFLARE_API_TOKEN');
+  const trustedActorIndex = preflightJob.indexOf(
+    'TRUSTED_CLOUDFLARE_DEPLOY_ACTORS'
+  );
+
+  assert.match(preflightJob, /github\.event_name == 'workflow_dispatch'/u);
+  assert.match(preflightJob, /github\.ref == 'refs\/heads\/main'/u);
+  assert.match(
+    preflightJob,
+    /contains\(format\(',\{0\},', vars\.TRUSTED_CLOUDFLARE_DEPLOY_ACTORS\), format\(',\{0\},', github\.actor\)\)/u
+  );
+  assert.match(preflightJob, /inputs\.deploy_target != 'none'/u);
+  assert.match(preflightJob, /needs\.check-ci\.outputs\.should_run == 'true'/u);
+  assert.ok(
+    trustedActorIndex > -1 &&
+      credentialsIndex > -1 &&
+      trustedActorIndex < credentialsIndex,
+    'Cloudflare deploy actor allowlist should be checked before loading credentials'
+  );
 });
 
 test('Supabase staging migration includes every local migration when pushing', () => {
@@ -526,6 +594,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     'Redact E2E diagnostics artifact'
   );
   const uploadIndex = e2eJob.indexOf('Upload Playwright report');
+  const testResultsUploadIndex = e2eJob.indexOf('Upload test results');
 
   assert.match(
     workflow,
@@ -538,6 +607,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(e2eJob, /PORTLESS_PORT: "1355"/u);
   assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
+  assert.match(
+    e2eJob,
+    /package-manager-cache: false/u,
+    'setup-node must not run a second Bun package-manager cache restore'
+  );
   assert.notEqual(cleanupIndex, -1);
   assert.notEqual(runIndex, -1);
   assert.notEqual(diagnosticsIndex, -1);
@@ -546,6 +620,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(diagnosticsUploadIndex, -1);
   assert.notEqual(diagnosticsRedactionIndex, -1);
   assert.notEqual(uploadIndex, -1);
+  assert.notEqual(testResultsUploadIndex, -1);
   assert.doesNotMatch(
     e2eJob,
     /name: Start Portless shared localhost proxy/u,
@@ -599,6 +674,25 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
   assert.match(
     e2eJob,
+    /key: supabase-docker-\$\{\{ runner\.os \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/u,
+    'Supabase Docker cache saves need a per-run key to avoid cross-run save conflicts'
+  );
+  assert.match(
+    e2eJob,
+    /restore-keys: \|\n {12}supabase-docker-\$\{\{ runner\.os \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-/u
+  );
+  assert.match(
+    e2eJob,
+    /id: prepare-supabase-docker-cache/u,
+    'E2E cache upload must verify a tarball exists before saving'
+  );
+  assert.match(e2eJob, /cache-ready=true/u);
+  assert.match(
+    e2eJob,
+    /steps\.prepare-supabase-docker-cache\.outputs\.cache-ready == 'true'/u
+  );
+  assert.match(
+    e2eJob,
     /docker ps -a --filter "label=com\.docker\.compose\.project=\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}"/u
   );
   assert.match(
@@ -627,6 +721,83 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(e2eJob, /path: tmp\/e2e-diagnostics\//u);
   assert.match(e2eJob, /if-no-files-found: warn/u);
+  assert.match(
+    e2eJob,
+    /name: test-results-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}[\s\S]*?path: apps\/web\/test-results\/\n {10}if-no-files-found: ignore/u,
+    'successful shards may not create Playwright test-results artifacts'
+  );
+});
+
+test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
+    'utf8'
+  );
+  const migrationJob = readWorkflowJobBlock('e2e-tests.yaml', 'migration-e2e');
+  const cleanupIndex = migrationJob.indexOf(
+    'Free runner disk for Dockerized migration E2E'
+  );
+  const installIndex = migrationJob.indexOf('Install dependencies');
+  const runIndex = migrationJob.indexOf('Run migration E2E');
+  const uploadIndex = migrationJob.indexOf('Upload migration E2E artifacts');
+  const stopIndex = migrationJob.indexOf('Stop migration E2E stacks');
+
+  assert.match(workflow, /\n {2}workflow_dispatch:\n/u);
+  assert.match(migrationJob, /needs: \[check-ci\]/u);
+  assert.match(
+    migrationJob,
+    /github\.ref != 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/u
+  );
+  assert.match(migrationJob, /mode: tanstack-dual-stack/u);
+  assert.match(
+    migrationJob,
+    /command: bun test:e2e:tanstack:docker -- -- --project=chromium/u,
+    'TanStack runner needs a literal -- before Playwright args'
+  );
+  assert.match(migrationJob, /playwright_workdir: apps\/tanstack-web/u);
+  assert.match(migrationJob, /setup_supabase: "false"/u);
+  assert.match(migrationJob, /mode: compare-smoke/u);
+  assert.match(
+    migrationJob,
+    /command: bun test:e2e:web:docker:compare -- public-marketing-routes\.noauth\.spec\.ts --project=chromium-no-auth/u
+  );
+  assert.match(migrationJob, /playwright_workdir: apps\/web/u);
+  assert.match(migrationJob, /setup_supabase: "true"/u);
+  assert.match(migrationJob, /if: matrix\.setup_supabase == 'true'/u);
+  assert.match(
+    migrationJob,
+    /uses: \.\/\.github\/actions\/setup-supabase-cli-with-retry/u
+  );
+  assert.match(
+    migrationJob,
+    /working-directory: \$\{\{ matrix\.playwright_workdir \}\}/u
+  );
+  assert.match(migrationJob, /run: \$\{\{ matrix\.command \}\}/u);
+  assert.match(migrationJob, /name: migration-e2e-\$\{\{ matrix\.mode \}\}/u);
+  assert.match(
+    migrationJob,
+    /path: \|\n {12}apps\/tanstack-web\/playwright-report\//u
+  );
+  assert.match(migrationJob, /tmp\/e2e\//u);
+  assert.match(migrationJob, /if-no-files-found: ignore/u);
+  assert.match(
+    migrationJob,
+    /docker compose -f docker-compose\.tanstack-dual\.yml down \|\| true/u
+  );
+  assert.match(
+    migrationJob,
+    /node scripts\/docker-web\.js down --mode prod --strategy blue-green --env-file tmp\/e2e\/web\.env \|\| true/u
+  );
+  assert.match(migrationJob, /bun sb:stop \|\| true/u);
+  assert.notEqual(cleanupIndex, -1);
+  assert.notEqual(installIndex, -1);
+  assert.notEqual(runIndex, -1);
+  assert.notEqual(uploadIndex, -1);
+  assert.notEqual(stopIndex, -1);
+  assert.ok(cleanupIndex < installIndex);
+  assert.ok(installIndex < runIndex);
+  assert.ok(runIndex < uploadIndex);
+  assert.ok(runIndex < stopIndex);
 });
 
 test('Supabase production migration requires production platform deploy and successful staged SHA', () => {

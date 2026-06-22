@@ -78,6 +78,10 @@
       "component": "storefront",
       "package-name": "@tuturuuu/storefront"
     },
+    "apps/tanstack-web": {
+      "component": "tanstack-web",
+      "package-name": "@tuturuuu/tanstack-web"
+    },
     "apps/learn": {
       "component": "learn",
       "package-name": "@tuturuuu/learn"

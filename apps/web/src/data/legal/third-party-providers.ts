@@ -1,21 +1,8 @@
-import {
-  Bot,
-  Cloud,
-  CreditCard,
-  Database,
-  Globe,
-  Mail,
-  MessageSquare,
-  Monitor,
-  Server,
-  Shield,
-} from '@tuturuuu/icons';
 import type { ThirdPartyCategory } from '@/components/legal/legal-types';
 
 export const thirdPartyCategories: ThirdPartyCategory[] = [
   {
     name: 'Core Infrastructure',
-    icon: Server,
     providers: [
       {
         name: 'Supabase',
@@ -41,7 +28,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'AI Providers',
-    icon: Bot,
     providers: [
       {
         name: 'Google Gemini',
@@ -72,7 +58,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Payments',
-    icon: CreditCard,
     providers: [
       {
         name: 'Polar.sh',
@@ -83,7 +68,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Calendar Integrations',
-    icon: Globe,
     providers: [
       {
         name: 'Google Calendar API',
@@ -99,7 +83,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Email',
-    icon: Mail,
     providers: [
       {
         name: 'AWS SES',
@@ -110,7 +93,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Background Jobs',
-    icon: Database,
     providers: [
       {
         name: 'Trigger.dev',
@@ -121,7 +103,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Compute',
-    icon: Cloud,
     providers: [
       {
         name: 'Modal',
@@ -132,7 +113,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Communication',
-    icon: MessageSquare,
     providers: [
       {
         name: 'Discord',
@@ -143,7 +123,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Security',
-    icon: Shield,
     providers: [
       {
         name: 'Cloudflare Turnstile',
@@ -154,7 +133,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
   },
   {
     name: 'Analytics',
-    icon: Monitor,
     providers: [
       {
         name: 'Vercel Analytics',

@@ -270,6 +270,22 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifySecret: vi.fn(() => Promise.resolve(true)),
 }));
 
+// The product/[productId] and inventory routes now resolve auth through the
+// inventory app-session-aware helper. Mock it to grant access with the same
+// permission shape the rest of these tests rely on.
+vi.mock('@/lib/inventory/commerce/auth', () => ({
+  authorizeInventoryWorkspace: vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      value: {
+        permissions: mocks.permissions,
+        userId: 'user-1',
+        wsId: 'normalized-ws',
+      },
+    })
+  ),
+}));
+
 vi.mock('server-only', () => ({}));
 
 vi.mock('next/headers', () => ({

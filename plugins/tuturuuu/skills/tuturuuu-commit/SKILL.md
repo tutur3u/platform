@@ -26,6 +26,9 @@ and failure handling before creating commits.
   aborts.
 - Stage only files intentionally changed for the current commit.
 - Avoid `git add .` in shared worktrees.
+- Treat existing staged files as owned by the staging agent or coordinator until
+  explicitly reassigned. If a path is `MM`, review both staged and unstaged
+  portions with the relevant owner before committing.
 - Keep commits atomic by product domain, package, behavior, or independently
   revertible operational policy.
 - Use Conventional Commit subjects that match repo rules.
@@ -33,6 +36,8 @@ and failure handling before creating commits.
 - Do not push unless the user explicitly asks for push.
 - Let commit hooks run by default. Use `git commit --no-verify` only when the
   current agent has proof-gated no-verify evidence for its exact staged paths.
+  Do not use no-verify to bypass failures caused by unrelated worker files unless
+  you own the staged set and have exact-path proof.
 
 ## Commit Planning
 

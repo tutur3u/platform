@@ -25,6 +25,7 @@ export function areTaskCardPropsEqual(
   next: TaskCardProps
 ) {
   if (prev.isOverlay !== next.isOverlay) return false;
+  if (prev.readOnly !== next.readOnly) return false;
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (
@@ -36,6 +37,8 @@ export function areTaskCardPropsEqual(
   }
   if (prev.boardId !== next.boardId) return false;
   if (prev.workspaceId !== next.workspaceId) return false;
+  if (prev.deadlineContext !== next.deadlineContext) return false;
+  if (prev.deadlineNow !== next.deadlineNow) return false;
   if (prev.dragDisabled !== next.dragDisabled) return false;
   if (prev.sortableId !== next.sortableId) return false;
   if (prev.suppressSortableTransform !== next.suppressSortableTransform) {

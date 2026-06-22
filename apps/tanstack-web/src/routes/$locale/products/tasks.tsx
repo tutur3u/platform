@@ -1,0 +1,225 @@
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  Bell,
+  Bot,
+  Calendar,
+  CircleCheck,
+  Clock,
+  FolderKanban,
+  LayoutDashboard,
+  LineChart,
+  ListTodo,
+  ShieldCheck,
+  Tag,
+  Users,
+} from '@tuturuuu/icons/lucide';
+import {
+  ProductBadge,
+  ProductButton,
+  ProductCard,
+  ProductLinkButton,
+} from '../../../components/products/product-page-primitives';
+import { createPageHead } from '../../../lib/platform/head';
+
+export const Route = createFileRoute('/$locale/products/tasks')({
+  component: TasksProductPage,
+  head: () =>
+    createPageHead({
+      description:
+        'Keep projects on track with Tuturuuu Tasks and collaborative boards.',
+      title: 'Tasks Product',
+    }),
+});
+
+const features = [
+  {
+    title: 'Task Organization',
+    description:
+      'Organize tasks with custom lists, tags, and priority levels for better workflow management.',
+    icon: <ListTodo className="h-6 w-6" />,
+  },
+  {
+    title: 'AI Task Assistant',
+    description:
+      'Get intelligent suggestions for task prioritization and time management.',
+    icon: <Bot className="h-6 w-6" />,
+  },
+  {
+    title: 'Team Collaboration',
+    description:
+      'Assign tasks, track progress, and collaborate with team members seamlessly.',
+    icon: <Users className="h-6 w-6" />,
+  },
+  {
+    title: 'Due Date Tracking',
+    description:
+      'Set and track due dates with smart reminders and calendar integration.',
+    icon: <Calendar className="h-6 w-6" />,
+  },
+  {
+    title: 'Project Views',
+    description:
+      'View tasks in multiple formats including list, board, and timeline views.',
+    icon: <FolderKanban className="h-6 w-6" />,
+  },
+  {
+    title: 'Task Analytics',
+    description:
+      'Track productivity and task completion with detailed analytics and reports.',
+    icon: <LineChart className="h-6 w-6" />,
+  },
+];
+
+const useCases = [
+  {
+    title: 'Personal Tasks',
+    items: [
+      'Daily to-do lists',
+      'Goal tracking',
+      'Habit management',
+      'Priority planning',
+    ],
+  },
+  {
+    title: 'Team Projects',
+    items: [
+      'Project coordination',
+      'Task delegation',
+      'Progress tracking',
+      'Team collaboration',
+    ],
+  },
+  {
+    title: 'Workflow Management',
+    items: [
+      'Process automation',
+      'Deadline tracking',
+      'Resource allocation',
+      'Status reporting',
+    ],
+  },
+];
+
+export default function TasksProductPage() {
+  return (
+    <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
+      {/* Hero Section */}
+      <div className="mb-16 text-center">
+        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">Smart Task Management</h1>
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          Transform your productivity with intelligent task management.
+          Organize, prioritize, and complete tasks efficiently with AI-powered
+          assistance and team collaboration features.
+        </p>
+        <div className="mt-8 flex justify-center gap-4">
+          <ProductButton disabled>Join Waitlist</ProductButton>
+          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        </div>
+      </div>
+
+      {/* Trust Section */}
+      <section className="mb-24">
+        <ProductCard className="border-primary bg-primary/5 p-8">
+          <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
+            <ShieldCheck className="h-12 w-12 text-primary" />
+            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
+            <p className="text-muted-foreground">
+              Your tasks and project data are protected with advanced security
+              measures, ensuring safe and reliable task management for teams of
+              all sizes.
+            </p>
+          </div>
+        </ProductCard>
+      </section>
+
+      {/* Features Grid */}
+      <section className="mb-24">
+        <h2 className="mb-12 text-center font-bold text-3xl">
+          Powerful Features
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <ProductCard key={feature.title} className="p-6">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="text-primary">{feature.icon}</div>
+                <h3 className="font-semibold text-xl">{feature.title}</h3>
+              </div>
+              <p className="text-muted-foreground">{feature.description}</p>
+            </ProductCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Use Cases */}
+      <section className="mb-24">
+        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
+        <div className="grid gap-8 md:grid-cols-3">
+          {useCases.map((useCase) => (
+            <ProductCard key={useCase.title} className="p-6">
+              <CircleCheck className="mb-4 h-8 w-8 text-primary" />
+              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                {useCase.items.map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </ProductCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Task Management Section */}
+      <section className="mb-24">
+        <ProductCard className="overflow-hidden">
+          <div className="grid md:grid-cols-2">
+            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
+              <Tag className="h-8 w-8 text-primary" />
+              <h3 className="font-bold text-2xl">Smart Organization</h3>
+              <p className="text-muted-foreground">
+                Organize tasks with custom tags, labels, and categories for
+                efficient task management and quick access.
+              </p>
+            </div>
+            <div className="flex flex-col justify-center gap-4 p-8">
+              <Bell className="h-8 w-8 text-primary" />
+              <h3 className="font-bold text-2xl">Intelligent Reminders</h3>
+              <p className="text-muted-foreground">
+                Never miss a deadline with smart notifications and
+                priority-based reminders for important tasks.
+              </p>
+            </div>
+          </div>
+        </ProductCard>
+      </section>
+
+      {/* Additional Features Section */}
+      <section className="mb-24">
+        <h2 className="mb-12 text-center font-bold text-3xl">
+          Productivity Tools
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <ProductCard className="p-6">
+            <LayoutDashboard className="mb-4 h-8 w-8 text-primary" />
+            <h3 className="mb-2 font-bold text-xl">Custom Dashboards</h3>
+            <p className="text-muted-foreground">
+              Create personalized dashboards to track tasks, deadlines, and team
+              progress at a glance.
+            </p>
+          </ProductCard>
+          <ProductCard className="p-6">
+            <Clock className="mb-4 h-8 w-8 text-primary" />
+            <h3 className="mb-2 font-bold text-xl">Time Tracking</h3>
+            <p className="text-muted-foreground">
+              Track time spent on tasks and analyze productivity patterns with
+              detailed time analytics.
+            </p>
+          </ProductCard>
+        </div>
+      </section>
+    </div>
+  );
+}

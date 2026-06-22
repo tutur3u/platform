@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, ShieldCheck } from '@tuturuuu/icons';
+import { ArrowRight, ShieldCheck } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';

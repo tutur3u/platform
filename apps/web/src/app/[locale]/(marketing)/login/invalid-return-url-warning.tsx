@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, ArrowRight } from '@tuturuuu/icons';
+import { AlertTriangle, ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { ConfirmationCard } from './internal-app-account-confirmation-parts';

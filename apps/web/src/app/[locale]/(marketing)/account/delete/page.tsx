@@ -8,11 +8,9 @@ import {
   Info,
   ShieldAlert,
   Trash2,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   TUTURUUU_LOCAL_LOGO_URL,
@@ -20,7 +18,6 @@ import {
 } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -155,16 +152,16 @@ export default function DeleteAccountPage() {
             <TuturuuLogo src={TUTURUUU_LOCAL_LOGO_URL} width={80} height={80} />
           </div>
 
-          <Card className="border-dynamic-red/20 bg-card/80 shadow-2xl backdrop-blur-xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-dynamic-red text-xl">
+          <div className="rounded-xl border border-dynamic-red/20 bg-card/80 text-card-foreground shadow-2xl backdrop-blur-xl">
+            <div className="flex flex-col gap-1.5 p-6 text-center">
+              <div className="font-semibold text-dynamic-red text-xl leading-none">
                 {t('delete-account-page-title')}
-              </CardTitle>
+              </div>
               <p className="text-muted-foreground text-sm">
                 {t('delete-account-warning')}
               </p>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            </div>
+            <div className="flex flex-col gap-4 p-6 pt-0">
               {/* Pre-check loading state */}
               {preCheckLoading && (
                 <div className="flex items-center justify-center py-4">
@@ -209,9 +206,9 @@ export default function DeleteAccountPage() {
                           <span className="font-medium text-sm">
                             {ws.wsName}
                           </span>
-                          <Badge variant="outline" className="text-xs">
+                          <span className="inline-flex w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md border border-border bg-transparent px-2 py-0.5 font-semibold text-foreground text-xs transition-[color,box-shadow]">
                             {ws.tier}
-                          </Badge>
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -257,7 +254,7 @@ export default function DeleteAccountPage() {
                   {/* Cleanup summary */}
                   {hasCleanupWork && (
                     <>
-                      <Separator />
+                      <div className="h-px w-full bg-border" />
                       <div className="rounded-lg border border-border bg-muted/30 p-3">
                         <div className="flex gap-2">
                           <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -341,8 +338,8 @@ export default function DeleteAccountPage() {
                   {t('cancel')}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>

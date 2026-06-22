@@ -42,6 +42,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { getQrAppOrigin } from './lib/qr-app-url';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -199,6 +200,80 @@ function prependLocalePrefix(path: string, localePrefix: string): string {
   }
 
   return path === '/' ? localePrefix : `${localePrefix}${path}`;
+}
+
+function getLocaleAwarePathname(pathname: string) {
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0];
+  const locale = supportedLocales.includes((firstSegment ?? '') as Locale)
+    ? (firstSegment as Locale)
+    : null;
+  const pathSegments = locale ? segments.slice(1) : segments;
+  const pathnameWithoutLocale =
+    pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+
+  return {
+    locale,
+    pathnameWithoutLocale,
+  };
+}
+
+function isLocaleRootPublicPath(pathname: string): boolean {
+  const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
+
+  return Boolean(locale && pathnameWithoutLocale === '/');
+}
+
+function redirectToPath(req: NextRequest, pathname: string) {
+  return NextResponse.redirect(new URL(pathname, req.nextUrl));
+}
+
+function redirectToQrApp(req: NextRequest) {
+  const redirectUrl = new URL(getQrAppOrigin());
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handlePublicMarketingRedirectRoute(
+  req: NextRequest
+): NextResponse | null {
+  const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(
+    req.nextUrl.pathname
+  );
+
+  if (locale === defaultLocale && pathnameWithoutLocale === '/pricing') {
+    return redirectToPath(req, pathnameWithoutLocale);
+  }
+
+  if (pathnameWithoutLocale === '/docs') {
+    return NextResponse.redirect('https://docs.tuturuuu.com');
+  }
+
+  if (pathnameWithoutLocale === '/pricing') {
+    return redirectToPath(req, '/?hash-nav=1#pricing');
+  }
+
+  if (pathnameWithoutLocale === '/products/meet-together') {
+    return redirectToPath(req, '/meet-together');
+  }
+
+  if (pathnameWithoutLocale === '/qr-generator') {
+    return redirectToQrApp(req);
+  }
+
+  if (
+    locale &&
+    (pathnameWithoutLocale === '/calendar/meet-together' ||
+      pathnameWithoutLocale.startsWith('/calendar/meet-together/'))
+  ) {
+    return redirectToPath(
+      req,
+      pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')
+    );
+  }
+
+  return null;
 }
 
 function isWorkspaceHomeRedirectCandidate(
@@ -788,6 +863,7 @@ function shouldBypassOnboardingCheck(pathname: string): boolean {
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
+  isPublicPath: isLocaleRootPublicPath,
   skipApiRoutes: true,
 });
 
@@ -971,6 +1047,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const reservedRootRouteResponse = handleReservedRootRoute(req);
   if (reservedRootRouteResponse) {
     return reservedRootRouteResponse;
+  }
+
+  const publicMarketingRedirectResponse =
+    handlePublicMarketingRedirectRoute(req);
+  if (publicMarketingRedirectResponse) {
+    return publicMarketingRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -1276,7 +1358,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath || isDashboardRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    hasSupabaseSessionCookie(req)
   ) {
     try {
       const supabase = await createClient();

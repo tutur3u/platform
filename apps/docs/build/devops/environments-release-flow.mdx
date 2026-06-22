@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-06-12"
+updatedAt: "2026-06-21"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -71,7 +71,11 @@ This page explains how Tuturuuu moves from code to running environments.
 - Browser apps share one platform version from
   `packages/utils/src/platform-release.ts`; do not read visible app versions
   from individual app `package.json` files.
-- The current shared browser app version is `0.1.32`.
+- The shared browser app version is the `TUTURUUU_PLATFORM_VERSION` constant
+  exported from `packages/utils/src/platform-release.ts`. Release Please owns
+  that value (it carries the `x-release-please-version` annotation), so do not
+  pin a literal version in docs or bump it by hand. Read the constant directly
+  when you need the current value.
 - Every Vercel browser app workflow runs
   `bun run --silent scripts/ci/generate-build-metadata.ts` before
   `vercel build`. The generated metadata includes the commit hash, short hash,
@@ -120,6 +124,34 @@ the checked-out commit:
 
 Blue/green is the safer path when uptime matters because the new image is built and
 health-checked before the proxy is reloaded.
+
+## Migration Release Path (TanStack + Rust)
+
+`apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web`
+(TanStack Start) plus `apps/backend` (the Rust HTTP core, port `7820`). See
+[the TanStack/Rust migration overview](/platform/architecture/tanstack-rust-migration)
+for the full plan.
+
+While that migration is incomplete, Docker blue/green remains the canonical
+production rollout and rollback mechanism for the live hostname. Cloudflare
+Workers are used as a separate, incremental **preview** surface to prove Worker
+compatibility for `apps/tanstack-web` and `apps/backend` before any cutover:
+
+- Validate the Wrangler deploy configs without contacting Cloudflare with
+  `bun check:cloudflare`.
+- Deploy the Rust backend Worker (`apps/backend/wrangler.jsonc`) and the
+  TanStack Start Worker (`apps/tanstack-web/wrangler.jsonc`) to preview, then
+  smoke both returned origins with `bun smoke:cloudflare`.
+- Do not route the production hostname to preview Workers until the
+  TanStack/Rust route manifest, compare-mode Docker E2E, benchmark report, and
+  cutover gates (`bun migration:tanstack:gates`) all pass.
+- Rollback from the preview path is DNS/routing-based (remove the Cloudflare
+  route or roll back the Worker version); the Docker blue/green `apps/web` stack
+  keeps serving the canonical hostname throughout.
+
+The full Cloudflare preview, secret-bootstrap, smoke, and cutover-gate runbook
+lives in
+[Web Docker Deployment → Cloudflare Preview Path](/build/devops/web-docker-deployment).
 
 ## Team Release Checklist
 

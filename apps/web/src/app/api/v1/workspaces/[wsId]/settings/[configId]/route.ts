@@ -23,6 +23,20 @@ interface Params {
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
+// Workspace config ids that satellite apps legitimately read/write through their
+// own app session. The inventory operator surfaces the workspace default
+// currency, so its app session must be accepted for that config alongside the
+// finance/platform audiences. Other finance-gated configs stay finance-only.
+const INVENTORY_FINANCE_CONFIG_IDS = new Set(['DEFAULT_CURRENCY']);
+
+function financeAuthTargetsForConfig(
+  configId: string
+): Array<'finance' | 'platform' | 'inventory'> | undefined {
+  return INVENTORY_FINANCE_CONFIG_IDS.has(configId)
+    ? ['finance', 'platform', 'inventory']
+    : undefined;
+}
+
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
 
@@ -72,7 +86,9 @@ export async function PUT(req: Request, { params }: Params) {
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
-    await resolveFinanceRouteAuthContext(req)
+    await resolveFinanceRouteAuthContext(req, {
+      targetApp: financeAuthTargetsForConfig(id),
+    })
   );
 
   if (access.response) {
@@ -208,7 +224,9 @@ export async function GET(req: Request, { params }: Params) {
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
-    await resolveFinanceRouteAuthContext(req)
+    await resolveFinanceRouteAuthContext(req, {
+      targetApp: financeAuthTargetsForConfig(id),
+    })
   );
 
   if (access.response) {

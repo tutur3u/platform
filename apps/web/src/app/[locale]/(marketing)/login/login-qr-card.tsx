@@ -2,7 +2,7 @@
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useQuery } from '@tanstack/react-query';
-import { QrCode, RefreshCw, Smartphone } from '@tuturuuu/icons';
+import { QrCode, RefreshCw, Smartphone } from '@tuturuuu/icons/lucide-static';
 import {
   createQrLoginChallengeWithInternalApi,
   pollQrLoginChallengeWithInternalApi,

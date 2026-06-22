@@ -1,11 +1,12 @@
 ---
 title: 'Development'
 description: 'Learn how to preview changes locally.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
   **Prerequisite**: You should have installed [Node.js](https://nodejs.org)
-  (version 20 or higher).
+  (version 22 or higher, matching the repo's `engines.node` of `>=22`).
 </Info>
 
 ## Installation
@@ -64,8 +65,9 @@ To complete the initial setup, please restart your IDE so that it can recognize 
 <Tip>
   If you're using VS Code, you can install following the recommended extensions
   that will help you with the development process:
-  [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint),
-  [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode),
+  [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
+  (this repo standardizes on Biome for linting and formatting via `biome.json`,
+  not ESLint or Prettier),
   [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer),
   [Tailwind CSS
   IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss),
@@ -131,6 +133,57 @@ cross-app auth can still use the `*.tuturuuu.localhost` URL. Pass `--force` or
 `--no-reuse` when you intentionally want the command to include already-running
 app workspaces. Force mode starts the package `dev --force` path so Portless can
 take over the matching route instead of leaving a stale static alias in place.
+
+`bun dev:tanstack-web` starts the TanStack Start migration frontend at
+`https://tanstack.tuturuuu.localhost`, with fallback port `7824`. It is the
+dedicated frontend for the Next.js-to-TanStack migration and should call
+Rust-owned APIs through `packages/internal-api` helpers instead of direct
+browser access to protected `apps/web` routes. See
+`platform/architecture/tanstack-rust-migration` for the route manifest, Docker,
+E2E, benchmark gates, and Cloudflare Workers preparation.
+
+For the Cloudflare-compatible preview shape, start the Worker entrypoints
+instead of the normal Portless dev wrapper:
+
+```bash
+bun wrangler dev --config apps/backend/wrangler.jsonc
+bun --cwd apps/tanstack-web run preview:cloudflare
+```
+
+Use the same environment variable names as deployment:
+`BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, and
+`BACKEND_INTERNAL_URL`. Keep values in your shell or ignored local env files;
+do not add literal tokens or account-specific origins to docs, Wrangler config,
+package manifests, or source. After deploying preview Workers, run
+`bun smoke:cloudflare` with `BACKEND_WORKER_ORIGIN`,
+`TANSTACK_WEB_WORKER_ORIGIN`, and `BACKEND_INTERNAL_TOKEN` to verify backend
+health/readiness, protected migration status, missing/invalid token rejection,
+and the TanStack root shell.
+
+`bun dev:web` is intentionally lean: by default it starts only `apps/web` and
+does not start the `@tuturuuu/types` or `@tuturuuu/supabase` package watch
+builds. Use this default for app-route and UI work so the local process tree
+stays small. When you are actively editing those package sources and need their
+`dist` output rebuilt live, opt in explicitly:
+
+```bash
+bun dev:web --with-shared-watchers
+```
+
+You can also pass `--no-shared-watchers` to other root app launchers when you
+want the same low-memory posture for a focused app session.
+
+`apps/web` does not mount React Query Devtools in its default development
+provider. Keep the default off for faster cold route compiles and lower
+Turbopack memory pressure; add a local, temporary devtools mount only while
+debugging query cache behavior, then remove it before committing.
+
+Keep the always-mounted public shell small. The mobile menu drawer, marketing
+footer body, report-problem dialog, and authenticated dropdown-only affordances
+should stay behind dynamic imports when possible, and shell icons should use
+`@tuturuuu/icons/lucide-static` instead of the root `@tuturuuu/icons` entrypoint.
+This prevents the public `/login` compile graph from pulling large Radix,
+footer, or full icon-package chunks into every `bun dev:web` session.
 
 `bun dev:chat` also manages the local chat realtime sidecar. It reuses
 `localhost:7817` when a sidecar is already running; otherwise it starts
@@ -352,6 +405,15 @@ an app boundary. A dedicated infrastructure app only reduces `apps/web` memory
 when infrastructure pages leave the web route graph; running `apps/web` and an
 infrastructure app together can increase total RAM.
 
+Native local dev leaves Watchpack polling off unless the environment explicitly
+sets `WATCHPACK_POLLING`. This keeps file watching lighter on macOS and Linux.
+If the diagnostic reports watcher `EMFILE` errors or route discovery stops
+updating on your machine, restart with polling enabled:
+
+```bash
+WATCHPACK_POLLING=true bun dev:web
+```
+
 If the doctor warns that apps/web is missing Redis env, configure the local SRH
 bridge and start the Redis stack in one step:
 
@@ -504,4 +566,4 @@ Tests are still a work in progress. We're currently working on adding tests to a
 
 ## Git Conventions
 
-Tuturuuu uses standardized conventions for Git commits and branch naming. For more information, see the [Git Conventions](/git-conventions) guide to learn how to format your commits and branch names to align with our workflow.
+Tuturuuu uses standardized conventions for Git commits and branch naming. For more information, see the [Git Conventions](/build/development-tools/git-conventions) guide to learn how to format your commits and branch names to align with our workflow.

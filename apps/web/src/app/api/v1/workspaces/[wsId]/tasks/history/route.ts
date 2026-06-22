@@ -48,6 +48,46 @@ const querySchema = z.object({
   search: z.string().max(MAX_SEARCH_LENGTH).nullish(),
 });
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function getListIdFromHistoryValue(value: unknown) {
+  if (typeof value === 'string' && z.guid().safeParse(value).success) {
+    return value;
+  }
+
+  if (!isRecord(value)) return null;
+
+  const id = value.id;
+  return typeof id === 'string' && z.guid().safeParse(id).success ? id : null;
+}
+
+function getListNameFromMetadata(metadata: unknown, key: string) {
+  if (!isRecord(metadata)) return null;
+
+  const value = metadata[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function formatListHistoryValue({
+  fallbackName,
+  listNamesById,
+  value,
+}: {
+  fallbackName: string | null;
+  listNamesById: Map<string, string>;
+  value: unknown;
+}) {
+  const id = getListIdFromHistoryValue(value);
+  if (!id) return fallbackName ?? value;
+
+  return {
+    id,
+    name: fallbackName ?? listNamesById.get(id) ?? null,
+  };
+}
+
 /**
  * GET /api/v1/workspaces/[wsId]/tasks/history
  * Fetches workspace-wide task change history with pagination and filtering
@@ -138,6 +178,30 @@ export async function GET(
 
     // Get total count from first row (or 0 if empty)
     const totalCount = history?.[0]?.total_count ?? 0;
+    const listIds = new Set<string>();
+
+    for (const entry of history ?? []) {
+      if (entry.field_name !== 'list_id') continue;
+
+      const oldListId = getListIdFromHistoryValue(entry.old_value);
+      const newListId = getListIdFromHistoryValue(entry.new_value);
+
+      if (oldListId) listIds.add(oldListId);
+      if (newListId) listIds.add(newListId);
+    }
+
+    const listNamesById = new Map<string, string>();
+
+    if (listIds.size > 0) {
+      const { data: lists } = await supabase
+        .from('task_lists')
+        .select('id, name')
+        .in('id', [...listIds]);
+
+      for (const list of lists ?? []) {
+        if (list.name) listNamesById.set(list.id, list.name);
+      }
+    }
 
     // Format the response
     const formattedHistory = (history || []).map((entry) => ({
@@ -152,8 +216,28 @@ export async function GET(
       changed_at: entry.changed_at,
       change_type: entry.change_type ?? undefined,
       field_name: entry.field_name ?? undefined,
-      old_value: entry.old_value ?? undefined,
-      new_value: entry.new_value ?? undefined,
+      old_value:
+        entry.field_name === 'list_id'
+          ? formatListHistoryValue({
+              fallbackName: getListNameFromMetadata(
+                entry.metadata,
+                'old_list_name'
+              ),
+              listNamesById,
+              value: entry.old_value,
+            })
+          : (entry.old_value ?? undefined),
+      new_value:
+        entry.field_name === 'list_id'
+          ? formatListHistoryValue({
+              fallbackName: getListNameFromMetadata(
+                entry.metadata,
+                'new_list_name'
+              ),
+              listNamesById,
+              value: entry.new_value,
+            })
+          : (entry.new_value ?? undefined),
       metadata: entry.metadata,
       user: entry.user_id
         ? {

@@ -25,16 +25,15 @@ import {
   OperatorDialogHeader,
   OperatorDialogTabs,
 } from './operator-dialog-shell';
-import {
-  SelectField,
-  TextAreaField,
-  TextField,
-  ToggleField,
-} from './operator-form-fields';
+import { SelectField, TextAreaField, TextField } from './operator-form-fields';
 import { currency } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 import { bestMarginAcrossProfiles } from './operator-margin';
-import { stockAmountFromRecords } from './operator-stock';
+import {
+  getInitialProductStockRows,
+  getProductStockSaveState,
+  ProductStockEditor,
+} from './product-stock-editor';
 
 export function invalidateProducts(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -70,16 +69,20 @@ export function ProductEditDialog({
   const t = useTranslations('inventory.operator.forms');
   const operatorText = useTranslations('inventory.operator');
   const queryClient = useQueryClient();
-  const inventory = row.inventory?.[0] ?? {};
-  const stockAmount = stockAmountFromRecords(inventory, row.stock?.[0]);
   const [details, setDetails] = useState(() => getInitialDetails(row));
-  const [amount, setAmount] = useState(
-    stockAmount == null ? '' : String(stockAmount)
+  const initialStockRows = useMemo(
+    () => getInitialProductStockRows(row),
+    [row]
   );
-  const [minAmount, setMinAmount] = useState(String(inventory.min_amount ?? 0));
-  const [price, setPrice] = useState(String(inventory.price ?? 0));
-  const [unlimitedStock, setUnlimitedStock] = useState(stockAmount === null);
-  const canUpdateStock = Boolean(inventory.unit_id && inventory.warehouse_id);
+  const initialHadStockRows = useMemo(
+    () => initialStockRows.some((stockRow) => stockRow.existing),
+    [initialStockRows]
+  );
+  const [stockRows, setStockRows] = useState(initialStockRows);
+  const stockSaveState = useMemo(
+    () => getProductStockSaveState(stockRows, initialHadStockRows),
+    [initialHadStockRows, stockRows]
+  );
   const matchingCostProfiles = useMemo(
     () =>
       costingProfiles.filter((profile) => {
@@ -102,10 +105,7 @@ export function ProductEditDialog({
 
   const resetForm = () => {
     setDetails(getInitialDetails(row));
-    setAmount(stockAmount == null ? '' : String(stockAmount));
-    setMinAmount(String(inventory.min_amount ?? 0));
-    setPrice(String(inventory.price ?? 0));
-    setUnlimitedStock(stockAmount === null);
+    setStockRows(getInitialProductStockRows(row));
   };
 
   const saveMutation = useMutation({
@@ -121,19 +121,11 @@ export function ProductEditDialog({
         usage: details.usage || undefined,
       });
 
-      if (!canUpdateStock) return;
-
-      await updateInventoryProductInventory(wsId, row.id, {
-        inventory: [
-          {
-            amount: unlimitedStock ? null : Number(amount || 0),
-            min_amount: Number(minAmount || 0),
-            price: Number(price || 0),
-            unit_id: String(inventory.unit_id ?? ''),
-            warehouse_id: String(inventory.warehouse_id ?? ''),
-          },
-        ],
-      });
+      if (stockSaveState.shouldSave) {
+        await updateInventoryProductInventory(wsId, row.id, {
+          inventory: stockSaveState.inventory,
+        });
+      }
     },
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
@@ -307,59 +299,14 @@ export function ProductEditDialog({
                 value: 'details',
               },
               {
-                content: canUpdateStock ? (
-                  <div className="grid min-w-0 gap-3 lg:grid-cols-3">
-                    <ToggleField
-                      checked={unlimitedStock}
-                      className="items-start lg:col-span-3"
-                      onChange={(nextUnlimitedStock) => {
-                        setUnlimitedStock(nextUnlimitedStock);
-                        if (nextUnlimitedStock) setAmount('');
-                      }}
-                    >
-                      <span className="grid gap-1">
-                        <span className="font-medium">
-                          {t('unlimitedStock')}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          {t('unlimitedStockDescription')}
-                        </span>
-                      </span>
-                    </ToggleField>
-                    <TextField
-                      disabled={unlimitedStock}
-                      hint={t('hints.amount')}
-                      inputMode="numeric"
-                      label={t('amount')}
-                      onChange={setAmount}
-                      placeholder={
-                        unlimitedStock
-                          ? t('unlimitedStock')
-                          : t('placeholders.amount')
-                      }
-                      value={amount}
-                    />
-                    <TextField
-                      hint={t('hints.minAmount')}
-                      inputMode="numeric"
-                      label={t('minAmount')}
-                      onChange={setMinAmount}
-                      placeholder={t('placeholders.minAmount')}
-                      value={minAmount}
-                    />
-                    <TextField
-                      hint={t('hints.price')}
-                      inputMode="numeric"
-                      label={t('price')}
-                      onChange={setPrice}
-                      placeholder={t('placeholders.price')}
-                      value={price}
-                    />
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-border bg-muted/20 p-4 text-muted-foreground text-sm">
-                    {t('stockUnavailableDescription')}
-                  </div>
+                content: (
+                  <ProductStockEditor
+                    onRowsChange={setStockRows}
+                    options={options}
+                    rows={stockRows}
+                    saveState={stockSaveState}
+                    wsId={wsId}
+                  />
                 ),
                 icon: <Boxes className="h-4 w-4" />,
                 label: t('tabs.stock'),
@@ -476,7 +423,11 @@ export function ProductEditDialog({
               </Button>
             </DialogClose>
             <Button
-              disabled={!canSaveDetails || saveMutation.isPending}
+              disabled={
+                !canSaveDetails ||
+                !stockSaveState.canSave ||
+                saveMutation.isPending
+              }
               type="submit"
             >
               <Save className="h-4 w-4" />

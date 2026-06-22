@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/apis/tu-do/board/boardId/route';
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -21,27 +22,147 @@ const TASK_BOARD_ROUTE_APP_SESSION_AUTH = {
   targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
 } as const;
 
-// Board columns selected for the board detail view. `default_list_id` is split
-// into a separate (literal) select so we can degrade gracefully when the column
-// has not been migrated yet (rollout-safe: code may deploy before the migration
-// runs in an environment). Both must stay string literals for Supabase type
-// inference.
-const BOARD_SELECT_WITH_DEFAULT_LIST =
-  'id, ws_id, name, icon, ticket_prefix, default_list_id, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)';
-const BOARD_SELECT_WITHOUT_DEFAULT_LIST =
-  'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)';
+// Board columns selected for the board detail view. Optional columns are added
+// incrementally so a stale production schema cache cannot take the board page
+// down while a rollout is settling.
+const BOARD_BASE_COLUMNS = [
+  'id',
+  'ws_id',
+  'name',
+  'icon',
+  'ticket_prefix',
+  'created_at',
+  'archived_at',
+  'deleted_at',
+] as const;
 
-/**
- * True when a Postgres/PostgREST error indicates a referenced column does not
- * exist (undefined_column, code 42703), e.g. when `default_list_id` has not
- * been migrated in the target database yet.
- */
-function isUndefinedColumnError(error: { code?: string; message?: string }) {
-  return (
-    error.code === '42703' ||
-    (typeof error.message === 'string' &&
-      error.message.includes('default_list_id'))
+const BOARD_OPTIONAL_COLUMN_DEFAULTS = {
+  default_list_id: null,
+  estimation_type: null,
+  extended_estimation: false,
+  allow_zero_estimates: true,
+  count_unestimated_issues: false,
+} as const;
+
+type BoardOptionalColumn = keyof typeof BOARD_OPTIONAL_COLUMN_DEFAULTS;
+
+const BOARD_OPTIONAL_COLUMNS = Object.keys(
+  BOARD_OPTIONAL_COLUMN_DEFAULTS
+) as BoardOptionalColumn[];
+
+const BOARD_TASK_LISTS_SELECT =
+  'task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)';
+
+type BoardQueryError = {
+  code?: string;
+  details?: string;
+  hint?: string;
+  message?: string;
+};
+
+type BoardTaskListRow = {
+  board_id: string | null;
+  color: string | null;
+  created_at: string | null;
+  creator_id: string | null;
+  deleted: boolean | null;
+  archived: boolean | null;
+  id: string;
+  name: string | null;
+  position: number | null;
+  status: string | null;
+};
+
+type BoardDetailRow = {
+  allow_zero_estimates?: boolean | null;
+  archived_at: string | null;
+  count_unestimated_issues?: boolean | null;
+  created_at: string | null;
+  default_list_id?: string | null;
+  deleted_at: string | null;
+  estimation_type?: string | null;
+  extended_estimation?: boolean | null;
+  icon: string | null;
+  id: string;
+  name: string | null;
+  task_lists?: BoardTaskListRow[] | null;
+  ticket_prefix: string | null;
+  ws_id: string;
+};
+
+type NormalizedBoardDetailRow = BoardDetailRow &
+  Required<Pick<BoardDetailRow, BoardOptionalColumn>>;
+
+type BoardQueryResult = {
+  data: NormalizedBoardDetailRow | null;
+  error: BoardQueryError | null;
+};
+
+function buildBoardSelect(columns: Iterable<BoardOptionalColumn>) {
+  return [...BOARD_BASE_COLUMNS, ...columns, BOARD_TASK_LISTS_SELECT].join(
+    ', '
   );
+}
+
+function getMissingOptionalBoardColumn(error: BoardQueryError) {
+  const errorText = [error.message, error.details, error.hint]
+    .filter(Boolean)
+    .join('\n');
+
+  if (error.code !== '42703' && error.code !== 'PGRST204') {
+    return BOARD_OPTIONAL_COLUMNS.find((column) => errorText.includes(column));
+  }
+
+  return BOARD_OPTIONAL_COLUMNS.find((column) => errorText.includes(column));
+}
+
+async function loadBoardWithRolloutFallback({
+  boardId,
+  sbAdmin,
+}: {
+  boardId: string;
+  sbAdmin: TypedSupabaseClient;
+}): Promise<BoardQueryResult> {
+  const selectedOptionalColumns = new Set(BOARD_OPTIONAL_COLUMNS);
+
+  for (
+    let attempt = 0;
+    attempt <= BOARD_OPTIONAL_COLUMNS.length;
+    attempt += 1
+  ) {
+    const result = await sbAdmin
+      .from('workspace_boards')
+      .select(buildBoardSelect(selectedOptionalColumns))
+      .eq('id', boardId)
+      .maybeSingle();
+
+    if (!result.error) {
+      const data = result.data as BoardDetailRow | null;
+      return {
+        data: data
+          ? {
+              ...BOARD_OPTIONAL_COLUMN_DEFAULTS,
+              ...data,
+            }
+          : null,
+        error: null,
+      };
+    }
+
+    const error = result.error as BoardQueryError;
+    const missingColumn = getMissingOptionalBoardColumn(error);
+    if (!missingColumn || !selectedOptionalColumns.delete(missingColumn)) {
+      return {
+        data: null,
+        error,
+      };
+    }
+  }
+
+  return {
+    data: null,
+    error: { message: 'Failed to load task board' },
+  };
 }
 
 function createTaskBoardRouteContext(params: Params) {
@@ -61,31 +182,10 @@ export const GET = withSessionAuth<Params>(
 
       const { boardId, sbAdmin } = access;
 
-      const primary = await sbAdmin
-        .from('workspace_boards')
-        .select(BOARD_SELECT_WITH_DEFAULT_LIST)
-        .eq('id', boardId)
-        .maybeSingle();
-
-      let board:
-        | (typeof primary.data & { default_list_id?: string | null })
-        | null = primary.data;
-      let error = primary.error;
-
-      // Rollout safety: if the new `default_list_id` column is not present yet
-      // (migration not applied in this environment), fall back to the base
-      // select so boards still load. The value is treated as unset.
-      if (error && isUndefinedColumnError(error)) {
-        const fallback = await sbAdmin
-          .from('workspace_boards')
-          .select(BOARD_SELECT_WITHOUT_DEFAULT_LIST)
-          .eq('id', boardId)
-          .maybeSingle();
-        error = fallback.error;
-        board = fallback.data
-          ? { ...fallback.data, default_list_id: null }
-          : null;
-      }
+      const { data: board, error } = await loadBoardWithRolloutFallback({
+        boardId,
+        sbAdmin,
+      });
 
       if (error) {
         return NextResponse.json(

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
+  createCentralizedAuthProxy: vi.fn(),
   verifyCliAccessToken: vi.fn(),
   guardApiProxyRequest: vi.fn(),
   hasSupabaseSessionCookie: vi.fn(),
@@ -27,7 +28,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
-  createCentralizedAuthProxy: () => mocks.authProxy,
+  createCentralizedAuthProxy: (
+    ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
+  ) => mocks.createCentralizedAuthProxy(...args),
   propagateAuthCookies: vi.fn(),
 }));
 
@@ -105,6 +108,9 @@ vi.mock('@tuturuuu/utils/email/client', () => ({
 }));
 
 describe('web proxy api handling', () => {
+  const AUTH_COOKIE_HEADER =
+    'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue';
+
   function createAuthenticatedSupabaseClient() {
     const completedOnboardingBuilder = {
       select: vi.fn().mockReturnThis(),
@@ -143,6 +149,7 @@ describe('web proxy api handling', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.authProxy.mockResolvedValue(NextResponse.next());
+    mocks.createCentralizedAuthProxy.mockReturnValue(mocks.authProxy);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
     mocks.hasSupabaseSessionCookie.mockImplementation((req: NextRequest) => {
       return req.cookies
@@ -174,6 +181,14 @@ describe('web proxy api handling', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
   });
+
+  function createSessionRequest(url: string) {
+    return new NextRequest(url, {
+      headers: {
+        cookie: AUTH_COOKIE_HEADER,
+      },
+    });
+  }
 
   afterEach(() => {
     vi.useRealTimers();
@@ -870,6 +885,54 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it.each([
+    {
+      expectedLocation: 'http://localhost/pricing',
+      url: 'http://localhost/en/pricing',
+    },
+    {
+      expectedLocation: 'http://localhost/?hash-nav=1#pricing',
+      url: 'http://localhost/pricing',
+    },
+    {
+      expectedLocation: 'http://localhost/meet-together',
+      url: 'http://localhost/en/products/meet-together',
+    },
+    {
+      expectedLocation: 'http://localhost/meet-together',
+      url: 'http://localhost/products/meet-together',
+    },
+    {
+      expectedLocation: 'http://localhost/meet-together/plans/summer',
+      url: 'http://localhost/en/calendar/meet-together/plans/summer',
+    },
+    {
+      expectedLocation: 'https://docs.tuturuuu.com/',
+      url: 'http://localhost/en/docs',
+    },
+    {
+      expectedLocation:
+        'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/en/qr-generator?utm_source=e2e&tag=a&tag=b',
+    },
+    {
+      expectedLocation:
+        'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/qr-generator?utm_source=e2e&tag=a&tag=b',
+    },
+  ])('redirects public marketing alias $url before auth', async ({
+    expectedLocation,
+    url,
+  }) => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest(url));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(expectedLocation);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('returns a direct 404 for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));
@@ -983,12 +1046,44 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
       'http://localhost/ws-1/tasks/boards/board-1'
     );
+  });
+
+  it('skips default workspace redirect auth when root requests have no session cookie', async () => {
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-1',
+      personal: false,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('configures localized root paths as exact public auth paths', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/en'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+        }
+      | undefined;
+
+    expect(authOptions?.isPublicPath?.('/en')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/vi')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/en/personal')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/vi/personal')).toBe(false);
   });
 
   it('redirects the legacy dashboard alias to the default workspace home', async () => {
@@ -1008,7 +1103,9 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/dashboard'));
+    const response = await proxy(
+      createSessionRequest('http://localhost/dashboard')
+    );
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('http://localhost/ws-1');
@@ -1065,7 +1162,7 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
@@ -1104,7 +1201,7 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/vi'));
+    const response = await proxy(createSessionRequest('http://localhost/vi'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
@@ -1130,7 +1227,7 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/vi/dashboard')
+      createSessionRequest('http://localhost/vi/dashboard')
     );
 
     expect(response.status).toBe(307);
@@ -1351,7 +1448,7 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(

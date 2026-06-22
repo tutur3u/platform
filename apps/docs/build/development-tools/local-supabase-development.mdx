@@ -1,12 +1,13 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
   **Prerequisite**: You should have installed
   [Docker](https://www.docker.com/products/docker-desktop/) and followed the
-  [Development](/development) setup guide.
+  [Development](/build/development-tools/development) setup guide.
 </Info>
 
 ## Overview
@@ -23,7 +24,22 @@ To start a local Supabase instance tailored for Tuturuuu:
 bun sb:start
 ```
 
-This command launches a local Supabase instance on your machine, accessible at [http://localhost:8003](http://localhost:8003).
+This command launches a local Supabase instance on your machine. The local ports
+are pinned in `apps/database/supabase/config.toml`:
+
+| Service                | URL / Port                                        |
+| ---------------------- | ------------------------------------------------- |
+| REST/Auth API          | [http://localhost:8001](http://localhost:8001)    |
+| Postgres database      | `postgresql://postgres:postgres@localhost:8002/postgres` |
+| Studio (dashboard)     | [http://localhost:8003](http://localhost:8003)    |
+| InBucket (test emails) | [http://localhost:8004](http://localhost:8004)    |
+
+<Info>
+  Run `bun sb:status` at any time to print the live URLs, keys, and the DB
+  connection string for your running instance. Prefer reading these values from
+  `bun sb:status` over hard-coding them, since they are the source of truth for
+  the current container.
+</Info>
 
 ### Stopping Supabase
 
@@ -68,17 +84,19 @@ When developing for Tuturuuu, you have several options to start your environment
 
 3. **Fresh Database Setup**: When switching branches with potential schema changes.
    ```bash
-   bun sb:devrs
+   bun devrs
    ```
-   This command:
+   This command (`bun sb:stop && bun sb:start && bun sb:reset && bun dev`):
    - Stops any running Supabase instance (without backup)
-   - Installs all dependencies
    - Starts a new Supabase instance
-   - Resets the database to use the latest schema
+   - Resets the database to use the latest schema and seed data
    - Starts all Next.js apps in development mode
 
+   App-scoped variants also exist (for example `bun devrs:web`, `bun devrs:tasks`)
+   that reset Supabase and then start only that app's dev server.
+
 <Warning>
-  Use `bun sb:devrs` when switching between branches that might have different
+  Use `bun devrs` when switching between branches that might have different
   database migrations to ensure your local database schema matches the branch
   you're working on.
 </Warning>
@@ -170,16 +188,25 @@ The Supabase-generated TypeScript types are available at `packages/types/src/sup
 
 You can use these types to ensure type safety when working with Supabase data:
 
+With supabase-js v2, table types flow from the client itself rather than a
+generic on `.from()`. The Tuturuuu Supabase helpers in `@tuturuuu/supabase` are
+already typed with the generated `Database` type, so queries are type-safe out of
+the box. Reach for the `Database` type directly when you need a specific row
+shape:
+
 ```typescript
 import type { Database } from '@tuturuuu/types/supabase';
 
-// Type-safe access to tables
+type WorkspaceMemberRow =
+  Database['public']['Tables']['workspace_members']['Row'];
+
+// Type-safe access to tables (the client already knows the row shapes)
 const { data, error } = await supabase
-  .from<
-    Database['public']['Tables']['workspace_members']['Row']
-  >('workspace_members')
+  .from('workspace_members')
   .select('*')
   .eq('ws_id', workspaceId);
+
+// data is typed as WorkspaceMemberRow[] | null
 
 // Type-safe access to specific columns
 const { data: workspace } = await supabase
@@ -189,7 +216,7 @@ const { data: workspace } = await supabase
   .single();
 
 // TypeScript knows the structure of 'workspace' with proper types
-const workspaceName: string = workspace?.name;
+const workspaceName: string | undefined = workspace?.name;
 ```
 
 ### Short-hand Type Access
@@ -447,36 +474,67 @@ For better performance in your RLS policies:
 
 ### Testing RLS Policies
 
-To test your RLS policies during local development:
+Tuturuuu ships a large suite of database tests in
+`apps/database/supabase/tests/`. These are [pgTAP](https://pgtap.org/) test files
+(each one wraps its assertions in a transaction and rolls back), and they run
+against the local Supabase instance through the Supabase CLI.
 
-1. Create a SQL file in `apps/database/supabase/tests` with your test cases
-2. Use the `bun sb:test` command to run the tests
+To run the database test suite locally:
 
-Example test file:
+1. Make sure a local Supabase instance is running (`bun sb:start`).
+2. Add or edit a `*.sql` test file in `apps/database/supabase/tests/`.
+3. Run the tests through the database workspace's Supabase CLI wrapper:
+
+   ```bash
+   # From the repo root
+   bun --cwd apps/database run scripts/run-supabase.js test db
+   ```
+
+   `run-supabase.js` resolves the pinned local Supabase binary and invokes
+   `supabase test db`, which executes every `tests/*.sql` file against the local
+   database. There is no dedicated `bun sb:test` alias — the test runner is the
+   Supabase CLI itself.
+
+Each test file begins by enabling pgTAP, then uses helpers like `plan()`,
+`is()`, and `throws_ok()` to assert behavior. A trimmed example:
 
 ```sql
--- Test normal user can view their own workspace
-BEGIN;
-  SET LOCAL ROLE authenticated;
+begin;
 
-  -- Mock the auth.uid() function
-  CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID LANGUAGE SQL AS 'SELECT ''user1-uuid''::UUID';
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
 
-  -- Should return data
-  SELECT is(
-    (SELECT count(*) FROM public.projects WHERE workspace_id = 'workspace1-uuid'),
-    1,
-    'User should be able to see their workspace project'
-  );
+select plan(2);
 
-  -- Should return no data
-  SELECT is(
-    (SELECT count(*) FROM public.projects WHERE workspace_id = 'workspace2-uuid'),
-    0,
-    'User should not be able to see projects from other workspaces'
-  );
-ROLLBACK;
+-- Impersonate an authenticated user
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000000001","role":"authenticated"}',
+  true
+);
+
+-- Should return data the user is allowed to see
+select isnt_empty(
+  $$ select 1 from public.workspaces where id = '00000000-0000-0000-0000-000000000000' $$,
+  'User can see a workspace they belong to'
+);
+
+-- Should be blocked by RLS for an unrelated workspace
+select is_empty(
+  $$ select 1 from public.workspaces where id = '11111111-1111-1111-1111-111111111111' $$,
+  'User cannot see a workspace they do not belong to'
+);
+
+select * from finish();
+rollback;
 ```
+
+<Info>
+  Look through the existing files in `apps/database/supabase/tests/` (for
+  example `user-profile-rls.sql` and the `private-schema-*` suites) to follow the
+  established pgTAP patterns for impersonating roles and asserting RLS behavior.
+</Info>
 
 ## Database Triggers
 

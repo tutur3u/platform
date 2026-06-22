@@ -1,7 +1,7 @@
 ---
 title: 'Database Schema Overview'
 description: 'Complete reference for the Tuturuuu platform database schema'
-updatedAt: '2026-05-29'
+updatedAt: '2026-06-21'
 ---
 
 The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
@@ -80,14 +80,66 @@ Granular permission system for workspace roles.
 - `created_at` (timestamptz)
 
 **Available Permissions:**
-- Infrastructure: `manage_infrastructure_settings`
-- Workspace: `manage_workspace_settings`, `manage_workspace_security`
-- Users: `manage_users`, `manage_user_groups`, `manage_user_roles`
-- Finance: `manage_finance`, `ai_lab_assistant`
-- Calendar: `manage_calendar`, `manage_external_users`
-- Documents: `manage_documents`
-- Inventory: `manage_inventory`
-- Disabled Users: `view_disabled_users`, `disable_user`
+
+<Warning>
+  The `workspace_role_permission` enum is large (100+ values) and evolves
+  frequently as new product surfaces ship. The generated TypeScript union is the
+  single source of truth — do **not** hand-copy permission names from this page
+  into RLS policies, role seeds, or app code. Read the live union instead:
+
+  ```typescript
+  import type { Database } from '@tuturuuu/types';
+
+  type WorkspacePermission =
+    Database['public']['Enums']['workspace_role_permission'];
+  ```
+
+  In SQL, the canonical definition lives in the `workspace_role_permission` enum
+  type (defined by the migrations under `apps/database/supabase/migrations/`).
+</Warning>
+
+The values below are a representative snapshot grouped by domain (accurate as of
+this page's `updatedAt`, but treat the generated type as authoritative):
+
+- **Workspace administration**: `manage_workspace_settings`,
+  `manage_workspace_roles`, `manage_workspace_members`,
+  `manage_workspace_security`, `manage_workspace_integrations`,
+  `manage_workspace_billing`, `manage_workspace_audit_logs`,
+  `manage_workspace_secrets`, `manage_subscription`, `manage_api_keys`,
+  `manage_e2ee`, `admin`
+- **Infrastructure**: `view_infrastructure`, `manage_external_migrations`,
+  `manage_infrastructure_stress_tests`, `manage_mobile_deployment_vault`
+- **Users & groups**: `manage_users`, `create_users`, `update_users`,
+  `delete_users`, `export_users_data`, `view_users_public_info`,
+  `view_users_private_info`, `view_user_groups`, `create_user_groups`,
+  `update_user_groups`, `delete_user_groups`, `send_user_group_post_emails`,
+  `manage_user_report_templates`, `manage_user_profile_links`
+- **Finance**: `manage_finance`, `export_finance_data`, `view_finance_stats`,
+  `view_transactions`, `create_transactions`, `update_transactions`,
+  `delete_transactions`, `view_invoices`, `view_expenses`, `view_incomes`,
+  `create_wallets`, `update_wallets`, `delete_wallets`, `change_finance_wallets`,
+  `view_confidential_amount`, `view_confidential_description`
+- **Inventory**: `manage_inventory`, `view_inventory`, `create_inventory`,
+  `update_inventory`, `delete_inventory`, `view_inventory_catalog`,
+  `manage_inventory_catalog`, `view_inventory_stock`, `adjust_inventory_stock`,
+  `view_inventory_sales`, `view_inventory_analytics`
+- **AI**: `ai_chat`, `ai_lab`
+- **Chat**: `view_chat`, `create_chat`, `manage_chat`, `moderate_chat`
+- **Projects, docs & drive**: `manage_projects`, `manage_documents`,
+  `manage_drive`, `view_drive`, `manage_drive_tasks_directory`,
+  `manage_external_projects`, `publish_external_projects`
+- **Calendar & time tracking**: `manage_calendar`,
+  `manage_time_tracking_requests`, `bypass_time_tracking_request_approval`
+- **Workforce & payroll**: `manage_workforce`, `view_workforce`,
+  `manage_payroll`, `view_payroll`, `check_user_attendance`,
+  `update_user_attendance`
+- **Forms & changelog**: `manage_forms`, `view_form_analytics`,
+  `manage_changelog`
+
+The previously documented permissions `manage_infrastructure_settings`,
+`ai_lab_assistant`, `manage_user_groups`, `manage_user_roles`,
+`manage_external_users`, `view_disabled_users`, and `disable_user` have been
+**removed or renamed** in the current enum — do not reference them in new policies.
 
 ### Authentication & Credential Handoffs
 
@@ -268,7 +320,11 @@ Persistent chat sessions.
 **Key Fields:**
 - `id` (uuid, PK)
 - `title` (text)
-- `model` (text) - legacy model identifier
+- `model` (text) - free-text AI Gateway model id in `provider/model` form
+  (e.g. `google/gemini-2.5-flash`). No longer a foreign key — the legacy
+  `ai_chats.model → private.ai_models` constraint was dropped, and
+  `private.ai_gateway_models` is now the single source of truth for the active
+  model catalog.
 - `creator_id` (uuid, FK → workspace_users)
 
 #### `ai_chat_messages`
@@ -287,7 +343,9 @@ Token usage tracking for billing.
 **Key Fields:**
 - `id` (uuid, PK)
 - `ws_id` (text, FK → workspaces)
-- `model_id` (text, FK → private.ai_models)
+- `model_id` (text, FK → private.ai_models) - retains the legacy `ai_models`
+  reference for historical executions; the active model catalog now lives in
+  `private.ai_gateway_models`, and pricing helpers map identifiers accordingly
 - `input_tokens` (integer)
 - `output_tokens` (integer)
 - `total_tokens` (integer)

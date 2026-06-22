@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
   Calendar as CalendarIcon,
-  Check,
   Filter,
   Flag,
   Globe2,
@@ -30,25 +29,17 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
+import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import type {
   SortOption,
   TaskAssignee,
@@ -192,6 +183,85 @@ const PRIORITIES: { value: TaskPriority; labelKey: string; color: string }[] = [
   { value: 'low', labelKey: 'tasks.priority_low', color: 'text-dynamic-gray' },
 ];
 
+function formatShortDate(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+  }).format(date);
+}
+
+function formatDateInputValue(date: Date | undefined) {
+  if (!date) return '';
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInputValue(value: string) {
+  if (!value) return undefined;
+
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+
+  return new Date(year, month - 1, day);
+}
+
+function FilterPickerField({
+  badge,
+  children,
+  icon,
+  label,
+}: {
+  badge?: ReactNode;
+  children: ReactNode;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs">
+        {icon}
+        <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
+        {badge}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FilterSection({
+  badge,
+  children,
+  className,
+  icon,
+  testId,
+  title,
+}: {
+  badge?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  icon: ReactNode;
+  testId?: string;
+  title: string;
+}) {
+  return (
+    <section
+      className={cn('rounded-md border bg-background p-2.5', className)}
+      data-testid={testId}
+    >
+      <div className="mb-2 flex min-w-0 items-center gap-2 text-muted-foreground text-xs">
+        {icon}
+        <span className="min-w-0 flex-1 truncate font-semibold">{title}</span>
+        {badge}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function TaskFilter({
   wsId,
   currentUserId,
@@ -320,59 +390,115 @@ export function TaskFilter({
     staleTime: 60_000,
   });
 
-  const toggleLabel = (label: TaskLabel) => {
-    const isSelected = filters.labels.some((l) => l.id === label.id);
+  const sourceScopeOptions = SOURCE_SCOPE_OPTIONS.map((scope) => {
+    const Icon = SOURCE_SCOPE_ICONS[scope];
+
+    return {
+      value: scope,
+      label: t(`ws-tasks.filter_source_scope_${scope}` as any),
+      icon: <Icon className="h-4 w-4 text-muted-foreground" />,
+    };
+  });
+
+  const sourceWorkspaceOptions = sourceWorkspaces.map((workspace) => ({
+    value: workspace.id,
+    label: workspace.name ?? workspace.id,
+    icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
+  }));
+
+  const sourceBoardOptions = sourceBoards.map((board) => ({
+    value: board.id,
+    label: board.name ?? t('common.untitled'),
+    description: board.workspaceName,
+    searchValue: `${board.name ?? ''} ${board.workspaceName}`,
+    icon: <LayoutDashboard className="h-4 w-4 text-muted-foreground" />,
+  }));
+
+  const assigneeOptions = availableAssignees.map((assignee) => {
+    const label =
+      assignee.display_name ||
+      assignee.email ||
+      assignee.id ||
+      t('common.untitled');
+
+    return {
+      value: assignee.id,
+      label,
+      description:
+        assignee.display_name && assignee.email ? assignee.email : undefined,
+      searchValue: `${label} ${assignee.email ?? ''}`,
+      icon: (
+        <Avatar className="h-5 w-5 border">
+          {assignee.avatar_url && <AvatarImage src={assignee.avatar_url} />}
+          <AvatarFallback className="font-medium text-[9px]">
+            {getInitials(label)}
+          </AvatarFallback>
+        </Avatar>
+      ),
+    };
+  });
+
+  const labelOptions = availableLabels.map((label) => ({
+    value: label.id,
+    label: label.name,
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        style={getColorStyles(label.color)}
+      />
+    ),
+  }));
+
+  const projectOptions = availableProjects.map((project) => ({
+    value: project.id,
+    label: project.name,
+    icon: <Hash className="h-4 w-4 text-muted-foreground" />,
+  }));
+
+  const priorityOptions = PRIORITIES.map((priority) => ({
+    value: priority.value,
+    label: t(priority.labelKey as any),
+    icon: <Flag className={cn(priority.color, 'h-4 w-4')} />,
+  }));
+
+  const setLabelIds = (labelIds: string[]) => {
     onFiltersChange({
       ...filters,
-      labels: isSelected
-        ? filters.labels.filter((l) => l.id !== label.id)
-        : [...filters.labels, label],
+      labels: availableLabels.filter((label) => labelIds.includes(label.id)),
     });
   };
 
-  const toggleAssignee = (assignee: TaskAssignee) => {
-    const isSelected = filters.assignees.some((a) => a.id === assignee.id);
-    const isCurrentUser = currentUserId === assignee.id;
-
-    const newAssignees = isSelected
-      ? filters.assignees.filter((a) => a.id !== assignee.id)
-      : [...filters.assignees, assignee];
-
-    // Determine if "Assigned to me" should be checked:
-    // - If toggling current user: sync with their selection state
-    // - If adding a non-current-user: uncheck "Assigned to me"
-    // - If removing someone while current user remains: keep "Assigned to me" if only current user left
-    const shouldIncludeMyTasks = isCurrentUser
-      ? !isSelected
-      : newAssignees.length === 1 && newAssignees[0]?.id === currentUserId;
+  const setAssigneeIds = (assigneeIds: string[]) => {
+    const newAssignees = availableAssignees.filter((assignee) =>
+      assigneeIds.includes(assignee.id)
+    );
+    const shouldIncludeMyTasks =
+      newAssignees.length === 1 && newAssignees[0]?.id === currentUserId;
 
     onFiltersChange({
       ...filters,
       assignees: newAssignees,
       includeMyTasks: shouldIncludeMyTasks,
-      // Auto-deselect "Unassigned" when selecting any assignee
       includeUnassigned:
         newAssignees.length > 0 ? false : filters.includeUnassigned,
     });
   };
 
-  const toggleProject = (project: TaskProject) => {
-    const isSelected = filters.projects.some((p) => p.id === project.id);
+  const setProjectIds = (projectIds: string[]) => {
     onFiltersChange({
       ...filters,
-      projects: isSelected
-        ? filters.projects.filter((p) => p.id !== project.id)
-        : [...filters.projects, project],
+      projects: availableProjects.filter((project) =>
+        projectIds.includes(project.id)
+      ),
     });
   };
 
-  const togglePriority = (priority: TaskPriority) => {
-    const isSelected = filters.priorities.includes(priority);
+  const setPriorityValues = (priorities: string[]) => {
     onFiltersChange({
       ...filters,
-      priorities: isSelected
-        ? filters.priorities.filter((p) => p !== priority)
-        : [...filters.priorities, priority],
+      priorities: priorities.filter((priority): priority is TaskPriority =>
+        PRIORITIES.some((option) => option.value === priority)
+      ),
     });
   };
 
@@ -389,38 +515,33 @@ export function TaskFilter({
     });
   };
 
-  const toggleSourceWorkspace = (workspace: InternalApiWorkspaceSummary) => {
-    const isSelected = selectedSourceWorkspaceIds.includes(workspace.id);
-    const nextWorkspaceIds = isSelected
-      ? selectedSourceWorkspaceIds.filter((id) => id !== workspace.id)
-      : [...selectedSourceWorkspaceIds, workspace.id];
-    const deselectedBoardIds = new Set(
-      sourceBoards
-        .filter((board) => board.workspaceId === workspace.id)
-        .map((board) => board.id)
-    );
+  const setSourceWorkspaceIds = (nextWorkspaceIds: string[]) => {
+    const selectedWorkspaces = new Set(nextWorkspaceIds);
 
     onFiltersChange({
       ...filters,
       sourceScope: 'external_specific',
       sourceWorkspaceIds: nextWorkspaceIds,
-      sourceBoardIds: isSelected
-        ? selectedSourceBoardIds.filter((id) => !deselectedBoardIds.has(id))
-        : selectedSourceBoardIds,
+      sourceBoardIds: selectedSourceBoardIds.filter((boardId) => {
+        const board = sourceBoards.find((item) => item.id === boardId);
+        return !board || selectedWorkspaces.has(board.workspaceId);
+      }),
     });
   };
 
-  const toggleSourceBoard = (board: SourceBoardOption) => {
-    const isSelected = selectedSourceBoardIds.includes(board.id);
+  const setSourceBoardIds = (nextBoardIds: string[]) => {
+    const workspaceIds = new Set(selectedSourceWorkspaceIds);
+    for (const board of sourceBoards.filter((board) =>
+      nextBoardIds.includes(board.id)
+    )) {
+      workspaceIds.add(board.workspaceId);
+    }
+
     onFiltersChange({
       ...filters,
       sourceScope: 'external_specific',
-      sourceBoardIds: isSelected
-        ? selectedSourceBoardIds.filter((id) => id !== board.id)
-        : [...selectedSourceBoardIds, board.id],
-      sourceWorkspaceIds: selectedSourceWorkspaceIds.includes(board.workspaceId)
-        ? selectedSourceWorkspaceIds
-        : [...selectedSourceWorkspaceIds, board.workspaceId],
+      sourceBoardIds: nextBoardIds,
+      sourceWorkspaceIds: Array.from(workspaceIds),
     });
   };
 
@@ -477,510 +598,399 @@ export function TaskFilter({
           selectedSourceWorkspaceIds.length + selectedSourceBoardIds.length
         )
       : 0);
+  const sourceFilterCount = isSourceFilterActive
+    ? Math.max(
+        1,
+        selectedSourceWorkspaceIds.length + selectedSourceBoardIds.length
+      )
+    : 0;
+  const quickFilterCount =
+    (filters.includeMyTasks ? 1 : 0) + (filters.includeUnassigned ? 1 : 0);
+  const peopleFilterCount = assigneeCount;
+  const detailFilterCount =
+    filters.labels.length + filters.projects.length + filters.priorities.length;
+  const dueDateSummary = filters.dueDateRange
+    ? [
+        filters.dueDateRange.from
+          ? formatShortDate(filters.dueDateRange.from)
+          : null,
+        filters.dueDateRange.to
+          ? formatShortDate(filters.dueDateRange.to)
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' - ') || t('common.due_date')
+    : t('common.due_date');
 
   return (
     <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="xs"
-            variant="outline"
-            className={cn(
-              'text-[10px] sm:text-xs',
-              hasFilters && 'border-primary/50 bg-primary/5'
-            )}
-          >
-            <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-            <span className="hidden sm:inline">{t('common.filters')}</span>
-            {hasFilters && (
-              <Badge
-                variant="secondary"
-                className="h-3.5 px-1 text-[9px] sm:h-4 sm:text-[10px]"
+      <Popover open={open} onOpenChange={setOpen}>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                size="xs"
+                variant="outline"
+                aria-label={t('common.filters')}
+                className={cn(
+                  'relative h-7 w-7 px-0 text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:w-8',
+                  hasFilters && 'border-primary/50 bg-primary/5 text-foreground'
+                )}
               >
-                {filterCount}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-70 sm:w-[320px]" align="start">
-          <ScrollArea className="max-h-[70vh] sm:max-h-100">
-            {/* My Tasks */}
-            {currentUserId && (
-              <>
-                <DropdownMenuLabel className="flex items-center gap-2 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-                  <User className="h-3.5 w-3.5" />
-                  {t('common.quick_filters')}
-                </DropdownMenuLabel>
-                <div className="space-y-1 px-2 pb-2">
-                  <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
-                    <Checkbox
-                      checked={filters.includeMyTasks}
-                      onCheckedChange={(checked) => {
-                        const currentUser = availableAssignees.find(
-                          (a) => a.id === currentUserId
+                <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                {hasFilters && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -top-1 -right-1 h-4 min-w-4 justify-center px-1 text-[9px]"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{t('common.filters')}</TooltipContent>
+        </Tooltip>
+        <PopoverContent
+          className="max-h-[min(82dvh,40rem)] w-[min(26rem,calc(100vw-1rem))] overflow-hidden p-0"
+          align="end"
+          collisionPadding={8}
+          sideOffset={6}
+        >
+          <ScrollArea className="h-[min(76dvh,36rem)]">
+            <div className="space-y-3 p-3">
+              {currentUserId && (
+                <FilterSection
+                  icon={<User className="h-3.5 w-3.5" />}
+                  title={t('common.quick_filters')}
+                  badge={
+                    quickFilterCount ? (
+                      <Badge variant="secondary">{quickFilterCount}</Badge>
+                    ) : null
+                  }
+                  testId="task-filter-section-quick"
+                >
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    <label className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                      <Checkbox
+                        checked={filters.includeMyTasks}
+                        onCheckedChange={(checked) => {
+                          const currentUser = availableAssignees.find(
+                            (assignee) => assignee.id === currentUserId
+                          );
+
+                          onFiltersChange({
+                            ...filters,
+                            includeMyTasks: !!checked,
+                            assignees:
+                              checked && currentUser ? [currentUser] : [],
+                            includeUnassigned: checked
+                              ? false
+                              : filters.includeUnassigned,
+                          });
+                        }}
+                      />
+                      <UserStar className="h-4 w-4 shrink-0 text-dynamic-yellow" />
+                      <span className="min-w-0 truncate">
+                        {t('common.assigned_to_me')}
+                      </span>
+                    </label>
+                    <label className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                      <Checkbox
+                        checked={filters.includeUnassigned}
+                        onCheckedChange={(checked) =>
+                          onFiltersChange({
+                            ...filters,
+                            includeUnassigned: !!checked,
+                            includeMyTasks: checked
+                              ? false
+                              : filters.includeMyTasks,
+                            assignees: checked ? [] : filters.assignees,
+                          })
+                        }
+                      />
+                      <UserX className="h-4 w-4 shrink-0 text-dynamic-red" />
+                      <span className="min-w-0 truncate">
+                        {t('common.unassigned')}
+                      </span>
+                    </label>
+                  </div>
+                </FilterSection>
+              )}
+
+              <FilterSection
+                icon={<ListFilter className="h-3.5 w-3.5" />}
+                title={t('ws-tasks.filter_source_scope')}
+                badge={
+                  isSourceFilterActive ? (
+                    <Badge variant="secondary">{sourceFilterCount}</Badge>
+                  ) : null
+                }
+              >
+                <Combobox
+                  mode="single"
+                  options={sourceScopeOptions}
+                  selected={sourceScope}
+                  onChange={(value) => setSourceScope(value as TaskSourceScope)}
+                  placeholder={t('ws-tasks.filter_source_scope')}
+                  searchPlaceholder={t('common.search_tasks')}
+                  className="[&_button]:h-9"
+                />
+                {sourceScope === 'external_specific' && (
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <FilterPickerField
+                      icon={<Building2 className="h-3.5 w-3.5" />}
+                      label={t('ws-tasks.filter_workspaces')}
+                      badge={
+                        selectedSourceWorkspaceIds.length ? (
+                          <Badge variant="secondary">
+                            {selectedSourceWorkspaceIds.length}
+                          </Badge>
+                        ) : null
+                      }
+                    >
+                      <Combobox
+                        mode="multiple"
+                        options={sourceWorkspaceOptions}
+                        selected={selectedSourceWorkspaceIds}
+                        onChange={(value) =>
+                          setSourceWorkspaceIds(value as string[])
+                        }
+                        placeholder={t('ws-tasks.filter_workspaces')}
+                        searchPlaceholder={t('common.search_tasks')}
+                        emptyText={t('ws-tasks.filter_no_workspaces_available')}
+                        className="[&_button]:h-9"
+                      />
+                    </FilterPickerField>
+
+                    <FilterPickerField
+                      icon={<LayoutDashboard className="h-3.5 w-3.5" />}
+                      label={t('ws-tasks.filter_boards')}
+                      badge={
+                        selectedSourceBoardIds.length ? (
+                          <Badge variant="secondary">
+                            {selectedSourceBoardIds.length}
+                          </Badge>
+                        ) : null
+                      }
+                    >
+                      <Combobox
+                        mode="multiple"
+                        options={sourceBoardOptions}
+                        selected={selectedSourceBoardIds}
+                        onChange={(value) =>
+                          setSourceBoardIds(value as string[])
+                        }
+                        placeholder={
+                          selectedSourceWorkspaceIds.length
+                            ? t('ws-tasks.filter_boards')
+                            : t('ws-tasks.filter_select_source_prompt')
+                        }
+                        searchPlaceholder={t('common.search_boards')}
+                        emptyText={
+                          sourceBoardsLoading
+                            ? t('common.loading')
+                            : t('ws-tasks.filter_no_boards_for_workspaces')
+                        }
+                        disabled={selectedSourceWorkspaceIds.length === 0}
+                        className="[&_button]:h-9"
+                      />
+                    </FilterPickerField>
+                  </div>
+                )}
+              </FilterSection>
+
+              <FilterSection
+                icon={<Users className="h-3.5 w-3.5" />}
+                title={t('common.people')}
+                badge={
+                  peopleFilterCount ? (
+                    <Badge variant="secondary">{peopleFilterCount}</Badge>
+                  ) : null
+                }
+              >
+                <Combobox
+                  mode="multiple"
+                  options={assigneeOptions}
+                  selected={filters.assignees.map((assignee) => assignee.id)}
+                  onChange={(value) => setAssigneeIds(value as string[])}
+                  placeholder={t('common.assignees')}
+                  searchPlaceholder={t('common.search_members')}
+                  emptyText={t('common.no_members_found')}
+                  className="[&_button]:h-9"
+                />
+              </FilterSection>
+
+              <FilterSection
+                icon={<Tag className="h-3.5 w-3.5" />}
+                title={t('common.details')}
+                badge={
+                  detailFilterCount ? (
+                    <Badge variant="secondary">{detailFilterCount}</Badge>
+                  ) : null
+                }
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <FilterPickerField
+                    icon={<Tag className="h-3.5 w-3.5" />}
+                    label={t('common.labels')}
+                    badge={
+                      filters.labels.length ? (
+                        <Badge variant="secondary">
+                          {filters.labels.length}
+                        </Badge>
+                      ) : null
+                    }
+                  >
+                    <Combobox
+                      mode="multiple"
+                      options={labelOptions}
+                      selected={filters.labels.map((label) => label.id)}
+                      onChange={(value) => setLabelIds(value as string[])}
+                      placeholder={t('common.labels')}
+                      searchPlaceholder={t('common.search_labels')}
+                      emptyText={t('common.no_labels_found')}
+                      className="[&_button]:h-9"
+                    />
+                  </FilterPickerField>
+
+                  {availableProjects.length > 0 && (
+                    <FilterPickerField
+                      icon={<Hash className="h-3.5 w-3.5" />}
+                      label={t('common.projects')}
+                      badge={
+                        filters.projects.length ? (
+                          <Badge variant="secondary">
+                            {filters.projects.length}
+                          </Badge>
+                        ) : null
+                      }
+                    >
+                      <Combobox
+                        mode="multiple"
+                        options={projectOptions}
+                        selected={filters.projects.map((project) => project.id)}
+                        onChange={(value) => setProjectIds(value as string[])}
+                        placeholder={t('common.projects')}
+                        searchPlaceholder={t('common.search_projects')}
+                        emptyText={t('common.empty')}
+                        className="[&_button]:h-9"
+                      />
+                    </FilterPickerField>
+                  )}
+
+                  <FilterPickerField
+                    icon={<Flag className="h-3.5 w-3.5" />}
+                    label={t('common.priority')}
+                    badge={
+                      filters.priorities.length ? (
+                        <Badge variant="secondary">
+                          {filters.priorities.length}
+                        </Badge>
+                      ) : null
+                    }
+                  >
+                    <Combobox
+                      mode="multiple"
+                      options={priorityOptions}
+                      selected={filters.priorities}
+                      onChange={(value) => setPriorityValues(value as string[])}
+                      placeholder={t('common.priority')}
+                      searchPlaceholder={t('common.search_tasks')}
+                      className="[&_button]:h-9"
+                    />
+                  </FilterPickerField>
+                </div>
+              </FilterSection>
+
+              <FilterSection
+                icon={<CalendarIcon className="h-3.5 w-3.5" />}
+                title={t('common.due_date')}
+                badge={
+                  filters.dueDateRange ? (
+                    <Badge variant="secondary">1</Badge>
+                  ) : null
+                }
+              >
+                <div className="space-y-2">
+                  <div className="flex min-w-0 items-center gap-2 rounded-md border bg-muted/20 px-2 py-1.5 text-muted-foreground text-xs">
+                    <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 truncate">{dueDateSummary}</span>
+                  </div>
+                  <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem]">
+                    <Input
+                      aria-label={t('common.from')}
+                      className="h-9 min-w-0"
+                      type="date"
+                      value={formatDateInputValue(filters.dueDateRange?.from)}
+                      onChange={(event) => {
+                        const nextFrom = parseDateInputValue(
+                          event.target.value
                         );
+                        const nextTo = filters.dueDateRange?.to;
 
                         onFiltersChange({
                           ...filters,
-                          includeMyTasks: !!checked,
-                          // Replace all assignees with only current user when checked
-                          assignees:
-                            checked && currentUser ? [currentUser] : [],
-                          // Auto-deselect "Unassigned" when selecting "Assigned to me"
-                          includeUnassigned: checked
-                            ? false
-                            : filters.includeUnassigned,
+                          dueDateRange:
+                            nextFrom || nextTo
+                              ? { from: nextFrom, to: nextTo }
+                              : null,
                         });
                       }}
                     />
-                    <UserStar className="h-4 w-4 text-dynamic-yellow" />
-                    <span>{t('common.assigned_to_me')}</span>
-                  </label>
-                  <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
-                    <Checkbox
-                      checked={filters.includeUnassigned}
-                      onCheckedChange={(checked) =>
+                    <Input
+                      aria-label={t('common.to')}
+                      className="h-9 min-w-0"
+                      type="date"
+                      value={formatDateInputValue(filters.dueDateRange?.to)}
+                      onChange={(event) => {
+                        const nextFrom = filters.dueDateRange?.from;
+                        const nextTo = parseDateInputValue(event.target.value);
+
                         onFiltersChange({
                           ...filters,
-                          includeUnassigned: !!checked,
-                          // Auto-deselect all assignees when selecting "Unassigned"
-                          includeMyTasks: checked
-                            ? false
-                            : filters.includeMyTasks,
-                          assignees: checked ? [] : filters.assignees,
+                          dueDateRange:
+                            nextFrom || nextTo
+                              ? { from: nextFrom, to: nextTo }
+                              : null,
+                        });
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-full sm:w-9"
+                      aria-label={t('common.clear')}
+                      onClick={() =>
+                        onFiltersChange({
+                          ...filters,
+                          dueDateRange: null,
                         })
                       }
-                    />
-                    <UserX className="h-4 w-4 text-dynamic-red" />
-                    <span>{t('common.unassigned')}</span>
-                  </label>
-                </div>
-                <DropdownMenuSeparator />
-              </>
-            )}
-
-            {/* Source Scope */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="gap-2 py-2.5">
-                <ListFilter className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">
-                  {t('ws-tasks.filter_source_scope')}
-                </span>
-                {isSourceFilterActive && (
-                  <Badge
-                    variant="secondary"
-                    className="h-4 min-w-5 justify-center px-1 text-[10px]"
-                  >
-                    {sourceScope === 'external_specific'
-                      ? Math.max(
-                          1,
-                          selectedSourceWorkspaceIds.length +
-                            selectedSourceBoardIds.length
-                        )
-                      : 1}
-                  </Badge>
-                )}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-76 p-0">
-                <div className="p-1">
-                  {SOURCE_SCOPE_OPTIONS.map((scope) => {
-                    const Icon = SOURCE_SCOPE_ICONS[scope];
-                    return (
-                      <DropdownMenuItem
-                        key={scope}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setSourceScope(scope);
-                        }}
-                        className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2"
-                      >
-                        <Checkbox
-                          checked={sourceScope === scope}
-                          className="pointer-events-none"
-                        />
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                        <span className="flex-1 truncate font-medium text-sm">
-                          {t(`ws-tasks.filter_source_scope_${scope}` as any)}
-                        </span>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </div>
-
-                {sourceScope === 'external_specific' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="flex items-center gap-2 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-                      <Building2 className="h-3.5 w-3.5" />
-                      {t('ws-tasks.filter_workspaces')}
-                    </DropdownMenuLabel>
-                    <div className="max-h-48 overflow-y-auto px-1 pb-1">
-                      {sourceWorkspaces.length === 0 ? (
-                        <div className="px-3 py-2 text-muted-foreground text-xs">
-                          {t('ws-tasks.filter_no_workspaces_available')}
-                        </div>
-                      ) : (
-                        sourceWorkspaces.map((workspace) => (
-                          <DropdownMenuItem
-                            key={workspace.id}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              toggleSourceWorkspace(workspace);
-                            }}
-                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2"
-                          >
-                            <Checkbox
-                              checked={selectedSourceWorkspaceIds.includes(
-                                workspace.id
-                              )}
-                              className="pointer-events-none"
-                            />
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="truncate font-medium text-sm">
-                              {workspace.name}
-                            </span>
-                          </DropdownMenuItem>
-                        ))
-                      )}
-                    </div>
-
-                    <DropdownMenuLabel className="flex items-center gap-2 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-                      <LayoutDashboard className="h-3.5 w-3.5" />
-                      {t('ws-tasks.filter_boards')}
-                    </DropdownMenuLabel>
-                    <div className="max-h-56 overflow-y-auto px-1 pb-1">
-                      {selectedSourceWorkspaceIds.length === 0 ? (
-                        <div className="px-3 py-2 text-muted-foreground text-xs">
-                          {t('ws-tasks.filter_select_source_prompt')}
-                        </div>
-                      ) : sourceBoardsLoading ? (
-                        <div className="px-3 py-2 text-muted-foreground text-xs">
-                          {t('common.loading')}
-                        </div>
-                      ) : sourceBoards.length === 0 ? (
-                        <div className="px-3 py-2 text-muted-foreground text-xs">
-                          {t('ws-tasks.filter_no_boards_for_workspaces')}
-                        </div>
-                      ) : (
-                        sourceBoards.map((board) => (
-                          <DropdownMenuItem
-                            key={board.id}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              toggleSourceBoard(board);
-                            }}
-                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2"
-                          >
-                            <Checkbox
-                              checked={selectedSourceBoardIds.includes(
-                                board.id
-                              )}
-                              className="pointer-events-none"
-                            />
-                            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate font-medium text-sm">
-                                {board.name}
-                              </div>
-                              <div className="truncate text-muted-foreground text-xs">
-                                {board.workspaceName}
-                              </div>
-                            </div>
-                          </DropdownMenuItem>
-                        ))
-                      )}
-                    </div>
-                  </>
-                )}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            {/* Assignees */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="gap-2 py-2.5">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">{t('common.assignees')}</span>
-                {filters.assignees.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="h-4 min-w-5 justify-center px-1 text-[10px]"
-                  >
-                    {filters.assignees.length}
-                  </Badge>
-                )}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-65 p-0">
-                {availableAssignees.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    {t('common.no_members_found')}
-                  </div>
-                ) : (
-                  <div className="max-h-60 overflow-y-auto">
-                    <div className="p-1">
-                      {availableAssignees.map((assignee) => (
-                        <DropdownMenuItem
-                          key={assignee.id}
-                          onClick={() => toggleAssignee(assignee)}
-                          className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2"
-                        >
-                          <Checkbox
-                            checked={filters.assignees.some(
-                              (a) => a.id === assignee.id
-                            )}
-                            className="pointer-events-none"
-                          />
-                          <Avatar className="h-6 w-6 border">
-                            {assignee.avatar_url && (
-                              <AvatarImage src={assignee.avatar_url} />
-                            )}
-                            <AvatarFallback className="font-medium text-[10px]">
-                              {getInitials(
-                                assignee.display_name || assignee.email || ''
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-1 flex-col overflow-hidden">
-                            <span className="truncate font-medium text-sm">
-                              {assignee.display_name || assignee.email}
-                            </span>
-                            {assignee.display_name && assignee.email && (
-                              <span className="truncate text-muted-foreground text-xs">
-                                {assignee.email}
-                              </span>
-                            )}
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            {/* Labels */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="gap-2 py-2.5">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">{t('common.labels')}</span>
-                {filters.labels.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="h-4 min-w-5 justify-center px-1 text-[10px]"
-                  >
-                    {filters.labels.length}
-                  </Badge>
-                )}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-60 p-0">
-                {availableLabels.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    {t('common.no_labels_found')}
-                  </div>
-                ) : (
-                  <div className="max-h-60 overflow-y-auto">
-                    <div className="p-1">
-                      {availableLabels.map((label) => (
-                        <DropdownMenuItem
-                          key={label.id}
-                          onClick={() => toggleLabel(label)}
-                          className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2"
-                        >
-                          <Checkbox
-                            checked={filters.labels.some(
-                              (l) => l.id === label.id
-                            )}
-                            className="pointer-events-none"
-                          />
-                          <Badge
-                            style={getColorStyles(label.color)}
-                            className="border-0 font-medium text-xs"
-                          >
-                            {label.name}
-                          </Badge>
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            {/* Projects */}
-            {availableProjects.length > 0 && (
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2 py-2.5">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1">{t('common.projects')}</span>
-                  {filters.projects.length > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="h-4 min-w-5 justify-center px-1 text-[10px]"
+                      disabled={!filters.dueDateRange}
                     >
-                      {filters.projects.length}
-                    </Badge>
-                  )}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="w-60 p-0">
-                  <div className="max-h-60 overflow-y-auto">
-                    <div className="p-1">
-                      {availableProjects.map((project) => (
-                        <DropdownMenuItem
-                          key={project.id}
-                          onClick={() => toggleProject(project)}
-                          className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2"
-                        >
-                          <Checkbox
-                            checked={filters.projects.some(
-                              (p) => p.id === project.id
-                            )}
-                            className="pointer-events-none"
-                          />
-                          <span className="font-medium text-sm">
-                            {project.name}
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            )}
-
-            {/* Priority */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="gap-2 py-2.5">
-                <Flag className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">{t('common.priority')}</span>
-                {filters.priorities.length > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="h-4 min-w-5 justify-center px-1 text-[10px]"
-                  >
-                    {filters.priorities.length}
-                  </Badge>
-                )}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-50 p-0">
-                <div className="p-1">
-                  {PRIORITIES.map((priority) => (
-                    <DropdownMenuItem
-                      key={priority.value}
-                      onClick={() => togglePriority(priority.value)}
-                      className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2"
-                    >
-                      <Checkbox
-                        checked={filters.priorities.includes(priority.value)}
-                        className="pointer-events-none"
-                      />
-                      <Flag className={cn(priority.color, 'h-4 w-4')} />
-                      <span className="font-medium text-sm">
-                        {t(priority.labelKey as any)}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
                 </div>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+              </FilterSection>
 
-            {/* Due Date */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="gap-2 py-2.5">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1">{t('common.due_date')}</span>
-                {filters.dueDateRange && (
-                  <Check className="h-3.5 w-3.5 text-primary" />
-                )}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-auto p-0">
-                <Calendar
-                  mode="range"
-                  selected={
-                    filters.dueDateRange
-                      ? {
-                          from: filters.dueDateRange.from,
-                          to: filters.dueDateRange.to,
-                        }
-                      : undefined
-                  }
-                  onSelect={(range) =>
-                    onFiltersChange({
-                      ...filters,
-                      dueDateRange: range
-                        ? { from: range.from, to: range.to }
-                        : null,
-                    })
-                  }
-                  numberOfMonths={1}
-                  className="rounded-md border-0"
-                />
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            {/* Clear All */}
-            {hasFilters && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
+              {hasFilters && (
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={clearAllFilters}
-                  className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
+                  className="h-8 w-full justify-start gap-2 text-dynamic-red/80 hover:text-dynamic-red"
                 >
                   <X className="h-4 w-4" />
                   {t('common.clear_all_filters')}
-                </DropdownMenuItem>
-              </>
-            )}
+                </Button>
+              )}
+            </div>
           </ScrollArea>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Active filter chips */}
-      {/* {filters.labels.map((label) => (
-        <Badge
-          key={label.id}
-          style={getColorStyles(label.color)}
-          className="h-5 cursor-pointer border-0 px-1.5 text-[10px] hover:opacity-80 sm:h-6 sm:px-2 sm:text-xs"
-          onClick={() => toggleLabel(label)}
-        >
-          {label.name}
-          <X className="ml-0.5 h-2.5 w-2.5 sm:ml-1 sm:h-3 sm:w-3" />
-        </Badge>
-      ))}
-      {filters.assignees.map((assignee) => (
-        <Badge
-          key={assignee.id}
-          variant="secondary"
-          className="h-5 cursor-pointer px-1.5 text-[10px] hover:opacity-80 sm:h-6 sm:px-2 sm:text-xs"
-          onClick={() => toggleAssignee(assignee)}
-        >
-          {assignee.display_name || assignee.email}
-          <X className="ml-0.5 h-2.5 w-2.5 sm:ml-1 sm:h-3 sm:w-3" />
-        </Badge>
-      ))}
-      {filters.projects.map((project) => (
-        <Badge
-          key={project.id}
-          variant="outline"
-          className="h-5 cursor-pointer px-1.5 text-[10px] hover:opacity-80 sm:h-6 sm:px-2 sm:text-xs"
-          onClick={() => toggleProject(project)}
-        >
-          {project.name}
-          <X className="ml-0.5 h-2.5 w-2.5 sm:ml-1 sm:h-3 sm:w-3" />
-        </Badge>
-      ))}
-      {filters.priorities.map((priority) => {
-        const priorityConfig = PRIORITIES.find((p) => p.value === priority);
-        return (
-          <Badge
-            key={priority}
-            variant="outline"
-            className="h-5 cursor-pointer px-1.5 text-[10px] hover:opacity-80 sm:h-6 sm:px-2 sm:text-xs"
-            onClick={() => togglePriority(priority)}
-          >
-            {priorityConfig?.label}
-            <X className="ml-0.5 h-2.5 w-2.5 sm:ml-1 sm:h-3 sm:w-3" />
-          </Badge>
-        );
-      })} */}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

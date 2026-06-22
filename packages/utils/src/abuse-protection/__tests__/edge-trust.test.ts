@@ -152,6 +152,7 @@ describe('edge-trust cache', () => {
 
   it('writes neutral verified session markers without writing non-session subjects', async () => {
     mockRedisClient();
+    mocks.mget.mockResolvedValue([null]);
     mocks.set.mockResolvedValue('OK');
 
     const { writeVerifiedSessionCacheForSubjects } = await import(
@@ -167,6 +168,32 @@ describe('edge-trust cache', () => {
       'trust:mult:session:aaa',
       { m: 1, verified: true },
       { ex: 600 }
+    );
+  });
+
+  it('does not downgrade elevated trust entries when writing verified session markers', async () => {
+    mockRedisClient();
+    mocks.mget.mockResolvedValue([3, null]);
+    mocks.set.mockResolvedValue('OK');
+
+    const { writeVerifiedSessionCacheForSubjects } = await import(
+      '../edge-trust.js'
+    );
+    await writeVerifiedSessionCacheForSubjects(
+      ['session:elevated', 'session:neutral'],
+      600
+    );
+
+    expect(mocks.set).toHaveBeenCalledTimes(1);
+    expect(mocks.set).toHaveBeenCalledWith(
+      'trust:mult:session:neutral',
+      { m: 1, verified: true },
+      { ex: 600 }
+    );
+    expect(mocks.set).not.toHaveBeenCalledWith(
+      'trust:mult:session:elevated',
+      expect.anything(),
+      expect.anything()
     );
   });
 

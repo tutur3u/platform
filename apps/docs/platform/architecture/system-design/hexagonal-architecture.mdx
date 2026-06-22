@@ -1,12 +1,35 @@
 ---
 title: "Hexagonal Architecture"
-description: "Implementation of ports and adapters pattern in Tuturuuu for maintainable, testable services"
-updatedAt: "2025-11-16"
+description: "An educational guide to the ports and adapters pattern, with notes on where Tuturuuu applies its ideas"
+updatedAt: "2026-06-21"
 ---
 
 # Hexagonal Architecture (Ports and Adapters)
 
-Hexagonal Architecture, also known as Ports and Adapters, is the internal structure pattern used within each Tuturuuu microservice to achieve **technology independence**, **testability**, and **maintainability**.
+Hexagonal Architecture, also known as Ports and Adapters, is a design pattern
+for achieving **technology independence**, **testability**, and
+**maintainability** by isolating core business logic from the technologies that
+surround it.
+
+<Note>
+This page is an **educational pattern guide**, not a description of Tuturuuu's
+current directory layout. The Tuturuuu apps (`apps/web`, `apps/finance`) are
+conventional Next.js App Router apps organized by `app/`, `components/`, `lib/`,
+and `utils/` — they do **not** use formal `domain/`, `application/`, and
+`infrastructure/` layers. The code samples below are illustrative; their file
+paths are aspirational and do not exist in the repo. Where Tuturuuu genuinely
+borrows an idea from this pattern, the text says so explicitly.
+</Note>
+
+<Note>
+**Architecture is moving.** Tuturuuu is migrating the legacy Next.js
+`apps/web` runtime (port `7803`) to TanStack Start (`apps/tanstack-web`) plus a
+dedicated Rust backend (`apps/backend`, port `7820`). The emerging backend is
+the Rust service, not a TypeScript "microservice." See
+[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
+for the canonical target. Treat the patterns below as portable design ideas, not
+a permanent structural mandate.
+</Note>
 
 ## Core Concept
 
@@ -50,11 +73,40 @@ graph TB
     style K fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
-## Layer Structure in Tuturuuu
+## How Tuturuuu Actually Structures Apps
+
+Before the conceptual layers below, here is the real layout you will find in the
+codebase today. The Next.js apps are organized by concern, not by hexagonal
+layer:
+
+```
+apps/web/src/
+├── app/          # Next.js App Router routes + /api/v1 REST handlers (presentation)
+├── components/   # React components (presentation)
+├── features/     # Feature-scoped UI and logic
+├── hooks/        # Client hooks (TanStack Query, etc.)
+├── lib/          # Cross-cutting helpers and clients
+├── utils/        # Pure utilities
+├── constants/    # Static config
+└── trpc/         # Minimal tRPC stub (health-check only — not the product data path)
+```
+
+Product data flows through shared helpers in `packages/internal-api` and the
+REST `/api/v1` routes — **not** through tRPC, which in `apps/web/src/trpc` is
+only a `healthCheck` stub today. Cross-app concerns live in `packages/*`
+(`packages/supabase`, `packages/payment`, `packages/trigger`,
+`packages/internal-api`, `packages/ui`, ...), which is where most "swap the
+adapter" flexibility actually lives in practice.
+
+The sections that follow describe the **idealized hexagonal layers** as a
+learning model. Read them for the concepts; do not expect to find these exact
+directories in the repo.
+
+## The Idealized Layers (Conceptual)
 
 ### 1. Domain Layer (Core Business Logic)
 
-**Location:** `apps/*/src/domain/`
+**Conceptual location:** `domain/` (illustrative — not a real directory in Tuturuuu)
 
 **Responsibilities:**
 - Pure business logic and rules
@@ -67,10 +119,10 @@ graph TB
 - No knowledge of databases, APIs, or frameworks
 - Fully unit-testable without infrastructure
 
-**Example:**
+**Example (illustrative — this file does not exist in the repo):**
 
 ```typescript
-// apps/web/src/domain/models/workspace.ts
+// Illustrative: domain/models/workspace.ts
 export class Workspace {
   private constructor(
     public readonly id: string,
@@ -138,7 +190,7 @@ export class Workspace {
 
 ### 2. Application Layer (Use Cases / Orchestration)
 
-**Location:** `apps/*/src/application/`
+**Conceptual location:** `application/` (illustrative — not a real directory in Tuturuuu)
 
 **Responsibilities:**
 - Orchestrate domain objects
@@ -146,10 +198,10 @@ export class Workspace {
 - Transaction management
 - Call infrastructure services via ports
 
-**Example:**
+**Example (illustrative):**
 
 ```typescript
-// apps/web/src/application/use-cases/create-workspace.ts
+// Illustrative: application/use-cases/create-workspace.ts
 export interface WorkspaceRepository {
   save(workspace: Workspace): Promise<void>;
   findById(id: string): Promise<Workspace | null>;
@@ -189,17 +241,17 @@ export class CreateWorkspaceUseCase {
 
 ### 3. Infrastructure Layer (Adapters)
 
-**Location:** `apps/*/src/infrastructure/`
+**Conceptual location:** `infrastructure/` (illustrative — not a real directory in Tuturuuu)
 
 **Responsibilities:**
 - Implement ports defined by application/domain
 - Handle technology-specific details
 - Database access, API calls, event publishing
 
-**Example:**
+**Example (illustrative):**
 
 ```typescript
-// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
+// Illustrative: infrastructure/repositories/supabase-workspace-repository.ts
 import { WorkspaceRepository } from '@/application/use-cases/create-workspace';
 
 export class SupabaseWorkspaceRepository implements WorkspaceRepository {
@@ -263,7 +315,9 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
 
 ### 4. Presentation Layer (API / UI)
 
-**Location:** `apps/*/src/app/api/` or `apps/*/src/app/`
+**Real location:** `apps/web/src/app/api/v1/` (REST handlers) or `apps/web/src/app/`
+(routes/pages). This is the one layer that maps cleanly onto Tuturuuu's actual
+structure.
 
 **Responsibilities:**
 - HTTP request/response handling
@@ -271,10 +325,16 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
 - Authentication/authorization
 - Call application use cases
 
-**Example:**
+In real Tuturuuu code, a route handler does its own validation, gets an
+**awaited** Supabase client (`createClient()` from `@tuturuuu/supabase/next/server`
+is async), checks auth via `supabase.auth.getUser()`, and then calls a helper.
+The example below keeps the use-case indirection for teaching purposes:
+
+**Example (illustrative use-case wiring; Supabase client usage is real):**
 
 ```typescript
-// apps/web/src/app/api/workspaces/create/route.ts
+// Illustrative: apps/web/src/app/api/v1/workspaces/create/route.ts
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { CreateWorkspaceUseCase } from '@/application/use-cases/create-workspace';
 
 const CreateWorkspaceRequestSchema = z.object({
@@ -283,9 +343,12 @@ const CreateWorkspaceRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  // 1. Authentication
-  const session = await getSession();
-  if (!session) {
+  // 1. Authentication — createClient() is async; await it
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -302,13 +365,13 @@ export async function POST(request: Request) {
 
   // 3. Execute use case
   const useCase = new CreateWorkspaceUseCase(
-    new SupabaseWorkspaceRepository(createClient()),
-    new TriggerEventPublisher()
+    new SupabaseWorkspaceRepository(supabase),
+    new TriggerWorkspaceEventPublisher()
   );
 
   try {
     const workspace = await useCase.execute({
-      ownerId: session.userId,
+      ownerId: user.id,
       name: validation.data.name,
       plan: new WorkspacePlan(validation.data.plan)
     });
@@ -462,50 +525,81 @@ Adapters **implement** the ports:
 // Repository adapter
 export class SupabaseWorkspaceRepository implements WorkspaceRepository { /* ... */ }
 
-// Event publisher adapter
-export class TriggerEventPublisher implements EventPublisher {
+// Event publisher adapter.
+// Tuturuuu uses Trigger.dev v4 (@trigger.dev/sdk ^4.x). There is no
+// `trigger.event(...)` / `eventTrigger` API — background work is modeled as
+// tasks defined with `task({ id, run })` (see packages/trigger/src) and
+// invoked with `.trigger(payload)`.
+import { type DomainEvent } from '@/domain/events';
+import { task } from '@trigger.dev/sdk/v3';
+
+// A real Trigger.dev v4 task lives in packages/trigger/src, e.g.:
+export const workspaceCreatedTask = task({
+  id: 'workspace-created',
+  run: async (payload: { workspaceId: string; ownerId: string }) => {
+    // ...side effects: notifications, projections, etc.
+    return { ok: true };
+  },
+});
+
+// The adapter just enqueues the task — keeping the core ignorant of Trigger.dev.
+export class TriggerWorkspaceEventPublisher implements EventPublisher {
   async publish(event: DomainEvent): Promise<void> {
-    await trigger.event({
-      name: event.name,
-      payload: event.payload
+    await workspaceCreatedTask.trigger({
+      workspaceId: event.payload.workspaceId,
+      ownerId: event.payload.ownerId,
     });
   }
 }
 
-// Email service adapter
-export class ResendEmailService implements EmailService {
+// Email service adapter.
+// Tuturuuu sends transactional email through packages/transactional and
+// packages/email-service rather than a raw provider SDK in app code; the body
+// here is illustrative of how any provider would sit behind the port.
+export class TransactionalEmailService implements EmailService {
   async sendWorkspaceInvitation(email: string, workspaceId: string): Promise<void> {
-    await resend.emails.send({
-      to: email,
-      subject: 'Workspace Invitation',
-      html: renderTemplate('invitation', { workspaceId })
-    });
+    await sendInvitationEmail({ to: email, workspaceId });
   }
 }
 ```
 
 ## Dependency Injection
 
-Wire adapters to use cases:
+Wire adapters to use cases. Note that `createClient()` is async, so the factory
+must be async too:
 
 ```typescript
-// apps/web/src/lib/container.ts
-export function createWorkspaceUseCase(): CreateWorkspaceUseCase {
+// Illustrative: lib/container.ts (no such DI container exists in Tuturuuu today)
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createWorkspaceUseCase(): Promise<CreateWorkspaceUseCase> {
+  const supabase = await createClient();
   return new CreateWorkspaceUseCase(
-    new SupabaseWorkspaceRepository(createClient()),
-    new TriggerEventPublisher()
+    new SupabaseWorkspaceRepository(supabase),
+    new TriggerWorkspaceEventPublisher()
   );
 }
 
 // Usage in API route
-const useCase = createWorkspaceUseCase();
+const useCase = await createWorkspaceUseCase();
 const result = await useCase.execute(command);
 ```
 
-## Directory Structure Example
+<Note>
+Tuturuuu does **not** ship a formal DI container. Route handlers and
+`packages/internal-api` helpers wire their dependencies directly. The factory
+above shows the pattern conceptually.
+</Note>
+
+## Directory Structure Example (Illustrative)
+
+The tree below shows what a **fully layered** hexagonal app could look like. It
+is a teaching illustration — **Tuturuuu does not use this layout.** For the
+actual structure, see [How Tuturuuu Actually Structures Apps](#how-tuturuuu-actually-structures-apps)
+above.
 
 ```
-apps/web/src/
+src/                                 # Illustrative hexagonal layout (NOT the real apps/web layout)
 ├── domain/                          # Core (no dependencies)
 │   ├── models/
 │   │   ├── workspace.ts             # Domain entities
@@ -523,11 +617,11 @@ apps/web/src/
 │   ├── repositories/
 │   │   └── supabase-workspace-repository.ts
 │   ├── events/
-│   │   └── trigger-event-publisher.ts
+│   │   └── trigger-workspace-publisher.ts
 │   └── email/
-│       └── resend-email-service.ts
+│       └── transactional-email-service.ts
 └── app/                             # Presentation
-    └── api/workspaces/
+    └── api/v1/workspaces/
         ├── create/route.ts          # HTTP adapter
         └── [id]/route.ts
 ```
@@ -536,49 +630,83 @@ apps/web/src/
 
 The C4 model provides a structured way to visualize software architecture at different levels of abstraction. At the Component level, we focus on the major structural building blocks and their interactions within a system.
 
-### Backend – Hexagonal Architecture (C4 Component Diagram)
+### Backend – Applying Ports and Adapters to Payments
 
-The Payment Microservice adopts a Hexagonal Architecture to enforce strict separation of concerns, improve testability, and enable flexible integration with external systems.
+<Note>
+The original version of this section described a Java/Kafka/Redis/Stripe payment
+microservice. **None of that exists in Tuturuuu.** Payments are handled by
+`packages/payment`, which currently has a single provider integration: **Polar**
+(`packages/payment/src/polar`, with `checkout/`, `client.ts`, `server.ts`, and
+Next.js helpers under `next/`). There is no Kafka, no Redis, no Stripe SDK, and
+no Java. The dedicated backend is the **Rust** service in `apps/backend`
+(route modules such as `inventory.rs`, `aurora.rs`, `nova.rs`,
+`onboarding_progress.rs`), not a JVM microservice.
+</Note>
 
-**Inbound Flow (Outside → Core):**
+The ports-and-adapters *idea* still maps cleanly onto how `packages/payment` is
+organized, even though the package does not enforce formal layers:
 
-Incoming requests enter the system through **Inbound Adapters** such as REST controllers and Kafka consumers, which convert incoming **Inbound DTOs** into internal representations and delegate execution to **Application Services**. These services coordinate the primary business flows and act as the main entry point to the domain layer.
+**Inbound (Outside → Core):**
 
-**Core Domain Layer:**
+Requests enter through HTTP route handlers (in `apps/web` `/api/v1` today, and
+increasingly in `apps/backend` Rust routes) and provider webhooks. These
+translate transport payloads into typed inputs and call payment helpers — the
+"inbound adapter" role.
 
-The **Domain Layer** contains the core business logic through **Domain Services** and **Domain Models**, which represent the essential rules and constraints of the payment domain. Domain logic remains completely isolated from external frameworks and is unaware of transport, persistence, or other infrastructure concerns.
+**Core (Business Rules):**
 
-**Outbound Flow (Core → Outside):**
+Subscription tier logic, entitlement checks, and checkout orchestration are the
+domain concern. Keeping these decisions independent of the provider is the goal:
+the rest of the platform asks "what tier is this workspace?" without caring that
+Polar answers it.
 
-When external communication or persistence is required, the Application Services call **Outbound Ports**, whose interfaces define what the domain requires from the outside world. Corresponding **Outbound Adapters** implement these ports by integrating with external dependencies such as the Payment Database, Redis caches, Kafka event producers, and the Stripe API.
+**Outbound (Core → Outside):**
 
-**Infrastructure and Cross-Cutting Concerns:**
+The **Polar provider** in `packages/payment/src/polar` is the outbound adapter
+to the payment processor. Persistence flows through the shared Supabase project
+(`packages/supabase`), not a dedicated payment database. If Tuturuuu added a
+second processor, it would implement the same client/checkout contract behind
+the existing interface — which is exactly the substitutability hexagonal
+architecture is designed to give you.
 
-Configuration components such as Kafka and Redis configs are placed in the **Infrastructure Layer**, while cross-cutting concerns such as filters and security packages operate at the service edge.
+**Why the pattern still helps here:**
 
-**Dependency Flow:**
-
-This structure ensures a **one-way dependency flow**—from adapters toward the centre—so the domain remains stable, framework-independent, and highly testable. Commands, results, and mappers exist in the implementation but are intentionally omitted at the component level to keep the C4 diagram high-level and focused on architectural boundaries rather than internal Java classes.
+Even without formal `domain/`/`application/`/`infrastructure/` directories,
+isolating the provider behind `packages/payment` keeps the swap surface small.
+That is the practical, real-world takeaway from this pattern in Tuturuuu — a
+clean seam around an external dependency, not a strict layered file tree.
 
 ### Frontend – Headless UI React Architecture (C4 Component Diagram)
 
-The frontend is structured using a **Headless UI + React Architecture**, separating rendering logic from state and behavioural logic to maintain scalability and reusability.
+The frontend separates rendering from state and behavioural logic to maintain
+scalability and reusability. This part of the description **does** broadly match
+Tuturuuu's real conventions (Server Components by default, client hooks for
+interactivity, shared UI in `packages/ui`).
 
 **Presentation Layer:**
 
-Each **Page** acts as a top-level container that orchestrates data loading and renders multiple UI components. Visual components such as **ProductTable**, **ProductCard**, and the **Search & Filter Panel** remain purely presentational, while all stateful or behavioural logic is delegated to dedicated **Hooks**. These hooks encapsulate actions such as fetching data, handling events, or executing mutations, thereby keeping the UI simple and predictable.
+Each **route/page** acts as a top-level container that orchestrates data loading
+and renders UI components. Visual components stay purely presentational, while
+stateful or behavioural logic is delegated to **hooks** (`apps/web/src/hooks`,
+typically TanStack Query for fetching and mutations). Per the platform rules,
+data fetching is **not** done in `useEffect`.
 
 **Communication Layer:**
 
-All external communication flows through **Service** components, which call typed **HTTP client utilities** responsible for interacting with backend API endpoints. Shared logic such as constant management and fetcher utilities is abstracted into reusable modules, ensuring consistency across the application.
+Client-side data access flows through **TanStack Query** hooks, and app API
+access is routed through the shared **`packages/internal-api`** helpers rather
+than raw client-side `fetch` against app endpoints. Backend calls target the
+REST `/api/v1` routes today and, increasingly, the Rust `apps/backend` service.
 
 **Shared Component Library:**
 
-Reusable UI building blocks are grouped into a **shared component library**, supporting composability and reducing duplication.
+Reusable UI building blocks live in **`packages/ui`** (imported via
+`@tuturuuu/ui/*`), with shared icons in **`packages/icons`** (`@tuturuuu/icons`),
+supporting composability and reducing duplication across apps.
 
 **Layer Separation:**
 
-This architecture clearly separates **Presentation → Logic → Communication** layers, enabling maintainable state management, easier testability, and seamless integration with backend microservices. Since the diagram operates at C4 Component Level, it intentionally excludes internal React implementation details (such as local state, props, or context) and instead focuses on component roles, interactions, and the flow of data through the system.
+This architecture clearly separates **Presentation → Logic → Communication** layers, enabling maintainable state management, easier testability, and clean integration with backend APIs (Tuturuuu's `/api/v1` routes and the emerging Rust `apps/backend`). Since the diagram operates at C4 Component Level, it intentionally excludes internal React implementation details (such as local state, props, or context) and instead focuses on component roles, interactions, and the flow of data through the system.
 
 **Key Principles:**
 

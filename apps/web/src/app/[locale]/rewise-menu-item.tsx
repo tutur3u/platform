@@ -1,4 +1,4 @@
-import { Sparkles } from '@tuturuuu/icons/lucide';
+import { Sparkles } from '@tuturuuu/icons/lucide-static';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,

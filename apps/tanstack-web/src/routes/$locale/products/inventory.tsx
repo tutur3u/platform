@@ -1,0 +1,224 @@
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  BarChart3,
+  Box,
+  Boxes,
+  Building2,
+  History,
+  PackageSearch,
+  QrCode,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  Truck,
+  Warehouse,
+} from '@tuturuuu/icons/lucide';
+import {
+  ProductBadge,
+  ProductButton,
+  ProductCard,
+  ProductLinkButton,
+} from '../../../components/products/product-page-primitives';
+import { createPageHead } from '../../../lib/platform/head';
+
+export const Route = createFileRoute('/$locale/products/inventory')({
+  component: InventoryProductPage,
+  head: () =>
+    createPageHead({
+      description:
+        'Monitor stock levels and fulfillment workflows with Tuturuuu Inventory.',
+      title: 'Inventory Product',
+    }),
+});
+
+const features = [
+  {
+    title: 'Stock Management',
+    description:
+      'Track and manage inventory levels with real-time updates and alerts.',
+    icon: <Boxes className="h-6 w-6" />,
+  },
+  {
+    title: 'Order Processing',
+    description:
+      'Streamline purchase orders and manage supplier relationships efficiently.',
+    icon: <Box className="h-6 w-6" />,
+  },
+  {
+    title: 'Barcode & QR Scanning',
+    description:
+      'Quick and accurate item tracking with integrated scanning capabilities.',
+    icon: <QrCode className="h-6 w-6" />,
+  },
+  {
+    title: 'Warehouse Management',
+    description:
+      'Organize multiple warehouses and track stock movement between locations.',
+    icon: <Warehouse className="h-6 w-6" />,
+  },
+  {
+    title: 'Analytics & Reports',
+    description:
+      'Generate detailed reports on inventory performance and trends.',
+    icon: <BarChart3 className="h-6 w-6" />,
+  },
+  {
+    title: 'Automated Reordering',
+    description: 'Set up automatic reordering based on minimum stock levels.',
+    icon: <RefreshCw className="h-6 w-6" />,
+  },
+];
+
+const useCases = [
+  {
+    title: 'Retail Management',
+    items: [
+      'Stock tracking',
+      'Sales integration',
+      'Supplier management',
+      'Order processing',
+    ],
+  },
+  {
+    title: 'Distribution',
+    items: [
+      'Warehouse organization',
+      'Order fulfillment',
+      'Shipping management',
+      'Location tracking',
+    ],
+  },
+  {
+    title: 'Manufacturing',
+    items: [
+      'Raw materials tracking',
+      'Production planning',
+      'Quality control',
+      'Cost management',
+    ],
+  },
+];
+
+export default function InventoryProductPage() {
+  return (
+    <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
+      {/* Hero Section */}
+      <div className="mb-16 text-center">
+        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">Smart Inventory Management</h1>
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          Transform your inventory operations with our intelligent management
+          system. Track stock, automate orders, and optimize your supply chain
+          with powerful analytics.
+        </p>
+        <div className="mt-8 flex justify-center gap-4">
+          <ProductButton disabled>Join Waitlist</ProductButton>
+          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        </div>
+      </div>
+
+      {/* Trust Section */}
+      <section className="mb-24">
+        <ProductCard className="border-primary bg-primary/5 p-8">
+          <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
+            <ShieldCheck className="h-12 w-12 text-primary" />
+            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
+            <p className="text-muted-foreground">
+              Your inventory data is protected with advanced security measures,
+              ensuring safe and reliable stock management across your
+              organization.
+            </p>
+          </div>
+        </ProductCard>
+      </section>
+
+      {/* Features Grid */}
+      <section className="mb-24">
+        <h2 className="mb-12 text-center font-bold text-3xl">
+          Powerful Features
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <ProductCard key={feature.title} className="p-6">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="text-primary">{feature.icon}</div>
+                <h3 className="font-semibold text-xl">{feature.title}</h3>
+              </div>
+              <p className="text-muted-foreground">{feature.description}</p>
+            </ProductCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Use Cases */}
+      <section className="mb-24">
+        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
+        <div className="grid gap-8 md:grid-cols-3">
+          {useCases.map((useCase) => (
+            <ProductCard key={useCase.title} className="p-6">
+              <Building2 className="mb-4 h-8 w-8 text-primary" />
+              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                {useCase.items.map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </ProductCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Supply Chain Section */}
+      <section className="mb-24">
+        <ProductCard className="overflow-hidden">
+          <div className="grid md:grid-cols-2">
+            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
+              <Truck className="h-8 w-8 text-primary" />
+              <h3 className="font-bold text-2xl">Supply Chain Visibility</h3>
+              <p className="text-muted-foreground">
+                Get complete visibility into your supply chain with real-time
+                tracking and automated notifications for stock movements.
+              </p>
+            </div>
+            <div className="flex flex-col justify-center gap-4 p-8">
+              <PackageSearch className="h-8 w-8 text-primary" />
+              <h3 className="font-bold text-2xl">Inventory Insights</h3>
+              <p className="text-muted-foreground">
+                Make informed decisions with detailed analytics on stock levels,
+                turnover rates, and demand forecasting.
+              </p>
+            </div>
+          </div>
+        </ProductCard>
+      </section>
+
+      {/* Additional Features Section */}
+      <section className="mb-24">
+        <h2 className="mb-12 text-center font-bold text-3xl">
+          Operations Tools
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <ProductCard className="p-6">
+            <Settings className="mb-4 h-8 w-8 text-primary" />
+            <h3 className="mb-2 font-bold text-xl">Process Automation</h3>
+            <p className="text-muted-foreground">
+              Automate routine tasks like reordering, stock counts, and report
+              generation to save time and reduce errors.
+            </p>
+          </ProductCard>
+          <ProductCard className="p-6">
+            <History className="mb-4 h-8 w-8 text-primary" />
+            <h3 className="mb-2 font-bold text-xl">Audit Trail</h3>
+            <p className="text-muted-foreground">
+              Maintain detailed records of all inventory movements and changes
+              for compliance and accountability.
+            </p>
+          </ProductCard>
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -15,6 +15,10 @@ const {
 const {
   getWatcherComposeEnv,
 } = require('./watch-blue-green/deploy-watcher-runtime.js');
+const {
+  getBlueGreenFrontend,
+  getBlueGreenServiceName,
+} = require('./docker-web/blue-green.js');
 
 const DEFAULT_INTERNAL_WEB_API_ORIGIN = 'http://web-proxy:7803';
 const DEFAULT_INTERVAL_MS = 30_000;
@@ -404,15 +408,20 @@ async function listWebContainers({
   env = process.env,
   run = runCommand,
 } = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    rootDir: env.PLATFORM_HOST_WORKSPACE_DIR || ROOT_DIR,
+  });
+  getBlueGreenFrontend(composeEnv);
   const containers = [];
 
   for (const deploymentColor of ['blue', 'green']) {
-    const serviceName = `web-${deploymentColor}`;
+    const serviceName = getBlueGreenServiceName(deploymentColor, composeEnv);
     const result = await run(
       'docker',
       ['compose', '-f', composeFile, 'ps', '-q', serviceName],
       {
-        env,
+        env: composeEnv,
         stdio: 'pipe',
       }
     );

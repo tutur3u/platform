@@ -3,6 +3,7 @@ import {
   clearMailpitMessages,
   completeOtpStage,
   fetchOtpSettings,
+  getOtpCodeInput,
   openPasswordStage,
 } from './helpers/auth';
 import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
@@ -265,7 +266,7 @@ test.describe('Authentication (unauthenticated)', () => {
       await continueButton.click();
 
       // The OTP entry form should appear
-      const otpInput = page.getByRole('textbox', { name: /code/i }).first();
+      const otpInput = getOtpCodeInput(page);
       await expect(otpInput).toBeVisible({ timeout: 15_000 });
 
       // The "Use password instead" fallback should be visible
@@ -356,7 +357,7 @@ test.describe('Authentication (unauthenticated)', () => {
       await continueButton.click();
 
       // OTP entry form should appear
-      const otpInput = page.getByRole('textbox', { name: /code/i }).first();
+      const otpInput = getOtpCodeInput(page);
       await expect(otpInput).toBeVisible({ timeout: 15_000 });
 
       // Retrieve the OTP code from Mailpit and enter it

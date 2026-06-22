@@ -1,6 +1,6 @@
 'use client';
 
-import { Image as ImageIcon, Upload, X } from '@tuturuuu/icons';
+import { Image as ImageIcon, Upload, X } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';

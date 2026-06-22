@@ -33,11 +33,20 @@ async function attachSessionDates({
     .map((row) => row.workspace_user_groups?.id)
     .filter((id): id is string => Boolean(id));
 
-  const sessionsByGroupId = await listUserGroupSessionDatesByGroupIds({
-    groupIds,
-    supabase: sbAdmin,
-    wsId,
-  });
+  // Session-date enrichment is a best-effort hint. If the sessions subsystem is
+  // unavailable (e.g. the table is missing because a migration has not applied),
+  // fall back to empty schedules so core user-group listing — and the invoice
+  // flows that depend on it — keep working instead of failing the whole request.
+  let sessionsByGroupId = new Map<string, string[]>();
+  try {
+    sessionsByGroupId = await listUserGroupSessionDatesByGroupIds({
+      groupIds,
+      supabase: sbAdmin,
+      wsId,
+    });
+  } catch (error) {
+    serverLogger.error('Error attaching user group session dates:', error);
+  }
 
   return rows.map((row) => {
     const group = row.workspace_user_groups;

@@ -260,6 +260,28 @@ ask the human partner to arbitrate. They should never format, stage, or fix
 unrelated dirty files simply because a repo-wide check or commit hook reports
 them.
 
+When coordinating subagents, split work into named lanes with disjoint owned
+paths, excluded paths, validation commands, and a no-stage/no-commit boundary
+unless the lane explicitly owns a commit. The coordinator owns integration and
+shared generated artifacts by default, including TanStack route trees, migration
+manifests, route overrides, OpenAPI snapshots, docs navigation, sorted
+translation bundles, and Supabase generated types. Workers should report
+generated drift and hand off exact follow-up instead of silently committing it.
+When a generator can see dirty or untracked files owned by another lane,
+regenerate from a clean worktree or an explicit input set and copy back only the
+intended artifact.
+
+Write a lane contract before spawning: owner, mode, owned paths, excluded paths,
+generated outputs, validation, handoff shape, and commit authority. Read-only
+lanes return evidence and risks without taking ownership. In Codex, choose
+either a typed worker/explorer role with explicit lane context in the prompt or
+a full-history fork without a role override; the harness rejects a spawn request
+that asks for both. After integrating a
+slice, checkpoint before dispatching more work: refresh status, close completed
+subagents, update the parent note with the commit or handoff state, list
+validation and unrelated blockers, and choose the next lane from the current
+worktree state.
+
 The normal scoped commit path still lets Git hooks run. Agents may use
 `git commit --no-verify` only when they can produce a proof packet for their
 exact staged paths: reviewed status and staged diff output, path ownership,
@@ -342,6 +364,10 @@ library.
 - Keep shared-worktree and commit-window coordination guidance aligned across
   `AGENTS.md`, the Agent Operating Manual, `$tuturuuu-agent-coordination`, and
   `$tuturuuu-commit`.
+- Keep parallel subagent lane, staged-set ownership, generated-artifact
+  ownership, and hook-failure guidance aligned across the Agent Operating
+  Manual, `$tuturuuu-agent-coordination`, `$tuturuuu-commit`, and Git
+  conventions docs.
 - Keep platform release/version guidance aligned across `AGENTS.md`,
   `$tuturuuu-web-release`, and the Web Docker Deployment runbook.
 - Add marketplace metadata only when deciding where the plugin should be

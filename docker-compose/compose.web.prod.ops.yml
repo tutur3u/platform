@@ -24,6 +24,7 @@ services:
       - DOCKER_WEB_COMPOSE_PROJECT_NAME
       - DOCKER_WEB_DIRECT_HOST_PORT
       - DOCKER_WEB_DOCKER_MEMORY_LIMIT
+      - DOCKER_WEB_FRONTEND
       - DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT
       - DOCKER_WEB_NATIVE_BUILD
       - DOCKER_WEB_NATIVE_BUILD_MEMORY
@@ -51,9 +52,6 @@ services:
       - SUPERMEMORY_TIMEOUT_MS=${SUPERMEMORY_TIMEOUT_MS:-1500}
       - UPSTASH_REDIS_REST_TOKEN
       - UPSTASH_REDIS_REST_URL
-    depends_on:
-      log-drain-postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "ps | grep -q '[w]atch-blue-green-deploy.js'"]
       interval: 30s
@@ -80,6 +78,7 @@ services:
       - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
       - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
       - INTERNAL_WEB_API_ORIGIN
+      - DOCKER_WEB_FRONTEND
       - PLATFORM_CRON_CONTROL_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/tmp/docker-web/watch/control
       - PLATFORM_CRON_MONITORING_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/tmp/docker-web/cron
       - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}

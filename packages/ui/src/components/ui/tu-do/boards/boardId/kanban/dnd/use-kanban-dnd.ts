@@ -22,6 +22,7 @@ import {
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useRef, useState } from 'react';
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
+import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { useAutoScroll } from './auto-scroll';
 import { getColumnReorderUpdates } from './column-reorder';
@@ -62,6 +63,10 @@ import type {
   TaskRect,
   VerticalRect,
 } from './task-drag-types';
+import {
+  compareTasksByEffectiveSortKey,
+  getEffectiveTaskSortKey,
+} from './task-sort-key';
 
 export {
   applyTaskDropPreviewToCache,
@@ -1162,14 +1167,14 @@ export function useKanbanDnd({
             const nextTask = projectedDropOrder[1];
             newSortKey = await calculateSortKeyWithRetry(
               null,
-              nextTask?.sort_key ?? null,
+              nextTask ? getEffectiveTaskSortKey(nextTask) : null,
               targetListId,
               projectedDropOrder
             );
           } else if (newIndex === projectedDropOrder.length - 1) {
             const prevTask = projectedDropOrder[projectedDropOrder.length - 2];
             newSortKey = await calculateSortKeyWithRetry(
-              prevTask?.sort_key ?? null,
+              prevTask ? getEffectiveTaskSortKey(prevTask) : null,
               null,
               targetListId,
               projectedDropOrder
@@ -1178,8 +1183,8 @@ export function useKanbanDnd({
             const prevTask = projectedDropOrder[newIndex - 1];
             const nextTask = projectedDropOrder[newIndex + 1];
             newSortKey = await calculateSortKeyWithRetry(
-              prevTask?.sort_key ?? null,
-              nextTask?.sort_key ?? null,
+              prevTask ? getEffectiveTaskSortKey(prevTask) : null,
+              nextTask ? getEffectiveTaskSortKey(nextTask) : null,
               targetListId,
               projectedDropOrder
             );
@@ -1195,7 +1200,8 @@ export function useKanbanDnd({
       const needsUpdate =
         dropChangesVisualOrder ||
         (newSortKey !== null &&
-          (activeTaskForDrop.sort_key ?? MAX_SAFE_INTEGER_SORT) !== newSortKey);
+          (getEffectiveTaskSortKey(activeTaskForDrop) ??
+            MAX_SAFE_INTEGER_SORT) !== newSortKey);
 
       let shouldPreservePendingAfterDragReset = false;
       const persistPersonalPlacementMove = (
@@ -1211,6 +1217,19 @@ export function useKanbanDnd({
         shouldPreservePendingAfterDragReset = true;
 
         void movePersonalPlacementTask(task, targetListId, sortKey, order)
+          .then((updatedTask) => {
+            broadcast?.('task:upsert', {
+              task: {
+                id: updatedTask.id,
+                list_id: updatedTask.list_id,
+                sort_key: updatedTask.sort_key,
+                personal_sort_key: updatedTask.personal_sort_key,
+                completed_at: updatedTask.completed_at,
+                closed_at: updatedTask.closed_at,
+              },
+            });
+            void invalidateKanbanDeadlineTasks(queryClient, boardId);
+          })
           .catch((error) => {
             console.error('Failed to update personal task placement:', error);
             rollbackOptimisticDropPreview();
@@ -1231,16 +1250,9 @@ export function useKanbanDnd({
             .map((taskId) => baseTasks.find((t) => t.id === taskId))
             .filter((t): t is Task => t !== undefined);
 
-          const sortedTasksToMove = selectedTaskObjects.sort((a, b) => {
-            const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-            const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-            if (sortA !== sortB) return sortA - sortB;
-            if (!a.created_at || !b.created_at) return 0;
-            return (
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime()
-            );
-          });
+          const sortedTasksToMove = selectedTaskObjects.sort(
+            compareTasksByEffectiveSortKey
+          );
 
           if (
             targetIsExternalStaging &&
@@ -1306,7 +1318,7 @@ export function useKanbanDnd({
                 const nextTask = simulatedTargetList[1];
                 batchSortKey = await calculateSortKeyWithRetry(
                   null,
-                  nextTask?.sort_key ?? null,
+                  nextTask ? getEffectiveTaskSortKey(nextTask) : null,
                   targetListId,
                   targetListTasks
                 );
@@ -1316,7 +1328,7 @@ export function useKanbanDnd({
               ) {
                 const prevTask = simulatedTargetList[positionInSimulated - 1];
                 batchSortKey = await calculateSortKeyWithRetry(
-                  prevTask?.sort_key ?? null,
+                  prevTask ? getEffectiveTaskSortKey(prevTask) : null,
                   null,
                   targetListId,
                   targetListTasks
@@ -1334,8 +1346,8 @@ export function useKanbanDnd({
 
                 if (!prevIsMoving && !nextIsMoving) {
                   batchSortKey = await calculateSortKeyWithRetry(
-                    prevTask?.sort_key ?? null,
-                    nextTask?.sort_key ?? null,
+                    prevTask ? getEffectiveTaskSortKey(prevTask) : null,
+                    nextTask ? getEffectiveTaskSortKey(nextTask) : null,
                     targetListId,
                     targetListTasks
                   );
@@ -1349,8 +1361,10 @@ export function useKanbanDnd({
                     }
                   }
                   batchSortKey = await calculateSortKeyWithRetry(
-                    stationaryPrev?.sort_key ?? null,
-                    nextTask?.sort_key ?? null,
+                    stationaryPrev
+                      ? getEffectiveTaskSortKey(stationaryPrev)
+                      : null,
+                    nextTask ? getEffectiveTaskSortKey(nextTask) : null,
                     targetListId,
                     targetListTasks
                   );
@@ -1368,8 +1382,10 @@ export function useKanbanDnd({
                     }
                   }
                   batchSortKey = await calculateSortKeyWithRetry(
-                    prevTask?.sort_key ?? null,
-                    stationaryNext?.sort_key ?? null,
+                    prevTask ? getEffectiveTaskSortKey(prevTask) : null,
+                    stationaryNext
+                      ? getEffectiveTaskSortKey(stationaryNext)
+                      : null,
                     targetListId,
                     targetListTasks
                   );
@@ -1398,8 +1414,8 @@ export function useKanbanDnd({
                   }
 
                   batchSortKey = await calculateSortKeyWithRetry(
-                    boundaryPrev?.sort_key ?? null,
-                    boundaryNext?.sort_key ?? null,
+                    boundaryPrev ? getEffectiveTaskSortKey(boundaryPrev) : null,
+                    boundaryNext ? getEffectiveTaskSortKey(boundaryNext) : null,
                     targetListId,
                     targetListTasks
                   );
@@ -1430,6 +1446,7 @@ export function useKanbanDnd({
                           closed_at: updatedTask.closed_at,
                         },
                       });
+                      void invalidateKanbanDeadlineTasks(queryClient, boardId);
                     },
                     onSettled: () => {
                       clearPendingTaskIds(pendingTaskIds);
@@ -1475,14 +1492,45 @@ export function useKanbanDnd({
                   closed_at: updatedTask.closed_at,
                 },
               });
+              void invalidateKanbanDeadlineTasks(queryClient, boardId);
             };
 
             if (repairedTaskSortKeys.length > 0) {
               void (async () => {
                 try {
+                  const repairTaskById = new Map<string, Task>();
+                  for (const task of [
+                    ...baseTasks,
+                    ...(optimisticDropPreview?.previousTasks ?? []),
+                    ...(optimisticDropPreview?.previousFullTasks ?? []),
+                  ]) {
+                    repairTaskById.set(task.id, task);
+                  }
+
                   const results = await Promise.allSettled(
-                    repairedTaskSortKeys.map((repair) =>
-                      reorderTaskMutation.mutateAsync(
+                    repairedTaskSortKeys.map(async (repair) => {
+                      const repairTask = repairTaskById.get(repair.taskId);
+
+                      if (repairTask && usesPersonalPlacement(repairTask)) {
+                        const updatedTask = await movePersonalPlacementTask(
+                          repairTask,
+                          repair.listId,
+                          repair.sortKey
+                        );
+                        broadcast?.('task:upsert', {
+                          task: {
+                            id: updatedTask.id,
+                            list_id: updatedTask.list_id,
+                            sort_key: updatedTask.sort_key,
+                            personal_sort_key: updatedTask.personal_sort_key,
+                            completed_at: updatedTask.completed_at,
+                            closed_at: updatedTask.closed_at,
+                          },
+                        });
+                        return updatedTask;
+                      }
+
+                      return reorderTaskMutation.mutateAsync(
                         {
                           taskId: repair.taskId,
                           newListId: repair.listId,
@@ -1495,14 +1543,17 @@ export function useKanbanDnd({
                         {
                           onSuccess: handleReorderSuccess,
                         }
-                      )
-                    )
+                      );
+                    })
                   );
                   const failedResults = results.filter(
                     (result) => result.status === 'rejected'
                   );
 
-                  if (failedResults.length === 0) return;
+                  if (failedResults.length === 0) {
+                    void invalidateKanbanDeadlineTasks(queryClient, boardId);
+                    return;
+                  }
 
                   console.error(
                     'Failed to persist repaired task sort keys:',

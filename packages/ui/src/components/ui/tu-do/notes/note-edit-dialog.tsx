@@ -41,10 +41,7 @@ export function NoteEditDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange} modal={true}>
-      <DialogContent
-        showCloseButton={false}
-        className="inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0"
-      >
+      <DialogContent showCloseButton={false} presentation="fullscreen">
         {/* Main content area - Note title and description */}
         <div className="flex min-w-0 flex-1 flex-col bg-background transition-all duration-300">
           {/* Enhanced Header with gradient */}

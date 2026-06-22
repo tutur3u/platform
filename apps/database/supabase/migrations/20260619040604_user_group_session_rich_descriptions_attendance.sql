@@ -90,7 +90,18 @@ set session_id = unambiguous_sessions.session_id
 from unambiguous_sessions
 where attendance.session_id is null
   and attendance.group_id = unambiguous_sessions.group_id
-  and attendance.date = unambiguous_sessions.session_date;
+  and attendance.date = unambiguous_sessions.session_date
+  -- Skip orphan attendance rows whose (user_id, group_id) no longer exists in
+  -- workspace_user_groups_users. user_group_attendance_member_fkey was added
+  -- NOT VALID (20260603095000), so such pre-existing orphans are tolerated but
+  -- must not be touched here — updating them would re-check the FK and abort the
+  -- whole migration (SQLSTATE 23503).
+  and exists (
+    select 1
+    from public.workspace_user_groups_users member
+    where member.user_id = attendance.user_id
+      and member.group_id = attendance.group_id
+  );
 
 create or replace function private.assert_user_group_attendance_session_scope()
 returns trigger

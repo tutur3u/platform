@@ -28,6 +28,7 @@ import type {
   CreateChatIntegrationPayload,
   CreateChatIntegrationResponse,
   GatewayModelRow,
+  GatewayModelRowsPage,
   ListAIWhitelistDomainsParams,
   ListAIWhitelistEmailsParams,
   ListAiGatewayModelsPageParams,
@@ -59,31 +60,40 @@ export async function listAiGatewayModels(
   return listAiGatewayModelsLegacy(params, options);
 }
 
+function aiGatewayModelQuery(
+  params?: ListAiGatewayModelsPageParams,
+  options: { paginated: boolean } = { paginated: false }
+) {
+  return {
+    enabled:
+      typeof params?.enabled === 'boolean' ? String(params.enabled) : undefined,
+    format: options.paginated ? 'paginated' : undefined,
+    ids: params?.ids?.join(','),
+    limit: options.paginated ? params?.limit : undefined,
+    page: options.paginated ? params?.page : undefined,
+    provider: params?.provider,
+    q: params?.q,
+    tag: params?.tag,
+    type: params?.type ?? 'language',
+  };
+}
+
+export async function listAiGatewayModelRows(
+  params?: ListAiGatewayModelsParams,
+  options?: InternalApiClientOptions
+): Promise<GatewayModelRow[]> {
+  const client = getInternalApiClient(options);
+  return client.json<GatewayModelRow[]>('/api/v1/infrastructure/ai/models', {
+    cache: 'no-store',
+    query: aiGatewayModelQuery(params),
+  });
+}
+
 export async function listAiGatewayModelsPage(
   params?: ListAiGatewayModelsPageParams,
   options?: InternalApiClientOptions
 ): Promise<AiGatewayModelsPage> {
-  const client = getInternalApiClient(options);
-  const response = await client.json<{
-    data: GatewayModelRow[];
-    pagination: AiGatewayModelsPage['pagination'];
-  }>('/api/v1/infrastructure/ai/models', {
-    cache: 'no-store',
-    query: {
-      enabled:
-        typeof params?.enabled === 'boolean'
-          ? String(params.enabled)
-          : undefined,
-      format: 'paginated',
-      ids: params?.ids?.join(','),
-      limit: params?.limit,
-      page: params?.page,
-      provider: params?.provider,
-      q: params?.q,
-      tag: params?.tag,
-      type: params?.type ?? 'language',
-    },
-  });
+  const response = await listAiGatewayModelRowsPage(params, options);
 
   return {
     data: response.data.map((row) => mapGatewayModel(row)),
@@ -91,28 +101,22 @@ export async function listAiGatewayModelsPage(
   };
 }
 
+export async function listAiGatewayModelRowsPage(
+  params?: ListAiGatewayModelsPageParams,
+  options?: InternalApiClientOptions
+): Promise<GatewayModelRowsPage> {
+  const client = getInternalApiClient(options);
+  return client.json<GatewayModelRowsPage>('/api/v1/infrastructure/ai/models', {
+    cache: 'no-store',
+    query: aiGatewayModelQuery(params, { paginated: true }),
+  });
+}
+
 export async function listAiGatewayModelsLegacy(
   params?: ListAiGatewayModelsParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  const rows = await client.json<GatewayModelRow[]>(
-    '/api/v1/infrastructure/ai/models',
-    {
-      cache: 'no-store',
-      query: {
-        enabled:
-          typeof params?.enabled === 'boolean'
-            ? String(params.enabled)
-            : undefined,
-        ids: params?.ids?.join(','),
-        provider: params?.provider,
-        q: params?.q,
-        tag: params?.tag,
-        type: params?.type ?? 'language',
-      },
-    }
-  );
+  const rows = await listAiGatewayModelRows(params, options);
 
   return rows.map((row) => mapGatewayModel(row));
 }

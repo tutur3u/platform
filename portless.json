@@ -40,6 +40,10 @@
       "name": "storefront.tuturuuu",
       "script": "dev:app"
     },
+    "apps/tanstack-web": {
+      "name": "tanstack.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/hive": {
       "name": "hive.tuturuuu",
       "script": "dev:app"

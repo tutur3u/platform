@@ -1,6 +1,6 @@
 'use client';
 
-import { Check } from '@tuturuuu/icons/lucide';
+import { Check } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';

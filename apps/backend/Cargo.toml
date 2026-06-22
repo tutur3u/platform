@@ -1,0 +1,41 @@
+[package]
+name = "tuturuuu-backend"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "backend"
+path = "src/main.rs"
+required-features = ["native"]
+
+[features]
+default = ["native"]
+native = ["dep:axum", "dep:reqwest", "dep:rustls", "dep:tokio"]
+worker = ["dep:worker"]
+reqwest = ["dep:reqwest"]
+rustls = ["dep:rustls"]
+
+[dependencies]
+axum = { version = "0.8.7", optional = true }
+base64 = "0.22.1"
+hmac = "0.13.0"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls-no-provider"], optional = true }
+rustls = { version = "0.23.40", default-features = false, features = ["ring"], optional = true }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+sha2 = "0.11.0"
+tokio = { version = "1.48.0", features = ["macros", "net", "rt-multi-thread", "signal"], optional = true }
+url = "2.5.8"
+worker = { version = "0.8.5", optional = true }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+# wasm-bindgen catch wrappers require the externref table in Worker bundles.
+strip = "debuginfo"

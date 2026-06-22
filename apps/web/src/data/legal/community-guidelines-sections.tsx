@@ -7,7 +7,7 @@ import {
   Mail,
   MessageCircle,
   ShieldAlert,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import type { LegalSection } from '@/components/legal/legal-types';
 
 export const communityGuidelinesSections: LegalSection[] = [

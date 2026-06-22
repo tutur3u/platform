@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-05-16'
+updatedAt: '2026-06-21'
 ---
 
 # Tuturuuu SDK
@@ -1281,16 +1281,35 @@ await new Promise(resolve => setTimeout(resolve, 1000));
 
 ## Changelog
 
-### v0.1.0 (2025-10-21)
+The package version is managed by Release Please, and the full, authoritative
+changelog is generated per release. For the complete history (currently shipping
+the `0.10.x` line), see the maintained changelog rather than this page:
 
-- Initial release
+<CardGroup cols={2}>
+<Card title="CHANGELOG.md" icon="github" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/CHANGELOG.md">
+  Full per-release changelog (source of truth)
+</Card>
+<Card title="npm" icon="npm" href="https://www.npmjs.com/package/tuturuuu">
+  Published versions and release tags
+</Card>
+</CardGroup>
+
+**Highlights since the initial release:**
+
 - Storage operations (list, upload, download, delete, folders, share, analytics)
 - Document operations (CRUD, search)
-- Comprehensive error handling
-- Full TypeScript support
-- Zod validation
+- `ttr` CLI with workspace, host switching, and session-based auth
+- Finance commands (wallets, transactions, transfers, tags, wallet checkpoints)
+- Calendar commands
+- External projects support and remote devbox tooling
+- Comprehensive error handling, full TypeScript types, and Zod validation
+
+<Note>
+  Do not treat any version number quoted in this page as exact — the SDK is on a
+  fast release cadence. Always check the linked changelog or npm for the current
+  version.
+</Note>
 
 ## License
 
 MIT
-```

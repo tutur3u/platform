@@ -174,6 +174,7 @@ interface BoardColumnProps {
   wsId: string;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
+  readOnly?: boolean;
 }
 
 export function BoardColumn({
@@ -200,6 +201,7 @@ export function BoardColumn({
   wsId,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
+  readOnly = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -210,7 +212,9 @@ export function BoardColumn({
   const isExternalCollapsed =
     isExternalStaging && column.is_external_collapsed === true;
   const listState = pagination[column.id];
-  const isInitialLoad = !listState || listState.isInitialLoad;
+  const isInitialLoad = readOnly
+    ? false
+    : !listState || listState.isInitialLoad;
   const [externalIncludeDocuments, setExternalIncludeDocuments] =
     useState(false);
   const [externalIncludeDoneClosed, setExternalIncludeDoneClosed] =
@@ -376,7 +380,7 @@ export function BoardColumn({
     isDragging,
   } = useSortable({
     id: column.id,
-    disabled: isExternalStaging,
+    disabled: readOnly || isExternalStaging,
     data: {
       type: 'Column',
       column: {
@@ -501,6 +505,8 @@ export function BoardColumn({
       <Card
         ref={composedRef}
         style={style}
+        data-kanban-column-id={column.id}
+        data-kanban-real-column={isExternalStaging ? undefined : 'true'}
         className={cn(
           'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dashed transition-all duration-200',
           'touch-none select-none overflow-hidden hover:shadow-md',
@@ -550,6 +556,8 @@ export function BoardColumn({
     <Card
       ref={composedRef}
       style={style}
+      data-kanban-column-id={column.id}
+      data-kanban-real-column={isExternalStaging ? undefined : 'true'}
       className={cn(
         'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200 last:snap-end',
         'touch-none select-none',
@@ -566,7 +574,7 @@ export function BoardColumn({
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
-        {!isExternalStaging && DragHandle}
+        {!readOnly && !isExternalStaging && DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
           <h3
@@ -577,9 +585,9 @@ export function BoardColumn({
                 : 'cursor-pointer hover:underline'
             )}
             onClick={() => {
-              if (!isExternalStaging) setIsEditOpen(true);
+              if (!readOnly && !isExternalStaging) setIsEditOpen(true);
             }}
-            title={isExternalStaging ? undefined : t('edit_list')}
+            title={readOnly || isExternalStaging ? undefined : t('edit_list')}
           >
             {translateListName(column.name)}
           </h3>
@@ -739,19 +747,21 @@ export function BoardColumn({
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
               ) : null}
-              <ListActions
-                listId={column.id}
-                listName={column.name}
-                listStatus={column.status}
-                listColor={column.color as SupportedColor}
-                tasks={tasks}
-                boardId={boardId}
-                wsId={wsId}
-                onUpdate={handleUpdate}
-                onSelectAll={handleSelectAll}
-                isEditOpen={isEditOpen}
-                onEditOpenChange={setIsEditOpen}
-              />
+              {!readOnly && (
+                <ListActions
+                  listId={column.id}
+                  listName={column.name}
+                  listStatus={column.status}
+                  listColor={column.color as SupportedColor}
+                  tasks={tasks}
+                  boardId={boardId}
+                  wsId={wsId}
+                  onUpdate={handleUpdate}
+                  onSelectAll={handleSelectAll}
+                  isEditOpen={isEditOpen}
+                  onEditOpenChange={setIsEditOpen}
+                />
+              )}
             </>
           )}
         </div>
@@ -783,10 +793,11 @@ export function BoardColumn({
           onLoadMore={handleLoadMore}
           hasMore={listState?.hasMore ?? false}
           isLoadingMore={listState?.isLoading ?? false}
+          readOnly={readOnly}
         />
       )}
 
-      {!isExternalStaging && (
+      {!readOnly && !isExternalStaging && (
         <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
           <Button
             variant="ghost"

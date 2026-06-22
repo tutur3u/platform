@@ -12,7 +12,7 @@ export const ci = {
   'docker-setup-check.yaml': true,
   'e2e-tests.yaml': true,
   'external-internal-packages.yaml': true,
-  'go-backend.yml': true,
+  'rust-backend.yml': true,
   'i18n-check.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,

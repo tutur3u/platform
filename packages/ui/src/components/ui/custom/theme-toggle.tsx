@@ -1,6 +1,6 @@
 'use client';
 
-import { Moon, Sun } from '@tuturuuu/icons';
+import { Moon, Sun } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTheme } from 'next-themes';

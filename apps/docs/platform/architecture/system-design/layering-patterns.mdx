@@ -1,7 +1,7 @@
 ---
 title: "Layering Patterns in Architecture"
 description: "Comprehensive comparison of N-tier, layer-based, and microservices architectural patterns in Tuturuuu"
-updatedAt: "2025-11-17"
+updatedAt: "2026-06-21"
 ---
 
 Understanding how to structure code within services is critical for maintainability and testability. This document compares traditional N-Tier architecture with modern layer-based patterns, and explains how layering works within microservices.
@@ -9,6 +9,27 @@ Understanding how to structure code within services is critical for maintainabil
 <Note>
 **Key Insight**: Layering is an **internal** concern (how code is organized within a service), while microservices is an **external** concern (how services are distributed). These patterns are complementary, not mutually exclusive.
 </Note>
+
+<Warning>
+**How to read this page.** The N-Tier, Hexagonal, Clean, and Onion sections
+below are **conceptual / educational** material that explains layering theory
+with illustrative TypeScript. Tuturuuu's apps do **not** ship a formal hexagonal
+directory layout (no `domain/`, `application/`, or `infrastructure/` folders).
+Each app is a conventional **Next.js App Router** app (`app/`, `components/`,
+`lib/`, `utils/`, `features/`) that talks to a shared Supabase project, with the
+newer backend logic moving into the Rust service in `apps/backend`. Treat the
+layered code samples as patterns to learn from, not as a map of the current
+codebase. The "Tuturuuu's Implementation" section near the end describes the
+**actual** layout.
+</Warning>
+
+<Info>
+**Active migration.** `apps/web` (Next.js, port `7803`) is being replaced by
+`apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
+Backend layering increasingly lives in the Rust service. See
+[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
+for the migration contract.
+</Info>
 
 <Info>
 For a comprehensive comparison of all architectural patterns with detailed pros and cons, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
@@ -351,8 +372,9 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
 export async function POST(request: Request) {
   const body = await request.json();
 
-  // Dependency injection - provide implementation
-  const repository = new SupabaseWorkspaceRepository(createClient());
+  // Dependency injection - provide implementation.
+  // Note: Tuturuuu's createClient() (@tuturuuu/supabase/next/server) is async.
+  const repository = new SupabaseWorkspaceRepository(await createClient());
   const service = new WorkspaceService(repository);
 
   const workspace = await service.createWorkspace(
@@ -450,17 +472,17 @@ graph TD
 
 **Key Rule**: Dependencies can only point inward. Inner circles know nothing about outer circles.
 
-**Example Structure:**
+**Example Structure** (illustrative — these paths are not present in the repo):
 
 ```typescript
 // ===== INNERMOST: Enterprise Business Rules =====
-// packages/types/src/domain/workspace.ts
+// Illustrative: packages/types/src/domain/workspace.ts
 export class Workspace {
   // Pure domain entity - no dependencies
 }
 
 // ===== APPLICATION LAYER: Use Cases =====
-// apps/web/src/application/use-cases/create-workspace.ts
+// Illustrative: src/application/use-cases/create-workspace.ts
 export class CreateWorkspaceUseCase {
   constructor(
     private readonly repository: WorkspaceRepository,
@@ -477,7 +499,7 @@ export class CreateWorkspaceUseCase {
 }
 
 // ===== INTERFACE ADAPTERS: Controllers =====
-// apps/web/src/app/api/workspaces/create/route.ts
+// Illustrative: src/app/api/workspaces/create/route.ts
 export async function POST(request: Request) {
   const useCase = new CreateWorkspaceUseCase(repository, eventPublisher);
   const workspace = await useCase.execute(command);
@@ -575,13 +597,19 @@ graph TB
     style Note fill:#ffeb3b,stroke:#f57f17,stroke-width:2px
 ```
 
-### Best Practice: Hexagonal Architecture Within Microservices
+### Illustrative: Hexagonal Architecture Within a Service
 
-In Tuturuuu, each microservice (app) uses **Hexagonal Architecture internally**:
+<Warning>
+The directory tree below is an **illustrative target** showing how a service
+*could* be organized with strict hexagonal layers. It is **not** the current
+Tuturuuu layout — `apps/web/src` and `apps/finance/src` do not contain
+`domain/`, `application/`, or `infrastructure/` folders. See
+[Tuturuuu's Implementation](#tuturuuus-implementation) for the real structure.
+</Warning>
 
-```typescript
-// apps/web/ (Microservice for main platform)
-apps/web/src/
+```text
+# Aspirational hexagonal layout for a single service (not the current repo)
+src/
 ├── domain/                    # Domain Core (Pure business logic)
 │   ├── models/
 │   │   └── workspace.ts       # Entities, Value Objects
@@ -594,36 +622,22 @@ apps/web/src/
 │   ├── repositories/
 │   │   └── supabase-workspace-repository.ts
 │   └── events/
-│       └── trigger-event-publisher.ts
+│       └── trigger-publisher.ts
 └── app/                       # Presentation (API Endpoints)
     └── api/workspaces/create/route.ts
-
-// apps/finance/ (Separate microservice for finance domain)
-apps/finance/src/
-├── domain/                    # Finance-specific domain
-│   ├── models/
-│   │   └── transaction.ts
-│   └── services/
-│       └── transaction-service.ts
-├── application/
-│   └── use-cases/
-│       └── process-payment.ts
-├── infrastructure/
-│   ├── repositories/
-│   │   └── supabase-transaction-repository.ts
-│   └── gateways/
-│       └── payment-gateway.ts
-└── app/
-    └── api/transactions/route.ts
 ```
 
-**Benefits of This Approach:**
+**Why a team might adopt this approach:**
 
-1. **Service Isolation**: Each microservice is independently deployable
+1. **Service Isolation**: Each deployable unit stays independently shippable
 2. **Internal Quality**: Each service maintains clean internal architecture
 3. **Technology Freedom**: Each service can use different infrastructure
 4. **Testability**: Domain logic in each service is pure and testable
 5. **Maintainability**: Clear structure within each service
+
+In practice, Tuturuuu keeps most code in conventional Next.js folders and pushes
+heavier backend logic into the Rust service (`apps/backend`) rather than
+introducing a formal hexagonal folder hierarchy inside each frontend app.
 
 ---
 
@@ -654,10 +668,11 @@ Many teams make the mistake of thinking: "We have microservices, so we don't nee
 - Business Rules (validation, constraints)
 - Domain Events (things that happened)
 
-**Example - Complete Domain Layer:**
+**Example - Complete Domain Layer** (illustrative path; the repo does not
+contain a `src/domain/` folder):
 
 ```typescript
-// apps/web/src/domain/models/workspace.ts
+// Illustrative: src/domain/models/workspace.ts
 // Pure business entity - no infrastructure dependencies
 
 export class Workspace {
@@ -731,7 +746,7 @@ export class Workspace {
   get memberLimit(): number { return this._memberLimit; }
 }
 
-// apps/web/src/domain/value-objects/email.ts
+// Illustrative: src/domain/value-objects/email.ts
 // Value Object - immutable, validated business concept
 export class Email {
   private constructor(private readonly value: string) {}
@@ -827,14 +842,14 @@ describe('Workspace Domain', () => {
 **Example - Complete Application Layer:**
 
 ```typescript
-// apps/web/src/application/commands/create-workspace.command.ts
+// Illustrative: src/application/commands/create-workspace.command.ts
 export interface CreateWorkspaceCommand {
   name: string;
   ownerId: string;
   memberLimit?: number;
 }
 
-// apps/web/src/application/use-cases/create-workspace.usecase.ts
+// Illustrative: src/application/use-cases/create-workspace.usecase.ts
 import { Workspace } from '@/domain/models/workspace';
 import { WorkspaceRepository } from '@/domain/interfaces/workspace-repository';
 import { EventPublisher } from '@/domain/interfaces/event-publisher';
@@ -876,7 +891,7 @@ export class CreateWorkspaceUseCase {
   }
 }
 
-// apps/web/src/application/use-cases/archive-workspace.usecase.ts
+// Illustrative: src/application/use-cases/archive-workspace.usecase.ts
 export class ArchiveWorkspaceUseCase {
   constructor(
     private readonly repository: WorkspaceRepository,
@@ -979,7 +994,7 @@ describe('CreateWorkspaceUseCase', () => {
 **Example - Complete Infrastructure Layer:**
 
 ```typescript
-// apps/web/src/infrastructure/repositories/supabase-workspace.repository.ts
+// Illustrative: src/infrastructure/repositories/supabase-workspace.repository.ts
 import { Workspace } from '@/domain/models/workspace';
 import { WorkspaceRepository } from '@/domain/interfaces/workspace-repository';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -1064,28 +1079,54 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
   }
 }
 
-// apps/web/src/infrastructure/events/trigger-event-publisher.ts
+// Illustrative: src/infrastructure/events/trigger-publisher.ts
+//
+// Tuturuuu uses Trigger.dev v4. Background work is modelled as `task()`
+// definitions (in packages/trigger/src) that you enqueue with
+// `myTask.trigger(payload)` — there is no v2-style `trigger.event(...)`,
+// `client.defineJob`, or `eventTrigger`. The real tasks live in
+// packages/trigger/src (e.g. scheduleTask, unifiedScheduleTask).
 import { EventPublisher } from '@/domain/interfaces/event-publisher';
 import { DomainEvent } from '@/domain/events/domain-event';
+import { workspaceCreatedTask } from '@tuturuuu/trigger';
 
 export class TriggerEventPublisher implements EventPublisher {
-  constructor(private readonly trigger: typeof import('@/lib/trigger')) {}
-
   async publish(event: DomainEvent): Promise<void> {
-    await this.trigger.event({
-      name: event.eventName,
-      payload: {
-        ...event.payload,
-        eventId: event.eventId,
-        occurredAt: event.occurredAt.toISOString()
-      }
+    // Enqueue a Trigger.dev v4 task run for the event.
+    await workspaceCreatedTask.trigger({
+      eventName: event.eventName,
+      eventId: event.eventId,
+      occurredAt: event.occurredAt.toISOString(),
+      ...event.payload,
     });
   }
 
   async publishMany(events: DomainEvent[]): Promise<void> {
-    await Promise.all(events.map(event => this.publish(event)));
+    await Promise.all(events.map((event) => this.publish(event)));
   }
 }
+```
+
+For reference, the matching Trigger.dev v4 task definition looks like the real
+tasks in `packages/trigger/src`:
+
+```typescript
+// packages/trigger/src/<your-task>.ts (Trigger.dev v4 task() API)
+import { task } from '@trigger.dev/sdk/v3';
+
+export const workspaceCreatedTask = task({
+  id: 'workspace-created',
+  queue: { concurrencyLimit: 10 },
+  run: async (payload: {
+    eventName: string;
+    eventId: string;
+    occurredAt: string;
+    [key: string]: unknown;
+  }) => {
+    // ...react to the event (notifications, projections, etc.)
+    return { ok: true };
+  },
+});
 ```
 
 #### Layer 4: Presentation Layer (API/UI)
@@ -1102,14 +1143,14 @@ export class TriggerEventPublisher implements EventPublisher {
 **Example - Complete Presentation Layer:**
 
 ```typescript
-// apps/web/src/app/api/workspaces/create/route.ts
+// Illustrative: src/app/api/workspaces/create/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CreateWorkspaceUseCase } from '@/application/use-cases/create-workspace.usecase';
 import { SupabaseWorkspaceRepository } from '@/infrastructure/repositories/supabase-workspace.repository';
-import { TriggerEventPublisher } from '@/infrastructure/events/trigger-event-publisher';
-import { createClient } from '@/lib/supabase/server';
-import { trigger } from '@/lib/trigger';
+import { TriggerEventPublisher } from '@/infrastructure/events/trigger-publisher';
+// In Tuturuuu, createClient() from @tuturuuu/supabase/next/server is ASYNC.
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 // Request validation schema
 const CreateWorkspaceSchema = z.object({
@@ -1119,8 +1160,8 @@ const CreateWorkspaceSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authentication
-    const supabase = createClient();
+    // 1. Authentication (await the async client factory)
+    const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
@@ -1143,7 +1184,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Dependency injection - wire up layers
     const repository = new SupabaseWorkspaceRepository(supabase);
-    const eventPublisher = new TriggerEventPublisher(trigger);
+    const eventPublisher = new TriggerEventPublisher();
     const logger = console; // Or proper logger
 
     const useCase = new CreateWorkspaceUseCase(
@@ -1281,18 +1322,20 @@ graph TB
 
 ### Deployment Considerations
 
-Each microservice deploys independently, but maintains consistent internal structure:
+Each app deploys independently. Tuturuuu does **not** expose `bun deploy:web` /
+`bun deploy:finance` / `bun deploy:calendar` scripts — deployment is driven by
+CI/CD (GitHub Actions) and Docker images, and each app's `package.json` ships
+conventional `dev`, `build`, `start`, and `test` scripts (for example
+`apps/web` builds with `next build --turbopack`). Verify the current scripts in
+each app's `package.json` before quoting commands.
 
 ```bash
-# Microservice deployment
-$ bun deploy:web        # Deploy web service
-$ bun deploy:finance    # Deploy finance service
-$ bun deploy:calendar   # Deploy calendar service
+# Build / run a single app locally (real scripts in apps/web/package.json)
+$ cd apps/web && bun run build   # next build --turbopack
+$ cd apps/web && bun start       # next start on port 7803
 
-# Each service has:
-# - Same layer structure (domain, application, infrastructure, presentation)
-# - Different business logic (workspace vs transaction vs event)
-# - Potentially different technologies (Supabase vs Drizzle vs Prisma)
+# Each app is a conventional Next.js App Router app sharing one Supabase
+# project; heavier backend logic increasingly lives in apps/backend (Rust).
 ```
 
 ### Key Takeaways
@@ -1343,11 +1386,25 @@ $ bun deploy:calendar   # Deploy calendar service
 - ✅ Can handle distributed system complexity
 - ✅ Have DevOps maturity for service orchestration
 
-### Tuturuuu's Choice: Hexagonal Within Microservices
+### Tuturuuu's Pragmatic Choice
 
-We combine both patterns to get the best of both worlds:
-- **Microservices** for organizational agility and independent deployment
-- **Hexagonal Architecture** within services for clean, testable code
+Tuturuuu favors pragmatism over textbook purity:
+
+- **Multiple deployable apps** (`apps/web`, `apps/finance`, `apps/calendar`,
+  the Rust `apps/backend`, ...) for organizational agility and independent
+  deployment.
+- **Conventional Next.js App Router structure** inside each frontend app
+  (`app/`, `components/`, `lib/`, `utils/`, `features/`) rather than a formal
+  hexagonal `domain/application/infrastructure` hierarchy. Shared logic lives in
+  `packages/*`; cross-app data access goes through `packages/internal-api`
+  helpers and REST `/api/v1` routes.
+- **Heavier backend logic moving into the Rust service** (`apps/backend`),
+  where layering and typed domain modules increasingly live as part of the
+  [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration).
+
+The hexagonal samples above remain useful for *reasoning about* boundaries and
+testability, even though the repository does not enforce that exact folder
+shape.
 
 ---
 
@@ -1369,7 +1426,16 @@ graph TD
     style Step3 fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
 ```
 
-**Tuturuuu started with Step 3** to avoid future rewrites and support rapid, safe evolution.
+**Where Tuturuuu sits today.** Rather than formally adopting "Step 3"
+(microservices with strict hexagonal layering), Tuturuuu runs several
+conventional Next.js App Router apps backed by a shared Supabase project, with
+shared logic in `packages/*` and an emerging Rust backend (`apps/backend`). The
+practical trajectory is toward the TanStack Start frontend
+(`apps/tanstack-web`) plus the Rust backend rather than toward per-app
+hexagonal folder hierarchies — see the
+[TanStack + Rust migration](/platform/architecture/tanstack-rust-migration).
+Treat the steps above as a conceptual maturity model, not a literal description
+of the repository.
 
 ---
 
@@ -1423,8 +1489,8 @@ export async function POST(request: Request) {
   // Database
   const { data } = await supabase.from('workspaces').insert(body);
 
-  // Events
-  await trigger.event({ name: 'workspace.created', payload: data });
+  // Events (Trigger.dev v4: enqueue a task run, not v2 trigger.event(...))
+  await workspaceCreatedTask.trigger({ ...data });
 
   return Response.json(data);
 }
@@ -1435,96 +1501,100 @@ export async function POST(request: Request) {
 
 ## Tuturuuu's Implementation
 
-### Project Structure Reflects Layering + Microservices
+### Actual Project Structure
 
-```
-platform/
-├── apps/                          # Microservices (External)
-│   ├── web/                       # Main platform service
+This is the **real** repository layout (verified against the codebase). Apps are
+conventional Next.js App Router apps — there are no `domain/`, `application/`, or
+`infrastructure/` folders.
+
+```text
+tuturuuu/
+├── apps/                          # Independently deployable apps
+│   ├── web/                       # Main platform (Next.js, port 7803)
 │   │   └── src/
-│   │       ├── domain/           # Hexagonal layers (Internal)
-│   │       ├── application/
-│   │       ├── infrastructure/
-│   │       └── app/
-│   ├── finance/                   # Finance service
-│   │   └── src/
-│   │       ├── domain/           # Hexagonal layers (Internal)
-│   │       ├── application/
-│   │       ├── infrastructure/
-│   │       └── app/
-│   └── calendar/                  # Calendar service
-│       └── src/
-│           ├── domain/           # Hexagonal layers (Internal)
-│           ├── application/
-│           ├── infrastructure/
-│           └── app/
-└── packages/                      # Shared libraries
-    ├── types/                     # Shared domain types
+│   │       ├── app/               # App Router routes + /api endpoints
+│   │       ├── components/
+│   │       ├── features/          # Feature modules (forms, reports, ...)
+│   │       ├── hooks/
+│   │       ├── lib/
+│   │       └── utils/
+│   ├── finance/                   # Finance app (Next.js)
+│   │   └── src/                   # app/, components/, lib/, utils/, ...
+│   ├── calendar/                  # Calendar app (Next.js)
+│   │   └── src/                   # app/, components/, lib/, constants/, ...
+│   ├── tanstack-web/              # TanStack Start replacement for apps/web
+│   └── backend/                   # Rust backend (port 7820)
+│       └── src/                   # aurora.rs, inventory.rs, lib.rs, ...
+└── packages/                      # Shared libraries (workspace:*)
+    ├── types/                     # Shared types (DB types in @tuturuuu/types/db)
     ├── ui/                        # Shared UI components
-    └── supabase/                  # Shared database client
+    ├── supabase/                  # Shared Supabase client factories
+    ├── internal-api/              # Cross-app data access helpers
+    └── trigger/                   # Trigger.dev v4 task() definitions
 ```
 
-### Code Example: Complete Flow
+<Note>
+**Where backend layering lives.** Newer/heavier backend logic is implemented in
+the Rust service (`apps/backend/src`, e.g. `aurora.rs`, `inventory.rs`,
+`onboarding_progress.rs`) rather than as a layered TypeScript hierarchy inside
+each frontend app. Frontends reach shared app data through
+`packages/internal-api` and REST `/api/v1` routes. (A repo guard,
+`check-tanstack-api-access`, forbids `apps/tanstack-web/src` from calling
+`/trpc` — the tRPC surface in `apps/web/src/trpc` is a stub, not the product
+data path.)
+</Note>
+
+### How the Real Flow Maps to These Layers
+
+You can still reason about a real Tuturuuu request in layered terms, even though
+the folders are flat:
+
+- **Presentation** — an App Router route handler in `apps/web/src/app/api/...`
+  (or a TanStack Start route in `apps/tanstack-web`).
+- **Application / orchestration** — helpers in `lib/`, `features/`,
+  `packages/internal-api`, or background `task()` runs in `packages/trigger`.
+- **Domain rules** — validation and business logic colocated with the feature
+  (or enforced in the Rust backend).
+- **Infrastructure** — the shared Supabase client from
+  `@tuturuuu/supabase/next/server` and the Rust backend's data access.
 
 ```typescript
-// ===== DOMAIN LAYER (Pure Business Logic) =====
-// apps/web/src/domain/models/workspace.ts
-export class Workspace {
-  static create(name: string, ownerId: string): Workspace {
-    if (name.length < 3) throw new DomainError('Name too short');
-    return new Workspace(generateId(), name, ownerId, true, new Date());
-  }
-}
+// Real shape: an App Router API route in apps/web/src/app/api/...
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { workspaceCreatedTask } from '@tuturuuu/trigger';
 
-// apps/web/src/domain/interfaces/workspace-repository.ts
-export interface WorkspaceRepository {
-  save(workspace: Workspace): Promise<void>;
-}
-
-// ===== APPLICATION LAYER (Use Cases) =====
-// apps/web/src/application/use-cases/create-workspace.ts
-export class CreateWorkspaceUseCase {
-  constructor(
-    private readonly repository: WorkspaceRepository,
-    private readonly eventPublisher: EventPublisher
-  ) {}
-
-  async execute(command: CreateWorkspaceCommand): Promise<Workspace> {
-    const workspace = Workspace.create(command.name, command.ownerId);
-    await this.repository.save(workspace);
-    await this.eventPublisher.publish(new WorkspaceCreatedEvent(workspace));
-    return workspace;
-  }
-}
-
-// ===== INFRASTRUCTURE LAYER (Adapters) =====
-// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
-export class SupabaseWorkspaceRepository implements WorkspaceRepository {
-  async save(workspace: Workspace): Promise<void> {
-    await this.supabase.from('workspaces').upsert(this.toDatabase(workspace));
-  }
-}
-
-// ===== PRESENTATION LAYER (API) =====
-// apps/web/src/app/api/workspaces/create/route.ts
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // createClient() is ASYNC in Tuturuuu — await it.
+  const supabase = await createClient();
   const body = await request.json();
 
-  const useCase = new CreateWorkspaceUseCase(
-    new SupabaseWorkspaceRepository(createClient()),
-    new TriggerEventPublisher(trigger)
-  );
+  // Presentation-level validation
+  if (typeof body.name !== 'string' || body.name.length < 3) {
+    return NextResponse.json({ error: 'Name too short' }, { status: 400 });
+  }
 
-  const workspace = await useCase.execute({
-    name: body.name,
-    ownerId: session.userId
-  });
+  // Infrastructure: shared Supabase project
+  const { data, error } = await supabase
+    .from('workspaces')
+    .insert({ name: body.name, owner_id: body.ownerId })
+    .select()
+    .single();
 
-  return Response.json({ workspace });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Background work via Trigger.dev v4 task()
+  await workspaceCreatedTask.trigger({ workspaceId: data.id });
+
+  return NextResponse.json({ workspace: data }, { status: 201 });
 }
 ```
 
-Each layer has a clear responsibility, dependencies point inward, and the system is both testable and maintainable.
+The layered patterns earlier in this page are a lens for keeping responsibilities
+clear; the snippet above shows what that looks like in the conventional
+structure Tuturuuu actually ships.
 
 ---
 

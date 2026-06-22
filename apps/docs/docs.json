@@ -49,6 +49,8 @@
                 "group": "Architecture",
                 "pages": [
                   "platform/architecture/routing",
+                  "platform/architecture/tanstack-rust-migration",
+                  "platform/architecture/tanstack-rust-migration-plan",
                   "platform/architecture/data-fetching",
                   "platform/architecture/effect",
                   "platform/architecture/api-routes",
@@ -251,6 +253,7 @@
                   "build/devops/overview",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
+                  "build/devops/tanstack-rust-cutover-runbook",
                   "build/devops/chat-realtime-runbook",
                   "build/devops/hive-realtime-runbook",
                   "build/devops/log-drain-observability",
@@ -361,7 +364,10 @@
               },
               {
                 "group": "API Reference",
-                "pages": ["reference/api-reference/endpoint/generate"]
+                "pages": [
+                  "reference/api-reference/introduction",
+                  "reference/api-reference/endpoint/generate"
+                ]
               }
             ]
           }

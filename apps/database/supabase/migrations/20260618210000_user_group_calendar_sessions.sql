@@ -359,8 +359,11 @@ select
   legacy_session.session_date,
   coalesce(workspace_group.created_at, now())
 from public.workspace_user_groups as workspace_group
-cross join lateral unnest(coalesce(workspace_group.sessions, array[]::date[]))
-  as legacy_session(session_date)
+cross join lateral (
+  select distinct legacy_date
+  from unnest(coalesce(workspace_group.sessions, array[]::date[]))
+    as legacy_date
+) as legacy_session(session_date)
 on conflict (group_id, source, source_legacy_date)
   where source_legacy_date is not null
 do update set

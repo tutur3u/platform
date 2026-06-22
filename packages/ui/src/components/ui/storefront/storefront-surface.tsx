@@ -1,19 +1,26 @@
 'use client';
 
-import { ArrowLeft, ShoppingCart } from '@tuturuuu/icons';
+import { ArrowLeft } from '@tuturuuu/icons';
 import type {
   InventoryStorefront,
   InventoryStorefrontListing,
-  InventoryStorefrontSection,
 } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../dialog';
+import { StorefrontCartPopover } from './cart-popover';
 import { StorefrontCartSummary } from './cart-summary';
 import { StorefrontCheckoutOverlay } from './checkout-overlay';
 import { StorefrontEmptyListings } from './empty-listings';
 import { StorefrontHeroPanel } from './hero-panel';
-import { StorefrontImagePanel } from './image-panel';
 import { StorefrontListingCard } from './listing-card';
+import { StorefrontMerchSections } from './merch-sections';
 import { StorefrontProductDetail } from './product-detail';
 import { StorefrontProductDialog } from './product-dialog';
 import type {
@@ -25,7 +32,6 @@ import type {
 import { mergeStorefrontSurfaceLabels } from './types';
 import {
   getAccentStyle,
-  getSafeStorefrontHttpUrl,
   getStorefrontLinePrice,
   getStorefrontListingLimit,
   getStorefrontVariantLimit,
@@ -39,6 +45,7 @@ export function StorefrontSurface({
   buyerDefaults,
   cartLines = [],
   cartHref,
+  checkoutOpen,
   checkoutHref,
   className,
   compactLayout = false,
@@ -53,6 +60,8 @@ export function StorefrontSurface({
   mode,
   notice,
   onBuyNow,
+  onCheckoutOpen,
+  onCheckoutOpenChange,
   onCheckoutSubmit,
   onDecrement,
   onDetailListingChange,
@@ -65,6 +74,7 @@ export function StorefrontSurface({
   buyerDefaults?: StorefrontBuyerDefaults;
   cartLines?: StorefrontCartLine[];
   cartHref?: string;
+  checkoutOpen?: boolean;
   checkoutHref?: string;
   className?: string;
   compactLayout?: boolean;
@@ -79,6 +89,8 @@ export function StorefrontSurface({
   mode: StorefrontSurfaceMode;
   notice?: ReactNode;
   onBuyNow?: (listingId: string, variantId?: string | null) => void;
+  onCheckoutOpen?: () => void;
+  onCheckoutOpenChange?: (open: boolean) => void;
   onCheckoutSubmit?: (formData: FormData) => void;
   onDecrement?: (listingId: string, variantId?: string | null) => void;
   onDetailListingChange?: (listingId: string | null) => void;
@@ -93,6 +105,7 @@ export function StorefrontSurface({
   storefrontHref?: string;
 }) {
   const labels = mergeStorefrontSurfaceLabels(labelOverrides);
+  const [isCartPopoverOpen, setIsCartPopoverOpen] = useState(false);
   const accentColor = sanitizeStorefrontAccentColor(storefront.accentColor);
   const radius = storefrontRadiusClasses[storefront.cornerStyle];
   const resolveVariant = (
@@ -135,12 +148,15 @@ export function StorefrontSurface({
       ? listings.filter((listing) => listing.id === selectedListingId)
       : listings;
   const isCheckout = mode === 'checkout';
+  const isCheckoutDialogOpen = checkoutOpen ?? isCheckout;
   const isPreview = mode === 'preview';
-  const showCartListings = mode === 'cart' || isCheckout;
-  const listingRows = showCartListings
-    ? cartEntries.map(({ listing }) => listing)
-    : visibleListings;
+  const isCartPage = mode === 'cart';
+  const listingRows = visibleListings;
   const currency = storefront.currency ?? 'USD';
+  const handleCheckoutOpen = () => {
+    setIsCartPopoverOpen(false);
+    onCheckoutOpen?.();
+  };
 
   const cartSummary = (
     <StorefrontCartSummary
@@ -148,36 +164,53 @@ export function StorefrontSurface({
       cartEntries={checkoutEntries}
       checkoutHref={checkoutHref}
       currency={currency}
-      isCheckout={isCheckout}
+      isCheckout={false}
       isPreview={isPreview}
       isSubmitting={isSubmitting}
       labels={labels}
+      onCheckoutOpen={handleCheckoutOpen}
       onCheckoutSubmit={onCheckoutSubmit}
       onInstantCheckout={mode === 'cart' ? onInstantCheckout : undefined}
       radius={radius}
       storefront={storefront}
       total={total}
+      variant="panel"
     />
   );
-  const cartControlClassName = cn(
-    'inline-flex h-11 min-w-14 shrink-0 items-center justify-center gap-2 border bg-card px-3 font-semibold text-sm tabular-nums transition hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-    radius
+  const cartPopoverSummary = (
+    <StorefrontCartSummary
+      buyerDefaults={buyerDefaults}
+      cartEntries={checkoutEntries}
+      checkoutHref={checkoutHref}
+      currency={currency}
+      isPreview={isPreview}
+      isSubmitting={isSubmitting}
+      labels={labels}
+      onCheckoutOpen={handleCheckoutOpen}
+      onCheckoutSubmit={onCheckoutSubmit}
+      radius={radius}
+      storefront={storefront}
+      total={total}
+      variant="popover"
+    />
   );
-  const cartControlStyle =
-    cartQuantity > 0
-      ? {
-          borderColor: 'var(--storefront-accent, var(--primary))',
-          color: 'var(--storefront-accent, var(--primary))',
-        }
-      : undefined;
-  const cartControlContent = (
-    <>
-      <ShoppingCart aria-hidden className="size-5 shrink-0" />
-      <span className="sr-only">{labels.cart}: </span>
-      <span className="min-w-4 text-center">{cartQuantity}</span>
-    </>
+  const checkoutDialogSummary = (
+    <StorefrontCartSummary
+      buyerDefaults={buyerDefaults}
+      cartEntries={checkoutEntries}
+      checkoutHref={checkoutHref}
+      currency={currency}
+      isCheckout
+      isPreview={isPreview}
+      isSubmitting={isSubmitting}
+      labels={labels}
+      onCheckoutSubmit={onCheckoutSubmit}
+      radius={radius}
+      storefront={storefront}
+      total={total}
+      variant="checkout"
+    />
   );
-
   return (
     <main
       className={cn(
@@ -187,13 +220,6 @@ export function StorefrontSurface({
       )}
       style={getAccentStyle(accentColor)}
     >
-      {/* Accent strip — makes the storefront's accent color immediately visible. */}
-      <div
-        className="h-1 w-full"
-        style={{
-          backgroundColor: 'var(--storefront-accent, var(--primary))',
-        }}
-      />
       {notice ? (
         <div className="border-border border-b bg-muted/35 px-4 py-2 text-center text-muted-foreground text-sm">
           {notice}
@@ -206,7 +232,7 @@ export function StorefrontSurface({
             <h1 className="truncate font-semibold text-xl">
               {storefrontHref ? (
                 <a
-                  className="block truncate rounded-sm transition hover:text-[var(--storefront-accent,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="block truncate rounded-sm transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                   href={storefrontHref}
                   title={storefront.name}
                 >
@@ -224,47 +250,28 @@ export function StorefrontSurface({
           </div>
           <div className="flex items-center gap-2">
             {headerActions}
-            {cartHref ? (
-              <a
-                aria-label={`${labels.cart}: ${cartQuantity}`}
-                className={cartControlClassName}
-                href={cartHref}
-                style={cartControlStyle}
-              >
-                {cartControlContent}
-              </a>
-            ) : (
-              <span className={cartControlClassName} style={cartControlStyle}>
-                {cartControlContent}
-              </span>
-            )}
+            <StorefrontCartPopover
+              cartQuantity={cartQuantity}
+              labels={labels}
+              onOpenChange={setIsCartPopoverOpen}
+              open={isCartPopoverOpen}
+              radius={radius}
+            >
+              {cartPopoverSummary}
+            </StorefrontCartPopover>
           </div>
         </div>
       </header>
 
-      {isCheckout ? (
-        <section className="mx-auto w-full max-w-xl px-4 py-8">
-          {cartHref ? (
-            <a
-              className="mb-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition hover:text-foreground"
-              href={cartHref}
-            >
-              <ArrowLeft aria-hidden className="size-4" />
-              {labels.cart}
-            </a>
-          ) : null}
-          <h2 className="mb-4 font-semibold text-2xl tracking-tight">
-            {labels.checkout}
-          </h2>
-          {cartSummary}
-        </section>
-      ) : (
-        <section
-          className={cn(
-            'mx-auto grid max-w-7xl gap-4 px-4 py-5',
-            compactLayout ? 'grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_340px]'
-          )}
-        >
+      <section
+        className={cn(
+          'mx-auto max-w-7xl px-4 py-5',
+          compactLayout ? 'max-w-5xl' : null
+        )}
+      >
+        {isCartPage ? (
+          <div className="mx-auto max-w-2xl">{cartSummary}</div>
+        ) : (
           <div className="min-w-0">
             {isProductDetail && selectedListing ? (
               <>
@@ -323,39 +330,11 @@ export function StorefrontSurface({
                   )}
                 >
                   {listingRows.length === 0 ? (
-                    showCartListings ? (
-                      <div
-                        className={cn(
-                          'col-span-full grid min-h-56 place-items-center border border-dashed bg-muted/25 p-6 text-center',
-                          radius
-                        )}
-                      >
-                        <div className="max-w-sm">
-                          <ShoppingCart
-                            aria-hidden
-                            className="mx-auto size-8 text-muted-foreground"
-                          />
-                          <p className="mt-3 font-semibold">
-                            {labels.emptyCart}
-                          </p>
-                          {storefrontHref ? (
-                            <a
-                              className="mt-4 inline-flex items-center gap-1.5 font-medium text-[var(--storefront-accent,var(--primary))] text-sm hover:underline"
-                              href={storefrontHref}
-                            >
-                              <ArrowLeft aria-hidden className="size-4" />
-                              {labels.browse}
-                            </a>
-                          ) : null}
-                        </div>
-                      </div>
-                    ) : (
-                      <StorefrontEmptyListings
-                        action={emptyAction}
-                        labels={labels}
-                        radius={radius}
-                      />
-                    )
+                    <StorefrontEmptyListings
+                      action={emptyAction}
+                      labels={labels}
+                      radius={radius}
+                    />
                   ) : (
                     listingRows.map((listing) => {
                       const line = cartLines.find(
@@ -390,10 +369,8 @@ export function StorefrontSurface({
               </>
             )}
           </div>
-
-          {cartSummary}
-        </section>
-      )}
+        )}
+      </section>
 
       <StorefrontProductDialog
         cartHref={cartHref}
@@ -413,66 +390,24 @@ export function StorefrontSurface({
         surfaceClassName={storefrontSurfaceClasses[storefront.surfaceStyle]}
       />
 
+      <Dialog
+        onOpenChange={(open) => onCheckoutOpenChange?.(open)}
+        open={isCheckoutDialogOpen}
+      >
+        <DialogContent className="grid max-h-[92dvh] max-w-[min(42rem,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden border-border/60 p-0 shadow-2xl sm:rounded-2xl">
+          <DialogHeader className="px-5 pt-5 pb-2 text-left sm:px-6">
+            <DialogTitle>{labels.checkout}</DialogTitle>
+            <DialogDescription>{labels.reservedCopy}</DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 overflow-y-auto px-5 pt-3 pb-5 sm:px-6">
+            {checkoutDialogSummary}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isSubmitting || isRedirecting ? (
         <StorefrontCheckoutOverlay label={labels.redirectingToCheckout} />
       ) : null}
     </main>
-  );
-}
-
-function StorefrontMerchSections({
-  radius,
-  sections,
-}: {
-  radius: string;
-  sections: InventoryStorefrontSection[];
-}) {
-  const visibleSections = sections
-    .filter((section) => section.status === 'published')
-    .filter((section) => section.sectionType !== 'cover')
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-
-  if (visibleSections.length === 0) return null;
-
-  return (
-    <div className="mt-4 grid gap-3">
-      {visibleSections.map((section) => {
-        const sectionHref = getSafeStorefrontHttpUrl(section.href);
-
-        return (
-          <section
-            className={cn(
-              'grid overflow-hidden border border-border bg-card md:grid-cols-[minmax(0,1fr)_280px]',
-              radius
-            )}
-            key={section.id}
-          >
-            <div className="flex min-w-0 flex-col justify-center gap-2 p-4">
-              {section.title ? (
-                <h2 className="font-semibold text-lg">{section.title}</h2>
-              ) : null}
-              {section.description ? (
-                <p className="text-muted-foreground text-sm leading-6">
-                  {section.description}
-                </p>
-              ) : null}
-              {sectionHref ? (
-                <a
-                  className="mt-1 w-fit font-medium text-sm underline-offset-4 hover:underline"
-                  href={sectionHref}
-                >
-                  {sectionHref.replace(/^https?:\/\//u, '')}
-                </a>
-              ) : null}
-            </div>
-            <StorefrontImagePanel
-              className="min-h-36 md:min-h-full"
-              imageUrl={section.imageUrl}
-              label={section.title ?? 'Storefront section'}
-            />
-          </section>
-        );
-      })}
-    </div>
   );
 }

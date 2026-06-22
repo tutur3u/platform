@@ -21,12 +21,12 @@ The main [WorkspaceWrapper documentation](/platform/components/workspace-wrapper
 ```tsx
 // Basic server component with WorkspaceWrapper
 export default async function MyPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
+    <WorkspaceWrapper params={params}>
       {({ workspace, wsId }) => (
         <div>{workspace.name}</div>
       )}
@@ -75,10 +75,10 @@ export async function GET(
 
 ```tsx
 // Proper error handling in components
-export default async function MyPage({ searchParams }) {
+export default async function MyPage({ params }) {
   return (
     <WorkspaceWrapper 
-      searchParams={searchParams}
+      params={params}
       fallback={<ErrorBoundary />}
     >
       {({ workspace, wsId }) => {
@@ -97,10 +97,10 @@ export default async function MyPage({ searchParams }) {
 
 ```tsx
 // Proper loading state handling
-export default async function MyPage({ searchParams }) {
+export default async function MyPage({ params }) {
   return (
     <WorkspaceWrapper 
-      searchParams={searchParams}
+      params={params}
       fallback={<LoadingSkeleton />}
     >
       {({ workspace, wsId }) => (
@@ -118,7 +118,7 @@ export default async function MyPage({ searchParams }) {
 ```tsx
 // Proper TypeScript usage
 interface PageProps {
-  searchParams: Promise<{ wsId: string }>;
+  params: Promise<{ wsId: string }>;
 }
 
 interface WorkspaceData {
@@ -126,9 +126,9 @@ interface WorkspaceData {
   wsId: string;
 }
 
-export default async function MyPage({ searchParams }: PageProps) {
+export default async function MyPage({ params }: PageProps) {
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
+    <WorkspaceWrapper params={params}>
       {({ workspace, wsId }: WorkspaceData) => (
         <MyComponent workspace={workspace} wsId={wsId} />
       )}

@@ -1,5 +1,5 @@
 import 'server-only';
-import { createHighlighter, type Highlighter } from 'shiki';
+import type { Highlighter } from 'shiki';
 
 /**
  * Server-side syntax highlighting for the UI docs code blocks. A single
@@ -16,12 +16,27 @@ let highlighterPromise: Promise<Highlighter> | null = null;
 
 function getHighlighter() {
   if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      themes: Object.values(themes),
-      langs: [...langs],
-    });
+    highlighterPromise = import('shiki').then(({ createHighlighter }) =>
+      createHighlighter({
+        themes: Object.values(themes),
+        langs: [...langs],
+      })
+    );
   }
   return highlighterPromise;
+}
+
+function escapeHtml(code: string) {
+  return code
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function plainCodeHtml(code: string) {
+  return `<pre><code>${escapeHtml(code)}</code></pre>`;
 }
 
 /**
@@ -29,6 +44,10 @@ function getHighlighter() {
  * colors as CSS variables (see `shiki.css`) so theme switching needs no JS.
  */
 export async function highlightCode(code: string, lang = 'tsx') {
+  if (process.env.NODE_ENV === 'development') {
+    return plainCodeHtml(code);
+  }
+
   const highlighter = await getHighlighter();
   const resolvedLang = (langs as readonly string[]).includes(lang)
     ? lang

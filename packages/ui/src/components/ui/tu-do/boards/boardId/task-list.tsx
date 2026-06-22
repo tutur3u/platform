@@ -43,6 +43,7 @@ interface VirtualizedTaskListProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  readOnly?: boolean;
 }
 
 interface TaskListContentProps {
@@ -64,6 +65,7 @@ interface TaskListContentProps {
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
   startIndex?: number;
   taskOrder?: Pick<Task, 'id'>[];
+  readOnly?: boolean;
 }
 
 export function getTaskDragPreviewSlotIndex({
@@ -132,6 +134,7 @@ function TaskListContent({
   bulkUpdateCustomDueDate,
   startIndex = 0,
   taskOrder = tasks,
+  readOnly = false,
 }: TaskListContentProps) {
   const slotIndex = getTaskDragPreviewSlotIndex({
     columnId: column.id,
@@ -170,6 +173,7 @@ function TaskListContent({
               optimisticUpdateInProgress={optimisticUpdateInProgress}
               selectedTasks={selectedTasks}
               bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+              readOnly={readOnly}
             />
             {slotIndex === globalIndex + 1 && (
               <DragPreviewSlot
@@ -238,6 +242,7 @@ function VirtualizedTaskListInner({
   onLoadMore,
   hasMore,
   isLoadingMore,
+  readOnly = false,
 }: VirtualizedTaskListProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -474,6 +479,7 @@ function VirtualizedTaskListInner({
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
                 startIndex={startIndex}
                 taskOrder={tasks}
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -502,6 +508,7 @@ function VirtualizedTaskListInner({
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
             taskOrder={tasks}
+            readOnly={readOnly}
           />
           {loadMoreSentinel}
         </SortableContext>

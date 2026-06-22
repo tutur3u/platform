@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-tanstack-web",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "dev": {
+    "port": 8784,
+    "local_protocol": "http"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  },
+  "services": [
+    {
+      "binding": "BACKEND",
+      "service": "tuturuuu-backend"
+    }
+  ],
+  "secrets": {
+    "required": ["BACKEND_PUBLIC_ORIGIN", "BACKEND_INTERNAL_TOKEN"]
+  }
+}

@@ -127,6 +127,7 @@ describe('inventory storefront checkout route', () => {
       'release_inventory_checkout_session',
       {
         p_checkout_id: 'checkout-1',
+        p_ws_id: 'ws-1',
       }
     );
     expect(mocks.schema).toHaveBeenCalledWith('private');

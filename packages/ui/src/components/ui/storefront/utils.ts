@@ -49,7 +49,10 @@ export const storefrontThemeClasses: Record<
 
 export type StorefrontAccentStyle = CSSProperties & {
   '--storefront-accent'?: string;
+  '--storefront-accent-border'?: string;
   '--storefront-accent-foreground'?: string;
+  '--storefront-accent-soft'?: string;
+  '--storefront-accent-text'?: string;
 };
 
 export function sanitizeStorefrontAccentColor(value?: string | null) {
@@ -182,7 +185,10 @@ export function getAccentStyle(
 
   return {
     '--storefront-accent': accentColor,
+    '--storefront-accent-border': `color-mix(in oklab, ${accentColor} 42%, var(--border))`,
     '--storefront-accent-foreground': getAccentForeground(accentColor),
+    '--storefront-accent-soft': `color-mix(in oklab, ${accentColor} 14%, var(--background))`,
+    '--storefront-accent-text': `color-mix(in oklab, ${accentColor} 68%, var(--foreground))`,
   };
 }
 

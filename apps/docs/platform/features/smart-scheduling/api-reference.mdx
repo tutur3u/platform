@@ -1,6 +1,7 @@
 ---
 title: API Reference
 description: REST API endpoints for Smart Scheduling
+updatedAt: '2026-06-21'
 ---
 
 # Smart Scheduling API
@@ -198,7 +199,9 @@ For background jobs, the API accepts a Bearer token with the cron secret:
 Authorization: Bearer {CRON_SECRET}
 ```
 
-This is used by the Vercel cron job that runs scheduling hourly.
+This is used by the Vercel cron job that runs scheduling every 6 hours.
+
+The cron secret is read from `process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET`.
 
 ## Error Responses
 
@@ -207,6 +210,8 @@ This is used by the Vercel cron job that runs scheduling hourly.
 | 400 | Invalid workspace ID |
 | 401 | Not authenticated |
 | 403 | Not a workspace member |
+| 409 | Safe apply blocked because the schedule still has unresolved warnings |
+| 422 | Workspace timezone is not set, or is set to `auto` |
 | 500 | Internal server error |
 
 ## Rate Limiting
@@ -214,16 +219,16 @@ This is used by the Vercel cron job that runs scheduling hourly.
 The scheduling endpoint is rate-limited to prevent abuse:
 
 - **Manual triggers**: Limited by standard API rate limits
-- **Cron triggers**: Runs once per hour per workspace
+- **Cron triggers**: A single global cron runs every 6 hours and fans out to eligible workspaces (not per-workspace at the cron level)
 
 ## Cron Job
 
-Smart Scheduling runs automatically every hour via Vercel Cron:
+Smart Scheduling runs automatically every 6 hours via Vercel Cron:
 
 ```json
 {
   "path": "/api/cron/calendar/smart-schedule",
-  "schedule": "0 * * * *"
+  "schedule": "0 */6 * * *"
 }
 ```
 

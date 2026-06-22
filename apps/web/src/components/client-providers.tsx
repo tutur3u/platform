@@ -12,12 +12,11 @@ import {
   setRateLimitMessage,
   setRateLimitToastLabels,
 } from '@/lib/fetch-interceptor';
-import { RateLimitDetailsDialog } from './rate-limit-details-dialog';
 
-const ReactQueryDevtools = dynamic(
+const RateLimitDetailsDialog = dynamic(
   () =>
-    import('@tanstack/react-query-devtools').then(
-      (module) => module.ReactQueryDevtools
+    import('./rate-limit-details-dialog').then(
+      (module) => module.RateLimitDetailsDialog
     ),
   { ssr: false }
 );
@@ -50,12 +49,6 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       <AccountSwitcherKeyboardShortcut />
       <FetchInterceptorI18n />
       <RateLimitDetailsDialog />
-      {process.env.NODE_ENV === 'development' ? (
-        <ReactQueryDevtools
-          initialIsOpen={false}
-          buttonPosition="bottom-right"
-        />
-      ) : null}
     </>
   );
 

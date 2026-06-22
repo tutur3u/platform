@@ -38,6 +38,10 @@ interface SessionCalendarToolbarProps {
   canChooseGroup: boolean;
   canUpdateSchedule: boolean;
   createPending: boolean;
+  densityStats?: {
+    groupedTimeblockCount: number;
+    sessionCount: number;
+  };
   groupFilter: string;
   groups: WorkspaceUserGroupScheduleGroup[];
   onCreate: (payload: CreateWorkspaceUserGroupSessionPayload) => Promise<void>;
@@ -61,6 +65,7 @@ export function SessionCalendarToolbar({
   canChooseGroup,
   canUpdateSchedule,
   createPending,
+  densityStats,
   groupFilter,
   groups,
   onCreate,
@@ -143,6 +148,14 @@ export function SessionCalendarToolbar({
         {dayjs(weekStart).locale(locale).format('MMM D')} -{' '}
         {dayjs(weekStart).add(6, 'day').locale(locale).format('MMM D, YYYY')}
       </div>
+      {densityStats && densityStats.groupedTimeblockCount > 0 && (
+        <div className="flex min-h-9 items-center rounded-md border bg-background px-2 text-muted-foreground text-xs">
+          {t('calendar_density_summary', {
+            sessionCount: densityStats.sessionCount,
+            timeblockCount: densityStats.groupedTimeblockCount,
+          })}
+        </div>
+      )}
       {canChooseGroup && (
         <Select value={groupFilter} onValueChange={onGroupFilterChange}>
           <SelectTrigger className="h-9 w-[220px]">

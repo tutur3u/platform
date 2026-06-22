@@ -172,6 +172,50 @@ services:
     ports:
       - "7820:7820"
 
+  tanstack-web:
+    build:
+      context: .
+      dockerfile: apps/tanstack-web/Dockerfile
+      target: dev
+    command: ["bun", "run", "--filter", "@tuturuuu/tanstack-web", "dev:app"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
+      - BACKEND_PUBLIC_ORIGIN=${BACKEND_PUBLIC_ORIGIN:-http://backend:7820}
+      - HOST=0.0.0.0
+      - NODE_ENV=development
+      - PORT=7824
+      - TANSTACK_WEB_E2E_BASE_URL=${TANSTACK_WEB_E2E_BASE_URL:-https://tanstack.tuturuuu.localhost}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+    ports:
+      - "7824:7824"
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace
+      - platform-bun-install:/root/.bun/install/cache
+      - platform-tanstack-web-node_modules:/workspace/apps/tanstack-web/node_modules
+      - platform-tanstack-web-output:/workspace/apps/tanstack-web/.output
+      - platform-web-node_modules:/workspace/node_modules
+      - platform-web-internal-api-dist:/workspace/packages/internal-api/dist
+      - platform-web-internal-api-node_modules:/workspace/packages/internal-api/node_modules
+      - platform-web-types-dist:/workspace/packages/types/dist
+      - platform-web-types-node_modules:/workspace/packages/types/node_modules
+      - platform-web-ui-dist:/workspace/packages/ui/dist
+      - platform-web-ui-node_modules:/workspace/packages/ui/node_modules
+      - platform-web-utils-dist:/workspace/packages/utils/dist
+      - platform-web-utils-node_modules:/workspace/packages/utils/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+
   chat-realtime:
     build:
       context: .
@@ -437,6 +481,8 @@ services:
 volumes:
   platform-buildkit-state:
   platform-pronunciation-assessor-cache:
+  platform-tanstack-web-node_modules:
+  platform-tanstack-web-output:
   platform-voice-lab-cache:
   platform-web-app-node_modules:
   platform-web-ai-node_modules:

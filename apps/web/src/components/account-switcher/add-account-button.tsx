@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from '@tuturuuu/icons/lucide';
+import { Plus } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

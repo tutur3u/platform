@@ -86,6 +86,100 @@ export interface InternalApiWorkspaceLabel {
   creator_id: string | null;
 }
 
+export interface InternalApiTaskDraft {
+  id: string;
+  ws_id: string;
+  creator_id: string;
+  board_id: string | null;
+  list_id: string | null;
+  name: string;
+  description: string | null;
+  priority: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  estimation_points: number | null;
+  label_ids: string[];
+  assignee_ids: string[];
+  project_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListWorkspaceTaskDraftsOptions {
+  boardId?: string;
+  includeUnassignedForBoard?: boolean;
+}
+
+export interface InternalApiTaskInitiativeProject {
+  id: string;
+  name: string;
+  status: string | null;
+}
+
+export interface InternalApiTaskInitiative {
+  id: string;
+  name: string;
+  description: string | null;
+  status: 'active' | 'completed' | 'on_hold' | 'cancelled' | null;
+  created_at: string;
+  creator?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  projectsCount: number;
+  linkedProjects: InternalApiTaskInitiativeProject[];
+}
+
+export interface UpsertWorkspaceTaskInitiativePayload {
+  name: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'on_hold' | 'cancelled';
+}
+
+export interface ListWorkspaceTaskHistoryOptions {
+  page?: number;
+  pageSize?: number;
+  boardId?: string;
+  changeType?: string;
+  fieldName?: string;
+  search?: string;
+}
+
+export interface WorkspaceTaskHistoryEntry {
+  id: string;
+  task_id: string;
+  task_name: string;
+  task_deleted_at?: string;
+  task_permanently_deleted?: boolean;
+  board_id?: string;
+  board_name?: string;
+  changed_by?: string;
+  changed_at: string;
+  change_type?: string;
+  field_name?: string;
+  old_value?: unknown;
+  new_value?: unknown;
+  metadata?: unknown;
+  user: {
+    id: string;
+    name: string;
+    avatar_url?: string | null;
+  } | null;
+}
+
+export interface WorkspaceTaskHistoryListValue {
+  id: string;
+  name: string | null;
+}
+
+export interface WorkspaceTaskHistoryResponse {
+  data: WorkspaceTaskHistoryEntry[];
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface WorkspaceTaskUpdatePayload {
   name?: string;
   description?: string | null;
@@ -545,6 +639,39 @@ export interface WorkspaceTaskBoardSharesResponse {
   shares: WorkspaceTaskBoardShare[];
 }
 
+export interface WorkspaceTaskBoardViewableMember {
+  avatar_url: string | null;
+  display_name: string | null;
+  email: string | null;
+  handle: string | null;
+  id: string;
+  is_creator: boolean;
+  roles: Array<{
+    id: string;
+    name: string;
+  }>;
+  user_id: string;
+  workspace_member_type: string | null;
+}
+
+export interface WorkspaceTaskBoardViewableMembersResponse {
+  members: WorkspaceTaskBoardViewableMember[];
+}
+
+export interface WorkspaceTaskBoardPublicLink {
+  board_id: string;
+  code: string;
+  created_at: string | null;
+  disabled_at: string | null;
+  enabled: boolean;
+  id: string;
+  updated_at: string | null;
+}
+
+export interface WorkspaceTaskBoardPublicLinkResponse {
+  publicLink: WorkspaceTaskBoardPublicLink | null;
+}
+
 export interface CreateWorkspaceTaskListPayload {
   name: string;
   status?: string;
@@ -769,6 +896,61 @@ export async function listWorkspaceLabels(
   );
 }
 
+export async function listWorkspaceTaskDrafts(
+  workspaceId: string,
+  options?: ListWorkspaceTaskDraftsOptions,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  const payload = await client.json<{ data: InternalApiTaskDraft[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-drafts`,
+    {
+      query: {
+        boardId: options?.boardId,
+        includeUnassignedForBoard: options?.includeUnassignedForBoard,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  return payload.data ?? [];
+}
+
+export async function deleteWorkspaceTaskDraft(
+  workspaceId: string,
+  draftId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-drafts/${encodePathSegment(draftId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function convertWorkspaceTaskDraft(
+  workspaceId: string,
+  draftId: string,
+  payload: { listId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message?: string; taskId?: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-drafts/${encodePathSegment(draftId)}/convert`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function createWorkspaceLabel(
   workspaceId: string,
   payload: { name: string; color: string },
@@ -990,6 +1172,64 @@ export async function deleteWorkspaceTaskBoardShare(
     {
       method: 'DELETE',
       query: { shareId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceTaskBoardViewableMembers(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardViewableMembersResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/viewable-members`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTaskBoardPublicLink(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardPublicLinkResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function enableWorkspaceTaskBoardPublicLink(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardPublicLinkResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function disableWorkspaceTaskBoardPublicLink(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
     }
   );
@@ -1787,6 +2027,109 @@ export async function deleteWorkspaceTaskProject(
   );
 }
 
+export async function listWorkspaceTaskInitiatives(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InternalApiTaskInitiative[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTaskInitiative(
+  workspaceId: string,
+  payload: UpsertWorkspaceTaskInitiativePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InternalApiTaskInitiative>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskInitiative(
+  workspaceId: string,
+  initiativeId: string,
+  payload: Required<UpsertWorkspaceTaskInitiativePayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InternalApiTaskInitiative>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTaskInitiative(
+  workspaceId: string,
+  initiativeId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success?: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function linkWorkspaceTaskInitiativeProject(
+  workspaceId: string,
+  initiativeId: string,
+  projectId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}/projects`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ projectId }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function unlinkWorkspaceTaskInitiativeProject(
+  workspaceId: string,
+  initiativeId: string,
+  projectId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}/projects/${encodePathSegment(projectId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function linkWorkspaceTaskProjectTask(
   workspaceId: string,
   projectId: string,
@@ -1818,6 +2161,28 @@ export async function unlinkWorkspaceTaskProjectTask(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks/${encodePathSegment(taskId)}`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceTaskHistory(
+  workspaceId: string,
+  options?: ListWorkspaceTaskHistoryOptions,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceTaskHistoryResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/history`,
+    {
+      query: {
+        page: options?.page,
+        pageSize: options?.pageSize,
+        board_id: options?.boardId,
+        change_type: options?.changeType,
+        field_name: options?.fieldName,
+        search: options?.search,
+      },
       cache: 'no-store',
     }
   );

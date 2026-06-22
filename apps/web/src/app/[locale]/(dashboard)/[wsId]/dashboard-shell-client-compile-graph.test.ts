@@ -53,5 +53,11 @@ describe('[wsId] dashboard shell client compile graph', () => {
     expect(dashboardShellClientSource).toContain(
       'useDashboardSettingsDialogHost'
     );
+    expect(dashboardShellClientSource).toContain(
+      'DashboardSettingsDialogSkeletonGate'
+    );
+    expect(dashboardShellClientSource).toContain(
+      'SettingsDialogFullscreenSkeleton'
+    );
   });
 });

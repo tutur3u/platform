@@ -37,5 +37,6 @@ describe('user nav client compile graph', () => {
       /import\(["']\.\/user-nav-settings-dialog["']\)/u
     );
     expect(userNavClientSource).toContain('useUserNavSettingsDialogComponent');
+    expect(userNavClientSource).toContain('SettingsDialogFullscreenSkeleton');
   });
 });

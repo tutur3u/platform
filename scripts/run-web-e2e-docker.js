@@ -16,6 +16,7 @@ const {
   createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
   LOCAL_E2E_BASE_URL,
+  LOCAL_E2E_TANSTACK_BASE_URL,
   SAFE_LOCAL_WEB_ORIGINS,
 } = require('./e2e-local-environment.js');
 const { SKIP_WATCH_HISTORY_ENV } = require('./watch-blue-green/history.js');
@@ -24,9 +25,24 @@ const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
+const DEFAULT_E2E_COMPARE_REPORT_PATH = path.join(
+  ROOT_DIR,
+  'tmp',
+  'e2e',
+  'web-migration',
+  'compare-report.json'
+);
+const DEFAULT_E2E_PLAYWRIGHT_JSON_REPORT_DIR = path.join(
+  ROOT_DIR,
+  'tmp',
+  'e2e',
+  'web-migration',
+  'playwright-json'
+);
 const DEFAULT_HEALTH_URL = 'http://127.0.0.1:7803/login';
 const DEFAULT_PORTLESS_BASE_URL = LOCAL_E2E_BASE_URL;
 const DEFAULT_PORTLESS_HEALTH_URL = `${DEFAULT_PORTLESS_BASE_URL}/login`;
+const DEFAULT_TANSTACK_PORTLESS_BASE_URL = LOCAL_E2E_TANSTACK_BASE_URL;
 const DEFAULT_PORTLESS_READY_STATUS_CODES = Object.freeze([404]);
 const DEFAULT_PORTLESS_READY_TIMEOUT_MS = 300_000;
 const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
@@ -39,7 +55,11 @@ const DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL =
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN = 'example_token';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
 const PORTLESS_ROUTE_NAME = 'tuturuuu';
+const TANSTACK_PORTLESS_ROUTE_NAME = 'tanstack.tuturuuu';
 const DEFAULT_WEB_PROXY_HOST_PORT = '7803';
+const DEFAULT_TANSTACK_DIRECT_HOST_PORT = '7824';
+const TANSTACK_WEB_PROXY_TARGET_OPT_IN_ENV =
+  'E2E_ALLOW_TANSTACK_WEB_PROXY_PORT';
 const DNS_IPV4_FIRST_NODE_OPTION = '--dns-result-order=ipv4first';
 const DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS = 3;
 const DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS = 1_000;
@@ -52,6 +72,9 @@ const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
   'web-proxy',
   'web-blue',
   'web-green',
+  'tanstack-web',
+  'tanstack-web-blue',
+  'tanstack-web-green',
   'hive-blue',
   'hive-green',
   'hive-realtime',
@@ -84,6 +107,7 @@ const BLUE_GREEN_ACTIVE_COLOR_FILE = path.join(
   'prod',
   'active-color'
 );
+const E2E_FRONTENDS = new Set(['next', 'tanstack', 'compare']);
 
 function getDockerWebUpArgs(envFilePath, env = process.env) {
   return [
@@ -203,10 +227,11 @@ function getDockerComposeDiagnosticArgs(env = process.env, ...args) {
 
 function getPortlessHealthUrl(env = process.env) {
   const baseUrl = env.BASE_URL ?? DEFAULT_PORTLESS_BASE_URL;
+  const healthPath = env.E2E_PORTLESS_HEALTH_PATH ?? '/login';
 
   try {
     const url = new URL(baseUrl);
-    url.pathname = '/login';
+    url.pathname = healthPath.startsWith('/') ? healthPath : `/${healthPath}`;
     url.search = '';
     url.hash = '';
 
@@ -214,6 +239,312 @@ function getPortlessHealthUrl(env = process.env) {
   } catch {
     return DEFAULT_PORTLESS_HEALTH_URL;
   }
+}
+
+function parseE2EFrontendArgs(playwrightArgs = [], env = process.env) {
+  const filteredArgs = [];
+  let frontend = env.DOCKER_WEB_FRONTEND || 'next';
+
+  for (let index = 0; index < playwrightArgs.length; index += 1) {
+    const arg = playwrightArgs[index];
+
+    if (arg === '--frontend') {
+      frontend = playwrightArgs[index + 1];
+      index += 1;
+      continue;
+    }
+
+    const frontendMatch = arg.match(/^--frontend=(.+)$/u);
+    if (frontendMatch) {
+      frontend = frontendMatch[1];
+      continue;
+    }
+
+    filteredArgs.push(arg);
+  }
+
+  if (!E2E_FRONTENDS.has(frontend)) {
+    throw new Error(
+      `Unsupported Docker web E2E frontend "${frontend}". Expected next, tanstack, or compare.`
+    );
+  }
+
+  return {
+    frontend,
+    playwrightArgs: filteredArgs,
+  };
+}
+
+function getE2ECompareReportPath(env = process.env) {
+  const configuredPath = String(env.E2E_COMPARE_REPORT_PATH ?? '').trim();
+
+  return configuredPath
+    ? path.resolve(configuredPath)
+    : DEFAULT_E2E_COMPARE_REPORT_PATH;
+}
+
+function isInsideDirectory(candidatePath, parentPath) {
+  const relativePath = path.relative(parentPath, candidatePath);
+
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+  );
+}
+
+function resolveSafeE2ECompareReportPath(reportPath, rootDir = ROOT_DIR) {
+  const resolvedReportPath = path.resolve(reportPath);
+  const tmpDir = path.join(rootDir, 'tmp');
+
+  if (!isInsideDirectory(resolvedReportPath, tmpDir)) {
+    throw new Error(
+      `Docker E2E compare reports must be written under ${path.relative(
+        rootDir,
+        tmpDir
+      )}; got ${path.relative(rootDir, resolvedReportPath)}.`
+    );
+  }
+
+  return resolvedReportPath;
+}
+
+function isPassedE2EResult(result) {
+  return (
+    result?.passed === true ||
+    ['passed', 'pass', 'ok', 'success'].includes(
+      String(result?.status ?? '').toLowerCase()
+    )
+  );
+}
+
+function normalizeE2ECompareResult(result) {
+  const normalized = { ...result };
+  const durationMs = Number(normalized.durationMs);
+  const executedCount = Number(normalized.executedCount);
+  const passedCount = Number(normalized.passedCount);
+
+  if (normalized.wallMs === undefined && Number.isFinite(durationMs)) {
+    normalized.wallMs = durationMs;
+  }
+
+  if (
+    normalized.passRate === undefined &&
+    Number.isFinite(executedCount) &&
+    executedCount > 0 &&
+    Number.isFinite(passedCount)
+  ) {
+    normalized.passRate = passedCount / executedCount;
+  } else if (normalized.passRate === undefined) {
+    normalized.passRate = isPassedE2EResult(normalized) ? 1 : 0;
+  }
+
+  return normalized;
+}
+
+function getFrontendE2EBaseUrl(frontend, env = process.env) {
+  const fallback =
+    frontend === 'tanstack'
+      ? DEFAULT_TANSTACK_PORTLESS_BASE_URL
+      : DEFAULT_PORTLESS_BASE_URL;
+  const envValue =
+    frontend === 'tanstack' ? env.TANSTACK_WEB_E2E_BASE_URL : env.BASE_URL;
+  const value = typeof envValue === 'string' ? envValue.trim() : '';
+
+  return value || fallback;
+}
+
+function normalizeFrontendE2EOrigin(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    if (url.username || url.password) {
+      return null;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function getE2EPlaywrightJsonReportPath(frontend, env = process.env) {
+  const reportDir = path.resolve(
+    env.E2E_PLAYWRIGHT_JSON_REPORT_DIR ?? DEFAULT_E2E_PLAYWRIGHT_JSON_REPORT_DIR
+  );
+
+  return path.join(reportDir, `${frontend}-report.json`);
+}
+
+function withPlaywrightJsonReporterArgs(playwrightArgs = []) {
+  const filteredArgs = [];
+
+  for (let index = 0; index < playwrightArgs.length; index += 1) {
+    const arg = playwrightArgs[index];
+
+    if (arg === '--reporter') {
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--reporter=')) {
+      continue;
+    }
+
+    filteredArgs.push(arg);
+  }
+
+  return [...filteredArgs, '--reporter=json'];
+}
+
+function getPlaywrightJsonSummary(reportPath, fsImpl = fs) {
+  const report = JSON.parse(fsImpl.readFileSync(reportPath, 'utf8'));
+  const stats = report.stats ?? {};
+  const passedCount = Math.max(0, Number(stats.expected) || 0);
+  const failedCount = Math.max(0, Number(stats.unexpected) || 0);
+  const flakyCount = Math.max(0, Number(stats.flaky) || 0);
+  const skippedCount = Math.max(0, Number(stats.skipped) || 0);
+  const executedCount = passedCount + failedCount + flakyCount;
+
+  return {
+    executedCount,
+    failedCount,
+    flakyCount,
+    passedCount,
+    skippedCount,
+    testCount: executedCount + skippedCount,
+  };
+}
+
+function createE2ECompareReport(frontends, generatedAt = new Date()) {
+  const next = normalizeE2ECompareResult(
+    frontends.next ?? { passed: false, status: 'missing' }
+  );
+  const tanstack = normalizeE2ECompareResult(
+    frontends.tanstack ?? { passed: false, status: 'missing' }
+  );
+  const origins = {
+    next: normalizeFrontendE2EOrigin(next.origin),
+    tanstack: normalizeFrontendE2EOrigin(tanstack.origin),
+  };
+  next.origin = origins.next;
+  tanstack.origin = origins.tanstack;
+  const passed = next.passed === true && tanstack.passed === true;
+
+  return {
+    frontend: 'compare',
+    frontends: {
+      next,
+      tanstack,
+    },
+    generatedAt: generatedAt.toISOString(),
+    origins,
+    passed,
+    status: passed ? 'passed' : 'failed',
+  };
+}
+
+function writeE2ECompareReport({
+  fsImpl = fs,
+  output = process.stderr,
+  report,
+  reportPath = getE2ECompareReportPath(),
+  rootDir = ROOT_DIR,
+} = {}) {
+  const resolvedReportPath = resolveSafeE2ECompareReportPath(
+    reportPath,
+    rootDir
+  );
+
+  fsImpl.mkdirSync(path.dirname(resolvedReportPath), { recursive: true });
+  fsImpl.writeFileSync(
+    resolvedReportPath,
+    `${JSON.stringify(report, null, 2)}\n`
+  );
+  writeDiagnosticLine(
+    output,
+    `[e2e-diagnostics] Docker E2E compare report: ${path.relative(
+      rootDir,
+      resolvedReportPath
+    )}`
+  );
+
+  return resolvedReportPath;
+}
+
+async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
+  const startedAt = Date.now();
+  const origin = normalizeFrontendE2EOrigin(
+    getFrontendE2EBaseUrl(frontend, process.env)
+  );
+  const playwrightJsonReportPath = getE2EPlaywrightJsonReportPath(
+    frontend,
+    process.env
+  );
+
+  fs.mkdirSync(path.dirname(playwrightJsonReportPath), { recursive: true });
+  fs.rmSync(playwrightJsonReportPath, { force: true });
+
+  try {
+    await runWebE2E([], {
+      ...options,
+      env: {
+        ...(options.env ?? {}),
+        PLAYWRIGHT_JSON_OUTPUT_NAME: playwrightJsonReportPath,
+      },
+      frontend,
+      playwrightArgs: withPlaywrightJsonReporterArgs(playwrightArgs),
+    });
+    const summary = getPlaywrightJsonSummary(playwrightJsonReportPath);
+
+    return {
+      durationMs: Date.now() - startedAt,
+      origin,
+      passed: true,
+      playwright: {
+        reporter: 'json',
+        reportPath: path.relative(ROOT_DIR, playwrightJsonReportPath),
+      },
+      ...summary,
+      status: 'passed',
+    };
+  } catch (error) {
+    return {
+      durationMs: Date.now() - startedAt,
+      error: getErrorMessage(error),
+      origin,
+      passed: false,
+      status: 'failed',
+    };
+  }
+}
+
+function getFrontendE2EEnv(frontend, env = process.env) {
+  if (frontend === 'tanstack') {
+    const baseUrl = getFrontendE2EBaseUrl('tanstack', env);
+
+    return {
+      ...env,
+      BASE_URL: baseUrl,
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      E2E_PORTLESS_HEALTH_PATH: env.E2E_PORTLESS_HEALTH_PATH ?? '/',
+      PORTLESS_ROUTE_NAME: TANSTACK_PORTLESS_ROUTE_NAME,
+      TANSTACK_WEB_E2E_BASE_URL: baseUrl,
+    };
+  }
+
+  return {
+    ...env,
+    BASE_URL: getFrontendE2EBaseUrl('next', env),
+    DOCKER_WEB_FRONTEND: 'next',
+  };
 }
 
 function getWebProxyHostPort(env = process.env) {
@@ -224,6 +555,17 @@ function getWebProxyHostPort(env = process.env) {
   return /^\d+$/u.test(value) && Number.parseInt(value, 10) > 0
     ? value
     : DEFAULT_WEB_PROXY_HOST_PORT;
+}
+
+function getTanStackDirectHostPort(env = process.env) {
+  const value = String(
+    env.DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT ??
+      DEFAULT_TANSTACK_DIRECT_HOST_PORT
+  ).trim();
+
+  return /^\d+$/u.test(value) && Number.parseInt(value, 10) > 0
+    ? value
+    : DEFAULT_TANSTACK_DIRECT_HOST_PORT;
 }
 
 function getWebProxyHealthUrl(env = process.env) {
@@ -339,15 +681,47 @@ function getPortlessAliasVerifyDelayMs(env = process.env) {
   );
 }
 
+function getE2EPortlessRouteName(env = process.env) {
+  return String(env.PORTLESS_ROUTE_NAME || PORTLESS_ROUTE_NAME).trim();
+}
+
+function isTanStackPortlessRoute(env = process.env) {
+  return (
+    getE2EPortlessRouteName(env) === TANSTACK_PORTLESS_ROUTE_NAME ||
+    env.DOCKER_WEB_FRONTEND === 'tanstack'
+  );
+}
+
+function getE2EPortlessTargetPort(env = process.env) {
+  if (!isTanStackPortlessRoute(env)) {
+    return getWebProxyHostPort(env);
+  }
+
+  const targetPort = getTanStackDirectHostPort(env);
+  const webProxyPort = getWebProxyHostPort(env);
+
+  if (
+    targetPort === webProxyPort &&
+    !isTruthyEnvValue(env[TANSTACK_WEB_PROXY_TARGET_OPT_IN_ENV])
+  ) {
+    throw new Error(
+      `Refusing to alias the TanStack Portless route to the Next web proxy port ${webProxyPort}. Set ${TANSTACK_WEB_PROXY_TARGET_OPT_IN_ENV}=1 only for an intentional proxy-routing test.`
+    );
+  }
+
+  return targetPort;
+}
+
 function routeListHasPortlessAlias(routeListOutput, env = process.env) {
   const output = String(routeListOutput ?? '');
-  const hostPort = getWebProxyHostPort(env);
+  const targetPort = getE2EPortlessTargetPort(env);
+  const routeName = getE2EPortlessRouteName(env);
   const aliasPatterns = [
-    new RegExp(`\\b${PORTLESS_ROUTE_NAME}\\.localhost\\b`, 'iu'),
-    new RegExp(`\\b${PORTLESS_ROUTE_NAME}\\b`, 'iu'),
+    new RegExp(`\\b${routeName}\\.localhost\\b`, 'iu'),
+    new RegExp(`\\b${routeName}\\b`, 'iu'),
   ];
   const hostPortPattern = new RegExp(
-    `(?:localhost|127\\.0\\.0\\.1):?${hostPort}\\b`,
+    `(?:localhost|127\\.0\\.0\\.1):?${targetPort}\\b`,
     'iu'
   );
 
@@ -747,6 +1121,7 @@ async function ensurePortlessRoute({
   try {
     const portlessEnv = getPortlessCommandEnv(env);
     const proxyStartArgs = getPortlessProxyStartArgs(env);
+    const routeName = getE2EPortlessRouteName(env);
 
     removePortlessProxyTlsMarker({ output });
 
@@ -781,14 +1156,10 @@ async function ensurePortlessRoute({
     }
 
     try {
-      await run(
-        'bunx',
-        ['portless', 'alias', '--remove', PORTLESS_ROUTE_NAME],
-        {
-          cwd: ROOT_DIR,
-          env: portlessEnv,
-        }
-      );
+      await run('bunx', ['portless', 'alias', '--remove', routeName], {
+        cwd: ROOT_DIR,
+        env: portlessEnv,
+      });
     } catch (error) {
       writeDiagnosticLine(
         output,
@@ -803,8 +1174,8 @@ async function ensurePortlessRoute({
       [
         'portless',
         'alias',
-        PORTLESS_ROUTE_NAME,
-        getWebProxyHostPort(env),
+        routeName,
+        getE2EPortlessTargetPort(env),
         '--force',
       ],
       {
@@ -851,7 +1222,7 @@ async function ensurePortlessRoute({
       : lastRouteListOutput || 'no Portless routes were returned';
 
     throw new Error(
-      `Portless alias ${PORTLESS_ROUTE_NAME}.localhost was not registered for localhost:${getWebProxyHostPort(
+      `Portless alias ${routeName}.localhost was not registered for localhost:${getE2EPortlessTargetPort(
         env
       )}: ${routeDetail}`
     );
@@ -1418,6 +1789,49 @@ async function stopDockerizedE2E({ env, envFilePath }) {
 }
 
 async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
+  const frontendArgs =
+    options.frontend && options.playwrightArgs
+      ? {
+          frontend: options.frontend,
+          playwrightArgs: options.playwrightArgs,
+        }
+      : parseE2EFrontendArgs(playwrightArgs, process.env);
+
+  if (frontendArgs.frontend === 'compare') {
+    const frontends = {
+      next: await runFrontendE2EForCompare(
+        'next',
+        frontendArgs.playwrightArgs,
+        options
+      ),
+      tanstack: await runFrontendE2EForCompare(
+        'tanstack',
+        frontendArgs.playwrightArgs,
+        options
+      ),
+    };
+    const report = createE2ECompareReport(frontends);
+    const reportPath = getE2ECompareReportPath(process.env);
+    writeE2ECompareReport({
+      report,
+      reportPath,
+    });
+
+    if (!report.passed) {
+      const failures = Object.entries(frontends)
+        .filter(([, result]) => result.passed !== true)
+        .map(([frontend, result]) => `${frontend}: ${result.error}`);
+      throw new Error(
+        `Docker E2E compare failed. See ${path.relative(
+          ROOT_DIR,
+          reportPath
+        )}. ${failures.join(' ')}`
+      );
+    }
+
+    return;
+  }
+
   const envFilePath = options.envFilePath ?? DEFAULT_ENV_FILE;
   ensureLocalE2EEnvFile(envFilePath);
 
@@ -1426,6 +1840,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       envFilePath,
       rootDir: ROOT_DIR,
     }),
+    ...(options.env ?? {}),
     [SKIP_WATCH_HISTORY_ENV]: '1',
     [WATCHER_CONTAINER_ENV]: '1',
     DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
@@ -1436,6 +1851,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       process.env.E2E_SUPABASE_START_EXCLUDE ??
       'edge-runtime',
   };
+  env = getFrontendE2EEnv(frontendArgs.frontend, env);
   const dockerMemoryLimit = await getDockerMemoryLimit({
     env,
     runCommandForOutput,
@@ -1508,10 +1924,14 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
       timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
     });
-    await runCommand('bunx', ['playwright', 'test', ...playwrightArgs], {
-      cwd: WEB_DIR,
-      env,
-    });
+    await runCommand(
+      'bunx',
+      ['playwright', 'test', ...frontendArgs.playwrightArgs],
+      {
+        cwd: WEB_DIR,
+        env,
+      }
+    );
   } catch (error) {
     runError = error;
     await printE2EFailureDiagnostics({ env, error });
@@ -1551,6 +1971,7 @@ if (require.main === module) {
 
 module.exports = {
   DNS_IPV4_FIRST_NODE_OPTION,
+  DEFAULT_E2E_COMPARE_REPORT_PATH,
   DEFAULT_ENV_FILE,
   DEFAULT_HEALTH_URL,
   DEFAULT_PORTLESS_BASE_URL,
@@ -1560,18 +1981,25 @@ module.exports = {
   DEFAULT_PORTLESS_PROXY_TLS_MARKER,
   DEFAULT_PORTLESS_READY_STATUS_CODES,
   DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+  DEFAULT_TANSTACK_PORTLESS_BASE_URL,
   DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
   DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
   DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
   DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
   DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
+  DEFAULT_TANSTACK_DIRECT_HOST_PORT,
   DEFAULT_WEB_PROXY_HOST_PORT,
   E2E_COMPOSE_PROJECT_PREFIX,
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
+  createE2ECompareReport,
   formatBlueGreenStages,
+  getE2ECompareReportPath,
+  getE2EPlaywrightJsonReportPath,
   getPortlessAliasVerifyAttempts,
   getPortlessAliasVerifyDelayMs,
+  getE2EPortlessRouteName,
+  getE2EPortlessTargetPort,
   getPortlessCommandEnv,
   getDockerComposeDiagnosticArgs,
   getE2EDockerNativeBuildValue,
@@ -1580,8 +2008,11 @@ module.exports = {
   getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  getFrontendE2EBaseUrl,
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
+  getTanStackDirectHostPort,
+  getFrontendE2EEnv,
   getReadinessFetchOptions,
   getDockerImageRefCandidates,
   getReusableLocalRedisRuntime,
@@ -1592,6 +2023,7 @@ module.exports = {
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
+  getPlaywrightJsonSummary,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
   isPortlessProxyConfigMismatchError,
@@ -1601,6 +2033,7 @@ module.exports = {
   isReusableLocalRedisResponse,
   isReusingLocalRedis,
   parseE2EProjectImageTags,
+  parseE2EFrontendArgs,
   probeReusableLocalRedis,
   prepareReusableWebImage,
   prepareReusableSupportImages,
@@ -1609,6 +2042,7 @@ module.exports = {
   removePortlessProxyTlsMarker,
   resolveReusableWebImageSourceFromList,
   removeE2EProjectImages,
+  writeE2ECompareReport,
   resolveReusableLocalRedisRuntime,
   routeListHasPortlessAlias,
   runCommand,
@@ -1617,4 +2051,5 @@ module.exports = {
   shouldKeepStack,
   stopDockerizedE2E,
   waitForUrl,
+  withPlaywrightJsonReporterArgs,
 };

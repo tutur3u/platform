@@ -1,6 +1,7 @@
 ---
 title: 'AI Structured Data'
 description: 'Learn how to use Vercel AI SDK for structured data generation in Tuturuuu.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
@@ -184,7 +185,8 @@ export async function POST(req: Request) {
 Use Supabase to authenticate the user and validate their permissions:
 
 ```typescript
-const sbAdmin = await createAdminClient();
+// createAdminClient() is synchronous; do not await it.
+const sbAdmin = createAdminClient();
 const { wsId, context } = await req.json();
 
 // Validate input
@@ -223,7 +225,11 @@ Use the AI SDK to generate structured data based on the schema:
 
 ```typescript
 const result = streamObject({
-  model: google('gemini-2.0-flash-001', {
+  // Use a current default model ID. Active callers in `packages/ai/src`
+  // (calendar, chat title generation, search wrapper) use
+  // `gemini-3.1-flash-lite`. See "Supported Models" below for how the
+  // catalog is resolved dynamically at runtime.
+  model: google('gemini-3.1-flash-lite', {
     safetySettings: [
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
@@ -242,33 +248,40 @@ return result.toTextStreamResponse();
 
 ## Supported Models
 
-Tuturuuu supports multiple AI models through the Vercel AI SDK. The available models are defined in `packages/ai/src/models.ts`:
+Tuturuuu supports multiple AI models through the Vercel AI SDK. There is **no
+static model array** anymore — the catalog is sourced dynamically from the AI
+gateway and stored in the `ai_gateway_models` table (synced by
+`packages/ai/src/credits/sync-gateway-models.ts`). The browsable catalog is
+served from `apps/web`:
+
+- **API**: `GET /api/v1/infrastructure/ai/models`
+  (`apps/web/src/app/api/v1/infrastructure/ai/models/route.ts`)
+- **Docs**: see [Model Catalog](/platform/ai/model-catalog) for how metadata is
+  published, browsed, and synced.
+
+The set of provider integrations the SDK can wire up lives in
+`packages/ai/src/supported-providers.ts`:
 
 ```typescript
-export const models = [
-  {
-    value: 'gemini-2.0-flash-001',
-    label: 'gemini-2.0-flash',
-    provider: 'Google',
-    description: 'Gemini 2.0 Flash delivers next-gen features...',
-    context: 1000000,
-  },
-  {
-    value: 'gemini-2.0-pro-exp-02-05',
-    label: 'gemini-2.0-pro-exp-02-05',
-    provider: 'Google',
-    description: 'Gemini 2.0 Pro supports up to 1 million tokens...',
-    context: 2000000,
-  },
-  // Other models...
-];
+export const supportedProviders = [
+  'google',
+  'google-vertex',
+  'openai',
+  'anthropic',
+] as const;
 ```
 
-To use a different model in your endpoint, simply change the model reference:
+For per-workspace plan resolution (which model a billed workspace is allowed to
+run), use the helpers under `packages/ai/src/credits/` such as
+`resolve-plan-model.ts` and `cap-output-tokens.ts`, rather than hard-coding a
+model ID.
+
+To use a different model in your endpoint, change the model reference. Active
+callers default to `gemini-3.1-flash-lite`:
 
 ```typescript
 const result = streamObject({
-  model: google('gemini-2.0-pro-exp-02-05', {
+  model: google('gemini-3.1-flash-lite', {
     // Configuration...
   }),
   // Other parameters...

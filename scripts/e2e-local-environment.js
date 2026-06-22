@@ -2,6 +2,8 @@ const path = require('node:path');
 
 const LOCAL_E2E_PORTLESS_PORT = '1355';
 const LOCAL_E2E_BASE_URL = `https://tuturuuu.localhost:${LOCAL_E2E_PORTLESS_PORT}`;
+const LOCAL_E2E_TANSTACK_BASE_URL = `https://tanstack.tuturuuu.localhost:${LOCAL_E2E_PORTLESS_PORT}`;
+const LOCAL_E2E_TANSTACK_DIRECT_URL = 'http://127.0.0.1:7824';
 const LOCAL_E2E_SUPABASE_URL = 'http://127.0.0.1:8001';
 const LOCAL_E2E_DOCKER_SUPABASE_URL = 'http://host.docker.internal:8001';
 const LOCAL_E2E_SUPABASE_PUBLISHABLE_KEY =
@@ -26,6 +28,10 @@ const LOCAL_E2E_PROXY_READ_LIMITS = Object.freeze({
 });
 
 const SAFE_LOCAL_WEB_ORIGINS = new Set([
+  'http://127.0.0.1:7824',
+  'http://localhost:7824',
+  'https://tanstack.tuturuuu.localhost',
+  `https://tanstack.tuturuuu.localhost:${LOCAL_E2E_PORTLESS_PORT}`,
   'http://127.0.0.1:7803',
   'http://localhost:7803',
   'https://tuturuuu.localhost',
@@ -244,6 +250,8 @@ module.exports = {
   LOCAL_E2E_SUPABASE_PUBLISHABLE_KEY,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
+  LOCAL_E2E_TANSTACK_BASE_URL,
+  LOCAL_E2E_TANSTACK_DIRECT_URL,
   LOCAL_E2E_PROXY_READ_LIMITS,
   LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN,
   LOCAL_E2E_UPSTASH_REDIS_REST_URL,

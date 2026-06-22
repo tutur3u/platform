@@ -21,6 +21,7 @@ interface MeasuredTaskCardProps {
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+  readOnly?: boolean;
 }
 
 export function MeasuredTaskCard({
@@ -41,6 +42,7 @@ export function MeasuredTaskCard({
   optimisticUpdateInProgress,
   selectedTasks,
   bulkUpdateCustomDueDate,
+  readOnly = false,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const onHeightRef = useRef(onHeight);
@@ -103,6 +105,7 @@ export function MeasuredTaskCard({
         optimisticUpdateInProgress={optimisticUpdateInProgress}
         selectedTasks={selectedTasks}
         bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+        readOnly={readOnly}
       />
     </div>
   );

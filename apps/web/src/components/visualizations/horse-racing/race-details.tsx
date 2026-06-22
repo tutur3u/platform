@@ -1,4 +1,4 @@
-import { ChevronRight } from '@tuturuuu/icons';
+import { ChevronRight } from '@tuturuuu/icons/lucide';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { motion } from 'framer-motion';

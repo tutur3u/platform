@@ -2911,7 +2911,7 @@ async function cacheBlueGreenDeploymentImage({
     fsImpl,
     rootDir,
   });
-  const serviceName = getBlueGreenServiceName(activeColor);
+  const serviceName = getBlueGreenServiceName(activeColor, composeEnv);
   const imageTag = getBlueGreenCacheImageTag(latestCommit.shortHash, {
     composeFile,
     env: composeEnv,

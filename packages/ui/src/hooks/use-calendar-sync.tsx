@@ -40,6 +40,7 @@ type CalendarConnection = {
 export type CalendarEventWithHabitInfo = CalendarEvent & {
   _isHabit?: boolean;
   _habitCompleted?: boolean;
+  _optimisticStatus?: CalendarOptimisticStatus;
 };
 
 // Sync status type
@@ -50,13 +51,31 @@ type SyncStatus = {
   direction?: 'google-to-tuturuuu' | 'tuturuuu-to-google' | 'both';
 };
 
-type OptimisticCalendarSyncEvent = {
-  id: string;
-  title: string;
-  start_at: string;
-  end_at: string;
-  color?: string | null;
-  locked?: boolean;
+export type CalendarOptimisticStatus =
+  | 'creating'
+  | 'updating'
+  | 'deleting'
+  | 'error';
+
+type OptimisticCalendarSyncEvent = Partial<
+  Omit<CalendarEvent, 'color' | 'description' | 'location'>
+> &
+  Pick<CalendarEvent, 'id'> & {
+    color?: CalendarEvent['color'] | string | null;
+    description?: string | null;
+    location?: string | null;
+    _optimisticStatus?: CalendarOptimisticStatus;
+  };
+
+type OptimisticCalendarPatchOptions = {
+  removeIds?: string[];
+  clearIds?: string[];
+  status?: CalendarOptimisticStatus;
+};
+
+type OptimisticCalendarState = {
+  events: Record<string, OptimisticCalendarSyncEvent>;
+  removedIds: string[];
 };
 
 const CalendarSyncContext = createContext<{
@@ -90,7 +109,7 @@ const CalendarSyncContext = createContext<{
   refresh: () => void;
   patchVisibleEvents: (
     events: OptimisticCalendarSyncEvent[],
-    options?: { removeIds?: string[] }
+    options?: OptimisticCalendarPatchOptions
   ) => void;
 
   syncToGoogle: () => Promise<void>;
@@ -193,6 +212,11 @@ export const CalendarSyncProvider = ({
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
+  const [optimisticState, setOptimisticState] =
+    useState<OptimisticCalendarState>({
+      events: {},
+      removedIds: [],
+    });
   const prevDatesRef = useRef<string>('');
   const isForcedRef = useRef<boolean>(false);
   const lastSyncTimeRef = useRef<number>(0);
@@ -313,72 +337,81 @@ export const CalendarSyncProvider = ({
     });
   }, []);
 
-  const patchVisibleEvents = useCallback(
-    (
-      incomingEvents: OptimisticCalendarSyncEvent[],
-      options?: { removeIds?: string[] }
-    ) => {
-      const cacheKey = getCacheKey(dates);
-      if (!cacheKey) return;
+  const isVisibleInCurrentRange = useCallback(
+    (event: { start_at?: string; end_at?: string }) => {
+      if (dates.length === 0) return true;
 
       const firstDate = dates[0];
       const lastDate = dates[dates.length - 1];
-      if (!firstDate || !lastDate) return;
+      if (!firstDate || !lastDate) return true;
+
+      if (!event.start_at && !event.end_at) return true;
 
       const rangeStart = dayjs(firstDate).startOf('day').valueOf();
       const rangeEnd = dayjs(lastDate).endOf('day').valueOf();
-      const removeIds = new Set(options?.removeIds ?? []);
+      const startAt = event.start_at ? dayjs(event.start_at).valueOf() : NaN;
+      const endAt = event.end_at ? dayjs(event.end_at).valueOf() : startAt;
 
-      const isVisibleInRange = (event: {
-        start_at?: string;
-        end_at?: string;
-      }) => {
-        const startAt = event.start_at ? dayjs(event.start_at).valueOf() : NaN;
-        const endAt = event.end_at ? dayjs(event.end_at).valueOf() : startAt;
+      if (Number.isNaN(startAt) || Number.isNaN(endAt)) {
+        return true;
+      }
 
-        return !Number.isNaN(startAt) && !Number.isNaN(endAt)
-          ? startAt <= rangeEnd && endAt >= rangeStart
-          : false;
-      };
+      return startAt <= rangeEnd && endAt >= rangeStart;
+    },
+    [dates]
+  );
 
-      const mergeEvents = (existingData: WorkspaceCalendarEvent[] | null) => {
-        const existing = Array.isArray(existingData) ? existingData : [];
-        const byId = new Map(
-          existing
-            .filter((event) => !removeIds.has(event.id))
-            .map((event) => [event.id, event])
-        );
+  const patchVisibleEvents = useCallback(
+    (
+      incomingEvents: OptimisticCalendarSyncEvent[],
+      options?: OptimisticCalendarPatchOptions
+    ) => {
+      setOptimisticState((prev) => {
+        const events = { ...prev.events };
+        const removedIds = new Set(prev.removedIds);
 
-        for (const event of incomingEvents) {
-          if (!event.id || !isVisibleInRange(event)) continue;
-          byId.set(event.id, {
-            ...(byId.get(event.id) ?? {}),
-            ...event,
-          } as WorkspaceCalendarEvent);
+        for (const id of options?.clearIds ?? []) {
+          delete events[id];
+          removedIds.delete(id);
         }
 
-        return [...byId.values()].sort(
-          (left, right) =>
-            new Date(left.start_at).getTime() -
-            new Date(right.start_at).getTime()
-        );
-      };
+        for (const id of options?.removeIds ?? []) {
+          delete events[id];
+          removedIds.add(id);
+        }
 
-      const nextDbEvents = mergeEvents(
-        calendarCache[cacheKey]?.dbEvents ?? data ?? []
-      );
+        for (const event of incomingEvents) {
+          if (!event.id) continue;
 
-      updateCache(cacheKey, {
-        dbEvents: nextDbEvents,
-        dbLastUpdated: Date.now(),
+          if (!isVisibleInCurrentRange(event)) {
+            delete events[event.id];
+            removedIds.add(event.id);
+            continue;
+          }
+
+          removedIds.delete(event.id);
+
+          const nextEvent: OptimisticCalendarSyncEvent = {
+            ...(events[event.id] ?? {}),
+            ...event,
+          };
+
+          if (options?.status) {
+            nextEvent._optimisticStatus = options.status;
+          } else {
+            delete nextEvent._optimisticStatus;
+          }
+
+          events[event.id] = nextEvent;
+        }
+
+        return {
+          events,
+          removedIds: [...removedIds],
+        };
       });
-      setData(nextDbEvents);
-      queryClient.setQueryData(
-        ['databaseCalendarEvents', wsId, cacheKey],
-        nextDbEvents
-      );
     },
-    [calendarCache, data, dates, getCacheKey, queryClient, updateCache, wsId]
+    [isVisibleInCurrentRange]
   );
 
   // Fetch database events with caching
@@ -431,6 +464,7 @@ export const CalendarSyncProvider = ({
         // Reset the ref immediately (synchronous)
         isForcedRef.current = false;
 
+        setError(null);
         setData(fetchedData);
         return fetchedData;
       } catch (err) {
@@ -450,7 +484,7 @@ export const CalendarSyncProvider = ({
           lastSyncTime: new Date(),
         });
 
-        return null;
+        return cachedData?.dbEvents ?? data ?? [];
       }
     },
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
@@ -713,150 +747,119 @@ export const CalendarSyncProvider = ({
   Show data from database to Tuturuuu
   */
 
-  // Create a unique signature for an event based on its content
-  const createEventSignature = useCallback((event: CalendarEvent): string => {
-    return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-  }, []);
-
-  // Detect and remove duplicate events
-  const removeDuplicateEvents = useCallback(
-    async (eventsData: CalendarEvent[]) => {
-      if (!wsId || !eventsData || eventsData.length === 0) return eventsData;
-
-      // Group events by their signature
-      const eventGroups = new Map<string, CalendarEvent[]>();
-
-      eventsData.forEach((event) => {
-        const signature = createEventSignature(event);
-        if (!eventGroups.has(signature)) {
-          eventGroups.set(signature, []);
-        }
-        eventGroups.get(signature)!.push(event);
-      });
-
-      // Find duplicates that need to be removed
-      const eventsToDelete: string[] = [];
-      let deletionPerformed = false;
-
-      eventGroups.forEach((eventGroup) => {
-        if (eventGroup.length > 1) {
-          // Sort by creation time if available, otherwise by ID
-          // Keep the first/oldest event, delete the rest
-          const sortedEvents = [...eventGroup].sort((a, b) => {
-            // If we have created_at field, use it (check with optional chaining)
-            const aCreatedAt = (a as any)?.created_at;
-            const bCreatedAt = (b as any)?.created_at;
-            if (aCreatedAt && bCreatedAt) {
-              return (
-                new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
-              );
-            }
-            // Otherwise sort by ID which is often sequential
-            return a.id.localeCompare(b.id);
-          });
-
-          // Keep the first event (oldest), mark the rest for deletion
-          const eventsToRemove = sortedEvents.slice(1);
-          eventsToRemove.forEach((event) => {
-            eventsToDelete.push(event.id);
-          });
-        }
-      });
-
-      // Delete duplicate events if any were found
-      if (eventsToDelete.length > 0) {
-        try {
-          for (const eventId of eventsToDelete) {
-            const response = await fetch(
-              `/api/v1/workspaces/${wsId}/calendar/events/${eventId}`,
-              {
-                method: 'DELETE',
-              }
-            );
-
-            if (!response.ok) {
-              // Error deleting duplicate events
-              continue;
-            }
-
-            deletionPerformed = true;
-          }
-
-          // If events were deleted, refresh to get updated data
-          if (deletionPerformed) {
-            queryClient.invalidateQueries({
-              queryKey: ['databaseCalendarEvents', wsId],
-              exact: false,
-            });
-          }
-        } catch (err) {
-          // Failed to delete duplicate events
-          console.error(err);
-        }
-      }
-
-      // Return the filtered list without duplicates
-      return eventsData.filter((event) => !eventsToDelete.includes(event.id));
-    },
-    [wsId, queryClient, createEventSignature]
+  const visibleDatabaseEvents = useMemo(
+    () =>
+      hasExternalEvents
+        ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
+        : (data ?? fetchedData ?? []),
+    [data, externalEvents, fetchedData, hasExternalEvents]
   );
 
-  const visibleDatabaseEvents = hasExternalEvents
-    ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
-    : (data ?? fetchedData ?? null);
+  const visibleEventsWithOptimisticState = useMemo(() => {
+    const removedIds = new Set(optimisticState.removedIds);
 
-  useEffect(() => {
-    const processEvents = async () => {
-      if (visibleDatabaseEvents) {
-        const result = hasExternalEvents
-          ? (visibleDatabaseEvents as CalendarEvent[])
-          : await removeDuplicateEvents(
-              visibleDatabaseEvents as CalendarEvent[]
-            );
+    // Filter external events by enabled provider calendars. Local Tuturuuu
+    // events are always shown here; native calendar visibility is handled
+    // by the workspace calendar endpoints.
+    const filteredEvents =
+      !hasExternalEvents && calendarConnections.length > 0
+        ? (visibleDatabaseEvents as CalendarEvent[]).filter((event) => {
+            const eventCalendarId =
+              (event as any).external_calendar_id ||
+              (event as any).google_calendar_id;
+            return !eventCalendarId || enabledCalendarIds.has(eventCalendarId);
+          })
+        : (visibleDatabaseEvents as CalendarEvent[]);
 
-        // Filter external events by enabled provider calendars. Local Tuturuuu
-        // events are always shown here; native calendar visibility is handled
-        // by the workspace calendar endpoints.
-        const filteredEvents =
-          !hasExternalEvents && calendarConnections.length > 0
-            ? result.filter((event) => {
-                const eventCalendarId =
-                  (event as any).external_calendar_id ||
-                  (event as any).google_calendar_id;
-                return (
-                  !eventCalendarId || enabledCalendarIds.has(eventCalendarId)
-                );
-              })
-            : result;
+    const byId = new Map<string, CalendarEvent>();
 
-        // Merge habit info into events
-        const habitEventIds =
-          habitEventData?.habitEventIds || new Set<string>();
-        const completedHabitEventIds =
-          habitEventData?.completedHabitEventIds || new Set<string>();
+    for (const event of filteredEvents) {
+      if (!event.id || removedIds.has(event.id)) continue;
+      byId.set(event.id, event);
+    }
 
-        const eventsWithHabitInfo: CalendarEventWithHabitInfo[] =
-          filteredEvents.map((event) => ({
-            ...event,
-            _isHabit: habitEventIds.has(event.id),
-            _habitCompleted: completedHabitEventIds.has(event.id),
-          }));
+    for (const optimisticEvent of Object.values(optimisticState.events)) {
+      if (!optimisticEvent.id || removedIds.has(optimisticEvent.id)) continue;
+      if (!isVisibleInCurrentRange(optimisticEvent)) continue;
 
-        setEvents(eventsWithHabitInfo);
-      } else {
-        setEvents([]);
-      }
-    };
+      byId.set(optimisticEvent.id, {
+        ...(byId.get(optimisticEvent.id) ?? {}),
+        ...optimisticEvent,
+      } as CalendarEvent);
+    }
 
-    processEvents();
+    return [...byId.values()].sort(
+      (left, right) =>
+        new Date(left.start_at).getTime() - new Date(right.start_at).getTime()
+    );
   }, [
-    visibleDatabaseEvents,
-    removeDuplicateEvents,
     calendarConnections.length,
     enabledCalendarIds,
-    habitEventData,
     hasExternalEvents,
+    isVisibleInCurrentRange,
+    optimisticState.events,
+    optimisticState.removedIds,
+    visibleDatabaseEvents,
   ]);
+
+  useEffect(() => {
+    setOptimisticState((prev) => {
+      const serverEventsById = new Map(
+        (visibleDatabaseEvents as CalendarEvent[])
+          .filter((event) => event.id)
+          .map((event) => [event.id, event])
+      );
+      const nextEvents = { ...prev.events };
+      const nextRemovedIds = prev.removedIds.filter((id) =>
+        serverEventsById.has(id)
+      );
+      let changed = nextRemovedIds.length !== prev.removedIds.length;
+
+      for (const [id, event] of Object.entries(prev.events)) {
+        const serverEvent = serverEventsById.get(id);
+
+        if (
+          !event._optimisticStatus &&
+          serverEvent &&
+          (event.title === undefined || serverEvent.title === event.title) &&
+          (event.description === undefined ||
+            serverEvent.description === event.description) &&
+          (event.start_at === undefined ||
+            serverEvent.start_at === event.start_at) &&
+          (event.end_at === undefined || serverEvent.end_at === event.end_at) &&
+          (event.color === undefined || serverEvent.color === event.color) &&
+          (event.location === undefined ||
+            serverEvent.location === event.location) &&
+          (event.locked === undefined || serverEvent.locked === event.locked)
+        ) {
+          delete nextEvents[id];
+          changed = true;
+        }
+      }
+
+      return changed
+        ? {
+            events: nextEvents,
+            removedIds: nextRemovedIds,
+          }
+        : prev;
+    });
+  }, [visibleDatabaseEvents]);
+
+  useEffect(() => {
+    const habitEventIds = habitEventData?.habitEventIds || new Set<string>();
+    const completedHabitEventIds =
+      habitEventData?.completedHabitEventIds || new Set<string>();
+
+    const eventsWithHabitInfo: CalendarEventWithHabitInfo[] =
+      visibleEventsWithOptimisticState.map((event) => ({
+        ...event,
+        _isHabit: habitEventIds.has(event.id),
+        _habitCompleted: completedHabitEventIds.has(event.id),
+      }));
+
+    setEvents(eventsWithHabitInfo);
+  }, [habitEventData, visibleEventsWithOptimisticState]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change

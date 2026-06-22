@@ -768,6 +768,110 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
+  it('keys verified calendar event deletes by authenticated session', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number; verified: true }>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, { m: 1, verified: true });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 60,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest(
+        '/api/v1/workspaces/071e0fc7-9aa8-42d8-92e5-cc9b3aeec2f1/calendar/events/68e18a3a-c527-421e-8ac3-f8b846175622',
+        'DELETE',
+        {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+        }
+      ),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 60,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:default:authenticated:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:default:authenticated:t1:mutate:minute'
+    );
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
+  it('keeps unverified calendar event deletes on the anonymous IP bucket', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest(
+        '/api/v1/workspaces/071e0fc7-9aa8-42d8-92e5-cc9b3aeec2f1/calendar/events/68e18a3a-c527-421e-8ac3-f8b846175622',
+        'DELETE',
+        {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=forged-value; theme=dark',
+        }
+      ),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 30,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:default:anonymous:mutate:minute'
+    );
+    expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
+  });
+
   it('keeps unauthenticated cron reads on a strict proxy bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -1911,6 +2015,64 @@ describe('guardApiProxyRequest', () => {
     expect(limiterId.startsWith('session:')).toBe(true);
   });
 
+  it('keeps trusted-session mutation limits flat while using the session bucket', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number }>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, { m: 3 });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 60,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest(
+        '/api/v1/workspaces/071e0fc7-9aa8-42d8-92e5-cc9b3aeec2f1/calendar/events/68e18a3a-c527-421e-8ac3-f8b846175622',
+        'DELETE',
+        {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+        }
+      ),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 60,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:default:authenticated:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:default:authenticated:t3:mutate:minute'
+    );
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
   it('uplifts a trusted location per-IP without per-session keying', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -1952,6 +2114,56 @@ describe('guardApiProxyRequest', () => {
       'proxy:test:api:task-board-read:anonymous:t2:get:minute'
     );
     // Location trust keeps the shared per-IP bucket (whole team benefits).
+    expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
+  });
+
+  it('does not apply trusted-location read uplift to mutations', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    const receivedKeys: string[] = [];
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      receivedKeys.push(...keys);
+      const map = new Map<string, { m: number }>();
+      const cidrKey = keys.find((key) => key.startsWith('cidr:'));
+      if (cidrKey) {
+        map.set(cidrKey, { m: 2 });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 30,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:default:anonymous:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:default:anonymous:t2:mutate:minute'
+    );
+    expect(receivedKeys.some((key) => key.startsWith('cidr:'))).toBe(false);
     expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
   });
 

@@ -1,70 +1,84 @@
 ---
 title: "Development Tools"
 description: "Tools and guides for developing on the Tuturuuu platform"
-updatedAt: "2025-09-27"
+updatedAt: "2026-06-21"
 ---
 
 This section contains tools, guides, and best practices for developing on the Tuturuuu platform.
 
 ## Getting Started
 
-- [Development Setup](./development) - Set up your development environment
-- [Monorepo Architecture](./monorepo-architecture) - Understand the project structure
-- [Git Conventions](./git-conventions) - Code contribution guidelines
+- [Development Setup](/build/development-tools/development) - Set up your development environment
+- [Monorepo Architecture](/build/development-tools/monorepo-architecture) - Understand the project structure
+- [Git Conventions](/build/development-tools/git-conventions) - Code contribution guidelines
 
 ## Development Workflow
 
-- [Local Supabase Development](./local-supabase-development) - Database development setup
-- [CI/CD Pipelines](./ci-cd-pipelines) - Continuous integration and deployment
+- [Local Supabase Development](/build/development-tools/local-supabase-development) - Database development setup
+- [CI/CD Pipelines](/build/development-tools/ci-cd-pipelines) - Continuous integration and deployment
 - [DevOps & Deployment](/build/devops/overview) - Operational runbooks for environments, workflows, Docker, and secrets
-- [Cleaning Clone](./cleaning-clone) - Reset your local environment
+- [Cleaning Clone](/build/development-tools/cleaning-clone) - Reset your local environment
 
 ## Documentation
 
-- [Documenting](./documenting) - How to write and maintain documentation
+- [Documenting](/build/development-tools/documenting) - How to write and maintain documentation
 
 ## Development Guidelines
 
 ### Code Quality
 
-- Follow TypeScript best practices
-- Use proper error handling
-- Write comprehensive tests
-- Follow the established patterns
+- Formatting and linting are handled by [Biome](https://biomejs.dev/) (`biome.json`),
+  not ESLint or Prettier. Use `bun ff` to format, lint, and check in one pass.
+- Run `bun check` before opening a PR — it is the repo's verification gate for
+  TypeScript, JavaScript, root-script, and config changes (run focused tests first).
+- Default to Server Components in `apps/web`; add `'use client'` only for state,
+  browser APIs, or interactivity.
+- Prefer typed expected errors and dependency services via `@tuturuuu/utils/effect`
+  for new server/service orchestration.
 
 ### Git Workflow
 
-- Use conventional commits
-- Create feature branches
-- Write descriptive PR descriptions
-- Keep commits atomic
+- Use [Conventional Commits](/build/development-tools/git-conventions) for commit
+  messages and branch names.
+- The branch checker only accepts these prefixes: `feature/`, `feat/`, `fix/`,
+  `bugfix/`, `hotfix/`, `release/`, `chore/`, `docs/`, `style/`, `refactor/`,
+  `perf/`, `dependabot/`, and `claude/`.
+- Keep commits atomic and write descriptive PR descriptions.
+- Do not manually bump `TUTURUUU_PLATFORM_VERSION`, package versions, or
+  changelogs — Release Please owns version updates.
 
 ### Testing
 
-- Write unit tests for utilities
-- Add integration tests for components
-- Test error scenarios
-- Maintain test coverage
+- Tests run with Vitest. Use `bun test` for the full suite or filter to a single
+  workspace (for example `bun --filter @tuturuuu/web test`).
+- Write unit tests for utilities and cover error scenarios.
+- Run focused tests before the full `bun check` gate.
 
 ### Performance
 
-- Optimize for server-side rendering
-- Use proper caching strategies
-- Minimize bundle size
-- Profile performance regularly
+- Default to server-side rendering and Server Components where possible.
+- Use TanStack Query for client-side fetching and caching; avoid `useEffect` for
+  data fetching.
+- Minimize bundle size and profile performance regularly.
 
 ## Tools and Scripts
 
 ### Package Management
 
+Dependencies are always installed from inside the owning workspace — never by
+hand-editing the root `package.json` and never with a `--workspace` flag.
+
 ```bash
-# Install dependencies
+# Install all dependencies
 bun install
 
-# Add a new dependency
-bun add <package> --workspace=@tuturuuu/<scope>
+# Add a dependency to an app (e.g. apps/web)
+cd apps/web && bun add <package>
 
-# Update dependencies
+# Add a dependency to a shared package (e.g. packages/ui)
+cd packages/ui && bun add <package>
+
+# Update dependencies across the monorepo
 bun update-all
 ```
 
@@ -74,39 +88,49 @@ bun update-all
 # Start all apps
 bun dev
 
-# Start specific app
-bun --filter @tuturuuu/web dev
+# Start a specific app
+bun dev:web
 
-# Run tests
+# Run tests (Vitest)
 bun test
 
-# Build all packages
-bun run build
+# Run the full verification gate before a PR
+bun check
 ```
 
 ### Database Commands
 
 ```bash
-# Start Supabase
+# Start the local Supabase stack
 bun sb:start
 
-# Apply migrations
-bun sb:push
+# Create a new migration
+bun sb:new
 
-# Generate types
+# Apply pending migrations locally
+bun sb:up
+
+# Generate TypeScript types from the local schema
 bun sb:typegen
 
-# Reset database
+# Reset the local database (re-runs all migrations + seeds)
 bun sb:reset
 ```
+
+<Warning>
+  `bun sb:push` and `bun sb:linkpush` push migrations to the **remote**
+  Supabase project and are reserved for the maintainer applying production
+  changes. Do not run them — prepare migrations locally with `bun sb:up` and let
+  the user apply production changes.
+</Warning>
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Build Failures**: Check TypeScript errors and missing dependencies
-2. **Database Issues**: Ensure Supabase is running and migrations are applied
-3. **Test Failures**: Check for environment setup and mock configurations
+1. **Build / Check Failures**: Run `bun check` to surface TypeScript and Biome errors, and confirm dependencies are installed with `bun install`
+2. **Database Issues**: Ensure the local Supabase stack is running (`bun sb:start`) and migrations are applied (`bun sb:up`)
+3. **Test Failures**: Check environment setup and re-run the focused Vitest workspace before the full `bun check` gate
 4. **Performance Issues**: Use React DevTools and bundle analyzers
 
 ### Getting Help

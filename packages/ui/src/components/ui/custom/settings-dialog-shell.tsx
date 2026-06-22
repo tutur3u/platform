@@ -273,7 +273,8 @@ export function SettingsDialogShell({
 
   return (
     <DialogContent
-      className="top-0 left-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 shadow-none sm:max-w-none"
+      presentation="fullscreen"
+      className="flex-col"
       onKeyDown={handleKeyboardNavigation}
       showCloseButton={false}
     >

@@ -7,18 +7,21 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { getBoardRealtimeChannelName } from '@tuturuuu/ui/hooks/useBoardRealtime.types';
+import { useLayoutEffect, useRef } from 'react';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
 import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
+import { compareTasksByEffectiveSortKey } from '../dnd/task-sort-key';
 import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
 import { isKanbanColumnCollapsed } from '../kanban-column-collapse';
-import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { getKanbanColumnWidth } from './kanban-column-width';
 import {
+  type KanbanDeadlineCollapsedState,
   type KanbanDeadlineLabels,
   KanbanDeadlinePanels,
+  type KanbanDeadlineSection,
 } from './kanban-deadline-panels';
 import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
 
@@ -55,6 +58,13 @@ interface KanbanColumnsProps {
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   deadlineLabels?: KanbanDeadlineLabels;
   deadlineSections?: KanbanDeadlineSections;
+  deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
+  deadlineNow?: number;
+  onDeadlineSectionCollapsedChange?: (
+    section: KanbanDeadlineSection,
+    collapsed: boolean
+  ) => void;
+  readOnly?: boolean;
 }
 
 export function KanbanColumns({
@@ -85,16 +95,62 @@ export function KanbanColumns({
   onTaskListCollapsedChange,
   deadlineLabels,
   deadlineSections,
+  deadlineSectionsCollapsed,
+  deadlineNow,
+  onDeadlineSectionCollapsedChange,
+  readOnly = false,
 }: KanbanColumnsProps) {
+  const initialScrollAnchoredBoardRef = useRef<string | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
+  const deadlineSectionOrder: KanbanDeadlineSection[] = ['overdue', 'upcoming'];
+  const visibleDeadlineSections =
+    !readOnly && deadlineSections
+      ? deadlineSectionOrder.filter(
+          (section) => deadlineSections[section].length > 0
+        )
+      : [];
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
-  const collapsedColumnCount = columns.filter(isKanbanColumnCollapsed).length;
+  const collapsedColumnCount =
+    columns.filter(isKanbanColumnCollapsed).length +
+    visibleDeadlineSections.filter(
+      (section) => deadlineSectionsCollapsed?.[section] === true
+    ).length;
   const dynamicColumnWidth = getKanbanColumnWidth({
-    columnCount: columns.length,
+    columnCount: columns.length + visibleDeadlineSections.length,
     collapsedColumnCount,
     snapEdgePadding,
     fillAvailableWidth: listStatusFilter === 'all',
   });
+  const hasLeftSpecialColumns =
+    visibleDeadlineSections.length > 0 ||
+    columns.some((column) => column.is_external_staging);
+
+  useLayoutEffect(() => {
+    if (!hasLeftSpecialColumns) return;
+    if (initialScrollAnchoredBoardRef.current === boardId) return;
+
+    const container = boardRef.current;
+    if (!container) return;
+
+    const target = container.querySelector<HTMLElement>(
+      '[data-kanban-real-column="true"]'
+    );
+    if (!target) return;
+
+    initialScrollAnchoredBoardRef.current = boardId;
+
+    const anchor = () => {
+      container.scrollLeft = Math.max(0, target.offsetLeft - 8);
+    };
+
+    if (typeof window.requestAnimationFrame !== 'function') {
+      anchor();
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(anchor);
+    return () => window.cancelAnimationFrame?.(frame);
+  }, [boardId, boardRef, hasLeftSpecialColumns]);
 
   return (
     <div
@@ -121,7 +177,7 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
-          {deadlineSections && deadlineLabels && (
+          {!readOnly && deadlineSections && deadlineLabels && (
             <KanbanDeadlinePanels
               availableLists={realColumns}
               boardId={boardId}
@@ -130,10 +186,13 @@ export function KanbanColumns({
               isPersonalWorkspace={isPersonalWorkspace}
               labels={deadlineLabels}
               onClearSelection={onClearSelection}
+              onSectionCollapsedChange={onDeadlineSectionCollapsedChange}
               onTaskSelect={onTaskSelect}
               onUpdate={onUpdate}
               optimisticUpdateInProgress={optimisticUpdateInProgress}
               sections={deadlineSections}
+              collapsedSections={deadlineSectionsCollapsed}
+              deadlineNow={deadlineNow}
               selectedTasks={selectedTasks}
               taskLists={columns}
               workspaceId={workspaceId}
@@ -170,14 +229,7 @@ export function KanbanColumns({
 
               // For all other lists, only sort by sort_key if parent hasn't already sorted
               if (!disableSort) {
-                const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                if (sortA !== sortB) return sortA - sortB;
-                if (!a.created_at || !b.created_at) return 0;
-                return (
-                  new Date(a.created_at).getTime() -
-                  new Date(b.created_at).getTime()
-                );
+                return compareTasksByEffectiveSortKey(a, b);
               }
 
               return 0;
@@ -210,10 +262,13 @@ export function KanbanColumns({
                 wsId={workspaceId}
                 onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
                 onTaskListCollapsedChange={onTaskListCollapsedChange}
+                readOnly={readOnly}
               />
             );
           })}
-          <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+          {!readOnly && (
+            <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+          )}
         </div>
       </SortableContext>
 

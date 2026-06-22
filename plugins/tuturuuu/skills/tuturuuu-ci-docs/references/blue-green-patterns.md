@@ -130,6 +130,13 @@ infrastructure dashboard changes.
   cluster look unhealthy after a successful migration. Project-label cleanup
   must honor Compose `--project-name`/`-p`, `COMPOSE_PROJECT_NAME`, and
   `DOCKER_WEB_COMPOSE_PROJECT_NAME`.
+- Log-drain Postgres is an optional script-owned preflight, not a Compose
+  `depends_on` gate for `web`, blue/green lanes, or the watcher. If
+  `log-drain-postgres` stays unhealthy after one service-container recreate,
+  continue with `PLATFORM_LOG_DRAIN_ENABLED=false` unless
+  `DOCKER_WEB_LOG_DRAIN_REQUIRED=1`; never remove or recreate the persistent
+  volume automatically because incompatible database files and data-directory
+  corruption need an operator-approved backup, migration, or reset.
 
 ## Observability
 

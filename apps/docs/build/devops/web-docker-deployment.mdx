@@ -1,10 +1,11 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-06-11"
+updatedAt: "2026-06-21"
 ---
 
-This is the operational guide for the Docker-based `apps/web` runtime.
+This is the operational guide for the Docker-based `apps/web` runtime and the
+parallel `apps/tanstack-web` migration runtime.
 
 ## Files That Define The Stack
 
@@ -12,6 +13,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - `apps/web/docker/blue-green-watcher.Dockerfile`
 - `apps/web/docker/cron-runner.Dockerfile`
 - `apps/web/cron.config.json`
+- `apps/tanstack-web/Dockerfile`
 - `apps/backend/Dockerfile`
 - `apps/meet-realtime/Dockerfile`
 - `apps/supermemory/Dockerfile`
@@ -36,28 +38,31 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `bun serve:web:docker:down`                | Stop the production Docker stack                                                                                                                        |
 | `bun serve:web:docker:bg:down`             | Stop the blue/green stack and clear local runtime state                                                                                                 |
 | `bun test:e2e` / `bun test:e2e:web:docker` | Start local Supabase, reset it, run the production blue/green Docker web stack, then run Playwright                                                     |
+| `bun benchmark:web-setups`                 | Compare reachable Next.js, TanStack Start, and Rust backend routes and write reports under `tmp/benchmarks/web-migration/`                              |
+| `bun migration:tanstack:gates`             | Validate route parity, Docker E2E evidence, and benchmark evidence before TanStack/Rust cutover                                                         |
 | `bun check:docker`                         | Validate Dockerfile and compose parity rules                                                                                                            |
+| `bun check:cloudflare`                     | Validate TanStack Start and Rust backend Wrangler deploy configs without contacting Cloudflare                                                          |
 
 ## Flags And Implicit Mappings
 
-| Flag                            | Meaning                                                                                     |
-| ------------------------------- | ------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------- |
-| `--without-redis`               | Disable the bundled Redis profile and skip Docker-injected Redis env                        |
-| `--with-cloudflared`            | Enable the bundled Cloudflare Tunnel container profile                                      |
-| `--with-supabase`               | Start local Supabase before the Docker web flow                                             |
-| `--reset-supabase`              | Start and reset local Supabase before the Docker web flow                                   |
-| `--env-file tmp/e2e/web.env`    | Use an explicit Docker web env file for build secrets and runtime env files                 |
-| `--mode prod`                   | Use the production compose file instead of the dev stack                                    |
-| `--strategy blue-green`         | Use blue/green production deployment instead of in-place replacement                        |
-| `--profile redis`               | Explicitly enable the Redis profile when calling the helper directly                        |
-| `--profile cloudflared`         | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly            |
-| `--build-memory 4g`             | Run builds through a capped Buildx builder with a memory ceiling                            |
-| `--build-cpus 4`                | Run builds through a capped Buildx builder with an approximate CPU limit                    |
-| `--build-max-parallelism 2`     | Limit concurrent BuildKit solve steps for lower build pressure                              |
-| `--build-builder-name tuturuuu` | Override the throttled Buildx builder name                                                  |
-| `--resume-if-running`           | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
-| `--replace-existing`            | If another watcher PID already holds the lock, stop it and take over                        |
-| `--if-locked &lt;fail           | resume                                                                                      | replace&gt;` | Explicit lock-conflict policy for the watcher |
+| Flag                                                | Meaning                                                                                     |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `--without-redis`                                   | Disable the bundled Redis profile and skip Docker-injected Redis env                        |
+| `--with-cloudflared`                                | Enable the bundled Cloudflare Tunnel container profile                                      |
+| `--with-supabase`                                   | Start local Supabase before the Docker web flow                                             |
+| `--reset-supabase`                                  | Start and reset local Supabase before the Docker web flow                                   |
+| `--env-file tmp/e2e/web.env`                        | Use an explicit Docker web env file for build secrets and runtime env files                 |
+| `--mode prod`                                       | Use the production compose file instead of the dev stack                                    |
+| `--strategy blue-green`                             | Use blue/green production deployment instead of in-place replacement                        |
+| `--profile redis`                                   | Explicitly enable the Redis profile when calling the helper directly                        |
+| `--profile cloudflared`                             | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly            |
+| `--build-memory 4g`                                 | Run builds through a capped Buildx builder with a memory ceiling                            |
+| `--build-cpus 4`                                    | Run builds through a capped Buildx builder with an approximate CPU limit                    |
+| `--build-max-parallelism 2`                         | Limit concurrent BuildKit solve steps for lower build pressure                              |
+| `--build-builder-name tuturuuu`                     | Override the throttled Buildx builder name                                                  |
+| `--resume-if-running`                               | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
+| `--replace-existing`                                | If another watcher PID already holds the lock, stop it and take over                        |
+| `--if-locked &lt;fail&#124;resume&#124;replace&gt;` | Explicit lock-conflict policy for the watcher                                               |
 
 | Command                                 | Implicit flags                      |
 | --------------------------------------- | ----------------------------------- |
@@ -93,13 +98,25 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   those snippets in sync with `scripts/check-docker-web.js`. Adding a new
   workspace app or package without updating those lists makes Docker-only
   installs try to rewrite `bun.lock`. `bun check:docker` validates this manifest
-  parity. `apps/backend` is an independent Go module, and `apps/meet-realtime`
+  parity. `apps/backend` is an independent Rust crate, and `apps/meet-realtime`
   is intentionally not a workspace package; their Dockerfiles do not require
   `bun.lock` changes when service source changes.
 - The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
 - Production Docker serving commands (`bun serve:web:docker`, `bun serve:web:docker:bg`, and `bun serve:web:docker:bg:watch`) prefer root `.env.local` when it exists, even if the shell inherited stale `DOCKER_WEB_ENV_FILE` or `DOCKER_WEB_COMPOSE_*ENV_FILE` values. Passing `--env-file <path>` is the explicit way to use another deployment env file.
 - `ttr box setup` intentionally writes local Supabase values into app-local env files such as `apps/web/.env.local`. Those files are valid for devbox/local work but must not be the effective production watcher env. Keep root `.env.local` or the explicit deployment env file pointed at the cloud Supabase project.
 - Production Docker serving refuses local Supabase origins (`localhost`, `127.0.0.1`, `::1`, `host.docker.internal`, and local Supabase ports) unless `DOCKER_WEB_ALLOW_LOCAL_SUPABASE=1` is set for a local production-image rehearsal.
+- `log-drain-postgres` stores deployment telemetry only. Production startup
+  explicitly starts it from `scripts/docker-web.js` and retries once after
+  removing only the service container, but web and watcher services do not
+  declare a Compose `depends_on` relationship to it. An unhealthy log-drain
+  database no longer blocks web promotion by default: the helper continues with
+  `PLATFORM_LOG_DRAIN_ENABLED=false`, prints recent service state/log
+  diagnostics, and leaves the `platform-log-drain-postgres` volume intact. Set
+  `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` only when telemetry storage must be a hard
+  promotion gate. If diagnostics mention incompatible database files or data
+  directory corruption, back up or migrate the Compose volume first; do not run
+  `docker compose down --volumes` or remove the volume without explicit
+  operator approval.
 - Non-production Docker helpers still rewrite an explicitly local server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
 - Dockerized web services set `__NEXT_PRIVATE_ORIGIN` from
   `DOCKER_WEB_NEXT_PRIVATE_ORIGIN`, defaulting to
@@ -117,8 +134,47 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - Dockerized web commands auto-enable the local Redis companion stack and inject `UPSTASH_REDIS_REST_URL` plus a generated `UPSTASH_REDIS_REST_TOKEN` into the web container.
 - Dockerized production commands generate `BACKEND_INTERNAL_TOKEN` when one is
   not provided and inject `BACKEND_INTERNAL_URL=http://backend:7820` for the
-  Go backend service. Dev Compose uses the same internal URL with a local
-  fallback token.
+  Rust backend service. Dev Compose uses the same internal URL with a local
+  fallback token. The same Rust HTTP core is prepared for later Cloudflare
+  Workers deployment through `apps/backend/wrangler.jsonc`; validate the Worker
+  deploy contract with `bun check:cloudflare`.
+- `apps/backend/Dockerfile` copies
+  `apps/tanstack-web/migration/route-manifest.json` before `cargo build`
+  because the Rust migration endpoints include that checked manifest at compile
+  time. Regenerate the manifest before Docker validation when legacy route
+  inventory changes.
+- The TanStack migration services use `apps/tanstack-web/Dockerfile`, direct
+  host port `7824`, and the Portless browser origin
+  `https://tanstack.tuturuuu.localhost:1355`.
+  Production Compose defines `tanstack-web`, `tanstack-web-blue`, and
+  `tanstack-web-green` so benchmark and cutover checks can run beside the
+  legacy Next.js lanes. Docker E2E aliases the TanStack Portless route to
+  `DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT` (default `7824`), not the Next
+  `web-proxy` port `7803`; setting
+  `E2E_ALLOW_TANSTACK_WEB_PROXY_PORT=1` is required for an intentional
+  proxy-routing experiment. Production TanStack services wait on the Rust
+  backend `service_healthy` check before starting, because the Start runtime
+  uses `BACKEND_INTERNAL_URL=http://backend:7820` for server-owned API calls.
+  The TanStack image and production Compose healthchecks also require the root
+  readiness page to include `Backend reachable`, so a status-only shell cannot
+  satisfy Docker cutover readiness when the Rust backend is unreachable.
+  Use `DOCKER_WEB_FRONTEND=next|tanstack` to select the default web frontend in
+  migration-aware scripts. The default is still `next`; setting `tanstack`
+  keeps nginx on the public `web-proxy:7803` listener but routes the active
+  upstream to `tanstack-web-blue:7824` or `tanstack-web-green:7824`. Set the
+  variable in the host/root deployment env before creating
+  `web-blue-green-watcher` or `web-cron-runner`, because both containers inherit
+  it for status probes, cached recovery, and watcher recreation. Cloudflare
+  preview deploys use
+  `apps/tanstack-web/wrangler.jsonc` plus the app-local
+  `deploy:cloudflare`, `deploy:cloudflare:dry-run`, `preview:cloudflare`, and
+  `cf-typegen` scripts, so incremental TanStack route ports can be validated on
+  Workers before the full cutover gate passes.
+- Cloudflare preview deployment is separate from the Docker blue/green
+  production stack. Use it to prove Worker compatibility for
+  `apps/tanstack-web` and `apps/backend`; do not route the production hostname
+  to preview Workers until the TanStack/Rust manifest, compare-mode Docker E2E,
+  benchmark report, and cutover gates pass.
 - The production stack runs the first-party AI memory sidecar as an internal
   support service at `http://supermemory:8787`. The service name and
   `SUPERMEMORY_*` env names stay compatible with existing web runtime wiring,
@@ -140,6 +196,136 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   removes that support service from blue/green builds, starts, and health gates
   for local-only runs.
 
+## Cloudflare Preview Path
+
+Docker remains the production rollout and rollback mechanism while the
+TanStack/Rust migration is incomplete. Cloudflare Workers are available now for
+incremental preview validation:
+
+1. Run the config preflight without contacting Cloudflare:
+
+   ```bash
+   bun check:cloudflare
+   ```
+
+   Keep local Worker secret values in `apps/backend/.dev.vars` and
+   `apps/tanstack-web/.dev.vars`; those files are ignored by `.gitignore`.
+   `wrangler.jsonc` may name required secrets, but it must not contain secret
+   values or account-specific private origins.
+
+2. Deploy the Rust backend Worker first:
+
+   ```bash
+   rustup target add wasm32-unknown-unknown
+   cargo install worker-build --locked
+   bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+   bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
+   bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+   bun wrangler deploy --config apps/backend/wrangler.jsonc
+   ```
+
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for the
+   Rust-owned contact/profile APIs. The backend uses them only server-side to
+   read `users` and `user_private_details` and insert `support_inquiries`
+   through Supabase REST.
+   `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are required for Rust-owned
+   Discord cron proxy preview readiness, and `AURORA_EXTERNAL_URL` is required
+   for the Rust-owned Aurora health probe; configure them even when the first
+   smoke target is only `/healthz`.
+
+   Use `wrangler secret put` for first preview bootstrap only. It creates and
+   deploys a new active Worker version when the secret changes. For rotations or
+   canary traffic, use:
+
+   ```bash
+   bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+   bun wrangler versions deploy --config apps/backend/wrangler.jsonc
+   ```
+
+3. Bind the TanStack Worker to the backend Worker by service binding and keep
+   secret values out of source. `apps/tanstack-web/wrangler.jsonc` declares the
+   `BACKEND` service binding to `tuturuuu-backend`; `BACKEND_INTERNAL_URL` is
+   only an optional HTTP fallback for local or emergency non-binding runs:
+
+   ```bash
+   bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+   ```
+
+   Use the versions flow for TanStack Worker secret rotations too:
+
+   ```bash
+   bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler versions deploy --config apps/tanstack-web/wrangler.jsonc
+   ```
+
+4. Deploy the TanStack Start Worker:
+
+   ```bash
+   bun --cwd apps/tanstack-web run cf-typegen
+   bun --cwd apps/tanstack-web run deploy:cloudflare
+   ```
+
+5. Smoke both returned Worker origins:
+
+   ```bash
+   BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+   BACKEND_WORKER_ORIGIN=https://<backend-worker-origin> \
+   TANSTACK_WEB_WORKER_ORIGIN=https://<tanstack-worker-origin> \
+   bun smoke:cloudflare
+   ```
+
+   Keep `BACKEND_INTERNAL_TOKEN` in the shell, ignored local env, or Wrangler
+   secret storage only. The smoke report must include the positive authenticated
+   migration-status probe and the missing/invalid-token rejection probes before
+   the Cloudflare cutover gate can pass.
+
+Security expectations for this path:
+
+- Keep `BACKEND_INTERNAL_TOKEN`, backend origins, and future service credentials
+  in Wrangler/Cloudflare bindings or ignored local env only. `wrangler.jsonc`
+  may list variable names and non-secret preview defaults, never secret values.
+- Browser code must not receive backend bearer tokens. Protected workspace,
+  private schema, cron, job, and admin routes stay server-owned through Rust
+  endpoints and `packages/internal-api` / TanStack server functions.
+- Re-check CORS, cookie domain, secure-cookie, `SameSite`, and session-origin
+  behavior before adding a custom hostname; `workers.dev`, local Portless, and
+  production hosts are different browser origins.
+- Keep Cloudflare preview in `BACKEND_ENV=preview`; development-only migration
+  bypasses are local-only.
+
+Rollback from this preview path is DNS/routing-based: remove the Cloudflare
+route or custom domain that points at the preview Worker, or redeploy the last
+known-good Worker version, while the Docker blue/green `apps/web` production
+stack keeps serving the canonical hostname. Do not delete Worker secrets unless
+the secret value is compromised. Use Wrangler to inspect and roll back preview
+Worker versions:
+
+```bash
+bun wrangler deployments list --config apps/backend/wrangler.jsonc
+bun wrangler deployments status --config apps/backend/wrangler.jsonc
+bun wrangler rollback <VERSION_ID> --config apps/backend/wrangler.jsonc
+
+bun wrangler deployments list --config apps/tanstack-web/wrangler.jsonc
+bun wrangler deployments status --config apps/tanstack-web/wrangler.jsonc
+bun wrangler rollback <VERSION_ID> --config apps/tanstack-web/wrangler.jsonc
+```
+
+Worker rollback does not revert external resources, bindings, routes, custom
+domains, or secret values. Re-run `bun smoke:cloudflare` against the remaining
+preview origins before resuming canary traffic.
+
 ## Dockerized E2E
 
 `bun test:e2e` from the repo root and `bun test:e2e` in `apps/web` run through
@@ -156,6 +342,62 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 5. waits for `https://tuturuuu.localhost:1355/login`, then runs Playwright
    against that shared-cookie origin, and
 6. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
+
+Pass `--frontend next`, `--frontend tanstack`, or `--frontend compare` to select
+the legacy Next.js host, the TanStack host, or both sequentially:
+
+```bash
+bun test:e2e:web:docker -- --frontend compare
+```
+
+The TanStack mode reuses the existing `apps/web/e2e` suite and points Playwright
+at `https://tanstack.tuturuuu.localhost:1355`. The runner aliases that Portless
+host to the direct TanStack Docker port `7824` by default. If
+`DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT` is changed to the same value as the Next
+`DOCKER_WEB_PROXY_HOST_PORT`, the runner refuses to continue unless
+`E2E_ALLOW_TANSTACK_WEB_PROXY_PORT=1` is set for an explicit proxy-routing test.
+
+Compare mode writes `tmp/e2e/web-migration/compare-report.json` after both
+frontend runs complete. Set `E2E_COMPARE_REPORT_PATH` to redirect that evidence
+file under another ignored `tmp/` location. The report records the normalized
+Next and TanStack frontend origins used by the run plus per-frontend Playwright
+test counts from JSON reporter output. The cutover gate rejects missing,
+credentialed, invalid, or same-origin compare evidence, and it also rejects
+reports that do not prove nonzero Playwright execution for both frontends before
+they can satisfy terminal migration gates.
+
+Before cutover, pair the compare-mode E2E evidence with a full benchmark report
+and Cloudflare smoke report:
+
+```bash
+BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+bun benchmark:web-setups -- \
+  --setup compare \
+  --profile full \
+  --require-all \
+  --next-origin https://<legacy-next-origin> \
+  --tanstack-origin https://<tanstack-worker-origin> \
+  --backend-origin https://<backend-worker-origin>
+```
+
+The benchmark report is cutover evidence, so the origins are part of the gate.
+The benchmark command rejects same-origin Next/TanStack compare runs, and the
+cutover gate rejects reports with missing origins or route/sample URLs that do
+not match the recorded setup origin. This catches accidental proxy reuse before
+the report can satisfy migration gates.
+
+```bash
+bun migration:tanstack:gates -- \
+  --e2e-report tmp/e2e/web-migration/compare-report.json \
+  --benchmark-report tmp/benchmarks/web-migration/<timestamp>/report.json \
+  --cloudflare-smoke-report tmp/benchmarks/web-migration/<timestamp>/cloudflare-smoke.json \
+  --output tmp/benchmarks/web-migration/<timestamp>/cutover-gates.json
+```
+
+The gate command does not start Docker. It only validates explicit report files
+so generated evidence remains under ignored `tmp/` paths. The output JSON is the
+review/handoff artifact that links the Docker E2E, benchmark, and Cloudflare
+smoke evidence for sign-off without committing generated reports.
 
 Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
 custom image tags for the current `ttr-e2e-*` project, so per-run containers,
@@ -899,8 +1141,9 @@ deployment kind, and a re-entrant token for nested helper calls).
   as a stale PID reuse. On **macOS and Windows**, the same age-based stale window
   (`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`, default eight hours) still clears
   abandoned locks because `/proc` validation is unavailable. When no `web-proxy`
-  / `web-blue` / `web-green` containers exist, the auto-deploy watcher also runs
-  the same stale-lock sweep before cached recovery.
+  / `web-blue` / `web-green` / `tanstack-web-blue` / `tanstack-web-green`
+  containers exist, the auto-deploy watcher also runs the same stale-lock sweep
+  before cached recovery.
 - **`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`**: optional override for the
   default eight-hour window used when `/proc` is unreadable but `kill(pid, 0)`
   still reports a process (for example permission quirks). Set to `0` to
@@ -1606,11 +1849,12 @@ Dashboard details:
   deployment stamp and blue/green color. That lets the watcher link requests
   back to the correct deployment instead of only estimating by time window.
 - For each newly drained proxy request, the watcher also reads recent
-  `web-blue` and `web-green` container stdout/stderr and stores up to 20 route
-  console lines that fall inside the request latency window. Those captured
-  lines are persisted on the request-log record itself so the request explorer
-  can show request-scoped server console output after the live Docker logs have
-  moved on.
+  stdout/stderr from the selected frontend lanes (`web-blue` / `web-green` for
+  `DOCKER_WEB_FRONTEND=next`, or `tanstack-web-blue` / `tanstack-web-green` for
+  `DOCKER_WEB_FRONTEND=tanstack`) and stores up to 20 route console lines that
+  fall inside the request latency window. Those captured lines are persisted on
+  the request-log record itself so the request explorer can show request-scoped
+  server console output after the live Docker logs have moved on.
 - The watcher retains up to 10,000 deployment history entries and up to
   100,000,000 recent drained request-log records on disk, bounded by a 256 MiB
   durable request-log byte cap by default. When the next request record would
@@ -1728,6 +1972,32 @@ Dashboard details:
   `DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS`, and
   `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`; non-transient Compose errors still
   fail immediately.
+- If `log-drain-postgres` starts but remains unhealthy before promotion, the
+  helper removes and recreates only that service container once, collects
+  `docker compose ps`, container inspect state, recent service logs, and
+  matching Compose volume names, then continues the rollout with
+  `PLATFORM_LOG_DRAIN_ENABLED=false` for that run. The production `web` and
+  `web-blue-green-watcher` services intentionally do not use Compose
+  `depends_on` for log-drain; the script-owned preflight is the only log-drain
+  gate. Platform traffic can promote while telemetry and Infrastructure project
+  automation are degraded.
+- Set `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` when an operator wants
+  `log-drain-postgres` to remain a hard deployment gate. Use that only when the
+  log-drain database is part of the deployment objective and a blocked rollout
+  is preferable to serving without persisted request/server logs.
+- To inspect a degraded log-drain startup without changing data, run:
+
+  ```bash
+  docker compose -f docker-compose.web.prod.yml --profile redis ps --all log-drain-postgres
+  docker compose -f docker-compose.web.prod.yml --profile redis logs --tail 200 log-drain-postgres
+  docker volume ls --filter label=com.docker.compose.volume=platform-log-drain-postgres
+  ```
+
+  If those logs mention incompatible database files, data-directory corruption,
+  or an invalid checkpoint, back up or migrate the matching Compose volume
+  before retrying. Do not run `docker compose down --volumes`,
+  `docker volume rm`, or any other volume-clearing command for log-drain data
+  unless an operator has explicitly approved a backed-up reset.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
   status snapshot and active PID before the watcher service is force-recreated,
   but preserves any complete branch/upstream target metadata. A stale lock from
@@ -1844,18 +2114,22 @@ Operational notes:
 `docker-setup-check.yaml` now validates all of the following:
 
 - `node scripts/check-docker-web.js`
-- `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js`
+- `node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/run-tanstack-e2e-docker.test.js`
 - `docker compose -f docker-compose.web.yml config`
 - `docker compose -f docker-compose.web.yml --profile redis config`
 - `docker compose -f docker-compose.web.yml --profile cloudflared config`
 - `docker compose -f docker-compose.web.prod.yml config`
 - `docker compose -f docker-compose.web.prod.yml --profile redis config`
 - `docker compose -f docker-compose.web.prod.yml --profile cloudflared config`
+- `docker compose -f docker-compose.tanstack-dual.yml config`
 - `docker build -f apps/backend/Dockerfile .`
 - `docker build --target dev -f apps/web/Dockerfile .`
-- `docker build --target runner --secret id=web_env,src=.env.local -f apps/web/Dockerfile .`
+- `docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .`
+- `docker build --target runner -f apps/tanstack-web/Dockerfile .`
 
-That means Docker CI now covers both the dev image and the real production path.
+That means Docker CI now covers the dev image, the Next.js production image,
+the TanStack production image, the dual-stack compose file, and the optional
+Cloudflare Tunnel profile rendering.
 
 For focused watcher-script checks, run the root Node test file directly, for
 example `node --test --test-name-pattern "pullTrackedBranch"

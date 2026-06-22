@@ -141,6 +141,28 @@ test('bun check always includes mobile iOS project settings validation', () => {
   assert.ok(mobileIosProjectIndex < scriptTestsIndex);
 });
 
+test('bun check always includes TanStack protected API access validation', () => {
+  const activeChecks = getActiveChecks({
+    changedFiles: ['apps/tanstack-web/src/routes/index.tsx'],
+  });
+  const tanstackApiAccessCheck = activeChecks.find(
+    (check) => check.name === 'tanstack-api-access'
+  );
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+  const tanstackApiAccessIndex = activeChecks.findIndex(
+    (check) => check.name === 'tanstack-api-access'
+  );
+
+  assert.ok(tanstackApiAccessCheck);
+  assert.deepEqual(tanstackApiAccessCheck.args, [
+    'scripts/check-tanstack-api-access.js',
+  ]);
+  assert.ok(tanstackApiAccessIndex > -1);
+  assert.ok(tanstackApiAccessIndex < scriptTestsIndex);
+});
+
 test('bun check includes platform release sync validation for release-please files only', () => {
   assert.equal(touchesPlatformReleaseVersion(['platform-version.txt']), true);
   assert.equal(

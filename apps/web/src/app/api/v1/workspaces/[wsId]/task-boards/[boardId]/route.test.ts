@@ -133,6 +133,62 @@ describe('task board GET', () => {
     expect(maybeSingle).toHaveBeenCalledTimes(2);
   });
 
+  it('continues stripping missing optional board columns until the board loads', async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          code: 'PGRST204',
+          message:
+            "Could not find the 'default_list_id' column of 'workspace_boards' in the schema cache",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          code: 'PGRST204',
+          message:
+            "Could not find the 'count_unestimated_issues' column of 'workspace_boards' in the schema cache",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: BOARD_ID,
+          ws_id: 'ws-1',
+          name: 'Roadmap',
+          task_lists: [{ id: 'list-1', position: 0, created_at: null }],
+        },
+        error: null,
+      });
+    const query = mockBoardAccess(maybeSingle);
+
+    const res = await GET(buildRequest(), routeContext());
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.board.default_list_id).toBeNull();
+    expect(body.board.count_unestimated_issues).toBe(false);
+    expect(body.board.name).toBe('Roadmap');
+    expect(maybeSingle).toHaveBeenCalledTimes(3);
+    expect(query.select).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('default_list_id')
+    );
+    expect(query.select).toHaveBeenNthCalledWith(
+      2,
+      expect.not.stringContaining('default_list_id')
+    );
+    expect(query.select).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('count_unestimated_issues')
+    );
+    expect(query.select).toHaveBeenNthCalledWith(
+      3,
+      expect.not.stringContaining('count_unestimated_issues')
+    );
+  });
+
   it('returns 500 when the query fails for an unrelated reason', async () => {
     const maybeSingle = vi.fn().mockResolvedValue({
       data: null,

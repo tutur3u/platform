@@ -14,6 +14,18 @@ const BACKEND_DOCKERFILE_PATH = path.join(
   'Dockerfile'
 );
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
+const TANSTACK_WEB_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'Dockerfile'
+);
+const DOCKER_SETUP_WORKFLOW_PATH = path.join(
+  ROOT_DIR,
+  '.github',
+  'workflows',
+  'docker-setup-check.yaml'
+);
 const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
 const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -86,6 +98,10 @@ const WEB_PROD_COMPOSE_FILE_PATH = path.join(
   ROOT_DIR,
   'docker-compose.web.prod.yml'
 );
+const TANSTACK_DUAL_COMPOSE_FILE_PATH = path.join(
+  ROOT_DIR,
+  'docker-compose.tanstack-dual.yml'
+);
 const DOCKER_BAKE_WEB_PROD_PATH = path.join(
   ROOT_DIR,
   'docker-bake.web.prod.hcl'
@@ -122,6 +138,48 @@ const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
   'apps/mobile/build',
   'apps/mobile/build/**',
 ];
+
+function countOccurrences(content, snippet) {
+  return content.split(snippet).length - 1;
+}
+
+function hasComposeDependsOnService(composeContent, serviceName) {
+  const lines = composeContent.split(/\r?\n/u);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const dependsOnMatch = lines[index].match(/^(\s*)depends_on:\s*$/u);
+
+    if (!dependsOnMatch) {
+      continue;
+    }
+
+    const dependsOnIndent = dependsOnMatch[1].length;
+
+    for (
+      let childIndex = index + 1;
+      childIndex < lines.length;
+      childIndex += 1
+    ) {
+      const line = lines[childIndex];
+
+      if (line.trim().length === 0) {
+        continue;
+      }
+
+      const lineIndent = line.match(/^(\s*)/u)?.[1].length ?? 0;
+
+      if (lineIndent <= dependsOnIndent) {
+        break;
+      }
+
+      if (new RegExp(`^\\s+${serviceName}:\\s*$`, 'u').test(line)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 
 function getRetryWrappedBunInstallSnippets(installCommand) {
   return [
@@ -569,6 +627,39 @@ function validateDockerignore(dockerignoreContent) {
   return errors;
 }
 
+function validateDockerSetupWorkflow(workflowContent) {
+  const errors = [];
+  const requiredPathFilterSnippets = [
+    '- "apps/tanstack-web/**"',
+    '- "docker-compose.tanstack-dual.yml"',
+  ];
+  const requiredSnippets = [
+    'run: node scripts/check-docker-web.js',
+    'docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml',
+    'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
+    'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
+    'docker build --target runner -f apps/tanstack-web/Dockerfile .',
+  ];
+
+  for (const snippet of requiredPathFilterSnippets) {
+    if (countOccurrences(workflowContent, snippet) < 2) {
+      errors.push(
+        `.github/workflows/docker-setup-check.yaml must include ${snippet} in both pull_request and push path filters.`
+      );
+    }
+  }
+
+  for (const snippet of requiredSnippets) {
+    if (!workflowContent.includes(snippet)) {
+      errors.push(
+        `.github/workflows/docker-setup-check.yaml is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateDockerCompose(
   composeContent,
   { workspacePackageJsonPaths = listWorkspacePackageJsonPaths() } = {}
@@ -659,6 +750,17 @@ function validateDockerCompose(
       '}',
     '      - PORT=7820',
     '      test: ["CMD", "/app/backend", "healthcheck"]',
+    '  tanstack-web:',
+    '      dockerfile: apps/tanstack-web/Dockerfile\n      target: dev',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - BACKEND_PUBLIC_ORIGIN=${' +
+      'BACKEND_PUBLIC_ORIGIN:-http://backend:7820' +
+      '}',
+    '      - PORT=7824',
+    '      - platform-tanstack-web-node_modules:/workspace/apps/tanstack-web/node_modules',
+    '  platform-tanstack-web-node_modules:',
     '  chat-realtime:',
     '      dockerfile: apps/chat-realtime/Dockerfile',
     'http://127.0.0.1:7817/health',
@@ -680,6 +782,61 @@ function validateDockerCompose(
     if (!composeContent.includes(snippet)) {
       errors.push(
         `docker-compose.web.yml is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateTanstackDualCompose(composeContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'x-tanstack-dual-env-file: &tanstack-dual-env-file',
+    'services:',
+    '  backend:',
+    '    container_name: backend-dual',
+    '      dockerfile: apps/backend/Dockerfile',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - PORT=${' + 'BACKEND_PORT:-7820' + '}',
+    '      test: ["CMD", "/app/backend", "healthcheck"]',
+    '      - "127.0.0.1:${' +
+      'BACKEND_PORT:-7820' +
+      '}:${' +
+      'BACKEND_PORT:-7820' +
+      '}"',
+    '  tanstack-web:',
+    '    container_name: tanstack-web-dual',
+    '      dockerfile: apps/tanstack-web/Dockerfile',
+    '      target: runner',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
+    '      - BACKEND_PUBLIC_ORIGIN=${' +
+      'BACKEND_PUBLIC_ORIGIN:-http://backend:7820' +
+      '}',
+    '      - PORT=${' + 'TANSTACK_WEB_PORT:-7824' + '}',
+    '          "node",',
+    "body.includes('Backend reachable')",
+    '      - "127.0.0.1:${' +
+      'TANSTACK_WEB_PORT:-7824' +
+      '}:${' +
+      'TANSTACK_WEB_PORT:-7824' +
+      '}"',
+    '      backend:\n        condition: service_healthy',
+    'networks:\n  tanstack-dual:',
+    '    name: ${' + 'COMPOSE_PROJECT_NAME:-tuturuuu' + '}-tanstack-dual',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!composeContent.includes(snippet)) {
+      errors.push(
+        `docker-compose.tanstack-dual.yml is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -734,6 +891,10 @@ function validateDockerProdCompose(composeContent) {
     '  web:',
     '  web-blue:',
     '  web-green:',
+    'x-tanstack-web-service: &tanstack-web-service',
+    '  tanstack-web:',
+    '  tanstack-web-blue:',
+    '  tanstack-web-green:',
     '  buildkit:',
     '  web-blue-green-watcher:',
     '  web-cron-runner:',
@@ -757,10 +918,14 @@ function validateDockerProdCompose(composeContent) {
     '      dockerfile: Dockerfile.markitdown',
     '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
     '      dockerfile: apps/backend/Dockerfile',
+    '    dockerfile: apps/tanstack-web/Dockerfile',
     '      dockerfile: apps/chat-realtime/Dockerfile',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/meet-realtime/Dockerfile',
     '      dockerfile: apps/supermemory/Dockerfile',
+    '    - BACKEND_PUBLIC_ORIGIN=$' +
+      '{BACKEND_PUBLIC_ORIGIN:-http://backend:7820}',
+    '    - PORT=7824',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
     '    container_name: ' +
@@ -795,6 +960,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD',
     '      - DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD',
     '      - DOCKER_WEB_DOCKER_MEMORY_LIMIT',
+    '      - DOCKER_WEB_FRONTEND',
     '      - DOCKER_WEB_NATIVE_BUILD',
     '      - DOCKER_WEB_NATIVE_BUILD_MEMORY',
     '      - DOCKER_WEB_NEXT_APP_ONLY',
@@ -841,6 +1007,7 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}',
+    '      - DOCKER_WEB_FRONTEND',
     '      - ..:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
     '      - platform-bun-install:/root/.bun/install/cache',
@@ -867,6 +1034,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
     "http://127.0.0.1:'' + port + path",
+    "body.includes(''Backend reachable'')",
     '      test: ["CMD", "/app/backend", "healthcheck"]',
     '      - BACKEND_ENV=production\n      - BACKEND_INTERNAL_TOKEN\n      - PORT=7820',
     '      - PORT=8000\n      - SUPABASE_URL',
@@ -877,6 +1045,10 @@ function validateDockerProdCompose(composeContent) {
     '      required: false',
     '    - BACKEND_INTERNAL_TOKEN',
     '    - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
+    'x-tanstack-web-service: &tanstack-web-service\n  build:',
+    '  environment:\n    - BACKEND_INTERNAL_TOKEN\n    - BACKEND_INTERNAL_URL=${' +
       'BACKEND_INTERNAL_URL:-http://backend:7820' +
       '}',
     '    - DISCORD_APP_DEPLOYMENT_URL',
@@ -1005,6 +1177,40 @@ function validateDockerProdCompose(composeContent) {
     }
   }
 
+  const frontendSelectorEnvCount = [
+    ...composeContent.matchAll(/^\s+- DOCKER_WEB_FRONTEND$/gmu),
+  ].length;
+
+  if (frontendSelectorEnvCount < 2) {
+    errors.push(
+      'docker-compose.web.prod.yml must pass DOCKER_WEB_FRONTEND to both web-blue-green-watcher and web-cron-runner so TanStack production selection survives container recreation.'
+    );
+  }
+
+  if (hasComposeDependsOnService(composeContent, 'log-drain-postgres')) {
+    errors.push(
+      'docker-compose.web.prod.yml services must not depend_on log-drain-postgres; scripts/docker-web.js owns the optional start/check/degrade flow so incompatible or corrupt log-drain volumes cannot block web or watcher startup.'
+    );
+  }
+
+  if (
+    /log-drain-postgres:\n\s+condition: service_healthy/iu.test(composeContent)
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml must not use log-drain-postgres service_healthy as a promotion gate.'
+    );
+  }
+
+  if (
+    !composeContent.includes(
+      '  depends_on:\n    backend:\n      condition: service_healthy'
+    )
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml x-tanstack-web-service must depend on backend: service_healthy.'
+    );
+  }
+
   const forbiddenSecuritySnippets = [
     {
       message:
@@ -1094,7 +1300,10 @@ function validateDockerBakeFile(bakeContent) {
   const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
+    'group "blue-green-tanstack-web" {\n  targets = ["tanstack-web-blue", "tanstack-web-green"]\n}',
     'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-cron-runner"]\n}',
+    `target "tanstack-web-blue" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-tanstack-web-blue"]\n}`,
+    `target "tanstack-web-green" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-tanstack-web-green"]\n}`,
     `target "backend" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-backend"]\n}`,
     `target "chat-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-chat-realtime"]\n}`,
     `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
@@ -1115,11 +1324,14 @@ function validateDockerBakeFile(bakeContent) {
 function validateBackendDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM golang:1.26.3-alpine AS builder',
-    'COPY apps/backend/go.mod ./apps/backend/go.mod',
-    'RUN go mod download',
-    'RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/backend ./cmd/backend',
+    'FROM rust:1-alpine AS builder',
+    'RUN apk add --no-cache musl-dev',
+    'COPY apps/backend/Cargo.toml apps/backend/Cargo.lock apps/backend/build.rs ./apps/backend/',
+    'COPY apps/backend/src ./apps/backend/src',
+    'COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migration/route-manifest.json',
+    'cargo build --release --locked --features native --bin backend',
     'FROM gcr.io/distroless/static-debian12:nonroot AS runner',
+    'ENV BACKEND_DEPLOYMENT_TARGET=container',
     'HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/app/backend", "healthcheck"]',
     'USER nonroot:nonroot',
     'CMD ["/app/backend"]',
@@ -1129,6 +1341,57 @@ function validateBackendDockerfile(dockerfileContent) {
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/backend/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateTanstackWebDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/tanstack-web/Dockerfile',
+      workspacePackageJsonPaths,
+      fileDependencyPaths,
+    }),
+  ];
+  const requiredSnippets = [
+    'FROM oven/bun:1.3.14 AS deps',
+    'FROM oven/bun:1.3.14 AS dev',
+    'FROM node:26-bookworm-slim AS builder',
+    'FROM node:26-bookworm-slim AS runner',
+    'COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json',
+    'COPY packages/internal-api/package.json ./packages/internal-api/package.json',
+    'COPY packages/ui/package.json ./packages/ui/package.json',
+    'COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
+    ),
+    'node node_modules/vite/bin/vite.js build',
+    'node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json',
+    'ENV PORT=7824',
+    'ENV TANSTACK_WEB_RUNTIME=node',
+    'COPY --from=builder /workspace/node_modules/.bun /app/node_modules/.bun',
+    'COPY --from=builder /workspace/apps/tanstack-web/node_modules ./node_modules',
+    'COPY --from=builder /workspace/packages /app/packages',
+    'COPY --from=builder /workspace/apps/tanstack-web/dist ./dist',
+    'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs',
+    "body.includes('Backend reachable')",
+    'CMD ["node", "docker/server.mjs"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/tanstack-web/Dockerfile is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -1535,11 +1798,23 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'backend', 'Dockerfile'),
     'utf8'
   ),
+  dockerSetupWorkflowContent = fsImpl.readFileSync(
+    path.join(rootDir, '.github', 'workflows', 'docker-setup-check.yaml'),
+    'utf8'
+  ),
+  tanstackWebDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'tanstack-web', 'Dockerfile'),
+    'utf8'
+  ),
   composeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-compose.web.yml'),
     'utf8'
   ),
   prodComposeContent = readDockerProdComposeMergedText(rootDir, fsImpl),
+  tanstackDualComposeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'docker-compose.tanstack-dual.yml'),
+    'utf8'
+  ),
   dockerBakeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-bake.web.prod.hcl'),
     'utf8'
@@ -1614,7 +1889,13 @@ function checkDockerWebSetup({
       workspacePackageJsonPaths,
     }),
     ...validateBackendDockerfile(backendDockerfileContent),
+    ...validateDockerSetupWorkflow(dockerSetupWorkflowContent),
+    ...validateTanstackWebDockerfile(tanstackWebDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
+    ...validateTanstackDualCompose(tanstackDualComposeContent),
     ...validateDockerProdCompose(prodComposeContent),
     ...validateDockerBakeFile(dockerBakeContent),
     ...validateDockerignore(dockerignoreContent),
@@ -1671,6 +1952,8 @@ if (require.main === module) {
 module.exports = {
   ROOT_DIR,
   BACKEND_DOCKERFILE_PATH,
+  DOCKER_SETUP_WORKFLOW_PATH,
+  TANSTACK_WEB_DOCKERFILE_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
@@ -1687,6 +1970,7 @@ module.exports = {
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
   WEB_PROD_COMPOSE_FILE_PATH,
+  TANSTACK_DUAL_COMPOSE_FILE_PATH,
   checkDockerWebSetup,
   getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
@@ -1694,8 +1978,11 @@ module.exports = {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateBackendDockerfile,
+  validateTanstackWebDockerfile,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
+  validateDockerSetupWorkflow,
+  validateTanstackDualCompose,
   validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,

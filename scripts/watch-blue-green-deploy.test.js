@@ -2743,6 +2743,63 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
   }
 });
 
+test('resolveCurrentBlueGreenStatus probes selected TanStack blue-green services', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-blue-green-tanstack-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      `${LOCAL_SUPABASE_ENV_FILE_CONTENT}DOCKER_WEB_FRONTEND=tanstack\n`,
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+
+    const status = await resolveCurrentBlueGreenStatus({
+      envFilePath,
+      fsImpl: fs,
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('tanstack-web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey('tanstack-web-blue')) {
+          return createResult('blue-123\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.equal(status.activeColor, 'green');
+    assert.deepEqual(status.liveColors, ['blue', 'green']);
+    assert.deepEqual(status.serviceContainers, {
+      proxy: 'proxy-123',
+      'tanstack-web-blue': 'blue-123',
+      'tanstack-web-green': 'green-123',
+    });
+    assert.equal(calls.includes(prodComposePsKey('web-blue')), false);
+    assert.equal(calls.includes(prodComposePsKey('web-green')), false);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('resolveCurrentBlueGreenStatus recovers active color from proxy config when state file is missing', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-blue-green-proxy-active-')

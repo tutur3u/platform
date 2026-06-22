@@ -1,8 +1,7 @@
 import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, DEV_MODE } from '@/constants/common';
 import {
@@ -53,6 +52,9 @@ const DOMAINS = {
     logo: TUTURUUU_LOCAL_LOGO_URL,
   },
 } as const satisfies Record<string, LoginDomain>;
+
+const SUPABASE_AUTH_COOKIE_HEADER_PATTERN =
+  /(?:^|;\s*)sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?=/u;
 
 type LoginSearchParams = {
   [key: string]: string | string[] | undefined;
@@ -127,6 +129,19 @@ const getAuthenticatedLoginRedirectPath = (params: LoginSearchParams) => {
 
 async function hasAuthenticatedSession() {
   try {
+    const headerStore = await headers();
+
+    if (
+      !SUPABASE_AUTH_COOKIE_HEADER_PATTERN.test(headerStore.get('cookie') ?? '')
+    ) {
+      return false;
+    }
+
+    const [{ createClient }, { resolveAuthenticatedSessionUser }] =
+      await Promise.all([
+        import('@tuturuuu/supabase/next/server'),
+        import('@tuturuuu/supabase/next/auth-session-user'),
+      ]);
     const supabase = await createClient();
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 

@@ -1,0 +1,22 @@
+/*
+ * Dual-theme styling for shiki-highlighted code blocks in the UI docs.
+ * Highlighting is generated with `defaultColor: false`, so each token carries
+ * both `--shiki-light` and `--shiki-dark` colors and we pick one based on the
+ * app's `.dark` class — no client JS required. Scoped to `.ui-docs-code` so it
+ * never leaks onto other code rendered in the app.
+ */
+
+.ui-docs-code .shiki,
+.ui-docs-code .shiki span {
+  color: var(--shiki-light);
+}
+
+.dark .ui-docs-code .shiki,
+.dark .ui-docs-code .shiki span {
+  color: var(--shiki-dark);
+}
+
+.ui-docs-code .shiki {
+  margin: 0;
+  background-color: transparent;
+}
