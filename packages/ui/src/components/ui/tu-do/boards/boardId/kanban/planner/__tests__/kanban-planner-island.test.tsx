@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type React from 'react';
+import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { KanbanPlannerIsland } from '../kanban-planner-island';
+import { KanbanPlannerDialog } from '../kanban-planner-dialog';
 
 const mocks = vi.hoisted(() => ({
   addWorkspaceTaskPlanWorkspace: vi.fn(),
@@ -25,41 +25,62 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
-vi.mock('@tuturuuu/ui/select', () => ({
-  Select: ({
-    children,
+vi.mock('@tuturuuu/ui/collapsible', () => ({
+  Collapsible: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CollapsibleContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CollapsibleTrigger: ({ children }: { children: React.ReactNode }) =>
+    React.isValidElement(children)
+      ? React.cloneElement(
+          children as React.ReactElement<{ 'aria-expanded'?: string }>,
+          { 'aria-expanded': 'false' }
+        )
+      : children,
+}));
+
+vi.mock('@tuturuuu/ui/custom/combobox', () => ({
+  Combobox: ({
     disabled,
-    onValueChange,
-    value,
+    mode = 'single',
+    onChange,
+    options,
+    placeholder,
+    selected,
   }: {
-    children: React.ReactNode;
     disabled?: boolean;
-    onValueChange?: (value: string) => void;
-    value?: string;
+    mode?: 'single' | 'multiple';
+    onChange?: (value: string | string[]) => void;
+    options: { label: string; value: string }[];
+    placeholder?: string;
+    selected: string | string[];
   }) => (
     <select
+      aria-label={placeholder}
       disabled={disabled}
-      value={value}
-      onChange={(event) => onValueChange?.(event.target.value)}
+      multiple={mode === 'multiple'}
+      value={selected}
+      onChange={(event) => {
+        if (mode === 'multiple') {
+          onChange?.(
+            Array.from(event.currentTarget.selectedOptions).map(
+              (option) => option.value
+            )
+          );
+          return;
+        }
+
+        onChange?.(event.target.value);
+      }}
     >
-      {children}
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
     </select>
-  ),
-  SelectContent: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  SelectItem: ({
-    children,
-    value,
-  }: {
-    children: React.ReactNode;
-    value: string;
-  }) => <option value={value}>{children}</option>,
-  SelectTrigger: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  SelectValue: ({ placeholder }: { placeholder?: string }) => (
-    <option value="">{placeholder}</option>
   ),
 }));
 
@@ -68,6 +89,9 @@ vi.mock('@tuturuuu/ui/dialog', () => ({
     open ? <div role="dialog">{children}</div> : null,
   DialogContent: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
+  ),
+  DialogDescription: ({ children }: { children: React.ReactNode }) => (
+    <p>{children}</p>
   ),
   DialogFooter: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
@@ -166,16 +190,18 @@ function renderPlanner() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <KanbanPlannerIsland
+      <KanbanPlannerDialog
         boardId="board-1"
         isPersonalWorkspace
+        onOpenChange={vi.fn()}
+        open
         workspaceId="ws-personal"
       />
     </QueryClientProvider>
   );
 }
 
-describe('KanbanPlannerIsland', () => {
+describe('KanbanPlannerDialog', () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.listWorkspaces.mockResolvedValue([
@@ -203,12 +229,35 @@ describe('KanbanPlannerIsland', () => {
 
     renderPlanner();
 
-    expect(
-      await screen.findByRole('button', { name: 'schema_unavailable' })
-    ).toBeDisabled();
-    expect(
-      screen.queryByTestId('kanban-planner-island')
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('schema_unavailable')).toBeInTheDocument();
+  });
+
+  it('renders planner sections collapsed by default', async () => {
+    mocks.listWorkspaceTaskPlans.mockResolvedValue({
+      ok: true,
+      schemaAvailable: true,
+      plans: [basePlan],
+    });
+
+    renderPlanner();
+
+    await waitFor(() => {
+      expect(mocks.listWorkspaceTaskPlans).toHaveBeenCalledWith('ws-personal');
+    });
+
+    for (const sectionName of [
+      'create_plan',
+      'target_workspace',
+      'scope_draft',
+      'digest',
+      'share_plan',
+    ]) {
+      const sectionButton = screen
+        .getAllByRole('button', { name: new RegExp(sectionName) })
+        .find((button) => button.getAttribute('aria-expanded') === 'false');
+
+      expect(sectionButton).toBeDefined();
+    }
   });
 
   it('switches planner mode and creates a monthly plan', async () => {
@@ -225,15 +274,15 @@ describe('KanbanPlannerIsland', () => {
 
     renderPlanner();
 
-    expect(await screen.findByText('open_planner')).toBeInTheDocument();
-    expect(screen.queryByText('mode_month')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('kanban-planner-toggle'));
+    await screen.findByLabelText('mode_week');
 
-    fireEvent.click(await screen.findByText('mode_month'));
+    fireEvent.change(screen.getByLabelText('mode_week'), {
+      target: { value: 'month' },
+    });
     fireEvent.change(screen.getByPlaceholderText('plan_title_placeholder'), {
       target: { value: 'Monthly roadmap' },
     });
-    fireEvent.click(screen.getByText('create_plan'));
+    fireEvent.click(screen.getAllByText('create_plan').at(-1)!);
 
     await waitFor(() => {
       expect(mocks.createWorkspaceTaskPlan).toHaveBeenCalledWith(
@@ -260,14 +309,11 @@ describe('KanbanPlannerIsland', () => {
 
     renderPlanner();
 
-    fireEvent.click(await screen.findByTestId('kanban-planner-toggle'));
-
     expect(await screen.findByText('scope_team_source')).toBeInTheDocument();
     expect(screen.getByText('scope_external_workspace')).toBeInTheDocument();
     expect(screen.getByText('scope_my_override')).toBeInTheDocument();
     expect(screen.getByText('scope_shared_plan')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByText('share_plan')[0]!);
     fireEvent.change(screen.getByPlaceholderText('share_email_placeholder'), {
       target: { value: 'lead@example.com' },
     });

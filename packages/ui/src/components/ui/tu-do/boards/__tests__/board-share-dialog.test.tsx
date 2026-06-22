@@ -6,12 +6,45 @@ import { BoardShareDialog } from '../board-share-dialog';
 
 const createWorkspaceTaskBoardShareMock = vi.fn();
 const deleteWorkspaceTaskBoardShareMock = vi.fn();
+const disableWorkspaceTaskBoardPublicLinkMock = vi.fn();
+const enableWorkspaceTaskBoardPublicLinkMock = vi.fn();
+const getWorkspaceTaskBoardPublicLinkMock = vi.fn();
 const listWorkspaceTaskBoardSharesMock = vi.fn();
 const listWorkspaceTaskBoardViewableMembersMock = vi.fn();
 const updateWorkspaceTaskBoardShareMock = vi.fn();
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
+}));
+
+vi.mock('@tuturuuu/ui/custom/combobox', () => ({
+  Combobox: ({
+    disabled,
+    onChange,
+    options,
+    placeholder,
+    selected,
+  }: {
+    disabled?: boolean;
+    onChange?: (value: string) => void;
+    options: { label: string; value: string }[];
+    placeholder?: string;
+    selected: string;
+  }) => (
+    <select
+      aria-label={placeholder}
+      disabled={disabled}
+      value={selected}
+      onChange={(event) => onChange?.(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
@@ -21,6 +54,15 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
   deleteWorkspaceTaskBoardShare: (
     ...args: Parameters<typeof deleteWorkspaceTaskBoardShareMock>
   ) => deleteWorkspaceTaskBoardShareMock(...args),
+  disableWorkspaceTaskBoardPublicLink: (
+    ...args: Parameters<typeof disableWorkspaceTaskBoardPublicLinkMock>
+  ) => disableWorkspaceTaskBoardPublicLinkMock(...args),
+  enableWorkspaceTaskBoardPublicLink: (
+    ...args: Parameters<typeof enableWorkspaceTaskBoardPublicLinkMock>
+  ) => enableWorkspaceTaskBoardPublicLinkMock(...args),
+  getWorkspaceTaskBoardPublicLink: (
+    ...args: Parameters<typeof getWorkspaceTaskBoardPublicLinkMock>
+  ) => getWorkspaceTaskBoardPublicLinkMock(...args),
   listWorkspaceTaskBoardShares: (
     ...args: Parameters<typeof listWorkspaceTaskBoardSharesMock>
   ) => listWorkspaceTaskBoardSharesMock(...args),
@@ -30,10 +72,6 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
   updateWorkspaceTaskBoardShare: (
     ...args: Parameters<typeof updateWorkspaceTaskBoardShareMock>
   ) => updateWorkspaceTaskBoardShareMock(...args),
-}));
-
-vi.mock('../board-public-link-section', () => ({
-  BoardPublicLinkSection: () => <div data-testid="public-link-section" />,
 }));
 
 vi.mock('sonner', () => ({
@@ -67,6 +105,16 @@ function renderBoardShareDialog() {
 describe('BoardShareDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getWorkspaceTaskBoardPublicLinkMock.mockResolvedValue({ publicLink: null });
+    enableWorkspaceTaskBoardPublicLinkMock.mockResolvedValue({
+      publicLink: { code: 'abc123' },
+    });
+    disableWorkspaceTaskBoardPublicLinkMock.mockResolvedValue({
+      publicLink: null,
+    });
+    createWorkspaceTaskBoardShareMock.mockResolvedValue({ share: null });
+    updateWorkspaceTaskBoardShareMock.mockResolvedValue({ share: null });
+    deleteWorkspaceTaskBoardShareMock.mockResolvedValue({ ok: true });
     listWorkspaceTaskBoardSharesMock.mockResolvedValue({ shares: [] });
     listWorkspaceTaskBoardViewableMembersMock.mockResolvedValue({
       members: [
@@ -85,17 +133,43 @@ describe('BoardShareDialog', () => {
     });
   });
 
-  it('renders tooltip note triggers and fetches viewable members only when opened', async () => {
+  it('starts compact with all sections collapsed and tooltip copy hidden', () => {
     renderBoardShareDialog();
 
-    expect(screen.getByTestId('public-link-section')).toBeInTheDocument();
+    for (const title of [
+      'ws-task-boards.share.public.title',
+      'ws-task-boards.share.workspace_members.title',
+      'ws-task-boards.share.guests.title',
+      'ws-task-boards.share.shared_with',
+    ]) {
+      expect(
+        screen.getByRole('button', { name: new RegExp(title) })
+      ).toHaveAttribute('aria-expanded', 'false');
+    }
+
     expect(
-      screen.getAllByLabelText('ws-task-boards.share.note').length
-    ).toBeGreaterThan(0);
+      screen.queryByText('ws-task-boards.share.public.description')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('ws-task-boards.share.public.tooltip')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('ws-task-boards.share.workspace_members.description')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('ws-task-boards.share.guests.description')
+    ).not.toBeInTheDocument();
+    expect(getWorkspaceTaskBoardPublicLinkMock).not.toHaveBeenCalled();
     expect(listWorkspaceTaskBoardViewableMembersMock).not.toHaveBeenCalled();
+  });
+
+  it('fetches viewable members only when the workspace section opens', async () => {
+    renderBoardShareDialog();
 
     fireEvent.click(
-      screen.getByText('ws-task-boards.share.workspace_members.title')
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.workspace_members.title/,
+      })
     );
 
     await waitFor(() => {
@@ -106,5 +180,76 @@ describe('BoardShareDialog', () => {
     });
     expect(await screen.findByText('Project Manager')).toBeInTheDocument();
     expect(screen.getByText('pm@example.com')).toBeInTheDocument();
+  });
+
+  it('keeps direct board guests first-class for invite, update, and remove', async () => {
+    listWorkspaceTaskBoardSharesMock.mockResolvedValue({
+      shares: [
+        {
+          id: 'share-1',
+          email: 'guest@example.com',
+          permission: 'view',
+          user: null,
+          user_id: null,
+        },
+      ],
+    });
+
+    renderBoardShareDialog();
+    await waitFor(() => {
+      expect(listWorkspaceTaskBoardSharesMock).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1'
+      );
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.guests.title/,
+      })
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText('ws-task-boards.share.email_placeholder'),
+      {
+        target: { value: 'new@example.com' },
+      }
+    );
+    fireEvent.click(screen.getByText('common.share'));
+
+    await waitFor(() => {
+      expect(createWorkspaceTaskBoardShareMock).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1',
+        { email: 'new@example.com', permission: 'view' }
+      );
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.shared_with/,
+      })
+    );
+    expect(await screen.findAllByText('guest@example.com')).toHaveLength(2);
+
+    fireEvent.change(
+      screen.getAllByLabelText('ws-task-boards.share.permission.view').at(-1)!,
+      { target: { value: 'edit' } }
+    );
+    await waitFor(() => {
+      expect(updateWorkspaceTaskBoardShareMock).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1',
+        { shareId: 'share-1', permission: 'edit' }
+      );
+    });
+
+    fireEvent.click(screen.getByLabelText('common.remove'));
+    await waitFor(() => {
+      expect(deleteWorkspaceTaskBoardShareMock).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1',
+        'share-1'
+      );
+    });
   });
 });

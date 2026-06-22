@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardHeader } from '../board-header';
@@ -40,6 +40,35 @@ vi.mock('@tuturuuu/ui/hooks/use-board-actions', () => ({
   }),
 }));
 
+vi.mock('@tuturuuu/ui/custom/combobox', () => ({
+  Combobox: ({
+    disabled,
+    onChange,
+    options,
+    placeholder,
+    selected,
+  }: {
+    disabled?: boolean;
+    onChange?: (value: string) => void;
+    options: { label: string; value: string }[];
+    placeholder?: string;
+    selected: string;
+  }) => (
+    <select
+      aria-label={placeholder}
+      disabled={disabled}
+      value={selected}
+      onChange={(event) => onChange?.(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
+}));
+
 vi.mock('../tasks-route-context', () => ({
   useTasksHref: () => '/tasks',
 }));
@@ -69,6 +98,11 @@ vi.mock('../board-user-presence-avatars', () => ({
 
 vi.mock('../boards/boardId/task-filter', () => ({
   TaskFilter: () => <div data-testid="task-filter" />,
+}));
+
+vi.mock('../boards/boardId/kanban/planner/kanban-planner-dialog', () => ({
+  KanbanPlannerDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog">planner-dialog</div> : null,
 }));
 
 vi.mock('../boards/copy-board-dialog', () => ({
@@ -196,5 +230,94 @@ describe('BoardHeader', () => {
     expect(
       screen.queryByLabelText('ws-task-boards.share.action')
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('ws-task-plans.planner')
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows planner as a personal kanban toolbar button and opens the dialog', () => {
+    renderBoardHeader({
+      isPersonalWorkspace: true,
+    });
+
+    fireEvent.click(screen.getByLabelText('ws-task-plans.planner'));
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('planner');
+  });
+
+  it('hides planner outside personal kanban editing', () => {
+    const { rerender } = renderBoardHeader({
+      currentView: 'list',
+      isPersonalWorkspace: true,
+    });
+
+    expect(
+      screen.queryByLabelText('ws-task-plans.planner')
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <BoardHeader
+          workspaceId="ws-1"
+          board={mockBoard}
+          currentView="kanban"
+          filters={{
+            assignees: [],
+            dueDateRange: null,
+            estimationRange: null,
+            includeMyTasks: false,
+            includeUnassigned: false,
+            labels: [],
+            priorities: [],
+            projects: [],
+            sourceBoardIds: [],
+            sourceScope: 'all_visible',
+            sourceWorkspaceIds: [],
+          }}
+          isMultiSelectMode={false}
+          isPersonalWorkspace
+          listStatusFilter="all"
+          onFiltersChange={vi.fn()}
+          onListStatusFilterChange={vi.fn()}
+          onUpdate={vi.fn()}
+          onViewChange={vi.fn()}
+          publicView
+          setIsMultiSelectMode={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(
+      screen.queryByLabelText('ws-task-plans.planner')
+    ).not.toBeInTheDocument();
+  });
+
+  it('updates status, view, and sort through combobox controls', () => {
+    const onFiltersChange = vi.fn();
+    const onListStatusFilterChange = vi.fn();
+    const onViewChange = vi.fn();
+
+    renderBoardHeader({
+      onFiltersChange,
+      onListStatusFilterChange,
+      onViewChange,
+    });
+
+    fireEvent.change(screen.getByLabelText('common.all'), {
+      target: { value: 'active' },
+    });
+    expect(onListStatusFilterChange).toHaveBeenCalledWith('active');
+
+    fireEvent.change(screen.getByLabelText('ws-task-boards.views.kanban'), {
+      target: { value: 'list' },
+    });
+    expect(onViewChange).toHaveBeenCalledWith('list');
+
+    fireEvent.change(screen.getByLabelText('common.sort'), {
+      target: { value: 'priority-high' },
+    });
+    expect(onFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'priority-high' })
+    );
   });
 });

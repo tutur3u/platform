@@ -18,12 +18,14 @@ import { buildPlanWindow, getDefaultPlanTitle } from './planner-utils';
 
 interface UseKanbanPlannerStateOptions {
   boardId: string | null;
+  enabled?: boolean;
   isPersonalWorkspace: boolean;
   workspaceId: string;
 }
 
 export function useKanbanPlannerState({
   boardId,
+  enabled = true,
   isPersonalWorkspace,
   workspaceId,
 }: UseKanbanPlannerStateOptions) {
@@ -40,7 +42,7 @@ export function useKanbanPlannerState({
 
   const plansQueryKey = ['task-plans', workspaceId] as const;
   const plansQuery = useQuery({
-    enabled: isPersonalWorkspace,
+    enabled: isPersonalWorkspace && enabled,
     queryKey: plansQueryKey,
     queryFn: () => listWorkspaceTaskPlans(workspaceId),
     staleTime: 20_000,
@@ -54,13 +56,13 @@ export function useKanbanPlannerState({
   );
 
   const workspacesQuery = useQuery({
-    enabled: isPersonalWorkspace && !schemaUnavailable,
+    enabled: isPersonalWorkspace && enabled && !schemaUnavailable,
     queryKey: ['task-plan-workspaces'],
     queryFn: () => listWorkspaces({ limit: 100 }),
     staleTime: 60_000,
   });
   const boardsQuery = useQuery({
-    enabled: Boolean(targetWorkspaceId) && !schemaUnavailable,
+    enabled: enabled && Boolean(targetWorkspaceId) && !schemaUnavailable,
     queryKey: ['task-plan-boards-with-lists', targetWorkspaceId],
     queryFn: () => listWorkspaceBoardsWithLists(targetWorkspaceId),
     staleTime: 30_000,

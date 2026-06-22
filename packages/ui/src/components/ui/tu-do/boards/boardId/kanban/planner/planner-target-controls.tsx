@@ -2,14 +2,8 @@
 
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 
 type WorkspaceOption = { id: string; name: string | null };
@@ -61,49 +55,50 @@ export function PlannerTargetControls({
   workspaces,
 }: PlannerTargetControlsProps) {
   const t = useTranslations('ws-task-plans');
+  const workspaceOptions = workspaces.map((workspace) => ({
+    value: workspace.id,
+    label: workspace.name ?? t('untitled_workspace'),
+  }));
+  const boardOptions = boards.map((board) => ({
+    value: board.id,
+    label: board.name ?? t('untitled_board'),
+  }));
+  const listOptions = lists.map((list) => ({
+    value: list.id,
+    label: list.name ?? t('target_list'),
+  }));
 
   return (
-    <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_auto]">
-        <Select
-          value={targetWorkspaceId}
-          onValueChange={onTargetWorkspaceChange}
-        >
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder={t('target_workspace')} />
-          </SelectTrigger>
-          <SelectContent>
-            {workspaces.map((workspace) => (
-              <SelectItem key={workspace.id} value={workspace.id}>
-                {workspace.name ?? t('untitled_workspace')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={targetBoardId} onValueChange={onTargetBoardChange}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder={t('target_board')} />
-          </SelectTrigger>
-          <SelectContent>
-            {boards.map((board) => (
-              <SelectItem key={board.id} value={board.id}>
-                {board.name ?? t('untitled_board')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={targetListId} onValueChange={onTargetListChange}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder={t('target_list')} />
-          </SelectTrigger>
-          <SelectContent>
-            {lists.map((list) => (
-              <SelectItem key={list.id} value={list.id}>
-                {list.name ?? t('target_list')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Combobox
+          mode="single"
+          options={workspaceOptions}
+          selected={targetWorkspaceId}
+          onChange={(value) => onTargetWorkspaceChange(value as string)}
+          placeholder={t('target_workspace')}
+          searchPlaceholder={t('target_workspace')}
+          className="[&_button]:h-9"
+        />
+        <Combobox
+          mode="single"
+          options={boardOptions}
+          selected={targetBoardId}
+          onChange={(value) => onTargetBoardChange(value as string)}
+          placeholder={t('target_board')}
+          searchPlaceholder={t('target_board')}
+          className="[&_button]:h-9"
+        />
+        <Combobox
+          mode="single"
+          options={listOptions}
+          selected={targetListId}
+          onChange={(value) => onTargetListChange(value as string)}
+          placeholder={t('target_list')}
+          searchPlaceholder={t('target_list')}
+          disabled={!targetBoardId}
+          className="[&_button]:h-9"
+        />
         <Button
           type="button"
           variant={targetIsIntended ? 'secondary' : 'outline'}

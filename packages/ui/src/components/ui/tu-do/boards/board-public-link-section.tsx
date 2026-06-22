@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ChevronDown,
   Copy,
   ExternalLink,
   Globe2,
@@ -17,6 +18,11 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Tooltip,
@@ -24,7 +30,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface BoardPublicLinkSectionProps {
@@ -52,12 +60,13 @@ export function BoardPublicLinkSection({
   const t = useTranslations();
   const locale = useLocale();
   const queryClient = useQueryClient();
+  const [sectionOpen, setSectionOpen] = useState(false);
   const queryKey = ['task-board-public-link', wsId, boardId] as const;
 
   const publicLinkQuery = useQuery({
     queryKey,
     queryFn: () => getWorkspaceTaskBoardPublicLink(wsId, boardId),
-    enabled: open,
+    enabled: open && sectionOpen,
   });
 
   const enableMutation = useMutation({
@@ -103,95 +112,109 @@ export function BoardPublicLinkSection({
   }
 
   return (
-    <section className="space-y-3 rounded-md border p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 font-medium text-sm">
+    <Collapsible
+      open={sectionOpen}
+      onOpenChange={setSectionOpen}
+      className="rounded-md border"
+    >
+      <div className="flex min-h-11 items-center gap-2 px-3">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-2 text-left transition-colors hover:text-foreground"
+          >
             <Globe2 className="h-4 w-4 text-muted-foreground" />
-            {t('ws-task-boards.share.public.title')}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                    aria-label={t('ws-task-boards.share.note')}
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  {t('ws-task-boards.share.public.tooltip')}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            {t('ws-task-boards.share.public.description')}
-          </p>
-        </div>
-        {publicLink && (
-          <Badge variant="secondary">
-            {t('ws-task-boards.share.public.active')}
-          </Badge>
-        )}
+            <span className="min-w-0 flex-1 truncate font-medium text-sm">
+              {t('ws-task-boards.share.public.title')}
+            </span>
+            {publicLink && (
+              <Badge variant="secondary">
+                {t('ws-task-boards.share.public.active')}
+              </Badge>
+            )}
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                sectionOpen && 'rotate-180'
+              )}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <TooltipProvider delayDuration={500} skipDelayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                aria-label={t('ws-task-boards.share.note')}
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              {t('ws-task-boards.share.public.tooltip')}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
-      {publicLinkQuery.isLoading ? (
-        <div className="flex items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {t('common.loading')}
-        </div>
-      ) : publicLink ? (
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
-          <Input value={publicUrl} readOnly className="min-w-0" />
+      <CollapsibleContent className="border-t p-3">
+        {publicLinkQuery.isLoading ? (
+          <div className="flex items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t('common.loading')}
+          </div>
+        ) : publicLink ? (
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+            <Input value={publicUrl} readOnly className="min-w-0" />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={copyPublicUrl}
+              disabled={!publicUrl}
+            >
+              <Copy className="h-4 w-4" />
+              {t('ws-task-boards.share.public.copy')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openPublicUrl}
+              disabled={!publicUrl}
+            >
+              <ExternalLink className="h-4 w-4" />
+              {t('ws-task-boards.share.public.open')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => disableMutation.mutate()}
+              disabled={isMutating}
+            >
+              {disableMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {t('ws-task-boards.share.public.disable')}
+            </Button>
+          </div>
+        ) : (
           <Button
             type="button"
             variant="outline"
-            onClick={copyPublicUrl}
-            disabled={!publicUrl}
-          >
-            <Copy className="h-4 w-4" />
-            {t('ws-task-boards.share.public.copy')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={openPublicUrl}
-            disabled={!publicUrl}
-          >
-            <ExternalLink className="h-4 w-4" />
-            {t('ws-task-boards.share.public.open')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => disableMutation.mutate()}
+            onClick={() => enableMutation.mutate()}
             disabled={isMutating}
           >
-            {disableMutation.isPending ? (
+            {enableMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Trash2 className="h-4 w-4" />
+              <Globe2 className="h-4 w-4" />
             )}
-            {t('ws-task-boards.share.public.disable')}
+            {t('ws-task-boards.share.public.enable')}
           </Button>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => enableMutation.mutate()}
-          disabled={isMutating}
-        >
-          {enableMutation.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Globe2 className="h-4 w-4" />
-          )}
-          {t('ws-task-boards.share.public.enable')}
-        </Button>
-      )}
-    </section>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
