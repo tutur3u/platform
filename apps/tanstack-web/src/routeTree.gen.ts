@@ -126,6 +126,7 @@ import { Route as LocaleWsIdInventoryUnitsRouteImport } from './routes/$locale/$
 import { Route as LocaleWsIdInventorySuppliersRouteImport } from './routes/$locale/$wsId/inventory/suppliers';
 import { Route as LocaleWsIdInventoryStorefrontsRouteImport } from './routes/$locale/$wsId/inventory/storefronts';
 import { Route as LocaleWsIdInventoryPromotionsRouteImport } from './routes/$locale/$wsId/inventory/promotions';
+import { Route as LocaleWsIdInventoryProductsRouteImport } from './routes/$locale/$wsId/inventory/products';
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
@@ -788,6 +789,12 @@ const LocaleWsIdInventoryPromotionsRoute =
     path: '/$wsId/inventory/promotions',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInventoryProductsRoute =
+  LocaleWsIdInventoryProductsRouteImport.update({
+    id: '/$wsId/inventory/products',
+    path: '/$wsId/inventory/products',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInventoryManufacturersRoute =
   LocaleWsIdInventoryManufacturersRouteImport.update({
     id: '/$wsId/inventory/manufacturers',
@@ -973,9 +980,9 @@ const LocaleWsIdMeetMeetingsMeetingIdRoute =
   } as any);
 const LocaleWsIdInventoryProductsProductIdRoute =
   LocaleWsIdInventoryProductsProductIdRouteImport.update({
-    id: '/$wsId/inventory/products/$productId',
-    path: '/$wsId/inventory/products/$productId',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/$productId',
+    path: '/$productId',
+    getParentRoute: () => LocaleWsIdInventoryProductsRoute,
   } as any);
 const LocaleWsIdFinanceWalletsWalletIdRoute =
   LocaleWsIdFinanceWalletsWalletIdRouteImport.update({
@@ -1159,6 +1166,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/products': typeof LocaleWsIdInventoryProductsRouteWithChildren;
   '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
   '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
@@ -1321,6 +1329,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/products': typeof LocaleWsIdInventoryProductsRouteWithChildren;
   '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
   '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
@@ -1485,6 +1494,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
+  '/$locale/$wsId/inventory/products': typeof LocaleWsIdInventoryProductsRouteWithChildren;
   '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
   '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
   '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
@@ -1650,6 +1660,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/products'
     | '/$locale/$wsId/inventory/promotions'
     | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
@@ -1812,6 +1823,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/products'
     | '/$locale/$wsId/inventory/promotions'
     | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
@@ -1975,6 +1987,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
+    | '/$locale/$wsId/inventory/products'
     | '/$locale/$wsId/inventory/promotions'
     | '/$locale/$wsId/inventory/storefronts'
     | '/$locale/$wsId/inventory/suppliers'
@@ -2862,6 +2875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInventoryPromotionsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/inventory/products': {
+      id: '/$locale/$wsId/inventory/products';
+      path: '/$wsId/inventory/products';
+      fullPath: '/$locale/$wsId/inventory/products';
+      preLoaderRoute: typeof LocaleWsIdInventoryProductsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/inventory/manufacturers': {
       id: '/$locale/$wsId/inventory/manufacturers';
       path: '/$wsId/inventory/manufacturers';
@@ -3081,10 +3101,10 @@ declare module '@tanstack/react-router' {
     };
     '/$locale/$wsId/inventory/products/$productId': {
       id: '/$locale/$wsId/inventory/products/$productId';
-      path: '/$wsId/inventory/products/$productId';
+      path: '/$productId';
       fullPath: '/$locale/$wsId/inventory/products/$productId';
       preLoaderRoute: typeof LocaleWsIdInventoryProductsProductIdRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInventoryProductsRoute;
     };
     '/$locale/$wsId/finance/wallets/$walletId': {
       id: '/$locale/$wsId/finance/wallets/$walletId';
@@ -3372,6 +3392,21 @@ const LocaleCalendarMeetTogetherRouteWithChildren =
     LocaleCalendarMeetTogetherRouteChildren,
   );
 
+interface LocaleWsIdInventoryProductsRouteChildren {
+  LocaleWsIdInventoryProductsProductIdRoute: typeof LocaleWsIdInventoryProductsProductIdRoute;
+}
+
+const LocaleWsIdInventoryProductsRouteChildren: LocaleWsIdInventoryProductsRouteChildren =
+  {
+    LocaleWsIdInventoryProductsProductIdRoute:
+      LocaleWsIdInventoryProductsProductIdRoute,
+  };
+
+const LocaleWsIdInventoryProductsRouteWithChildren =
+  LocaleWsIdInventoryProductsRoute._addFileChildren(
+    LocaleWsIdInventoryProductsRouteChildren,
+  );
+
 interface LocaleWsIdTasksProjectsRouteChildren {
   LocaleWsIdTasksProjectsProjectIdRoute: typeof LocaleWsIdTasksProjectsProjectIdRoute;
 }
@@ -3523,6 +3558,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
+  LocaleWsIdInventoryProductsRoute: typeof LocaleWsIdInventoryProductsRouteWithChildren;
   LocaleWsIdInventoryPromotionsRoute: typeof LocaleWsIdInventoryPromotionsRoute;
   LocaleWsIdInventoryStorefrontsRoute: typeof LocaleWsIdInventoryStorefrontsRoute;
   LocaleWsIdInventorySuppliersRoute: typeof LocaleWsIdInventorySuppliersRoute;
@@ -3554,7 +3590,6 @@ interface LocaleRouteRouteChildren {
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute;
   LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
-  LocaleWsIdInventoryProductsProductIdRoute: typeof LocaleWsIdInventoryProductsProductIdRoute;
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute;
   LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute;
   LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
@@ -3650,6 +3685,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
+  LocaleWsIdInventoryProductsRoute:
+    LocaleWsIdInventoryProductsRouteWithChildren,
   LocaleWsIdInventoryPromotionsRoute: LocaleWsIdInventoryPromotionsRoute,
   LocaleWsIdInventoryStorefrontsRoute: LocaleWsIdInventoryStorefrontsRoute,
   LocaleWsIdInventorySuppliersRoute: LocaleWsIdInventorySuppliersRoute,
@@ -3684,8 +3721,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdAiChatMyChatbotsNewRoute: LocaleWsIdAiChatMyChatbotsNewRoute,
   LocaleWsIdEducationCoursesCourseIdRoute:
     LocaleWsIdEducationCoursesCourseIdRouteWithChildren,
-  LocaleWsIdInventoryProductsProductIdRoute:
-    LocaleWsIdInventoryProductsProductIdRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:
     LocaleWsIdSettingsInfrastructureAppCoordinationRoute,
   LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,
