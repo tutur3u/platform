@@ -16,6 +16,7 @@ const BUFFERED_JSON_OPERATIONS = [
   ['POST', '/api/v1/infrastructure/languages'],
   ['POST', '/api/v1/infrastructure/sidebar'],
   ['POST', '/api/v1/infrastructure/sidebar/sizes'],
+  ['POST', '/api/v1/internal/holidays'],
 ];
 
 function readJson(filePath) {

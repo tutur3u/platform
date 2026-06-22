@@ -2594,7 +2594,7 @@ paths:
   /api/v1/internal/holidays:
     get:
       summary: Legacy-compatible Vietnamese holiday list
-      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/route.ts GET. The Rust backend reads public Vietnamese holiday rows through the server-owned Supabase REST adapter, preserves the optional parseInt-style year filter, orders rows by date ascending, and leaves admin holiday mutations on legacy Next.js routes.
+      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/route.ts GET. The Rust backend reads public Vietnamese holiday rows through the server-owned Supabase REST adapter, preserves the optional parseInt-style year filter, and orders rows by date ascending.
       parameters:
         - name: year
           in: query
@@ -2635,7 +2635,65 @@ paths:
               schema:
                 type: string
                 examples:
-                  - GET
+                  - GET, POST
+    post:
+      summary: Legacy-compatible Vietnamese holiday create
+      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/route.ts POST. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row, preserves the legacy holiday date/name validation and duplicate-date response, and inserts with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HolidayCreateRequest"
+      responses:
+        "201":
+          description: Holiday row created.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VietnameseHoliday"
+        "400":
+          description: Request body failed legacy-compatible validation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayInputError"
+        "403":
+          description: Caller is not an authenticated root workspace MEMBER.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayMutationError"
+        "409":
+          description: A holiday already exists for the requested date.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayMutationError"
+        "500":
+          description: Holiday row could not be created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayMutationError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
   /api/v1/infrastructure/migrate/grouped-score-names:
     put:
       summary: Disabled grouped score names infrastructure migration
@@ -4872,6 +4930,23 @@ components:
           type: string
         year:
           type: integer
+    HolidayCreateRequest:
+      type: object
+      required:
+        - date
+        - name
+      properties:
+        date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          examples:
+            - "2026-01-01"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          examples:
+            - New Year
     HolidaysError:
       type: object
       required:
@@ -4881,6 +4956,30 @@ components:
           type: string
           examples:
             - Error fetching holidays
+    HolidayMutationError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Admin access required
+            - A holiday already exists for this date
+            - Error creating holiday
+    HolidayInputError:
+      type: object
+      required:
+        - message
+        - errors
+      properties:
+        message:
+          type: string
+          examples:
+            - Invalid input
+        errors:
+          type: object
+          additionalProperties: true
     CrawlerUncrawledUrl:
       type: object
       required:

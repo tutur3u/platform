@@ -1186,6 +1186,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
             | ("POST", "/api/v1/infrastructure/sidebar")
             | ("POST", "/api/v1/infrastructure/sidebar/sizes")
     ) || contact::should_buffer_request_body(method, path)
+        || holidays::should_buffer_request_body(method, path)
         || auth_mfa::should_buffer_request_body(method, path)
         || user_profile::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
@@ -5516,13 +5517,13 @@ mod tests {
 
         let response = handle_backend_request(
             &config,
-            request("POST", "/api/v1/internal/holidays"),
+            request("PATCH", "/api/v1/internal/holidays"),
             &outbound,
         )
         .await;
 
         assert_eq!(response.status, 405);
-        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(response.allow, Some("GET, POST"));
         assert_eq!(response.body["error"], "method not allowed");
         assert_eq!(outbound.calls().len(), 0);
     }
@@ -5542,6 +5543,248 @@ mod tests {
         assert_eq!(response.status, 500);
         assert_eq!(response.body["message"], "Error fetching holidays");
         assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn holidays_post_requires_authenticated_root_workspace_member() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "POST",
+                "/api/v1/internal/holidays",
+                r#"{"date":"2026-01-01","name":"New Year"}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["message"], "Admin access required");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn holidays_post_validates_payload_after_membership_check() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/internal/holidays",
+                    r#"{"date":"2026/01/01","name":""}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid input");
+        assert!(response.body["errors"]["fieldErrors"]["date"].is_array());
+        assert!(response.body["errors"]["fieldErrors"]["name"].is_array());
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn holidays_post_rejects_root_workspace_guests() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("guest-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-guest"}"#),
+            outbound_response(200, r#"{"type":"GUEST"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/internal/holidays",
+                    r#"{"date":"2026-01-01","name":"New Year"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["message"], "Admin access required");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn holidays_post_rejects_duplicate_dates() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(200, r#"{"id":"holiday-existing"}"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/internal/holidays",
+                    r#"{"date":"2026-01-01","name":"New Year"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 409);
+        assert_eq!(
+            response.body["message"],
+            "A holiday already exists for this date"
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[2].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=id&date=eq.2026-01-01&limit=1"
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+    }
+
+    #[tokio::test]
+    async fn holidays_post_creates_holiday_with_user_token_rls() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("admin-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"{"type":"MEMBER"}"#),
+            outbound_response(
+                406,
+                r#"{
+                    "code":"PGRST116",
+                    "details":"The result contains 0 rows",
+                    "hint":null,
+                    "message":"JSON object requested, multiple (or no) rows returned"
+                }"#,
+            ),
+            outbound_response(
+                201,
+                r#"{"id":"holiday-1","date":"2026-01-01","name":"New Year","year":2026}"#,
+            ),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "theme=dark; sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request_with_body(
+                    "POST",
+                    "/api/v1/internal/holidays",
+                    r#"{"date":"2026-01-01","name":"New Year"}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 201);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["id"], "holiday-1");
+        assert_eq!(response.body["date"], "2026-01-01");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[0].method, OutboundMethod::Get);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[1].url,
+            "https://project-ref.supabase.co/rest/v1/workspace_members?select=type&ws_id=eq.00000000-0000-0000-0000-000000000000&user_id=eq.user-1&limit=1"
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[1], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(calls[2].method, OutboundMethod::Get);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=id&date=eq.2026-01-01&limit=1"
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(calls[3].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[3].url,
+            "https://project-ref.supabase.co/rest/v1/vietnamese_holidays?select=*"
+        );
+        assert_eq!(
+            recorded_header(&calls[3], "Accept"),
+            Some("application/vnd.pgrst.object+json")
+        );
+        assert_eq!(
+            recorded_header(&calls[3], "Authorization"),
+            Some("Bearer admin-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[3], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[3], "Prefer"),
+            Some("return=representation")
+        );
+        assert_eq!(
+            recorded_header(&calls[3], "Content-Type"),
+            Some(APPLICATION_JSON)
+        );
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(
+                calls[3].body.as_ref().expect("insert request body")
+            )
+            .expect("insert request json"),
+            json!({
+                "date": "2026-01-01",
+                "name": "New Year",
+            })
+        );
     }
 
     #[tokio::test]
@@ -7032,6 +7275,7 @@ mod tests {
             "/api/v1/infrastructure/languages",
             "/api/v1/infrastructure/sidebar",
             "/api/v1/infrastructure/sidebar/sizes",
+            "/api/v1/internal/holidays",
             "/api/auth/mfa/totp/factors",
             SUPPORT_INQUIRIES_PATH,
         ] {
@@ -7049,6 +7293,10 @@ mod tests {
         assert!(!should_buffer_request_body(
             "POST",
             CURRENT_USER_PROFILE_PATH
+        ));
+        assert!(!should_buffer_request_body(
+            "PUT",
+            "/api/v1/internal/holidays/holiday-1"
         ));
         assert!(!should_buffer_request_body("GET", ONBOARDING_PROGRESS_PATH));
         assert!(!should_buffer_request_body("PATCH", SUPPORT_INQUIRIES_PATH));

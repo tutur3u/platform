@@ -25,7 +25,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Vietnamese holiday list GET through the server-owned Supabase REST adapter, preserving optional parseInt-style year filtering, date ascending ordering, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned until admin holiday mutation behavior moves behind the Rust backend."
+          "note": "Rust backend handle_backend_request handles the public Vietnamese holiday list GET through the server-owned Supabase REST adapter, preserving optional parseInt-style year filtering, date ascending ordering, no-store JSON responses, and the legacy 500 error body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles POST /api/v1/internal/holidays by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access, validating date/name input, checking duplicate dates, and inserting with the caller's Supabase token so vietnamese_holidays RLS remains active while preserving legacy-compatible 201, 400, 403, 409, and 500 JSON responses."
         }
       }
     },
