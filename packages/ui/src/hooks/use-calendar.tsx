@@ -1,4 +1,10 @@
-import { createWorkspaceCalendarEvent } from '@tuturuuu/internal-api';
+import {
+  createWorkspaceCalendarEvent,
+  deleteWorkspaceCalendarEvent,
+  updateWorkspaceCalendarEvent,
+  type WorkspaceCalendarEventCreatePayload,
+  type WorkspaceCalendarEventUpdatePayload,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -38,15 +44,26 @@ const roundToNearest15Minutes = (date: Date): Date => {
   return roundedDate;
 };
 
-// Function to create a unique signature for an event based on its content
-const createEventSignature = (event: CalendarEvent): string => {
-  return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-};
-
 type TaskDragData = {
   name?: string;
   priority?: string | null;
   totalDuration?: number;
+};
+
+const createOptimisticEventId = () => {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return `optimistic-${crypto.randomUUID()}`;
+  }
+
+  return `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const noStoreFetchOptions = {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(input, { ...init, cache: 'no-store' }),
 };
 
 function patchWorkspaceCalendarEventCache(
@@ -234,8 +251,11 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _updateId?: string;
   _timestamp: number;
   _eventId: string;
-  _resolve?: (value: CalendarEvent) => void;
-  _reject?: (reason: any) => void;
+  _previousEvent?: CalendarEvent;
+  _resolvers?: Array<{
+    resolve: (value: CalendarEvent) => void;
+    reject: (reason: unknown) => void;
+  }>;
 }
 
 export type CalendarEventAdapter = {
@@ -425,7 +445,7 @@ export const CalendarProvider = ({
   const updateQueueRef = useRef<PendingEventUpdate[]>([]);
   const isProcessingQueueRef = useRef<boolean>(false);
 
-  const { events, refresh } = useCalendarSync();
+  const { events, refresh, patchVisibleEvents } = useCalendarSync();
 
   // Modal state
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
@@ -635,62 +655,63 @@ export const CalendarProvider = ({
 
       if (!ws) throw new Error('No workspace selected');
 
-      // Create an event signature to check for duplicates
-      const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+      const payload: WorkspaceCalendarEventCreatePayload = {
+        title: event.title || '',
+        description: event.description || '',
+        start_at: startDate.toISOString(),
+        end_at: endDate.toISOString(),
+        color: eventColor as SupportedColor,
+        location: event.location || '',
+        locked: true,
+        task_id: (event as CalendarEvent & { task_id?: string | null }).task_id,
+        source: event.source,
+      };
+      const optimisticId = createOptimisticEventId();
+      const optimisticEvent = {
+        ...event,
+        ...payload,
+        id: optimisticId,
+        ws_id: ws.id,
+        color: eventColor as SupportedColor,
+        _optimisticStatus: 'creating' as const,
+      };
 
-      // Check existing events for potential duplicates to prevent race condition
-      const duplicates = events.filter((e: CalendarEvent) => {
-        const existingSignature = createEventSignature(e);
-        return existingSignature === newEventSignature;
-      });
+      patchVisibleEvents([optimisticEvent], { status: 'creating' });
 
-      // If duplicates already exist, return the first one
-      if (duplicates.length > 0) {
-        // Clear any pending new event
-        setPendingNewEvent(null);
+      try {
+        const data = await createWorkspaceCalendarEvent(
+          ws.id,
+          payload,
+          noStoreFetchOptions
+        );
 
-        // Return the existing event
-        return duplicates[0];
-      }
+        patchVisibleEvents([data], { clearIds: [optimisticId] });
+        patchWorkspaceCalendarEventCache(queryClient, ws.id, (existing) => {
+          if (existing.some((item) => item.id === data.id)) {
+            return existing.map((item) =>
+              item.id === data.id
+                ? ({ ...item, ...data } as CalendarEvent)
+                : item
+            );
+          }
 
-      // No duplicates, proceed with creating the event via API (handles E2EE encryption)
-      const response = await fetch(
-        `/api/v1/workspaces/${ws.id}/calendar/events`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: event.title || '',
-            description: event.description || '',
-            start_at: startDate.toISOString(),
-            end_at: endDate.toISOString(),
-            color: eventColor as SupportedColor,
-            location: event.location || '',
-            locked: true,
-            source: event.source,
-          }),
-        }
-      );
+          return [...existing, data].sort(
+            (left, right) =>
+              new Date(left.start_at).getTime() -
+              new Date(right.start_at).getTime()
+          );
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create event');
-      }
-
-      const data = (await response.json()) as CalendarEvent;
-
-      // Refresh the query cache after adding an event
-      refresh();
-
-      if (data) {
-        // Clear any pending new event
+        // Refresh the query cache after adding an event
+        refresh();
         setPendingNewEvent(null);
         return data as CalendarEvent;
+      } catch (error) {
+        patchVisibleEvents([], { clearIds: [optimisticId] });
+        throw error;
       }
-
-      return {} as CalendarEvent;
     },
-    [ws, refresh, events, readOnly, eventAdapter]
+    [ws, readOnly, eventAdapter, patchVisibleEvents, queryClient, refresh]
   );
 
   const addEmptyEvent = useCallback(
@@ -829,33 +850,35 @@ export const CalendarProvider = ({
         _updateId,
         _timestamp,
         _eventId,
-        _resolve,
-        _reject,
+        _previousEvent,
+        _resolvers,
         ...updateData
       } = update;
+      pendingUpdatesRef.current.delete(eventId);
 
       // Check if the event exists before trying to update
-      const existingEvent = events.find((e: CalendarEvent) => e.id === eventId);
+      const existingEvent =
+        _previousEvent ?? events.find((e: CalendarEvent) => e.id === eventId);
       if (!existingEvent) {
         const errorMsg = `Event with ID ${eventId} not found in local events`;
-        if (_reject) {
-          _reject(new Error(errorMsg));
-        }
+        _resolvers?.forEach(({ reject }) => {
+          reject(new Error(errorMsg));
+        });
         return;
       }
 
       // Validate workspace ownership
       if (existingEvent.ws_id !== ws?.id) {
         const errorMsg = `Event ${eventId} does not belong to current workspace (${ws?.id})`;
-        if (_reject) {
-          _reject(new Error(errorMsg));
-        }
+        _resolvers?.forEach(({ reject }) => {
+          reject(new Error(errorMsg));
+        });
         return;
       }
 
       try {
         // Clean up the update data to ensure no undefined values and exclude system fields
-        const cleanUpdateData: Partial<CalendarEvent> = {
+        const cleanUpdateData: WorkspaceCalendarEventUpdatePayload = {
           ...(updateData.title !== undefined && { title: updateData.title }),
           ...(updateData.description !== undefined && {
             description: updateData.description,
@@ -875,25 +898,14 @@ export const CalendarProvider = ({
         // ws is guaranteed to be defined here (validated above at line 732)
         const wsId = ws!.id;
 
-        // Use API endpoint which handles E2EE encryption
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/events/${eventId}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cleanUpdateData),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update event');
-        }
-
         // The API response includes task_id from the database which is not in CalendarEvent type
-        const data = (await response.json()) as CalendarEvent & {
-          task_id?: string | null;
-        };
+        const data = (await updateWorkspaceCalendarEvent(
+          wsId,
+          eventId,
+          cleanUpdateData,
+          noStoreFetchOptions
+        )) as CalendarEvent & { task_id?: string | null };
+        const hasNewerPendingUpdate = pendingUpdatesRef.current.has(eventId);
 
         // If event times changed, sync task's total_duration
         if (data) {
@@ -904,6 +916,10 @@ export const CalendarProvider = ({
                 : event
             )
           );
+
+          if (!hasNewerPendingUpdate) {
+            patchVisibleEvents([data]);
+          }
         }
 
         if (data && (cleanUpdateData.start_at || cleanUpdateData.end_at)) {
@@ -928,20 +944,23 @@ export const CalendarProvider = ({
 
         if (data) {
           // Resolve the promise for this update
-          if (_resolve) {
-            _resolve(data as CalendarEvent);
-          }
+          _resolvers?.forEach(({ resolve }) => {
+            resolve(data as CalendarEvent);
+          });
         } else {
-          if (_reject) {
-            _reject(
+          _resolvers?.forEach(({ reject }) => {
+            reject(
               new Error(`Failed to update event ${eventId} - no data returned`)
             );
-          }
+          });
         }
       } catch (err) {
-        if (_reject) {
-          _reject(err);
+        if (!pendingUpdatesRef.current.has(eventId) && _previousEvent) {
+          patchVisibleEvents([_previousEvent]);
         }
+        _resolvers?.forEach(({ reject }) => {
+          reject(err);
+        });
       }
     } finally {
       isProcessingQueueRef.current = false;
@@ -951,7 +970,15 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws, queryClient, onTaskScheduled, readOnly]);
+  }, [
+    refresh,
+    events,
+    ws,
+    queryClient,
+    onTaskScheduled,
+    readOnly,
+    patchVisibleEvents,
+  ]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -1028,32 +1055,6 @@ export const CalendarProvider = ({
           ...pendingNewEvent,
           ...cleanedUpdates,
         };
-        // Check for potential duplicates before creating a new event
-        if (cleanedUpdates.title || pendingNewEvent.title) {
-          const startDate = roundToNearest15Minutes(
-            new Date(newEventData.start_at || new Date())
-          );
-          const endDate = roundToNearest15Minutes(
-            new Date(newEventData.end_at || new Date())
-          );
-
-          const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
-
-          // Check existing events for potential duplicates
-          const duplicates = events.filter((e: CalendarEvent) => {
-            const existingSignature = createEventSignature(e);
-            return existingSignature === newEventSignature;
-          });
-
-          // If duplicates already exist, return the first one
-          if (duplicates.length > 0) {
-            // Clear any pending new event
-            setPendingNewEvent(null);
-
-            // Return the existing event
-            return duplicates[0];
-          }
-        }
 
         // Create a new event instead of updating
         const result = await addEvent(
@@ -1062,26 +1063,55 @@ export const CalendarProvider = ({
         return result;
       }
 
+      const existingEvent = events.find(
+        (event: CalendarEvent) => event.id === eventId
+      );
+      if (!existingEvent) {
+        throw new Error(`Event with ID ${eventId} not found in local events`);
+      }
+
+      patchVisibleEvents(
+        [
+          {
+            ...existingEvent,
+            ...cleanedUpdates,
+            _optimisticStatus: 'updating',
+          } as CalendarEvent & { _optimisticStatus: 'updating' },
+        ],
+        { status: 'updating' }
+      );
+
       // Generate a unique update ID to track this specific update request
       const updateId = `${eventId}-${Date.now()}`;
       const timestamp = Date.now();
 
       // Create a promise that will resolve when the update is actually performed
       return new Promise<CalendarEvent>((resolve, reject) => {
+        const existingPending = pendingUpdatesRef.current.get(eventId);
+        const resolvers = [
+          ...(existingPending?._resolvers ?? []),
+          { resolve, reject },
+        ];
+
         // Create the update object with the promise callbacks
         const updateObject: PendingEventUpdate = {
+          ...(existingPending ?? {}),
           ...cleanedUpdates,
           _updateId: updateId,
           _timestamp: timestamp,
           _eventId: eventId,
-          _resolve: resolve,
-          _reject: reject,
+          _previousEvent: existingPending?._previousEvent ?? existingEvent,
+          _resolvers: resolvers,
         };
 
         // Store the latest update for this event
         pendingUpdatesRef.current.set(eventId, updateObject);
 
-        // Add to the queue
+        // Keep only the newest queued payload per event. Promise callers are
+        // retained in _resolvers and settle from the single coalesced request.
+        updateQueueRef.current = updateQueueRef.current.filter(
+          (queuedUpdate) => queuedUpdate._eventId !== eventId
+        );
         updateQueueRef.current.push(updateObject);
 
         // Clear any existing timer
@@ -1105,6 +1135,7 @@ export const CalendarProvider = ({
       readOnly,
       eventAdapter,
       refresh,
+      patchVisibleEvents,
     ]
   );
 
@@ -1144,22 +1175,27 @@ export const CalendarProvider = ({
         throw new Error('No workspace selected');
       }
 
-      const deleteResponse = await fetch(
-        `/api/v1/workspaces/${ws.id}/calendar/events/${eventId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!deleteResponse.ok) {
-        const errorData = await deleteResponse.json().catch(() => null);
-        throw new Error(errorData?.error || 'Failed to delete event');
+      if (eventToDelete) {
+        patchVisibleEvents([], { removeIds: [eventId] });
       }
 
-      const deleteResult = (await deleteResponse.json()) as {
+      let deleteResult: {
         linkedTaskId?: string | null;
         skippedHabitId?: string | null;
       };
+
+      try {
+        deleteResult = await deleteWorkspaceCalendarEvent(
+          ws.id,
+          eventId,
+          noStoreFetchOptions
+        );
+      } catch (error) {
+        if (eventToDelete) {
+          patchVisibleEvents([eventToDelete]);
+        }
+        throw error;
+      }
 
       const hasLinkedTask =
         !!deleteResult.linkedTaskId || !!eventToDelete?.task_id;
@@ -1189,6 +1225,7 @@ export const CalendarProvider = ({
       onTaskScheduled,
       readOnly,
       eventAdapter,
+      patchVisibleEvents,
     ]
   );
 

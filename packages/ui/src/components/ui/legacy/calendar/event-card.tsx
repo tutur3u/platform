@@ -83,6 +83,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isReused,
     _previewType,
     _warning,
+    _optimisticStatus,
   } = event as CalendarEvent & {
     _isHabit?: boolean;
     _habitCompleted?: boolean;
@@ -90,6 +91,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isReused?: boolean;
     _previewType?: 'habit' | 'task';
     _warning?: string;
+    _optimisticStatus?: 'creating' | 'updating' | 'deleting' | 'error';
   };
 
   // Default values for overlap properties if not provided
@@ -174,6 +176,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     isDragging: false,
     isResizing: false,
   });
+  const isOptimisticallyPending =
+    _optimisticStatus === 'creating' ||
+    _optimisticStatus === 'updating' ||
+    _optimisticStatus === 'deleting';
 
   // Status feedback timeout
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1079,6 +1085,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
               // Preview-specific styling - dashed border only for NEW/MOVED events (not reused)
               'border-2 border-dashed': _isPreview && !_isReused,
+              'opacity-80 ring-1 ring-primary/30': isOptimisticallyPending,
             },
             level ? 'border border-l-2' : 'border-l-2',
             border,
@@ -1134,6 +1141,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasResizedRef.current = false;
           }}
           aria-label={`Event: ${title || 'Untitled event'}${hasCalendarInfo ? ` from ${calendarDisplayName}` : ''}`}
+          aria-busy={isOptimisticallyPending || updateStatus === 'syncing'}
           title={
             hasCalendarInfo ? `Calendar: ${calendarDisplayName}` : undefined
           }
@@ -1187,7 +1195,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
                 {
                   'opacity-0!':
-                    isDragging || isResizing || updateStatus !== 'idle',
+                    isDragging ||
+                    isResizing ||
+                    updateStatus !== 'idle' ||
+                    isOptimisticallyPending,
                 } // Hide during interaction or status updates
               )}
               onClick={(e) => {
@@ -1201,7 +1212,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
 
           {/* Status indicators */}
-          {updateStatus === 'syncing' && (
+          {(updateStatus === 'syncing' || isOptimisticallyPending) && (
             <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/5">
               {/* <div
                 className="animate-shimmer h-full w-full bg-linear-to-r from-transparent via-background/10 to-transparent"
@@ -1260,6 +1271,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 )}
                 {localEvent.locked && !_isPreview && (
                   <Lock className="mr-1 inline-block h-3 w-3 align-middle opacity-70" />
+                )}
+                {isOptimisticallyPending && (
+                  <RefreshCw className="mr-1 inline-block h-3 w-3 animate-spin align-middle opacity-80" />
                 )}
                 <span>{localEvent.title || 'Untitled event'}</span>
                 {_isPreview && !_isReused && (
