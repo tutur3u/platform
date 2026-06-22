@@ -34,9 +34,9 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next-intl": "^4.13.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "use-intl": "^4.13.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

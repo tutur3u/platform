@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
+import { IntlProvider } from 'use-intl';
 import {
   getMessages,
   resolveMessagesLocale,
@@ -9,14 +9,22 @@ import {
 /**
  * Locale-scoped layout for every `/$locale/*` route.
  *
- * Provides the next-intl message context so SHARED `@tuturuuu/ui` components
- * that call `useTranslations()` (e.g. the tu-do dashboard surface, TaskEditDialog)
+ * Provides the i18n message context so SHARED `@tuturuuu/ui` components that
+ * call `useTranslations()` (e.g. the tu-do dashboard surface, TaskEditDialog)
  * can render inside apps/tanstack-web WITHOUT being forked to inline strings.
  *
+ * Uses `use-intl`'s framework-agnostic `IntlProvider` rather than
+ * `next-intl`'s `NextIntlClientProvider`. next-intl is built on use-intl and
+ * re-exports the same `useTranslations` hook / `IntlContext`, so the shared
+ * components (which import from `next-intl`) read this provider's context — but
+ * use-intl carries no Next.js runtime coupling, which is the supported way to
+ * run these hooks under TanStack Start (see TanStack Router i18n guide, which
+ * lists use-intl as a TanStack Start integration).
+ *
  * apps/web supplies messages via next-intl's request config; TanStack Start has
- * no Next request context, so we pass `locale` + `messages` explicitly to the
- * client provider. `timeZone` is defaulted so relative-time formatting in shared
- * components does not throw; per-page/workspace overrides can be layered later.
+ * no Next request context, so we pass `locale` + `messages` explicitly.
+ * `timeZone` is defaulted so relative-time formatting in shared components does
+ * not throw; per-page/workspace overrides can be layered later.
  *
  * Additive on purpose: this is a new layout route, not a change to `__root.tsx`,
  * to minimise overlap with the app-shell lane that owns the root document.
@@ -31,13 +39,9 @@ function LocaleLayout() {
   const messages = getMessages(resolvedLocale);
 
   return (
-    <NextIntlClientProvider
-      locale={resolvedLocale}
-      messages={messages as Record<string, unknown>}
-      timeZone="UTC"
-    >
+    <IntlProvider locale={resolvedLocale} messages={messages} timeZone="UTC">
       <Outlet />
-    </NextIntlClientProvider>
+    </IntlProvider>
   );
 }
 
@@ -51,12 +55,12 @@ export function LocaleIntlProvider({
 }) {
   const resolvedLocale = resolveMessagesLocale(locale);
   return (
-    <NextIntlClientProvider
+    <IntlProvider
       locale={resolvedLocale}
-      messages={getMessages(resolvedLocale) as Record<string, unknown>}
+      messages={getMessages(resolvedLocale)}
       timeZone="UTC"
     >
       {children}
-    </NextIntlClientProvider>
+    </IntlProvider>
   );
 }
