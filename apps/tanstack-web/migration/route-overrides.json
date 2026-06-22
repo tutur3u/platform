@@ -818,6 +818,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/mind redirects to the standalone Mind workspace route while preserving query parameters. This marks only the page handoff artifact migrated; Mind APIs and parent dashboard/session ownership remain separately owned."
     },
+    "layout:/:locale/:wsId/mind/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/mind/boards/$boardId already redirects to the standalone Mind board route while preserving query parameters. The legacy Mind board route layout only imported @xyflow/react styles and returned children, so this marks only the route-specific layout metadata artifact migrated; Mind APIs and parent dashboard/session ownership remain legacy-owned."
+    },
     "page:/:locale/:wsId/mind/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
