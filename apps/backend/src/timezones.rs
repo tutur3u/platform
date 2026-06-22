@@ -15,6 +15,7 @@ const INFRASTRUCTURE_TIMEZONES_DETAIL_PATH_PREFIX: &str = "/api/v1/infrastructur
 const MANAGE_WORKSPACE_ROLES_PERMISSION: &str = "manage_workspace_roles";
 const PRIVATE_SCHEMA: &str = "private";
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
+const TIMEZONE_CREATE_ERROR: &str = "Error creating timezone";
 const TIMEZONE_DELETE_ERROR: &str = "Error deleting timezone";
 const TIMEZONE_UPDATE_ERROR: &str = "Error updating timezone";
 const TIMEZONES_LOAD_ERROR: &str = "Error fetching timezones";
@@ -43,6 +44,9 @@ pub(crate) async fn handle_timezones_route(
         ("GET", INFRASTRUCTURE_TIMEZONES_PATH) => {
             Some(timezones_response(config, request, outbound).await)
         }
+        ("POST", INFRASTRUCTURE_TIMEZONES_PATH) => {
+            Some(timezone_create_response(config, request, outbound).await)
+        }
         ("PUT", path) => {
             let timezone_id = path.strip_prefix(INFRASTRUCTURE_TIMEZONES_DETAIL_PATH_PREFIX)?;
             Some(timezone_update_response(config, request, outbound, timezone_id).await)
@@ -52,6 +56,30 @@ pub(crate) async fn handle_timezones_route(
             Some(timezone_delete_response(config, request, outbound, timezone_id).await)
         }
         _ => None,
+    }
+}
+
+async fn timezone_create_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    if let Err(error) = authorize_timezones_operator(config, request, outbound).await {
+        return match error {
+            TimezonesAuthError::Unauthorized | TimezonesAuthError::Forbidden => {
+                timezones_auth_error_response(error)
+            }
+            TimezonesAuthError::Internal => timezone_create_error_response(),
+        };
+    }
+
+    let Ok(body) = timezone_create_body(request.body_text) else {
+        return timezone_create_error_response();
+    };
+
+    match create_timezone(config, outbound, &body).await {
+        Ok(()) => no_store_response(json_response(200, json!({ "message": "success" }))),
+        Err(()) => timezone_create_error_response(),
     }
 }
 
@@ -218,6 +246,32 @@ async fn list_timezones(
     response.json::<Value>().map_err(|_| ())
 }
 
+async fn create_timezone(
+    config: &BackendConfig,
+    outbound: &impl OutboundHttpClient,
+    body: &Value,
+) -> Result<(), ()> {
+    let Some(url) = config.contact_data.rest_url(TIMEZONES_TABLE, &[]) else {
+        return Err(());
+    };
+    let body = serde_json::to_string(body).map_err(|_| ())?;
+    let response = send_private_timezone_request(
+        config,
+        outbound,
+        OutboundMethod::Post,
+        &url,
+        Some(&body),
+        Some("return=minimal"),
+    )
+    .await?;
+
+    if !is_success_status(response.status) {
+        return Err(());
+    }
+
+    Ok(())
+}
+
 async fn update_timezone(
     config: &BackendConfig,
     outbound: &impl OutboundHttpClient,
@@ -326,6 +380,41 @@ fn timezone_update_body(body_text: Option<&str>) -> Result<Value, ()> {
     }))
 }
 
+fn timezone_create_body(body_text: Option<&str>) -> Result<Value, ()> {
+    let body = body_text
+        .and_then(|body_text| serde_json::from_str::<Value>(body_text).ok())
+        .ok_or(())?;
+    let body = body.as_object().ok_or(())?;
+    let mut payload = Map::new();
+
+    if let Some(id) = body.get("id")
+        && !id.is_null()
+    {
+        payload.insert("id".to_owned(), id.clone());
+    }
+
+    payload.insert(
+        "value".to_owned(),
+        Value::String(normalized_string(body, "value")),
+    );
+    payload.insert(
+        "abbr".to_owned(),
+        Value::String(normalized_string(body, "abbr")),
+    );
+    payload.insert("offset".to_owned(), normalized_offset(body));
+    payload.insert(
+        "isdst".to_owned(),
+        Value::Bool(normalized_bool(body, "isdst")),
+    );
+    payload.insert(
+        "text".to_owned(),
+        Value::String(normalized_string(body, "text")),
+    );
+    payload.insert("utc".to_owned(), json!(normalized_utc(body.get("utc"))));
+
+    Ok(Value::Object(payload))
+}
+
 fn normalized_string(body: &Map<String, Value>, key: &str) -> String {
     body.get(key)
         .and_then(Value::as_str)
@@ -371,6 +460,13 @@ fn timezones_auth_error_response(error: TimezonesAuthError) -> BackendResponse {
         }
         TimezonesAuthError::Internal => timezones_load_error_response(),
     }
+}
+
+fn timezone_create_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({ "message": TIMEZONE_CREATE_ERROR }),
+    ))
 }
 
 fn timezone_update_error_response() -> BackendResponse {

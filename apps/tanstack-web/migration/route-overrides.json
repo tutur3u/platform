@@ -825,7 +825,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array. Collection POST remains legacy-owned until timezone creation moves to Rust."
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, normalizing the legacy create payload, omitting missing/null IDs so the database default generates a UUID, inserting private.timezones through the server-owned private-schema Supabase REST adapter, and preserving the legacy success and create failure response bodies."
         }
       }
     },

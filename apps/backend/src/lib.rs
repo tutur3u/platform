@@ -9301,6 +9301,87 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn infrastructure_timezones_post_rejects_missing_auth_before_body_parse() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body("POST", timezones::INFRASTRUCTURE_TIMEZONES_PATH, "not json"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_post_inserts_private_row_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(201, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "POST",
+                    timezones::INFRASTRUCTURE_TIMEZONES_PATH,
+                    r#"{
+                        "id": null,
+                        "value":"Asia/Ho_Chi_Minh",
+                        "abbr":"+07",
+                        "offset":7,
+                        "isdst":false,
+                        "text":"Ho Chi Minh",
+                        "utc":"Asia/Ho_Chi_Minh, UTC"
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let insert_call = &calls[2];
+        assert_eq!(insert_call.method, OutboundMethod::Post);
+        assert!(insert_call.url.contains("/rest/v1/timezones"));
+        assert_eq!(
+            recorded_header(insert_call, "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(insert_call, "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(insert_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(insert_call, "Prefer"),
+            Some("return=minimal")
+        );
+
+        let body: Value = serde_json::from_str(insert_call.body.as_deref().unwrap()).unwrap();
+        assert!(body.get("id").is_none());
+        assert_eq!(body["value"], "Asia/Ho_Chi_Minh");
+        assert_eq!(body["abbr"], "+07");
+        assert_eq!(body["offset"], 7);
+        assert_eq!(body["isdst"], false);
+        assert_eq!(body["text"], "Ho Chi Minh");
+        assert_eq!(body["utc"], json!(["Asia/Ho_Chi_Minh", "UTC"]));
+    }
+
+    #[tokio::test]
     async fn infrastructure_timezones_put_patches_private_row_for_root_operators() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::with_responses(vec![
@@ -9413,6 +9494,53 @@ mod tests {
     #[tokio::test]
     async fn infrastructure_timezones_writes_return_legacy_errors_after_auth() {
         let config = backend_config_with_contact_data();
+        let create_invalid_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let create_invalid_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body("POST", timezones::INFRASTRUCTURE_TIMEZONES_PATH, "not json")
+            },
+            &create_invalid_outbound,
+        )
+        .await;
+
+        assert_eq!(create_invalid_response.status, 500);
+        assert_eq!(
+            create_invalid_response.body["message"],
+            "Error creating timezone"
+        );
+        assert_eq!(create_invalid_outbound.calls().len(), 2);
+
+        let create_save_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let create_save_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "POST",
+                    timezones::INFRASTRUCTURE_TIMEZONES_PATH,
+                    r#"{"value":"Asia/Ho_Chi_Minh"}"#,
+                )
+            },
+            &create_save_outbound,
+        )
+        .await;
+
+        assert_eq!(create_save_response.status, 500);
+        assert_eq!(
+            create_save_response.body["message"],
+            "Error creating timezone"
+        );
+        assert_eq!(create_save_outbound.calls().len(), 3);
+
         let update_outbound = RecordingOutboundClient::with_responses(vec![
             outbound_response(200, r#"{"id":"user-1"}"#),
             outbound_response(200, "true"),

@@ -5839,7 +5839,7 @@ paths:
   /api/v1/infrastructure/timezones:
     get:
       summary: Legacy-compatible protected timezone list
-      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/timezones/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, requires the root workspace manage_workspace_roles permission through the server-owned has_workspace_permission RPC, reads private.timezones through the server-owned private-schema Supabase REST adapter, preserves value ordering, and returns the legacy raw timezone row array. Collection POST remains legacy-owned until timezone creation moves to Rust.
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/timezones/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, requires the root workspace manage_workspace_roles permission through the server-owned has_workspace_permission RPC, reads private.timezones through the server-owned private-schema Supabase REST adapter, preserves value ordering, and returns the legacy raw timezone row array.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -5877,6 +5877,54 @@ paths:
                 $ref: "#/components/schemas/TimezonesMessage"
         "500":
           description: Timezone rows could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimezonesMessage"
+    post:
+      summary: Legacy-compatible protected timezone creation
+      description: Migrated replacement for the POST export in apps/web/src/app/api/v1/infrastructure/timezones/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, requires the root workspace manage_workspace_roles permission through the server-owned has_workspace_permission RPC, normalizes the legacy writable timezone fields, omits missing or null IDs so the database default generates a UUID, inserts private.timezones through the server-owned private-schema Supabase REST adapter, and preserves the legacy success and create failure bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TimezoneCreateRequest"
+      responses:
+        "200":
+          description: Timezone was created.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimezonesMessage"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimezonesMessage"
+        "403":
+          description: Authenticated caller lacks the root workspace manage_workspace_roles permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimezonesMessage"
+        "500":
+          description: Timezone could not be created.
           content:
             application/json:
               schema:
@@ -10331,6 +10379,42 @@ components:
           type: string
           examples:
             - 2026-01-01 00:00:00+00
+    TimezoneCreateRequest:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: Optional timezone UUID. Missing or null values use the database UUID default.
+        value:
+          type: string
+          examples:
+            - Asia/Ho_Chi_Minh
+        abbr:
+          type: string
+          examples:
+            - ICT
+        offset:
+          type: number
+          examples:
+            - 7
+        isdst:
+          type: boolean
+        text:
+          type: string
+          examples:
+            - (UTC+07:00) Bangkok, Hanoi, Jakarta
+        utc:
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+          examples:
+            - ["Asia/Ho_Chi_Minh"]
+            - Asia/Ho_Chi_Minh, UTC
     TimezoneWriteRequest:
       type: object
       properties:
@@ -10373,6 +10457,7 @@ components:
             - Unauthorized
             - Forbidden
             - Error fetching timezones
+            - Error creating timezone
             - Error updating timezone
             - Error deleting timezone
     InfrastructurePaginatedRowsResponse:
