@@ -91,6 +91,7 @@ import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index'
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId'
 import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code'
+import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode'
 import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$'
 import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements'
 import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure'
@@ -558,6 +559,12 @@ const LocaleSharedUserProfileCodeRoute =
     path: '/$locale/shared/user-profile/$code',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LocaleSharedTaskShareCodeRoute =
+  LocaleSharedTaskShareCodeRouteImport.update({
+    id: '/$locale/shared/task/$shareCode',
+    path: '/$locale/shared/task/$shareCode',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LocaleCalendarMeetTogetherSplatRoute =
   LocaleCalendarMeetTogetherSplatRouteImport.update({
     id: '/$',
@@ -896,6 +903,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute
@@ -1020,6 +1028,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail': typeof LocaleWsIdMailIndexRoute
@@ -1145,6 +1154,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute
   '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute
+  '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute
@@ -1271,6 +1281,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail/'
@@ -1395,6 +1406,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail'
@@ -1519,6 +1531,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/structure'
     | '/$locale/$wsId/users/topic-announcements'
     | '/$locale/calendar/meet-together/$'
+    | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
     | '/$locale/$wsId/mail/'
@@ -1628,6 +1641,7 @@ export interface RootRouteChildren {
   LocaleWsIdTasksHabitsRoute: typeof LocaleWsIdTasksHabitsRoute
   LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute
   LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute
+  LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute
   LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute
@@ -2216,6 +2230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleSharedUserProfileCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/shared/task/$shareCode': {
+      id: '/$locale/shared/task/$shareCode'
+      path: '/$locale/shared/task/$shareCode'
+      fullPath: '/$locale/shared/task/$shareCode'
+      preLoaderRoute: typeof LocaleSharedTaskShareCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/calendar/meet-together/$': {
       id: '/$locale/calendar/meet-together/$'
       path: '/$'
@@ -2801,6 +2822,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleWsIdUsersStructureRoute: LocaleWsIdUsersStructureRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
     LocaleWsIdUsersTopicAnnouncementsRoute,
+  LocaleSharedTaskShareCodeRoute: LocaleSharedTaskShareCodeRoute,
   LocaleSharedUserProfileCodeRoute: LocaleSharedUserProfileCodeRoute,
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
   LocaleWsIdMailIndexRoute: LocaleWsIdMailIndexRoute,
@@ -2819,10 +2841,13 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
+
 import type { createStart } from '@tanstack/react-start'
+
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
+
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }
