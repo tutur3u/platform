@@ -805,9 +805,14 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array. POST and detail PUT/DELETE remain legacy-owned until timezone writes move to Rust."
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array. Collection POST remains legacy-owned until timezone creation moves to Rust."
         }
       }
+    },
+    "api:/api/v1/infrastructure/timezones/:timezoneId:apps/web/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns PUT and DELETE /api/v1/infrastructure/timezones/:timezoneId by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, normalizing the legacy timezone update payload, patching and deleting private.timezones through the server-owned private-schema Supabase REST adapter, and preserving the legacy success plus method-specific update/delete failure response bodies."
     },
     "api:/api/v1/infrastructure/user-status-changes:apps/web/src/app/api/v1/infrastructure/user-status-changes/route.ts": {
       "methods": {

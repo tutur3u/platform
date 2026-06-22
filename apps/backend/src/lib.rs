@@ -9280,6 +9280,181 @@ mod tests {
         assert_eq!(outbound.calls().len(), 3);
     }
 
+    #[tokio::test]
+    async fn infrastructure_timezones_put_rejects_missing_auth_before_body_parse() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PUT",
+                "/api/v1/infrastructure/timezones/timezone-1",
+                "not json",
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_put_patches_private_row_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/infrastructure/timezones/timezone-1",
+                    r#"{
+                        "value":"Asia/Ho_Chi_Minh",
+                        "abbr":"+07",
+                        "offset":7,
+                        "isdst":false,
+                        "text":"Ho Chi Minh",
+                        "utc":"Asia/Ho_Chi_Minh, UTC"
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let update_call = &calls[2];
+        assert_eq!(update_call.method, OutboundMethod::Patch);
+        assert!(update_call.url.contains("/rest/v1/timezones?"));
+        assert!(update_call.url.contains("id=eq.timezone-1"));
+        assert_eq!(
+            recorded_header(update_call, "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(update_call, "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(update_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(update_call, "Prefer"),
+            Some("return=minimal")
+        );
+
+        let body: Value = serde_json::from_str(update_call.body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["value"], "Asia/Ho_Chi_Minh");
+        assert_eq!(body["abbr"], "+07");
+        assert_eq!(body["offset"], 7);
+        assert_eq!(body["isdst"], false);
+        assert_eq!(body["text"], "Ho Chi Minh");
+        assert_eq!(body["utc"], json!(["Asia/Ho_Chi_Minh", "UTC"]));
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_delete_removes_private_row_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("DELETE", "/api/v1/infrastructure/timezones/timezone-1")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let delete_call = &calls[2];
+        assert_eq!(delete_call.method, OutboundMethod::Delete);
+        assert!(delete_call.url.contains("/rest/v1/timezones?"));
+        assert!(delete_call.url.contains("id=eq.timezone-1"));
+        assert_eq!(delete_call.body, None);
+        assert_eq!(
+            recorded_header(delete_call, "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(delete_call, "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(delete_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(delete_call, "Prefer"),
+            Some("return=minimal")
+        );
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_writes_return_legacy_errors_after_auth() {
+        let config = backend_config_with_contact_data();
+        let update_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let update_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/infrastructure/timezones/timezone-1",
+                    "not json",
+                )
+            },
+            &update_outbound,
+        )
+        .await;
+
+        assert_eq!(update_response.status, 500);
+        assert_eq!(update_response.body["message"], "Error updating timezone");
+        assert_eq!(update_outbound.calls().len(), 2);
+
+        let delete_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let delete_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("DELETE", "/api/v1/infrastructure/timezones/timezone-1")
+            },
+            &delete_outbound,
+        )
+        .await;
+
+        assert_eq!(delete_response.status, 500);
+        assert_eq!(delete_response.body["message"], "Error deleting timezone");
+        assert_eq!(delete_outbound.calls().len(), 3);
+    }
+
     #[test]
     fn native_outbound_client_installs_tls_provider_before_construction() {
         let _client = outbound::NativeOutboundHttpClient::default();

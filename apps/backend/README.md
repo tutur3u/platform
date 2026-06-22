@@ -182,13 +182,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   and upserts the nine root workspace policy config rows for writes while
   preserving the legacy `{ ios, android, webOtpEnabled }` and success/error
   bodies.
-- `GET /api/v1/infrastructure/timezones`: protected infrastructure timezone
-  list. Rust revalidates the browser Supabase session cookie or non-app-session
-  Bearer token, requires root workspace `manage_workspace_roles`, reads
-  `private.timezones` through the server-owned private-schema Supabase REST
-  adapter ordered by `value`, and returns the legacy raw timezone row array.
-  `POST` plus detail `PUT`/`DELETE` remain legacy-owned until timezone writes
-  move behind Rust.
+- `GET /api/v1/infrastructure/timezones` and `PUT` / `DELETE`
+  `/api/v1/infrastructure/timezones/:timezoneId`: protected infrastructure
+  timezone routes. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, requires root workspace
+  `manage_workspace_roles`, reads `private.timezones` through the server-owned
+  private-schema Supabase REST adapter ordered by `value`, and patches/deletes
+  detail rows through the same private-schema adapter. Collection `POST`
+  remains legacy-owned until timezone creation moves behind Rust.
 - `GET /api/v1/infrastructure/user-status-changes`: legacy-compatible
   workspace user status change list. Rust requires a normal Supabase browser
   session cookie or non-app-session Bearer token, forwards that caller token to
