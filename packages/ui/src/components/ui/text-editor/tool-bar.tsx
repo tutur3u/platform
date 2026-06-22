@@ -13,7 +13,6 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Highlighter,
   ImageIcon,
   Italic,
   Link,
@@ -37,6 +36,7 @@ import { Toggle } from '@tuturuuu/ui/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TextEditorColorControls } from './color-controls';
 import {
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
@@ -65,7 +65,6 @@ const HOTKEYS = {
   'ordered-list': 'Mod+Shift+7',
   'task-list': 'Mod+Shift+9',
   table: '',
-  highlight: 'Mod+Shift+H',
   link: 'Mod+K',
   image: '',
   video: '',
@@ -90,7 +89,6 @@ const LABELS: Record<string, string> = {
   'ordered-list': 'Ordered List',
   'task-list': 'Task List',
   table: 'Insert Table',
-  highlight: 'Highlight',
   link: 'Link',
   image: 'Upload Image',
   video: 'Upload Video',
@@ -104,7 +102,7 @@ const TOOLBAR_GROUPS = [
   ['bold', 'italic', 'strike', 'subscript', 'superscript'],
   ['align-left', 'align-center', 'align-right'],
   ['bullet-list', 'ordered-list', 'task-list'],
-  ['table', 'highlight', 'link'],
+  ['table', 'link'],
 ] as const;
 
 /** Format a hotkey combo string for display (platform-aware). */
@@ -371,12 +369,6 @@ export function ToolBar({
               .run(),
           pressed: editor?.isActive('table'),
         },
-        {
-          key: 'highlight',
-          icon: <Highlighter className="size-4" />,
-          onClick: () => editor?.chain().focus().toggleHighlight().run(),
-          pressed: editor?.isActive('highlight'),
-        },
       ] as const,
     [editor]
   );
@@ -600,6 +592,10 @@ export function ToolBar({
             onClick={option.onClick}
           />
         ))}
+
+        {/* Color controls */}
+        <ToolbarSeparator />
+        <TextEditorColorControls editor={editor} />
 
         {/* Link */}
         <ToolbarSeparator />
@@ -1099,12 +1095,6 @@ export function FixedToolbar({
         pressed: editor.isActive('table'),
       },
       {
-        key: 'highlight',
-        icon: <Highlighter className="size-4" />,
-        onClick: () => editor.chain().focus().toggleHighlight().run(),
-        pressed: editor.isActive('highlight'),
-      },
-      {
         key: 'link',
         icon: <Link className="size-4" />,
         onClick: () => editor.chain().focus().toggleLink({ href: '' }).run(),
@@ -1243,6 +1233,9 @@ export function FixedToolbar({
           })}
         </div>
       ))}
+
+      <ToolbarSeparator />
+      <TextEditorColorControls editor={editor} />
 
       {/* Media group */}
       {workspaceId && onImageUpload && (

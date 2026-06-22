@@ -1,7 +1,7 @@
 import { InputRule } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
-import Highlight from '@tiptap/extension-highlight';
+import { Color } from '@tiptap/extension-color';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Link from '@tiptap/extension-link';
 import { TaskList } from '@tiptap/extension-list';
@@ -14,11 +14,14 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import TableRow from '@tiptap/extension-table-row';
 import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Youtube from '@tiptap/extension-youtube';
 import type { Extensions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import type * as Y from 'yjs';
+import { BackgroundColor } from './background-color-extension';
+import { ThemeAwareHighlight } from './highlight-extension';
 import { CustomImage } from './image-extension';
 import { ListConverter } from './list-converter-extension';
 import { ListItemBase } from './list-item-extension';
@@ -148,7 +151,10 @@ export function getEditorExtensions({
     }),
     TextShortcuts,
     MarkdownPaste,
-    Highlight,
+    TextStyle,
+    Color,
+    BackgroundColor,
+    ThemeAwareHighlight,
     Link.configure({
       openOnClick: true,
       autolink: true,
