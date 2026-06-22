@@ -34,6 +34,19 @@ struct EffectiveWorkspacePermissions {
     permissions: Vec<String>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct WorkspacePermissionAuthorization {
+    pub(crate) ws_id: String,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum WorkspacePermissionAuthorizationError {
+    Forbidden,
+    Internal,
+    NotFound,
+    Unauthorized,
+}
+
 #[derive(Deserialize)]
 struct PermissionRow {
     permission: Option<String>,
@@ -77,6 +90,63 @@ pub(crate) async fn handle_workspace_permission_check_route(
         "GET" => workspace_permission_check_response(config, request, ws_id, outbound).await,
         method => no_store_response(method_not_allowed(method, "GET")),
     })
+}
+
+pub(crate) async fn authorize_workspace_permission(
+    contact_data: &contact::ContactDataConfig,
+    request: BackendRequest<'_>,
+    raw_ws_id: &str,
+    permission: &str,
+    outbound: &impl OutboundHttpClient,
+) -> Result<WorkspacePermissionAuthorization, WorkspacePermissionAuthorizationError> {
+    if !contact_data.configured() {
+        return Err(WorkspacePermissionAuthorizationError::Internal);
+    }
+
+    let Some(access_token) = request_access_token_ignoring_app_sessions(request) else {
+        return Err(WorkspacePermissionAuthorizationError::Unauthorized);
+    };
+    let Some(user) =
+        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
+    else {
+        return Err(WorkspacePermissionAuthorizationError::Unauthorized);
+    };
+    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
+        return Err(WorkspacePermissionAuthorizationError::Unauthorized);
+    };
+    let Some(resolved_ws_id) =
+        normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
+            .await
+            .map_err(|_| WorkspacePermissionAuthorizationError::Internal)?
+    else {
+        return Err(WorkspacePermissionAuthorizationError::NotFound);
+    };
+
+    let Some(permissions) = effective_workspace_permissions_for_user(
+        contact_data,
+        outbound,
+        &resolved_ws_id,
+        &user_id,
+        &access_token,
+    )
+    .await
+    .map_err(|_| WorkspacePermissionAuthorizationError::Internal)?
+    else {
+        return Err(WorkspacePermissionAuthorizationError::NotFound);
+    };
+
+    if permissions.has_all_permissions
+        || permissions
+            .permissions
+            .iter()
+            .any(|value| value == permission)
+    {
+        Ok(WorkspacePermissionAuthorization {
+            ws_id: resolved_ws_id,
+        })
+    } else {
+        Err(WorkspacePermissionAuthorizationError::Forbidden)
+    }
 }
 
 async fn workspace_permission_check_response(
@@ -127,31 +197,49 @@ async fn effective_workspace_permissions(
     else {
         return Ok(None);
     };
-    let Some(membership_type) = workspace_membership_type(
+
+    effective_workspace_permissions_for_user(
         contact_data,
         outbound,
         &resolved_ws_id,
         &user_id,
         &access_token,
     )
+    .await
+}
+
+async fn effective_workspace_permissions_for_user(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    resolved_ws_id: &str,
+    user_id: &str,
+    access_token: &str,
+) -> Result<Option<EffectiveWorkspacePermissions>, ()> {
+    let Some(membership_type) = workspace_membership_type(
+        contact_data,
+        outbound,
+        resolved_ws_id,
+        user_id,
+        access_token,
+    )
     .await?
     else {
         return Ok(None);
     };
-    let Some(workspace) = workspace_row(contact_data, outbound, &resolved_ws_id).await? else {
+    let Some(workspace) = workspace_row(contact_data, outbound, resolved_ws_id).await? else {
         return Ok(None);
     };
 
     let role_permissions = if membership_type == "MEMBER" {
-        workspace_role_permissions(contact_data, outbound, &resolved_ws_id, &user_id).await?
+        workspace_role_permissions(contact_data, outbound, resolved_ws_id, user_id).await?
     } else {
         Vec::new()
     };
     let default_permissions =
-        workspace_default_permissions(contact_data, outbound, &resolved_ws_id, &membership_type)
+        workspace_default_permissions(contact_data, outbound, resolved_ws_id, &membership_type)
             .await?;
     let is_creator =
-        membership_type == "MEMBER" && workspace.creator_id.as_deref() == Some(user_id.as_str());
+        membership_type == "MEMBER" && workspace.creator_id.as_deref() == Some(user_id);
 
     if !is_creator && role_permissions.is_empty() && default_permissions.is_empty() {
         return Ok(None);

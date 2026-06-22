@@ -3488,6 +3488,124 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/user-monthly-report-logs:
+    get:
+      summary: Legacy-compatible user monthly report log export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/user-monthly-report-logs/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, normalizes the requested workspace, requires the manage_external_migrations workspace permission through the shared workspace permission resolver, reads private.external_user_monthly_report_logs_workspace_view through the server-owned Supabase REST adapter, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy error bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User monthly report log rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "403":
+          description: Caller does not have manage_external_migrations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "404":
+          description: Requested workspace could not be resolved or permissions were unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User monthly report logs could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+  /api/v1/infrastructure/user-monthly-reports:
+    get:
+      summary: Legacy-compatible user monthly report export list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/user-monthly-reports/route.ts. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token, normalizes the requested workspace, requires the manage_external_migrations workspace permission through the shared workspace permission resolver, reads private.external_user_monthly_reports_workspace_view through the server-owned Supabase REST adapter, and preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy error bodies.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: User monthly report rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "403":
+          description: Caller does not have manage_external_migrations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "404":
+          description: Requested workspace could not be resolved or permissions were unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: User monthly reports could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
   /api/v1/infrastructure/bills:
     get:
       summary: Legacy-compatible finance invoice export list
