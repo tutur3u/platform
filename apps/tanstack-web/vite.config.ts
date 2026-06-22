@@ -1,9 +1,20 @@
+import { fileURLToPath } from 'node:url';
 import { cloudflare } from '@cloudflare/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
+
+// Runtime alias: shared @tuturuuu/ui clients import navigation hooks from
+// `next/navigation`, which has no provider in TanStack Start and throws at
+// runtime. Resolve those imports to a TanStack Router-backed compat shim that
+// covers the full surface they use (useRouter/usePathname/useSearchParams/
+// useParams/redirect/notFound). Runtime-only (no tsconfig paths remap), so tsc
+// still type-checks the shared components against the real `next` types.
+const nextNavigationShim = fileURLToPath(
+  new URL('./src/lib/platform/next-navigation-shim.tsx', import.meta.url)
+);
 
 const port = Number.parseInt(process.env.PORT ?? '7824', 10);
 const prerenderLocales = ['en', 'vi'] as const;
@@ -95,6 +106,11 @@ export default defineConfig(({ mode }) => {
       viteReact(),
       tailwindcss(),
     ],
+    resolve: {
+      alias: {
+        'next/navigation': nextNavigationShim,
+      },
+    },
     server: {
       host: '0.0.0.0',
       port: Number.isFinite(port) ? port : 7824,
