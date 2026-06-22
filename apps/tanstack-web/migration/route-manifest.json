@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 169,
-        "migrated": 137,
-        "percentComplete": 44.77,
-        "remaining": 169,
-        "terminal": 137,
+        "legacyNext": 167,
+        "migrated": 139,
+        "percentComplete": 45.42,
+        "remaining": 167,
+        "terminal": 139,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 190,
-        "migrated": 188,
-        "percentComplete": 49.74,
-        "remaining": 190,
-        "terminal": 188,
+        "legacyNext": 188,
+        "migrated": 190,
+        "percentComplete": 50.26,
+        "remaining": 188,
+        "terminal": 190,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1175,
-      "migrated": 266,
-      "percentComplete": 22.9,
-      "remaining": 1175,
-      "terminal": 349,
+      "legacyNext": 1173,
+      "migrated": 268,
+      "percentComplete": 23.03,
+      "remaining": 1173,
+      "terminal": 351,
       "total": 1524,
       "unknownStatus": 0
     }
@@ -12624,7 +12624,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/inventory/suppliers",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12642,7 +12642,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/inventory/warehouses",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/warehouses/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

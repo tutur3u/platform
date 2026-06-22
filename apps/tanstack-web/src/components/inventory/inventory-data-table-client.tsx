@@ -10,6 +10,8 @@ import {
   type InventoryListResponse,
   type InventoryNamedListQuery,
   listInventoryBatches,
+  listInventorySuppliers,
+  listInventoryWarehouses,
 } from '@tuturuuu/internal-api/inventory';
 import {
   DataTable,
@@ -18,9 +20,9 @@ import {
 import { useCallback } from 'react';
 import { useTranslations } from 'use-intl';
 
-export type InventoryTableResource = 'batches';
+export type InventoryTableResource = 'batches' | 'suppliers' | 'warehouses';
 
-type InventoryTableSearch = {
+export type InventoryTableSearch = {
   page: number;
   pageSize: number;
   q: string;
@@ -48,6 +50,8 @@ type InventoryDataTableClientProps<TData, TValue> = Omit<
 
 const resourceLoaders = {
   batches: listInventoryBatches,
+  suppliers: listInventorySuppliers,
+  warehouses: listInventoryWarehouses,
 } satisfies Record<
   InventoryTableResource,
   (
