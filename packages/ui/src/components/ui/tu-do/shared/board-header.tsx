@@ -308,12 +308,12 @@ export function BoardHeader({
     drafts: {
       icon: Pencil,
       label: t('task-drafts.title'),
-      description: t('task-drafts.empty_description'),
+      description: t('task-drafts.board_view_description'),
     },
     recycle_bin: {
       icon: Trash2,
       label: t('common.recycle_bin'),
-      description: t('common.recycle_bin_description'),
+      description: t('common.recycle_bin_board_description'),
     },
   };
   const viewOptions = Object.entries(viewConfig).filter(([view]) =>

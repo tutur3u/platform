@@ -6,6 +6,7 @@ import { Dialog } from '@tuturuuu/ui/dialog';
 import dynamic from 'next/dynamic';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { useCallback } from 'react';
+import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
 
 const SettingsDialog = dynamic(
@@ -13,7 +14,10 @@ const SettingsDialog = dynamic(
     import('@/components/settings/settings-dialog').then(
       (module) => module.SettingsDialog
     ),
-  { ssr: false }
+  {
+    loading: () => <SettingsDialogFullscreenSkeleton />,
+    ssr: false,
+  }
 );
 
 interface SettingsDialogHostProps {

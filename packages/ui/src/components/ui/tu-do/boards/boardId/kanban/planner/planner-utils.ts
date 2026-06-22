@@ -2,9 +2,16 @@ import type {
   TaskPlan,
   TaskPlanItem,
   TaskPlanPeriod,
+  TaskPlanStatus,
 } from '@tuturuuu/internal-api';
 
 export const TASK_PLAN_PERIODS: TaskPlanPeriod[] = ['week', 'month', 'year'];
+export const TASK_PLAN_STATUSES: TaskPlanStatus[] = [
+  'draft',
+  'active',
+  'sent',
+  'archived',
+];
 
 function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);

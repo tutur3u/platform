@@ -14,7 +14,11 @@ import {
 import { useTranslations } from 'next-intl';
 import { PlannerDigestPanel } from './planner-digest-panel';
 import { PlannerItemStrip } from './planner-item-strip';
-import { PlannerPlanToolbar } from './planner-plan-toolbar';
+import {
+  PlannerCreatePlanPanel,
+  PlannerEditPlanPanel,
+  PlannerPlanBrowser,
+} from './planner-plan-toolbar';
 import { PlannerSection } from './planner-section';
 import { PlannerSharePanel } from './planner-share-dialog';
 import { PlannerTargetControls } from './planner-target-controls';
@@ -71,25 +75,46 @@ export function KanbanPlannerDialog({
         ) : (
           <div className="space-y-2">
             <PlannerSection
-              title={t('create_plan')}
+              title={t('plan_browser')}
+              defaultOpen
               badge={
                 <Badge variant="secondary">
                   {planner.plansQuery.isLoading ? t('loading') : planCount}
                 </Badge>
               }
             >
-              <PlannerPlanToolbar
+              <PlannerPlanBrowser
+                onSelectedPlanChange={planner.setSelectedPlanId}
+                plans={planner.plans}
+                plansLoading={planner.plansQuery.isLoading}
+                selectedPlan={planner.selectedPlan}
+              />
+            </PlannerSection>
+
+            <PlannerSection title={t('new_plan')}>
+              <PlannerCreatePlanPanel
                 createPending={planner.createPlanMutation.isPending}
                 mode={planner.mode}
                 onCreatePlan={() => planner.createPlanMutation.mutate()}
                 onModeChange={planner.setMode}
                 onPlanTitleChange={planner.setPlanTitle}
-                onSelectedPlanChange={planner.setSelectedPlanId}
                 planTitle={planner.planTitle}
-                plans={planner.plans}
-                plansLoading={planner.plansQuery.isLoading}
-                selectedPlan={planner.selectedPlan}
               />
+            </PlannerSection>
+
+            <PlannerSection title={t('edit_plan')} disabled={!hasSelectedPlan}>
+              {planner.selectedPlan && (
+                <PlannerEditPlanPanel
+                  editMode={planner.editMode}
+                  editStatus={planner.editStatus}
+                  editTitle={planner.editTitle}
+                  onEditModeChange={planner.setEditMode}
+                  onEditStatusChange={planner.setEditStatus}
+                  onEditTitleChange={planner.setEditTitle}
+                  onSavePlan={() => planner.updatePlanMutation.mutate()}
+                  savePending={planner.updatePlanMutation.isPending}
+                />
+              )}
             </PlannerSection>
 
             <PlannerSection
@@ -126,7 +151,7 @@ export function KanbanPlannerDialog({
             </PlannerSection>
 
             <PlannerSection
-              title={t('scope_draft')}
+              title={t('planned_tasks')}
               disabled={!hasSelectedPlan}
               badge={<Badge variant="secondary">{itemCount}</Badge>}
             >

@@ -232,6 +232,36 @@ function FilterPickerField({
   );
 }
 
+function FilterSection({
+  badge,
+  children,
+  className,
+  icon,
+  testId,
+  title,
+}: {
+  badge?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  icon: ReactNode;
+  testId?: string;
+  title: string;
+}) {
+  return (
+    <section
+      className={cn('rounded-md border bg-background p-2.5', className)}
+      data-testid={testId}
+    >
+      <div className="mb-2 flex min-w-0 items-center gap-2 text-muted-foreground text-xs">
+        {icon}
+        <span className="min-w-0 flex-1 truncate font-semibold">{title}</span>
+        {badge}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function TaskFilter({
   wsId,
   currentUserId,
@@ -568,6 +598,17 @@ export function TaskFilter({
           selectedSourceWorkspaceIds.length + selectedSourceBoardIds.length
         )
       : 0);
+  const sourceFilterCount = isSourceFilterActive
+    ? Math.max(
+        1,
+        selectedSourceWorkspaceIds.length + selectedSourceBoardIds.length
+      )
+    : 0;
+  const quickFilterCount =
+    (filters.includeMyTasks ? 1 : 0) + (filters.includeUnassigned ? 1 : 0);
+  const peopleFilterCount = assigneeCount;
+  const detailFilterCount =
+    filters.labels.length + filters.projects.length + filters.priorities.length;
   const dueDateSummary = filters.dueDateRange
     ? [
         filters.dueDateRange.from
@@ -611,7 +652,7 @@ export function TaskFilter({
           <TooltipContent>{t('common.filters')}</TooltipContent>
         </Tooltip>
         <PopoverContent
-          className="max-h-[min(82dvh,40rem)] w-[min(22rem,calc(100vw-1rem))] overflow-hidden p-0"
+          className="max-h-[min(82dvh,40rem)] w-[min(26rem,calc(100vw-1rem))] overflow-hidden p-0"
           align="end"
           collisionPadding={8}
           sideOffset={6}
@@ -619,72 +660,70 @@ export function TaskFilter({
           <ScrollArea className="h-[min(76dvh,36rem)]">
             <div className="space-y-3 p-3">
               {currentUserId && (
-                <div className="space-y-1 rounded-md border p-2">
-                  <div className="mb-1 flex items-center gap-2 text-muted-foreground text-xs">
-                    <User className="h-3.5 w-3.5" />
-                    <span className="font-medium">
-                      {t('common.quick_filters')}
-                    </span>
-                  </div>
-                  <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
-                    <Checkbox
-                      checked={filters.includeMyTasks}
-                      onCheckedChange={(checked) => {
-                        const currentUser = availableAssignees.find(
-                          (assignee) => assignee.id === currentUserId
-                        );
+                <FilterSection
+                  icon={<User className="h-3.5 w-3.5" />}
+                  title={t('common.quick_filters')}
+                  badge={
+                    quickFilterCount ? (
+                      <Badge variant="secondary">{quickFilterCount}</Badge>
+                    ) : null
+                  }
+                  testId="task-filter-section-quick"
+                >
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    <label className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                      <Checkbox
+                        checked={filters.includeMyTasks}
+                        onCheckedChange={(checked) => {
+                          const currentUser = availableAssignees.find(
+                            (assignee) => assignee.id === currentUserId
+                          );
 
-                        onFiltersChange({
-                          ...filters,
-                          includeMyTasks: !!checked,
-                          assignees:
-                            checked && currentUser ? [currentUser] : [],
-                          includeUnassigned: checked
-                            ? false
-                            : filters.includeUnassigned,
-                        });
-                      }}
-                    />
-                    <UserStar className="h-4 w-4 text-dynamic-yellow" />
-                    <span>{t('common.assigned_to_me')}</span>
-                  </label>
-                  <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
-                    <Checkbox
-                      checked={filters.includeUnassigned}
-                      onCheckedChange={(checked) =>
-                        onFiltersChange({
-                          ...filters,
-                          includeUnassigned: !!checked,
-                          includeMyTasks: checked
-                            ? false
-                            : filters.includeMyTasks,
-                          assignees: checked ? [] : filters.assignees,
-                        })
-                      }
-                    />
-                    <UserX className="h-4 w-4 text-dynamic-red" />
-                    <span>{t('common.unassigned')}</span>
-                  </label>
-                </div>
+                          onFiltersChange({
+                            ...filters,
+                            includeMyTasks: !!checked,
+                            assignees:
+                              checked && currentUser ? [currentUser] : [],
+                            includeUnassigned: checked
+                              ? false
+                              : filters.includeUnassigned,
+                          });
+                        }}
+                      />
+                      <UserStar className="h-4 w-4 shrink-0 text-dynamic-yellow" />
+                      <span className="min-w-0 truncate">
+                        {t('common.assigned_to_me')}
+                      </span>
+                    </label>
+                    <label className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                      <Checkbox
+                        checked={filters.includeUnassigned}
+                        onCheckedChange={(checked) =>
+                          onFiltersChange({
+                            ...filters,
+                            includeUnassigned: !!checked,
+                            includeMyTasks: checked
+                              ? false
+                              : filters.includeMyTasks,
+                            assignees: checked ? [] : filters.assignees,
+                          })
+                        }
+                      />
+                      <UserX className="h-4 w-4 shrink-0 text-dynamic-red" />
+                      <span className="min-w-0 truncate">
+                        {t('common.unassigned')}
+                      </span>
+                    </label>
+                  </div>
+                </FilterSection>
               )}
 
-              <FilterPickerField
+              <FilterSection
                 icon={<ListFilter className="h-3.5 w-3.5" />}
-                label={t('ws-tasks.filter_source_scope')}
+                title={t('ws-tasks.filter_source_scope')}
                 badge={
                   isSourceFilterActive ? (
-                    <Badge
-                      variant="secondary"
-                      className="h-4 min-w-5 justify-center px-1 text-[10px]"
-                    >
-                      {sourceScope === 'external_specific'
-                        ? Math.max(
-                            1,
-                            selectedSourceWorkspaceIds.length +
-                              selectedSourceBoardIds.length
-                          )
-                        : 1}
-                    </Badge>
+                    <Badge variant="secondary">{sourceFilterCount}</Badge>
                   ) : null
                 }
               >
@@ -697,77 +736,76 @@ export function TaskFilter({
                   searchPlaceholder={t('common.search_tasks')}
                   className="[&_button]:h-9"
                 />
-              </FilterPickerField>
-
-              {sourceScope === 'external_specific' && (
-                <div className="grid gap-3 rounded-md border p-2">
-                  <FilterPickerField
-                    icon={<Building2 className="h-3.5 w-3.5" />}
-                    label={t('ws-tasks.filter_workspaces')}
-                    badge={
-                      selectedSourceWorkspaceIds.length ? (
-                        <Badge variant="secondary">
-                          {selectedSourceWorkspaceIds.length}
-                        </Badge>
-                      ) : null
-                    }
-                  >
-                    <Combobox
-                      mode="multiple"
-                      options={sourceWorkspaceOptions}
-                      selected={selectedSourceWorkspaceIds}
-                      onChange={(value) =>
-                        setSourceWorkspaceIds(value as string[])
+                {sourceScope === 'external_specific' && (
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <FilterPickerField
+                      icon={<Building2 className="h-3.5 w-3.5" />}
+                      label={t('ws-tasks.filter_workspaces')}
+                      badge={
+                        selectedSourceWorkspaceIds.length ? (
+                          <Badge variant="secondary">
+                            {selectedSourceWorkspaceIds.length}
+                          </Badge>
+                        ) : null
                       }
-                      placeholder={t('ws-tasks.filter_workspaces')}
-                      searchPlaceholder={t('common.search_tasks')}
-                      emptyText={t('ws-tasks.filter_no_workspaces_available')}
-                      className="[&_button]:h-9"
-                    />
-                  </FilterPickerField>
+                    >
+                      <Combobox
+                        mode="multiple"
+                        options={sourceWorkspaceOptions}
+                        selected={selectedSourceWorkspaceIds}
+                        onChange={(value) =>
+                          setSourceWorkspaceIds(value as string[])
+                        }
+                        placeholder={t('ws-tasks.filter_workspaces')}
+                        searchPlaceholder={t('common.search_tasks')}
+                        emptyText={t('ws-tasks.filter_no_workspaces_available')}
+                        className="[&_button]:h-9"
+                      />
+                    </FilterPickerField>
 
-                  <FilterPickerField
-                    icon={<LayoutDashboard className="h-3.5 w-3.5" />}
-                    label={t('ws-tasks.filter_boards')}
-                    badge={
-                      selectedSourceBoardIds.length ? (
-                        <Badge variant="secondary">
-                          {selectedSourceBoardIds.length}
-                        </Badge>
-                      ) : null
-                    }
-                  >
-                    <Combobox
-                      mode="multiple"
-                      options={sourceBoardOptions}
-                      selected={selectedSourceBoardIds}
-                      onChange={(value) => setSourceBoardIds(value as string[])}
-                      placeholder={
-                        selectedSourceWorkspaceIds.length
-                          ? t('ws-tasks.filter_boards')
-                          : t('ws-tasks.filter_select_source_prompt')
+                    <FilterPickerField
+                      icon={<LayoutDashboard className="h-3.5 w-3.5" />}
+                      label={t('ws-tasks.filter_boards')}
+                      badge={
+                        selectedSourceBoardIds.length ? (
+                          <Badge variant="secondary">
+                            {selectedSourceBoardIds.length}
+                          </Badge>
+                        ) : null
                       }
-                      searchPlaceholder={t('common.search_boards')}
-                      emptyText={
-                        sourceBoardsLoading
-                          ? t('common.loading')
-                          : t('ws-tasks.filter_no_boards_for_workspaces')
-                      }
-                      disabled={selectedSourceWorkspaceIds.length === 0}
-                      className="[&_button]:h-9"
-                    />
-                  </FilterPickerField>
-                </div>
-              )}
+                    >
+                      <Combobox
+                        mode="multiple"
+                        options={sourceBoardOptions}
+                        selected={selectedSourceBoardIds}
+                        onChange={(value) =>
+                          setSourceBoardIds(value as string[])
+                        }
+                        placeholder={
+                          selectedSourceWorkspaceIds.length
+                            ? t('ws-tasks.filter_boards')
+                            : t('ws-tasks.filter_select_source_prompt')
+                        }
+                        searchPlaceholder={t('common.search_boards')}
+                        emptyText={
+                          sourceBoardsLoading
+                            ? t('common.loading')
+                            : t('ws-tasks.filter_no_boards_for_workspaces')
+                        }
+                        disabled={selectedSourceWorkspaceIds.length === 0}
+                        className="[&_button]:h-9"
+                      />
+                    </FilterPickerField>
+                  </div>
+                )}
+              </FilterSection>
 
-              <FilterPickerField
+              <FilterSection
                 icon={<Users className="h-3.5 w-3.5" />}
-                label={t('common.assignees')}
+                title={t('common.people')}
                 badge={
-                  filters.assignees.length ? (
-                    <Badge variant="secondary">
-                      {filters.assignees.length}
-                    </Badge>
+                  peopleFilterCount ? (
+                    <Badge variant="secondary">{peopleFilterCount}</Badge>
                   ) : null
                 }
               >
@@ -781,79 +819,93 @@ export function TaskFilter({
                   emptyText={t('common.no_members_found')}
                   className="[&_button]:h-9"
                 />
-              </FilterPickerField>
+              </FilterSection>
 
-              <FilterPickerField
+              <FilterSection
                 icon={<Tag className="h-3.5 w-3.5" />}
-                label={t('common.labels')}
+                title={t('common.details')}
                 badge={
-                  filters.labels.length ? (
-                    <Badge variant="secondary">{filters.labels.length}</Badge>
+                  detailFilterCount ? (
+                    <Badge variant="secondary">{detailFilterCount}</Badge>
                   ) : null
                 }
               >
-                <Combobox
-                  mode="multiple"
-                  options={labelOptions}
-                  selected={filters.labels.map((label) => label.id)}
-                  onChange={(value) => setLabelIds(value as string[])}
-                  placeholder={t('common.labels')}
-                  searchPlaceholder={t('common.search_labels')}
-                  emptyText={t('common.no_labels_found')}
-                  className="[&_button]:h-9"
-                />
-              </FilterPickerField>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <FilterPickerField
+                    icon={<Tag className="h-3.5 w-3.5" />}
+                    label={t('common.labels')}
+                    badge={
+                      filters.labels.length ? (
+                        <Badge variant="secondary">
+                          {filters.labels.length}
+                        </Badge>
+                      ) : null
+                    }
+                  >
+                    <Combobox
+                      mode="multiple"
+                      options={labelOptions}
+                      selected={filters.labels.map((label) => label.id)}
+                      onChange={(value) => setLabelIds(value as string[])}
+                      placeholder={t('common.labels')}
+                      searchPlaceholder={t('common.search_labels')}
+                      emptyText={t('common.no_labels_found')}
+                      className="[&_button]:h-9"
+                    />
+                  </FilterPickerField>
 
-              {availableProjects.length > 0 && (
-                <FilterPickerField
-                  icon={<Hash className="h-3.5 w-3.5" />}
-                  label={t('common.projects')}
-                  badge={
-                    filters.projects.length ? (
-                      <Badge variant="secondary">
-                        {filters.projects.length}
-                      </Badge>
-                    ) : null
-                  }
-                >
-                  <Combobox
-                    mode="multiple"
-                    options={projectOptions}
-                    selected={filters.projects.map((project) => project.id)}
-                    onChange={(value) => setProjectIds(value as string[])}
-                    placeholder={t('common.projects')}
-                    searchPlaceholder={t('common.search_projects')}
-                    emptyText={t('common.empty')}
-                    className="[&_button]:h-9"
-                  />
-                </FilterPickerField>
-              )}
+                  {availableProjects.length > 0 && (
+                    <FilterPickerField
+                      icon={<Hash className="h-3.5 w-3.5" />}
+                      label={t('common.projects')}
+                      badge={
+                        filters.projects.length ? (
+                          <Badge variant="secondary">
+                            {filters.projects.length}
+                          </Badge>
+                        ) : null
+                      }
+                    >
+                      <Combobox
+                        mode="multiple"
+                        options={projectOptions}
+                        selected={filters.projects.map((project) => project.id)}
+                        onChange={(value) => setProjectIds(value as string[])}
+                        placeholder={t('common.projects')}
+                        searchPlaceholder={t('common.search_projects')}
+                        emptyText={t('common.empty')}
+                        className="[&_button]:h-9"
+                      />
+                    </FilterPickerField>
+                  )}
 
-              <FilterPickerField
-                icon={<Flag className="h-3.5 w-3.5" />}
-                label={t('common.priority')}
-                badge={
-                  filters.priorities.length ? (
-                    <Badge variant="secondary">
-                      {filters.priorities.length}
-                    </Badge>
-                  ) : null
-                }
-              >
-                <Combobox
-                  mode="multiple"
-                  options={priorityOptions}
-                  selected={filters.priorities}
-                  onChange={(value) => setPriorityValues(value as string[])}
-                  placeholder={t('common.priority')}
-                  searchPlaceholder={t('common.search_tasks')}
-                  className="[&_button]:h-9"
-                />
-              </FilterPickerField>
+                  <FilterPickerField
+                    icon={<Flag className="h-3.5 w-3.5" />}
+                    label={t('common.priority')}
+                    badge={
+                      filters.priorities.length ? (
+                        <Badge variant="secondary">
+                          {filters.priorities.length}
+                        </Badge>
+                      ) : null
+                    }
+                  >
+                    <Combobox
+                      mode="multiple"
+                      options={priorityOptions}
+                      selected={filters.priorities}
+                      onChange={(value) => setPriorityValues(value as string[])}
+                      placeholder={t('common.priority')}
+                      searchPlaceholder={t('common.search_tasks')}
+                      className="[&_button]:h-9"
+                    />
+                  </FilterPickerField>
+                </div>
+              </FilterSection>
 
-              <FilterPickerField
+              <FilterSection
                 icon={<CalendarIcon className="h-3.5 w-3.5" />}
-                label={t('common.due_date')}
+                title={t('common.due_date')}
                 badge={
                   filters.dueDateRange ? (
                     <Badge variant="secondary">1</Badge>
@@ -865,7 +917,7 @@ export function TaskFilter({
                     <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
                     <span className="min-w-0 truncate">{dueDateSummary}</span>
                   </div>
-                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
+                  <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.25rem]">
                     <Input
                       aria-label={t('common.from')}
                       className="h-9 min-w-0"
@@ -908,7 +960,7 @@ export function TaskFilter({
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9"
+                      className="h-9 w-full sm:w-9"
                       aria-label={t('common.clear')}
                       onClick={() =>
                         onFiltersChange({
@@ -922,7 +974,7 @@ export function TaskFilter({
                     </Button>
                   </div>
                 </div>
-              </FilterPickerField>
+              </FilterSection>
 
               {hasFilters && (
                 <Button

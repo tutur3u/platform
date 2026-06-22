@@ -11,6 +11,9 @@ const navigationMocks = vi.hoisted(() => ({
 const internalApiMocks = vi.hoisted(() => ({
   getWorkspaceTaskBoard: vi.fn(),
 }));
+const comboboxMocks = vi.hoisted(() => ({
+  seenOptions: [] as { description?: string; label: string; value: string }[][],
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -44,7 +47,7 @@ vi.mock('@tuturuuu/ui/hooks/use-board-actions', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/custom/combobox', () => ({
-  Combobox: ({
+  Combobox: function MockCombobox({
     ariaLabel,
     className,
     colorizeTriggerIcon,
@@ -62,34 +65,38 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
     disabled?: boolean;
     hideTriggerLabel?: boolean;
     onChange?: (value: string) => void;
-    options: { label: string; value: string }[];
+    options: { description?: string; label: string; value: string }[];
     placeholder?: string;
     selected: string;
     triggerTooltip?: React.ReactNode;
-  }) => (
-    <select
-      aria-label={
-        ariaLabel ??
-        (hideTriggerLabel
-          ? options.find((option) => option.value === selected)?.label
-          : placeholder)
-      }
-      disabled={disabled}
-      className={className}
-      data-colorize-trigger-icon={String(colorizeTriggerIcon)}
-      data-trigger-tooltip={
-        typeof triggerTooltip === 'string' ? triggerTooltip : undefined
-      }
-      value={selected}
-      onChange={(event) => onChange?.(event.target.value)}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  ),
+  }) {
+    comboboxMocks.seenOptions.push(options);
+
+    return (
+      <select
+        aria-label={
+          ariaLabel ??
+          (hideTriggerLabel
+            ? options.find((option) => option.value === selected)?.label
+            : placeholder)
+        }
+        className={className}
+        data-colorize-trigger-icon={String(colorizeTriggerIcon)}
+        data-trigger-tooltip={
+          typeof triggerTooltip === 'string' ? triggerTooltip : undefined
+        }
+        disabled={disabled}
+        value={selected}
+        onChange={(event) => onChange?.(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  },
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
@@ -215,6 +222,7 @@ function renderBoardHeader(
 
 describe('BoardHeader', () => {
   beforeEach(() => {
+    comboboxMocks.seenOptions = [];
     navigationMocks.replace.mockReset();
     internalApiMocks.getWorkspaceTaskBoard.mockReset();
     internalApiMocks.getWorkspaceTaskBoard.mockResolvedValue({
@@ -386,6 +394,41 @@ describe('BoardHeader', () => {
     });
     expect(onFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({ sortBy: 'priority-high' })
+    );
+  });
+
+  it('uses short board view descriptions including drafts and recycle bin keys', () => {
+    renderBoardHeader({
+      availableViews: ['kanban', 'list', 'timeline', 'drafts', 'recycle_bin'],
+    });
+
+    const viewOptions = comboboxMocks.seenOptions.find((options) =>
+      options.some((option) => option.value === 'kanban')
+    );
+
+    expect(viewOptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          value: 'kanban',
+          description: 'ws-task-boards.views.kanban_description',
+        }),
+        expect.objectContaining({
+          value: 'list',
+          description: 'ws-task-boards.views.list_description',
+        }),
+        expect.objectContaining({
+          value: 'timeline',
+          description: 'ws-task-boards.views.timeline_description',
+        }),
+        expect.objectContaining({
+          value: 'drafts',
+          description: 'task-drafts.board_view_description',
+        }),
+        expect.objectContaining({
+          value: 'recycle_bin',
+          description: 'common.recycle_bin_board_description',
+        }),
+      ])
     );
   });
 

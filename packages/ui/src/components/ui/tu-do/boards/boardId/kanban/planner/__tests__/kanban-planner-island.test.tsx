@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   listWorkspaceBoardsWithLists: vi.fn(),
   listWorkspaceTaskPlans: vi.fn(),
   listWorkspaces: vi.fn(),
+  updateWorkspaceTaskPlan: vi.fn(),
 }));
 
 vi.mock('next-intl', () => ({
@@ -125,6 +126,8 @@ vi.mock('@tuturuuu/internal-api', async () => {
     listWorkspaceBoardsWithLists: (...args: unknown[]) =>
       mocks.listWorkspaceBoardsWithLists(...args),
     listWorkspaces: (...args: unknown[]) => mocks.listWorkspaces(...args),
+    updateWorkspaceTaskPlan: (...args: unknown[]) =>
+      mocks.updateWorkspaceTaskPlan(...args),
   };
 });
 
@@ -232,7 +235,7 @@ describe('KanbanPlannerDialog', () => {
     expect(await screen.findByText('schema_unavailable')).toBeInTheDocument();
   });
 
-  it('renders planner sections collapsed by default', async () => {
+  it('renders browse-first planner sections with create and edit separated', async () => {
     mocks.listWorkspaceTaskPlans.mockResolvedValue({
       ok: true,
       schemaAvailable: true,
@@ -246,9 +249,11 @@ describe('KanbanPlannerDialog', () => {
     });
 
     for (const sectionName of [
-      'create_plan',
+      'plan_browser',
+      'new_plan',
+      'edit_plan',
       'target_workspace',
-      'scope_draft',
+      'planned_tasks',
       'digest',
       'share_plan',
     ]) {
@@ -258,6 +263,8 @@ describe('KanbanPlannerDialog', () => {
 
       expect(sectionButton).toBeDefined();
     }
+
+    expect(await screen.findByText('Launch plan')).toBeInTheDocument();
   });
 
   it('switches planner mode and creates a monthly plan', async () => {
@@ -312,7 +319,6 @@ describe('KanbanPlannerDialog', () => {
     expect(await screen.findByText('scope_team_source')).toBeInTheDocument();
     expect(screen.getByText('scope_external_workspace')).toBeInTheDocument();
     expect(screen.getByText('scope_my_override')).toBeInTheDocument();
-    expect(screen.getByText('scope_shared_plan')).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('share_email_placeholder'), {
       target: { value: 'lead@example.com' },
@@ -324,6 +330,50 @@ describe('KanbanPlannerDialog', () => {
         'ws-personal',
         'plan-1',
         { shared_with_email: 'lead@example.com', permission: 'view' }
+      );
+    });
+  });
+
+  it('edits a selected plan without using the create panel', async () => {
+    mocks.listWorkspaceTaskPlans.mockResolvedValue({
+      ok: true,
+      schemaAvailable: true,
+      plans: [basePlan],
+    });
+    mocks.updateWorkspaceTaskPlan.mockResolvedValue({
+      ok: true,
+      schemaAvailable: true,
+      plan: {
+        ...basePlan,
+        title: 'Updated launch plan',
+      },
+    });
+
+    renderPlanner();
+
+    await screen.findByDisplayValue('Launch plan');
+    const editTitle = screen
+      .getAllByPlaceholderText('plan_title_placeholder')
+      .find(
+        (element) => (element as HTMLInputElement).value === 'Launch plan'
+      )!;
+
+    fireEvent.change(editTitle, {
+      target: { value: 'Updated launch plan' },
+    });
+    fireEvent.change(screen.getAllByLabelText('mode_week').at(-1)!, {
+      target: { value: 'month' },
+    });
+    fireEvent.click(screen.getByText('save_plan'));
+
+    await waitFor(() => {
+      expect(mocks.updateWorkspaceTaskPlan).toHaveBeenCalledWith(
+        'ws-personal',
+        'plan-1',
+        expect.objectContaining({
+          period_type: 'month',
+          title: 'Updated launch plan',
+        })
       );
     });
   });

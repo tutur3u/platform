@@ -17,6 +17,7 @@ import {
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +42,7 @@ import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { ComponentType } from 'react';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
+import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
@@ -217,6 +219,14 @@ export default function UserNavClient({
           wsId={wsId}
         />
       )}
+      {user &&
+        renderSettingsDialog &&
+        requestedSettingsOpen &&
+        !UserNavSettingsDialog && (
+          <Dialog open onOpenChange={handleSettingsOpenChange}>
+            <SettingsDialogFullscreenSkeleton />
+          </Dialog>
+        )}
       {accountSwitcherOpen && (
         <AccountSwitcherModal
           open={accountSwitcherOpen}

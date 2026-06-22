@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
 import UserNavClient from '../../app/[locale]/user-nav-client';
+import { SettingsDialogFullscreenSkeleton } from './settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from './use-settings-dialog-shortcut';
 
 const { globalCommandLauncherMock, setSettingsQueryMock } = vi.hoisted(() => ({
@@ -55,6 +56,21 @@ vi.mock('@tuturuuu/ui/avatar', () => ({
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
   Dialog: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  DialogContent: ({
+    children,
+    ...props
+  }: {
+    children: ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <div data-testid={props['data-testid'] as string | undefined}>
+      {children}
+    </div>
+  ),
+  DialogDescription: ({ children }: { children: ReactNode }) => (
+    <p>{children}</p>
+  ),
+  DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
@@ -280,6 +296,15 @@ describe('settings dialog shortcut', () => {
     fireEvent.keyDown(window, { ctrlKey: true, key: ',' });
 
     expectSettingsQueryOpened();
+  });
+
+  it('renders the fullscreen settings loading skeleton', () => {
+    const { getByTestId, getAllByText } = render(
+      <SettingsDialogFullscreenSkeleton />
+    );
+
+    expect(getByTestId('settings-dialog-skeleton')).toBeInTheDocument();
+    expect(getAllByText('common.settings').length).toBeGreaterThan(0);
   });
 
   it('only mounts one command launcher when the secondary user nav disables it', async () => {

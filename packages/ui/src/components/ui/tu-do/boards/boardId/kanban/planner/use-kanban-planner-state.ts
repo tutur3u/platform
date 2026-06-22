@@ -10,6 +10,8 @@ import {
   listWorkspaces,
   listWorkspaceTaskPlans,
   type TaskPlanPeriod,
+  type TaskPlanStatus,
+  updateWorkspaceTaskPlan,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -33,6 +35,9 @@ export function useKanbanPlannerState({
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<TaskPlanPeriod>('week');
   const [planTitle, setPlanTitle] = useState('');
+  const [editMode, setEditMode] = useState<TaskPlanPeriod>('week');
+  const [editStatus, setEditStatus] = useState<TaskPlanStatus>('draft');
+  const [editTitle, setEditTitle] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [targetWorkspaceId, setTargetWorkspaceId] = useState(workspaceId);
   const [targetBoardId, setTargetBoardId] = useState(boardId ?? '');
@@ -80,7 +85,9 @@ export function useKanbanPlannerState({
 
   useEffect(() => {
     if (!selectedPlan) return;
-    setMode(selectedPlan.period_type);
+    setEditMode(selectedPlan.period_type);
+    setEditStatus(selectedPlan.status);
+    setEditTitle(selectedPlan.title);
     setPlannedDate(selectedPlan.period_start);
     setTargetWorkspaceId(selectedPlan.default_target_ws_id ?? workspaceId);
     setTargetBoardId(selectedPlan.default_target_board_id ?? boardId ?? '');
@@ -112,6 +119,28 @@ export function useKanbanPlannerState({
       if (isTaskPlanSchemaUnavailable(response)) return;
       setSelectedPlanId(response.plan.id);
       setPlanTitle('');
+      void queryClient.invalidateQueries({ queryKey: plansQueryKey });
+    },
+    onError: () => toast.error(tCommon('error')),
+  });
+  const updatePlanMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedPlan) throw new Error('Missing plan');
+      const window = buildPlanWindow(editMode);
+      return updateWorkspaceTaskPlan(workspaceId, selectedPlan.id, {
+        title: editTitle.trim() || getDefaultPlanTitle(editMode),
+        period_type: editMode,
+        period_start: window.start,
+        period_end: window.end,
+        timezone: selectedPlan.timezone || 'UTC',
+        status: editStatus,
+        default_target_ws_id: targetWorkspaceId,
+        default_target_board_id: targetBoardId || null,
+        default_target_list_id: targetListId || null,
+      });
+    },
+    onSuccess: (response) => {
+      if (isTaskPlanSchemaUnavailable(response)) return;
       void queryClient.invalidateQueries({ queryKey: plansQueryKey });
     },
     onError: () => toast.error(tCommon('error')),
@@ -161,6 +190,9 @@ export function useKanbanPlannerState({
     boards,
     createItemMutation,
     createPlanMutation,
+    editMode,
+    editStatus,
+    editTitle,
     invalidatePlans: () =>
       queryClient.invalidateQueries({ queryKey: plansQueryKey }),
     lists,
@@ -172,6 +204,9 @@ export function useKanbanPlannerState({
     plansQueryKey,
     schemaUnavailable,
     selectedPlan,
+    setEditMode,
+    setEditStatus,
+    setEditTitle,
     setMode,
     setPlannedDate,
     setPlanTitle,
@@ -193,6 +228,7 @@ export function useKanbanPlannerState({
     targetWorkspace,
     targetWorkspaceId,
     taskTitle,
+    updatePlanMutation,
     workspaces: workspacesQuery.data ?? [],
   };
 }

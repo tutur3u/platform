@@ -12,6 +12,7 @@ import { type ReactNode, useState } from 'react';
 interface PlannerSectionProps {
   badge?: ReactNode;
   children: ReactNode;
+  defaultOpen?: boolean;
   disabled?: boolean;
   title: string;
 }
@@ -19,10 +20,11 @@ interface PlannerSectionProps {
 export function PlannerSection({
   badge,
   children,
+  defaultOpen = false,
   disabled,
   title,
 }: PlannerSectionProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
     <Collapsible

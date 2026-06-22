@@ -95,16 +95,24 @@ describe('TaskFilter', () => {
     vi.clearAllMocks();
   });
 
-  it('keeps due-date controls compact inside the filter panel', () => {
+  it('renders compact filter sections with responsive due-date controls', () => {
     const { onFiltersChange } = renderTaskFilter();
 
     fireEvent.click(screen.getByRole('button', { name: 'common.filters' }));
 
+    expect(screen.getByText('common.quick_filters')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('ws-tasks.filter_source_scope').length
+    ).toBeGreaterThan(0);
+    expect(screen.getByText('common.people')).toBeInTheDocument();
+    expect(screen.getByText('common.details')).toBeInTheDocument();
+    expect(screen.getAllByText('common.due_date').length).toBeGreaterThan(0);
     expect(screen.getByLabelText('common.from')).toHaveAttribute(
       'type',
       'date'
     );
     expect(screen.getByLabelText('common.to')).toHaveAttribute('type', 'date');
+    expect(screen.getByLabelText('common.clear')).toBeInTheDocument();
     expect(
       screen.queryByRole('grid', { name: /calendar/i })
     ).not.toBeInTheDocument();
@@ -120,5 +128,25 @@ describe('TaskFilter', () => {
         }),
       })
     );
+  });
+
+  it('shows active count badges for compact sections', () => {
+    renderTaskFilter({
+      filters: {
+        ...baseFilters,
+        dueDateRange: { from: new Date(2026, 5, 22), to: undefined },
+        includeMyTasks: true,
+        sourceScope: 'external_current_workspace',
+      },
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'common.filters' })
+    ).toHaveTextContent('3');
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.filters' }));
+
+    expect(screen.getByText('common.quick_filters')).toBeInTheDocument();
+    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(3);
   });
 });

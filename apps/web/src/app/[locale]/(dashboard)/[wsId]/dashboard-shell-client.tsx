@@ -2,7 +2,10 @@
 
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Dialog } from '@tuturuuu/ui/dialog';
+import { useSearchParams } from 'next/navigation';
 import type { ComponentType, ReactNode } from 'react';
+import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { SidebarProvider } from '@/context/sidebar-context';
 import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 import type { DashboardNavigationLink } from './navigation-icon-descriptor';
@@ -77,6 +80,26 @@ function DashboardShellFallback({ children }: { children: ReactNode }) {
   return <div className="min-h-screen bg-background">{children}</div>;
 }
 
+function DashboardSettingsDialogSkeletonGate({
+  enabled,
+  hostReady,
+}: {
+  enabled: boolean;
+  hostReady: boolean;
+}) {
+  const searchParams = useSearchParams();
+
+  if (!enabled || hostReady || searchParams.get('settingsDialog') !== 'open') {
+    return null;
+  }
+
+  return (
+    <Dialog open>
+      <SettingsDialogFullscreenSkeleton />
+    </Dialog>
+  );
+}
+
 export function DashboardShellClient({
   actions,
   children,
@@ -139,6 +162,10 @@ export function DashboardShellClient({
       initialBehavior={sidebarBehavior}
       initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
     >
+      <DashboardSettingsDialogSkeletonGate
+        enabled={!isGuestWorkspace}
+        hostReady={Boolean(SettingsDialogHost)}
+      />
       {SettingsDialogHost && (
         <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
       )}

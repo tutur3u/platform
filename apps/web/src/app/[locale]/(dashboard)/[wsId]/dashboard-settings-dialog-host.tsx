@@ -2,14 +2,32 @@
 
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
+import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
+
+function DashboardSettingsDialogHostLoading() {
+  const searchParams = useSearchParams();
+
+  if (searchParams.get('settingsDialog') !== 'open') return null;
+
+  return (
+    <Dialog open>
+      <SettingsDialogFullscreenSkeleton />
+    </Dialog>
+  );
+}
 
 const SettingsDialogHost = dynamic(
   () =>
     import('../../settings-dialog-host').then(
       (module) => module.SettingsDialogHost
     ),
-  { ssr: false }
+  {
+    loading: () => <DashboardSettingsDialogHostLoading />,
+    ssr: false,
+  }
 );
 
 interface DashboardSettingsDialogHostProps {
