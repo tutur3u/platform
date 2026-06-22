@@ -65,6 +65,63 @@ export type BackendCalendarMockResponse = {
   data: BackendCalendarMockEvent[];
 };
 
+export type BackendUserFieldTypeId =
+  | 'TEXT'
+  | 'NUMBER'
+  | 'BOOLEAN'
+  | 'DATE'
+  | 'DATETIME';
+
+export type BackendUserFieldType = {
+  id: BackendUserFieldTypeId;
+};
+
+export type BackendAiWhitelistMeResponse = {
+  email: string | null;
+  enabled: boolean;
+};
+
+export type BackendNovaCurrentTeamResponse = {
+  teamId: string | null;
+};
+
+export type BackendHiveAccessResponse = {
+  hasAccess: boolean;
+  isAdmin: boolean;
+  isMember: boolean;
+};
+
+export type BackendTaskBoardStatus =
+  | 'documents'
+  | 'not_started'
+  | 'active'
+  | 'review'
+  | 'done'
+  | 'closed';
+
+export type BackendTaskBoardStatusDefinition = {
+  allow_multiple?: boolean;
+  color?: string;
+  name?: string;
+  status?: BackendTaskBoardStatus;
+  [key: string]: unknown;
+};
+
+export type BackendTaskBoardStatusTemplate = {
+  created_at: string | null;
+  description: string | null;
+  id: string;
+  is_default: boolean | null;
+  name: string;
+  statuses: BackendTaskBoardStatusDefinition[];
+  updated_at: string | null;
+  [key: string]: unknown;
+};
+
+export type BackendTaskBoardStatusTemplatesResponse = {
+  templates: BackendTaskBoardStatusTemplate[];
+};
+
 export type BackendCreateSupportInquiryResponse = {
   inquiryId: string;
   success: true;
@@ -479,6 +536,59 @@ export function getBackendCurrentUserProfile(
 export function getBackendCalendarMock(options: BackendApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendCalendarMockResponse>(
     '/api/v1/calendar/mock',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendUserFieldTypes(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendUserFieldType[]>(
+    '/api/v1/infrastructure/users/fields/types',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendAiWhitelistMe(options: BackendApiClientOptions = {}) {
+  return createBackendApiClient(options).json<BackendAiWhitelistMeResponse>(
+    '/api/v1/ai/whitelist/me',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendNovaCurrentTeam(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendNovaCurrentTeamResponse>(
+    '/api/v1/nova/me/team',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendHiveAccess(options: BackendApiClientOptions = {}) {
+  return createBackendApiClient(options).json<BackendHiveAccessResponse>(
+    '/api/v1/users/me/hive-access',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendTaskBoardStatusTemplates(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendTaskBoardStatusTemplatesResponse>(
+    '/api/v1/task-board-status-templates',
     {
       cache: 'no-store',
     }

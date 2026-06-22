@@ -3,15 +3,20 @@ import {
   checkBackendWorkspacePermission,
   createBackendApiClient,
   createBackendSupportInquiry,
+  getBackendAiWhitelistMe,
   getBackendAuthMe,
   getBackendAuthMfaAssuranceLevel,
   getBackendCalendarMock,
   getBackendCurrentUserProfile,
+  getBackendHiveAccess,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
   getBackendMigrationManifest,
   getBackendMigrationProgress,
   getBackendMigrationStatus,
+  getBackendNovaCurrentTeam,
+  getBackendTaskBoardStatusTemplates,
+  getBackendUserFieldTypes,
   getBackendWorkspaceCrawlerStatus,
   getBackendWorkspaceLimits,
   getBackendWorkspacePostPermissions,
@@ -307,6 +312,181 @@ describe('backend API client', () => {
     expect(calendar.data[0]?.title).toBe('Event 1');
     expect(fetchMock).toHaveBeenCalledWith(
       'http://backend:7820/api/v1/calendar/mock',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads the Rust-owned deterministic user field types', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        { id: 'TEXT' },
+        { id: 'NUMBER' },
+        { id: 'BOOLEAN' },
+        { id: 'DATE' },
+        { id: 'DATETIME' },
+      ],
+    });
+
+    const fieldTypes = await getBackendUserFieldTypes({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fieldTypes).toHaveLength(5);
+    expect(fieldTypes[0]?.id).toBe('TEXT');
+    expect(fieldTypes.at(-1)?.id).toBe('DATETIME');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/infrastructure/users/fields/types',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads the Rust-owned current user AI whitelist status without backend internal auth', async () => {
+    vi.stubEnv('BACKEND_INTERNAL_TOKEN', 'server-token');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        email: 'member@example.com',
+        enabled: true,
+      }),
+    });
+
+    const whitelist = await getBackendAiWhitelistMe({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(whitelist.email).toBe('member@example.com');
+    expect(whitelist.enabled).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/ai/whitelist/me',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('reads the Rust-owned current Nova team including null memberships', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          teamId: '6a5cbf77-7d95-427f-a263-9705bd416f3d',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          teamId: null,
+        }),
+      });
+
+    const team = await getBackendNovaCurrentTeam({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    const missingTeam = await getBackendNovaCurrentTeam({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(team.teamId).toBe('6a5cbf77-7d95-427f-a263-9705bd416f3d');
+    expect(missingTeam.teamId).toBeNull();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://backend:7820/api/v1/nova/me/team',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://backend:7820/api/v1/nova/me/team',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads the Rust-owned current user Hive access flags', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        hasAccess: true,
+        isAdmin: false,
+        isMember: true,
+      }),
+    });
+
+    const access = await getBackendHiveAccess({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(access.hasAccess).toBe(true);
+    expect(access.isAdmin).toBe(false);
+    expect(access.isMember).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/users/me/hive-access',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads the Rust-owned task board status template catalog', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        templates: [
+          {
+            created_at: '2026-06-22T00:00:00.000Z',
+            description: null,
+            id: 'template-1',
+            is_default: true,
+            name: 'Default',
+            statuses: [
+              {
+                allow_multiple: false,
+                color: 'BLUE',
+                name: 'Active',
+                status: 'active',
+              },
+            ],
+            updated_at: '2026-06-22T00:00:00.000Z',
+          },
+        ],
+      }),
+    });
+
+    const catalog = await getBackendTaskBoardStatusTemplates({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(catalog.templates[0]?.id).toBe('template-1');
+    expect(catalog.templates[0]?.statuses[0]?.status).toBe('active');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/task-board-status-templates',
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),
