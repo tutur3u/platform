@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(17);
+select plan(18);
 
 select has_table('public', 'task_plans', 'task plans table exists');
 select has_table('public', 'task_plan_workspaces', 'task plan workspaces table exists');
@@ -93,6 +93,20 @@ select ok(
   public.can_access_task_plan('00000000-0000-4000-8000-00000000c101', 'edit', '00000000-0000-0000-0000-000000000003'),
   'direct user share can edit when granted edit'
 );
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
+
+select throws_ok(
+  $$update public.task_plans
+      set owner_id = '00000000-0000-0000-0000-000000000003'
+    where id = '00000000-0000-4000-8000-00000000c101'$$,
+  '42501',
+  'task plan owner cannot be changed',
+  'editor cannot take ownership of a shared task plan through direct RLS update'
+);
+
+reset role;
 
 select ok(
   public.can_access_task_plan('00000000-0000-4000-8000-00000000c101', 'view', '00000000-0000-0000-0000-000000000004'),
