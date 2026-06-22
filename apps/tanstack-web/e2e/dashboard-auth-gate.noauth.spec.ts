@@ -25,18 +25,40 @@ import { DEFAULT_LOCALE } from './helpers/public-routes';
 
 const WS_ID = 'personal';
 
-// Representative sample across migrated feature areas. Each entry is a route
-// that gates directly via `requireCurrentUser` with `nextPath: /{wsId}/{route}`
-// (verified in the route loaders). Excludes thin redirect routes like
-// `finance`/`mind`/`drive` (which forward to a sub-route before gating) so the
-// URL is stable without seeded data or a reachable backend.
+// Every migrated route that gates directly via `requireCurrentUser` with
+// `nextPath: /{wsId}/{route}` (auth runs FIRST in the loader, before workspace
+// resolution — the established invariant). Discovered by scanning the route
+// loaders for that exact gate. Excludes thin redirect routes like
+// `finance`/`mind`/`drive` (forward to a sub-route before gating) and dynamic
+// `$param` routes, so the URL is stable without seeded data or a reachable
+// backend. Keep this list in sync as more routes migrate — it is the regression
+// guard that the fail-closed gate stays wired across the migrated surface.
 const GATED_ROUTES = [
   'calendar',
+  'changelog',
   'chat',
   'cron',
-  'memories',
+  'inventory',
+  'inventory/batches',
+  'inventory/categories',
+  'inventory/manufacturers',
+  'inventory/suppliers',
+  'inventory/units',
+  'inventory/warehouses',
   'members',
+  'memories',
   'tasks',
+  'tasks/boards',
+  'tasks/cycles',
+  'tasks/estimates',
+  'tasks/initiatives',
+  'tasks/labels',
+  'tasks/logs',
+  'tasks/notes',
+  'tasks/projects',
+  'tasks/templates',
+  'tasks/templates/marketplace',
+  'users/tutoring',
 ] as const;
 
 test.describe('Dashboard auth gate (unauthenticated)', () => {
