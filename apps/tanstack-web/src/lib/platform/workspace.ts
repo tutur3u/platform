@@ -38,8 +38,11 @@ const legacyWorkspaceMissingStatuses = new Set([401, 403, 404]);
  * Maps the legacy missing-workspace error surface (401/403/404, plus the
  * legacy 500 "Error fetching workspaces") to a not-found signal. Any other
  * error is treated as a genuine failure and propagated by the callers.
+ *
+ * Exported for unit testing — the resolver server functions are not directly
+ * unit-testable, so this isolates and locks the non-trivial mapping behaviour.
  */
-function isLegacyMissingWorkspaceError(error: unknown): boolean {
+export function isLegacyMissingWorkspaceError(error: unknown): boolean {
   return (
     error instanceof InternalApiError &&
     (legacyWorkspaceMissingStatuses.has(error.status) ||
