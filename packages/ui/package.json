@@ -14,7 +14,7 @@
     "ui": "bunx shadcn-ui@latest",
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsgo --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -165,7 +165,7 @@
     "postcss": "^8.5.14",
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.3.1",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.1-rc",
     "uuid": "^14.0.0",
     "vitest": "^4.1.8"
   },

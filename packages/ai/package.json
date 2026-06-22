@@ -14,7 +14,7 @@
   "files": ["src", "!src/**/*.test.ts", "!src/**/__tests__", "README.md"],
   "scripts": {
     "test": "vitest run",
-    "type-check": "tsgo --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.117",
@@ -103,7 +103,7 @@
     "@types/node": "^25.9.3",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.17",
-    "typescript": "^6.0.3"
+    "typescript": "7.0.1-rc"
   },
   "exports": {
     "./*": "./src/*.ts"

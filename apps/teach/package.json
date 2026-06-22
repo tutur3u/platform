@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsgo-build.js --build",
+    "type-check": "node ../../scripts/run-tsc-build.js --build",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7813} --turbopack",
     "build": "next build --turbopack",
@@ -41,7 +41,7 @@
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^6.0.3"
+    "typescript": "7.0.1-rc"
   },
   "portless": {
     "name": "teach.tuturuuu",

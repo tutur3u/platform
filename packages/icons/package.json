@@ -11,7 +11,7 @@
     "access": "public"
   },
   "scripts": {
-    "type-check": "tsgo --project tsconfig.typecheck.json",
+    "type-check": "tsc --project tsconfig.typecheck.json",
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {
@@ -19,7 +19,8 @@
     "lucide-react": "^1.18.0"
   },
   "devDependencies": {
-    "@tuturuuu/typescript-config": "workspace:*"
+    "@tuturuuu/typescript-config": "workspace:*",
+    "typescript": "7.0.1-rc"
   },
   "exports": {
     ".": {

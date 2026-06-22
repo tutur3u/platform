@@ -25,6 +25,7 @@
     "strict": true,
     "noEmit": true,
     "target": "esnext",
+    "types": ["*"],
     "jsx": "react-jsx"
   }
 }

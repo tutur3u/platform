@@ -13,7 +13,7 @@
     "./providers/ses": "./src/providers/ses.ts"
   },
   "scripts": {
-    "type-check": "tsgo --project tsconfig.typecheck.json",
+    "type-check": "tsc --project tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -30,7 +30,7 @@
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.9.3",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.1-rc",
     "vitest": "^4.1.8"
   }
 }
