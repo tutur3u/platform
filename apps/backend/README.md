@@ -80,6 +80,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   private-schema REST adapter, preserves `page`/`pageSize`/`q`,
   `created_at.desc` ordering, exact-count pagination, raw row lists, and keeps
   POST legacy-owned until whitelist writes move to Rust.
+- `GET /api/v1/infrastructure/post-email-queue`: legacy-compatible protected
+  post email queue infrastructure summary. Rust revalidates a normal Supabase
+  browser session or non-app-session Bearer token, requires root workspace
+  membership, reads `post_email_queue` through the service-role Supabase REST
+  adapter, preserves the legacy queue status, workspace, and recent batch
+  aggregation shape, and keeps workspace/batch read failures non-fatal.
 - `GET /api/v1/workspaces/limits`: legacy-compatible workspace creation limit
   check. Rust validates browser Supabase auth cookies with Supabase Auth,
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise

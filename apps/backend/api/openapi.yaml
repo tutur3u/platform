@@ -661,6 +661,108 @@ paths:
                 type: string
                 examples:
                   - Internal Server Error
+  /api/v1/infrastructure/post-email-queue:
+    get:
+      summary: Legacy-compatible post email queue infrastructure summary
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/infrastructure/post-email-queue/route.ts. The
+        Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, requires root workspace membership, reads
+        post_email_queue through the service-role Supabase REST adapter,
+        preserves the legacy queue status, workspace, and recent batch
+        aggregation shape, keeps workspace and batch breakdown read failures
+        non-fatal, and returns the legacy summary error body when the primary
+        queue status read fails.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Queue status summary, workspace breakdown, and recent batch summary.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - summary
+                  - byWorkspace
+                  - recentBatches
+                properties:
+                  summary:
+                    type: object
+                    required:
+                      - queued
+                      - processing
+                      - sent
+                      - failed
+                      - blocked
+                      - cancelled
+                      - total
+                    additionalProperties:
+                      type: integer
+                  byWorkspace:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - ws_id
+                        - queued
+                        - processing
+                        - sent
+                        - failed
+                        - blocked
+                        - cancelled
+                        - total
+                      additionalProperties: true
+                  recentBatches:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - batch_id
+                        - claimed
+                        - sent
+                        - failed
+                        - last_attempt_at
+                      additionalProperties: true
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "403":
+          description: Caller is not a root workspace member.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "500":
+          description: Primary queue status rows could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/nova/me/team:
     get:
       summary: Current user Nova team

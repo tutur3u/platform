@@ -33,6 +33,9 @@ mod infrastructure_inventory_exports;
 mod infrastructure_inventory_exports_test;
 mod infrastructure_migration_exports;
 mod infrastructure_paginated_list;
+mod infrastructure_post_email_queue;
+#[cfg(test)]
+mod infrastructure_post_email_queue_test;
 mod infrastructure_related_exports;
 mod infrastructure_root_auth;
 mod infrastructure_suspensions;
@@ -559,6 +562,13 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         infrastructure_finance_exports::handle_finance_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_post_email_queue::handle_post_email_queue_route(config, request, outbound)
+            .await
     {
         return response;
     }

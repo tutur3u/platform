@@ -609,6 +609,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/packages by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring the view_inventory workspace permission through the shared workspace permission resolver, reading workspace_products through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
     },
+    "api:/api/v1/infrastructure/post-email-queue:apps/web/src/app/api/v1/infrastructure/post-email-queue/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/post-email-queue by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace membership, reading post_email_queue through the service-role Supabase REST adapter, preserving the legacy queue status, workspace, and recent batch aggregation shape, keeping workspace and batch breakdown read failures non-fatal, and returning the legacy summary error body when the primary queue status read fails."
+    },
     "api:/api/v1/infrastructure/product-categories:apps/web/src/app/api/v1/infrastructure/product-categories/route.ts": {
       "methods": {
         "GET": {
