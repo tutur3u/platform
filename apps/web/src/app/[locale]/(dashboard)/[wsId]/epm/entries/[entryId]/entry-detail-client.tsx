@@ -1502,7 +1502,7 @@ export function EntryDetailClient({
   if (studioQuery.isPending && !studio) {
     return variant === 'dialog' ? (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="inset-0 top-0 left-0 h-screen max-h-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none border-0 p-0 sm:max-w-none">
+        <DialogContent presentation="fullscreen" className="overflow-y-auto">
           <EntryDetailLoadingState />
         </DialogContent>
       </Dialog>
@@ -1798,7 +1798,7 @@ export function EntryDetailClient({
   if (variant === 'dialog') {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="inset-0 top-0 left-0 flex h-screen max-h-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:max-w-none">
+        <DialogContent presentation="fullscreen" className="flex-col">
           <DialogHeader className="sr-only">
             <DialogTitle>{activeEntry.title}</DialogTitle>
             <DialogDescription>

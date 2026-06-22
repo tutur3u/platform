@@ -2258,10 +2258,11 @@ export function TaskEditDialog({
       <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
         <DialogContent
           showCloseButton={false}
+          presentation={showCompactDialog ? 'default' : 'fullscreen'}
           className={
             showCompactDialog
               ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl'
-              : 'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0'
+              : undefined
           }
           onContextMenu={(e) => {
             if (shouldPreserveNativeContextMenu(e.target)) {
