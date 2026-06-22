@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(15);
+select plan(19);
 
 select ok(
   to_regprocedure(
@@ -407,7 +407,10 @@ values (
 on conflict (id) do update
 set
   public_token = excluded.public_token,
-  status = excluded.status;
+  status = excluded.status,
+  polar_order_id = null,
+  polar_status = null,
+  completed_at = null;
 
 insert into private.inventory_checkout_lines (
   id,
@@ -435,6 +438,51 @@ values (
 )
 on conflict (id) do update
 set quantity = excluded.quantity;
+
+select throws_ok(
+  $$
+    select private.release_inventory_checkout_session(
+      p_checkout_id := '00000000-0000-4000-8000-000000002001',
+      p_ws_id := '00000000-0000-4000-8000-000000009999'
+    )
+  $$,
+  'P0001',
+  'CHECKOUT_NOT_FOUND',
+  'release RPC rejects checkout ids outside the supplied workspace'
+);
+
+select is(
+  (
+    select status
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  'reserved',
+  'wrong-workspace release leaves checkout reserved'
+);
+
+select throws_ok(
+  $$
+    select private.complete_inventory_checkout_session_payment(
+      p_checkout_id := '00000000-0000-4000-8000-000000002001',
+      p_ws_id := '00000000-0000-4000-8000-000000009999',
+      p_polar_order_id := 'forged-order-id'
+    )
+  $$,
+  'P0001',
+  'CHECKOUT_NOT_FOUND',
+  'payment RPC rejects checkout ids outside the supplied workspace'
+);
+
+select is(
+  (
+    select polar_order_id
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  null::text,
+  'wrong-workspace payment leaves checkout unpaid'
+);
 
 select ok(
   private.get_public_inventory_storefront('missing-public-rpc-store') is null,

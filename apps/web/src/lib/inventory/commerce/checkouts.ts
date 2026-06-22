@@ -428,6 +428,7 @@ export async function releaseCheckout(wsId: string, checkoutId: string) {
     'release_inventory_checkout_session' as never,
     {
       p_checkout_id: checkoutId,
+      p_ws_id: wsId,
     } as never
   )) as {
     data: null;

@@ -10956,6 +10956,7 @@ export type Database = {
           p_checkout_id: string;
           p_now?: string;
           p_polar_order_id: string;
+          p_ws_id: string;
         };
         Returns: string;
       };
@@ -12140,7 +12141,7 @@ export type Database = {
       };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       release_inventory_checkout_session: {
-        Args: { p_checkout_id: string; p_now?: string };
+        Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: undefined;
       };
       remove_workspace_user_referral: {
@@ -33547,6 +33548,7 @@ export type Database = {
           p_checkout_id: string;
           p_now?: string;
           p_polar_order_id: string;
+          p_ws_id: string;
         };
         Returns: string;
       };
@@ -36401,7 +36403,7 @@ export type Database = {
         }[];
       };
       release_inventory_checkout_session: {
-        Args: { p_checkout_id: string; p_now?: string };
+        Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: undefined;
       };
       release_metered_embedding_credits: {

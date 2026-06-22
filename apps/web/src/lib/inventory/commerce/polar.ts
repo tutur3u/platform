@@ -26,6 +26,39 @@ import {
 
 type SupabaseErrorLike = { message?: string } | null;
 
+export class InventoryPolarWorkspaceMismatchError extends Error {
+  actualWsId: string;
+  expectedWsId: string;
+
+  constructor({
+    actualWsId,
+    expectedWsId,
+  }: {
+    actualWsId: string;
+    expectedWsId: string;
+  }) {
+    super('Inventory Polar webhook workspace mismatch');
+    this.name = 'InventoryPolarWorkspaceMismatchError';
+    this.actualWsId = actualWsId;
+    this.expectedWsId = expectedWsId;
+  }
+}
+
+export function assertInventoryPolarWorkspace({
+  actualWsId,
+  expectedWsId,
+}: {
+  actualWsId: string;
+  expectedWsId?: string;
+}) {
+  if (expectedWsId && actualWsId !== expectedWsId) {
+    throw new InventoryPolarWorkspaceMismatchError({
+      actualWsId,
+      expectedWsId,
+    });
+  }
+}
+
 type PolarIntegrationRow = {
   access_token_encrypted: string;
   access_token_fingerprint: string | null;
@@ -803,7 +836,7 @@ async function updateCheckoutPolarState(
   }
 }
 
-function getInventoryMetadata(value: unknown) {
+function getInventoryMetadata(value: unknown, expectedWsId?: string) {
   if (!value || typeof value !== 'object') return null;
 
   const metadata = value as Record<string, unknown>;
@@ -815,6 +848,8 @@ function getInventoryMetadata(value: unknown) {
   if (typeof checkoutId !== 'string' || typeof wsId !== 'string') {
     return null;
   }
+
+  assertInventoryPolarWorkspace({ actualWsId: wsId, expectedWsId });
 
   return {
     checkoutId,
@@ -847,8 +882,11 @@ function mapCheckoutStatus(status: string) {
   return 'checkout_created';
 }
 
-export async function syncInventoryPolarCheckout(checkout: Checkout) {
-  const metadata = getInventoryMetadata(checkout.metadata);
+export async function syncInventoryPolarCheckout(
+  checkout: Checkout,
+  expectedWsId?: string
+) {
+  const metadata = getInventoryMetadata(checkout.metadata, expectedWsId);
   if (!metadata) return false;
 
   const polarStatus = mapCheckoutStatus(String(checkout.status));
@@ -863,6 +901,7 @@ export async function syncInventoryPolarCheckout(checkout: Checkout) {
       'release_inventory_checkout_session' as never,
       {
         p_checkout_id: metadata.checkoutId,
+        p_ws_id: metadata.wsId,
       } as never
     )) as { error: SupabaseErrorLike };
 
@@ -882,8 +921,11 @@ function mapOrderPolarStatus(status: string) {
   return 'failed';
 }
 
-export async function syncInventoryPolarOrder(order: Order) {
-  const metadata = getInventoryMetadata(order.metadata);
+export async function syncInventoryPolarOrder(
+  order: Order,
+  expectedWsId?: string
+) {
+  const metadata = getInventoryMetadata(order.metadata, expectedWsId);
   if (!metadata) return false;
 
   await updateCheckoutPolarState(metadata.checkoutId, metadata.wsId, {
@@ -898,6 +940,7 @@ export async function syncInventoryPolarOrder(order: Order) {
       {
         p_checkout_id: metadata.checkoutId,
         p_polar_order_id: order.id,
+        p_ws_id: metadata.wsId,
       } as never
     )) as { error: SupabaseErrorLike };
 

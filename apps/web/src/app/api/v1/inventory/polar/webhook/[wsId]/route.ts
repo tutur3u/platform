@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getInventoryPolarWebhookSecret,
+  InventoryPolarWorkspaceMismatchError,
   syncInventoryPolarCheckout,
   syncInventoryPolarOrder,
 } from '@/lib/inventory/commerce/polar';
@@ -25,14 +26,17 @@ const ENVIRONMENTS = ['production', 'sandbox'] as const;
 
 type PolarWebhookEvent = ReturnType<typeof validateEvent>;
 
-async function handleInventoryPolarEvent(event: PolarWebhookEvent) {
+async function handleInventoryPolarEvent(
+  event: PolarWebhookEvent,
+  verifiedWsId: string
+) {
   const { type } = event;
   if (type.startsWith('checkout')) {
-    await syncInventoryPolarCheckout(event.data as Checkout);
+    await syncInventoryPolarCheckout(event.data as Checkout, verifiedWsId);
   } else if (type.startsWith('order')) {
-    await syncInventoryPolarOrder(event.data as Order);
+    await syncInventoryPolarOrder(event.data as Order, verifiedWsId);
   } else if (type.startsWith('product')) {
-    await applyPolarProductToInventory(event.data as Product);
+    await applyPolarProductToInventory(event.data as Product, verifiedWsId);
   }
 }
 
@@ -61,8 +65,24 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     try {
-      await handleInventoryPolarEvent(event);
+      await handleInventoryPolarEvent(event, wsId);
     } catch (error) {
+      if (error instanceof InventoryPolarWorkspaceMismatchError) {
+        serverLogger.warn(
+          'Rejected inventory Polar webhook workspace mismatch',
+          {
+            actualWsId: error.actualWsId,
+            eventType: event.type,
+            expectedWsId: error.expectedWsId,
+            verifiedWsId: wsId,
+          }
+        );
+        return NextResponse.json(
+          { message: 'Webhook workspace mismatch' },
+          { status: 403 }
+        );
+      }
+
       serverLogger.error(
         'Failed to handle inventory Polar webhook event',
         error

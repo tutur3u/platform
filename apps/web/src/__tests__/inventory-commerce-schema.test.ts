@@ -54,6 +54,10 @@ const inventoryOperatorPrivateRpcMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260612003400_inventory_operator_private_rpcs.sql'
 );
+const inventoryPolarWebhookWorkspaceBindingMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260622133112_harden_inventory_polar_webhook_workspace_binding.sql'
+);
 
 describe('inventory commerce migration contract', () => {
   it('creates storefront, bundle, checkout, reservation, and settlement tables', () => {
@@ -129,6 +133,41 @@ describe('inventory commerce migration contract', () => {
     expect(source).toContain('complete_inventory_checkout_session_payment');
     expect(source).toContain('polar_checkout_id');
     expect(source).toContain('polar_order_id');
+  });
+
+  it('requires workspace scope for Polar checkout release and payment RPCs', () => {
+    expect(existsSync(inventoryPolarWebhookWorkspaceBindingMigrationPath)).toBe(
+      true
+    );
+
+    const source = readFileSync(
+      inventoryPolarWebhookWorkspaceBindingMigrationPath,
+      'utf8'
+    );
+
+    expect(source).toContain(
+      'drop function if exists public.release_inventory_checkout_session'
+    );
+    expect(source).toContain(
+      'drop function if exists public.complete_inventory_checkout_session_payment'
+    );
+    expect(source).toContain(
+      'create or replace function public.release_inventory_checkout_session'
+    );
+    expect(source).toContain('p_ws_id uuid');
+    expect(source).toContain(
+      'where id = p_checkout_id\n    and ws_id = p_ws_id'
+    );
+    expect(source).toContain(
+      'create or replace function private.release_inventory_checkout_session'
+    );
+    expect(source).toContain('p_ws_id := p_ws_id');
+    expect(source).toContain(
+      'create or replace function private.complete_inventory_checkout_session_payment'
+    );
+    expect(source).toContain(
+      'grant execute on function private.complete_inventory_checkout_session_payment'
+    );
   });
 
   it('hardens bundle components and checkout reservations by workspace scope', () => {

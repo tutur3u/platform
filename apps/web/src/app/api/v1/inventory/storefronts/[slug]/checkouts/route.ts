@@ -314,6 +314,7 @@ export async function POST(request: Request, { params }: Params) {
         'release_inventory_checkout_session',
         {
           p_checkout_id: checkout.id,
+          p_ws_id: checkout.wsId,
         }
       );
 
