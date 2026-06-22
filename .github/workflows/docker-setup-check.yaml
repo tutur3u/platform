@@ -56,9 +56,15 @@ on:
       - "turbo.json"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
     with:
       workflow_name: docker-setup-check.yaml
 

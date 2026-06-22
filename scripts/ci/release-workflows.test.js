@@ -319,9 +319,18 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
     'utf8'
   );
   const verifyJob = readWorkflowJobBlock('docker-setup-check.yaml', 'verify');
+  const checkCiJob = readWorkflowJobBlock(
+    'docker-setup-check.yaml',
+    'check-ci'
+  );
   const prePullIndex = verifyJob.indexOf('Pre-pull Docker BuildKit image');
   const setupBuildxIndex = verifyJob.indexOf('Setup Docker Buildx');
 
+  assert.match(workflow, /\npermissions:\n {2}contents: read\n/u);
+  assert.match(
+    checkCiJob,
+    /permissions:\n {6}contents: read\n {6}deployments: read/u
+  );
   assert.notEqual(prePullIndex, -1);
   assert.notEqual(setupBuildxIndex, -1);
   assert.ok(
