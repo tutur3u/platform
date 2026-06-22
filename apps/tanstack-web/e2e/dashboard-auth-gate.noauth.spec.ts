@@ -44,6 +44,7 @@ const GATED_ROUTES = [
   'inventory/batches',
   'inventory/categories',
   'inventory/manufacturers',
+  'inventory/products',
   'inventory/promotions',
   'inventory/storefronts',
   'inventory/suppliers',
