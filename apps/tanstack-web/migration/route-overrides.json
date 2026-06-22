@@ -688,6 +688,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/drive preserves the legacy handoff to the Drive app origin with root-workspace internal slug handling, personal workspace slug normalization, and query forwarding. This marks only the page handoff artifact migrated; the Drive app owns its own auth and manage_drive permission gate, while parent dashboard layout/session ownership remains legacy-owned."
     },
+    "layout:/:locale/:wsId/finance:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/finance and its migrated Finance child routes preserve the accepted 307 redirect handoff to /:wsId/finance... with query forwarding before rendering legacy Finance UI. This marks only the route-specific layout artifact migrated; parent dashboard/session ownership and Finance data routes remain legacy-owned."
+    },
     "page:/:locale/:wsId/finance:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/(dashboard)/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
