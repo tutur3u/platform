@@ -29,6 +29,7 @@ mod task_embeddings;
 mod topic_announcements;
 mod user_profile;
 mod workspace_limits;
+mod workspace_post_permissions;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -436,6 +437,14 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspace_limits::handle_workspace_limits_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspace_post_permissions::handle_workspace_post_permissions_route(
+        config, request, outbound,
+    )
+    .await
     {
         return response;
     }

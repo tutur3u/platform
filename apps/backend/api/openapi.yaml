@@ -4375,6 +4375,40 @@ paths:
                 $ref: "#/components/schemas/PreferenceSuccess"
         "405":
           description: Unsupported HTTP method.
+  /api/v1/workspaces/{wsId}/posts/permissions:
+    get:
+      summary: Workspace post permissions
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts GET. The Rust backend keeps the legacy quiet-failure contract by returning `{ canApprovePosts: false, canForceSendPosts: false }` for missing auth, inaccessible workspaces, permission RPC failures, or missing permissions. When a Supabase browser session or non-app-session Bearer token resolves, it calls the server-owned `has_workspace_permission` RPC for the workspace `approve_posts` permission and the root workspace `manage_workspace_roles` permission.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workspace post permission flags. Failures are represented as false flags for legacy compatibility.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePostPermissionsResponse"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/user-groups/{groupId}/group-checks/{postId}/email:
     post:
       summary: Removed direct group-check email sender
@@ -5104,6 +5138,18 @@ components:
           type: string
           examples:
             - Error checking workspace limit
+    WorkspacePostPermissionsResponse:
+      type: object
+      required:
+        - canApprovePosts
+        - canForceSendPosts
+      properties:
+        canApprovePosts:
+          type: boolean
+          description: Whether the authenticated caller has the workspace approve_posts permission. False is also returned for unauthenticated or unresolved callers.
+        canForceSendPosts:
+          type: boolean
+          description: Whether the authenticated caller has the root workspace manage_workspace_roles permission. False is also returned for unauthenticated or unresolved callers.
     OnboardingProgress:
       type: object
       additionalProperties: true

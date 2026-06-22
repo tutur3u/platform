@@ -548,6 +548,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles the removed POST direct group-check email endpoint with the legacy 410 response; emails are sent by the system queue after approval."
     },
+    "api:/api/v1/workspaces/:wsId/posts/permissions:apps/web/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
+    },
     "api:/api/v1/workspaces/:wsId/slides:apps/web/src/app/api/v1/workspaces/[wsId]/slides/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
