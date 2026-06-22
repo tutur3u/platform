@@ -6,11 +6,11 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 947,
-        "migrated": 98,
-        "percentComplete": 16.05,
-        "remaining": 947,
-        "terminal": 181,
+        "legacyNext": 945,
+        "migrated": 100,
+        "percentComplete": 16.22,
+        "remaining": 945,
+        "terminal": 183,
         "total": 1128,
         "unknownStatus": 0
       },
@@ -116,11 +116,11 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 965,
-        "migrated": 103,
-        "percentComplete": 16.16,
-        "remaining": 965,
-        "terminal": 186,
+        "legacyNext": 963,
+        "migrated": 105,
+        "percentComplete": 16.33,
+        "remaining": 963,
+        "terminal": 188,
         "total": 1151,
         "unknownStatus": 0
       },
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1141,
-      "migrated": 305,
-      "percentComplete": 25.38,
-      "remaining": 1141,
-      "terminal": 388,
+      "legacyNext": 1139,
+      "migrated": 307,
+      "percentComplete": 25.51,
+      "remaining": 1139,
+      "terminal": 390,
       "total": 1529,
       "unknownStatus": 0
     }
@@ -3738,7 +3738,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/payment-methods",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/payment-methods/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -4051,7 +4051,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/infrastructure/wallets",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/wallets/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
