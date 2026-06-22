@@ -549,6 +549,15 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array. POST and detail PUT/DELETE remain legacy-owned until timezone writes move to Rust."
+        }
+      }
+    },
     "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
       "methods": {
         "GET": {

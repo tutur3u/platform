@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 964,
-        "migrated": 77,
-        "percentComplete": 14.23,
+        "migrated": 78,
+        "percentComplete": 14.31,
         "remaining": 964,
-        "terminal": 160,
-        "total": 1124,
+        "terminal": 161,
+        "total": 1125,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 982,
-        "migrated": 82,
-        "percentComplete": 14.39,
+        "migrated": 83,
+        "percentComplete": 14.46,
         "remaining": 982,
-        "terminal": 165,
-        "total": 1147,
+        "terminal": 166,
+        "total": 1148,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1158,
-      "migrated": 284,
-      "percentComplete": 24.07,
+      "migrated": 285,
+      "percentComplete": 24.12,
       "remaining": 1158,
-      "terminal": 367,
-      "total": 1525,
+      "terminal": 368,
+      "total": 1526,
       "unknownStatus": 0
     }
   },
@@ -3890,13 +3890,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/timezones",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/timezones/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/timezones",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/timezones/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/timezones/:timezoneId:apps/web/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts",
@@ -14154,11 +14167,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1124,
+    "apiRoutes": 1125,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1147,
+    "routeHandlers": 1148,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14168,6 +14181,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1525
+    "total": 1526
   }
 }
