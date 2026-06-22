@@ -11,6 +11,7 @@ const {
   TANSTACK_RUST_MIGRATION_DOC_PATH,
   TANSTACK_WEB_PACKAGE_JSON_PATH,
   TANSTACK_WEB_ROUTE_TREE_PATH,
+  TANSTACK_WEB_TSCONFIG_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
   WEB_DOCKER_DEPLOYMENT_DOC_PATH,
@@ -21,6 +22,7 @@ const {
   validateCloudflareSecretIgnoreRules,
   validateRootPackageJson,
   validateRustBackendWorkflow,
+  validateTanstackWebTsconfig,
   validateTanstackWebViteConfig,
   validateTanstackWebRouteTree,
   validateTanstackWebWranglerConfig,
@@ -198,6 +200,40 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
       workflow.replaceAll('apps/backend/README.md', '')
     ).join('\n'),
     /README/
+  );
+});
+
+test('TanStack tsconfig resolves CI type-check workspace packages from source', () => {
+  const tsconfig = JSON.parse(
+    fs.readFileSync(TANSTACK_WEB_TSCONFIG_PATH, 'utf8')
+  );
+
+  assert.deepEqual(validateTanstackWebTsconfig(tsconfig), []);
+  assert.match(
+    validateTanstackWebTsconfig({
+      ...tsconfig,
+      compilerOptions: {
+        ...tsconfig.compilerOptions,
+        paths: {
+          ...tsconfig.compilerOptions.paths,
+          '@tuturuuu/types/*': ['../../packages/types/dist/*'],
+        },
+      },
+    }).join('\n'),
+    /@tuturuuu\/types\/\*/
+  );
+  assert.match(
+    validateTanstackWebTsconfig({
+      ...tsconfig,
+      compilerOptions: {
+        ...tsconfig.compilerOptions,
+        paths: {
+          ...tsconfig.compilerOptions.paths,
+          '@tuturuuu/supabase': undefined,
+        },
+      },
+    }).join('\n'),
+    /@tuturuuu\/supabase/
   );
 });
 

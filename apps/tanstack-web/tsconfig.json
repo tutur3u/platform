@@ -7,7 +7,11 @@
     "paths": {
       "@/*": ["./src/*"],
       "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
-      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"]
+      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
+      "@tuturuuu/supabase": ["../../packages/supabase/src/index.ts"],
+      "@tuturuuu/supabase/*": ["../../packages/supabase/src/*"],
+      "@tuturuuu/types": ["../../packages/types/src/index.ts"],
+      "@tuturuuu/types/*": ["../../packages/types/src/*"]
     },
     "types": ["node", "vite/client"]
   },

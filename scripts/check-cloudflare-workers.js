@@ -41,6 +41,12 @@ const TANSTACK_WEB_PACKAGE_JSON_PATH = path.join(
   'tanstack-web',
   'package.json'
 );
+const TANSTACK_WEB_TSCONFIG_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'tsconfig.json'
+);
 const TANSTACK_WEB_VITE_CONFIG_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -404,6 +410,37 @@ function validateTanstackWebPackageJson(packageJson) {
   return errors;
 }
 
+function validateTanstackWebTsconfig(tsconfig) {
+  const errors = [];
+  const paths = tsconfig.compilerOptions?.paths;
+  const requiredPathAliases = {
+    '@tuturuuu/internal-api': '../../packages/internal-api/src/index.ts',
+    '@tuturuuu/internal-api/*': '../../packages/internal-api/src/*',
+    '@tuturuuu/supabase': '../../packages/supabase/src/index.ts',
+    '@tuturuuu/supabase/*': '../../packages/supabase/src/*',
+    '@tuturuuu/types': '../../packages/types/src/index.ts',
+    '@tuturuuu/types/*': '../../packages/types/src/*',
+  };
+
+  if (!isPlainObject(paths)) {
+    return [
+      'apps/tanstack-web/tsconfig.json must define compilerOptions.paths for workspace source packages used during CI type-checks.',
+    ];
+  }
+
+  for (const [alias, expectedPath] of Object.entries(requiredPathAliases)) {
+    const aliasPaths = paths[alias];
+
+    if (!Array.isArray(aliasPaths) || !aliasPaths.includes(expectedPath)) {
+      errors.push(
+        `apps/tanstack-web/tsconfig.json compilerOptions.paths.${alias} must include ${expectedPath} so CI type-checks do not depend on untracked package dist output.`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateTanstackWebViteConfig(viteConfigContent) {
   const errors = [];
 
@@ -709,6 +746,10 @@ function checkCloudflareWorkersSetup({
     path.join(rootDir, 'apps', 'tanstack-web', 'package.json'),
     fsImpl
   ),
+  tanstackWebTsconfig = readJson(
+    path.join(rootDir, 'apps', 'tanstack-web', 'tsconfig.json'),
+    fsImpl
+  ),
   rustBackendWorkflowContent = fsImpl.readFileSync(
     path.join(rootDir, '.github', 'workflows', 'rust-backend.yml'),
     'utf8'
@@ -762,6 +803,7 @@ function checkCloudflareWorkersSetup({
     ...validateRustBackendWorkflow(rustBackendWorkflowContent),
     ...validateBackendWranglerConfig(backendWranglerConfig),
     ...validateTanstackWebPackageJson(tanstackWebPackageJson),
+    ...validateTanstackWebTsconfig(tanstackWebTsconfig),
     ...validateTanstackWebViteConfig(tanstackWebViteConfigContent),
     ...validateTanstackWebRouteTree(tanstackWebRouteTreeContent),
     ...validateTanstackWebWranglerConfig(tanstackWebWranglerConfig),
@@ -798,6 +840,7 @@ module.exports = {
   TANSTACK_WEB_PACKAGE_JSON_PATH,
   TANSTACK_RUST_MIGRATION_DOC_PATH,
   TANSTACK_WEB_ROUTE_TREE_PATH,
+  TANSTACK_WEB_TSCONFIG_PATH,
   TANSTACK_WEB_VITE_CONFIG_PATH,
   TANSTACK_WEB_WRANGLER_PATH,
   WEB_DOCKER_DEPLOYMENT_DOC_PATH,
@@ -810,6 +853,7 @@ module.exports = {
   validateRustBackendWorkflow,
   validateTanstackWebPackageJson,
   validateTanstackWebRouteTree,
+  validateTanstackWebTsconfig,
   validateTanstackWebViteConfig,
   validateTanstackWebWranglerConfig,
 };
