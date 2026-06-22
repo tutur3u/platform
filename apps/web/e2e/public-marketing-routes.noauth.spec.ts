@@ -210,6 +210,12 @@ const dynamicNotFoundRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/documents/__e2e_missing_document_id__`,
   },
+  {
+    path: `/${DEFAULT_LOCALE}/share/course/__e2e_missing_course_id__`,
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/share/course/__e2e_missing_course_id__/modules/__e2e_missing_module_id__`,
+  },
 ];
 
 const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];

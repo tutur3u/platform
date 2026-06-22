@@ -70,6 +70,16 @@ function coverageExamplesForRoute(routePath) {
     return [`/${DEFAULT_LOCALE}/documents/__e2e_missing_document_id__`];
   }
 
+  if (routePath === '/:locale/share/:type/:resourceId') {
+    return [`/${DEFAULT_LOCALE}/share/course/__e2e_missing_course_id__`];
+  }
+
+  if (routePath === '/:locale/share/:type/:resourceId/modules/:moduleId') {
+    return [
+      `/${DEFAULT_LOCALE}/share/course/__e2e_missing_course_id__/modules/__e2e_missing_module_id__`,
+    ];
+  }
+
   if (routePath === '/:locale/ui/components/:componentId') {
     return [`/${DEFAULT_LOCALE}/ui/components/button`];
   }

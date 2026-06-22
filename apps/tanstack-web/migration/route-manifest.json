@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 191,
-        "migrated": 115,
-        "percentComplete": 37.58,
-        "remaining": 191,
-        "terminal": 115,
+        "legacyNext": 189,
+        "migrated": 117,
+        "percentComplete": 38.24,
+        "remaining": 189,
+        "terminal": 117,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 212,
-        "migrated": 166,
-        "percentComplete": 43.92,
-        "remaining": 212,
-        "terminal": 166,
+        "legacyNext": 210,
+        "migrated": 168,
+        "percentComplete": 44.44,
+        "remaining": 210,
+        "terminal": 168,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 83,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1197,
-      "migrated": 244,
-      "percentComplete": 21.46,
-      "remaining": 1197,
-      "terminal": 327,
+      "legacyNext": 1195,
+      "migrated": 246,
+      "percentComplete": 21.59,
+      "remaining": 1195,
+      "terminal": 329,
       "total": 1524,
       "unknownStatus": 0
     }
@@ -13866,7 +13866,7 @@
       "methods": [],
       "routePath": "/:locale/share/:type/:resourceId",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/share/[type]/[resourceId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13875,7 +13875,7 @@
       "methods": [],
       "routePath": "/:locale/share/:type/:resourceId/modules/:moduleId",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/share/[type]/[resourceId]/modules/[moduleId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

@@ -603,6 +603,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start routes /$locale/calendar/meet-together and /$locale/calendar/meet-together/$ preserve the legacy redirect to /meet-together with optional trailing slug segments."
     },
+    "page:/:locale/share/:type/:resourceId:apps/web/src/app/[locale]/(marketing)/share/[type]/[resourceId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/share/$type/$resourceId preserves the legacy course-only shared content behavior, no-store server loading through @tuturuuu/internal-api getSharedCourseContent with forwarded request auth, UUID validation, notFound handling for unsupported types or missing content, and the shared course outline/list UI."
+    },
+    "page:/:locale/share/:type/:resourceId/modules/:moduleId:apps/web/src/app/[locale]/(marketing)/share/[type]/[resourceId]/modules/[moduleId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/share/$type/$resourceId/modules/$moduleId preserves the legacy course-only module view, no-store server loading through @tuturuuu/internal-api getSharedCourseContent with forwarded request auth, module notFound handling, previous/next module navigation, rich-content rendering, and YouTube embed behavior."
+    },
     "page:/:locale/pricing:apps/web/src/app/[locale]/(marketing)/pricing/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
