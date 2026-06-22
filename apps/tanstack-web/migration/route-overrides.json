@@ -152,7 +152,12 @@
     "api:/api/v1/devboxes/cache:apps/web/src/app/api/v1/devboxes/cache/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/devboxes/cache by accepting CLI app-session Bearer tokens for the platform target with cli:access or browser/non-app-session Supabase credentials, requiring root workspace MEMBER access, and returning the legacy { caches: [] } body. Adjacent prune and mutation routes remain legacy-owned."
+      "note": "Rust backend handle_backend_request handles GET /api/v1/devboxes/cache by accepting CLI app-session Bearer tokens for the platform target with cli:access or browser/non-app-session Supabase credentials, requiring root workspace MEMBER access, and returning the legacy { caches: [] } body. Other devbox mutation routes remain legacy-owned."
+    },
+    "api:/api/v1/devboxes/cache/prune:apps/web/src/app/api/v1/devboxes/cache/prune/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles POST /api/v1/devboxes/cache/prune with the same platform CLI app-session or browser/non-app-session Supabase auth boundary as the cache list route, requires root workspace MEMBER access, and returns the legacy { message: \"Devbox cache prune requested.\" } acknowledgement without private devbox table mutations."
     },
     "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
       "status": "migrated",

@@ -3681,8 +3681,8 @@ paths:
         targeting platform with both internal-app:session and cli:access scopes,
         or browser/non-app-session Supabase credentials revalidated with
         Supabase Auth. Callers must be root workspace MEMBERs. The route
-        currently preserves the legacy empty cache list body while adjacent
-        prune and mutation routes remain legacy-owned.
+        currently preserves the legacy empty cache list body while other
+        devbox mutation routes remain legacy-owned.
       security:
         - AppSessionBearer: []
         - SupabaseBearer: []
@@ -3731,6 +3731,65 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/devboxes/cache/prune:
+    post:
+      summary: Legacy-compatible devbox cache prune request
+      description: >
+        Migrated replacement for apps/web/src/app/api/v1/devboxes/cache/prune/route.ts
+        POST. The Rust backend uses the same auth boundary as the cache list
+        route: platform CLI app-session Bearer tokens with cli:access, or
+        browser/non-app-session Supabase credentials revalidated with Supabase
+        Auth, followed by a root workspace MEMBER check. The current legacy
+        behavior only acknowledges the prune request and does not mutate private
+        devbox tables.
+      security:
+        - AppSessionBearer: []
+        - SupabaseBearer: []
+        - SupabaseBrowserSessionCookie: []
+      responses:
+        "200":
+          description: Devbox cache prune request was accepted.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevboxCachePruneResponse"
+        "401":
+          description: Caller is missing a valid CLI app-session token or Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactUnauthorized"
+        "403":
+          description: Caller is authenticated but not a root workspace MEMBER.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevboxForbidden"
+        "503":
+          description: Contact data adapter configuration is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactDataLayerNotReady"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - POST
   /api/v1/users/me/profile:
     get:
       summary: Current user profile
@@ -6121,6 +6180,15 @@ components:
             additionalProperties: true
           examples:
             - []
+    DevboxCachePruneResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Devbox cache prune requested.
     DevboxForbidden:
       type: object
       required:

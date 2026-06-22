@@ -9,6 +9,7 @@ use crate::{
 };
 
 const DEVBOX_CACHE_PATH: &str = "/api/v1/devboxes/cache";
+const DEVBOX_CACHE_PRUNE_PATH: &str = "/api/v1/devboxes/cache/prune";
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
 const WORKSPACE_MEMBERS_TABLE: &str = "workspace_members";
 const POSTGREST_SINGLE_JSON: &str = "application/vnd.pgrst.object+json";
@@ -27,6 +28,10 @@ pub(crate) async fn handle_devbox_cache_route(
     match (request.method, request.path) {
         ("GET", DEVBOX_CACHE_PATH) => Some(devbox_cache_response(config, request, outbound).await),
         (method, DEVBOX_CACHE_PATH) => Some(method_not_allowed(method, "GET")),
+        ("POST", DEVBOX_CACHE_PRUNE_PATH) => {
+            Some(devbox_cache_prune_response(config, request, outbound).await)
+        }
+        (method, DEVBOX_CACHE_PRUNE_PATH) => Some(method_not_allowed(method, "POST")),
         _ => None,
     }
 }
@@ -36,16 +41,8 @@ async fn devbox_cache_response(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(user_id) = devbox_request_user_id(config, request, outbound).await else {
-        return no_store_response(json_response(401, json!({ "message": "Unauthorized" })));
-    };
-
-    if !config.contact_data.configured() {
-        return contact_data_layer_not_ready_response(request);
-    }
-
-    if !has_root_workspace_member(&config.contact_data, &user_id, outbound).await {
-        return no_store_response(json_response(403, json!({ "message": "Forbidden" })));
+    if let Err(response) = authorize_devbox_root_member(config, request, outbound).await {
+        return response;
     }
 
     no_store_response(json_response(
@@ -54,6 +51,49 @@ async fn devbox_cache_response(
             "caches": [],
         }),
     ))
+}
+
+async fn devbox_cache_prune_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    if let Err(response) = authorize_devbox_root_member(config, request, outbound).await {
+        return response;
+    }
+
+    no_store_response(json_response(
+        200,
+        json!({
+            "message": "Devbox cache prune requested.",
+        }),
+    ))
+}
+
+async fn authorize_devbox_root_member(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> Result<(), BackendResponse> {
+    let Some(user_id) = devbox_request_user_id(config, request, outbound).await else {
+        return Err(no_store_response(json_response(
+            401,
+            json!({ "message": "Unauthorized" }),
+        )));
+    };
+
+    if !config.contact_data.configured() {
+        return Err(contact_data_layer_not_ready_response(request));
+    }
+
+    if !has_root_workspace_member(&config.contact_data, &user_id, outbound).await {
+        return Err(no_store_response(json_response(
+            403,
+            json!({ "message": "Forbidden" }),
+        )));
+    }
+
+    Ok(())
 }
 
 async fn devbox_request_user_id(
