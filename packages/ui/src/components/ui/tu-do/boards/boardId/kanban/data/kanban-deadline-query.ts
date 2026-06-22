@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api';
+import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
 const KANBAN_DEADLINE_TASK_PAGE_SIZE = 200;
@@ -7,9 +8,15 @@ export const KANBAN_DEADLINE_TASKS_QUERY_KEY = 'kanban-deadline-tasks';
 
 export function getKanbanDeadlineTasksQueryKey(
   workspaceId: string,
-  boardId: string | null | undefined
+  boardId: string | null | undefined,
+  taskQueryOptions?: ListWorkspaceTasksOptions
 ) {
-  return [KANBAN_DEADLINE_TASKS_QUERY_KEY, workspaceId, boardId] as const;
+  return [
+    KANBAN_DEADLINE_TASKS_QUERY_KEY,
+    workspaceId,
+    boardId,
+    taskQueryOptions,
+  ] as const;
 }
 
 export function invalidateKanbanDeadlineTasks(
@@ -28,18 +35,36 @@ export function invalidateKanbanDeadlineTasks(
 
 interface ListKanbanDeadlineTasksOptions {
   boardId: string;
+  taskQueryOptions?: ListWorkspaceTasksOptions;
   workspaceId: string;
 }
 
 export async function listKanbanDeadlineTasks({
   boardId,
+  taskQueryOptions,
   workspaceId,
 }: ListKanbanDeadlineTasksOptions): Promise<Task[]> {
   const tasks: Task[] = [];
   let offset = 0;
+  const {
+    boardId: _boardId,
+    closed: _closed,
+    completed: _completed,
+    externalSortBy: _externalSortBy,
+    hasDueDate: _hasDueDate,
+    includeCount: _includeCount,
+    includeListCounts: _includeListCounts,
+    includeRelationshipSummary: _includeRelationshipSummary,
+    limit: _limit,
+    listId: _listId,
+    offset: _offset,
+    sortBy: _sortBy,
+    ...filterOptions
+  } = taskQueryOptions ?? {};
 
   while (true) {
     const response = await listWorkspaceTasks(workspaceId, {
+      ...filterOptions,
       boardId,
       closed: 'exclude',
       completed: 'exclude',
@@ -48,9 +73,9 @@ export async function listKanbanDeadlineTasks({
       includeCount: true,
       includeRelationshipSummary: false,
       limit: KANBAN_DEADLINE_TASK_PAGE_SIZE,
-      listStatuses: ['not_started', 'active'],
+      listStatuses: filterOptions.listStatuses ?? ['not_started', 'active'],
       offset,
-      sourceScope: 'all_visible',
+      sourceScope: filterOptions.sourceScope ?? 'all_visible',
     });
 
     tasks.push(...response.tasks);

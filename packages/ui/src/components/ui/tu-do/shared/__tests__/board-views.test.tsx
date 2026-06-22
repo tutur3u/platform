@@ -708,6 +708,31 @@ describe('BoardViews', () => {
     });
   });
 
+  it('passes board filter criteria into deadline task query options without global sort', async () => {
+    renderBoardViews();
+
+    act(() => {
+      boardHeaderProps?.onListStatusFilterChange('active');
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        labels: [{ color: 'BLUE', id: 'label-1', name: 'Urgent' } as any],
+        searchQuery: 'launch',
+        sortBy: 'name-asc',
+      });
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.deadlineTaskQueryOptions).toEqual(
+        expect.objectContaining({
+          labelIds: ['label-1'],
+          listStatuses: ['active'],
+          q: 'launch',
+        })
+      );
+    });
+    expect(kanbanBoardProps?.deadlineTaskQueryOptions?.sortBy).toBeUndefined();
+  });
+
   it('uses server-side search counts to hide task lists without matching tasks', async () => {
     listWorkspaceTasksMock.mockImplementation(async (_workspaceId, options) => {
       if (options?.includeListCounts) {

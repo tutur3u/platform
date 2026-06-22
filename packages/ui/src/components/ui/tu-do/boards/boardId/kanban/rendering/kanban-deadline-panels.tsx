@@ -2,16 +2,33 @@
 
 import {
   AlertTriangle,
+  ArrowDownAZ,
+  ArrowUpAZ,
   CalendarClock,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
+  FileText,
+  Filter,
+  RotateCcw,
 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
+import { useMemo, useState } from 'react';
 import { TaskCard } from '../../task';
 import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
 
@@ -23,7 +40,18 @@ export type KanbanDeadlineCollapsedState = Partial<
 export interface KanbanDeadlineLabels {
   collapseSection?: (name: string) => string;
   expandSection?: (name: string) => string;
+  filter?: string;
   overdue: string;
+  reset?: string;
+  showDocuments?: string;
+  showExternalTasks?: string;
+  sort?: string;
+  sortCreatedAsc?: string;
+  sortCreatedDesc?: string;
+  sortDueAsc?: string;
+  sortDueDesc?: string;
+  sortNameAsc?: string;
+  sortSourceAsc?: string;
   upcoming: string;
 }
 
@@ -59,11 +87,116 @@ interface DeadlineSectionConfig {
   titleClassName: string;
 }
 
+type DeadlineTaskSortBy =
+  | 'created-asc'
+  | 'created-desc'
+  | 'due-asc'
+  | 'due-desc'
+  | 'name-asc'
+  | 'source-asc';
+
+const DEFAULT_DEADLINE_TASK_SORT_BY: DeadlineTaskSortBy = 'due-asc';
+const DOCUMENT_LIST_STATUS = 'documents';
+
+function getTaskTime(value: string | null | undefined) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+function compareNullableTaskTime(
+  a: string | null | undefined,
+  b: string | null | undefined,
+  ascending: boolean
+) {
+  const aTime = getTaskTime(a);
+  const bTime = getTaskTime(b);
+
+  if (aTime === null && bTime === null) return 0;
+  if (aTime === null) return 1;
+  if (bTime === null) return -1;
+
+  return ascending ? aTime - bTime : bTime - aTime;
+}
+
+function getDeadlineTaskSourceSortText(task: Task) {
+  return [
+    task.source_workspace_name,
+    task.source_board_name,
+    task.source_list_name,
+    task.name,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+    .toLowerCase();
+}
+
+function sortDeadlineTasks(tasks: Task[], sortBy: DeadlineTaskSortBy) {
+  const sorted = [...tasks];
+
+  sorted.sort((a, b) => {
+    switch (sortBy) {
+      case 'created-asc':
+        return (
+          compareNullableTaskTime(a.created_at, b.created_at, true) ||
+          a.name.localeCompare(b.name)
+        );
+      case 'created-desc':
+        return (
+          compareNullableTaskTime(a.created_at, b.created_at, false) ||
+          a.name.localeCompare(b.name)
+        );
+      case 'due-desc':
+        return (
+          compareNullableTaskTime(a.end_date, b.end_date, false) ||
+          compareNullableTaskTime(a.created_at, b.created_at, false) ||
+          a.name.localeCompare(b.name)
+        );
+      case 'name-asc':
+        return (
+          a.name.localeCompare(b.name) ||
+          compareNullableTaskTime(a.end_date, b.end_date, true)
+        );
+      case 'source-asc':
+        return (
+          getDeadlineTaskSourceSortText(a).localeCompare(
+            getDeadlineTaskSourceSortText(b)
+          ) ||
+          compareNullableTaskTime(a.end_date, b.end_date, true) ||
+          a.name.localeCompare(b.name)
+        );
+      default:
+        return (
+          compareNullableTaskTime(a.end_date, b.end_date, true) ||
+          compareNullableTaskTime(a.created_at, b.created_at, false) ||
+          a.name.localeCompare(b.name)
+        );
+    }
+  });
+
+  return sorted;
+}
+
 function getFallbackTaskList(lists: TaskList[]) {
   return (
     lists.find((list) => list.status === 'active') ??
     lists.find((list) => list.status === 'not_started') ??
     lists[0]
+  );
+}
+
+function isDocumentDeadlineTask(task: Task, taskList?: TaskList) {
+  return (
+    task.source_list_status === DOCUMENT_LIST_STATUS ||
+    taskList?.status === DOCUMENT_LIST_STATUS
+  );
+}
+
+function isExternalDeadlineTask(task: Task, taskList?: TaskList) {
+  return (
+    task.is_personal_external === true ||
+    taskList?.is_external_staging === true ||
+    Boolean(task.source_workspace_id)
   );
 }
 
@@ -116,13 +249,40 @@ function DeadlineSection({
   tasks: Task[];
   workspaceId: string;
 }) {
-  if (tasks.length === 0) return null;
-
   const Icon = config.icon;
   const collapseLabel =
     labels.collapseSection?.(config.label) ?? `Collapse ${config.label}`;
   const expandLabel =
     labels.expandSection?.(config.label) ?? `Expand ${config.label}`;
+  const [includeDocuments, setIncludeDocuments] = useState(true);
+  const [includeExternal, setIncludeExternal] = useState(true);
+  const [sortBy, setSortBy] = useState<DeadlineTaskSortBy>(
+    DEFAULT_DEADLINE_TASK_SORT_BY
+  );
+  const taskListById = useMemo(
+    () => new Map(taskLists.map((list) => [String(list.id), list] as const)),
+    [taskLists]
+  );
+  const visibleTasks = useMemo(() => {
+    const filteredTasks = tasks.filter((task) => {
+      const taskList = taskListById.get(String(task.list_id));
+
+      if (!includeDocuments && isDocumentDeadlineTask(task, taskList)) {
+        return false;
+      }
+
+      if (!includeExternal && isExternalDeadlineTask(task, taskList)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return sortDeadlineTasks(filteredTasks, sortBy);
+  }, [includeDocuments, includeExternal, sortBy, taskListById, tasks]);
+  const filterCount = (includeDocuments ? 0 : 1) + (includeExternal ? 0 : 1);
+
+  if (tasks.length === 0) return null;
 
   if (collapsed) {
     return (
@@ -148,7 +308,7 @@ function DeadlineSection({
             variant="secondary"
             className="h-5 min-w-5 justify-center px-1 text-[10px]"
           >
-            {tasks.length}
+            {visibleTasks.length}
           </Badge>
           <span
             className="max-h-48 truncate font-medium text-[11px]"
@@ -164,13 +324,13 @@ function DeadlineSection({
   return (
     <Card
       className={cn(
-        'flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col overflow-hidden rounded-xl border shadow-xs',
+        'flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-dashed shadow-xs',
         config.panelClassName
       )}
       data-testid={`kanban-deadline-section-${config.section}`}
     >
       <div className="flex items-center justify-between gap-3 border-border/70 border-b p-3">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <span
             className={cn(
               'inline-flex size-6 shrink-0 items-center justify-center rounded-md border bg-background/70',
@@ -187,25 +347,151 @@ function DeadlineSection({
           >
             {config.label}
           </h3>
+          <Badge
+            className="h-5 px-1.5 text-[10px]"
+            data-testid={`kanban-deadline-section-${config.section}-count`}
+            variant="outline"
+          >
+            {visibleTasks.length}
+          </Badge>
         </div>
-        <Badge className="h-5 px-1.5 text-[10px]" variant="outline">
-          {tasks.length}
-        </Badge>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          className={cn('h-7 w-7 p-0 hover:bg-muted/40', config.titleClassName)}
-          title={collapseLabel}
-          aria-label={collapseLabel}
-          onClick={() => onCollapsedChange?.(config.section, true)}
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className={cn(
+                  'relative h-7 w-7 p-0 hover:bg-muted/40',
+                  config.titleClassName,
+                  filterCount > 0 && 'bg-muted/40'
+                )}
+                title={labels.filter ?? 'Filters'}
+                aria-label={labels.filter ?? 'Filters'}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                {filterCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-current px-0.5 font-medium text-[9px] text-background">
+                    {filterCount}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuCheckboxItem
+                checked={includeDocuments}
+                onCheckedChange={(checked) =>
+                  setIncludeDocuments(checked === true)
+                }
+                onSelect={(event) => event.preventDefault()}
+              >
+                <FileText className="mr-2 h-3.5 w-3.5 text-dynamic-blue" />
+                {labels.showDocuments ?? 'Show document-list tasks'}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={includeExternal}
+                onCheckedChange={(checked) =>
+                  setIncludeExternal(checked === true)
+                }
+                onSelect={(event) => event.preventDefault()}
+              >
+                <ExternalLink className="mr-2 h-3.5 w-3.5 text-dynamic-cyan" />
+                {labels.showExternalTasks ?? 'External tasks'}
+              </DropdownMenuCheckboxItem>
+              {filterCount > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIncludeDocuments(true);
+                      setIncludeExternal(true);
+                    }}
+                  >
+                    <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                    {labels.reset ?? 'Reset'}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className={cn(
+                  'h-7 w-7 p-0 hover:bg-muted/40',
+                  config.titleClassName,
+                  sortBy !== DEFAULT_DEADLINE_TASK_SORT_BY && 'bg-muted/40'
+                )}
+                title={labels.sort ?? 'Sort'}
+                aria-label={labels.sort ?? 'Sort'}
+              >
+                {sortBy === 'created-asc' ||
+                sortBy === 'due-asc' ||
+                sortBy === 'name-asc' ||
+                sortBy === 'source-asc' ? (
+                  <ArrowUpAZ className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowDownAZ className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(value) =>
+                  setSortBy(value as DeadlineTaskSortBy)
+                }
+              >
+                <DropdownMenuRadioItem value="due-asc">
+                  <CalendarClock className="mr-2 h-3.5 w-3.5" />
+                  {labels.sortDueAsc ?? 'Soonest first'}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="due-desc">
+                  <CalendarClock className="mr-2 h-3.5 w-3.5" />
+                  {labels.sortDueDesc ?? 'Latest first'}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created-desc">
+                  <ArrowDownAZ className="mr-2 h-3.5 w-3.5" />
+                  {labels.sortCreatedDesc ?? 'Newest first'}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created-asc">
+                  <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                  {labels.sortCreatedAsc ?? 'Oldest first'}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name-asc">
+                  <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                  {labels.sortNameAsc ?? 'Task name'}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="source-asc">
+                  <ArrowUpAZ className="mr-2 h-3.5 w-3.5" />
+                  {labels.sortSourceAsc ?? 'Source board'}
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className={cn(
+              'h-7 w-7 p-0 hover:bg-muted/40',
+              config.titleClassName
+            )}
+            title={collapseLabel}
+            aria-label={collapseLabel}
+            onClick={() => onCollapsedChange?.(config.section, true)}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       <div className="scrollbar-thin min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
-        {tasks.map((task) => {
+        {visibleTasks.map((task) => {
           const taskList = getTaskListForDeadlineTask(task, taskLists);
 
           return (

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type React from 'react';
@@ -21,7 +21,10 @@ vi.mock('@dnd-kit/sortable', () => ({
 
 vi.mock('../../board-column', () => ({
   BoardColumn: ({ column }: { column: TaskList }) => (
-    <section data-testid={`column-${column.id}`} />
+    <section
+      data-kanban-real-column={column.is_external_staging ? undefined : 'true'}
+      data-testid={`column-${column.id}`}
+    />
   ),
 }));
 
@@ -317,10 +320,18 @@ describe('KanbanColumns', () => {
     );
 
     const deadlinePanels = screen.getByTestId('kanban-deadline-panels');
+    const overdueSection = screen.getByTestId(
+      'kanban-deadline-section-overdue'
+    );
+    const overdueCount = screen.getByTestId(
+      'kanban-deadline-section-overdue-count'
+    );
     const firstColumn = screen.getByTestId('column-list-1');
     const sharedTaskCard = screen.getByTestId('shared-task-card-overdue-task');
 
+    expect(overdueSection).toHaveClass('border-dashed');
     expect(deadlinePanels).toHaveTextContent('Overdue');
+    expect(overdueCount).toHaveTextContent('1');
     expect(sharedTaskCard).toHaveTextContent('Overdue task');
     expect(deadlinePanels.compareDocumentPosition(firstColumn)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
@@ -345,6 +356,281 @@ describe('KanbanColumns', () => {
     expect(
       overdueCardProps.availableLists.map((list: TaskList) => list.id)
     ).toEqual(['list-1', 'list-2']);
+  });
+
+  it('filters deadline cards by document and external source controls', () => {
+    render(
+      <KanbanColumns
+        columns={[...lists, externalList]}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={[...lists, externalList].map((list) => list.id)}
+        deadlineLabels={{
+          filter: 'Filters',
+          overdue: 'Overdue',
+          showDocuments: 'Show document-list tasks',
+          showExternalTasks: 'External tasks',
+          upcoming: 'Upcoming',
+        }}
+        deadlineSections={{
+          overdue: [],
+          upcoming: [
+            task({
+              end_date: '2026-06-01T00:00:00.000Z',
+              id: 'regular-deadline',
+              list_id: 'list-1',
+              name: 'Regular deadline task',
+            }),
+            task({
+              end_date: '2026-06-02T00:00:00.000Z',
+              id: 'document-deadline',
+              list_id: 'list-1',
+              name: 'Document deadline task',
+              source_list_status: 'documents',
+            }),
+            task({
+              end_date: '2026-06-03T00:00:00.000Z',
+              id: 'external-deadline',
+              list_id: 'external-list',
+              name: 'External deadline task',
+              source_workspace_id: 'source-ws',
+            }),
+          ],
+        }}
+      />
+    );
+
+    const upcomingSection = screen.getByTestId(
+      'kanban-deadline-section-upcoming'
+    );
+
+    expect(
+      screen.getByTestId('shared-task-card-regular-deadline')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('shared-task-card-document-deadline')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('shared-task-card-external-deadline')
+    ).toBeInTheDocument();
+
+    fireEvent.pointerDown(
+      within(upcomingSection).getByRole('button', { name: 'Filters' }),
+      { button: 0, ctrlKey: false }
+    );
+    fireEvent.click(
+      screen.getByRole('menuitemcheckbox', {
+        name: 'Show document-list tasks',
+      })
+    );
+    fireEvent.click(
+      screen.getByRole('menuitemcheckbox', { name: 'External tasks' })
+    );
+
+    expect(
+      screen.getByTestId('shared-task-card-regular-deadline')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('shared-task-card-document-deadline')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('shared-task-card-external-deadline')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId('kanban-deadline-section-upcoming-count')
+    ).toHaveTextContent('1');
+  });
+
+  it('sorts deadline cards using local deadline sort controls', () => {
+    render(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+        deadlineLabels={{
+          overdue: 'Overdue',
+          sort: 'Sort',
+          sortNameAsc: 'Task name',
+          upcoming: 'Upcoming',
+        }}
+        deadlineSections={{
+          overdue: [],
+          upcoming: [
+            task({
+              end_date: '2026-06-02T00:00:00.000Z',
+              id: 'z-deadline',
+              list_id: 'list-1',
+              name: 'Zulu task',
+            }),
+            task({
+              end_date: '2026-06-03T00:00:00.000Z',
+              id: 'a-deadline',
+              list_id: 'list-1',
+              name: 'Alpha task',
+            }),
+          ],
+        }}
+      />
+    );
+
+    const upcomingSection = screen.getByTestId(
+      'kanban-deadline-section-upcoming'
+    );
+
+    expect(
+      within(upcomingSection)
+        .getAllByTestId(/shared-task-card-/)
+        .map((item) => item.textContent)
+    ).toEqual(['Zulu task', 'Alpha task']);
+
+    fireEvent.pointerDown(
+      within(upcomingSection).getByRole('button', { name: 'Sort' }),
+      { button: 0, ctrlKey: false }
+    );
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Task name' }));
+
+    expect(
+      within(upcomingSection)
+        .getAllByTestId(/shared-task-card-/)
+        .map((item) => item.textContent)
+    ).toEqual(['Alpha task', 'Zulu task']);
+  });
+
+  it('anchors the first load on the first real task list when special columns render to the left', () => {
+    const frameCallbacks: FrameRequestCallback[] = [];
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+
+    window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    });
+    window.cancelAnimationFrame = vi.fn();
+
+    try {
+      const { container, rerender } = render(
+        <KanbanColumns
+          columns={[externalList, ...lists]}
+          tasks={[]}
+          boardId="board-1"
+          workspaceId="ws-1"
+          isPersonalWorkspace
+          disableSort={false}
+          selectedTasks={new Set()}
+          isMultiSelectMode={false}
+          setIsMultiSelectMode={vi.fn()}
+          onTaskSelect={vi.fn()}
+          onClearSelection={vi.fn()}
+          onUpdate={vi.fn()}
+          createTask={vi.fn()}
+          taskHeightsRef={{ current: new Map() }}
+          optimisticUpdateInProgress={new Set()}
+          bulkUpdateCustomDueDate={vi.fn()}
+          boardRef={{ current: null }}
+          columnsId={[externalList, ...lists].map((list) => list.id)}
+          deadlineLabels={{
+            overdue: 'Overdue',
+            upcoming: 'Upcoming',
+          }}
+          deadlineSections={{
+            overdue: [],
+            upcoming: [
+              task({
+                end_date: '2026-06-02T00:00:00.000Z',
+                id: 'upcoming-task',
+                list_id: 'list-1',
+                name: 'Upcoming task',
+              }),
+            ],
+          }}
+        />
+      );
+      const scrollContainer = container.firstElementChild as HTMLElement;
+      const firstRealColumn = screen.getByTestId('column-list-1');
+      Object.defineProperty(firstRealColumn, 'offsetLeft', {
+        configurable: true,
+        value: 320,
+      });
+
+      act(() => {
+        for (const callback of frameCallbacks) callback(0);
+      });
+
+      expect(scrollContainer.scrollLeft).toBe(312);
+
+      scrollContainer.scrollLeft = 64;
+      rerender(
+        <KanbanColumns
+          columns={[externalList, ...lists]}
+          tasks={[]}
+          boardId="board-1"
+          workspaceId="ws-1"
+          isPersonalWorkspace
+          disableSort={false}
+          selectedTasks={new Set()}
+          isMultiSelectMode={false}
+          setIsMultiSelectMode={vi.fn()}
+          onTaskSelect={vi.fn()}
+          onClearSelection={vi.fn()}
+          onUpdate={vi.fn()}
+          createTask={vi.fn()}
+          taskHeightsRef={{ current: new Map() }}
+          optimisticUpdateInProgress={new Set()}
+          bulkUpdateCustomDueDate={vi.fn()}
+          boardRef={{ current: null }}
+          columnsId={[externalList, ...lists].map((list) => list.id)}
+          deadlineLabels={{
+            overdue: 'Overdue',
+            upcoming: 'Upcoming',
+          }}
+          deadlineSections={{
+            overdue: [],
+            upcoming: [
+              task({
+                end_date: '2026-06-02T00:00:00.000Z',
+                id: 'upcoming-task',
+                list_id: 'list-1',
+                name: 'Upcoming task',
+              }),
+            ],
+          }}
+        />
+      );
+
+      expect(scrollContainer.scrollLeft).toBe(64);
+    } finally {
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
   });
 
   it('renders external deadline cards with their staging list context without exposing the staging list as a move target', () => {

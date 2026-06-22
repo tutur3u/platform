@@ -368,6 +368,13 @@ export function BoardViews({
       taskQueryOptions,
     ]
   );
+  const deadlineTaskQueryOptions = useMemo<ListWorkspaceTasksOptions>(() => {
+    const { sortBy: _sortBy, ...filterOptions } = taskQueryOptions;
+    return {
+      ...filterOptions,
+      listStatuses: listStatusesForQuery,
+    };
+  }, [listStatusesForQuery, taskQueryOptions]);
   const viewHotkeyLabels = useMemo(
     () => ({
       kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
@@ -837,6 +844,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}
@@ -885,6 +893,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}

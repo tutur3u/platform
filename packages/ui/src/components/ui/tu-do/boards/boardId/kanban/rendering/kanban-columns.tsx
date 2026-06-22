@@ -7,6 +7,7 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { getBoardRealtimeChannelName } from '@tuturuuu/ui/hooks/useBoardRealtime.types';
+import { useLayoutEffect, useRef } from 'react';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
 import { BoardColumn } from '../../board-column';
@@ -99,6 +100,7 @@ export function KanbanColumns({
   onDeadlineSectionCollapsedChange,
   readOnly = false,
 }: KanbanColumnsProps) {
+  const initialScrollAnchoredBoardRef = useRef<string | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const deadlineSectionOrder: KanbanDeadlineSection[] = ['overdue', 'upcoming'];
   const visibleDeadlineSections =
@@ -119,6 +121,36 @@ export function KanbanColumns({
     snapEdgePadding,
     fillAvailableWidth: listStatusFilter === 'all',
   });
+  const hasLeftSpecialColumns =
+    visibleDeadlineSections.length > 0 ||
+    columns.some((column) => column.is_external_staging);
+
+  useLayoutEffect(() => {
+    if (!hasLeftSpecialColumns) return;
+    if (initialScrollAnchoredBoardRef.current === boardId) return;
+
+    const container = boardRef.current;
+    if (!container) return;
+
+    const target = container.querySelector<HTMLElement>(
+      '[data-kanban-real-column="true"]'
+    );
+    if (!target) return;
+
+    initialScrollAnchoredBoardRef.current = boardId;
+
+    const anchor = () => {
+      container.scrollLeft = Math.max(0, target.offsetLeft - 8);
+    };
+
+    if (typeof window.requestAnimationFrame !== 'function') {
+      anchor();
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(anchor);
+    return () => window.cancelAnimationFrame?.(frame);
+  }, [boardId, boardRef, hasLeftSpecialColumns]);
 
   return (
     <div

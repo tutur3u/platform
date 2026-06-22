@@ -2386,43 +2386,46 @@ function TaskCardInner({
                     : 'text-muted-foreground'
                 )}
               >
-                <Calendar className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">
-                  {t('due_at', {
-                    date: formatSmartDate(
-                      endDate,
-                      {
-                        today: t('today'),
-                        tomorrow: t('tomorrow'),
-                        yesterday: t('yesterday'),
-                      },
-                      dateLocale
-                    ),
-                  })}
-                </span>
-                {isOverdue && !task.closed_at ? (
-                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                    {t('overdue')}
-                  </Badge>
-                ) : upcomingDeadlineCountdown && upcomingDeadlineExactDate ? (
+                {upcomingDeadlineCountdown && upcomingDeadlineExactDate ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge
-                        variant="secondary"
-                        className="ml-1 h-4 gap-1 px-1 font-semibold text-[9px]"
-                      >
+                      <span className="inline-flex min-w-0 items-center gap-1 truncate font-medium">
                         <Timer className="h-2.5 w-2.5" />
-                        {upcomingDeadlineCountdown}
-                      </Badge>
+                        <span className="truncate">
+                          {upcomingDeadlineCountdown}
+                        </span>
+                      </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
                       {upcomingDeadlineExactDate}
                     </TooltipContent>
                   </Tooltip>
                 ) : (
-                  <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                    {upcomingDeadlineExactDate}
-                  </span>
+                  <>
+                    <Calendar className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">
+                      {t('due_at', {
+                        date: formatSmartDate(
+                          endDate,
+                          {
+                            today: t('today'),
+                            tomorrow: t('tomorrow'),
+                            yesterday: t('yesterday'),
+                          },
+                          dateLocale
+                        ),
+                      })}
+                    </span>
+                    {isOverdue && !task.closed_at ? (
+                      <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                        {t('overdue')}
+                      </Badge>
+                    ) : (
+                      <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                        {upcomingDeadlineExactDate}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             )}

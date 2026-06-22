@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
+import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -81,6 +82,7 @@ interface Props {
   disableSort?: boolean;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
+  deadlineTaskQueryOptions?: ListWorkspaceTasksOptions;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
@@ -104,6 +106,7 @@ export function KanbanBoard({
   disableSort = false,
   listStatusFilter = 'all',
   filters,
+  deadlineTaskQueryOptions,
   isMultiSelectMode,
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
@@ -113,6 +116,8 @@ export function KanbanBoard({
   onBulkSelectionActiveChange,
   readOnly = false,
 }: Props) {
+  const tCommon = useTranslations('common');
+  const tBoards = useTranslations('ws-task-boards');
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
   const invalidColumnMoveMessage = tLayout.has('cannot_reorder_across_statuses')
@@ -156,9 +161,14 @@ export function KanbanBoard({
     queryFn: () =>
       listKanbanDeadlineTasks({
         boardId: boardId ?? '',
+        taskQueryOptions: deadlineTaskQueryOptions,
         workspaceId,
       }),
-    queryKey: getKanbanDeadlineTasksQueryKey(workspaceId, boardId),
+    queryKey: getKanbanDeadlineTasksQueryKey(
+      workspaceId,
+      boardId,
+      deadlineTaskQueryOptions
+    ),
     staleTime: 30_000,
   });
   const persistListPositions = useCallback(
@@ -215,10 +225,21 @@ export function KanbanBoard({
     () => ({
       collapseSection: (name: string) => tTasks('collapse_task_list', { name }),
       expandSection: (name: string) => tTasks('expand_task_list', { name }),
+      filter: tCommon('filters'),
       overdue: tTasks('overdue'),
+      reset: tCommon('reset'),
+      showDocuments: tTasks('external_tasks_show_documents'),
+      showExternalTasks: tTasks('external_tasks'),
+      sort: tCommon('sort'),
+      sortCreatedAsc: tBoards('filters.sort_options.oldest_first'),
+      sortCreatedDesc: tBoards('filters.sort_options.newest_first'),
+      sortDueAsc: tBoards('filters.sort_options.soonest_first'),
+      sortDueDesc: tBoards('filters.sort_options.latest_first'),
+      sortNameAsc: tTasks('external_tasks_sort_name_asc'),
+      sortSourceAsc: tTasks('external_tasks_sort_source_asc'),
       upcoming: tTasks('upcoming'),
     }),
-    [tTasks]
+    [tBoards, tCommon, tTasks]
   );
 
   // Selection Hook

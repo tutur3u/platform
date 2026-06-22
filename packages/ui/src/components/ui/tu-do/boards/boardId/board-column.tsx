@@ -505,6 +505,8 @@ export function BoardColumn({
       <Card
         ref={composedRef}
         style={style}
+        data-kanban-column-id={column.id}
+        data-kanban-real-column={isExternalStaging ? undefined : 'true'}
         className={cn(
           'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dashed transition-all duration-200',
           'touch-none select-none overflow-hidden hover:shadow-md',
@@ -554,6 +556,8 @@ export function BoardColumn({
     <Card
       ref={composedRef}
       style={style}
+      data-kanban-column-id={column.id}
+      data-kanban-real-column={isExternalStaging ? undefined : 'true'}
       className={cn(
         'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200 last:snap-end',
         'touch-none select-none',
