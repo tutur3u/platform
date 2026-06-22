@@ -18,7 +18,9 @@ mod devbox_cache;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
+mod infrastructure_paginated_list;
 mod infrastructure_user_status_changes;
+mod infrastructure_workspace_users;
 mod inventory;
 mod mobile_version;
 mod nova;
@@ -507,6 +509,13 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_workspace_users::handle_workspace_users_route(config, request, outbound)
+            .await
     {
         return response;
     }

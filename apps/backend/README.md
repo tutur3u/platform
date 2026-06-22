@@ -173,6 +173,11 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   the required `ws_id` query parameter, parseInt-style `limit`/`offset` range
   behavior, exact-count pagination, and legacy
   `{ data, count }` / error-response bodies.
+- `GET /api/v1/infrastructure/users`: legacy-compatible workspace user export
+  list. Rust uses the same caller-token paginated list helper for
+  `workspace_users`, so RLS remains active while preserving the legacy required
+  `ws_id`, parseInt-style `limit`/`offset`, exact-count pagination, raw row list,
+  and `{ data, count }` / error-response bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

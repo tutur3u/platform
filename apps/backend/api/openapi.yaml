@@ -3141,6 +3141,78 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/users:
+    get:
+      summary: Legacy-compatible workspace users list
+      description: Migrated replacement for the GET export in apps/web/src/app/api/v1/infrastructure/users/route.ts. The Rust backend requires a normal Supabase browser session or non-app-session Bearer token, forwards that caller token to Supabase REST so workspace_users row-level security remains active, preserves the legacy required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body. The server-owned service-role credential is used only as the PostgREST apikey and is never exposed to browsers.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: ws_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Workspace identifier used to filter workspace_users rows.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1000
+          description: Legacy page size parsed with Number.parseInt semantics.
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Legacy zero-based row offset parsed with Number.parseInt semantics.
+      responses:
+        "200":
+          description: Workspace user rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceUsersResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceUsersMessage"
+        "401":
+          description: Caller is missing a Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceUsersMessage"
+        "500":
+          description: Workspace users could not be fetched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceUsersMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/mobile/version-check:
     get:
       summary: Mobile version policy check
@@ -7199,6 +7271,123 @@ components:
             - Missing ws_id parameter
             - Unauthorized
             - Error fetching workspace_user_status_changes
+    WorkspaceUserRow:
+      type: object
+      required:
+        - archived
+        - id
+        - updated_at
+        - ws_id
+      properties:
+        address:
+          type:
+            - string
+            - "null"
+        archived:
+          type: boolean
+        archived_until:
+          type:
+            - string
+            - "null"
+        avatar_url:
+          type:
+            - string
+            - "null"
+        balance:
+          type:
+            - number
+            - "null"
+        birthday:
+          type:
+            - string
+            - "null"
+        created_at:
+          type:
+            - string
+            - "null"
+        created_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        display_name:
+          type:
+            - string
+            - "null"
+        email:
+          type:
+            - string
+            - "null"
+        ethnicity:
+          type:
+            - string
+            - "null"
+        full_name:
+          type:
+            - string
+            - "null"
+        gender:
+          type:
+            - string
+            - "null"
+        guardian:
+          type:
+            - string
+            - "null"
+        id:
+          type: string
+          format: uuid
+        national_id:
+          type:
+            - string
+            - "null"
+        note:
+          type:
+            - string
+            - "null"
+        phone:
+          type:
+            - string
+            - "null"
+        referred_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        updated_at:
+          type: string
+        updated_by:
+          type:
+            - string
+            - "null"
+          format: uuid
+        ws_id:
+          type: string
+          format: uuid
+    WorkspaceUsersResponse:
+      type: object
+      required:
+        - data
+        - count
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceUserRow"
+        count:
+          type: integer
+          minimum: 0
+    WorkspaceUsersMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Missing ws_id parameter
+            - Unauthorized
+            - Error fetching workspace users
     MobileVersionPolicies:
       type: object
       required:
