@@ -157,6 +157,7 @@ import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$loca
 import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/settings/infrastructure/app-coordination';
 import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId';
 import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId';
+import { Route as LocaleWsIdInventoryProductsProductIdRouteImport } from './routes/$locale/$wsId/inventory/products/$productId';
 import { Route as LocaleWsIdFinanceWalletsWalletIdRouteImport } from './routes/$locale/$wsId/finance/wallets/$walletId';
 import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories';
 import { Route as LocaleWsIdFinanceTransactionsTransactionIdRouteImport } from './routes/$locale/$wsId/finance/transactions/$transactionId';
@@ -970,6 +971,12 @@ const LocaleWsIdMeetMeetingsMeetingIdRoute =
     path: '/$meetingId',
     getParentRoute: () => LocaleWsIdMeetMeetingsRoute,
   } as any);
+const LocaleWsIdInventoryProductsProductIdRoute =
+  LocaleWsIdInventoryProductsProductIdRouteImport.update({
+    id: '/$wsId/inventory/products/$productId',
+    path: '/$wsId/inventory/products/$productId',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdFinanceWalletsWalletIdRoute =
   LocaleWsIdFinanceWalletsWalletIdRouteImport.update({
     id: '/$walletId',
@@ -1194,6 +1201,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute;
@@ -1355,6 +1363,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute;
@@ -1518,6 +1527,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/settings/infrastructure/app-coordination': typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute;
@@ -1682,6 +1692,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
@@ -1843,6 +1854,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
@@ -2005,6 +2017,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/settings/infrastructure/app-coordination'
@@ -3066,6 +3079,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRouteImport;
       parentRoute: typeof LocaleWsIdMeetMeetingsRoute;
     };
+    '/$locale/$wsId/inventory/products/$productId': {
+      id: '/$locale/$wsId/inventory/products/$productId';
+      path: '/$wsId/inventory/products/$productId';
+      fullPath: '/$locale/$wsId/inventory/products/$productId';
+      preLoaderRoute: typeof LocaleWsIdInventoryProductsProductIdRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/finance/wallets/$walletId': {
       id: '/$locale/$wsId/finance/wallets/$walletId';
       path: '/$walletId';
@@ -3534,6 +3554,7 @@ interface LocaleRouteRouteChildren {
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute;
   LocaleWsIdAiChatMyChatbotsNewRoute: typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   LocaleWsIdEducationCoursesCourseIdRoute: typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  LocaleWsIdInventoryProductsProductIdRoute: typeof LocaleWsIdInventoryProductsProductIdRoute;
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute;
   LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute;
   LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
@@ -3663,6 +3684,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdAiChatMyChatbotsNewRoute: LocaleWsIdAiChatMyChatbotsNewRoute,
   LocaleWsIdEducationCoursesCourseIdRoute:
     LocaleWsIdEducationCoursesCourseIdRouteWithChildren,
+  LocaleWsIdInventoryProductsProductIdRoute:
+    LocaleWsIdInventoryProductsProductIdRoute,
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute:
     LocaleWsIdSettingsInfrastructureAppCoordinationRoute,
   LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,
