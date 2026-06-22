@@ -196,15 +196,17 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   the service-role Supabase REST adapter. Both preserve the required `ws_id`,
   parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
   legacy error bodies.
-- `GET /api/v1/infrastructure/product-units` and
+- `GET /api/v1/infrastructure/product-prices`,
+  `GET /api/v1/infrastructure/product-units`, and
   `GET /api/v1/infrastructure/warehouses`: legacy-compatible inventory setup
-  export lists for `private.inventory_units` and
-  `private.inventory_warehouses`. Rust accepts inventory app-session
-  credentials or normal Supabase browser/non-app-session Bearer credentials,
-  normalizes workspace identifiers, requires inventory catalog/setup read
-  permissions, and preserves the required `ws_id`, parseInt-style
-  `limit`/`offset`, exact-count pagination, raw row lists, and legacy error
-  bodies.
+  export lists for `private.inventory_products`, `private.inventory_units`, and
+  `private.inventory_warehouses`. Product prices scope through the
+  `workspace_products` inner workspace filter. Rust accepts inventory
+  app-session credentials or normal Supabase browser/non-app-session Bearer
+  credentials, normalizes workspace identifiers, requires inventory
+  catalog/setup read permissions, and preserves the required `ws_id`,
+  parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
+  legacy error bodies.
 - `GET /api/v1/infrastructure/bills`,
   `GET /api/v1/infrastructure/roles`, and
   `GET /api/v1/infrastructure/transaction-categories`: legacy-compatible

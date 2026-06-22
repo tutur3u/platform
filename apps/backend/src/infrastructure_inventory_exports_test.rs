@@ -8,6 +8,7 @@ use serde_json::json;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 
+const PRODUCT_PRICES_PATH: &str = "/api/v1/infrastructure/product-prices";
 const PRODUCT_UNITS_PATH: &str = "/api/v1/infrastructure/product-units";
 const WAREHOUSES_PATH: &str = "/api/v1/infrastructure/warehouses";
 const PRIVATE_SCHEMA: &str = "private";
@@ -111,6 +112,14 @@ fn header<'a>(request: &'a RecordedOutboundRequest, name: &str) -> Option<&'a st
         .map(|(_, value)| value.as_str())
 }
 
+fn query_value(request: &RecordedOutboundRequest, key: &str) -> Option<String> {
+    let url = url::Url::parse(&request.url).ok()?;
+
+    url.query_pairs()
+        .find(|(query_key, _)| query_key == key)
+        .map(|(_, value)| value.into_owned())
+}
+
 fn app_session_claims(target_app: &str) -> contact::AppCoordinationClaims {
     contact::AppCoordinationClaims {
         aud: contact::app_coordination_token_audience().to_owned(),
@@ -192,6 +201,54 @@ async fn product_units_accepts_inventory_app_session_and_reads_private_rows() {
         Some("Bearer test-service-role-secret")
     );
     assert_eq!(header(data_call, "Range"), Some("2-4"));
+    assert_eq!(header(data_call, "Prefer"), Some("count=exact"));
+}
+
+#[tokio::test]
+async fn product_prices_uses_workspace_product_relation_filter() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"[{"id":"normalized-ws"}]"#),
+        outbound_response(200, r#"[{"type":"MEMBER"}]"#),
+        outbound_response(200, r#"[{"creator_id":"other-user"}]"#),
+        outbound_response(200, r#"[]"#),
+        outbound_response(200, r#"[{"permission":"view_inventory_catalog"}]"#),
+        outbound_response(200, r#"[{"id":"price-1"}]"#),
+    ]);
+    let response = infrastructure_inventory_exports::handle_inventory_export_route(
+        &backend_config_with_contact_data(),
+        request_with_bearer(
+            PRODUCT_PRICES_PATH,
+            "https://backend.test/api/v1/infrastructure/product-prices?ws_id=personal&offset=4&limit=2",
+            app_session_token("inventory"),
+        ),
+        &outbound,
+    )
+    .await
+    .expect("product-prices route should match");
+
+    assert_eq!(response.status, 200);
+    assert_eq!(
+        response.body,
+        json!({
+            "count": 1,
+            "data": [
+                { "id": "price-1" }
+            ]
+        })
+    );
+    let calls = outbound.calls();
+    let data_call = calls.last().expect("private inventory product row call");
+    assert!(data_call.url.contains("/rest/v1/inventory_products?"));
+    assert_eq!(
+        query_value(data_call, "select").as_deref(),
+        Some("*, workspace_products!product_id!inner(ws_id)")
+    );
+    assert_eq!(
+        query_value(data_call, "workspace_products.ws_id").as_deref(),
+        Some("eq.normalized-ws")
+    );
+    assert_eq!(header(data_call, "Range"), Some("4-5"));
+    assert_eq!(header(data_call, "Accept-Profile"), Some(PRIVATE_SCHEMA));
     assert_eq!(header(data_call, "Prefer"), Some("count=exact"));
 }
 

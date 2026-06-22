@@ -4371,6 +4371,92 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/infrastructure/product-prices:
+    get:
+      summary: Legacy-compatible inventory product price export list
+      description: >-
+        Migrated replacement for the GET export in
+        apps/web/src/app/api/v1/infrastructure/product-prices/route.ts. The Rust
+        backend accepts inventory app-session credentials or normal Supabase
+        browser/non-app-session Bearer credentials, normalizes the requested
+        workspace, requires inventory catalog/setup read permissions, reads
+        private.inventory_products through the service-role Supabase REST
+        adapter with the workspace_products inner workspace filter, and
+        preserves the legacy required ws_id query parameter, parseInt-style
+        limit/offset range behavior, exact-count pagination, raw row list
+        response, and legacy auth/error bodies.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - $ref: "#/components/parameters/InfrastructureExportWorkspaceId"
+        - $ref: "#/components/parameters/InfrastructureExportLimit"
+        - $ref: "#/components/parameters/InfrastructureExportOffset"
+      responses:
+        "200":
+          description: Inventory product rows and exact total count.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsResponse"
+        "400":
+          description: Required ws_id query parameter is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "401":
+          description: Caller is missing a valid inventory app-session or Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiWhitelistUnauthorized"
+        "403":
+          description: Caller does not have workspace access or inventory read permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "404":
+          description: Requested workspace alias or permissions could not be resolved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Not found
+        "500":
+          description: Inventory products could not be fetched or access could not be verified.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructurePaginatedRowsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/infrastructure/product-units:
     get:
       summary: Legacy-compatible inventory unit export list

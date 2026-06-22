@@ -600,6 +600,11 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/product-prices:apps/web/src/app/api/v1/infrastructure/product-prices/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-prices by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_products through the service-role Supabase REST adapter with the workspace_products inner workspace filter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+    },
     "api:/api/v1/infrastructure/product-units:apps/web/src/app/api/v1/infrastructure/product-units/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

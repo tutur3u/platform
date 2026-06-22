@@ -14,6 +14,8 @@ use crate::{
 };
 
 const MISSING_WS_ID_MESSAGE: &str = "Missing ws_id parameter";
+const PRODUCT_PRICES_ERROR_MESSAGE: &str = "Error fetching inventory_products";
+const PRODUCT_PRICES_PATH: &str = "/api/v1/infrastructure/product-prices";
 const PRODUCT_UNITS_ERROR_MESSAGE: &str = "Error fetching inventory_units";
 const PRODUCT_UNITS_PATH: &str = "/api/v1/infrastructure/product-units";
 const PRIVATE_SCHEMA: &str = "private";
@@ -30,17 +32,30 @@ struct InventoryExportQuery {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct InventoryExportSpec {
     error_message: &'static str,
+    select: &'static str,
     table: &'static str,
+    workspace_filter_column: &'static str,
 }
+
+const PRODUCT_PRICES_SPEC: InventoryExportSpec = InventoryExportSpec {
+    error_message: PRODUCT_PRICES_ERROR_MESSAGE,
+    select: "*, workspace_products!product_id!inner(ws_id)",
+    table: "inventory_products",
+    workspace_filter_column: "workspace_products.ws_id",
+};
 
 const PRODUCT_UNITS_SPEC: InventoryExportSpec = InventoryExportSpec {
     error_message: PRODUCT_UNITS_ERROR_MESSAGE,
+    select: "*",
     table: "inventory_units",
+    workspace_filter_column: "ws_id",
 };
 
 const WAREHOUSES_SPEC: InventoryExportSpec = InventoryExportSpec {
     error_message: WAREHOUSES_ERROR_MESSAGE,
+    select: "*",
     table: "inventory_warehouses",
+    workspace_filter_column: "ws_id",
 };
 
 pub(crate) async fn handle_inventory_export_route(
@@ -49,6 +64,7 @@ pub(crate) async fn handle_inventory_export_route(
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
     let spec = match request.path {
+        PRODUCT_PRICES_PATH => PRODUCT_PRICES_SPEC,
         PRODUCT_UNITS_PATH => PRODUCT_UNITS_SPEC,
         WAREHOUSES_PATH => WAREHOUSES_SPEC,
         _ => return None,
@@ -114,7 +130,10 @@ async fn fetch_inventory_export_rows(
 ) -> Result<OutboundResponse, ()> {
     let Some(url) = contact_data.rest_url(
         spec.table,
-        &[("select", "*".to_owned()), ("ws_id", format!("eq.{ws_id}"))],
+        &[
+            ("select", spec.select.to_owned()),
+            (spec.workspace_filter_column, format!("eq.{ws_id}")),
+        ],
     ) else {
         return Err(());
     };
