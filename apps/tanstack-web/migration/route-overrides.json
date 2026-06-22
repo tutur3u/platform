@@ -688,6 +688,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/inventory/promotions ports the legacy authenticated inventory promotions page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission context, route metadata, and TanStack Query CRUD through the internal-api promotion facades. The underlying workspace promotion API routes remain separately tracked backend migration work."
     },
+    "page:/:locale/:wsId/inventory/storefronts:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/storefronts/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/storefronts ports the legacy authenticated storefront management page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory catalog permission parity, route metadata, localized access-denied state, and TanStack Query reads/mutations through the internal-api inventory storefront facades. The protected workspace storefront, listing, option-template, product, and public storefront API routes remain separately tracked backend migration work."
+    },
     "page:/:locale/:wsId/inventory/suppliers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
