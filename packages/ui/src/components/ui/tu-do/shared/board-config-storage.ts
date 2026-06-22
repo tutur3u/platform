@@ -2,7 +2,12 @@
 
 import type { TaskFilters } from '../boards/boardId/task-filter';
 
-export type StoredBoardView = 'kanban' | 'list' | 'timeline';
+export type StoredBoardView =
+  | 'kanban'
+  | 'list'
+  | 'timeline'
+  | 'drafts'
+  | 'recycle_bin';
 export type StoredListStatusFilter = 'all' | 'active' | 'not_started';
 
 export interface BoardViewConfig {

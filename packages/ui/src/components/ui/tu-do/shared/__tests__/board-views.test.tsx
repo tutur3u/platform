@@ -75,7 +75,28 @@ vi.mock('../board-header', () => ({
 }));
 
 vi.mock('../recycle-bin-panel', () => ({
-  RecycleBinPanel: () => null,
+  RecycleBinContent: () => <div data-testid="recycle-bin-view">Recycle</div>,
+}));
+
+vi.mock('../../drafts/drafts-page', () => ({
+  DraftsPage: ({
+    boardId,
+    includeUnassignedForBoard,
+    wsId,
+  }: {
+    boardId?: string;
+    includeUnassignedForBoard?: boolean;
+    wsId: string;
+  }) => (
+    <div
+      data-board-id={boardId}
+      data-include-unassigned={String(includeUnassignedForBoard)}
+      data-testid="drafts-view"
+      data-ws-id={wsId}
+    >
+      Drafts
+    </div>
+  ),
 }));
 
 vi.mock('../../boards/boardId/kanban', () => ({
@@ -228,6 +249,18 @@ describe('BoardViews', () => {
     });
   });
 
+  it('exposes drafts and recycle bin as editable board modes by default', () => {
+    renderBoardViews();
+
+    expect(boardHeaderProps?.availableViews).toEqual([
+      'kanban',
+      'list',
+      'timeline',
+      'drafts',
+      'recycle_bin',
+    ]);
+  });
+
   it('passes explicit read-only public mode through shared board components', () => {
     renderBoardViews({
       props: {
@@ -246,6 +279,30 @@ describe('BoardViews', () => {
     expect(boardHeaderProps?.titlePrefix).toBeDefined();
     expect(kanbanBoardProps?.readOnly).toBe(true);
     expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+  });
+
+  it('renders board-scoped drafts and recycle bin views from the header mode switcher', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('drafts');
+    });
+
+    expect(screen.getByTestId('drafts-view')).toHaveAttribute(
+      'data-board-id',
+      'board-1'
+    );
+    expect(screen.getByTestId('drafts-view')).toHaveAttribute(
+      'data-include-unassigned',
+      'true'
+    );
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('recycle_bin');
+    });
+
+    expect(screen.getByTestId('recycle-bin-view')).toBeInTheDocument();
+    expect(createTaskMock).not.toHaveBeenCalled();
   });
 
   it('switches between kanban, list, and timeline using TanStack hotkey sequences', async () => {

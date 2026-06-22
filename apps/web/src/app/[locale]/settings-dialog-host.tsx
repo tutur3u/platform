@@ -31,6 +31,7 @@ export function SettingsDialogHost({
     {
       settingsDialog: parseAsStringLiteral(['open']),
       settingsTab: parseAsString,
+      settingsBoardId: parseAsString,
       settingsLinkedProvider: parseAsString,
     },
     {
@@ -42,6 +43,7 @@ export function SettingsDialogHost({
 
   const requestedSettingsOpen = settingsQuery.settingsDialog === 'open';
   const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
+  const requestedSettingsBoardId = settingsQuery.settingsBoardId ?? undefined;
   const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
 
   const openSettingsDialog = useCallback(() => {
@@ -49,6 +51,7 @@ export function SettingsDialogHost({
       {
         settingsDialog: 'open',
         settingsTab: null,
+        settingsBoardId: null,
         settingsLinkedProvider: null,
       },
       {
@@ -70,6 +73,7 @@ export function SettingsDialogHost({
         {
           settingsDialog: null,
           settingsTab: null,
+          settingsBoardId: null,
           settingsLinkedProvider: null,
         },
         {
@@ -93,6 +97,7 @@ export function SettingsDialogHost({
         user={user}
         workspace={workspace}
         defaultTab={requestedSettingsTab}
+        boardId={requestedSettingsBoardId}
         linkedProvider={linkedProvider}
       />
     </Dialog>

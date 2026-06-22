@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   Bell,
+  Bookmark,
+  Box,
   Brain,
   Building,
   CalendarDays,
@@ -17,6 +19,7 @@ import {
   FlaskConical,
   Goal,
   HandCoins,
+  KanbanSquare,
   Keyboard,
   Laptop,
   LayoutGrid,
@@ -24,6 +27,7 @@ import {
   Shield,
   Sparkles,
   Star,
+  Tags,
   Ticket,
   User,
   Users,
@@ -63,6 +67,7 @@ import UserAvatar from './settings-avatar';
 import {
   ApprovalsSettings,
   AttendanceDisplaySettings,
+  BoardSettingsPanel,
   CalendarContentSettingsPanel,
   CalendarGeneralSettingsPanel,
   CalendarIntegrationsSettingsPanel,
@@ -78,6 +83,10 @@ import {
   MiraPersonalitySettings,
   ReportDefaultTitleSettings,
   RequireAttentionColorSettings,
+  TaskInitiativesSettings,
+  TaskLabelsSettings,
+  TaskProjectsSettings,
+  TaskTemplatesSettings,
   TimeTrackerCategoriesSettings,
   TimeTrackerGeneralSettings,
   TimeTrackerGoalsSettings,
@@ -98,6 +107,7 @@ import MembersSettings from './workspace/members-settings';
 import UserStatusSettings from './workspace/user-status-settings';
 
 interface SettingsDialogProps {
+  boardId?: string;
   wsId?: string;
   user: WorkspaceUser | null;
   defaultTab?: string;
@@ -110,6 +120,7 @@ function normalizeSettingsTab(tab: string) {
 }
 
 export function SettingsDialog({
+  boardId,
   wsId,
   user,
   defaultTab = 'profile',
@@ -333,6 +344,17 @@ export function SettingsDialog({
     {
       label: t('settings.tasks.title'),
       items: [
+        ...(wsId && boardId
+          ? [
+              {
+                name: 'task_board',
+                label: t('settings.tasks.board'),
+                icon: KanbanSquare,
+                description: t('settings.tasks.board_description'),
+                keywords: ['Tasks', 'Board', 'Layout', 'Estimates', 'Logs'],
+              },
+            ]
+          : []),
         {
           name: 'tasks_general',
           label: t('settings.tasks.general'),
@@ -340,6 +362,38 @@ export function SettingsDialog({
           description: t('settings.tasks.general_description'),
           keywords: ['Tasks', 'General', 'Review', 'Due date'],
         },
+        ...(wsId
+          ? [
+              {
+                name: 'task_labels',
+                label: t('settings.tasks.labels'),
+                icon: Tags,
+                description: t('settings.tasks.labels_description'),
+                keywords: ['Tasks', 'Labels', 'Tags'],
+              },
+              {
+                name: 'task_projects',
+                label: t('settings.tasks.projects'),
+                icon: Box,
+                description: t('settings.tasks.projects_description'),
+                keywords: ['Tasks', 'Projects'],
+              },
+              {
+                name: 'task_initiatives',
+                label: t('settings.tasks.initiatives'),
+                icon: Goal,
+                description: t('settings.tasks.initiatives_description'),
+                keywords: ['Tasks', 'Initiatives'],
+              },
+              {
+                name: 'task_templates',
+                label: t('settings.tasks.templates'),
+                icon: Bookmark,
+                description: t('settings.tasks.templates_description'),
+                keywords: ['Tasks', 'Templates'],
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -740,6 +794,36 @@ export function SettingsDialog({
         <div className="h-full space-y-8">
           <TaskSettings workspace={workspace} />
           {wsId && <BoardDefaultListSettings wsId={wsId} />}
+        </div>
+      )}
+
+      {activeTab === 'task_board' && wsId && boardId && (
+        <div className="h-full">
+          <BoardSettingsPanel boardId={boardId} wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'task_labels' && wsId && (
+        <div className="h-full">
+          <TaskLabelsSettings wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'task_projects' && wsId && (
+        <div className="h-full">
+          <TaskProjectsSettings wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'task_initiatives' && wsId && (
+        <div className="h-full">
+          <TaskInitiativesSettings wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'task_templates' && wsId && (
+        <div className="h-full">
+          <TaskTemplatesSettings wsId={wsId} />
         </div>
       )}
 

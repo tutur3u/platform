@@ -38,13 +38,19 @@ import type {
 } from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
+import { DraftsPage } from '../drafts/drafts-page';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
-import { RecycleBinPanel } from '../shared/recycle-bin-panel';
+import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 
-export type ViewType = 'kanban' | 'list' | 'timeline';
+export type ViewType =
+  | 'kanban'
+  | 'list'
+  | 'timeline'
+  | 'drafts'
+  | 'recycle_bin';
 
 const HOTKEY_CREATE_TASK = 'C';
 const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
@@ -268,7 +274,6 @@ export function BoardViews({
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
-  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [kanbanBulkSelectionActive, setKanbanBulkSelectionActive] =
     useState(false);
@@ -277,8 +282,16 @@ export function BoardViews({
   const enabledViews = useMemo(
     () =>
       availableViews ??
-      (publicView ? (['kanban', 'list'] as ViewType[]) : null),
-    [availableViews, publicView]
+      (publicView || readOnly
+        ? (['kanban', 'list', 'timeline'] as ViewType[])
+        : ([
+            'kanban',
+            'list',
+            'timeline',
+            'drafts',
+            'recycle_bin',
+          ] as ViewType[])),
+    [availableViews, publicView, readOnly]
   );
   const viewIsEnabled = useCallback(
     (view: ViewType) => !enabledViews || enabledViews.includes(view),
@@ -789,7 +802,10 @@ export function BoardViews({
     },
     {
       enabled:
-        !readOnly && filteredLists.some((list) => !list.is_external_staging),
+        !readOnly &&
+        currentView !== 'drafts' &&
+        currentView !== 'recycle_bin' &&
+        filteredLists.some((list) => !list.is_external_staging),
       ignoreInputs: true,
       preventDefault: true,
     }
@@ -882,6 +898,66 @@ export function BoardViews({
             onTaskPartialUpdate={handleTaskPartialUpdate}
           />
         );
+      case 'drafts':
+        return (
+          <div className="h-full overflow-y-auto p-3 sm:p-4">
+            <DraftsPage
+              boardId={board.id}
+              includeUnassignedForBoard
+              wsId={effectiveWorkspaceId}
+            />
+          </div>
+        );
+      case 'recycle_bin':
+        return (
+          <RecycleBinContent
+            active
+            boardId={board.id}
+            className="h-full"
+            lists={boardLists}
+            translations={{
+              recycleBin: t('recycle_bin'),
+              recycleBinDescription: t('recycle_bin_description'),
+              noDeletedTasks: t('no_deleted_tasks'),
+              deletedTasksWillAppearHere: t('deleted_tasks_will_appear_here'),
+              selectedOfTotal: t('selected_of_total', {
+                selected: '{selected}',
+                total: '{total}',
+              }),
+              deletedTasksCount: t('deleted_tasks_count', { count: '{count}' }),
+              restore: t('restore'),
+              delete: t('delete'),
+              restoreTasksTitle: t('restore_tasks_title', { count: '{count}' }),
+              restoreTasksDescription: t('restore_tasks_description'),
+              cancel: t('cancel'),
+              restoring: t('restoring'),
+              permanentlyDeleteTitle: t('permanently_delete_title', {
+                count: '{count}',
+              }),
+              permanentlyDeleteDescription: t('permanently_delete_description'),
+              deleting: t('deleting'),
+              deletePermanently: t('delete_permanently'),
+              noListsAvailable: t('no_lists_available'),
+              restoredTasks: t('restored_tasks', { count: '{count}' }),
+              failedToRestore: t('failed_to_restore'),
+              permanentlyDeleted: t('permanently_deleted', {
+                count: '{count}',
+              }),
+              failedToDelete: t('failed_to_delete'),
+              deletedAgo: t('deleted_ago', { time: '{time}' }),
+              fromList: t('from_list', { list: '{list}' }),
+              nProjects: t('n_projects', { count: '{count}' }),
+              selectAllTasks: t('select_all_tasks'),
+              selectTask: t('select_task', { name: '{name}' }),
+              critical: tBoards('dialog.priority.critical'),
+              high: tBoards('dialog.priority.high'),
+              normal: tBoards('dialog.priority.normal'),
+              low: tBoards('dialog.priority.low'),
+              unknownList: t('unknown_list'),
+            }}
+            wsId={effectiveWorkspaceId}
+          />
+        );
       default:
         return (
           <KanbanBoard
@@ -936,7 +1012,6 @@ export function BoardViews({
         }
         lists={boardLists}
         onUpdate={handleUpdate}
-        onRecycleBinOpen={readOnly ? undefined : () => setRecycleBinOpen(true)}
         isMultiSelectMode={readOnly ? false : isMultiSelectMode}
         setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
         availableViews={enabledViews ?? undefined}
@@ -947,54 +1022,6 @@ export function BoardViews({
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
       {showIdleBottomIsland ? idleBottomIsland : null}
-
-      {!readOnly && (
-        <RecycleBinPanel
-          open={recycleBinOpen}
-          onOpenChange={setRecycleBinOpen}
-          wsId={effectiveWorkspaceId}
-          boardId={board.id}
-          lists={boardLists}
-          translations={{
-            recycleBin: t('recycle_bin'),
-            recycleBinDescription: t('recycle_bin_description'),
-            noDeletedTasks: t('no_deleted_tasks'),
-            deletedTasksWillAppearHere: t('deleted_tasks_will_appear_here'),
-            selectedOfTotal: t('selected_of_total', {
-              selected: '{selected}',
-              total: '{total}',
-            }),
-            deletedTasksCount: t('deleted_tasks_count', { count: '{count}' }),
-            restore: t('restore'),
-            delete: t('delete'),
-            restoreTasksTitle: t('restore_tasks_title', { count: '{count}' }),
-            restoreTasksDescription: t('restore_tasks_description'),
-            cancel: t('cancel'),
-            restoring: t('restoring'),
-            permanentlyDeleteTitle: t('permanently_delete_title', {
-              count: '{count}',
-            }),
-            permanentlyDeleteDescription: t('permanently_delete_description'),
-            deleting: t('deleting'),
-            deletePermanently: t('delete_permanently'),
-            noListsAvailable: t('no_lists_available'),
-            restoredTasks: t('restored_tasks', { count: '{count}' }),
-            failedToRestore: t('failed_to_restore'),
-            permanentlyDeleted: t('permanently_deleted', { count: '{count}' }),
-            failedToDelete: t('failed_to_delete'),
-            deletedAgo: t('deleted_ago', { time: '{time}' }),
-            fromList: t('from_list', { list: '{list}' }),
-            nProjects: t('n_projects', { count: '{count}' }),
-            selectAllTasks: t('select_all_tasks'),
-            selectTask: t('select_task', { name: '{name}' }),
-            critical: tBoards('dialog.priority.critical'),
-            high: tBoards('dialog.priority.high'),
-            normal: tBoards('dialog.priority.normal'),
-            low: tBoards('dialog.priority.low'),
-            unknownList: t('unknown_list'),
-          }}
-        />
-      )}
     </div>
   );
 }

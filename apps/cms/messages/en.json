@@ -10257,6 +10257,7 @@
     "converting": "Converting...",
     "create_task": "Create Task",
     "delete_draft": "Delete Draft",
+    "delete_failed": "Failed to delete draft",
     "deleted_success": "Draft deleted",
     "discard": "Discard",
     "draft_mode_active": "Draft mode",

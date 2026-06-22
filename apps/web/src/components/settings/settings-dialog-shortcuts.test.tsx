@@ -24,6 +24,7 @@ vi.mock('nuqs', () => ({
   parseAsStringLiteral: () => ({}),
   useQueryStates: () => [
     {
+      settingsBoardId: null,
       settingsDialog: null,
       settingsLinkedProvider: null,
       settingsTab: null,
@@ -211,6 +212,7 @@ function ShortcutHarness({
 function expectSettingsQueryOpened() {
   expect(setSettingsQueryMock).toHaveBeenCalledWith(
     {
+      settingsBoardId: null,
       settingsDialog: 'open',
       settingsLinkedProvider: null,
       settingsTab: null,

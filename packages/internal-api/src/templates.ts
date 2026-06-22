@@ -47,10 +47,25 @@ export interface InternalApiWorkspaceTemplate {
     labels: number;
   };
   backgroundPath?: string | null;
+  backgroundUrl?: string | null;
 }
 
 interface TemplateBackgroundUrlResponse {
   signedUrl: string | null;
+}
+
+export async function listWorkspaceTemplates(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{
+    templates: Omit<InternalApiWorkspaceTemplate, 'content'>[];
+  }>(`/api/v1/workspaces/${encodePathSegment(workspaceId)}/templates`, {
+    cache: 'no-store',
+  });
+
+  return payload.templates ?? [];
 }
 
 export async function getWorkspaceTemplate(

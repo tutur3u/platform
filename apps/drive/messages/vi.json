@@ -7396,6 +7396,7 @@
     "converting": "Đang chuyển đổi...",
     "create_task": "Tạo tác vụ",
     "delete_draft": "Xóa bản nháp",
+    "delete_failed": "Không thể xóa bản nháp",
     "deleted_success": "Đã xóa bản nháp",
     "discard": "Bỏ",
     "draft_mode_active": "Chế độ nháp",

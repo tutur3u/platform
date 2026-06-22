@@ -124,6 +124,7 @@ export default function UserNavClient({
     {
       settingsDialog: parseAsStringLiteral(['open']),
       settingsTab: parseAsString,
+      settingsBoardId: parseAsString,
       settingsLinkedProvider: parseAsString,
     },
     {
@@ -153,6 +154,7 @@ export default function UserNavClient({
         {
           settingsDialog: null,
           settingsTab: null,
+          settingsBoardId: null,
           settingsLinkedProvider: null,
         },
         {
@@ -170,6 +172,7 @@ export default function UserNavClient({
         {
           settingsDialog: 'open',
           settingsTab: tab ?? null,
+          settingsBoardId: null,
           settingsLinkedProvider: null,
         },
         {

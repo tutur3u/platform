@@ -1,14 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query';
 import {
-  Archive,
   ArrowDownAZ,
   ArrowLeft,
   ArrowUpAZ,
-  Bookmark,
   CalendarDays,
   Clock,
-  Columns3Cog,
-  Copy,
   CopyCheck,
   Flag,
   Gauge,
@@ -19,7 +14,6 @@ import {
   MoreHorizontal,
   Pencil,
   Play,
-  RotateCcw,
   Search,
   Settings,
   Share2,
@@ -27,57 +21,26 @@ import {
   X,
   Zap,
 } from '@tuturuuu/icons';
-import {
-  deleteWorkspaceTaskBoard,
-  updateWorkspaceTaskBoard,
-} from '@tuturuuu/internal-api';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
-import { CopyBoardDialog } from '../boards/copy-board-dialog';
-import { TaskBoardForm } from '../boards/form';
-import { useTasksHref } from '../tasks-route-context';
-import { SaveAsTemplateDialog } from '../templates/save-as-template-dialog';
 import { saveBoardConfig } from './board-config-storage';
-import { BoardLayoutSettings } from './board-layout-settings';
-import { syncBoardTicketPrefixCaches } from './board-query-cache';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
@@ -133,9 +96,6 @@ export function BoardHeader({
   backUrl,
   hideActions = false,
   isSearching = false,
-  lists = [],
-  onUpdate,
-  onRecycleBinOpen,
   isMultiSelectMode,
   setIsMultiSelectMode,
   availableViews,
@@ -145,27 +105,15 @@ export function BoardHeader({
 }: Props) {
   const t = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
-  const [editBoardOpen, setEditBoardOpen] = useState(false);
-  const [duplicateBoardOpen, setDuplicateBoardOpen] = useState(false);
-  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
-  const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
-  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
-  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
-  const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix || '');
-  const [defaultListId, setDefaultListId] = useState<string | null>(
-    board.default_list_id ?? null
-  );
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
-  const { archiveBoard, unarchiveBoard } = useBoardActions(workspaceId);
-  const queryClient = useQueryClient();
   const router = useRouter();
-  const tasksHref = useTasksHref();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
   const activeView = enabledViews.includes(currentView)
     ? currentView
@@ -237,61 +185,16 @@ export function BoardHeader({
     return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
 
-  async function handleDelete() {
-    try {
-      setIsLoading(true);
-      await deleteWorkspaceTaskBoard(workspaceId, board.id);
-      router.push(`/${workspaceId}${tasksHref('/boards')}`);
-    } catch (error) {
-      console.error('Failed to delete board:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleSaveTicketPrefix() {
-    try {
-      setIsLoading(true);
-
-      // Validate and clean the prefix
-      const cleanedPrefix = ticketPrefix.trim().toUpperCase();
-      const nextTicketPrefix = cleanedPrefix || null;
-
-      await updateWorkspaceTaskBoard(workspaceId, board.id, {
-        ticket_prefix: nextTicketPrefix,
-        default_list_id: defaultListId,
-      });
-
-      syncBoardTicketPrefixCaches({
-        queryClient,
-        workspaceId,
-        board,
-        ticketPrefix: nextTicketPrefix,
-      });
-
-      setBoardSettingsOpen(false);
-
-      // Invalidate relevant caches
-      queryClient.invalidateQueries({
-        queryKey: ['task-board', workspaceId, board.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['board-config', workspaceId, board.id],
-      });
-
-      // Trigger parent update
-      if (onUpdate) {
-        onUpdate();
-      }
-    } catch (error) {
-      console.error('Failed to update ticket prefix:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   function handleSortChange(sortBy: TaskFilters['sortBy']) {
     onFiltersChange({ ...filters, sortBy });
+  }
+
+  function openBoardSettings() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('settingsDialog', 'open');
+    params.set('settingsTab', 'task_board');
+    params.set('settingsBoardId', board.id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   function handleSmartFocus() {
@@ -354,6 +257,16 @@ export function BoardHeader({
       icon: CalendarDays,
       label: t('ws-task-boards.views.timeline'),
       description: t('ws-task-boards.views.timeline_description'),
+    },
+    drafts: {
+      icon: Pencil,
+      label: t('task-drafts.title'),
+      description: t('task-drafts.empty_description'),
+    },
+    recycle_bin: {
+      icon: Trash2,
+      label: t('common.recycle_bin'),
+      description: t('common.recycle_bin_description'),
     },
   };
   const viewOptions = Object.entries(viewConfig).filter(([view]) =>
@@ -463,19 +376,6 @@ export function BoardHeader({
       icon: <Gauge className="h-3.5 w-3.5 text-dynamic-cyan" />,
     },
   ];
-  const defaultListOptions = [
-    {
-      value: '__none__',
-      label: t('ws-task-boards.settings.default_list_none'),
-    },
-    ...lists
-      .filter((list) => !list.deleted && !list.is_external_staging)
-      .map((list) => ({
-        value: list.id,
-        label: list.name || t('ws-task-boards.settings.untitled_list'),
-      })),
-  ];
-
   // Create metadata for presence tracking (excludes search query for stability)
   const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
     const { searchQuery: _, ...filtersWithoutSearch } = filters;
@@ -721,51 +621,7 @@ export function BoardHeader({
               <DropdownMenuContent align="end" className="w-50">
                 <DropdownMenuItem
                   onClick={() => {
-                    setEditBoardOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Pencil className="h-4 w-4" />
-                  {t('common.edit')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setDuplicateBoardOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Copy className="h-4 w-4" />
-                  {t('ws-task-boards.actions.duplicate')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSaveAsTemplateOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Bookmark className="h-4 w-4" />
-                  {t('ws-task-boards.actions.save_as_template')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setLayoutSettingsOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Columns3Cog className="h-4 w-4" />
-                  {t('ws-task-boards.actions.board_layout')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setTicketPrefix(board.ticket_prefix || '');
-                    setDefaultListId(board.default_list_id ?? null);
-                    setBoardSettingsOpen(true);
+                    openBoardSettings();
                     setBoardMenuOpen(false);
                   }}
                   className="gap-2"
@@ -773,129 +629,11 @@ export function BoardHeader({
                   <Settings className="h-4 w-4" />
                   {t('ws-task-boards.actions.board_settings')}
                 </DropdownMenuItem>
-                {(onRecycleBinOpen || board.archived_at) && (
-                  <DropdownMenuSeparator />
-                )}
-                {onRecycleBinOpen && (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      onRecycleBinOpen();
-                      setBoardMenuOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {t('ws-task-boards.actions.recycle_bin')}
-                  </DropdownMenuItem>
-                )}
-                {board.archived_at ? (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setShowUnarchiveDialog(true);
-                      setBoardMenuOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t('ws-task-boards.row_actions.unarchive')}
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setShowArchiveDialog(true);
-                      setBoardMenuOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <Archive className="h-4 w-4" />
-                    {t('ws-task-boards.row_actions.archive')}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem
-                      onSelect={(e) => e.preventDefault()}
-                      className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {t('ws-task-boards.actions.delete_board')}
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {t('common.are_you_sure')}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t('ws-task-boards.dialog.delete_board_confirmation', {
-                          name: board.name || '',
-                        })}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={isLoading}>
-                        {t('common.cancel')}
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        disabled={isLoading}
-                        className="bg-dynamic-red/90 text-white hover:bg-dynamic-red"
-                      >
-                        {isLoading
-                          ? t('common.deleting')
-                          : t('ws-task-boards.actions.delete_board')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
         </div>
       </div>
-      {/* Edit Board (name + icon) Dialog */}
-      <Dialog open={editBoardOpen} onOpenChange={setEditBoardOpen}>
-        <DialogContent className="p-0 sm:max-w-lg">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{t('ws-task-boards.edit_dialog.title')}</DialogTitle>
-            <DialogDescription>
-              {t('ws-task-boards.edit_dialog.description')}
-            </DialogDescription>
-          </DialogHeader>
-          <TaskBoardForm
-            wsId={workspaceId}
-            data={{
-              id: board.id,
-              name: board.name ?? '',
-              icon: board.icon ?? null,
-            }}
-            showCancel
-            onCancel={() => setEditBoardOpen(false)}
-            onFinish={() => {
-              setEditBoardOpen(false);
-              queryClient.invalidateQueries({
-                queryKey: ['task-board', workspaceId, board.id],
-              });
-              queryClient.invalidateQueries({
-                queryKey: ['other-boards', workspaceId, board.id],
-              });
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-      {/* Duplicate Board Dialog */}
-      <CopyBoardDialog
-        board={{ id: board.id, ws_id: workspaceId, name: board.name }}
-        open={duplicateBoardOpen}
-        onOpenChange={setDuplicateBoardOpen}
-      />
-      {/* Save as Template Dialog */}
-      <SaveAsTemplateDialog
-        board={{ id: board.id, ws_id: workspaceId, name: board.name }}
-        open={saveAsTemplateOpen}
-        onOpenChange={setSaveAsTemplateOpen}
-      />
       <BoardShareDialog
         board={{ id: board.id, name: board.name }}
         open={shareBoardOpen}
@@ -911,225 +649,6 @@ export function BoardHeader({
           workspaceId={workspaceId}
         />
       )}
-      {/* Board Layout Settings */}
-      {onUpdate && (
-        <BoardLayoutSettings
-          open={layoutSettingsOpen}
-          onOpenChange={setLayoutSettingsOpen}
-          boardId={board.id}
-          wsId={workspaceId}
-          lists={lists}
-          onUpdate={onUpdate}
-          translations={{
-            boardLayoutSettings: t('ws-task-boards.layout_settings.title'),
-            boardLayoutSettingsDescription: t(
-              'ws-task-boards.layout_settings.description'
-            ),
-            addNewList: t('ws-task-boards.layout_settings.add_new_list'),
-            noListsInStatus: t('ws-task-boards.layout_settings.no_lists'),
-            done: t('common.done'),
-            editList: t('ws-task-boards.layout_settings.edit_list'),
-            updateListDescription: t(
-              'ws-task-boards.layout_settings.edit_list_description'
-            ),
-            listName: t('ws-task-boards.layout_settings.list_name'),
-            statusCategory: t('ws-task-boards.layout_settings.status_category'),
-            color: t('common.color'),
-            cancel: t('common.cancel'),
-            saving: t('common.saving'),
-            saveChanges: t('common.save_changes'),
-            deleteListTitle: t('ws-task-boards.layout_settings.delete_list'),
-            deleteListDescription: t(
-              'ws-task-boards.layout_settings.delete_list_description',
-              { name: '{name}' }
-            ),
-            deleteListConfirm: t('ws-task-boards.layout_settings.delete_list'),
-            listUpdatedSuccessfully: t(
-              'ws-task-boards.layout_settings.list_updated'
-            ),
-            failedToUpdateList: t(
-              'ws-task-boards.layout_settings.failed_to_update'
-            ),
-            listNameAlreadyExists: t(
-              'ws-task-boards.layout_settings.list_name_exists'
-            ),
-            colorUpdated: t('ws-task-boards.layout_settings.color_updated'),
-            failedToUpdateColor: t(
-              'ws-task-boards.layout_settings.failed_to_update_color'
-            ),
-            listDeletedSuccessfully: t(
-              'ws-task-boards.layout_settings.list_deleted'
-            ),
-            failedToDeleteList: t(
-              'ws-task-boards.layout_settings.failed_to_delete'
-            ),
-            cannotMoveToClosedStatus: t(
-              'ws-task-boards.layout_settings.cannot_move_to_closed'
-            ),
-            listsReordered: t('ws-task-boards.layout_settings.lists_reordered'),
-            failedToReorderLists: t(
-              'ws-task-boards.layout_settings.failed_to_reorder'
-            ),
-            task: t('common.task'),
-            tasks: t('common.tasks_plural'),
-            changeColor: t('ws-task-boards.layout_settings.change_color'),
-            backlog: t('ws-task-boards.layout_settings.backlog'),
-            active: t('ws-task-boards.layout_settings.active'),
-            review: t('ws-task-boards.layout_settings.review'),
-            doneStatus: t('ws-task-boards.layout_settings.done_status'),
-            closed: t('ws-task-boards.layout_settings.closed'),
-            documents: t('ws-task-boards.layout_settings.documents'),
-            gray: t('ws-task-boards.layout_settings.gray'),
-            red: t('ws-task-boards.layout_settings.red'),
-            blue: t('ws-task-boards.layout_settings.blue'),
-            green: t('ws-task-boards.layout_settings.green'),
-            yellow: t('ws-task-boards.layout_settings.yellow'),
-            orange: t('ws-task-boards.layout_settings.orange'),
-            purple: t('ws-task-boards.layout_settings.purple'),
-            pink: t('ws-task-boards.layout_settings.pink'),
-            indigo: t('ws-task-boards.layout_settings.indigo'),
-            cyan: t('ws-task-boards.layout_settings.cyan'),
-            movedToStatus: t('ws-task-boards.layout_settings.moved_to_status', {
-              status: '{status}',
-            }),
-            deleteList: t('ws-task-boards.layout_settings.delete_list'),
-          }}
-        />
-      )}
-      {/* Board Settings Dialog */}
-      <Dialog open={boardSettingsOpen} onOpenChange={setBoardSettingsOpen}>
-        <DialogContent className="sm:max-w-106.25">
-          <DialogHeader>
-            <DialogTitle>
-              {t('ws-task-boards.actions.board_settings')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('ws-task-boards.settings.configure_description')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="ticketPrefix" className="font-medium text-sm">
-                {t('ws-task-boards.settings.ticket_prefix')}
-              </label>
-              <Input
-                id="ticketPrefix"
-                value={ticketPrefix}
-                onChange={(e) => setTicketPrefix(e.target.value.toUpperCase())}
-                placeholder={t(
-                  'ws-task-boards.settings.ticket_prefix_placeholder'
-                )}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSaveTicketPrefix();
-                  }
-                }}
-                maxLength={10}
-                autoFocus
-              />
-              <p className="text-muted-foreground text-xs">
-                {t('ws-task-boards.settings.ticket_prefix_description')}
-              </p>
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="defaultList" className="font-medium text-sm">
-                {t('ws-task-boards.settings.default_list')}
-              </label>
-              <Combobox
-                mode="single"
-                options={defaultListOptions}
-                selected={defaultListId ?? '__none__'}
-                onChange={(value) =>
-                  setDefaultListId(value === '__none__' ? null : String(value))
-                }
-                placeholder={t('ws-task-boards.settings.default_list')}
-                searchPlaceholder={t('common.search_tasks')}
-              />
-              <p className="text-muted-foreground text-xs">
-                {t('ws-task-boards.settings.default_list_description')}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setBoardSettingsOpen(false)}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleSaveTicketPrefix} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('common.save_changes')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>{' '}
-      {/* End Board Settings Dialog */}
-      {/* Archive Dialog */}
-      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('ws-task-boards.row_actions.dialog.archive_title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {(() => {
-                const name = board.name ?? '';
-                const truncated = name.length > 20;
-                const display = truncated ? `${name.slice(0, 20)}…` : name;
-                return t(
-                  'ws-task-boards.row_actions.dialog.archive_description',
-                  { name: display }
-                );
-              })()}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => archiveBoard(board.id)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {t('ws-task-boards.row_actions.dialog.archive_button')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {/* Unarchive Dialog */}
-      <AlertDialog
-        open={showUnarchiveDialog}
-        onOpenChange={setShowUnarchiveDialog}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('ws-task-boards.row_actions.dialog.unarchive_title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {(() => {
-                const name = board.name ?? '';
-                const truncated = name.length > 20;
-                const display = truncated ? `${name.slice(0, 20)}…` : name;
-                return t(
-                  'ws-task-boards.row_actions.dialog.unarchive_description',
-                  { name: display }
-                );
-              })()}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => unarchiveBoard(board.id)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {t('ws-task-boards.row_actions.dialog.unarchive_button')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

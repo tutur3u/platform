@@ -6,24 +6,24 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 967,
+        "legacyNext": 968,
         "migrated": 72,
-        "percentComplete": 13.81,
-        "remaining": 967,
+        "percentComplete": 13.8,
+        "remaining": 968,
         "terminal": 155,
-        "total": 1122,
+        "total": 1123,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 192,
+        "legacyNext": 191,
         "migrated": 115,
-        "percentComplete": 37.46,
-        "remaining": 192,
+        "percentComplete": 37.58,
+        "remaining": 191,
         "terminal": 115,
-        "total": 307,
+        "total": 306,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 985,
+        "legacyNext": 986,
         "migrated": 77,
-        "percentComplete": 13.97,
-        "remaining": 985,
+        "percentComplete": 13.96,
+        "remaining": 986,
         "terminal": 160,
-        "total": 1145,
+        "total": 1146,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 213,
+        "legacyNext": 212,
         "migrated": 166,
-        "percentComplete": 43.8,
-        "remaining": 213,
+        "percentComplete": 43.92,
+        "remaining": 212,
         "terminal": 166,
-        "total": 379,
+        "total": 378,
         "unknownStatus": 0
       }
     ],
@@ -8596,6 +8596,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/templates:apps/web/src/app/api/v1/workspaces/[wsId]/templates/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/templates",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/templates/:templateId:apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/route.ts",
       "kind": "api",
       "methods": ["GET", "PATCH", "DELETE"],
@@ -12979,15 +12988,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/tasks/drafts:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/drafts/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/tasks/drafts",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/drafts/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/tasks/estimates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/estimates/page.tsx",
       "kind": "page",
       "methods": [],
@@ -14141,13 +14141,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1122,
+    "apiRoutes": 1123,
     "cronRoutes": 19,
     "layouts": 67,
-    "pages": 307,
-    "routeHandlers": 1145,
+    "pages": 306,
+    "routeHandlers": 1146,
     "methodCounts": {
-      "GET": 644,
+      "GET": 645,
       "HEAD": 1,
       "POST": 509,
       "PUT": 173,

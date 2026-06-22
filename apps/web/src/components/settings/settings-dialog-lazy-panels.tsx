@@ -119,6 +119,31 @@ const LazyWorkspaceBreakTypesSettings = lazy(() =>
     default: module.WorkspaceBreakTypesSettings,
   }))
 );
+const LazyBoardSettingsPanel = lazy(() =>
+  import('./tasks/board-settings/board-settings-panel').then((module) => ({
+    default: module.BoardSettingsPanel,
+  }))
+);
+const LazyTaskInitiativesSettings = lazy(() =>
+  import('./tasks/task-initiatives-settings').then((module) => ({
+    default: module.TaskInitiativesSettings,
+  }))
+);
+const LazyTaskLabelsSettings = lazy(() =>
+  import('./tasks/task-labels-settings').then((module) => ({
+    default: module.TaskLabelsSettings,
+  }))
+);
+const LazyTaskProjectsSettings = lazy(() =>
+  import('./tasks/task-projects-settings').then((module) => ({
+    default: module.TaskProjectsSettings,
+  }))
+);
+const LazyTaskTemplatesSettings = lazy(() =>
+  import('./tasks/task-templates-settings').then((module) => ({
+    default: module.TaskTemplatesSettings,
+  }))
+);
 
 function SettingsPanelFallback() {
   return (
@@ -259,6 +284,7 @@ export const ApprovalsSettings = withPanelSuspense(LazyApprovalsSettings);
 export const AttendanceDisplaySettings = withPanelSuspense(
   LazyAttendanceDisplaySettings
 );
+export const BoardSettingsPanel = withPanelSuspense(LazyBoardSettingsPanel);
 export const DatabaseDefaultFiltersSettings = withPanelSuspense(
   LazyDatabaseDefaultFiltersSettings
 );
@@ -288,6 +314,14 @@ export const ReportDefaultTitleSettings = withPanelSuspense(
 );
 export const RequireAttentionColorSettings = withPanelSuspense(
   LazyRequireAttentionColorSettings
+);
+export const TaskInitiativesSettings = withPanelSuspense(
+  LazyTaskInitiativesSettings
+);
+export const TaskLabelsSettings = withPanelSuspense(LazyTaskLabelsSettings);
+export const TaskProjectsSettings = withPanelSuspense(LazyTaskProjectsSettings);
+export const TaskTemplatesSettings = withPanelSuspense(
+  LazyTaskTemplatesSettings
 );
 export const TimeTrackerCategoriesSettings = withPanelSuspense(
   LazyTimeTrackerCategoriesSettings

@@ -5,22 +5,22 @@ import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardHeader } from '../board-header';
 
-let boardLayoutSettingsProps:
-  | React.ComponentProps<
-      typeof import('../board-layout-settings')['BoardLayoutSettings']
-    >
-  | undefined;
+const navigationMocks = vi.hoisted(() => ({
+  replace: vi.fn(),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
 vi.mock('next/navigation', () => ({
+  usePathname: () => '/ws-1/tasks/boards/board-1',
   useRouter: () => ({
     push: vi.fn(),
-    replace: vi.fn(),
+    replace: navigationMocks.replace,
     refresh: vi.fn(),
   }),
+  useSearchParams: () => new URLSearchParams('existing=1'),
 }));
 
 vi.mock('next/link', () => ({
@@ -69,21 +69,31 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
   ),
 }));
 
-vi.mock('../tasks-route-context', () => ({
-  useTasksHref: () => '/tasks',
+vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) => (
+    <button onClick={onClick} type="button">
+      {children}
+    </button>
+  ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
-vi.mock('../board-layout-settings', () => ({
-  BoardLayoutSettings: (props: any) => {
-    boardLayoutSettingsProps = props;
-    return (
-      <div
-        data-testid="board-layout-settings"
-        data-board-id={props.boardId}
-        data-ws-id={props.wsId ?? ''}
-      />
-    );
-  },
+vi.mock('../tasks-route-context', () => ({
+  useTasksHref: () => '/tasks',
 }));
 
 vi.mock('../board-switcher', () => ({
@@ -103,6 +113,11 @@ vi.mock('../boards/boardId/task-filter', () => ({
 vi.mock('../boards/boardId/kanban/planner/kanban-planner-dialog', () => ({
   KanbanPlannerDialog: ({ open }: { open: boolean }) =>
     open ? <div role="dialog">planner-dialog</div> : null,
+}));
+
+vi.mock('../boards/board-share-dialog', () => ({
+  BoardShareDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog">share-dialog</div> : null,
 }));
 
 vi.mock('../boards/copy-board-dialog', () => ({
@@ -171,37 +186,7 @@ function renderBoardHeader(
 
 describe('BoardHeader', () => {
   beforeEach(() => {
-    boardLayoutSettingsProps = undefined;
-  });
-
-  it('passes the workspace id to board layout settings', () => {
-    renderBoardHeader();
-
-    expect(screen.getByTestId('board-layout-settings')).toHaveAttribute(
-      'data-ws-id',
-      'ws-1'
-    );
-    expect(boardLayoutSettingsProps?.boardId).toBe('board-1');
-    expect(boardLayoutSettingsProps?.wsId).toBe('ws-1');
-  });
-
-  it('uses the explicit workspace id when the board payload omits ws_id', () => {
-    renderBoardHeader({
-      workspaceId: 'ws-fallback',
-      board: {
-        archived_at: null,
-        id: 'board-1',
-        name: 'Roadmap',
-        ticket_prefix: 'RD',
-        ws_id: null,
-      },
-    });
-
-    expect(screen.getByTestId('board-layout-settings')).toHaveAttribute(
-      'data-ws-id',
-      'ws-fallback'
-    );
-    expect(boardLayoutSettingsProps?.wsId).toBe('ws-fallback');
+    navigationMocks.replace.mockReset();
   });
 
   it('renders the board menu trigger with compact outline header styling', () => {
@@ -213,6 +198,22 @@ describe('BoardHeader', () => {
 
     expect(menuTrigger).toHaveClass('border', 'h-7', 'px-1.5');
     expect(menuTrigger).toHaveClass('sm:h-8', 'sm:px-2');
+  });
+
+  it('opens contextual board settings through query state', () => {
+    renderBoardHeader();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open board menu',
+      })
+    );
+    fireEvent.click(screen.getByText('ws-task-boards.actions.board_settings'));
+
+    expect(navigationMocks.replace).toHaveBeenCalledWith(
+      '/ws-1/tasks/boards/board-1?existing=1&settingsDialog=open&settingsTab=task_board&settingsBoardId=board-1',
+      { scroll: false }
+    );
   });
 
   it('renders a natural public title and hides member-only controls in read-only mode', () => {
