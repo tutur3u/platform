@@ -3,6 +3,9 @@ import {
   checkBackendWorkspacePermission,
   createBackendApiClient,
   createBackendSupportInquiry,
+  getBackendAuthMe,
+  getBackendAuthMfaAssuranceLevel,
+  getBackendCalendarMock,
   getBackendCurrentUserProfile,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
@@ -208,6 +211,107 @@ describe('backend API client', () => {
       })
     );
     expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('reads the Rust-owned current Supabase auth user route', async () => {
+    vi.stubEnv('BACKEND_INTERNAL_TOKEN', 'server-token');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        user: {
+          app_metadata: {
+            provider: 'email',
+          },
+          aud: 'authenticated',
+          email: 'ada@example.com',
+          id: 'user_123',
+          user_metadata: {
+            full_name: 'Ada Lovelace',
+          },
+        },
+      }),
+    });
+
+    const response = await getBackendAuthMe({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(response.user.email).toBe('ada@example.com');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/auth/me',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('reads Rust-owned MFA assurance details without losing auth method objects', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        currentAuthenticationMethods: [
+          {
+            method: 'password',
+            timestamp: 1_710_000_000,
+          },
+        ],
+        currentLevel: 'aal1',
+        nextLevel: 'aal2',
+      }),
+    });
+
+    const assuranceLevel = await getBackendAuthMfaAssuranceLevel({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(assuranceLevel.currentLevel).toBe('aal1');
+    expect(assuranceLevel.currentAuthenticationMethods[0]?.method).toBe(
+      'password'
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/auth/mfa/totp/assurance-level',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads the Rust-owned deterministic calendar mock route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: [
+          {
+            end_at: '2023-10-01T11:00:00Z',
+            id: 1,
+            start_at: '2023-10-01T10:00:00Z',
+            title: 'Event 1',
+          },
+        ],
+      }),
+    });
+
+    const calendar = await getBackendCalendarMock({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(calendar.data[0]?.title).toBe('Event 1');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/calendar/mock',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it('reads the Rust-owned current user profile route', async () => {

@@ -35,6 +35,36 @@ export type BackendLegacyHealth = {
   status: 'ok';
 };
 
+export type BackendSupabaseAuthUser = {
+  app_metadata?: Record<string, unknown>;
+  aud?: string;
+  email?: string | null;
+  id?: string;
+  user_metadata?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+export type BackendAuthMeResponse = {
+  user: BackendSupabaseAuthUser;
+};
+
+export type BackendAuthMfaAssuranceLevel = {
+  currentAuthenticationMethods: Record<string, unknown>[];
+  currentLevel: string | null;
+  nextLevel: string | null;
+};
+
+export type BackendCalendarMockEvent = {
+  end_at: string;
+  id: number;
+  start_at: string;
+  title: string;
+};
+
+export type BackendCalendarMockResponse = {
+  data: BackendCalendarMockEvent[];
+};
+
 export type BackendCreateSupportInquiryResponse = {
   inquiryId: string;
   success: true;
@@ -415,11 +445,40 @@ export function getBackendLegacyHealth(options: BackendApiClientOptions = {}) {
   );
 }
 
+export function getBackendAuthMe(options: BackendApiClientOptions = {}) {
+  return createBackendApiClient(options).json<BackendAuthMeResponse>(
+    '/api/auth/me',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendAuthMfaAssuranceLevel(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendAuthMfaAssuranceLevel>(
+    '/api/auth/mfa/totp/assurance-level',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export function getBackendCurrentUserProfile(
   options: BackendApiClientOptions = {}
 ) {
   return createBackendApiClient(options).json<CurrentUserProfileResponse>(
     '/api/v1/users/me/profile',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendCalendarMock(options: BackendApiClientOptions = {}) {
+  return createBackendApiClient(options).json<BackendCalendarMockResponse>(
+    '/api/v1/calendar/mock',
     {
       cache: 'no-store',
     }

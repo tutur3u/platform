@@ -82,6 +82,10 @@ export {
 } from './auth';
 export {
   type BackendApiClientOptions,
+  type BackendAuthMeResponse,
+  type BackendAuthMfaAssuranceLevel,
+  type BackendCalendarMockEvent,
+  type BackendCalendarMockResponse,
   type BackendCreateSupportInquiryResponse,
   type BackendLegacyHealth,
   type BackendMigrationCutoverGates,
@@ -93,6 +97,7 @@ export {
   type BackendRouteManifestRoute,
   type BackendRouteManifestSummary,
   type BackendServiceBinding,
+  type BackendSupabaseAuthUser,
   type BackendWorkspaceCrawlerStatus,
   type BackendWorkspaceLimits,
   type BackendWorkspacePermissionCheck,
@@ -100,6 +105,9 @@ export {
   checkBackendWorkspacePermission,
   createBackendApiClient,
   createBackendSupportInquiry,
+  getBackendAuthMe,
+  getBackendAuthMfaAssuranceLevel,
+  getBackendCalendarMock,
   getBackendCurrentUserProfile,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
