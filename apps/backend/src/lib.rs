@@ -12,6 +12,7 @@ mod aurora;
 mod auth_me;
 mod auth_mfa;
 mod changelog;
+mod cms_workspaces;
 mod contact;
 mod crawlers;
 #[cfg(test)]
@@ -52,7 +53,9 @@ mod finance_subscription_context;
 #[cfg(test)]
 mod finance_subscription_context_test;
 mod hive_access;
+mod hive_ai_credits;
 mod hive_ai_models;
+mod hive_workspaces;
 mod holidays;
 mod infrastructure_abuse_events;
 mod infrastructure_abuse_intelligence;
@@ -634,6 +637,24 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         hive_ai_models::handle_hive_ai_models_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_workspaces::handle_hive_workspaces_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_ai_credits::handle_hive_ai_credits_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        cms_workspaces::handle_cms_workspaces_route(config, request, outbound).await
     {
         return response;
     }
