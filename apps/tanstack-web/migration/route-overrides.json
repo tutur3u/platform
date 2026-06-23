@@ -1444,6 +1444,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/flashcards ports the legacy workspace flashcard library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; flashcard API route ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/education/library/quizzes:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quizzes/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/quizzes ports the legacy workspace quiz library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state with the legacy 10-row default, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, internal-api-backed AI explanation generation, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; quiz create/update/delete/list API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/education/valsea:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1453,6 +1458,11 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags ports the legacy workspace user group tags table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for group-tag reads, internal-api-backed create/update/delete forms and row actions, localized FeatureSummary content, and canonical locale-prefixed detail hrefs. This marks only the frontend page artifact migrated; group-tag detail page and API route ownership remain separately tracked."
+    },
+    "page:/:locale/:wsId/education/courses:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses ports the legacy workspace courses card/table page with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize/view search state, forwarded internal-api auth, shared CourseCardView/CoursePagination/CustomDataTable UI, internal-api-backed create/edit/delete forms and row actions, and legacy builder navigation hrefs. This marks only the frontend page artifact migrated; course list/detail API route ownership and course builder remain separately tracked."
     },
     "page:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx": {
       "status": "migrated",

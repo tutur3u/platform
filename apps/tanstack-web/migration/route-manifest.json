@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 136,
-        "migrated": 170,
-        "percentComplete": 55.56,
-        "remaining": 136,
-        "terminal": 170,
+        "legacyNext": 134,
+        "migrated": 172,
+        "percentComplete": 56.21,
+        "remaining": 134,
+        "terminal": 172,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 154,
-        "migrated": 223,
-        "percentComplete": 59.26,
-        "remaining": 154,
-        "terminal": 224,
+        "legacyNext": 152,
+        "migrated": 225,
+        "percentComplete": 59.79,
+        "remaining": 152,
+        "terminal": 226,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1089,
-      "migrated": 370,
-      "percentComplete": 29.42,
-      "remaining": 1089,
-      "terminal": 454,
+      "legacyNext": 1087,
+      "migrated": 372,
+      "percentComplete": 29.55,
+      "remaining": 1087,
+      "terminal": 456,
       "total": 1543,
       "unknownStatus": 0
     }
@@ -11932,7 +11932,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/courses",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12076,7 +12076,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/library/quizzes",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quizzes/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
