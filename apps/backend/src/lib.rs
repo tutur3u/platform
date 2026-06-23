@@ -110,6 +110,7 @@ mod storage_analytics;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
+mod time_tracking_export;
 mod timezones;
 mod topic_announcements;
 mod user_identities;
@@ -187,6 +188,7 @@ mod workspaces_users_attendance;
 mod workspaces_users_audit_logs;
 mod workspaces_users_emails;
 mod workspaces_users_referral_discounts;
+mod workspaces_users_reports_groups_bulk_export;
 mod workspaces_users_reports_logs;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
@@ -1334,6 +1336,18 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspaces_teach_users::handle_workspaces_teach_users_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        time_tracking_export::handle_time_tracking_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_reports_groups_bulk_export::handle_workspaces_users_reports_groups_bulk_export_route(config, request, outbound).await
     {
         return response;
     }
