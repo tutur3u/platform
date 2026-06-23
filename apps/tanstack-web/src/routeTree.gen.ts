@@ -141,6 +141,7 @@ import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './ro
 import { Route as LocaleWsIdInfrastructureHolidaysRouteImport } from './routes/$locale/$wsId/infrastructure/holidays';
 import { Route as LocaleWsIdInfrastructureExternalAppsRouteImport } from './routes/$locale/$wsId/infrastructure/external-apps';
 import { Route as LocaleWsIdInfrastructureEmailBlacklistRouteImport } from './routes/$locale/$wsId/infrastructure/email-blacklist';
+import { Route as LocaleWsIdInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/infrastructure/app-coordination';
 import { Route as LocaleWsIdInfrastructureAbuseIntelligenceRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-intelligence';
 import { Route as LocaleWsIdInfrastructureAbuseEventsRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-events';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
@@ -906,6 +907,12 @@ const LocaleWsIdInfrastructureEmailBlacklistRoute =
     path: '/$wsId/infrastructure/email-blacklist',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureAppCoordinationRoute =
+  LocaleWsIdInfrastructureAppCoordinationRouteImport.update({
+    id: '/$wsId/infrastructure/app-coordination',
+    path: '/$wsId/infrastructure/app-coordination',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureAbuseIntelligenceRoute =
   LocaleWsIdInfrastructureAbuseIntelligenceRouteImport.update({
     id: '/$wsId/infrastructure/abuse-intelligence',
@@ -1379,6 +1386,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/abuse-intelligence': typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  '/$locale/$wsId/infrastructure/app-coordination': typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -1572,6 +1580,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/abuse-intelligence': typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  '/$locale/$wsId/infrastructure/app-coordination': typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -1767,6 +1776,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/abuse-intelligence': typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  '/$locale/$wsId/infrastructure/app-coordination': typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -1963,6 +1973,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/abuse-intelligence'
+    | '/$locale/$wsId/infrastructure/app-coordination'
     | '/$locale/$wsId/infrastructure/email-blacklist'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/holidays'
@@ -2156,6 +2167,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/abuse-intelligence'
+    | '/$locale/$wsId/infrastructure/app-coordination'
     | '/$locale/$wsId/infrastructure/email-blacklist'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/holidays'
@@ -2350,6 +2362,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/abuse-intelligence'
+    | '/$locale/$wsId/infrastructure/app-coordination'
     | '/$locale/$wsId/infrastructure/email-blacklist'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/holidays'
@@ -3371,6 +3384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/app-coordination': {
+      id: '/$locale/$wsId/infrastructure/app-coordination';
+      path: '/$wsId/infrastructure/app-coordination';
+      fullPath: '/$locale/$wsId/infrastructure/app-coordination';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureAppCoordinationRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/abuse-intelligence': {
       id: '/$locale/$wsId/infrastructure/abuse-intelligence';
       path: '/$wsId/infrastructure/abuse-intelligence';
@@ -4219,6 +4239,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
   LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   LocaleWsIdInfrastructureAbuseIntelligenceRoute: typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  LocaleWsIdInfrastructureAppCoordinationRoute: typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   LocaleWsIdInfrastructureEmailBlacklistRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   LocaleWsIdInfrastructureExternalAppsRoute: typeof LocaleWsIdInfrastructureExternalAppsRoute;
   LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -4369,6 +4390,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdInfrastructureAbuseEventsRoute,
   LocaleWsIdInfrastructureAbuseIntelligenceRoute:
     LocaleWsIdInfrastructureAbuseIntelligenceRoute,
+  LocaleWsIdInfrastructureAppCoordinationRoute:
+    LocaleWsIdInfrastructureAppCoordinationRoute,
   LocaleWsIdInfrastructureEmailBlacklistRoute:
     LocaleWsIdInfrastructureEmailBlacklistRoute,
   LocaleWsIdInfrastructureExternalAppsRoute:
