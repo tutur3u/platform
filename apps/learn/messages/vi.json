@@ -154,6 +154,7 @@
     "testTakeQuizzes": "Câu hỏi kiểm tra",
     "submitTest": "Nộp bài",
     "submitTestConfirm": "Bạn có chắc chắn muốn nộp bài thi? Bạn sẽ không thể thay đổi đáp án sau khi nộp.",
+    "leaveTestConfirm": "Bạn đang có bài thi đang làm. Bạn có chắc chắn muốn rời đi? Các đáp án đã lưu sẽ được giữ lại, nhưng thời gian vẫn tiếp tục chạy.",
     "submitTestSuccess": "Nộp bài thi thành công",
     "submitTestDescription": "Bạn đã hoàn thành bài thi này. Điểm số của bạn: {score}",
     "testExpired": "Hết giờ làm bài",

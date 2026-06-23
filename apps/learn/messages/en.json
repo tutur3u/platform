@@ -154,6 +154,7 @@
     "testTakeQuizzes": "Test Questions",
     "submitTest": "Submit test",
     "submitTestConfirm": "Are you sure you want to submit your test? You cannot change your answers after submitting.",
+    "leaveTestConfirm": "You have an active test in progress. Are you sure you want to leave? Your saved answers will be kept, but the timer will continue.",
     "submitTestSuccess": "Test submitted successfully",
     "submitTestDescription": "You have completed this test. Your score: {score}",
     "testExpired": "Time expired",

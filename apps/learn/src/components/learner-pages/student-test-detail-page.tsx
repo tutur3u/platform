@@ -271,6 +271,41 @@ export function StudentTestDetailPage({
     return () => clearInterval(interval);
   }, [attempt, test, handleAutoSubmit]);
 
+  // Prevent accidental navigation away during an active test
+  useEffect(() => {
+    if (!attempt || attempt.submitted_at) return;
+
+    // beforeunload: catches refresh, tab close, URL bar navigation
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    // popstate: catches browser back button and swipe-back gestures.
+    // Push a sentinel entry so pressing back fires popstate instead of leaving.
+    const sentinel = { __testGuard: true };
+    window.history.pushState(sentinel, '');
+
+    const handlePopState = () => {
+      // The user pressed back — ask for confirmation
+      const leave = window.confirm(t('courses.leaveTestConfirm'));
+      if (leave) {
+        // Actually go back
+        window.history.back();
+      } else {
+        // Stay on the page — re-push sentinel
+        window.history.pushState(sentinel, '');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [attempt, t]);
+
   if (courseQuery.isLoading || attemptQuery.isLoading) return <LoadingState />;
 
   if (courseQuery.isError || !courseQuery.data || !test) {
