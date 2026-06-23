@@ -12,6 +12,7 @@ import {
   Layers,
   Pencil,
   Play,
+  Users,
 } from '@tuturuuu/icons';
 import {
   listWorkspaceCourseModules,
@@ -25,6 +26,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CourseEditTestDialog } from './course-edit-test-dialog';
 import { TestQuestionsSection } from './test-questions-section';
+import { TestSubmissionsSection } from './test-submissions-section';
 
 interface TestDetailClientProps {
   courseId: string;
@@ -42,6 +44,9 @@ export function TestDetailClient({
   const locale = useLocale();
   const t = useTranslations();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'questions' | 'submissions'
+  >('overview');
 
   // Query tests
   const { data: testsData, isLoading: isLoadingTests } = useQuery({
@@ -256,50 +261,88 @@ export function TestDetailClient({
           </div>
         </div>
 
-        {/* Description / Instructions */}
-        <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-          <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
-            {t('teachModules.assessmentOverview')}
-          </h2>
-          <div className="whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
-            {test.description || t('teachModules.noInstructions')}
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex gap-0 border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
+          {(['overview', 'questions', 'submissions'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 px-4 py-3 font-bold text-sm transition',
+                activeTab === tab
+                  ? 'border-primary border-b-4 bg-primary/5 text-foreground'
+                  : 'border-transparent border-b-4 text-muted-foreground hover:bg-muted/30'
+              )}
+            >
+              {tab === 'overview' && <BookOpenCheck className="h-4 w-4" />}
+              {tab === 'questions' && <Layers className="h-4 w-4" />}
+              {tab === 'submissions' && <Users className="h-4 w-4" />}
+              {t(
+                `teachModules.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Learning Objectives Assessed */}
-        <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-          <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
-            {t('teachModules.learningObjectivesAssessed')}
-          </h2>
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            {t('teachModules.learningObjectivesDescription')}
-          </p>
-          {testModules.length === 0 ? (
-            <p className="text-muted-foreground text-sm italic">
-              {t('teachModules.noAssociatedModules')}
-            </p>
-          ) : (
-            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-              {testModules.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-2.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)]"
-                >
-                  <span className="h-2 w-2 rounded-full bg-primary" />
-                  <span className="font-bold text-sm">{m.name}</span>
-                </div>
-              ))}
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Description / Instructions */}
+            <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
+              <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+                {t('teachModules.assessmentOverview')}
+              </h2>
+              <div className="whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
+                {test.description || t('teachModules.noInstructions')}
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Test Questions Section */}
-        <TestQuestionsSection
-          wsId={wsId}
-          courseId={courseId}
-          testId={testId}
-          testModules={testModules}
-        />
+            {/* Learning Objectives Assessed */}
+            <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
+              <h2 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+                {t('teachModules.learningObjectivesAssessed')}
+              </h2>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {t('teachModules.learningObjectivesDescription')}
+              </p>
+              {testModules.length === 0 ? (
+                <p className="text-muted-foreground text-sm italic">
+                  {t('teachModules.noAssociatedModules')}
+                </p>
+              ) : (
+                <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {testModules.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center gap-2.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)]"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-primary" />
+                      <span className="font-bold text-sm">{m.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'questions' && (
+          <TestQuestionsSection
+            wsId={wsId}
+            courseId={courseId}
+            testId={testId}
+            testModules={testModules}
+          />
+        )}
+
+        {activeTab === 'submissions' && (
+          <TestSubmissionsSection
+            wsId={wsId}
+            courseId={courseId}
+            testId={testId}
+          />
+        )}
 
         {/* Edit Test Dialog */}
         <CourseEditTestDialog

@@ -381,3 +381,28 @@ export function updateWorkspaceCourseTest(
     }
   );
 }
+
+export interface TeachTestSubmission {
+  id: string;
+  userId: string;
+  userName: string;
+  startedAt: string;
+  submittedAt: string | null;
+  score: number | null;
+  answeredCount: number;
+  correctCount: number;
+  totalQuizzes: number;
+}
+
+export function listWorkspaceCourseTestSubmissions(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TeachTestSubmission[]; count: number }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions`,
+    { cache: 'no-store' }
+  );
+}
