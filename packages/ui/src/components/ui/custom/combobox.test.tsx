@@ -163,6 +163,34 @@ describe('Combobox', () => {
     expect(screen.getByTestId('alpha-option-icon')).toBeInTheDocument();
   });
 
+  it('can use a stable trigger icon while preserving option row icons', () => {
+    render(
+      <Combobox
+        ariaLabel="View picker"
+        hideTriggerLabel
+        options={[
+          {
+            label: 'Kanban',
+            value: 'kanban',
+            icon: <span data-testid="kanban-option-icon">K</span>,
+          },
+        ]}
+        placeholder="Pick view"
+        selected="kanban"
+        showChevron={false}
+        triggerIcon={<span data-testid="stable-view-icon">V</span>}
+        triggerMode="compact"
+      />
+    );
+
+    expect(screen.getByTestId('stable-view-icon')).toBeInTheDocument();
+    expect(screen.queryByTestId('kanban-option-icon')).not.toBeInTheDocument();
+
+    openCombobox();
+
+    expect(screen.getByTestId('kanban-option-icon')).toBeInTheDocument();
+  });
+
   it('supports compact accessible icon-only triggers with wider popover content', () => {
     render(
       <Combobox

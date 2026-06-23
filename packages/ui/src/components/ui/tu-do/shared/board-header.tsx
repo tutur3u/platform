@@ -99,6 +99,8 @@ const toolbarButtonClass =
 const toolbarComboboxClass =
   'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 [&_button]:text-muted-foreground [&_button]:transition-colors hover:[&_button]:text-foreground [&_button_svg]:text-current sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8';
 const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
+const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
+  'tuturuuu:settings-dialog-open-intent';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'
@@ -216,6 +218,8 @@ export function BoardHeader({
   }
 
   function openBoardSettings() {
+    prefetchBoardSettings();
+    announceSettingsOpenIntent();
     const params = new URLSearchParams(searchParams.toString());
     params.set('settingsDialog', 'open');
     params.set('settingsTab', 'task_board');
@@ -243,6 +247,17 @@ export function BoardHeader({
       },
       staleTime: 30_000,
     });
+  }
+
+  function announceSettingsOpenIntent() {
+    if (typeof window === 'undefined') return;
+
+    window.dispatchEvent(new Event(SETTINGS_DIALOG_OPEN_INTENT_EVENT));
+  }
+
+  function handleBoardSettingsPointerDown() {
+    prefetchBoardSettings();
+    announceSettingsOpenIntent();
   }
 
   function handleSmartFocus() {
@@ -468,6 +483,13 @@ export function BoardHeader({
                 {board.name || t('common.untitled')}
               </h1>
             </div>
+          ) : currentView === 'my_tasks' ? (
+            <div className="flex h-7 min-w-0 items-center gap-2 rounded-md border bg-background px-2 text-foreground sm:h-8">
+              <UserStar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate font-semibold text-sm">
+                {t('ws-task-boards.views.my_tasks')}
+              </span>
+            </div>
           ) : (
             <BoardSwitcher
               board={{ ...board, ws_id: workspaceId }}
@@ -624,6 +646,7 @@ export function BoardHeader({
             triggerTooltip={`${t('common.view')}: ${
               selectedViewOption?.label ?? viewConfig[activeView].label
             }`}
+            triggerIcon={<LayoutGrid className="h-3.5 w-3.5" />}
             colorizeTriggerIcon={false}
             className={toolbarComboboxClass}
           />
@@ -711,7 +734,7 @@ export function BoardHeader({
                 onFocus={prefetchBoardSettings}
                 onMouseEnter={prefetchBoardSettings}
                 onClick={openBoardSettings}
-                onPointerDown={prefetchBoardSettings}
+                onPointerDown={handleBoardSettingsPointerDown}
                 aria-label={t('ws-task-boards.actions.board_settings')}
               >
                 <Settings className="h-3.5 w-3.5" />

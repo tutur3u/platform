@@ -10,7 +10,10 @@ import {
   type ListWorkspaceTasksOptions,
   listWorkspaceTasks,
 } from '@tuturuuu/internal-api/tasks';
-import { TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID } from '@tuturuuu/internal-api/users';
+import {
+  TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
+  TASK_LAST_BOARD_VIEW_CONFIG_ID,
+} from '@tuturuuu/internal-api/users';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -67,7 +70,10 @@ export type ViewType =
 const HOTKEY_CREATE_TASK = 'C';
 const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
 const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
+const HOTKEY_GO_TO_MY_TASKS: ['G', 'M'] = ['G', 'M'];
 const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
+const HOTKEY_GO_TO_DRAFTS: ['G', 'D'] = ['G', 'D'];
+const HOTKEY_GO_TO_RECYCLE_BIN: ['G', 'R'] = ['G', 'R'];
 const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
   'personal-board-external-tasks-collapsed';
 const CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
@@ -433,7 +439,10 @@ export function BoardViews({
     () => ({
       kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
       list: formatHotkeySequence(HOTKEY_GO_TO_LIST),
+      my_tasks: formatHotkeySequence(HOTKEY_GO_TO_MY_TASKS),
       timeline: formatHotkeySequence(HOTKEY_GO_TO_TIMELINE),
+      drafts: formatHotkeySequence(HOTKEY_GO_TO_DRAFTS),
+      recycle_bin: formatHotkeySequence(HOTKEY_GO_TO_RECYCLE_BIN),
     }),
     []
   );
@@ -468,6 +477,13 @@ export function BoardViews({
       if (!viewIsEnabled(nextView)) return;
       setCurrentView(nextView);
       primeFullTaskCache(nextView);
+      if (!localTaskState) {
+        updateUserWorkspaceConfig.mutate({
+          configId: TASK_LAST_BOARD_VIEW_CONFIG_ID,
+          value: nextView,
+          workspaceId: effectiveWorkspaceId,
+        });
+      }
 
       if (typeof window !== 'undefined') {
         const currentUrl = new URL(window.location.href);
@@ -487,7 +503,13 @@ export function BoardViews({
         );
       }
     },
-    [primeFullTaskCache, viewIsEnabled]
+    [
+      effectiveWorkspaceId,
+      localTaskState,
+      primeFullTaskCache,
+      updateUserWorkspaceConfig,
+      viewIsEnabled,
+    ]
   );
 
   const { data: fullTasks = [], isFetching: isFullTasksFetching } = useQuery({
@@ -953,12 +975,48 @@ export function BoardViews({
   );
 
   useHotkeySequence(
+    HOTKEY_GO_TO_MY_TASKS,
+    () => {
+      handleViewChange('my_tasks');
+    },
+    {
+      enabled: viewIsEnabled('my_tasks'),
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
+
+  useHotkeySequence(
     HOTKEY_GO_TO_TIMELINE,
     () => {
       handleViewChange('timeline');
     },
     {
       enabled: viewIsEnabled('timeline'),
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
+
+  useHotkeySequence(
+    HOTKEY_GO_TO_DRAFTS,
+    () => {
+      handleViewChange('drafts');
+    },
+    {
+      enabled: viewIsEnabled('drafts'),
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
+
+  useHotkeySequence(
+    HOTKEY_GO_TO_RECYCLE_BIN,
+    () => {
+      handleViewChange('recycle_bin');
+    },
+    {
+      enabled: viewIsEnabled('recycle_bin'),
       ignoreInputs: true,
       preventDefault: true,
     }

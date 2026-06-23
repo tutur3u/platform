@@ -10,8 +10,10 @@ mod ai_whitelist_delete;
 #[cfg(test)]
 mod ai_whitelist_test;
 mod aurora;
+mod auth_accounts;
 mod auth_me;
 mod auth_mfa;
+mod auth_mfa_mobile_approvals;
 mod changelog;
 mod cms_workspaces;
 mod contact;
@@ -23,6 +25,7 @@ mod current_user_calendar_settings;
 mod current_user_calendar_settings_test;
 mod current_user_default_workspace;
 mod devbox_cache;
+mod devboxes_runs;
 mod education_course_module_reads;
 mod education_course_module_reads_query;
 #[cfg(test)]
@@ -57,10 +60,13 @@ mod hive_access;
 mod hive_access_requests;
 mod hive_ai_credits;
 mod hive_ai_models;
+mod hive_servers_economy;
+mod hive_servers_workflows_runs;
 mod hive_workspaces;
 mod holidays;
 mod infrastructure_abuse_events;
 mod infrastructure_abuse_intelligence;
+mod infrastructure_ai_agents_external_threads;
 mod infrastructure_blocked_ips;
 mod infrastructure_catalog_exports;
 mod infrastructure_content_exports;
@@ -71,6 +77,9 @@ mod infrastructure_inventory_exports;
 #[cfg(test)]
 mod infrastructure_inventory_exports_test;
 mod infrastructure_migration_exports;
+mod infrastructure_monitoring_blue_green;
+mod infrastructure_monitoring_blue_green_watcher_logs;
+mod infrastructure_monitoring_stress_tests;
 mod infrastructure_paginated_list;
 mod infrastructure_post_email_queue;
 #[cfg(test)]
@@ -116,7 +125,16 @@ mod workspace_mobile_module_flags;
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
+mod workspaces_categories;
+mod workspaces_external_projects;
+mod workspaces_inventory_access;
+mod workspaces_inventory_analytics;
+mod workspaces_inventory_product_form_options;
 mod workspaces_list;
+mod workspaces_mail;
+mod workspaces_mail_mailboxes_messages;
+mod workspaces_mind_boards_patches;
+mod workspaces_posts;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -740,6 +758,136 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspace_inventory_sales_by_product::handle_workspace_inventory_sales_by_product_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_mail_mailboxes_messages::handle_workspaces_mail_mailboxes_messages_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_mail::handle_workspaces_mail_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        devboxes_runs::handle_devboxes_runs_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_categories::handle_workspaces_categories_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        auth_mfa_mobile_approvals::handle_auth_mfa_mobile_approvals_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_mind_boards_patches::handle_workspaces_mind_boards_patches_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = hive_servers_workflows_runs::handle_hive_servers_workflows_runs_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        auth_accounts::handle_auth_accounts_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_servers_economy::handle_hive_servers_economy_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_inventory_analytics::handle_workspaces_inventory_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_inventory_product_form_options::handle_workspaces_inventory_product_form_options_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_inventory_access::handle_workspaces_inventory_access_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_external_projects::handle_workspaces_external_projects_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_monitoring_blue_green_watcher_logs::handle_infrastructure_monitoring_blue_green_watcher_logs_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_monitoring_blue_green::handle_infrastructure_monitoring_blue_green_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_posts::handle_workspaces_posts_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_ai_agents_external_threads::handle_infrastructure_ai_agents_external_threads_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_monitoring_stress_tests::handle_infrastructure_monitoring_stress_tests_route(
             config, request, outbound,
         )
         .await

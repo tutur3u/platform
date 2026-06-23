@@ -57,6 +57,7 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
     options,
     placeholder,
     selected,
+    triggerIcon,
     triggerTooltip,
   }: {
     ariaLabel?: string;
@@ -68,6 +69,7 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
     options: { description?: string; label: string; value: string }[];
     placeholder?: string;
     selected: string;
+    triggerIcon?: React.ReactNode;
     triggerTooltip?: React.ReactNode;
   }) {
     comboboxMocks.seenOptions.push(options);
@@ -82,6 +84,7 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
         }
         className={className}
         data-colorize-trigger-icon={String(colorizeTriggerIcon)}
+        data-has-trigger-icon={String(Boolean(triggerIcon))}
         data-trigger-tooltip={
           typeof triggerTooltip === 'string' ? triggerTooltip : undefined
         }
@@ -311,6 +314,17 @@ describe('BoardHeader', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('hides the board picker when showing My Tasks', () => {
+    renderBoardHeader({
+      currentView: 'my_tasks',
+    });
+
+    expect(screen.queryByTestId('board-switcher')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('ws-task-boards.views.my_tasks')
+    ).toBeInTheDocument();
+  });
+
   it('shows planner as a personal kanban toolbar button and opens the dialog', () => {
     renderBoardHeader({
       isPersonalWorkspace: true,
@@ -447,6 +461,7 @@ describe('BoardHeader', () => {
       'data-trigger-tooltip',
       'common.view: ws-task-boards.views.kanban'
     );
+    expect(view).toHaveAttribute('data-has-trigger-icon', 'true');
     expect(sort).toHaveAttribute(
       'data-trigger-tooltip',
       'common.sort: common.sort'

@@ -81,6 +81,56 @@ function mockCalendarFetch(events: CalendarEvent[]) {
   });
 }
 
+function createWeekDates(startIsoDate: string) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(`${startIsoDate}T00:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + index);
+    return date;
+  });
+}
+
+function mockCalendarFetchByWeek(
+  eventsByWeekStart: Record<string, CalendarEvent[]>
+) {
+  return vi.fn(async (input: RequestInfo | URL) => {
+    const url = new URL(String(input), 'http://localhost');
+
+    if (url.pathname.includes('/calendar/habit-events')) {
+      return {
+        ok: true,
+        json: async () => ({
+          completedHabitEventIds: [],
+          habitEventIds: [],
+        }),
+      } as Response;
+    }
+
+    if (url.pathname.includes('/calendar/events')) {
+      const startAt = url.searchParams.get('start_at');
+      const startAtTime = startAt ? new Date(startAt).getTime() : NaN;
+      const matchingEvents = Object.entries(eventsByWeekStart).find(
+        ([weekStart]) => {
+          const expectedStart = new Date(
+            `${weekStart}T00:00:00.000Z`
+          ).getTime();
+
+          return Math.abs(startAtTime - expectedStart) < 24 * 60 * 60 * 1000;
+        }
+      )?.[1];
+
+      return {
+        ok: true,
+        json: async () => ({
+          count: matchingEvents?.length ?? 0,
+          data: matchingEvents ?? [],
+        }),
+      } as Response;
+    }
+
+    throw new Error(`Unexpected fetch ${url}`);
+  });
+}
+
 describe('CalendarSyncProvider optimistic visible events', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -200,6 +250,64 @@ describe('CalendarSyncProvider optimistic visible events', () => {
       expect(result.current.syncStatus.state).toBe('error');
     });
     expect(result.current.events.map((event) => event.id)).toEqual(['event-1']);
+  });
+
+  it('shows the active week events when navigating away and back', async () => {
+    const currentWeekEvent = createEvent('current-week-event', {
+      start_at: '2026-06-22T09:00:00.000Z',
+      end_at: '2026-06-22T10:00:00.000Z',
+    });
+    const nextWeekEvent = createEvent('next-week-event', {
+      start_at: '2026-06-29T09:00:00.000Z',
+      end_at: '2026-06-29T10:00:00.000Z',
+    });
+    const fetchMock = mockCalendarFetchByWeek({
+      '2026-06-22': [currentWeekEvent],
+      '2026-06-29': [nextWeekEvent],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderCalendarSync();
+
+    act(() => {
+      result.current.setDates(createWeekDates('2026-06-22'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual([
+        'current-week-event',
+      ]);
+    });
+
+    act(() => {
+      result.current.setDates(createWeekDates('2026-06-29'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual([
+        'next-week-event',
+      ]);
+    });
+
+    act(() => {
+      result.current.setDates(createWeekDates('2026-06-22'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual([
+        'current-week-event',
+      ]);
+    });
+
+    act(() => {
+      result.current.setDates(createWeekDates('2026-06-29'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual([
+        'next-week-event',
+      ]);
+    });
   });
 
   it('applies optimistic insert, update, and delete deltas immediately', async () => {

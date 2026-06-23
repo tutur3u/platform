@@ -198,7 +198,6 @@ export const CalendarSyncProvider = ({
   externalEventsLoading?: boolean;
   externalRefresh?: () => void;
 }) => {
-  const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [events, setEvents] = useState<CalendarEventWithHabitInfo[]>([]);
   const hasExternalEvents = externalEvents !== undefined;
@@ -262,6 +261,14 @@ export const CalendarSyncProvider = ({
     }
     return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
   }, []);
+
+  const activeCacheKey = useMemo(
+    () => getCacheKey(dates),
+    [dates, getCacheKey]
+  );
+  const activeCachedDatabaseEvents = activeCacheKey
+    ? calendarCache[activeCacheKey]?.dbEvents
+    : undefined;
 
   // Helper to check if a date range includes today (current week issue)
   const includesCurrentWeek = useCallback((dateRange: Date[]) => {
@@ -416,34 +423,33 @@ export const CalendarSyncProvider = ({
 
   // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
-    queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+    queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
     enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
-      const cacheKey = getCacheKey(dates);
-      if (!cacheKey) return null;
+      if (!activeCacheKey) return null;
 
-      const cachedData = calendarCache[cacheKey];
+      const cachedData = calendarCache[activeCacheKey];
 
       // If we have cached data and it's not stale, return it immediately
       if (
-        cachedData?.dbEvents &&
-        cachedData.dbEvents.length > 0 &&
+        cachedData &&
         !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
         !isForcedRef.current
       ) {
-        setData(cachedData.dbEvents);
         return cachedData.dbEvents;
       }
 
       // Otherwise fetch fresh data via API (which handles E2EE decryption)
       const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+      const endDate = dayjs(dates[dates.length - 1])
+        .add(1, 'day')
+        .startOf('day');
 
       try {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/events?start_at=${startDate.toISOString()}&end_at=${endDate.add(1, 'day').toISOString()}`,
+          `/api/v1/workspaces/${wsId}/calendar/events?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`,
           { cache: 'no-store' }
         );
 
@@ -456,7 +462,7 @@ export const CalendarSyncProvider = ({
         const fetchedData = result.data || [];
 
         // Update cache with new data and reset isForced flag
-        updateCache(cacheKey, {
+        updateCache(activeCacheKey, {
           dbEvents: fetchedData,
           dbLastUpdated: Date.now(),
         });
@@ -465,7 +471,6 @@ export const CalendarSyncProvider = ({
         isForcedRef.current = false;
 
         setError(null);
-        setData(fetchedData);
         return fetchedData;
       } catch (err) {
         const errorMessage =
@@ -484,7 +489,7 @@ export const CalendarSyncProvider = ({
           lastSyncTime: new Date(),
         });
 
-        return cachedData?.dbEvents ?? data ?? [];
+        return cachedData?.dbEvents ?? [];
       }
     },
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
@@ -493,7 +498,7 @@ export const CalendarSyncProvider = ({
   // Legacy direct Google fetch/reconcile is disabled. Provider inbound sync is
   // owned by the workspace sync route so account/calendar identity stays scoped.
   const { isLoading: isGoogleLoading } = useQuery({
-    queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
+    queryKey: ['googleCalendarEvents', wsId, activeCacheKey],
     enabled: false,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
@@ -503,17 +508,19 @@ export const CalendarSyncProvider = ({
 
   // Fetch habit calendar events to identify which events are habits
   const { data: habitEventData } = useQuery({
-    queryKey: ['habitCalendarEvents', wsId, getCacheKey(dates)],
+    queryKey: ['habitCalendarEvents', wsId, activeCacheKey],
     enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 60000, // Consider data fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
       const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+      const endDate = dayjs(dates[dates.length - 1])
+        .add(1, 'day')
+        .startOf('day');
 
       try {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/habit-events?start_at=${startDate.toISOString()}&end_at=${endDate.add(1, 'day').toISOString()}`,
+          `/api/v1/workspaces/${wsId}/calendar/habit-events?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`,
           { cache: 'no-store' }
         );
 
@@ -562,22 +569,14 @@ export const CalendarSyncProvider = ({
       return null;
     }
 
-    const cacheKey = getCacheKey(dates);
-    if (!cacheKey) return null;
+    if (!activeCacheKey) return null;
 
     isForcedRef.current = true;
 
     queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, cacheKey],
+      queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
     });
-  }, [
-    queryClient,
-    wsId,
-    dates,
-    getCacheKey,
-    hasExternalEvents,
-    externalRefresh,
-  ]);
+  }, [queryClient, wsId, activeCacheKey, hasExternalEvents, externalRefresh]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -709,8 +708,7 @@ export const CalendarSyncProvider = ({
       return;
     }
 
-    const cacheKey = getCacheKey(dates);
-    const cacheData = calendarCache[cacheKey];
+    const cacheData = calendarCache[activeCacheKey];
 
     // For current week, force a fresh database fetch
     const isCurrentWeek = includesCurrentWeek(dates);
@@ -718,7 +716,7 @@ export const CalendarSyncProvider = ({
     if (cacheData && isCurrentWeek) {
       isForcedRef.current = true;
       // For current week, reset database cache timestamp to force refresh
-      updateCache(cacheKey, {
+      updateCache(activeCacheKey, {
         dbLastUpdated: 0,
       });
     }
@@ -727,7 +725,7 @@ export const CalendarSyncProvider = ({
     calendarCache,
     includesCurrentWeek,
     areDatesEqual,
-    getCacheKey,
+    activeCacheKey,
     updateCache,
     hasExternalEvents,
   ]);
@@ -740,8 +738,8 @@ export const CalendarSyncProvider = ({
     () =>
       hasExternalEvents
         ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
-        : (data ?? fetchedData ?? []),
-    [data, externalEvents, fetchedData, hasExternalEvents]
+        : (fetchedData ?? activeCachedDatabaseEvents ?? []),
+    [activeCachedDatabaseEvents, externalEvents, fetchedData, hasExternalEvents]
   );
 
   const visibleEventsWithOptimisticState = useMemo(() => {
@@ -868,23 +866,6 @@ export const CalendarSyncProvider = ({
     });
   }, [events]);
 
-  // Add a ref to track if we've processed the initial data
-  const hasProcessedInitialData = useRef(false);
-
-  // Effect to process initial data
-  useEffect(() => {
-    if (fetchedData && !hasProcessedInitialData.current) {
-      hasProcessedInitialData.current = true;
-      // Force a re-render by updating the data state
-      setData(fetchedData);
-    }
-  }, [fetchedData]);
-
-  // Effect to reset the processed flag when dates change
-  useEffect(() => {
-    hasProcessedInitialData.current = false;
-  }, []);
-
   const syncToGoogle = useCallback(async () => {
     toast.info('Provider events sync when you create or edit them.');
     setSyncStatus({
@@ -898,7 +879,7 @@ export const CalendarSyncProvider = ({
   const value = {
     data: hasExternalEvents
       ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
-      : data,
+      : (fetchedData ?? activeCachedDatabaseEvents ?? null),
     googleData,
     error,
     dates,

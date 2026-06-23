@@ -1514,6 +1514,26 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/infrastructure/timezones ports the legacy authenticated root infrastructure timezone sync page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, bundled timezone pagination/search, server row status overlay, and create/update/delete mutations through the Rust-owned backend timezones facade instead of raw /api fetches."
     },
+    "layout:/:locale/:wsId/infrastructure/holidays:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/holidays/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/holidays owns the legacy infrastructure holidays layout gate in its loader by requiring an authenticated root workspace session and manage_workspace_roles before rendering the page."
+    },
+    "page:/:locale/:wsId/infrastructure/holidays:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/holidays/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/holidays ports the legacy authenticated root infrastructure holidays CRUD page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, URL year filtering, localized TanStack Query mutations, and list/create/update/delete/bulk-import calls through the Rust-owned backend holidays facade instead of raw /api fetches."
+    },
+    "page:/:locale/:wsId/infrastructure/email-blacklist:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/email-blacklist/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/email-blacklist ports the legacy authenticated infrastructure email blacklist page as a dynamic no-store dashboard route with workspace resolution, root and workspace view_infrastructure gating, URL search/type/pagination filtering, localized TanStack Query mutations, and list/create/update/delete calls through the Rust-owned backend email-blacklist facade instead of direct Supabase reads or raw /api fetches."
+    },
+    "page:/:locale/:wsId/infrastructure/post-email-queue:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/post-email-queue/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/post-email-queue ports the legacy authenticated infrastructure post email queue observability page as a dynamic no-store read-only dashboard route with workspace resolution, root and workspace view_infrastructure gating, and queue summary/workspace/batch data loaded through the Rust-owned backend post-email-queue facade instead of direct Supabase reads. The legacy cron trigger form remains intentionally unported until a safe Rust/ops trigger facade exists."
+    },
     "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

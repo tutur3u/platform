@@ -134,7 +134,10 @@ import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
 import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/$locale/$wsId/infrastructure/timezones';
+import { Route as LocaleWsIdInfrastructurePostEmailQueueRouteImport } from './routes/$locale/$wsId/infrastructure/post-email-queue';
 import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-versions';
+import { Route as LocaleWsIdInfrastructureHolidaysRouteImport } from './routes/$locale/$wsId/infrastructure/holidays';
+import { Route as LocaleWsIdInfrastructureEmailBlacklistRouteImport } from './routes/$locale/$wsId/infrastructure/email-blacklist';
 import { Route as LocaleWsIdInfrastructureAbuseEventsRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-events';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
 import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets';
@@ -856,10 +859,28 @@ const LocaleWsIdInfrastructureTimezonesRoute =
     path: '/$wsId/infrastructure/timezones',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructurePostEmailQueueRoute =
+  LocaleWsIdInfrastructurePostEmailQueueRouteImport.update({
+    id: '/$wsId/infrastructure/post-email-queue',
+    path: '/$wsId/infrastructure/post-email-queue',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureMobileVersionsRoute =
   LocaleWsIdInfrastructureMobileVersionsRouteImport.update({
     id: '/$wsId/infrastructure/mobile-versions',
     path: '/$wsId/infrastructure/mobile-versions',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdInfrastructureHolidaysRoute =
+  LocaleWsIdInfrastructureHolidaysRouteImport.update({
+    id: '/$wsId/infrastructure/holidays',
+    path: '/$wsId/infrastructure/holidays',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdInfrastructureEmailBlacklistRoute =
+  LocaleWsIdInfrastructureEmailBlacklistRouteImport.update({
+    id: '/$wsId/infrastructure/email-blacklist',
+    path: '/$wsId/infrastructure/email-blacklist',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
 const LocaleWsIdInfrastructureAbuseEventsRoute =
@@ -1313,7 +1334,10 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
@@ -1497,7 +1521,10 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
@@ -1683,7 +1710,10 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
@@ -1870,7 +1900,10 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
+    | '/$locale/$wsId/infrastructure/email-blacklist'
+    | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
@@ -2054,7 +2087,10 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
+    | '/$locale/$wsId/infrastructure/email-blacklist'
+    | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
@@ -2239,7 +2275,10 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
+    | '/$locale/$wsId/infrastructure/email-blacklist'
+    | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
@@ -3204,11 +3243,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureTimezonesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/post-email-queue': {
+      id: '/$locale/$wsId/infrastructure/post-email-queue';
+      path: '/$wsId/infrastructure/post-email-queue';
+      fullPath: '/$locale/$wsId/infrastructure/post-email-queue';
+      preLoaderRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/mobile-versions': {
       id: '/$locale/$wsId/infrastructure/mobile-versions';
       path: '/$wsId/infrastructure/mobile-versions';
       fullPath: '/$locale/$wsId/infrastructure/mobile-versions';
       preLoaderRoute: typeof LocaleWsIdInfrastructureMobileVersionsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure/holidays': {
+      id: '/$locale/$wsId/infrastructure/holidays';
+      path: '/$wsId/infrastructure/holidays';
+      fullPath: '/$locale/$wsId/infrastructure/holidays';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureHolidaysRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure/email-blacklist': {
+      id: '/$locale/$wsId/infrastructure/email-blacklist';
+      path: '/$wsId/infrastructure/email-blacklist';
+      fullPath: '/$locale/$wsId/infrastructure/email-blacklist';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/infrastructure/abuse-events': {
@@ -4041,7 +4101,10 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
   LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  LocaleWsIdInfrastructureEmailBlacklistRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
   LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  LocaleWsIdInfrastructurePostEmailQueueRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
@@ -4182,8 +4245,13 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdEducationValseaRoute: LocaleWsIdEducationValseaRoute,
   LocaleWsIdInfrastructureAbuseEventsRoute:
     LocaleWsIdInfrastructureAbuseEventsRoute,
+  LocaleWsIdInfrastructureEmailBlacklistRoute:
+    LocaleWsIdInfrastructureEmailBlacklistRoute,
+  LocaleWsIdInfrastructureHolidaysRoute: LocaleWsIdInfrastructureHolidaysRoute,
   LocaleWsIdInfrastructureMobileVersionsRoute:
     LocaleWsIdInfrastructureMobileVersionsRoute,
+  LocaleWsIdInfrastructurePostEmailQueueRoute:
+    LocaleWsIdInfrastructurePostEmailQueueRoute,
   LocaleWsIdInfrastructureTimezonesRoute:
     LocaleWsIdInfrastructureTimezonesRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,

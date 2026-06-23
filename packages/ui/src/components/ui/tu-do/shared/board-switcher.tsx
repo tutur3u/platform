@@ -192,7 +192,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
 
   return (
     <Combobox
-      className="w-[min(22rem,70vw)]"
+      className="w-[min(22rem,70vw)] [&_button]:h-7 [&_button]:min-h-7 [&_button]:px-2 sm:[&_button]:h-8 sm:[&_button]:min-h-8"
       disabled={isFetchingBoards}
       emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
       label={

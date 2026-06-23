@@ -1499,6 +1499,7 @@ export {
   SHOW_VERSION_BADGE_CONFIG_ID,
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+  TASK_LAST_BOARD_VIEW_CONFIG_ID,
   type UpdatePlatformUserRolesPayload,
   type UpdateWorkspaceUserApprovalPayload,
   type UpdateWorkspaceUserApprovalResponse,

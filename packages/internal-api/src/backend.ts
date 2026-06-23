@@ -1,4 +1,4 @@
-import type { AbuseEvent } from '@tuturuuu/types';
+import type { AbuseEvent, VietnameseHoliday } from '@tuturuuu/types';
 import type {
   InternalOtpClient,
   InternalOtpPlatform,
@@ -163,6 +163,97 @@ export type BackendInfrastructureTimezoneWriteRequest = Omit<
 
 export type BackendInfrastructureTimezonesMessage = {
   message: string;
+};
+
+export type BackendVietnameseHoliday = VietnameseHoliday;
+
+export type BackendInternalHolidaysQuery = {
+  year?: number | string;
+};
+
+export type BackendInternalHolidayCreateRequest = {
+  date: string;
+  name: string;
+};
+
+export type BackendInternalHolidayUpdateRequest =
+  Partial<BackendInternalHolidayCreateRequest>;
+
+export type BackendInternalHolidayBulkImportItem =
+  BackendInternalHolidayCreateRequest;
+
+export type BackendInternalHolidayBulkImportRequest = {
+  holidays: BackendInternalHolidayBulkImportItem[];
+  replaceExisting?: boolean;
+};
+
+export type BackendInternalHolidayBulkImportResponse = {
+  imported: number;
+  message: string;
+  yearsAffected: number[];
+};
+
+export type BackendInternalHolidayMutationMessage = {
+  message: string;
+};
+
+export type BackendInfrastructureEmailBlacklistEntryType = 'domain' | 'email';
+
+export type BackendInfrastructureEmailBlacklistEntry = {
+  added_by_user_id?: string | null;
+  created_at: string;
+  entry_type: BackendInfrastructureEmailBlacklistEntryType;
+  id: string;
+  reason?: string | null;
+  updated_at: string;
+  value: string;
+  users?: {
+    display_name: string | null;
+    id: string;
+  } | null;
+};
+
+export type BackendInfrastructureEmailBlacklistCreateRequest = {
+  entry_type: BackendInfrastructureEmailBlacklistEntryType;
+  reason?: string | null;
+  value: string;
+};
+
+export type BackendInfrastructureEmailBlacklistUpdateRequest = {
+  reason?: string | null;
+};
+
+export type BackendInfrastructureEmailBlacklistDeleteResponse = {
+  message: string;
+};
+
+export type BackendInfrastructurePostEmailQueueStatusCount = {
+  blocked: number;
+  cancelled: number;
+  failed: number;
+  processing: number;
+  queued: number;
+  sent: number;
+  total: number;
+};
+
+export type BackendInfrastructurePostEmailQueueWorkspaceSummary =
+  BackendInfrastructurePostEmailQueueStatusCount & {
+    ws_id: string;
+  };
+
+export type BackendInfrastructurePostEmailQueueBatchSummary = {
+  batch_id: string;
+  claimed: number;
+  failed: number;
+  last_attempt_at: string | null;
+  sent: number;
+};
+
+export type BackendInfrastructurePostEmailQueueResponse = {
+  byWorkspace: BackendInfrastructurePostEmailQueueWorkspaceSummary[];
+  recentBatches: BackendInfrastructurePostEmailQueueBatchSummary[];
+  summary: BackendInfrastructurePostEmailQueueStatusCount;
 };
 
 export type BackendNovaCurrentTeamResponse = {
@@ -825,6 +916,199 @@ export function deleteBackendInfrastructureTimezone(
       cache: 'no-store',
       headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
       method: 'DELETE',
+    }
+  );
+}
+
+export function getBackendInternalHolidays(
+  query: BackendInternalHolidaysQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  const apiQuery: InternalApiQuery = {
+    year: query.year,
+  };
+
+  return createBackendApiClient(options).json<BackendVietnameseHoliday[]>(
+    '/api/v1/internal/holidays',
+    {
+      cache: 'no-store',
+      query: apiQuery,
+    }
+  );
+}
+
+export function createBackendInternalHoliday(
+  payload: BackendInternalHolidayCreateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(clientOptions).json<BackendVietnameseHoliday>(
+    '/api/v1/internal/holidays',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateBackendInternalHoliday(
+  holidayId: string,
+  payload: BackendInternalHolidayUpdateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(clientOptions).json<BackendVietnameseHoliday>(
+    `/api/v1/internal/holidays/${backendPathSegment(holidayId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteBackendInternalHoliday(
+  holidayId: string,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInternalHolidayMutationMessage>(
+    `/api/v1/internal/holidays/${backendPathSegment(holidayId)}`,
+    {
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
+      method: 'DELETE',
+    }
+  );
+}
+
+export function bulkImportBackendInternalHolidays(
+  payload: BackendInternalHolidayBulkImportRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInternalHolidayBulkImportResponse>(
+    '/api/v1/internal/holidays/bulk',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export function getBackendInfrastructureEmailBlacklistEntries(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<
+    BackendInfrastructureEmailBlacklistEntry[]
+  >('/api/v1/infrastructure/email-blacklist', {
+    cache: 'no-store',
+  });
+}
+
+export function getBackendInfrastructureEmailBlacklistEntry(
+  entryId: string,
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendInfrastructureEmailBlacklistEntry>(
+    `/api/v1/infrastructure/email-blacklist/${backendPathSegment(entryId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function createBackendInfrastructureEmailBlacklistEntry(
+  payload: BackendInfrastructureEmailBlacklistCreateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureEmailBlacklistEntry>(
+    '/api/v1/infrastructure/email-blacklist',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateBackendInfrastructureEmailBlacklistEntry(
+  entryId: string,
+  payload: BackendInfrastructureEmailBlacklistUpdateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureEmailBlacklistEntry>(
+    `/api/v1/infrastructure/email-blacklist/${backendPathSegment(entryId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteBackendInfrastructureEmailBlacklistEntry(
+  entryId: string,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureEmailBlacklistDeleteResponse>(
+    `/api/v1/infrastructure/email-blacklist/${backendPathSegment(entryId)}`,
+    {
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
+      method: 'DELETE',
+    }
+  );
+}
+
+export function getBackendInfrastructurePostEmailQueue(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendInfrastructurePostEmailQueueResponse>(
+    '/api/v1/infrastructure/post-email-queue',
+    {
+      cache: 'no-store',
     }
   );
 }

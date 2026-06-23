@@ -1,4 +1,7 @@
-import { TASK_DEFAULT_BOARD_ID_CONFIG_ID } from '@tuturuuu/internal-api/users';
+import {
+  TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+  TASK_LAST_BOARD_VIEW_CONFIG_ID,
+} from '@tuturuuu/internal-api/users';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
@@ -17,6 +20,26 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+const TASK_BOARD_VIEWS = [
+  'kanban',
+  'list',
+  'my_tasks',
+  'timeline',
+  'drafts',
+  'recycle_bin',
+] as const;
+
+type TaskBoardView = (typeof TASK_BOARD_VIEWS)[number];
+
+function normalizeTaskBoardView(
+  value: string | null | undefined
+): TaskBoardView {
+  const trimmedValue = value?.trim();
+  return TASK_BOARD_VIEWS.includes(trimmedValue as TaskBoardView)
+    ? (trimmedValue as TaskBoardView)
+    : 'my_tasks';
 }
 
 async function getActiveBoardIdById({
@@ -72,20 +95,30 @@ export default async function Page({ params }: Props) {
   if (!workspace) notFound();
 
   const sbAdmin = await createAdminClient<Database>();
-  const { data: defaultBoardConfig, error: defaultBoardConfigError } =
-    await sbAdmin
-      .from('user_workspace_configs')
-      .select('value')
-      .eq('user_id', currentUser.id)
-      .eq('ws_id', workspace.id)
-      .eq('id', TASK_DEFAULT_BOARD_ID_CONFIG_ID)
-      .maybeSingle();
+  const { data: taskConfigs, error: taskConfigsError } = await sbAdmin
+    .from('user_workspace_configs')
+    .select('id,value')
+    .eq('user_id', currentUser.id)
+    .eq('ws_id', workspace.id)
+    .in('id', [
+      TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+      TASK_LAST_BOARD_VIEW_CONFIG_ID,
+    ]);
 
-  if (defaultBoardConfigError) throw defaultBoardConfigError;
+  if (taskConfigsError) throw taskConfigsError;
 
-  const defaultBoardId = defaultBoardConfig?.value?.trim()
+  const configById = new Map(
+    (taskConfigs ?? []).map((config) => [config.id, config.value] as const)
+  );
+  const defaultBoardConfigValue = configById.get(
+    TASK_DEFAULT_BOARD_ID_CONFIG_ID
+  );
+  const lastBoardView = normalizeTaskBoardView(
+    configById.get(TASK_LAST_BOARD_VIEW_CONFIG_ID)
+  );
+  const defaultBoardId = defaultBoardConfigValue?.trim()
     ? await getActiveBoardIdById({
-        boardId: defaultBoardConfig.value.trim(),
+        boardId: defaultBoardConfigValue.trim(),
         sbAdmin,
         wsId: workspace.id,
       })
@@ -98,10 +131,16 @@ export default async function Page({ params }: Props) {
     }));
 
   if (targetBoardId) {
-    redirect(`/${routeWsId}/tasks/boards/${targetBoardId}?view=my_tasks`);
+    redirect(
+      `/${routeWsId}/tasks/boards/${targetBoardId}?view=${lastBoardView}`
+    );
   }
 
   return (
-    <TasksNoBoardClient routeWsId={routeWsId} workspaceId={workspace.id} />
+    <TasksNoBoardClient
+      initialView={lastBoardView}
+      routeWsId={routeWsId}
+      workspaceId={workspace.id}
+    />
   );
 }
