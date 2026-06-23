@@ -91,8 +91,7 @@ export function QuizSetRowActions({
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-flashcards.edit')}
-        editDescription={t('ws-flashcards.edit_description')}
+        title={t('ws-quiz-sets.edit')}
         setOpen={setShowEditDialog}
         form={
           <QuizSetRowActionsForm wsId={wsId} moduleId={moduleId} data={data} />

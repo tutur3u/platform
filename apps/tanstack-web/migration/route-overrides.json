@@ -1444,6 +1444,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content ports the legacy Extra Reading placeholder with localized title and disabled AI action. This marks only the page artifact migrated; parent dashboard/course/module data ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets ports the legacy module quiz-set table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth, FeatureSummary parity, TanStack Query-backed create/update/delete forms, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; course-module quiz-set API route ownership remains separately tracked."
+    },
     "layout:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
