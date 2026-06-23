@@ -1082,6 +1082,52 @@ export async function getWorkspaceFlashcards(
   );
 }
 
+export interface ListCourseModuleQuizSetsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListCourseModuleQuizSetsResponse {
+  data: Array<{
+    id: string;
+    name: string;
+    created_at?: string;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of the quiz sets linked to a single course module via
+ * `GET /api/v1/workspaces/:wsId/course-modules/:moduleId/quiz-sets`.
+ */
+export async function getCourseModuleQuizSets(
+  workspaceId: string,
+  moduleId: string,
+  params?: ListCourseModuleQuizSetsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListCourseModuleQuizSetsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules/${encodePathSegment(moduleId)}/quiz-sets${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
 export interface ListWorkspaceQuizSetsParams {
   page?: number;
   pageSize?: number;

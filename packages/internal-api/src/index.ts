@@ -304,6 +304,8 @@ export {
 } from './client';
 export type {
   CreateWorkspaceQuizPayload,
+  ListCourseModuleQuizSetsParams,
+  ListCourseModuleQuizSetsResponse,
   ListWorkspaceCoursesParams,
   ListWorkspaceCoursesResponse,
   ListWorkspaceFlashcardsParams,
@@ -360,6 +362,7 @@ export {
   generateValseaClassroomArtifact,
   generateValseaClassroomScenario,
   generateWorkspaceQuizOptionExplanation,
+  getCourseModuleQuizSets,
   getValseaClassroomConfig,
   getWorkspaceEducationAttemptDetail,
   getWorkspaceFlashcards,
