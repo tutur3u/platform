@@ -8235,6 +8235,68 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/mobile/module-flags:
+    get:
+      summary: Workspace mobile module flags
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts
+        GET. The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, resolves the legacy `internal` workspace
+        slug, requires workspace membership through a caller-token
+        `workspace_members` read, reads `MOBILE_HIDE_EXPERIMENTAL_MODULES` and
+        `MOBILE_HIDDEN_MODULES` from `workspace_secrets` through the
+        server-owned Supabase REST adapter, preserves JSON-array and
+        comma-separated hidden-module parsing, and returns the sorted legacy
+        `hiddenModuleIds` payload with the private cache directive.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sorted mobile module IDs hidden for the workspace caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - private, max-age=60, stale-while-revalidate=60
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMobileModuleFlagsResponse"
+        "401":
+          description: Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMobileModuleFlagsError"
+        "403":
+          description: Caller is not a member of the requested workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMobileModuleFlagsError"
+        "500":
+          description: Workspace membership or mobile module secret lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMobileModuleFlagsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/posts/permissions:
     get:
       summary: Workspace post permissions
@@ -9630,6 +9692,28 @@ components:
             - Unauthorized
             - Forbidden
             - Failed to verify workspace access
+    WorkspaceMobileModuleFlagsResponse:
+      type: object
+      required:
+        - hiddenModuleIds
+      properties:
+        hiddenModuleIds:
+          type: array
+          items:
+            type: string
+          description: Sorted legacy list of mobile module IDs hidden for this workspace.
+    WorkspaceMobileModuleFlagsError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - You don't have access to this workspace
+            - Failed to verify workspace membership
+            - Failed to load mobile module flags
     WorkspaceEducationAccessResponse:
       type: object
       required:

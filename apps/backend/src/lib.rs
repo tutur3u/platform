@@ -85,6 +85,9 @@ mod workspace_limits;
 mod workspace_mentions;
 #[cfg(test)]
 mod workspace_mentions_test;
+mod workspace_mobile_module_flags;
+#[cfg(test)]
+mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
 
@@ -513,6 +516,15 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mobile_module_flags::handle_workspace_mobile_module_flags_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }

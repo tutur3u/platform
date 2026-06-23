@@ -839,6 +839,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/Mention by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, requiring exact MEMBER workspace membership through the caller-token workspace_members read, reading workspace_users.email with the caller token, returning the legacy singular email array payload, and preserving the legacy Unauthorized, Forbidden, Failed to verify workspace access, and Supabase error bodies."
     },
+    "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/mobile/module-flags by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving the legacy internal workspace slug, requiring workspace membership through a caller-token workspace_members read, reading MOBILE_HIDE_EXPERIMENTAL_MODULES and MOBILE_HIDDEN_MODULES from workspace_secrets through the server-owned Supabase REST adapter, preserving JSON-array and comma-separated hidden-module parsing, returning sorted hiddenModuleIds, and keeping the legacy private cache directive plus Unauthorized, workspace-access, membership lookup, and module-flag lookup error bodies."
+    },
     "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
