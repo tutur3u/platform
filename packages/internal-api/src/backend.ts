@@ -227,6 +227,35 @@ export type BackendInfrastructureEmailBlacklistDeleteResponse = {
   message: string;
 };
 
+export type BackendInfrastructurePostEmailQueueStatusCount = {
+  blocked: number;
+  cancelled: number;
+  failed: number;
+  processing: number;
+  queued: number;
+  sent: number;
+  total: number;
+};
+
+export type BackendInfrastructurePostEmailQueueWorkspaceSummary =
+  BackendInfrastructurePostEmailQueueStatusCount & {
+    ws_id: string;
+  };
+
+export type BackendInfrastructurePostEmailQueueBatchSummary = {
+  batch_id: string;
+  claimed: number;
+  failed: number;
+  last_attempt_at: string | null;
+  sent: number;
+};
+
+export type BackendInfrastructurePostEmailQueueResponse = {
+  byWorkspace: BackendInfrastructurePostEmailQueueWorkspaceSummary[];
+  recentBatches: BackendInfrastructurePostEmailQueueBatchSummary[];
+  summary: BackendInfrastructurePostEmailQueueStatusCount;
+};
+
 export type BackendNovaCurrentTeamResponse = {
   teamId: string | null;
 };
@@ -1067,6 +1096,19 @@ export function deleteBackendInfrastructureEmailBlacklistEntry(
       cache: 'no-store',
       headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
       method: 'DELETE',
+    }
+  );
+}
+
+export function getBackendInfrastructurePostEmailQueue(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendInfrastructurePostEmailQueueResponse>(
+    '/api/v1/infrastructure/post-email-queue',
+    {
+      cache: 'no-store',
     }
   );
 }

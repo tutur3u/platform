@@ -341,7 +341,7 @@ Current inventory:
 - `1,165` route handler artifacts
 - `19` cron handlers
 - `1,543` total tracked route artifacts
-- `360` migrated artifacts, `444` terminal artifacts, and `1,099` remaining
+- `361` migrated artifacts, `445` terminal artifacts, and `1,098` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -647,6 +647,7 @@ Frontend pages now terminal after backend readiness:
 | `/:locale/:wsId/infrastructure/timezones` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/timezones` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, overlays Rust-owned persisted timezone rows onto the bundled timezone catalog, and performs create/update/delete sync mutations through the backend timezones facade. |
 | `/:locale/:wsId/infrastructure/holidays` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/holidays` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, carries the year filter through TanStack Router search state, and performs list/create/update/delete/bulk-import work through the Rust-owned holidays backend facade. |
 | `/:locale/:wsId/infrastructure/email-blacklist` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/email-blacklist` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves `view_infrastructure` not-found gating, carries URL search/type/pagination filters through TanStack Router, and loads/mutates rows through the Rust-owned email blacklist backend facade. |
+| `/:locale/:wsId/infrastructure/post-email-queue` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/post-email-queue` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves `view_infrastructure` not-found gating, and renders the read-only queue summary, workspace breakdown, and recent batches through the Rust-owned post-email-queue backend facade while leaving the legacy cron trigger out of scope. |
 
 Frontend migration candidates blocked on auth/data ownership:
 

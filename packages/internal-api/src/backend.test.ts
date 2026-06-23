@@ -21,6 +21,7 @@ import {
   getBackendInfrastructureAbuseEvents,
   getBackendInfrastructureEmailBlacklistEntries,
   getBackendInfrastructureEmailBlacklistEntry,
+  getBackendInfrastructurePostEmailQueue,
   getBackendInfrastructureTimezones,
   getBackendInternalHolidays,
   getBackendLegacyHealth,
@@ -935,6 +936,61 @@ describe('backend API client', () => {
     expect(createHeaders.get('origin')).toBe('http://backend:7820');
     expect(updateHeaders.get('content-type')).toBe('application/json');
     expect(deleteHeaders.get('origin')).toBe('http://backend:7820');
+  });
+
+  it('reads the Rust-owned infrastructure post email queue summary', async () => {
+    const response = {
+      byWorkspace: [
+        {
+          blocked: 0,
+          cancelled: 0,
+          failed: 1,
+          processing: 0,
+          queued: 2,
+          sent: 3,
+          total: 6,
+          ws_id: 'ws-1',
+        },
+      ],
+      recentBatches: [
+        {
+          batch_id: 'batch-1',
+          claimed: 4,
+          failed: 1,
+          last_attempt_at: '2026-01-01T00:00:00.000Z',
+          sent: 3,
+        },
+      ],
+      summary: {
+        blocked: 0,
+        cancelled: 0,
+        failed: 1,
+        processing: 0,
+        queued: 2,
+        sent: 3,
+        total: 6,
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => response,
+    });
+
+    await expect(
+      getBackendInfrastructurePostEmailQueue({
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toEqual(response);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/infrastructure/post-email-queue',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it('reads the Rust-owned current Nova team including null memberships', async () => {
