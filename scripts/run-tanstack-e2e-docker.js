@@ -19,7 +19,7 @@
 //
 // This is the minimal "is the shipped dual-stack artifact green?" gate. For the
 // full operations + verification narrative (services, ports, gate checklist),
-// see docs/CUTOVER-RUNBOOK.md.
+// see apps/docs/build/devops/tanstack-rust-cutover-runbook.mdx.
 //
 // Usage
 // -----
@@ -75,7 +75,8 @@ Options:
   --compose-file <path> Compose file (default: ${DEFAULT_COMPOSE_FILE}).
   -h, --help            Print this help and exit.
 
-See docs/CUTOVER-RUNBOOK.md for the full operations + verification narrative.
+See apps/docs/build/devops/tanstack-rust-cutover-runbook.mdx for the full
+operations + verification narrative.
 `;
 
 function parseArgs(argv = []) {

@@ -669,6 +669,77 @@ test('TanStack Rust migration docs keep current manifest counts in sync', () => 
   }
 });
 
+test('TanStack migration plan docs stay canonical and root docs stay pointer-only', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        rootDir,
+        'apps',
+        'tanstack-web',
+        'migration',
+        'route-manifest.json'
+      ),
+      'utf8'
+    )
+  );
+  const planDocs = fs.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'docs',
+      'platform',
+      'architecture',
+      'tanstack-rust-migration-plan.mdx'
+    ),
+    'utf8'
+  );
+  const rootMigrationPlan = fs.readFileSync(
+    path.join(rootDir, 'docs', 'MIGRATION-PLAN.md'),
+    'utf8'
+  );
+  const rootCutoverRunbook = fs.readFileSync(
+    path.join(rootDir, 'docs', 'CUTOVER-RUNBOOK.md'),
+    'utf8'
+  );
+  const apiProgress = manifest.progress.byKind.find(
+    (bucket) => bucket.key === 'api'
+  );
+
+  assert.ok(apiProgress, 'manifest must include API progress');
+
+  const expectedPlanSnippets = [
+    `| \`legacy-next\` | ${manifest.progress.totals.legacyNext} |`,
+    `| \`migrated\` | ${manifest.progress.totals.migrated} |`,
+    `| \`accepted-removal\` | ${manifest.progress.totals.acceptedRemoval} |`,
+    `| Total tracked artifacts | ${manifest.summary.total} |`,
+    `| API | ${apiProgress.legacyNext} |`,
+  ];
+
+  for (const expectedSnippet of expectedPlanSnippets) {
+    assert.ok(
+      planDocs.includes(expectedSnippet),
+      `missing current migration plan snippet: ${expectedSnippet}`
+    );
+  }
+
+  assert.match(
+    rootMigrationPlan,
+    /apps\/docs\/platform\/architecture\/tanstack-rust-migration-plan\.mdx/u
+  );
+  assert.match(
+    rootCutoverRunbook,
+    /apps\/docs\/build\/devops\/tanstack-rust-cutover-runbook\.mdx/u
+  );
+
+  for (const rootDoc of [rootMigrationPlan, rootCutoverRunbook]) {
+    assert.doesNotMatch(rootDoc, /^## \d+\. Current State \(snapshot /mu);
+    assert.doesNotMatch(rootDoc, /^\| `legacy-next` \| \d+/mu);
+    assert.doesNotMatch(rootDoc, /^\| `migrated` \| \d+/mu);
+    assert.doesNotMatch(rootDoc, /^\| Total route artifacts \| \d+/mu);
+  }
+});
+
 test('TanStack contact route stays terminal across Rust APIs and Start page', () => {
   const rootDir = path.resolve(__dirname, '..');
   const manifest = JSON.parse(
