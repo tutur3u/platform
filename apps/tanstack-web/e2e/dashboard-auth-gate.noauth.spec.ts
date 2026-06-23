@@ -35,6 +35,7 @@ const WS_ID = 'personal';
 // guard that the fail-closed gate stays wired across the migrated surface.
 const GATED_ROUTES = [
   'ai-chat/chatbots',
+  'ai-chat/my-chatbots',
   'calendar',
   'changelog',
   'chat',

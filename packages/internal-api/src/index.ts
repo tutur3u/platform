@@ -607,6 +607,13 @@ export {
   updateWalletRoleAccess,
 } from './finance';
 export {
+  type DeleteWorkspaceGroupTagResponse,
+  deleteWorkspaceGroupTag,
+  type ListWorkspaceGroupTagsParams,
+  type ListWorkspaceGroupTagsResponse,
+  listWorkspaceGroupTags,
+} from './group-tags';
+export {
   createWorkspaceHabitTracker,
   createWorkspaceHabitTrackerEntry,
   createWorkspaceHabitTrackerStreakAction,

@@ -153,6 +153,7 @@ import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/
 import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
 import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
 import { Route as LocaleWsIdEducationCoursesIndexRouteImport } from './routes/$locale/$wsId/education/courses/index';
+import { Route as LocaleWsIdAiChatMyChatbotsIndexRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/index';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
 import { Route as LocaleWsIdUsersGroupsCalendarRouteImport } from './routes/$locale/$wsId/users/groups/calendar';
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
@@ -960,6 +961,12 @@ const LocaleWsIdEducationCoursesIndexRoute =
     path: '/$wsId/education/courses/',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdAiChatMyChatbotsIndexRoute =
+  LocaleWsIdAiChatMyChatbotsIndexRouteImport.update({
+    id: '/$wsId/ai-chat/my-chatbots/',
+    path: '/$wsId/ai-chat/my-chatbots/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdUsersReportsReportIdRoute =
   LocaleWsIdUsersReportsReportIdRouteImport.update({
     id: '/$wsId/users/reports/$reportId',
@@ -1324,6 +1331,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
@@ -1501,6 +1509,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/ai-chat/my-chatbots': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
@@ -1680,6 +1689,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
@@ -1860,6 +1870,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/courses/'
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
@@ -2037,6 +2048,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/ai-chat/my-chatbots'
     | '/$locale/$wsId/education/courses'
     | '/$locale/$wsId/tasks/boards'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
@@ -2215,6 +2227,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/courses/'
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
@@ -3246,6 +3259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationCoursesIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/ai-chat/my-chatbots/': {
+      id: '/$locale/$wsId/ai-chat/my-chatbots/';
+      path: '/$wsId/ai-chat/my-chatbots';
+      fullPath: '/$locale/$wsId/ai-chat/my-chatbots/';
+      preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/users/reports/$reportId': {
       id: '/$locale/$wsId/users/reports/$reportId';
       path: '/$wsId/users/reports/$reportId';
@@ -3941,6 +3961,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   LocaleWsIdUsersGroupsCalendarRoute: typeof LocaleWsIdUsersGroupsCalendarRoute;
   LocaleWsIdUsersReportsReportIdRoute: typeof LocaleWsIdUsersReportsReportIdRoute;
+  LocaleWsIdAiChatMyChatbotsIndexRoute: typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   LocaleWsIdEducationCoursesIndexRoute: typeof LocaleWsIdEducationCoursesIndexRoute;
   LocaleWsIdTasksBoardsIndexRoute: typeof LocaleWsIdTasksBoardsIndexRoute;
 }
@@ -4080,6 +4101,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdUsersGroupsGroupIdRouteWithChildren,
   LocaleWsIdUsersGroupsCalendarRoute: LocaleWsIdUsersGroupsCalendarRoute,
   LocaleWsIdUsersReportsReportIdRoute: LocaleWsIdUsersReportsReportIdRoute,
+  LocaleWsIdAiChatMyChatbotsIndexRoute: LocaleWsIdAiChatMyChatbotsIndexRoute,
   LocaleWsIdEducationCoursesIndexRoute: LocaleWsIdEducationCoursesIndexRoute,
   LocaleWsIdTasksBoardsIndexRoute: LocaleWsIdTasksBoardsIndexRoute,
 };
