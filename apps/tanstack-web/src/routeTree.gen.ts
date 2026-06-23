@@ -175,6 +175,7 @@ import { Route as LocaleWsIdEducationCoursesCourseIdRouteImport } from './routes
 import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new';
 import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
 import { Route as LocaleWsIdUsersGroupsGroupIdScheduleRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/schedule';
+import { Route as LocaleWsIdUsersGroupsGroupIdRequestsRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/requests';
 import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
 
 const Char126offlineRoute = Char126offlineRouteImport.update({
@@ -1083,6 +1084,12 @@ const LocaleWsIdUsersGroupsGroupIdScheduleRoute =
     path: '/schedule',
     getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
   } as any);
+const LocaleWsIdUsersGroupsGroupIdRequestsRoute =
+  LocaleWsIdUsersGroupsGroupIdRequestsRouteImport.update({
+    id: '/requests',
+    path: '/requests',
+    getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
+  } as any);
 const LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute =
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport.update(
     {
@@ -1257,6 +1264,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
+  '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
@@ -1425,6 +1433,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
   '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
+  '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
@@ -1595,6 +1604,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
+  '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
@@ -1766,6 +1776,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
     | '/$locale/$wsId/tasks/boards/'
+    | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
@@ -1934,6 +1945,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
     | '/$locale/$wsId/tasks/boards'
+    | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
@@ -2103,6 +2115,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
     | '/$locale/$wsId/tasks/boards/'
+    | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
@@ -3281,6 +3294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdScheduleRouteImport;
       parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
     };
+    '/$locale/$wsId/users/groups/$groupId/requests': {
+      id: '/$locale/$wsId/users/groups/$groupId/requests';
+      path: '/requests';
+      fullPath: '/$locale/$wsId/users/groups/$groupId/requests';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRequestsRouteImport;
+      parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
+    };
     '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': {
       id: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
       path: '/modules/$moduleId/extra-content';
@@ -3569,11 +3589,14 @@ const LocaleWsIdEducationCoursesCourseIdRouteWithChildren =
   );
 
 interface LocaleWsIdUsersGroupsGroupIdRouteChildren {
+  LocaleWsIdUsersGroupsGroupIdRequestsRoute: typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   LocaleWsIdUsersGroupsGroupIdScheduleRoute: typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
 }
 
 const LocaleWsIdUsersGroupsGroupIdRouteChildren: LocaleWsIdUsersGroupsGroupIdRouteChildren =
   {
+    LocaleWsIdUsersGroupsGroupIdRequestsRoute:
+      LocaleWsIdUsersGroupsGroupIdRequestsRoute,
     LocaleWsIdUsersGroupsGroupIdScheduleRoute:
       LocaleWsIdUsersGroupsGroupIdScheduleRoute,
   };
