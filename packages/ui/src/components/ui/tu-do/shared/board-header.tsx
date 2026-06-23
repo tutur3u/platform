@@ -10,6 +10,7 @@ import {
   Flag,
   Gauge,
   KanbanSquare,
+  Layers,
   LayoutDashboard,
   LayoutGrid,
   List,
@@ -628,7 +629,7 @@ export function BoardHeader({
             showChevron={false}
             triggerMode="compact"
             triggerTooltip={`${t('common.status')}: ${selectedListStatusOption?.label ?? t('common.all')}`}
-            triggerIcon={<CopyCheck className="h-3.5 w-3.5" />}
+            triggerIcon={<Layers className="h-3.5 w-3.5" />}
             colorizeTriggerIcon={false}
             className={cn(
               toolbarComboboxClass,
