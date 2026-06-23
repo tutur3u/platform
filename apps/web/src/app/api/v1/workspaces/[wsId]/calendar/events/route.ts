@@ -13,7 +13,14 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
-import { resolveCalendarSource } from '@/lib/calendar/source-resolver';
+import {
+  type ResolvedCalendarSource,
+  resolveCalendarSource,
+} from '@/lib/calendar/source-resolver';
+import {
+  getCalendarSyncPreferences,
+  resolveOutboundSyncSource,
+} from '@/lib/calendar/sync-preferences';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   decryptEventsFromStorage,
@@ -56,6 +63,39 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+function getProviderSyncFields(args: {
+  error: unknown;
+  settingsAvailable: boolean;
+  synced: boolean;
+}) {
+  if (!args.settingsAvailable) return {};
+
+  if (args.synced) {
+    return {
+      last_synced_at: new Date().toISOString(),
+      sync_error: null,
+      sync_status: 'synced',
+    };
+  }
+
+  if (args.error) {
+    const message =
+      args.error instanceof Error
+        ? args.error.message
+        : 'External calendar sync failed';
+
+    return {
+      sync_error: message.slice(0, 1000),
+      sync_status: 'failed',
+    };
+  }
+
+  return {
+    sync_error: null,
+    sync_status: 'local_only',
+  };
 }
 
 async function authorizeWorkspaceCalendarAccess(
@@ -170,20 +210,52 @@ export async function POST(request: Request, { params }: Params) {
       userId,
       source: event.source ?? null,
     });
+    const syncPreferences = await getCalendarSyncPreferences({
+      sbAdmin,
+      wsId,
+      userId,
+    });
 
-    const providerResult =
-      source.provider === 'tuturuuu'
-        ? null
-        : await createProviderEvent({
-            source,
-            event: {
-              title: event.title,
-              description: event.description ?? '',
-              location: event.location ?? '',
-              start_at: event.start_at,
-              end_at: event.end_at,
-            },
+    const providerWriteEvent = {
+      title: event.title,
+      description: event.description ?? '',
+      location: event.location ?? '',
+      start_at: event.start_at,
+      end_at: event.end_at,
+    };
+    let providerSource: ResolvedCalendarSource = source;
+    let providerWriteError: unknown = null;
+    let providerResult: Awaited<ReturnType<typeof createProviderEvent>> = null;
+
+    if (source.provider !== 'tuturuuu') {
+      providerResult = await createProviderEvent({
+        source,
+        event: providerWriteEvent,
+      });
+    } else {
+      const outboundSource = await resolveOutboundSyncSource({
+        sbAdmin,
+        wsId,
+        userId,
+      });
+
+      if (outboundSource) {
+        providerSource = outboundSource;
+        try {
+          providerResult = await createProviderEvent({
+            source: outboundSource,
+            event: providerWriteEvent,
           });
+        } catch (error) {
+          providerWriteError = error;
+          serverLogger.warn('Failed to mirror native calendar event', {
+            wsId,
+            provider: outboundSource.provider,
+            error,
+          });
+        }
+      }
+    }
 
     // Get workspace encryption key (read-only, does not auto-create)
     // This ensures encryption only happens if E2EE was explicitly enabled
@@ -206,8 +278,8 @@ export async function POST(request: Request, { params }: Params) {
     const externalCalendarId = providerResult?.externalCalendarId ?? null;
     const externalEventId = providerResult?.externalEventId ?? null;
     const sourceCalendarId =
-      source.provider === 'tuturuuu'
-        ? source.workspaceCalendarId
+      providerResult && providerSource.provider !== 'tuturuuu'
+        ? providerSource.workspaceCalendarId
         : source.workspaceCalendarId;
 
     const { data, error } = await (sbAdmin as any)
@@ -229,6 +301,11 @@ export async function POST(request: Request, { params }: Params) {
         external_event_id: externalEventId,
         google_calendar_id: provider === 'google' ? externalCalendarId : null,
         google_event_id: provider === 'google' ? externalEventId : null,
+        ...getProviderSyncFields({
+          error: providerWriteError,
+          settingsAvailable: syncPreferences.settingsAvailable,
+          synced: !!providerResult,
+        }),
       })
       .select()
       .single();

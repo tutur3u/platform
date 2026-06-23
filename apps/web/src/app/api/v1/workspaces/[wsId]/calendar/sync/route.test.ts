@@ -139,6 +139,41 @@ function createAdminSupabaseMock() {
   };
 
   return {
+    schema: vi.fn((schema: string) => ({
+      from: vi.fn((table: string) => {
+        if (
+          schema === 'private' &&
+          table === 'calendar_user_workspace_preferences'
+        ) {
+          return createAwaitableQuery({
+            data: {
+              conflict_policy: 'latest_write_wins',
+              default_outbound_calendar_connection_id: null,
+              inbound_sync_enabled: true,
+              outbound_sync_enabled: false,
+            },
+            error: null,
+          });
+        }
+
+        if (schema === 'private' && table === 'workspace_calendars') {
+          return createAwaitableQuery({
+            data: [
+              {
+                calendar_type: 'primary',
+                color: 'BLUE',
+                id: 'primary-workspace-calendar-id',
+                is_enabled: true,
+                name: 'Primary',
+              },
+            ],
+            error: null,
+          });
+        }
+
+        return createAwaitableQuery({ data: [], error: null });
+      }),
+    })),
     from: vi.fn((table: string) => {
       if (table === 'workspaces') {
         return {
@@ -235,7 +270,8 @@ describe('workspace calendar sync route', () => {
       expect.any(Date),
       undefined,
       'google-token-id',
-      'google-workspace-calendar-id'
+      'google-workspace-calendar-id',
+      { syncDeletes: true }
     );
     expect(performIncrementalActiveSyncMock).toHaveBeenCalledTimes(1);
     expect(createGraphClientMock).toHaveBeenCalledWith(

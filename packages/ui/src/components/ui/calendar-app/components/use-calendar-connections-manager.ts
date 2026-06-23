@@ -3,8 +3,11 @@ import {
   type CalendarSourceOption,
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
+  getWorkspaceCalendarSyncPreferences,
+  updateCalendarConnection as updateCalendarConnectionRequest,
   updateWorkspaceCalendarDefaultSource,
-} from '@tuturuuu/internal-api';
+  updateWorkspaceCalendarSyncPreferences,
+} from '@tuturuuu/internal-api/calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -184,6 +187,12 @@ export function useCalendarConnectionsManager(wsId: string) {
     staleTime: 30_000,
   });
 
+  const { data: syncPreferencesData } = useQuery({
+    queryKey: ['calendar-sync-preferences', wsId],
+    queryFn: () => getWorkspaceCalendarSyncPreferences(wsId),
+    staleTime: 30_000,
+  });
+
   const defaultSourceMutation = useMutation({
     mutationFn: async (sourceId: string) => {
       const option = defaultSourceData?.options.find(
@@ -206,6 +215,46 @@ export function useCalendarConnectionsManager(wsId: string) {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update default calendar');
+    },
+  });
+
+  const syncPreferencesMutation = useMutation({
+    mutationFn: (
+      payload: Parameters<typeof updateWorkspaceCalendarSyncPreferences>[1]
+    ) => updateWorkspaceCalendarSyncPreferences(wsId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['calendar-sync-preferences', wsId],
+      });
+      toast.success(
+        t('calendar_sync_settings_updated') || 'Calendar sync settings updated'
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update calendar sync settings');
+    },
+  });
+
+  const updateConnectionSyncSettingsMutation = useMutation({
+    mutationFn: (
+      payload: Parameters<typeof updateCalendarConnectionRequest>[0]
+    ) => updateCalendarConnectionRequest(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['calendar-connections', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['provider-calendar-list', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['calendar-sync-preferences', wsId],
+      });
+      toast.success(
+        t('calendar_sync_settings_updated') || 'Calendar sync settings updated'
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update calendar sync settings');
     },
   });
 
@@ -621,7 +670,13 @@ export function useCalendarConnectionsManager(wsId: string) {
         const existingConnection = calendarConnections.find(
           (conn) =>
             conn.calendar_id === apiCal.id && conn.auth_token_id === account.id
-        );
+        ) as
+          | ((typeof calendarConnections)[number] & {
+              sync_delete_enabled?: boolean | null;
+              sync_inbound_enabled?: boolean | null;
+              sync_outbound_enabled?: boolean | null;
+            })
+          | undefined;
 
         return {
           id: existingConnection?.id || apiCal.id,
@@ -634,6 +689,10 @@ export function useCalendarConnectionsManager(wsId: string) {
           connectionExists: !!existingConnection,
           accountId: account.id,
           accessRole: apiCal.accessRole,
+          syncDeleteEnabled: existingConnection?.sync_delete_enabled ?? true,
+          syncInboundEnabled: existingConnection?.sync_inbound_enabled ?? true,
+          syncOutboundEnabled:
+            existingConnection?.sync_outbound_enabled ?? false,
         };
       });
 
@@ -652,6 +711,9 @@ export function useCalendarConnectionsManager(wsId: string) {
         connectionExists: boolean;
         accountId: string;
         accessRole: string;
+        syncDeleteEnabled: boolean;
+        syncInboundEnabled: boolean;
+        syncOutboundEnabled: boolean;
       }>
     >
   );
@@ -688,6 +750,8 @@ export function useCalendarConnectionsManager(wsId: string) {
     showCreateCalendarDialog,
     syncHealth,
     syncMutation,
+    syncPreferencesData,
+    syncPreferencesMutation,
     syncStatusStyles,
     syncToTuturuuu,
     systemCalendars,
@@ -696,6 +760,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     togglingTuturuuuIds,
     toggleAccountExpanded,
     toggleWorkspaceCalendarMutation,
+    updateConnectionSyncSettingsMutation,
     tuturuuuEnabledCount,
     userEmail,
     workspaceCalendars,

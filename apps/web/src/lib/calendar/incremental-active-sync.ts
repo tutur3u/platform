@@ -12,6 +12,10 @@ import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
 
+type IncrementalSyncOptions = {
+  syncDeletes?: boolean;
+};
+
 /**
  * Filters events by date range and status using a pipe pattern
  */
@@ -49,7 +53,8 @@ export async function performIncrementalActiveSync(
   endDate: Date,
   globalEncryptedIds?: Set<string>,
   authTokenId?: string | null,
-  sourceCalendarId?: string | null
+  sourceCalendarId?: string | null,
+  options: IncrementalSyncOptions = {}
 ) {
   const syncStartTime = Date.now();
   const syncTokenKey = authTokenId
@@ -371,7 +376,8 @@ export async function performIncrementalActiveSync(
           endDateObj,
           calendarId,
           globalEncryptedIds,
-          sourceCalendarId
+          sourceCalendarId,
+          options
         );
         metrics.eventProcessingMs = result.timings.eventProcessingMs;
         metrics.databaseWritesMs = result.timings.databaseWritesMs;
@@ -443,7 +449,8 @@ async function incrementalActiveSync(
   endDate: Date,
   calendarId: string = 'primary',
   globalEncryptedIds?: Set<string>,
-  sourceCalendarId?: string | null
+  sourceCalendarId?: string | null,
+  options: IncrementalSyncOptions = {}
 ) {
   const processingStart = Date.now();
   const supabase = await createAdminClient();
@@ -477,6 +484,10 @@ async function incrementalActiveSync(
       external_calendar_id: calendarId,
       external_event_id: event.id,
       source_calendar_id: sourceCalendarId ?? null,
+      external_updated_at: event.updated ?? null,
+      last_synced_at: new Date().toISOString(),
+      sync_error: null,
+      sync_status: 'synced',
     });
   });
 
@@ -500,6 +511,7 @@ async function incrementalActiveSync(
 
   const dbWriteStart = Date.now();
   let batchCount = 0;
+  let deletedCount = 0;
 
   // IMPORTANT: Query for encrypted events BEFORE any deletes happen
   // This prevents race conditions where an event is deleted by one calendar
@@ -551,7 +563,11 @@ async function incrementalActiveSync(
     }
   }
 
-  if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
+  if (
+    options.syncDeletes !== false &&
+    formattedEventsToDelete &&
+    formattedEventsToDelete.length > 0
+  ) {
     serverLogger.debug('🔍 [DEBUG] Deleting events...');
     const validEventIds = formattedEventsToDelete
       .map((e) => e.external_event_id ?? e.google_event_id)
@@ -609,6 +625,7 @@ async function incrementalActiveSync(
       serverLogger.debug(
         '✅ [DEBUG] All delete batches completed successfully'
       );
+      deletedCount += validEventIds.length;
     }
   }
 
@@ -710,7 +727,7 @@ async function incrementalActiveSync(
   return {
     eventsInserted: upsertResult?.inserted || 0,
     eventsUpdated: upsertResult?.updated || 0,
-    eventsDeleted: formattedEventsToDelete?.length || 0,
+    eventsDeleted: deletedCount,
     timings: {
       eventProcessingMs,
       databaseWritesMs,
