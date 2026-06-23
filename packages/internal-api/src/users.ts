@@ -1,3 +1,9 @@
+import type {
+  PostApprovalItem,
+  PostLogEntry,
+  ReportApprovalItem,
+  ReportLogEntry,
+} from '@tuturuuu/types/db';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -672,6 +678,123 @@ export async function deleteWorkspaceUserReferral(
       method: 'DELETE',
       query: {
         referredUserId,
+      },
+    }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User approvals (reports + posts)
+// ---------------------------------------------------------------------------
+
+export type WorkspaceUserApprovalKind = 'reports' | 'posts';
+
+export type WorkspaceUserApprovalStatusFilter =
+  | 'all'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
+export interface ListWorkspaceUserApprovalsParams {
+  kind: WorkspaceUserApprovalKind;
+  status?: WorkspaceUserApprovalStatusFilter;
+  page?: number;
+  limit?: number;
+  groupId?: string;
+  userId?: string;
+  creatorId?: string;
+}
+
+export interface ListWorkspaceUserApprovalsResponse<
+  TItem = ReportApprovalItem | PostApprovalItem,
+> {
+  items: TItem[];
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface UpdateWorkspaceUserApprovalPayload {
+  action: 'approve' | 'reject' | 'approveAll' | 'unapprove';
+  kind: WorkspaceUserApprovalKind;
+  itemId?: string;
+  reason?: string;
+  filters?: {
+    groupId?: string;
+    userId?: string;
+    creatorId?: string;
+  };
+}
+
+export interface UpdateWorkspaceUserApprovalResponse {
+  success: boolean;
+}
+
+export interface ListWorkspaceUserApprovalLogsParams {
+  kind: WorkspaceUserApprovalKind;
+  reportId?: string;
+  postId?: string;
+}
+
+export async function listWorkspaceUserApprovals<
+  TItem = ReportApprovalItem | PostApprovalItem,
+>(
+  workspaceId: string,
+  params: ListWorkspaceUserApprovalsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceUserApprovalsResponse<TItem>>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals`,
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        status: params.status,
+        page: params.page,
+        limit: params.limit,
+        groupId: params.groupId,
+        userId: params.userId,
+        creatorId: params.creatorId,
+      },
+    }
+  );
+}
+
+export async function updateWorkspaceUserApproval(
+  workspaceId: string,
+  payload: UpdateWorkspaceUserApprovalPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateWorkspaceUserApprovalResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function listWorkspaceUserApprovalLogs<
+  TLog = ReportLogEntry | PostLogEntry,
+>(
+  workspaceId: string,
+  params: ListWorkspaceUserApprovalLogsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TLog | null>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals/logs`,
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        reportId: params.reportId,
+        postId: params.postId,
       },
     }
   );

@@ -32,13 +32,18 @@ import {
  * `push`/`replace` accept an optional options arg we intentionally ignore
  * (scroll behaviour etc. has no TanStack equivalent and is not relied upon).
  */
+/** Next's `NavigateOptions` subset callers pass; accepted but not relied upon. */
+export interface NextNavigateOptions {
+  scroll?: boolean;
+}
+
 export interface NextCompatRouter {
   back(): void;
   forward(): void;
   prefetch(href: string): void;
-  push(href: string): void;
+  push(href: string, options?: NextNavigateOptions): void;
   refresh(): void;
-  replace(href: string): void;
+  replace(href: string, options?: NextNavigateOptions): void;
 }
 
 /**
@@ -74,6 +79,8 @@ export function createNextCompatRouter(router: RouterLike): NextCompatRouter {
       // Intentionally a no-op — see doc comment above.
     },
     push: (href) => {
+      // Second `options` arg (scroll etc.) is accepted for next/navigation
+      // parity but has no TanStack equivalent; intentionally ignored.
       router.navigate({ href });
     },
     refresh: () => {
