@@ -36,6 +36,18 @@ export async function sendInfrastructurePushTest(
   );
 }
 
+export async function getMobileVersionPolicies(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileVersionPoliciesPayload>(
+    '/api/v1/infrastructure/mobile-versions',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function updateMobileVersionPolicies(
   payload: MobileVersionPoliciesPayload,
   options?: InternalApiClientOptions
