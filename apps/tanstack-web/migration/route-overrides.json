@@ -1159,6 +1159,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/meet/meetings/$meetingId redirects to the standalone Meet app meeting detail route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
     },
+    "page:/:locale/:wsId/habits:apps/web/src/app/[locale]/(dashboard)/[wsId]/habits/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/habits ports the legacy authenticated habit tracker page as a dynamic no-store workspace route with fail-closed current-user auth, workspace resolution, ENABLE_HABITS gating through the Rust-owned habits access backend route, route metadata, and the shared HabitsClientPage."
+    },
+    "page:/:locale/:wsId/posts:apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/posts ports the legacy authenticated posts page as a dynamic no-store workspace route with fail-closed current-user auth, workspace resolution, pass-through URL search handling for the nuqs client shell, route metadata, and the shared PostsClient backed by internal-api facades including the Rust-owned posts permissions backend route."
+    },
     "page:/:locale/:wsId/roles:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/roles/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
