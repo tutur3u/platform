@@ -2,6 +2,7 @@
 
 import {
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+  TASK_LAST_BOARD_VIEW_CONFIG_ID,
   updateUserWorkspaceConfig,
 } from '@tuturuuu/internal-api/users';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
@@ -9,11 +10,13 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 interface TasksNoBoardClientProps {
+  initialView?: string;
   routeWsId: string;
   workspaceId: string;
 }
 
 export function TasksNoBoardClient({
+  initialView = 'my_tasks',
   routeWsId,
   workspaceId,
 }: TasksNoBoardClientProps) {
@@ -39,13 +42,20 @@ export function TasksNoBoardClient({
               if (!boardId) return;
 
               void (async () => {
-                await updateUserWorkspaceConfig(
-                  workspaceId,
-                  TASK_DEFAULT_BOARD_ID_CONFIG_ID,
-                  boardId
-                );
+                await Promise.all([
+                  updateUserWorkspaceConfig(
+                    workspaceId,
+                    TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+                    boardId
+                  ),
+                  updateUserWorkspaceConfig(
+                    workspaceId,
+                    TASK_LAST_BOARD_VIEW_CONFIG_ID,
+                    initialView
+                  ),
+                ]);
                 router.replace(
-                  `/${routeWsId}/tasks/boards/${boardId}?view=my_tasks`
+                  `/${routeWsId}/tasks/boards/${boardId}?view=${initialView}`
                 );
               })();
             }}

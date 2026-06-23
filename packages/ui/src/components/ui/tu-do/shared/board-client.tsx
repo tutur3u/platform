@@ -15,6 +15,7 @@ import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import { KanbanSkeleton } from '../boards/boardId/kanban/rendering/kanban-skeleton';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -238,10 +239,8 @@ export function BoardClient({
 
   if (boardLoading && !board) {
     return (
-      <div className="flex flex-col">
-        <div className="p-4 text-center text-muted-foreground">
-          Loading board...
-        </div>
+      <div className="h-[calc(100vh-6rem)] min-h-[28rem]">
+        <KanbanSkeleton />
       </div>
     );
   }

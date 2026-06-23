@@ -75,6 +75,8 @@ interface ComboboxProps {
   ariaLabel?: string;
   /** Whether to render the selected option icon inside the trigger button */
   showSelectedIcon?: boolean;
+  /** Icon rendered in the trigger instead of the selected option icon */
+  triggerIcon?: React.ReactNode;
   /** Whether to render the chevron inside the trigger button */
   showChevron?: boolean;
   /** Trigger layout mode */
@@ -133,6 +135,7 @@ export function Combobox({
   label,
   ariaLabel,
   showSelectedIcon = true,
+  triggerIcon,
   showChevron = true,
   triggerMode = 'default',
   hideTriggerLabel = false,
@@ -427,6 +430,8 @@ export function Combobox({
     }
   }, [commitCreatedValue, handleOpenChange, onCreate, trimmedQuery]);
 
+  const triggerOptionIcon = triggerIcon ?? selectedOption?.icon;
+
   const triggerButton = (
     <Button
       type="button"
@@ -450,32 +455,34 @@ export function Combobox({
           !selectedLabel && 'text-muted-foreground'
         )}
       >
-        {showSelectedIcon && selectedOption?.icon && (
+        {showSelectedIcon && triggerOptionIcon && (
           <span className="flex shrink-0 items-center justify-center">
-            {React.isValidElement(selectedOption.icon)
-              ? React.cloneElement(
-                  selectedOption.icon as React.ReactElement<{
-                    style?: React.CSSProperties;
-                  }>,
-                  {
-                    style:
-                      colorizeTriggerIcon && selectedOption.color
-                        ? {
-                            ...((
-                              selectedOption.icon as React.ReactElement<{
+            {triggerIcon
+              ? triggerIcon
+              : React.isValidElement(triggerOptionIcon)
+                ? React.cloneElement(
+                    triggerOptionIcon as React.ReactElement<{
+                      style?: React.CSSProperties;
+                    }>,
+                    {
+                      style:
+                        colorizeTriggerIcon && selectedOption?.color
+                          ? {
+                              ...((
+                                triggerOptionIcon as React.ReactElement<{
+                                  style?: React.CSSProperties;
+                                }>
+                              ).props?.style || {}),
+                              color: selectedOption.color,
+                            }
+                          : (
+                              triggerOptionIcon as React.ReactElement<{
                                 style?: React.CSSProperties;
                               }>
-                            ).props?.style || {}),
-                            color: selectedOption.color,
-                          }
-                        : (
-                            selectedOption.icon as React.ReactElement<{
-                              style?: React.CSSProperties;
-                            }>
-                          ).props?.style,
-                  }
-                )
-              : selectedOption.icon}
+                            ).props?.style,
+                    }
+                  )
+                : triggerOptionIcon}
           </span>
         )}
         {hideTriggerLabel ? (

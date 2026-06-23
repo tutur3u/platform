@@ -17,6 +17,8 @@ import { getBoardConfigKey } from '../board-config-storage';
 import { BoardViews } from '../board-views';
 
 const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
+const getUserWorkspaceConfigMock = vi.hoisted(() => vi.fn());
+const updateUserWorkspaceConfigMock = vi.hoisted(() => vi.fn());
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
 let progressivePagination: Record<string, unknown> = {};
@@ -52,6 +54,15 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: listWorkspaceTasksMock,
+}));
+
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
+  TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',
+  getUserWorkspaceConfig: (...args: unknown[]) =>
+    getUserWorkspaceConfigMock(...args),
+  updateUserWorkspaceConfig: (...args: unknown[]) =>
+    updateUserWorkspaceConfigMock(...args),
 }));
 
 vi.mock('../progressive-loader-context', () => ({
@@ -97,6 +108,10 @@ vi.mock('../../drafts/drafts-page', () => ({
       Drafts
     </div>
   ),
+}));
+
+vi.mock('../../my-tasks/my-tasks-content', () => ({
+  default: () => <div data-testid="my-tasks-view">My Tasks</div>,
 }));
 
 vi.mock('../../boards/boardId/kanban', () => ({
@@ -236,6 +251,10 @@ describe('BoardViews', () => {
     progressivePagination = {};
     listWorkspaceTasksMock.mockReset();
     listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
+    getUserWorkspaceConfigMock.mockReset();
+    getUserWorkspaceConfigMock.mockResolvedValue({ value: null });
+    updateUserWorkspaceConfigMock.mockReset();
+    updateUserWorkspaceConfigMock.mockResolvedValue({ message: 'ok' });
     window.localStorage.clear();
     window.history.replaceState({}, '', '/');
   });
@@ -246,7 +265,10 @@ describe('BoardViews', () => {
     expect(boardHeaderProps?.viewHotkeyLabels).toEqual({
       kanban: formatHotkeySequence(['G', 'K']),
       list: formatHotkeySequence(['G', 'L']),
+      my_tasks: formatHotkeySequence(['G', 'M']),
       timeline: formatHotkeySequence(['G', 'T']),
+      drafts: formatHotkeySequence(['G', 'D']),
+      recycle_bin: formatHotkeySequence(['G', 'R']),
     });
   });
 
@@ -307,7 +329,7 @@ describe('BoardViews', () => {
     expect(createTaskMock).not.toHaveBeenCalled();
   });
 
-  it('switches between kanban, list, and timeline using TanStack hotkey sequences', async () => {
+  it('switches between all board views using TanStack hotkey sequences', async () => {
     renderBoardViews();
 
     expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
@@ -331,6 +353,43 @@ describe('BoardViews', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(document, { key: 'g' });
+    fireEvent.keyDown(document, { key: 'm' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('my-tasks-view')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(document, { key: 'g' });
+    fireEvent.keyDown(document, { key: 'd' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('drafts-view')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(document, { key: 'g' });
+    fireEvent.keyDown(document, { key: 'r' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('recycle-bin-view')).toBeInTheDocument();
+    });
+  });
+
+  it('saves the selected workspace task view when the header changes view', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(updateUserWorkspaceConfigMock).toHaveBeenCalledWith(
+        'ws-1',
+        'TASK_LAST_BOARD_VIEW',
+        'list'
+      );
     });
   });
 
