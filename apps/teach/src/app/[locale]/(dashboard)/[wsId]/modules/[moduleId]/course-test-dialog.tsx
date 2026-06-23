@@ -72,23 +72,46 @@ export function CourseTestDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedDuration = durationInMinutes
-      ? parseInt(durationInMinutes, 10)
-      : 0;
 
     if (!testName.trim()) {
       toast.error(t('teachModules.testNameRequired'));
       return;
     }
+
     if (selectedModuleIds.length === 0) {
       toast.error(t('teachModules.selectModules'));
       return;
     }
+
+    let parsedStartAt: string | null = null;
+    if (startAt) {
+      const parsedDate = new Date(startAt);
+      if (isNaN(parsedDate.getTime())) {
+        toast.error(t('teachModules.invalidStartTime'));
+        return;
+      }
+      if (parsedDate < new Date()) {
+        toast.error(t('teachModules.startTimeInPast'));
+        return;
+      }
+      parsedStartAt = parsedDate.toISOString();
+    }
+
+    let parsedDuration: number | null = null;
+    if (durationInMinutes) {
+      const durationVal = parseInt(durationInMinutes, 10);
+      if (isNaN(durationVal) || durationVal < 1 || durationVal > 1440) {
+        toast.error(t('teachModules.invalidDuration'));
+        return;
+      }
+      parsedDuration = durationVal;
+    }
+
     createTestMutation.mutate({
       name: testName.trim(),
       moduleIds: selectedModuleIds,
-      startAt: startAt ? new Date(startAt).toISOString() : null,
-      durationInMinutes: parsedDuration > 0 ? parsedDuration : null,
+      startAt: parsedStartAt,
+      durationInMinutes: parsedDuration,
       description: description.trim() || null,
     });
   };
