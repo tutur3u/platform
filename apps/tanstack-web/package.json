@@ -24,6 +24,7 @@
     "script": "dev:app"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-query-devtools": "^5.101.0",
     "@tanstack/react-router": "^1.170.16",

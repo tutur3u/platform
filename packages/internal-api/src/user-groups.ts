@@ -156,6 +156,45 @@ export async function listWorkspaceUserGroupsByIds(
   return payload.data;
 }
 
+export interface UpdateWorkspaceUserGroupPayload {
+  name?: string;
+  starting_date?: string | null;
+  ending_date?: string | null;
+  notes?: string | null;
+  archived?: boolean;
+}
+
+export type UpdateWorkspaceUserGroupResponse = {
+  data?: UserGroup;
+  message?: string;
+};
+
+/**
+ * Partial update of a workspace user group via
+ * `PUT /api/v1/workspaces/:wsId/user-groups/:groupId`. The endpoint validates
+ * with its own schema and enforces `update_user_groups`; this forwards the
+ * authenticated caller's request (RLS-respecting) and returns the updated row.
+ */
+export function updateWorkspaceUserGroup(
+  workspaceId: string,
+  groupId: string,
+  payload: UpdateWorkspaceUserGroupPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateWorkspaceUserGroupResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}`,
+    {
+      cache: 'no-store',
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 export function removeWorkspaceUserGroupIndicatorCategory(
   workspaceId: string,
   groupId: string,
