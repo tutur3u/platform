@@ -76,6 +76,7 @@ describe('TaskLegacyRouteRecovery', () => {
       />
     );
 
+    expect(screen.getByTestId('task-board-loading-state')).toBeInTheDocument();
     expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
     expect(screen.queryByText('loading')).not.toBeInTheDocument();
   });

@@ -5,7 +5,7 @@ import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { KanbanSkeleton } from '../boards/boardId/kanban/rendering/kanban-skeleton';
+import { TaskBoardLoadingState } from './task-board-loading-state';
 import { buildWorkspaceTaskUrl } from './task-url';
 
 interface TaskLegacyRouteRecoveryProps {
@@ -61,9 +61,5 @@ export function TaskLegacyRouteRecovery({
     );
   }
 
-  return (
-    <div className="h-[calc(100vh-6rem)] min-h-[28rem]">
-      <KanbanSkeleton />
-    </div>
-  );
+  return <TaskBoardLoadingState />;
 }
