@@ -29,7 +29,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@xyflow/react": "^12.11.0",
+    "@xyflow/react": "^12.11.1",
     "next": "^16.2.9",
     "next-intl": "^4.13.0",
     "react": "^19.2.7",
