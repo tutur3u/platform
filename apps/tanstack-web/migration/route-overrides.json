@@ -834,6 +834,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallet-transactions by forwarding the normal Supabase browser session or non-app-session Bearer token to the get_wallet_transactions_with_permissions RPC with the legacy p_ws_id, p_limit, p_offset, p_order_by=taken_at, p_order_direction=DESC, and p_include_count=true payload, preserving caller-token permission/RLS behavior, the required ws_id parameter, parseInt-style limit/offset behavior, raw RPC rows, first-row total_count extraction, and legacy error body."
     },
+    "api:/api/v1/workspaces/:wsId/Mention:apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/Mention by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, requiring exact MEMBER workspace membership through the caller-token workspace_members read, reading workspace_users.email with the caller token, returning the legacy singular email array payload, and preserving the legacy Unauthorized, Forbidden, Failed to verify workspace access, and Supabase error bodies."
+    },
     "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

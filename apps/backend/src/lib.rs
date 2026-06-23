@@ -82,6 +82,9 @@ mod topic_announcements;
 mod user_profile;
 mod workspace_education_access;
 mod workspace_limits;
+mod workspace_mentions;
+#[cfg(test)]
+mod workspace_mentions_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
 
@@ -559,6 +562,12 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mentions::handle_workspace_mentions_route(config, request, outbound).await
     {
         return response;
     }

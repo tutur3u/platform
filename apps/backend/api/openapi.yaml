@@ -8170,6 +8170,71 @@ paths:
                 $ref: "#/components/schemas/PreferenceSuccess"
         "405":
           description: Unsupported HTTP method.
+  /api/v1/workspaces/{wsId}/Mention:
+    get:
+      summary: Workspace mention emails
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts GET. The
+        Rust backend preserves the legacy path casing, revalidates a normal
+        Supabase browser session or non-app-session Bearer token, requires the
+        caller to be a `MEMBER` in the exact requested workspace, reads
+        `workspace_users.email` with the caller token, and keeps the legacy
+        `{ error }` response bodies for auth, membership, and Supabase failures.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workspace user email addresses for mention suggestions.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMentionEmailsResponse"
+        "400":
+          description: Supabase rejected the workspace_users email query.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMentionError"
+        "401":
+          description: Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMentionError"
+        "403":
+          description: Caller is not a MEMBER of the requested workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMentionError"
+        "500":
+          description: Workspace membership lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceMentionError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/posts/permissions:
     get:
       summary: Workspace post permissions
@@ -9542,6 +9607,29 @@ components:
         canForceSendPosts:
           type: boolean
           description: Whether the authenticated caller has the root workspace manage_workspace_roles permission. False is also returned for unauthenticated or unresolved callers.
+    WorkspaceMentionEmailsResponse:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: array
+          items:
+            type:
+              - string
+              - "null"
+          description: Legacy list of workspace user emails returned under the singular `email` key.
+    WorkspaceMentionError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Forbidden
+            - Failed to verify workspace access
     WorkspaceEducationAccessResponse:
       type: object
       required:

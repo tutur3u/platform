@@ -106,6 +106,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `ENABLE_EDUCATION` from `workspace_secrets` through the server-owned Supabase
   REST adapter, and preserves the legacy `{ "enabled": false }` response for
   workspace, feature-flag, permission, or lookup failures.
+- `GET /api/v1/workspaces/:wsId/Mention`: legacy-compatible mention email
+  endpoint. Rust revalidates a normal Supabase browser session or
+  non-app-session Bearer token, requires exact `MEMBER` workspace membership,
+  reads `workspace_users.email` with the caller token, and preserves the legacy
+  `{ "email": [...] }` success payload plus `{ "error": ... }` auth,
+  membership, and Supabase failure bodies.
 - `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
   legacy-compatible workspace permission check route. Rust revalidates a normal
   Supabase browser session or non-app-session Bearer token, ignores app-session
