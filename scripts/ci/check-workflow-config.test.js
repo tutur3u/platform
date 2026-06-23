@@ -385,6 +385,11 @@ test('workflows use the repo Bun setup and install retry helpers', () => {
       /^\s*run:\s*bun (?:install|setup)\b/m,
       `${workflowFile} must run Bun install/setup through scripts/ci/run-with-backoff.sh`
     );
+    assert.doesNotMatch(
+      workflow,
+      /^\s*run:\s*bunx\b/m,
+      `${workflowFile} must use "bun x" because the local Bun setup action only installs the bun binary`
+    );
 
     if (workflow.includes('./.github/actions/setup-bun-with-retry')) {
       assert.ok(
