@@ -1294,6 +1294,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/finance/wallets/$walletId preserves the legacy 307 redirect to /:wsId/finance/wallets/:walletId with encoded dynamic IDs and forwarded wallet detail query parameters. This marks only the page handoff artifact migrated; parent dashboard/session and Finance wallet data routes remain legacy-owned."
     },
+    "layout:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx": {
+      "status": "accepted-removal",
+      "targetOwner": "tanstack-start",
+      "note": "Accepted replacement/removal: TanStack Start mail leaf routes /$locale/$wsId/mail and /$locale/$wsId/mail/sent are already migrated as 307 handoffs to the standalone Mail app via buildMailRedirectHref. The legacy Next mail layout's workspace/user gate is replaced by the Mail app centralized auth proxy and workspace-normalization boundary, so no route-specific dashboard layout is rendered in the Start runtime. Parent dashboard/session/provider ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

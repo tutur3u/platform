@@ -27,14 +27,14 @@
         "unknownStatus": 0
       },
       {
-        "acceptedRemoval": 0,
+        "acceptedRemoval": 1,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 21,
+        "legacyNext": 20,
         "migrated": 46,
-        "percentComplete": 68.66,
-        "remaining": 21,
-        "terminal": 46,
+        "percentComplete": 70.15,
+        "remaining": 20,
+        "terminal": 47,
         "total": 67,
         "unknownStatus": 0
       },
@@ -125,14 +125,14 @@
         "unknownStatus": 0
       },
       {
-        "acceptedRemoval": 0,
+        "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 176,
+        "legacyNext": 175,
         "migrated": 202,
-        "percentComplete": 53.44,
-        "remaining": 176,
-        "terminal": 202,
+        "percentComplete": 53.7,
+        "remaining": 175,
+        "terminal": 203,
         "total": 378,
         "unknownStatus": 0
       }
@@ -320,14 +320,14 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 83,
+      "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1119,
+      "legacyNext": 1118,
       "migrated": 335,
-      "percentComplete": 27.2,
-      "remaining": 1119,
-      "terminal": 418,
+      "percentComplete": 27.26,
+      "remaining": 1118,
+      "terminal": 419,
       "total": 1537,
       "unknownStatus": 0
     }
@@ -11068,7 +11068,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/mail",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "tanstack-start"
     },
     {
