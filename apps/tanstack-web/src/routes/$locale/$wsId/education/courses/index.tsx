@@ -62,7 +62,7 @@ const loadCourses = createServerFn({ method: 'GET' })
     }): Promise<{ data: CoursesData['courses']; count: number }> => {
       const result = await listWorkspaceCourses(
         data.wsId,
-        { page: data.page, pageSize: data.pageSize, q: data.q },
+        { page: data.page, pageSize: data.pageSize, q: data.q, status: 'all' },
         withForwardedInternalApiAuth(getRequestHeaders())
       );
 
@@ -137,6 +137,7 @@ function CoursesRoutePage() {
   const totalPages = Math.ceil(data.count / data.pageSize);
   const courses = data.courses.map((course) => ({
     ...course,
+    modules: course.modules_count,
     ws_id: data.workspaceId,
     href: `/${wsId}/education/courses/${course.id}/builder`,
   }));
