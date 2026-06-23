@@ -68,15 +68,28 @@ export function TestDetailClient({
   const qc = useQueryClient();
 
   const updateTestMutation = useMutation({
-    mutationFn: async (payload: { id: string; is_published?: boolean }) =>
-      updateWorkspaceCourseTest(wsId, courseId, payload),
-    onSuccess: () => {
+    mutationFn: async (payload: {
+      id: string;
+      is_published?: boolean;
+      is_score_published?: boolean;
+    }) => updateWorkspaceCourseTest(wsId, courseId, payload),
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['course-tests', wsId, courseId] });
-      toast.success(
-        test?.is_published
-          ? t('teachModules.testUnpublished')
-          : t('teachModules.testPublished')
-      );
+      if (variables.is_published !== undefined) {
+        toast.success(
+          variables.is_published
+            ? t('teachModules.testPublished')
+            : t('teachModules.testUnpublished')
+        );
+      } else if (variables.is_score_published !== undefined) {
+        toast.success(
+          variables.is_score_published
+            ? t('teachModules.scoresPublished')
+            : t('teachModules.scoresHidden')
+        );
+      } else {
+        toast.success(t('teachModules.testUpdated'));
+      }
     },
     onError: (error) => {
       toast.error(
@@ -341,6 +354,14 @@ export function TestDetailClient({
             wsId={wsId}
             courseId={courseId}
             testId={testId}
+            isScorePublished={test.is_score_published ?? false}
+            onToggleScorePublished={() =>
+              updateTestMutation.mutate({
+                id: testId,
+                is_score_published: !test.is_score_published,
+              })
+            }
+            isToggling={updateTestMutation.isPending}
           />
         )}
 

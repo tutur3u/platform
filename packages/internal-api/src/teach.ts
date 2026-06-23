@@ -319,6 +319,7 @@ export interface TeachCourseTest {
   duration_in_minutes?: number | null;
   description?: string | null;
   is_published?: boolean;
+  is_score_published?: boolean;
 }
 
 export function listWorkspaceCourseTests(
@@ -363,6 +364,7 @@ export function updateWorkspaceCourseTest(
   payload: {
     id: string;
     is_published?: boolean;
+    is_score_published?: boolean;
     name?: string;
     startAt?: string | null;
     durationInMinutes?: number | null;

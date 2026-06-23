@@ -335,6 +335,316 @@ export function StudentTestDetailPage({
 
   // Render Completed / Submitted View
   if (attempt?.submitted_at) {
+    if (test.is_score_published) {
+      const maxScore = quizzes.reduce((sum, q) => sum + (q.score ?? 0), 0);
+      const studentScore = attempt.score ?? 0;
+      
+      // Calculate score percentage
+      const percentage = maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
+
+      const renderQuizReview = (quiz: any) => {
+        const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id) || {
+          selected_option_id: null,
+          answer: null,
+          is_correct: false,
+          score_awarded: 0,
+        };
+        
+        const isCorrect = quizAns.is_correct;
+
+        // Render choice options helper
+        if (!quiz.type || quiz.type === 'multiple_choice') {
+          const options = getMultipleChoiceOptions(quiz);
+          return (
+            <div className="mt-4 space-y-2.5">
+              {options.map((opt: any) => {
+                const isSelected = quizAns.selected_option_id === opt.id || 
+                  (opt.index !== null && (quizAns.answer as any)?.selectedIndex === opt.index);
+                
+                // Find if this option is correct
+                const rawOpt = quiz.quiz_options?.find((o: any) => o.id === opt.id);
+                const isOptionCorrect = rawOpt?.is_correct ?? false;
+
+                let cardStyle = 'border-border bg-background';
+                if (isSelected) {
+                  cardStyle = isCorrect
+                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                } else if (isOptionCorrect) {
+                  cardStyle = 'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                }
+
+                return (
+                  <div
+                    key={opt.id}
+                    className={cn(
+                      'flex items-start gap-3 border-2 p-3.5 shadow-[2px_2px_0_var(--border)] transition',
+                      cardStyle
+                    )}
+                  >
+                    <span className="font-bold text-sm">{opt.value}</span>
+                    {isSelected && (
+                      <span className="ml-auto text-xs font-bold uppercase tracking-wider">
+                        {isCorrect ? '✓ Your Answer (Correct)' : '✗ Your Answer (Incorrect)'}
+                      </span>
+                    )}
+                    {!isSelected && isOptionCorrect && (
+                      <span className="ml-auto text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        (Correct Answer)
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {quiz.quiz_options?.some((o: any) => o.explanation) && (
+                <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-xs text-muted-foreground leading-relaxed">
+                  <span className="block font-black uppercase tracking-wider text-[10px] mb-1">Explanation:</span>
+                  {quiz.quiz_options.find((o: any) => o.is_correct)?.explanation || quiz.quiz_options.find((o: any) => o.explanation)?.explanation}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'true_false') {
+          const studentVal = quizAns.answer === true || (quizAns.answer as any)?.correct === true;
+          const options = [
+            { label: t('courses.quizTrue'), value: true },
+            { label: t('courses.quizFalse'), value: false },
+          ];
+          
+          return (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {options.map((opt) => {
+                const isSelected = studentVal === opt.value;
+                
+                let cardStyle = 'border-border bg-background';
+                if (isSelected) {
+                  cardStyle = isCorrect
+                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                } else if (!isSelected && !isCorrect) {
+                  // If student was wrong, the other option is correct
+                  cardStyle = 'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                }
+
+                return (
+                  <div
+                    key={String(opt.value)}
+                    className={cn(
+                      'flex items-center justify-center border-2 py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]',
+                      cardStyle
+                    )}
+                  >
+                    {opt.label}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'ordering') {
+          const items = getStringItems(quiz.content, 'items');
+          const submittedOrder = Array.isArray(quizAns.answer)
+            ? quizAns.answer
+            : (quizAns.answer as any)?.order || items;
+          
+          return (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-muted-foreground font-bold mb-2">Your Answer (Status: {isCorrect ? 'Correct' : 'Incorrect'}):</p>
+              {submittedOrder.map((item: string, index: number) => (
+                <div
+                  key={`${item}-${index}`}
+                  className={cn(
+                    'flex items-center justify-between border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)]',
+                    isCorrect ? 'border-dynamic-green bg-dynamic-green/10' : 'border-dynamic-red bg-dynamic-red/10'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                      {index + 1}
+                    </span>
+                    <span className="font-bold">{item}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'matching') {
+          const pairs = getMatchingPairs(quiz.content);
+          const submittedPairs = Array.isArray(quizAns.answer)
+            ? quizAns.answer
+            : (quizAns.answer as any)?.pairs || [];
+          
+          return (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-muted-foreground font-bold mb-2">Your Matchings (Status: {isCorrect ? 'Correct' : 'Incorrect'}):</p>
+              {pairs.map((pair: any, index: number) => {
+                const currentRight = submittedPairs.find((p: any) => p.left === pair.left)?.right || '—';
+                return (
+                  <div
+                    key={`${pair.left}-${index}`}
+                    className={cn(
+                      'grid gap-3 border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
+                      isCorrect ? 'border-dynamic-green bg-dynamic-green/10' : 'border-dynamic-red bg-dynamic-red/10'
+                    )}
+                  >
+                    <span className="font-bold">{pair.left}</span>
+                    <div className="border-2 border-border bg-background p-2 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+                      {currentRight}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'paragraph') {
+          const textValue = (quizAns.answer as any)?.text || '—';
+          return (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-muted-foreground font-bold">Your Response:</p>
+              <div className="w-full border-2 border-border bg-muted/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] whitespace-pre-wrap">
+                {textValue}
+              </div>
+              <span className="mt-1 block text-[10px] text-muted-foreground italic">
+                Paragraph questions are manually graded by the instructor.
+              </span>
+            </div>
+          );
+        }
+
+        return null;
+      };
+
+      return (
+        <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
+          <div className="mx-auto max-w-4xl space-y-6">
+            {/* Back Navigation */}
+            <div>
+              <Link
+                className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                href={courseHref}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t('courses.backToCourse')}
+              </Link>
+            </div>
+
+            {/* Header / Score Overview */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_18rem]">
+              {/* Info panel */}
+              <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8 flex flex-col justify-between">
+                <div>
+                  <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-cyan/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                    <BookOpenCheck className="h-3.5 w-3.5" />
+                    {t('courses.testSubmitted')}
+                  </p>
+                  <h1 className="break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal mt-2">
+                    {test.name}
+                  </h1>
+                  <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
+                    {t('courses.testSubmittedDescription')}
+                  </p>
+                </div>
+                
+                <div className="mt-6 border-2 border-border bg-muted/10 p-4 shadow-[4px_4px_0_var(--border)]">
+                  <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+                    Submitted Date & Time
+                  </span>
+                  <span className="font-bold text-sm">
+                    {new Date(attempt.submitted_at).toLocaleString([], {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Score visual card */}
+              <div className="relative overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center shadow-[8px_8px_0_var(--border)] flex flex-col items-center justify-center min-h-[200px]">
+                <span className="block font-black text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                  Your Grade
+                </span>
+                
+                <div className="relative flex items-center justify-center">
+                  <span className="font-black text-6xl md:text-7xl tracking-tight text-foreground">
+                    {studentScore}
+                  </span>
+                  <span className="font-bold text-2xl text-muted-foreground mx-1">/</span>
+                  <span className="font-black text-3xl text-muted-foreground">
+                    {maxScore}
+                  </span>
+                </div>
+
+                <div className="mt-4 inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1 font-black text-xs shadow-[2px_2px_0_var(--border)]">
+                  {percentage}%
+                </div>
+              </div>
+            </div>
+
+            {/* Submissions Review list */}
+            <div className="space-y-6">
+              <h2 className="font-black text-xl uppercase tracking-wider border-b-2 border-border pb-2">
+                Questions Review
+              </h2>
+              {quizzes.length === 0 ? (
+                <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+                  <span className="text-muted-foreground text-sm italic">
+                    {t('courses.noQuestions')}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {quizzes.map((quiz: any, index: number) => {
+                    const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id);
+                    const isQuizCorrect = quizAns?.is_correct ?? false;
+                    const quizScore = quizAns?.score_awarded ?? 0;
+                    
+                    return (
+                      <div
+                        key={quiz.id}
+                        className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-border border-dashed pb-3">
+                          <div className="flex items-center gap-3">
+                            <span className={cn(
+                              "flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]",
+                              isQuizCorrect
+                                ? "bg-dynamic-green/15 text-dynamic-green-foreground"
+                                : "bg-dynamic-red/15 text-dynamic-red-foreground"
+                            )}>
+                              {index + 1}
+                            </span>
+                            <h3 className="font-bold text-base">
+                              {quiz.question}
+                            </h3>
+                          </div>
+                          <div className={cn(
+                            "border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]",
+                            isQuizCorrect
+                              ? "bg-dynamic-green/10 text-dynamic-green-foreground border-dynamic-green"
+                              : "bg-dynamic-red/10 text-dynamic-red-foreground border-dynamic-red"
+                          )}>
+                            Score: {quizScore} / {quiz.score ?? 1}
+                          </div>
+                        </div>
+                        {renderQuizReview(quiz)}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
         <div className="mx-auto max-w-xl space-y-6 border-2 border-border bg-background p-8 text-center shadow-[8px_8px_0_var(--border)]">

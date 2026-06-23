@@ -26,7 +26,7 @@ export const GET = withSessionAuth<Params>(
       // Verify course and test exist and are published
       const { data: test, error: testErr } = await sbAdmin
         .from('course_tests')
-        .select('id, name, duration_in_minutes, start_at, is_published, course_id')
+        .select('id, name, duration_in_minutes, start_at, is_published, is_score_published, course_id')
         .eq('id', testId)
         .eq('course_id', courseId)
         .eq('is_published', true)
@@ -67,10 +67,52 @@ export const GET = withSessionAuth<Params>(
 
       // If submitted, return the final result
       if (attempt.submitted_at) {
+        const score = test.is_score_published ? attempt.score : null;
+
+        let quizzes: any[] = [];
+        let answers: any[] = [];
+
+        // If score is published, we can also return quizzes (with is_correct/explanation) and answers so they can review their submission!
+        if (test.is_score_published) {
+          // Get quizzes linked to this test
+          const { data: testQuizzes, error: tqErr } = await sbAdmin
+            .from('course_test_quizzes')
+            .select('quiz_id')
+            .eq('test_id', testId);
+
+          if (tqErr) throw tqErr;
+
+          const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
+
+          if (quizIds.length > 0) {
+            const { data: rawQuizzes, error: quizzesErr } = await sbAdmin
+              .from('workspace_quizzes')
+              .select(
+                'id, question, type, content, score, quiz_options(id, value, is_correct, explanation)'
+              )
+              .in('id', quizIds)
+              .order('created_at', { ascending: false });
+
+            if (quizzesErr) throw quizzesErr;
+            quizzes = rawQuizzes ?? [];
+          }
+
+          const { data: rawAnswers, error: answersErr } = await sbAdmin
+            .from('course_test_attempt_answers')
+            .select('quiz_id, selected_option_id, answer, is_correct, score_awarded')
+            .eq('attempt_id', attempt.id);
+
+          if (answersErr) throw answersErr;
+          answers = rawAnswers ?? [];
+        }
+
         return NextResponse.json({
-          attempt,
-          quizzes: [],
-          answers: [],
+          attempt: {
+            ...attempt,
+            score,
+          },
+          quizzes,
+          answers,
         });
       }
 

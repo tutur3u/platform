@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle, Clock, User, XCircle } from '@tuturuuu/icons';
+import { CheckCircle, Clock, Eye, EyeOff, User, XCircle } from '@tuturuuu/icons';
 import type { TeachTestSubmission } from '@tuturuuu/internal-api';
 import { listWorkspaceCourseTestSubmissions } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
@@ -11,12 +11,18 @@ interface TestSubmissionsSectionProps {
   wsId: string;
   courseId: string;
   testId: string;
+  isScorePublished: boolean;
+  onToggleScorePublished: () => void;
+  isToggling: boolean;
 }
 
 export function TestSubmissionsSection({
   wsId,
   courseId,
   testId,
+  isScorePublished,
+  onToggleScorePublished,
+  isToggling,
 }: TestSubmissionsSectionProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -70,6 +76,43 @@ export function TestSubmissionsSection({
 
   return (
     <div className="space-y-4">
+      {/* Publish scores action */}
+      <div className="flex items-center justify-between border-2 border-border bg-background p-4 shadow-[4px_4px_0_var(--border)]">
+        <div>
+          <p className="font-bold text-sm">
+            {t('teachModules.scoreVisibility')}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {isScorePublished
+              ? t('teachModules.scoresVisibleToStudents')
+              : t('teachModules.scoresHiddenFromStudents')}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onToggleScorePublished}
+          disabled={isToggling}
+          className={cn(
+            'inline-flex cursor-pointer items-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50',
+            isScorePublished
+              ? 'bg-dynamic-green/15 text-foreground'
+              : 'bg-primary text-primary-foreground'
+          )}
+        >
+          {isScorePublished ? (
+            <>
+              <EyeOff className="h-4 w-4" />
+              {t('teachModules.hideScores')}
+            </>
+          ) : (
+            <>
+              <Eye className="h-4 w-4" />
+              {t('teachModules.publishScores')}
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard

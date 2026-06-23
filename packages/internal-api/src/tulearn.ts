@@ -132,6 +132,7 @@ export interface TulearnCourseTestSummary {
   start_at: string | null;
   duration_in_minutes: number | null;
   description: string | null;
+  is_score_published?: boolean;
   module_ids: string[];
 }
 
