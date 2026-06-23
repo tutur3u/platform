@@ -205,6 +205,11 @@ formatting behavior, or repo-wide verification.
   so package-owned build scripts cannot rely on the root `tsc` binary.
 - Programmatic compiler API consumers must stay on the active TypeScript 7
   toolchain instead of carrying legacy compiler compatibility packages.
+- Next.js apps that run `next build` must declare `@typescript/native-preview`
+  while the repo uses the TypeScript 7 native compiler package. TS7 no longer
+  exposes the classic `typescript/lib/typescript.js` file that Next probes
+  during build-time TypeScript setup; the native-preview marker uses Next's
+  supported native compiler path without reverting the repo to TS6.
 - Do not patch unrelated packages just because `bun check` fails outside the
   owned scope. Run focused verification and report the blocker.
 - Package subpath imports must be covered by the package `exports`; do not

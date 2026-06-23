@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const expectedTypeScriptVersion = '7.0.1-rc';
+const expectedNativePreviewVersion = '7.0.0-dev.20260614.1';
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
@@ -21,6 +22,17 @@ function getWorkspacePackageJsonPaths() {
       .filter((relativePath) =>
         fs.existsSync(path.join(repoRoot, relativePath))
       );
+  });
+}
+
+function getNextBuildPackageJsonPaths() {
+  return getWorkspacePackageJsonPaths().filter((packageJsonPath) => {
+    const packageJson = readJson(packageJsonPath);
+    const buildScript = packageJson.scripts?.build;
+
+    return (
+      typeof buildScript === 'string' && /\bnext\s+build\b/.test(buildScript)
+    );
   });
 }
 
@@ -158,8 +170,27 @@ test('workspace TypeScript dependencies use the TypeScript 7 RC', () => {
   assert.deepEqual(invalidPackages, []);
 });
 
-test('active workspace manifests do not declare native-preview TypeScript', () => {
+test('Next build workspaces declare native-preview TypeScript for TS7 builds', () => {
   const invalidPackages = [];
+
+  for (const packageJsonPath of getNextBuildPackageJsonPaths()) {
+    const packageJson = readJson(packageJsonPath);
+    const version = packageJson.devDependencies?.['@typescript/native-preview'];
+
+    if (version !== expectedNativePreviewVersion) {
+      invalidPackages.push({
+        file: packageJsonPath,
+        version,
+      });
+    }
+  }
+
+  assert.deepEqual(invalidPackages, []);
+});
+
+test('non-Next workspaces do not declare native-preview TypeScript', () => {
+  const invalidPackages = [];
+  const allowedPackageJsonPaths = new Set(getNextBuildPackageJsonPaths());
 
   for (const packageJsonPath of [
     'package.json',
@@ -176,7 +207,12 @@ test('active workspace manifests do not declare native-preview TypeScript', () =
       const version =
         packageJson[dependencyField]?.['@typescript/native-preview'];
 
-      if (version) {
+      if (
+        version &&
+        (!allowedPackageJsonPaths.has(packageJsonPath) ||
+          dependencyField !== 'devDependencies' ||
+          version !== expectedNativePreviewVersion)
+      ) {
         invalidPackages.push({
           file: packageJsonPath,
           dependencyField,
