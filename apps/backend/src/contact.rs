@@ -9,7 +9,12 @@ use crate::{
     parse_json_body, supabase_auth, url_origin,
 };
 
+mod datetime;
 mod session;
+mod validation;
+
+use datetime::unix_seconds_to_iso8601;
+use validation::{validate_email, validate_enum, validate_string_length};
 
 #[cfg(feature = "native")]
 pub(crate) use session::app_coordination_secrets_from_env;
@@ -76,7 +81,6 @@ const SUPPORT_INQUIRY_PRODUCTS: [&str; 12] = [
 const MAX_DISPLAY_NAME_LENGTH: usize = 100;
 const MAX_FULL_NAME_LENGTH: usize = 100;
 const MAX_BIO_LENGTH: usize = 1000;
-const MAX_EMAIL_LENGTH: usize = 320;
 const MAX_SUPPORT_INQUIRY_LENGTH: usize = 5000;
 const MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH: usize = 255;
 const CLI_APP_SESSION_TARGETS: [&str; 1] = ["platform"];
@@ -1309,56 +1313,6 @@ fn validate_support_inquiry_payload(payload: &SupportInquiryRequest) -> Vec<Stri
     errors
 }
 
-fn validate_string_length(
-    errors: &mut Vec<String>,
-    field: &str,
-    value: &str,
-    min_length: usize,
-    max_length: usize,
-) {
-    let length = value.chars().count();
-
-    if length < min_length {
-        errors.push(format!(
-            "{field} must contain at least {min_length} characters"
-        ));
-    }
-
-    if length > max_length {
-        errors.push(format!(
-            "{field} must contain at most {max_length} characters"
-        ));
-    }
-}
-
-fn validate_email(errors: &mut Vec<String>, value: &str) {
-    if value.chars().count() > MAX_EMAIL_LENGTH {
-        errors.push(format!(
-            "email must contain at most {MAX_EMAIL_LENGTH} characters"
-        ));
-        return;
-    }
-
-    let Some((local, domain)) = value.split_once('@') else {
-        errors.push("email must be a valid email address".to_owned());
-        return;
-    };
-
-    if local.is_empty()
-        || domain.is_empty()
-        || !domain.contains('.')
-        || value.chars().any(char::is_whitespace)
-    {
-        errors.push("email must be a valid email address".to_owned());
-    }
-}
-
-fn validate_enum(errors: &mut Vec<String>, field: &str, value: &str, allowed: &[&str]) {
-    if !allowed.contains(&value) {
-        errors.push(format!("{field} is not supported"));
-    }
-}
-
 fn is_same_origin_api_request(request: BackendRequest<'_>) -> bool {
     let Some(request_origin) = request.url.and_then(url_origin) else {
         return false;
@@ -1373,34 +1327,6 @@ fn is_same_origin_api_request(request: BackendRequest<'_>) -> bool {
         .and_then(url_origin)
         .as_deref()
         .is_some_and(|referer_origin| referer_origin == request_origin)
-}
-
-fn unix_seconds_to_iso8601(seconds: u64) -> String {
-    let days = seconds / 86_400;
-    let seconds_of_day = seconds % 86_400;
-    let (year, month, day) = civil_from_days(days as i64);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-
-    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.000Z")
-}
-
-fn civil_from_days(days_since_unix_epoch: i64) -> (i32, u32, u32) {
-    let days = days_since_unix_epoch + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month_prime = month_prime as i32;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-
-    (year as i32, month as u32, day as u32)
 }
 
 #[cfg(test)]
