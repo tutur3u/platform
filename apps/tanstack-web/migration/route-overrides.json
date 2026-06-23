@@ -460,6 +460,16 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
     },
+    "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/course-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving workspace permissions for ai_lab, requiring the ENABLE_EDUCATION workspace secret, reading workspace_course_modules through service-role Supabase REST with exact-count pagination, and preserving the legacy { data, count, page, pageSize } envelope."
+    },
+    "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving ai_lab workspace permission and ENABLE_EDUCATION, verifying the quiz set belongs to the resolved workspace before service-role linked-module reads, applying legacy page/pageSize/q parsing, and returning the legacy paginated envelope."
+    },
     "loading:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/loading.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1378,6 +1388,11 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/quiz-sets preserves the legacy 308 redirect to /:wsId/education/library/quiz-sets. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/education/quiz-sets/:setId/linked-modules:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/education/quiz-sets/$setId/linked-modules ports the legacy linked course modules table and link/unlink workflow with an auth-gated loader, forwarded internal-api auth, CustomDataTable, and shared quiz-set linked-module components."
     },
     "page:/:locale/:wsId/education/quizzes:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quizzes/page.tsx": {
       "status": "migrated",

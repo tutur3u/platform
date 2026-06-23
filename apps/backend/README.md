@@ -153,6 +153,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   personal/workspace identifiers, returns `manage_subscription`,
   `manage_workspace_settings`, and `manage_workspace_members`, and preserves the
   legacy private 30-second success cache directive.
+- `GET /api/v1/workspaces/:wsId/course-modules` and
+  `GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules`:
+  legacy-compatible education course-module readers. Rust revalidates a normal
+  Supabase browser session or non-app-session Bearer token, resolves workspace
+  `ai_lab` permission, requires the `ENABLE_EDUCATION` workspace secret, reads
+  course-module rows through the server-owned Supabase REST adapter with
+  exact-count pagination, and verifies linked quiz sets belong to the resolved
+  workspace before listing linked modules.
 - `GET /api/v1/workspaces/:wsId/crawlers/status`: legacy-compatible crawler
   status lookup. Rust preserves the legacy workspace-agnostic behavior,
   validates the required `url` query parameter, reads the exact `crawled_urls`

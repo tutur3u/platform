@@ -6,23 +6,23 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 915,
-        "migrated": 140,
-        "percentComplete": 19.6,
-        "remaining": 915,
-        "terminal": 223,
-        "total": 1138,
+        "legacyNext": 916,
+        "migrated": 142,
+        "percentComplete": 19.72,
+        "remaining": 916,
+        "terminal": 225,
+        "total": 1141,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 155,
-        "migrated": 151,
-        "percentComplete": 49.35,
-        "remaining": 155,
-        "terminal": 151,
+        "legacyNext": 154,
+        "migrated": 152,
+        "percentComplete": 49.67,
+        "remaining": 154,
+        "terminal": 152,
         "total": 306,
         "unknownStatus": 0
       },
@@ -116,23 +116,23 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 933,
-        "migrated": 145,
-        "percentComplete": 19.64,
-        "remaining": 933,
-        "terminal": 228,
-        "total": 1161,
+        "legacyNext": 934,
+        "migrated": 147,
+        "percentComplete": 19.76,
+        "remaining": 934,
+        "terminal": 230,
+        "total": 1164,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 175,
-        "migrated": 202,
-        "percentComplete": 53.7,
-        "remaining": 175,
-        "terminal": 203,
+        "legacyNext": 174,
+        "migrated": 203,
+        "percentComplete": 53.97,
+        "remaining": 174,
+        "terminal": 204,
         "total": 378,
         "unknownStatus": 0
       }
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1108,
-      "migrated": 347,
-      "percentComplete": 28.01,
+      "migrated": 350,
+      "percentComplete": 28.15,
       "remaining": 1108,
-      "terminal": 431,
-      "total": 1539,
+      "terminal": 434,
+      "total": 1542,
       "unknownStatus": 0
     }
   },
@@ -5704,6 +5704,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/course-modules",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/course-modules/:moduleId:apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/route.ts",
       "kind": "api",
       "methods": ["PUT", "DELETE"],
@@ -7877,6 +7886,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/modules:apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -9974,6 +9992,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/users/me:apps/web/src/app/api/v1/workspaces/[wsId]/users/me/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/users/me",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/me/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/users/merge:apps/web/src/app/api/v1/workspaces/[wsId]/users/merge/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -12067,7 +12094,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/quiz-sets/:setId/linked-modules",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -14340,13 +14367,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1138,
+    "apiRoutes": 1141,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1161,
+    "routeHandlers": 1164,
     "methodCounts": {
-      "GET": 647,
+      "GET": 650,
       "HEAD": 1,
       "POST": 509,
       "PUT": 173,
@@ -14354,6 +14381,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1539
+    "total": 1542
   }
 }

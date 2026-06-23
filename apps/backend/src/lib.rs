@@ -21,6 +21,10 @@ mod current_user_calendar_settings;
 mod current_user_calendar_settings_test;
 mod current_user_default_workspace;
 mod devbox_cache;
+mod education_course_module_reads;
+mod education_course_module_reads_query;
+#[cfg(test)]
+mod education_course_module_reads_test;
 mod email_blacklist;
 #[cfg(test)]
 mod email_blacklist_test;
@@ -540,6 +544,15 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        education_course_module_reads::handle_education_course_module_reads_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }

@@ -8565,6 +8565,187 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/course-modules:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Workspace course modules
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/route.ts GET.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, resolves the workspace with the shared
+        permission helper, requires the `ai_lab` permission and enabled
+        `ENABLE_EDUCATION` workspace secret, then reads workspace course modules
+        through the server-owned Supabase REST adapter with legacy page,
+        pageSize, and q query parsing.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional case-insensitive module-name search.
+      responses:
+        "200":
+          description: Paginated workspace course module rows.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleListResponse"
+        "401":
+          description: Missing or invalid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "403":
+          description: Caller lacks workspace access or the required education permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "404":
+          description: Education is not enabled for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "500":
+          description: Workspace access, education access, or course module lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/workspaces/{wsId}/quiz-sets/{setId}/linked-modules:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: setId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Quiz set linked course modules
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts
+        GET. The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, resolves `ai_lab` workspace access,
+        requires the enabled `ENABLE_EDUCATION` secret, verifies the quiz set
+        belongs to the resolved workspace before reading links, and returns the
+        legacy paginated linked-module envelope.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional case-insensitive linked-module name search.
+      responses:
+        "200":
+          description: Paginated course modules linked to the quiz set.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleListResponse"
+        "401":
+          description: Missing or invalid Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "403":
+          description: Caller lacks workspace access or the required education permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "404":
+          description: Education is not enabled or the quiz set does not belong to the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "500":
+          description: Workspace access, education access, or linked-module lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationCourseModuleMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/education/access:
     get:
       summary: Workspace education access
@@ -10117,6 +10298,69 @@ components:
             - You don't have access to this workspace
             - Failed to verify workspace membership
             - Failed to load mobile module flags
+    EducationCourseModuleListResponse:
+      type: object
+      required:
+        - data
+        - count
+        - page
+        - pageSize
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+            additionalProperties: false
+            properties:
+              id:
+                type: string
+                format: uuid
+              group_id:
+                type:
+                  - string
+                  - "null"
+                format: uuid
+              name:
+                type:
+                  - string
+                  - "null"
+              is_public:
+                type:
+                  - boolean
+                  - "null"
+              is_published:
+                type:
+                  - boolean
+                  - "null"
+        count:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+    EducationCourseModuleMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - You don't have access to this workspace
+            - Insufficient permissions
+            - Education is not enabled for this workspace
+            - Quiz set not found
+            - Failed to verify workspace access
+            - Failed to verify education access
+            - Error fetching workspace course modules
+            - Error fetching quiz set linked modules
     WorkspaceEducationAccessResponse:
       type: object
       required:
