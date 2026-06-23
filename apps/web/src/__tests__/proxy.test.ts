@@ -111,7 +111,12 @@ describe('web proxy api handling', () => {
   const AUTH_COOKIE_HEADER =
     'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue';
 
-  function createAuthenticatedSupabaseClient() {
+  function createAuthenticatedSupabaseClient(
+    user: { email?: string; id: string } = {
+      email: 'member@example.com',
+      id: 'user-1',
+    }
+  ) {
     const completedOnboardingBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -131,9 +136,7 @@ describe('web proxy api handling', () => {
 
     return {
       auth: {
-        getUser: vi
-          .fn()
-          .mockResolvedValue({ data: { user: { id: 'user-1' } } }),
+        getUser: vi.fn().mockResolvedValue({ data: { user } }),
       },
       from: vi.fn((table: string) =>
         table === 'onboarding_progress'
@@ -213,6 +216,7 @@ describe('web proxy api handling', () => {
     );
 
     expect(response).toBe(guardResponse);
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
       expect.any(NextRequest),
       expect.objectContaining({
@@ -727,6 +731,8 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBeNull();
     expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
       '203.0.113.10'
     );
@@ -803,16 +809,24 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'route-rate-limit'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
   it('does not escalate signed-in browser route-rate-limit responses into an IP block', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient({
+        email: 'member@example.com',
+        id: 'user-1',
+      })
+    );
     const guardResponse = NextResponse.json(
       { error: 'Too Many Requests', message: 'Rate limit exceeded' },
       {
         status: 429,
         headers: {
           'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Policy': 'users-me',
         },
       }
     );
@@ -834,7 +848,79 @@ describe('web proxy api handling', () => {
     );
 
     expect(response).toBe(guardResponse);
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBe('user-1');
+    expect(response.headers.get('X-RateLimit-User-Email')).toBe(
+      'member@example.com'
+    );
+    expect(response.headers.get('X-RateLimit-Warning')).toBeNull();
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('users-me');
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
+  it('allows verified exact Tuturuuu staff browser sessions through proxy rate limits with warning headers', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient({
+        email: 'member@tuturuuu.com',
+        id: 'staff-user-1',
+      })
+    );
+    mocks.isExactTuturuuuDotComEmail.mockImplementation(
+      (email: string | null | undefined) => email === 'member@tuturuuu.com'
+    );
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'CF-Ray': 'ray-123',
+          'Retry-After': '60',
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Limit': '600',
+          'X-RateLimit-Policy': 'users-me',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': '1893456000',
+          'X-RateLimit-Window': 'minute',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database',
+        {
+          method: 'GET',
+          headers: {
+            cookie:
+              'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('X-RateLimit-Warning')).toBe(
+      'staff-debug-bypass'
+    );
+    expect(response.headers.get('X-RateLimit-Debug-Bypass')).toBe(
+      'tuturuuu-staff'
+    );
+    expect(response.headers.get('X-RateLimit-Original-Status')).toBe('429');
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBe('staff-user-1');
+    expect(response.headers.get('X-RateLimit-User-Email')).toBe(
+      'member@tuturuuu.com'
+    );
+    expect(response.headers.get('Retry-After')).toBe('60');
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('users-me');
+    expect(response.headers.get('X-RateLimit-Window')).toBe('minute');
+    expect(response.headers.get('CF-Ray')).toBe('ray-123');
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
   it('bypasses auth and locale rewriting for the offline fallback route', async () => {

@@ -11,6 +11,7 @@ import {
   installFetchInterceptor,
   setRateLimitMessage,
   setRateLimitToastLabels,
+  setRateLimitWarningMessage,
 } from '@/lib/fetch-interceptor';
 
 const RateLimitDetailsDialog = dynamic(
@@ -37,6 +38,7 @@ function FetchInterceptorI18n() {
     setRateLimitToastLabels({
       viewDetails: t('rate_limited_view_details'),
     });
+    setRateLimitWarningMessage(() => t('rate_limited_staff_debug_warning'));
   }, [t]);
 
   return null;

@@ -43,16 +43,22 @@ const SENSITIVE_QUERY_PARAM_NAMES = new Set([
 
 export type RateLimitDebugDetails = {
   capturedAt: string;
+  clientIp?: string;
+  debugBypass?: string;
   headers: Record<string, string>;
   maxRetries: number;
   method: string;
   pagePath: string;
+  rateLimitStatus?: number;
   requestPath: string;
   retryAfterSeconds: number;
   retryAttempt: number;
   status: number;
   timezone: string;
+  userEmail?: string;
+  userId?: string;
   userAgent: string;
+  warning?: string;
   willRetry: boolean;
 };
 
@@ -61,6 +67,8 @@ type RateLimitDetailsHandler = (details: RateLimitDebugDetails) => void;
 /** Formats the rate-limit toast message. Overridden by `setRateLimitMessage`. */
 let formatMessage = (seconds: number): string =>
   `You're being rate limited. Retrying in ${seconds}s…`;
+let formatWarningMessage = (): string =>
+  'Rate limit triggered. Your Tuturuuu staff account was allowed through for debugging.';
 let viewDetailsLabel = 'View details';
 let detailsHandler: RateLimitDetailsHandler | null = null;
 let lastRateLimitDetails: RateLimitDebugDetails | null = null;
@@ -71,6 +79,10 @@ let lastRateLimitDetails: RateLimitDebugDetails | null = null;
  */
 export function setRateLimitMessage(fn: (seconds: number) => string) {
   formatMessage = fn;
+}
+
+export function setRateLimitWarningMessage(fn: () => string) {
+  formatWarningMessage = fn;
 }
 
 export function setRateLimitToastLabels(labels: { viewDetails: string }) {
@@ -110,6 +122,30 @@ function notifyRateLimit(retryAfter: number, details: RateLimitDebugDetails) {
       },
     },
     duration: Math.min(Math.max((retryAfter + 1) * 1000, 10_000), 60_000),
+    id: RATE_LIMIT_TOAST_ID,
+    onDismiss: () => {
+      rateLimitToastActive = false;
+    },
+    onAutoClose: () => {
+      rateLimitToastActive = false;
+    },
+  });
+}
+
+function notifyRateLimitWarning(details: RateLimitDebugDetails) {
+  lastRateLimitDetails = details;
+  if (rateLimitToastActive) return;
+  rateLimitToastActive = true;
+  toast.warning(formatWarningMessage(), {
+    action: {
+      label: viewDetailsLabel,
+      onClick: () => {
+        if (lastRateLimitDetails) {
+          openRateLimitDetails(lastRateLimitDetails);
+        }
+      },
+    },
+    duration: 10_000,
     id: RATE_LIMIT_TOAST_ID,
     onDismiss: () => {
       rateLimitToastActive = false;
@@ -216,12 +252,18 @@ function readSelectedHeaders(headers: Headers): Record<string, string> {
   const selectedHeaderNames = [
     'Retry-After',
     'X-Proxy-Block-Reason',
+    'X-RateLimit-Client-IP',
     'X-RateLimit-Policy',
     'X-RateLimit-Window',
     'X-RateLimit-Caller-Class',
     'X-RateLimit-Limit',
     'X-RateLimit-Remaining',
     'X-RateLimit-Reset',
+    'X-RateLimit-User-Email',
+    'X-RateLimit-User-Id',
+    'X-RateLimit-Warning',
+    'X-RateLimit-Debug-Bypass',
+    'X-RateLimit-Original-Status',
     'X-Request-Id',
     'X-Vercel-Id',
     'CF-Ray',
@@ -246,6 +288,20 @@ function getTimezone() {
   }
 }
 
+function readOptionalHeader(headers: Headers, name: string) {
+  return headers.get(name) || undefined;
+}
+
+function readOptionalIntegerHeader(headers: Headers, name: string) {
+  const raw = headers.get(name);
+  if (!raw) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function buildRateLimitDebugDetails({
   input,
   init,
@@ -265,16 +321,28 @@ function buildRateLimitDebugDetails({
 
   return {
     capturedAt: new Date().toISOString(),
+    clientIp: readOptionalHeader(response.headers, 'X-RateLimit-Client-IP'),
+    debugBypass: readOptionalHeader(
+      response.headers,
+      'X-RateLimit-Debug-Bypass'
+    ),
     headers: readSelectedHeaders(response.headers),
     maxRetries: MAX_RETRIES,
     method: getRequestMethod(input, init),
     pagePath: sanitizePath(pageUrl),
+    rateLimitStatus: readOptionalIntegerHeader(
+      response.headers,
+      'X-RateLimit-Original-Status'
+    ),
     requestPath: sanitizePath(getRequestUrl(input)),
     retryAfterSeconds,
     retryAttempt,
     status: response.status,
     timezone: getTimezone(),
+    userEmail: readOptionalHeader(response.headers, 'X-RateLimit-User-Email'),
+    userId: readOptionalHeader(response.headers, 'X-RateLimit-User-Id'),
     userAgent: window.navigator.userAgent,
+    warning: readOptionalHeader(response.headers, 'X-RateLimit-Warning'),
     willRetry,
   };
 }
@@ -285,6 +353,10 @@ function shouldRetryRateLimitedRequest(
 ) {
   const method = getRequestMethod(input, init);
   return method === 'GET' || method === 'HEAD';
+}
+
+function hasRateLimitWarning(response: Response) {
+  return Boolean(response.headers.get('X-RateLimit-Warning'));
 }
 
 let installed = false;
@@ -307,7 +379,23 @@ export function installFetchInterceptor() {
 
     // Only handle same-origin rate limits — never interfere with external
     // resources. Mutations show diagnostics but are not retried.
-    if (!isSameOrigin(input) || response.status !== 429) {
+    if (!isSameOrigin(input)) {
+      return response;
+    }
+
+    if (response.status !== 429) {
+      if (hasRateLimitWarning(response)) {
+        notifyRateLimitWarning(
+          buildRateLimitDebugDetails({
+            input,
+            init,
+            response,
+            retryAfterSeconds: getRetryAfterSeconds(response),
+            retryAttempt: 0,
+            willRetry: false,
+          })
+        );
+      }
       return response;
     }
 
