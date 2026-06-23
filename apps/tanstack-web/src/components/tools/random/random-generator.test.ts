@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   generateRandomStringFromAlphabet,
   generateRandomValues,
+  type RandomByteArray,
   type RandomCryptoSource,
 } from './random-generator';
 
@@ -12,7 +13,7 @@ function createCryptoSource(
   let byteIndex = 0;
 
   return {
-    getRandomValues<T extends Uint8Array>(array: T) {
+    getRandomValues(array: RandomByteArray) {
       for (let index = 0; index < array.length; index++) {
         array[index] = bytes[byteIndex % bytes.length] ?? 0;
         byteIndex += 1;

@@ -100,13 +100,14 @@ fn workspaces_category_id(path: &str) -> Option<&str> {
     let segments = path_segments(path);
 
     // /api/workspaces/:wsId/categories/:categoryId
-    (segments.len() == 5
-        && segments[0] == "api"
-        && segments[1] == "workspaces"
-        && !segments[2].is_empty()
-        && segments[3] == "categories"
-        && !segments[4].is_empty())
-    .then_some(segments[4])
+    match segments.as_slice() {
+        ["api", "workspaces", ws_id, "categories", category_id]
+            if !ws_id.is_empty() && !category_id.is_empty() =>
+        {
+            Some(category_id)
+        }
+        _ => None,
+    }
 }
 
 fn message_response(status: u16, message: &str) -> BackendResponse {
