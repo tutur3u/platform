@@ -10,6 +10,34 @@ const {
   vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
 
+function readWorkflowYaml(workflowName) {
+  const workflowPath = path.join(
+    repoRoot,
+    '.github',
+    'workflows',
+    workflowName
+  );
+  const workflowJson = execFileSync(
+    'ruby',
+    [
+      '-e',
+      "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
+      workflowPath,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
+
+  return JSON.parse(workflowJson);
+}
+
+function githubExpression(expression) {
+  return `${String.fromCharCode(36)}{{ ${expression} }}`;
+}
+
 test('docs-only changes skip all Vercel deploy workflows', () => {
   const rootDir = createFixtureRoot();
 
@@ -404,6 +432,86 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(retryScript, /CI_RETRY_MAX_ATTEMPTS/);
   assert.match(retryScript, /bun pm cache rm/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
+});
+
+test('TanStack migration E2E workflow keeps dual-stack and compare coverage', () => {
+  const workflow = readWorkflowYaml('e2e-tests.yaml');
+  const job = workflow.jobs?.['migration-e2e'];
+
+  assert.ok(job, 'e2e-tests.yaml must define the migration-e2e job');
+  assert.deepEqual(job.needs, ['check-ci']);
+  assert.equal(
+    job.if,
+    "github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
+  );
+  assert.equal(job['timeout-minutes'], 60);
+  assert.equal(job.strategy?.['fail-fast'], false);
+
+  const matrixRows = job.strategy?.matrix?.include;
+  assert.ok(Array.isArray(matrixRows));
+  assert.equal(matrixRows.length, 2);
+
+  const rowByMode = new Map(matrixRows.map((row) => [row.mode, row]));
+  assert.deepEqual([...rowByMode.keys()].sort(), [
+    'compare-smoke',
+    'tanstack-dual-stack',
+  ]);
+  assert.deepEqual(rowByMode.get('tanstack-dual-stack'), {
+    command: 'bun test:e2e:tanstack:docker -- -- --project=chromium',
+    mode: 'tanstack-dual-stack',
+    playwright_workdir: 'apps/tanstack-web',
+    setup_supabase: 'false',
+  });
+  assert.deepEqual(rowByMode.get('compare-smoke'), {
+    command:
+      'bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth',
+    mode: 'compare-smoke',
+    playwright_workdir: 'apps/web',
+    setup_supabase: 'true',
+  });
+
+  const steps = job.steps || [];
+  assert.ok(
+    steps.some(
+      (step) =>
+        step.name === 'Run migration E2E' &&
+        step.run === githubExpression('matrix.command')
+    ),
+    'migration-e2e must execute the matrix command'
+  );
+
+  const artifactStep = steps.find(
+    (step) => step.name === 'Upload migration E2E artifacts'
+  );
+  assert.ok(artifactStep, 'migration-e2e must upload diagnostics artifacts');
+  assert.equal(artifactStep.uses, 'actions/upload-artifact@v7');
+  assert.equal(artifactStep.if, githubExpression('!cancelled()'));
+  assert.equal(
+    artifactStep.with?.name,
+    `migration-e2e-${githubExpression('matrix.mode')}`
+  );
+  assert.match(
+    artifactStep.with?.path || '',
+    /apps\/tanstack-web\/playwright-report\//
+  );
+  assert.match(artifactStep.with?.path || '', /apps\/web\/blob-report\//);
+  assert.match(artifactStep.with?.path || '', /tmp\/e2e\//);
+  assert.equal(artifactStep.with?.['if-no-files-found'], 'ignore');
+
+  const cleanupStep = steps.find(
+    (step) => step.name === 'Stop migration E2E stacks'
+  );
+  assert.ok(cleanupStep, 'migration-e2e must clean up both Docker stacks');
+  assert.equal(cleanupStep.if, 'always()');
+  assert.match(
+    cleanupStep.run || '',
+    /docker compose -f docker-compose\.tanstack-dual\.yml down \|\| true/
+  );
+  assert.match(
+    cleanupStep.run || '',
+    /node scripts\/docker-web\.js down --mode prod --strategy blue-green --env-file tmp\/e2e\/web\.env \|\| true/
+  );
+  assert.match(cleanupStep.run || '', /bun sb:stop \|\| true/);
 });
 
 test('Supabase CLI workflows use tokenized retry setup', () => {
