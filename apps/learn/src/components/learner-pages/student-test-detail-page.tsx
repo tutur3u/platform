@@ -553,6 +553,7 @@ export function StudentTestDetailPage({
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleManualSubmit}
                   disabled={submitMutation.isPending}
                   className="inline-flex w-full items-center justify-center gap-2 border-2 border-border bg-primary py-3 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
@@ -578,6 +579,7 @@ export function StudentTestDetailPage({
                         return (
                           <button
                             key={q.id}
+                            type="button"
                             onClick={() => {
                               const el = document.getElementById(
                                 `question-${idx}`
