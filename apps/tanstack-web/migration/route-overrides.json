@@ -844,6 +844,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/debts/summary by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling private-schema get_debt_loan_summary with _actor_id and _ws_id using the service-role credential, returning the first legacy RPC row or the zero summary, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching debt/loan summary bodies."
     },
+    "api:/api/v1/workspaces/:wsId/finance/filter-users:apps/web/src/app/api/v1/workspaces/[wsId]/finance/filter-users/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/filter-users by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving the legacy type query branches, reading distinct_transaction_creators and distinct_invoice_creators with service-role auth and explicit ws_id filters, reading workspace_users with caller-token auth for normal Supabase sessions and service-role auth for app sessions, returning the legacy users envelope, and preserving the legacy Unauthorized and branch-specific failure bodies."
+    },
     "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

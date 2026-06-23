@@ -341,6 +341,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `manage_finance`, calls private-schema `get_debt_loan_summary` with the
   service-role credential, returns the first legacy RPC row or the zero summary,
   and preserves legacy auth, permission, and summary error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/filter-users`: legacy-compatible
+  finance user filter endpoint. Rust reuses the finance
+  app-session/CLI/Supabase auth boundary, normalizes the workspace identifier,
+  requires `view_transactions`, reads transaction and invoice creator filters
+  with service-role auth, preserves caller-token reads for workspace users when
+  a normal Supabase session is present, and keeps the legacy `{ users }` and
+  branch-specific error bodies.
 - `GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming`:
   legacy-compatible upcoming recurring transaction probe. Rust reuses the
   finance app-session/CLI/Supabase auth boundary, normalizes the workspace

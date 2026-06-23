@@ -8392,6 +8392,82 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/finance/filter-users:
+    get:
+      summary: Workspace finance filter users
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/finance/filter-users/route.ts
+        GET. The Rust backend accepts finance/platform app-session tokens and
+        CLI app-session tokens before falling back to a normal Supabase browser
+        session or non-app-session Bearer token, normalizes internal, personal,
+        handle, and UUID workspace identifiers, requires `view_transactions`
+        through `has_workspace_permission`, preserves the legacy `type` query
+        branch behavior, reads transaction and invoice creator filters with the
+        server-owned service-role credential, keeps normal workspace user reads
+        on the caller token when present, and preserves the legacy Unauthorized
+        and branch-specific failure bodies.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - transaction_creators
+              - invoice_creators
+            default: all
+          description: Filter source. Unknown values fall back to workspace users.
+      responses:
+        "200":
+          description: User rows for workspace user, transaction creator, or invoice creator filters.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceFilterUsersResponse"
+        "401":
+          description: Missing or invalid finance caller credentials, or unresolved workspace access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceFilterUsersMessage"
+        "403":
+          description: Authenticated caller lacks view_transactions permission for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceFilterUsersMessage"
+        "500":
+          description: Filter users lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceFilterUsersMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/finance/recurring-transactions/upcoming:
     get:
       summary: Workspace upcoming recurring finance transactions
@@ -9351,6 +9427,28 @@ components:
             - Unauthorized
             - Insufficient permissions
             - Error fetching debt/loan summary
+    FinanceFilterUsersResponse:
+      type: object
+      required:
+        - users
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    FinanceFilterUsersMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - Failed to fetch transaction creators
+            - Failed to fetch invoice creators
+            - Failed to fetch workspace users
     FinanceUpcomingRecurringTransactionsResponse:
       type: object
       required:
