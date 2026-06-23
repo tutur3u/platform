@@ -127,8 +127,8 @@ export function BoardDetailsSettings({
       </div>
 
       <div className="grid gap-4">
-        <div className="grid gap-4 md:grid-cols-[8rem_minmax(0,1fr)]">
-          <div className="space-y-2">
+        <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-end">
+          <div className="w-fit space-y-2">
             <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
               {t('ws-task-boards.icon_label')}
             </Label>
@@ -147,7 +147,7 @@ export function BoardDetailsSettings({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <Label
               className="font-semibold text-muted-foreground text-xs uppercase tracking-wider"
               htmlFor="board-name"

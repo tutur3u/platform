@@ -39,16 +39,19 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { dispatchRequestOpenTask } from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import React, {
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { DescriptionDiffViewer } from '@/components/tasks/description-diff-viewer';
 
 const ACTIVITY_PAGE_SIZE = 20;
 
@@ -56,6 +59,11 @@ type TaskListNameSummary = {
   id: string;
   name: string | null;
 };
+
+type TranslationFn = (
+  key: string,
+  options?: { count?: number; defaultValue?: string }
+) => string;
 
 const PRIORITY_BADGE_COLORS: Record<TaskPriority, string> = {
   critical:
@@ -114,6 +122,113 @@ function formatActivityToken(
   );
 }
 
+function getActivityFieldLabel(
+  fieldName: string | null | undefined,
+  historyT: TranslationFn
+) {
+  switch (fieldName) {
+    case 'name':
+      return historyT('field.name');
+    case 'description':
+      return historyT('field.description');
+    case 'priority':
+      return historyT('field.priority');
+    case 'start_date':
+      return historyT('field.start_date');
+    case 'end_date':
+      return historyT('field.end_date');
+    case 'estimation_points':
+      return historyT('field.estimation');
+    case 'list_id':
+      return historyT('field.list');
+    case 'completed':
+      return historyT('field.completed');
+    default:
+      return formatActivityToken(fieldName, historyT('unknown_change'));
+  }
+}
+
+function getActivityAction(
+  entry: WorkspaceTaskHistoryEntry,
+  t: ReturnType<typeof useTranslations>
+) {
+  if (entry.change_type === 'field_updated') {
+    switch (entry.field_name) {
+      case 'name':
+        return t('tasks-logs.field_updated.name' as any);
+      case 'description':
+        return t('tasks-logs.field_updated.description' as any);
+      case 'priority':
+        return t('tasks-logs.field_updated.priority' as any);
+      case 'start_date':
+        return t('tasks-logs.field_updated.start_date' as any);
+      case 'end_date':
+        return t('tasks-logs.field_updated.end_date' as any);
+      case 'estimation_points':
+        return t('tasks-logs.field_updated.estimation_points' as any);
+      case 'list_id':
+        return t('tasks-logs.field_updated.list_id' as any);
+      case 'completed':
+        return t('tasks-logs.field_updated.completed' as any);
+      default:
+        return t('tasks-logs.field_updated.unknown' as any);
+    }
+  }
+
+  switch (entry.change_type) {
+    case 'task_created':
+      return t('tasks-logs.task_created' as any);
+    case 'assignee_added':
+      return t('tasks-logs.assignee_added' as any);
+    case 'assignee_removed':
+      return t('tasks-logs.assignee_removed' as any);
+    case 'label_added':
+      return t('tasks-logs.label_added' as any);
+    case 'label_removed':
+      return t('tasks-logs.label_removed' as any);
+    case 'project_linked':
+      return t('tasks-logs.project_linked' as any);
+    case 'project_unlinked':
+      return t('tasks-logs.project_unlinked' as any);
+    default:
+      return t('tasks-logs.unknown_change' as any);
+  }
+}
+
+function getActivityBadgeLabel(
+  entry: WorkspaceTaskHistoryEntry,
+  historyT: TranslationFn,
+  t: ReturnType<typeof useTranslations>
+) {
+  if (entry.change_type === 'field_updated' && entry.field_name) {
+    return getActivityFieldLabel(entry.field_name, historyT);
+  }
+
+  switch (entry.change_type) {
+    case 'task_created':
+      return t('tasks-logs.change_type.task_created' as any);
+    case 'assignee_added':
+      return t('tasks-logs.change_type.assignee_added' as any);
+    case 'assignee_removed':
+      return t('tasks-logs.change_type.assignee_removed' as any);
+    case 'label_added':
+      return t('tasks-logs.change_type.label_added' as any);
+    case 'label_removed':
+      return t('tasks-logs.change_type.label_removed' as any);
+    case 'project_linked':
+      return t('tasks-logs.change_type.project_linked' as any);
+    case 'project_unlinked':
+      return t('tasks-logs.change_type.project_unlinked' as any);
+    default:
+      return t('tasks-logs.change_type.field_updated' as any);
+  }
+}
+
+function getCreatedDescriptionValue(metadata: unknown) {
+  if (!isRecord(metadata)) return null;
+  return metadata.description ?? null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
@@ -162,11 +277,13 @@ function formatActivityValue(
   {
     fieldName,
     listNameById,
+    changedLabel,
     noneLabel,
     unknownListLabel,
   }: {
     fieldName?: string | null;
     listNameById?: Map<string, string>;
+    changedLabel: string;
     noneLabel: string;
     unknownListLabel: string;
   }
@@ -191,6 +308,7 @@ function formatActivityValue(
         formatActivityValue(item, {
           fieldName,
           listNameById,
+          changedLabel,
           noneLabel,
           unknownListLabel,
         })
@@ -204,7 +322,7 @@ function formatActivityValue(
     const name =
       record.name ?? record.title ?? record.label ?? record.display_name;
     if (typeof name === 'string') return name;
-    return JSON.stringify(value);
+    return changedLabel;
   }
 
   return String(value);
@@ -230,6 +348,7 @@ function ActivityFieldValue({
       {formatActivityValue(value, {
         fieldName: entry.field_name,
         listNameById,
+        changedLabel: t('tasks.history.content_changed' as any),
         noneLabel: t('tasks.priority_none'),
         unknownListLabel: t('common.unknown_list'),
       })}
@@ -331,20 +450,58 @@ function getActivityVisual(entry: WorkspaceTaskHistoryEntry): {
   }
 }
 
+function ActivityDescriptionChange({
+  historyT,
+  newValue,
+  oldValue,
+}: {
+  historyT: TranslationFn;
+  newValue: unknown;
+  oldValue: unknown;
+}) {
+  if (!oldValue && !newValue) {
+    return (
+      <span className="text-muted-foreground text-xs">
+        {historyT('no_change')}
+      </span>
+    );
+  }
+
+  return (
+    <DescriptionDiffViewer
+      newValue={newValue}
+      oldValue={oldValue}
+      t={historyT}
+      triggerVariant="inline"
+    />
+  );
+}
+
 function ActivityTimelineEntry({
   entry,
+  historyT,
   listNameById,
+  onOpenTask,
 }: {
   entry: WorkspaceTaskHistoryEntry;
+  historyT: TranslationFn;
   listNameById: Map<string, string>;
+  onOpenTask: (entry: WorkspaceTaskHistoryEntry) => void;
 }) {
   const t = useTranslations();
   const { icon, tone } = getActivityVisual(entry);
   const actorName = entry.user?.name ?? t('common.unknown');
   const changedAt = new Date(entry.changed_at);
   const fieldLabel = entry.field_name
-    ? formatActivityToken(entry.field_name, entry.field_name)
+    ? getActivityFieldLabel(entry.field_name, historyT)
     : null;
+  const action = getActivityAction(entry, t);
+  const badgeLabel = getActivityBadgeLabel(entry, historyT, t);
+  const createdDescription = getCreatedDescriptionValue(entry.metadata);
+  const canOpenTask =
+    Boolean(entry.task_id) &&
+    !entry.task_deleted_at &&
+    !entry.task_permanently_deleted;
 
   return (
     <div className="group grid grid-cols-[auto_1fr] gap-3 rounded-md p-2 transition-colors hover:bg-muted/40">
@@ -369,22 +526,31 @@ function ActivityTimelineEntry({
             </AvatarFallback>
           </Avatar>
           <span className="font-medium text-sm">{actorName}</span>
-          <span className="text-muted-foreground text-sm">
-            {formatActivityToken(
-              entry.change_type,
-              t('settings.tasks.board_activity')
-            ).toLowerCase()}
-          </span>
+          <span className="text-muted-foreground text-sm">{action}</span>
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-            {formatActivityToken(
-              entry.change_type,
-              t('settings.tasks.board_activity')
-            )}
+            {badgeLabel}
           </Badge>
         </div>
 
         <div className="min-w-0">
-          <p className="truncate font-medium text-sm">{entry.task_name}</p>
+          {canOpenTask ? (
+            <button
+              className="block max-w-full truncate text-left font-medium text-sm underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => onOpenTask(entry)}
+              type="button"
+            >
+              {entry.task_name}
+            </button>
+          ) : (
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate font-medium text-muted-foreground text-sm">
+                {entry.task_name}
+              </p>
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                {t('tasks-logs.deleted' as any)}
+              </Badge>
+            </div>
+          )}
           <p className="text-muted-foreground text-xs">
             {new Intl.DateTimeFormat(undefined, {
               dateStyle: 'medium',
@@ -393,26 +559,58 @@ function ActivityTimelineEntry({
           </p>
         </div>
 
-        {fieldLabel && (
+        {fieldLabel &&
+          !(
+            entry.change_type === 'field_updated' &&
+            entry.field_name === 'description'
+          ) && (
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
+              <Badge variant="outline" className="h-5 px-1.5">
+                {fieldLabel}
+              </Badge>
+              {entry.change_type === 'field_updated' &&
+                entry.field_name !== 'description' && (
+                  <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <ActivityFieldValue
+                      entry={entry}
+                      listNameById={listNameById}
+                      value={entry.old_value}
+                    />
+                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <ActivityFieldValue
+                      entry={entry}
+                      listNameById={listNameById}
+                      value={entry.new_value}
+                    />
+                  </span>
+                )}
+            </div>
+          )}
+
+        {entry.change_type === 'field_updated' &&
+          entry.field_name === 'description' && (
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
+              <Badge variant="outline" className="h-5 px-1.5">
+                {historyT('field.description')}
+              </Badge>
+              <ActivityDescriptionChange
+                historyT={historyT}
+                newValue={entry.new_value}
+                oldValue={entry.old_value}
+              />
+            </div>
+          )}
+
+        {entry.change_type === 'task_created' && createdDescription && (
           <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
             <Badge variant="outline" className="h-5 px-1.5">
-              {fieldLabel}
+              {historyT('field.description')}
             </Badge>
-            {entry.change_type === 'field_updated' && (
-              <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-                <ActivityFieldValue
-                  entry={entry}
-                  listNameById={listNameById}
-                  value={entry.old_value}
-                />
-                <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                <ActivityFieldValue
-                  entry={entry}
-                  listNameById={listNameById}
-                  value={entry.new_value}
-                />
-              </span>
-            )}
+            <ActivityDescriptionChange
+              historyT={historyT}
+              newValue={createdDescription}
+              oldValue={null}
+            />
           </div>
         )}
       </div>
@@ -430,6 +628,7 @@ export function BoardActivitySettings({
   wsId: string;
 }) {
   const t = useTranslations();
+  const historyT = useTranslations('tasks.history') as TranslationFn;
   const [changeType, setChangeType] = useState('all');
   const [search, setSearch] = useState('');
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -526,6 +725,18 @@ export function BoardActivitySettings({
         timeStyle: 'short',
       }).format(new Date(entries[0].changed_at))
     : null;
+
+  const handleOpenTask = useCallback(
+    (entry: WorkspaceTaskHistoryEntry) => {
+      if (!entry.task_id) return;
+
+      dispatchRequestOpenTask({
+        taskId: entry.task_id,
+        wsId,
+      });
+    },
+    [wsId]
+  );
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -668,8 +879,10 @@ export function BoardActivitySettings({
           {entries.map((entry) => (
             <ActivityTimelineEntry
               entry={entry}
+              historyT={historyT}
               key={entry.id}
               listNameById={listNameById}
+              onOpenTask={handleOpenTask}
             />
           ))}
           <div ref={loadMoreRef} className="flex justify-center px-2 pt-2">

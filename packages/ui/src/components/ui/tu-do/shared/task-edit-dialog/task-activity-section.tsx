@@ -93,6 +93,7 @@ export function TaskActivitySection({
   revertDisabled = false,
 }: TaskActivitySectionProps) {
   const t = useTranslations('tasks-history');
+  const snapshotT = useTranslations('tasks.history');
   const locale = useLocale();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -219,7 +220,12 @@ export function TaskActivitySection({
             onTaskUpdate?.();
           }}
           locale={locale}
-          t={t as (key: string, options?: { defaultValue?: string }) => string}
+          t={
+            snapshotT as (
+              key: string,
+              options?: { count?: number; defaultValue?: string }
+            ) => string
+          }
           estimationType={estimationType}
           revertDisabled={revertDisabled}
         />

@@ -3,19 +3,20 @@ import {
   ArrowDownAZ,
   ArrowLeft,
   ArrowUpAZ,
+  Bolt,
   CalendarDays,
   Clock,
   CopyCheck,
   Flag,
   Gauge,
   KanbanSquare,
+  LayoutDashboard,
   LayoutGrid,
   List,
   Loader2,
   Pencil,
   Play,
   Search,
-  Settings,
   Share2,
   Trash2,
   UserStar,
@@ -627,6 +628,7 @@ export function BoardHeader({
             showChevron={false}
             triggerMode="compact"
             triggerTooltip={`${t('common.status')}: ${selectedListStatusOption?.label ?? t('common.all')}`}
+            triggerIcon={<CopyCheck className="h-3.5 w-3.5" />}
             colorizeTriggerIcon={false}
             className={cn(
               toolbarComboboxClass,
@@ -653,7 +655,7 @@ export function BoardHeader({
             triggerTooltip={`${t('common.view')}: ${
               selectedViewOption?.label ?? viewConfig[activeView].label
             }`}
-            triggerIcon={<LayoutGrid className="h-3.5 w-3.5" />}
+            triggerIcon={<LayoutDashboard className="h-3.5 w-3.5" />}
             colorizeTriggerIcon={false}
             className={toolbarComboboxClass}
           />
@@ -744,7 +746,7 @@ export function BoardHeader({
                 onPointerDown={handleBoardSettingsPointerDown}
                 aria-label={t('ws-task-boards.actions.board_settings')}
               >
-                <Settings className="h-3.5 w-3.5" />
+                <Bolt className="h-3.5 w-3.5" />
               </Button>
             </ToolbarTooltip>
           )}

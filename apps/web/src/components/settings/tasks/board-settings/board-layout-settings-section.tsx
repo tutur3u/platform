@@ -50,9 +50,9 @@ export function BoardLayoutSettingsSection({
 
       <BoardLayoutSettingsContent
         boardId={board.id}
+        disableScrollArea
         lists={lists}
         onUpdate={onRefresh}
-        scrollAreaClassName="h-[min(52rem,calc(100dvh-18rem))] pr-4"
         wsId={wsId}
       />
     </div>

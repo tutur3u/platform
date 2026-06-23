@@ -1,7 +1,14 @@
 'use client';
 
-import { AlertTriangle, Loader2, RotateCcw } from '@tuturuuu/icons';
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  RotateCcw,
+} from '@tuturuuu/icons';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   ALL_COMPARABLE_FIELDS,
@@ -21,15 +28,49 @@ interface SelectiveRevertPanelProps {
   onRevert: (fields: RevertibleField[]) => Promise<void>;
   isReverting: boolean;
   locale?: string;
-  t?: (key: string, options?: { defaultValue?: string }) => string;
+  t?: (
+    key: string,
+    options?: { count?: number; defaultValue?: string }
+  ) => string;
   /** Estimation type for displaying points */
   estimationType?: EstimationType;
   /** When true, disables the revert functionality (feature not stable) */
   revertDisabled?: boolean;
 }
 
-const defaultT = (key: string, opts?: { defaultValue?: string }) =>
-  opts?.defaultValue || key;
+const defaultT = (
+  key: string,
+  opts?: { count?: number; defaultValue?: string }
+) => opts?.defaultValue || key;
+
+const FIELD_SECTIONS: {
+  fields: ComparableField[];
+  titleKey: string;
+  titleFallback: string;
+}[] = [
+  {
+    fields: [
+      'name',
+      'description',
+      'priority',
+      'estimation_points',
+      'list_id',
+      'completed',
+    ],
+    titleFallback: 'Core Fields',
+    titleKey: 'core_fields',
+  },
+  {
+    fields: ['start_date', 'end_date'],
+    titleFallback: 'Dates',
+    titleKey: 'dates',
+  },
+  {
+    fields: ['assignees', 'labels', 'projects'],
+    titleFallback: 'Relationships',
+    titleKey: 'relationships',
+  },
+];
 
 export function SelectiveRevertPanel({
   snapshot,
@@ -95,6 +136,31 @@ export function SelectiveRevertPanel({
 
   const hasChanges = changedFields.length > 0;
   const hasSelection = selectedFields.size > 0;
+  const changedFieldSet = useMemo(
+    () => new Set(changedFields),
+    [changedFields]
+  );
+  const unchangedFields = useMemo(
+    () => ALL_COMPARABLE_FIELDS.filter((field) => !changedFieldSet.has(field)),
+    [changedFieldSet]
+  );
+
+  const renderField = (field: ComparableField) => (
+    <FieldDiffViewer
+      key={field}
+      fieldName={field}
+      snapshotValue={fieldValues[field].snapshot}
+      currentValue={fieldValues[field].current}
+      selected={selectedFields.has(field)}
+      onSelectionChange={(selected) => handleFieldSelect(field, selected)}
+      hasChanged={changedFieldSet.has(field)}
+      locale={locale}
+      t={t}
+      snapshotListName={snapshot.list_name}
+      currentListName={currentTask.list_name}
+      estimationType={estimationType}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -171,78 +237,37 @@ export function SelectiveRevertPanel({
 
       {/* Field list */}
       <div className="space-y-2">
-        {/* Core fields */}
-        <FieldGroup title={t('core_fields', { defaultValue: 'Core Fields' })}>
-          {(
-            [
-              'name',
-              'description',
-              'priority',
-              'estimation_points',
-              'list_id',
-              'completed',
-            ] as ComparableField[]
-          ).map((field) => (
-            <FieldDiffViewer
-              key={field}
-              fieldName={field}
-              snapshotValue={fieldValues[field].snapshot}
-              currentValue={fieldValues[field].current}
-              selected={selectedFields.has(field)}
-              onSelectionChange={(selected) =>
-                handleFieldSelect(field, selected)
-              }
-              hasChanged={changedFields.includes(field)}
-              locale={locale}
-              t={t}
-              snapshotListName={snapshot.list_name}
-              currentListName={currentTask.list_name}
-              estimationType={estimationType}
-            />
-          ))}
-        </FieldGroup>
+        {FIELD_SECTIONS.map((section) => {
+          const sectionChangedFields = section.fields.filter((field) =>
+            changedFieldSet.has(field)
+          );
 
-        {/* Date fields */}
-        <FieldGroup title={t('dates', { defaultValue: 'Dates' })}>
-          {(['start_date', 'end_date'] as ComparableField[]).map((field) => (
-            <FieldDiffViewer
-              key={field}
-              fieldName={field}
-              snapshotValue={fieldValues[field].snapshot}
-              currentValue={fieldValues[field].current}
-              selected={selectedFields.has(field)}
-              onSelectionChange={(selected) =>
-                handleFieldSelect(field, selected)
-              }
-              hasChanged={changedFields.includes(field)}
-              locale={locale}
-              t={t}
-            />
-          ))}
-        </FieldGroup>
+          if (sectionChangedFields.length === 0) return null;
 
-        {/* Relationship fields */}
-        <FieldGroup
-          title={t('relationships', { defaultValue: 'Relationships' })}
-        >
-          {(['assignees', 'labels', 'projects'] as ComparableField[]).map(
-            (field) => (
-              <FieldDiffViewer
-                key={field}
-                fieldName={field}
-                snapshotValue={fieldValues[field].snapshot}
-                currentValue={fieldValues[field].current}
-                selected={selectedFields.has(field)}
-                onSelectionChange={(selected) =>
-                  handleFieldSelect(field, selected)
-                }
-                hasChanged={changedFields.includes(field)}
-                locale={locale}
-                t={t}
-              />
-            )
-          )}
-        </FieldGroup>
+          return (
+            <FieldGroup
+              key={section.titleKey}
+              count={sectionChangedFields.length}
+              title={t(section.titleKey, {
+                defaultValue: section.titleFallback,
+              })}
+            >
+              {sectionChangedFields.map(renderField)}
+            </FieldGroup>
+          );
+        })}
+
+        {unchangedFields.length > 0 && (
+          <FieldGroup
+            count={unchangedFields.length}
+            defaultCollapsed
+            title={t('unchanged_fields', {
+              defaultValue: 'Unchanged fields',
+            })}
+          >
+            {unchangedFields.map(renderField)}
+          </FieldGroup>
+        )}
       </div>
 
       {/* Revert button */}
@@ -271,18 +296,38 @@ export function SelectiveRevertPanel({
 }
 
 function FieldGroup({
+  count,
+  defaultCollapsed = false,
   title,
   children,
 }: {
+  count: number;
+  defaultCollapsed?: boolean;
   title: string;
   children: React.ReactNode;
 }) {
+  const [isOpen, setIsOpen] = useState(!defaultCollapsed);
+
   return (
     <div className="space-y-2">
-      <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {title}
-      </h4>
-      <div className="space-y-2">{children}</div>
+      <button
+        className="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted/40"
+        onClick={() => setIsOpen((open) => !open)}
+        type="button"
+      >
+        {isOpen ? (
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
+        <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+          {title}
+        </span>
+        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+          {count}
+        </Badge>
+      </button>
+      {isOpen && <div className="space-y-2">{children}</div>}
     </div>
   );
 }

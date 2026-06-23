@@ -5,9 +5,11 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardActivitySettings } from './board-activity-settings';
 
-const { listWorkspaceTaskHistoryMock } = vi.hoisted(() => ({
-  listWorkspaceTaskHistoryMock: vi.fn(),
-}));
+const { dispatchRequestOpenTaskMock, listWorkspaceTaskHistoryMock } =
+  vi.hoisted(() => ({
+    dispatchRequestOpenTaskMock: vi.fn(),
+    listWorkspaceTaskHistoryMock: vi.fn(),
+  }));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -24,6 +26,16 @@ vi.mock('@tuturuuu/internal-api/tasks', async (importOriginal) => {
     ) => listWorkspaceTaskHistoryMock(...args),
   };
 });
+
+vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
+  dispatchRequestOpenTask: dispatchRequestOpenTaskMock,
+}));
+
+vi.mock('@/components/tasks/description-diff-viewer', () => ({
+  DescriptionDiffViewer: () => (
+    <button type="button">description-diff-trigger</button>
+  ),
+}));
 
 vi.mock('@tuturuuu/ui/custom/combobox', () => ({
   Combobox: ({
@@ -92,7 +104,7 @@ describe('BoardActivitySettings', () => {
       (_wsId: string, options: { page?: number }) => {
         if (options.page === 2) {
           return Promise.resolve({
-            count: 3,
+            count: 4,
             data: [
               {
                 board_id: 'board-1',
@@ -102,6 +114,17 @@ describe('BoardActivitySettings', () => {
                 changed_by: 'user-2',
                 field_name: null,
                 id: 'history-3',
+                metadata: {
+                  description: {
+                    content: [
+                      {
+                        content: [{ text: 'Checklist details', type: 'text' }],
+                        type: 'paragraph',
+                      },
+                    ],
+                    type: 'doc',
+                  },
+                },
                 new_value: null,
                 old_value: null,
                 task_id: 'task-3',
@@ -119,7 +142,7 @@ describe('BoardActivitySettings', () => {
         }
 
         return Promise.resolve({
-          count: 3,
+          count: 4,
           data: [
             {
               board_id: 'board-1',
@@ -157,6 +180,40 @@ describe('BoardActivitySettings', () => {
                 name: 'Alex Nguyen',
               },
             },
+            {
+              board_id: 'board-1',
+              board_name: 'Roadmap',
+              change_type: 'field_updated',
+              changed_at: '2026-06-21T08:30:00.000Z',
+              changed_by: 'user-1',
+              field_name: 'description',
+              id: 'history-4',
+              new_value: {
+                content: [
+                  {
+                    content: [{ text: 'Updated description', type: 'text' }],
+                    type: 'paragraph',
+                  },
+                ],
+                type: 'doc',
+              },
+              old_value: {
+                content: [
+                  {
+                    content: [{ text: 'Old description', type: 'text' }],
+                    type: 'paragraph',
+                  },
+                ],
+                type: 'doc',
+              },
+              task_id: 'task-4',
+              task_name: 'Description task',
+              user: {
+                avatar_url: null,
+                id: 'user-1',
+                name: 'Alex Nguyen',
+              },
+            },
           ],
           page: 1,
           pageSize: 20,
@@ -170,12 +227,20 @@ describe('BoardActivitySettings', () => {
 
     expect(await screen.findByText('Homepage task')).toBeInTheDocument();
     expect(screen.getAllByText('Alex Nguyen').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Field Updated').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText('tasks-logs.field_updated.priority').length
+    ).toBeGreaterThan(0);
     expect(screen.getByText('tasks.priority_normal')).toBeInTheDocument();
     expect(screen.getByText('tasks.priority_high')).toBeInTheDocument();
     expect(screen.getByText('To Do')).toBeInTheDocument();
     expect(screen.getByText('Doing')).toBeInTheDocument();
+    expect(screen.getAllByText('field.list').length).toBeGreaterThan(0);
     expect(screen.queryByText(todoListId)).not.toBeInTheDocument();
+    expect(screen.queryByText('List Id')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'description-diff-trigger' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Updated description/)).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(listWorkspaceTaskHistoryMock).toHaveBeenCalledWith(
@@ -220,6 +285,19 @@ describe('BoardActivitySettings', () => {
         }),
         expect.objectContaining({ baseUrl: expect.any(String) })
       );
+    });
+  });
+
+  it('opens a task from a timeline entry', async () => {
+    renderBoardActivitySettings();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Homepage task' })
+    );
+
+    expect(dispatchRequestOpenTaskMock).toHaveBeenCalledWith({
+      taskId: 'task-1',
+      wsId: 'ws-1',
     });
   });
 
