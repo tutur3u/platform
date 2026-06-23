@@ -107,6 +107,25 @@ export function StudentTestDetailPage({
   >({});
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [hasStarted, setHasStarted] = useState<boolean>(true);
+
+  // Check if test has started
+  useEffect(() => {
+    if (!test?.start_at) {
+      setHasStarted(true);
+      return;
+    }
+
+    const checkStarted = () => {
+      const startTime = new Date(test.start_at!).getTime();
+      const now = Date.now();
+      setHasStarted(now >= startTime);
+    };
+
+    checkStarted();
+    const interval = setInterval(checkStarted, 1000);
+    return () => clearInterval(interval);
+  }, [test?.start_at]);
 
   // Initialize local answers when query loads
   useEffect(() => {
@@ -613,12 +632,12 @@ export function StudentTestDetailPage({
             <div className="flex shrink-0 items-center self-start md:self-center">
               <button
                 onClick={() => startMutation.mutate()}
-                disabled={startMutation.isPending}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                disabled={startMutation.isPending || !hasStarted}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                 type="button"
               >
                 <Play className="h-5 w-5" />
-                {t('courses.startTest')}
+                {hasStarted ? t('courses.startTest') : t('courses.testNotStarted')}
               </button>
             </div>
           </div>

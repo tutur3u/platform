@@ -129,6 +129,7 @@
     "untitled": "Course",
     "tests": "Tests",
     "startTest": "Start test",
+    "testNotStarted": "Test has not started yet",
     "backToCourse": "Back to course",
     "courseAssessments": "Course assessments",
     "testNotFound": "Test not found",
