@@ -120,6 +120,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `MOBILE_HIDDEN_MODULES` from `workspace_secrets` through the server-owned
   Supabase REST adapter, and returns the sorted legacy `{ "hiddenModuleIds": [] }`
   payload with the private cache directive.
+- `GET /api/v1/users/me/identities`: legacy-compatible linked identity reader.
+  Rust revalidates a normal Supabase browser session or non-app-session Bearer
+  token with Supabase Auth, rejects Tuturuuu app-session tokens, extracts the
+  raw Supabase Auth `identities` array from the revalidated user JSON, and
+  returns `{ "identities": [], "canUnlink": false }` with the legacy private
+  cache directive.
 - `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
   legacy-compatible workspace permission check route. Rust revalidates a normal
   Supabase browser session or non-app-session Bearer token, ignores app-session

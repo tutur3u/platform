@@ -79,6 +79,9 @@ mod task_board_status_templates;
 mod task_embeddings;
 mod timezones;
 mod topic_announcements;
+mod user_identities;
+#[cfg(test)]
+mod user_identities_test;
 mod user_profile;
 mod workspace_education_access;
 mod workspace_limits;
@@ -443,6 +446,12 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = auth_mfa::handle_auth_mfa_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        user_identities::handle_user_identities_route(config, request, outbound).await
+    {
         return response;
     }
 

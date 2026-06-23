@@ -445,6 +445,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token."
     },
+    "api:/api/v1/users/me/identities:apps/web/src/app/api/v1/users/me/identities/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/users/me/identities by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, extracting the Auth JS-compatible identities array from the revalidated Supabase user JSON, returning the legacy identities plus canUnlink payload, and keeping the legacy private cache directive plus Unauthorized, Supabase Auth rejection, and internal error bodies."
+    },
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

@@ -7664,6 +7664,60 @@ paths:
                 type: string
                 examples:
                   - GET, PATCH
+  /api/v1/users/me/identities:
+    get:
+      summary: Current user linked identities
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/users/me/identities/route.ts GET. The Rust
+        backend revalidates the browser Supabase session cookie or
+        non-app-session Bearer token with Supabase Auth, intentionally ignores
+        Tuturuuu app-session tokens, extracts the Auth JS-compatible
+        `identities` array from the revalidated Supabase user JSON, and returns
+        the legacy `{ identities, canUnlink }` payload with the private cache
+        directive.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Linked Supabase Auth identities for the current user.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - private, max-age=30, stale-while-revalidate=30
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserIdentitiesResponse"
+        "400":
+          description: Supabase Auth rejected identity lookup for the current user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserIdentitiesMessage"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserIdentitiesUnauthorized"
+        "500":
+          description: Supabase Auth user lookup failed unexpectedly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserIdentitiesMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/users/me/full-name:
     patch:
       summary: Update current user full name
@@ -9247,6 +9301,40 @@ components:
         user_metadata:
           type: object
           additionalProperties: true
+    UserIdentitiesResponse:
+      type: object
+      required:
+        - identities
+        - canUnlink
+      properties:
+        identities:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Raw linked identity objects from Supabase Auth user JSON.
+        canUnlink:
+          type: boolean
+          description: True when two or more linked identities are present.
+    UserIdentitiesMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Failed to load linked identities
+            - Internal server error
+    UserIdentitiesUnauthorized:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
     AuthMeUnauthorized:
       type: object
       required:
