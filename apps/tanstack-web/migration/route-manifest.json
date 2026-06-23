@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 132,
-        "migrated": 174,
-        "percentComplete": 56.86,
-        "remaining": 132,
-        "terminal": 174,
+        "legacyNext": 130,
+        "migrated": 176,
+        "percentComplete": 57.52,
+        "remaining": 130,
+        "terminal": 176,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 150,
-        "migrated": 227,
-        "percentComplete": 60.32,
-        "remaining": 150,
-        "terminal": 228,
+        "legacyNext": 148,
+        "migrated": 229,
+        "percentComplete": 60.85,
+        "remaining": 148,
+        "terminal": 230,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1085,
-      "migrated": 374,
-      "percentComplete": 29.68,
-      "remaining": 1085,
-      "terminal": 458,
+      "legacyNext": 1083,
+      "migrated": 376,
+      "percentComplete": 29.81,
+      "remaining": 1083,
+      "terminal": 460,
       "total": 1543,
       "unknownStatus": 0
     }
@@ -13399,7 +13399,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/approvals",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/approvals/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13543,7 +13543,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/groups/calendar",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/calendar/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
