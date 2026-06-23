@@ -247,6 +247,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   helper so RLS remains active while preserving the required `ws_id`,
   parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
   legacy error bodies.
+- `GET /api/v1/infrastructure/abuse-intelligence`: legacy-compatible protected
+  abuse intelligence snapshot. Rust revalidates the browser Supabase session
+  cookie or non-app-session Bearer token, requires root workspace
+  `view_infrastructure`, reads reputation subjects, activity signals, and
+  step-up challenges with the caller token, reads active trust overrides with
+  the service-role Supabase adapter, and preserves the legacy summary,
+  `topRiskySubjects`, `limit`, `signalLimit`, and auth/error behavior. POST
+  remains legacy-owned until trust override mutations move to Rust.
 - `GET /api/v1/infrastructure/abuse-events`: legacy-compatible root-workspace
   abuse event list. Rust revalidates the browser Supabase session cookie or
   non-app-session Bearer token, checks root workspace membership with the

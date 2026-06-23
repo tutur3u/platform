@@ -29,6 +29,7 @@ mod hive_access;
 mod hive_ai_models;
 mod holidays;
 mod infrastructure_abuse_events;
+mod infrastructure_abuse_intelligence;
 mod infrastructure_blocked_ips;
 mod infrastructure_catalog_exports;
 mod infrastructure_content_exports;
@@ -607,6 +608,14 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) = infrastructure_abuse_intelligence::handle_abuse_intelligence_route(
+        config, request, outbound,
+    )
+    .await
     {
         return response;
     }

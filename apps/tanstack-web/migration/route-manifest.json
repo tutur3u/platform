@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 926,
-        "migrated": 126,
-        "percentComplete": 18.41,
+        "migrated": 127,
+        "percentComplete": 18.49,
         "remaining": 926,
-        "terminal": 209,
-        "total": 1135,
+        "terminal": 210,
+        "total": 1136,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 944,
-        "migrated": 131,
-        "percentComplete": 18.48,
+        "migrated": 132,
+        "percentComplete": 18.55,
         "remaining": 944,
-        "terminal": 214,
-        "total": 1158,
+        "terminal": 215,
+        "total": 1159,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1120,
-      "migrated": 333,
-      "percentComplete": 27.08,
+      "migrated": 334,
+      "percentComplete": 27.13,
       "remaining": 1120,
-      "terminal": 416,
-      "total": 1536,
+      "terminal": 417,
+      "total": 1537,
       "unknownStatus": 0
     }
   },
@@ -2346,13 +2346,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
+      "id": "api:GET:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/abuse-intelligence",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
       "routePath": "/api/v1/infrastructure/abuse-intelligence",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts"
     },
     {
       "id": "api:/api/v1/infrastructure/abuse-intelligence/overrides/:overrideId:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/overrides/[overrideId]/route.ts",
@@ -14309,11 +14322,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1135,
+    "apiRoutes": 1136,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1158,
+    "routeHandlers": 1159,
     "methodCounts": {
       "GET": 645,
       "HEAD": 1,
@@ -14323,6 +14336,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1536
+    "total": 1537
   }
 }

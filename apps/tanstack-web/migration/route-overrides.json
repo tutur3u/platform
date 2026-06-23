@@ -596,6 +596,15 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/abuse-intelligence by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace view_infrastructure through the shared workspace permission helper, reading abuse_reputation_subjects, abuse_activity_signals, and abuse_step_up_challenges with caller-token Supabase REST, reading active abuse_trust_overrides with the service-role Supabase adapter, and preserving the legacy limit/signalLimit parsing, summary, topRiskySubjects sorting, and legacy auth/error bodies. POST remains legacy-owned until trust override mutations move to Rust."
+        }
+      }
+    },
     "api:/api/v1/infrastructure/abuse-events:apps/web/src/app/api/v1/infrastructure/abuse-events/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
