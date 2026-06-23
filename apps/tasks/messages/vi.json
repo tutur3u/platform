@@ -1432,6 +1432,7 @@
     "calendar_disabled": "Lịch đã bị tắt",
     "calendar_enabled": "Lịch đã được bật",
     "calendar_reset_failed": "Không thể đặt lại dữ liệu lịch",
+    "calendar_sync_settings_updated": "Đã cập nhật cài đặt đồng bộ lịch",
     "calendar_sync_started": "Đã bắt đầu đồng bộ lịch",
     "calendar_toggle_failed": "Không thể bật/tắt lịch",
     "calendars": "Lịch",
