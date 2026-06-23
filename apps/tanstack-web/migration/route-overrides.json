@@ -1459,6 +1459,16 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags ports the legacy workspace user group tags table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for group-tag reads, internal-api-backed create/update/delete forms and row actions, localized FeatureSummary content, and canonical locale-prefixed detail hrefs. This marks only the frontend page artifact migrated; group-tag detail page and API route ownership remain separately tracked."
     },
+    "page:/:locale/:wsId/users/groups/:groupId/requests:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/requests/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/$groupId/requests ports the legacy group approval requests page with fail-closed current-user auth, workspace resolution, approve_reports/approve_posts not-found gating, shared GroupRequestsClient tabs, TanStack Query-backed approval list state, and internal-api-backed approve/reject/unapprove mutations. This marks only the frontend page artifact migrated; the parent group detail page and approvals API ownership remain separately tracked."
+    },
+    "page:/:locale/:wsId/users/groups/:groupId/schedule:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/schedule/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/$groupId/schedule ports the legacy group schedule page with fail-closed current-user auth, workspace resolution, forwarded internal-api group lookup, update_user_groups schedule permission state, shared EditEndDateDialog, and the shared UserGroupSessionCalendar. This marks only the frontend page artifact migrated; the parent group detail page and user-group schedule APIs remain separately tracked."
+    },
     "page:/:locale/:wsId/education/courses:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
