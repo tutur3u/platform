@@ -135,6 +135,7 @@ import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
 import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/$locale/$wsId/infrastructure/timezones';
+import { Route as LocaleWsIdInfrastructureRateLimitsRouteImport } from './routes/$locale/$wsId/infrastructure/rate-limits';
 import { Route as LocaleWsIdInfrastructurePostEmailQueueRouteImport } from './routes/$locale/$wsId/infrastructure/post-email-queue';
 import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-versions';
 import { Route as LocaleWsIdInfrastructureHolidaysRouteImport } from './routes/$locale/$wsId/infrastructure/holidays';
@@ -867,6 +868,12 @@ const LocaleWsIdInfrastructureTimezonesRoute =
     path: '/$wsId/infrastructure/timezones',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureRateLimitsRoute =
+  LocaleWsIdInfrastructureRateLimitsRouteImport.update({
+    id: '/$wsId/infrastructure/rate-limits',
+    path: '/$wsId/infrastructure/rate-limits',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructurePostEmailQueueRoute =
   LocaleWsIdInfrastructurePostEmailQueueRouteImport.update({
     id: '/$wsId/infrastructure/post-email-queue',
@@ -1361,6 +1368,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
+  '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
@@ -1551,6 +1559,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
+  '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
@@ -1743,6 +1752,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
+  '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
@@ -1936,6 +1946,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-versions'
     | '/$locale/$wsId/infrastructure/post-email-queue'
+    | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
@@ -2126,6 +2137,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-versions'
     | '/$locale/$wsId/infrastructure/post-email-queue'
+    | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
@@ -2317,6 +2329,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-versions'
     | '/$locale/$wsId/infrastructure/post-email-queue'
+    | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
@@ -3290,6 +3303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureTimezonesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/rate-limits': {
+      id: '/$locale/$wsId/infrastructure/rate-limits';
+      path: '/$wsId/infrastructure/rate-limits';
+      fullPath: '/$locale/$wsId/infrastructure/rate-limits';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureRateLimitsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/post-email-queue': {
       id: '/$locale/$wsId/infrastructure/post-email-queue';
       path: '/$wsId/infrastructure/post-email-queue';
@@ -4162,6 +4182,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
   LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   LocaleWsIdInfrastructurePostEmailQueueRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
+  LocaleWsIdInfrastructureRateLimitsRoute: typeof LocaleWsIdInfrastructureRateLimitsRoute;
   LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
@@ -4311,6 +4332,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdInfrastructureMobileVersionsRoute,
   LocaleWsIdInfrastructurePostEmailQueueRoute:
     LocaleWsIdInfrastructurePostEmailQueueRoute,
+  LocaleWsIdInfrastructureRateLimitsRoute:
+    LocaleWsIdInfrastructureRateLimitsRoute,
   LocaleWsIdInfrastructureTimezonesRoute:
     LocaleWsIdInfrastructureTimezonesRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
