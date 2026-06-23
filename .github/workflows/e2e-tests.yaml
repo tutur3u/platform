@@ -57,7 +57,7 @@ jobs:
 
       - name: Restore cached Docker images
         id: cache-supabase
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -81,7 +81,7 @@ jobs:
           package-manager-cache: false
 
       - name: Cache turbo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-e2e-${{ github.sha }}
@@ -246,7 +246,7 @@ jobs:
 
       - name: Cache Supabase Docker images
         if: ${{ always() && steps.prepare-supabase-docker-cache.outputs.cache-ready == 'true' }}
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -343,7 +343,7 @@ jobs:
           package-manager-cache: false
 
       - name: Cache turbo build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-migration-e2e-${{ matrix.mode }}-${{ github.sha }}
