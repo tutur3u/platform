@@ -1494,6 +1494,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/infrastructure/abuse-events ports the legacy authenticated infrastructure abuse-events page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, view_infrastructure not-found gating, URL search filters, shared data table rendering, and data loading through the Rust-owned /api/v1/infrastructure/abuse-events backend facade instead of direct Supabase reads."
     },
+    "page:/:locale/:wsId/infrastructure/ai/whitelist/domains:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/domains/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/ai/whitelist/domains ports the legacy authenticated AI whitelist domain page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, root view_infrastructure not-found gating, the @tuturuuu.com operator boundary, URL pagination/search, shared data table rendering, and row loading/mutations through the Rust-owned AI whitelist internal-api facade instead of direct Supabase reads."
+    },
+    "page:/:locale/:wsId/infrastructure/ai/whitelist/emails:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/emails/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/ai/whitelist/emails ports the legacy authenticated AI whitelist email page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, root view_infrastructure not-found gating, the @tuturuuu.com operator boundary, URL pagination/search, shared data table rendering, and row loading/mutations through the Rust-owned AI whitelist internal-api facade instead of direct Supabase reads."
+    },
     "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

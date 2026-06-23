@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 151,
-        "migrated": 155,
-        "percentComplete": 50.65,
-        "remaining": 151,
-        "terminal": 155,
+        "legacyNext": 149,
+        "migrated": 157,
+        "percentComplete": 51.31,
+        "remaining": 149,
+        "terminal": 157,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 171,
-        "migrated": 206,
-        "percentComplete": 54.76,
-        "remaining": 171,
-        "terminal": 207,
+        "legacyNext": 169,
+        "migrated": 208,
+        "percentComplete": 55.29,
+        "remaining": 169,
+        "terminal": 209,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1105,
-      "migrated": 353,
-      "percentComplete": 28.34,
-      "remaining": 1105,
-      "terminal": 437,
+      "legacyNext": 1103,
+      "migrated": 355,
+      "percentComplete": 28.47,
+      "remaining": 1103,
+      "terminal": 439,
       "total": 1542,
       "unknownStatus": 0
     }
@@ -12400,7 +12400,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/ai/whitelist/domains",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/domains/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12409,7 +12409,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/ai/whitelist/emails",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/emails/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
