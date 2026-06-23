@@ -32,7 +32,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.10",
     "@tanstack/react-query": "^5.101.0",
-    "@tanstack/react-virtual": "^3.14.2",
+    "@tanstack/react-virtual": "^3.14.3",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
@@ -57,7 +57,7 @@
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
@@ -65,6 +65,6 @@
     "jsdom": "^29.1.1",
     "postcss": "^8.5.15",
     "typescript": "7.0.1-rc",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }

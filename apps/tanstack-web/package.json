@@ -42,17 +42,17 @@
     "nuqs": "^2.8.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.79.0",
+    "react-hook-form": "^7.80.0",
     "react-papaparse": "^4.4.0",
     "use-intl": "^4.13.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.42.1",
-    "@playwright/test": "1.60.0",
+    "@playwright/test": "1.61.0",
     "@tailwindcss/vite": "^4.3.1",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
@@ -62,7 +62,7 @@
     "typescript": "7.0.1-rc",
     "vite": "^8.0.16",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "4.1.8",
+    "vitest": "4.1.9",
     "wrangler": "^4.103.0"
   }
 }
