@@ -97,20 +97,26 @@ mod user_identities;
 mod user_identities_test;
 mod user_profile;
 mod workspace_education_access;
+mod workspace_external_projects_members_enhanced;
+mod workspace_external_projects_summary;
 mod workspace_habits_access;
 #[cfg(test)]
 mod workspace_habits_access_test;
+mod workspace_inventory_checkouts;
 mod workspace_inventory_costing_analytics;
 mod workspace_inventory_realtime;
+mod workspace_inventory_sales_by_product;
 mod workspace_limits;
 mod workspace_mentions;
 #[cfg(test)]
 mod workspace_mentions_test;
+mod workspace_mind_search;
 mod workspace_mobile_module_flags;
 #[cfg(test)]
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
+mod workspaces_list;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -686,6 +692,54 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspace_inventory_costing_analytics::handle_workspace_inventory_costing_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_list::handle_workspaces_list_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_external_projects_summary::handle_workspace_external_projects_summary_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_external_projects_members_enhanced::handle_workspace_external_projects_members_enhanced_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mind_search::handle_workspace_mind_search_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_inventory_checkouts::handle_workspace_inventory_checkouts_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_inventory_sales_by_product::handle_workspace_inventory_sales_by_product_route(
             config, request, outbound,
         )
         .await
