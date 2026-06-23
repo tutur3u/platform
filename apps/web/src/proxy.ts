@@ -146,7 +146,6 @@ const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
 const SCANNER_PATH_PATTERN =
   /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
 const ROOT_DEFAULT_NAVIGATION_CONFIG_ID = 'ROOT_DEFAULT_NAVIGATION';
-const TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID = 'TASKS_OPEN_DEFAULT_BOARD';
 const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
   'Retry-After',
   'X-Proxy-Block-Reason',
@@ -350,75 +349,13 @@ async function resolveRootRedirectPath(
   }
 
   if (parsed.target === 'tasks') {
-    if (parsed.submodule === 'boards') {
-      if (parsed.boardId) {
-        const { data: board, error: boardLookupError } = await sbAdmin
-          .from('workspace_boards')
-          .select('id')
-          .eq('id', parsed.boardId)
-          .eq('ws_id', workspace.id)
-          .is('deleted_at', null)
-          .is('archived_at', null)
-          .maybeSingle();
-
-        if (boardLookupError) {
-          return {
-            path: `/${workspace.id}/tasks/boards`,
-            staleConfigValue: null,
-          };
-        }
-
-        if (board?.id) {
-          return {
-            path: `/${workspace.id}/tasks/boards/${board.id}`,
-            staleConfigValue: null,
-          };
-        }
-
-        return {
-          path: `/${workspace.id}/tasks/boards`,
-          staleConfigValue: JSON.stringify({
-            target: 'tasks',
-            submodule: 'boards',
-          }),
-        };
-      }
-
-      if (workspace.personal) {
-        const { data: openDefaultBoardConfig } = await sbAdmin
-          .from('user_configs')
-          .select('value')
-          .eq('user_id', userId)
-          .eq('id', TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID)
-          .maybeSingle();
-        const shouldOpenDefaultBoard =
-          openDefaultBoardConfig?.value == null ||
-          openDefaultBoardConfig.value === 'true';
-
-        if (shouldOpenDefaultBoard) {
-          const { data: defaultBoard } = await sbAdmin
-            .from('workspace_boards')
-            .select('id')
-            .eq('ws_id', workspace.id)
-            .ilike('name', 'tasks')
-            .is('deleted_at', null)
-            .is('archived_at', null)
-            .limit(1)
-            .maybeSingle();
-
-          if (defaultBoard?.id) {
-            return {
-              path: `/${workspace.id}/tasks/boards/${defaultBoard.id}`,
-              staleConfigValue: null,
-            };
-          }
-        }
-      }
-
-      return { path: `/${workspace.id}/tasks/boards`, staleConfigValue: null };
-    }
-
-    return { path: `/${workspace.id}/tasks`, staleConfigValue: null };
+    return {
+      path: `/${workspace.id}/tasks`,
+      staleConfigValue:
+        parsed.submodule || parsed.boardId
+          ? JSON.stringify({ target: 'tasks' })
+          : null,
+    };
   }
 
   return { path: `/${workspace.id}`, staleConfigValue: null };
@@ -1499,11 +1436,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
                 },
                 { onConflict: 'user_id,ws_id,id' }
               );
-            } catch (error) {
-              console.error(
-                'Failed to self-heal stale root navigation config in proxy:',
-                error
-              );
+            } catch {
+              // Best-effort cleanup only; root navigation should still redirect.
             }
           }
 

@@ -133,6 +133,9 @@ import { Route as LocaleWsIdInventoryProductsRouteImport } from './routes/$local
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
+import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/$locale/$wsId/infrastructure/timezones';
+import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-versions';
+import { Route as LocaleWsIdInfrastructureAbuseEventsRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-events';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
 import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets';
 import { Route as LocaleWsIdFinanceTransactionsRouteImport } from './routes/$locale/$wsId/finance/transactions';
@@ -183,6 +186,8 @@ import { Route as LocaleWsIdEducationQuizSetsSetIdIndexRouteImport } from './rou
 import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
 import { Route as LocaleWsIdUsersGroupsGroupIdScheduleRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/schedule';
 import { Route as LocaleWsIdUsersGroupsGroupIdRequestsRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/requests';
+import { Route as LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport } from './routes/$locale/$wsId/infrastructure/ai/whitelist/emails';
+import { Route as LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport } from './routes/$locale/$wsId/infrastructure/ai/whitelist/domains';
 import { Route as LocaleWsIdEducationQuizSetsSetIdLinkedModulesRouteImport } from './routes/$locale/$wsId/education/quiz-sets/$setId/linked-modules';
 import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets';
 import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
@@ -845,6 +850,24 @@ const LocaleWsIdInventoryBatchesRoute =
     path: '/$wsId/inventory/batches',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureTimezonesRoute =
+  LocaleWsIdInfrastructureTimezonesRouteImport.update({
+    id: '/$wsId/infrastructure/timezones',
+    path: '/$wsId/infrastructure/timezones',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdInfrastructureMobileVersionsRoute =
+  LocaleWsIdInfrastructureMobileVersionsRouteImport.update({
+    id: '/$wsId/infrastructure/mobile-versions',
+    path: '/$wsId/infrastructure/mobile-versions',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdInfrastructureAbuseEventsRoute =
+  LocaleWsIdInfrastructureAbuseEventsRouteImport.update({
+    id: '/$wsId/infrastructure/abuse-events',
+    path: '/$wsId/infrastructure/abuse-events',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdHiveNotWhitelistedRoute =
   LocaleWsIdHiveNotWhitelistedRouteImport.update({
     id: '/not-whitelisted',
@@ -1142,6 +1165,18 @@ const LocaleWsIdUsersGroupsGroupIdRequestsRoute =
     path: '/requests',
     getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
   } as any);
+const LocaleWsIdInfrastructureAiWhitelistEmailsRoute =
+  LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport.update({
+    id: '/$wsId/infrastructure/ai/whitelist/emails',
+    path: '/$wsId/infrastructure/ai/whitelist/emails',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdInfrastructureAiWhitelistDomainsRoute =
+  LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport.update({
+    id: '/$wsId/infrastructure/ai/whitelist/domains',
+    path: '/$wsId/infrastructure/ai/whitelist/domains',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute =
   LocaleWsIdEducationQuizSetsSetIdLinkedModulesRouteImport.update({
     id: '/$setId/linked-modules',
@@ -1277,6 +1312,9 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1343,6 +1381,8 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/users/group-tags/': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
+  '/$locale/$wsId/infrastructure/ai/whitelist/domains': typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
+  '/$locale/$wsId/infrastructure/ai/whitelist/emails': typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -1456,6 +1496,9 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1522,6 +1565,8 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/users/group-tags': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
+  '/$locale/$wsId/infrastructure/ai/whitelist/domains': typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
+  '/$locale/$wsId/infrastructure/ai/whitelist/emails': typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -1637,6 +1682,9 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1703,6 +1751,8 @@ export interface FileRoutesById {
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/users/group-tags/': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
+  '/$locale/$wsId/infrastructure/ai/whitelist/domains': typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
+  '/$locale/$wsId/infrastructure/ai/whitelist/emails': typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -1819,6 +1869,9 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/infrastructure/abuse-events'
+    | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -1885,6 +1938,8 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/$wsId/users/group-tags/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
+    | '/$locale/$wsId/infrastructure/ai/whitelist/domains'
+    | '/$locale/$wsId/infrastructure/ai/whitelist/emails'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -1998,6 +2053,9 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/infrastructure/abuse-events'
+    | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2064,6 +2122,8 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/boards'
     | '/$locale/$wsId/users/group-tags'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
+    | '/$locale/$wsId/infrastructure/ai/whitelist/domains'
+    | '/$locale/$wsId/infrastructure/ai/whitelist/emails'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -2178,6 +2238,9 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/infrastructure/abuse-events'
+    | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2244,6 +2307,8 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/$wsId/users/group-tags/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
+    | '/$locale/$wsId/infrastructure/ai/whitelist/domains'
+    | '/$locale/$wsId/infrastructure/ai/whitelist/emails'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -3132,6 +3197,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInventoryBatchesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/timezones': {
+      id: '/$locale/$wsId/infrastructure/timezones';
+      path: '/$wsId/infrastructure/timezones';
+      fullPath: '/$locale/$wsId/infrastructure/timezones';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureTimezonesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure/mobile-versions': {
+      id: '/$locale/$wsId/infrastructure/mobile-versions';
+      path: '/$wsId/infrastructure/mobile-versions';
+      fullPath: '/$locale/$wsId/infrastructure/mobile-versions';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMobileVersionsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure/abuse-events': {
+      id: '/$locale/$wsId/infrastructure/abuse-events';
+      path: '/$wsId/infrastructure/abuse-events';
+      fullPath: '/$locale/$wsId/infrastructure/abuse-events';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureAbuseEventsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/hive/not-whitelisted': {
       id: '/$locale/$wsId/hive/not-whitelisted';
       path: '/not-whitelisted';
@@ -3481,6 +3567,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/$wsId/users/groups/$groupId/requests';
       preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRequestsRouteImport;
       parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
+    };
+    '/$locale/$wsId/infrastructure/ai/whitelist/emails': {
+      id: '/$locale/$wsId/infrastructure/ai/whitelist/emails';
+      path: '/$wsId/infrastructure/ai/whitelist/emails';
+      fullPath: '/$locale/$wsId/infrastructure/ai/whitelist/emails';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure/ai/whitelist/domains': {
+      id: '/$locale/$wsId/infrastructure/ai/whitelist/domains';
+      path: '/$wsId/infrastructure/ai/whitelist/domains';
+      fullPath: '/$locale/$wsId/infrastructure/ai/whitelist/domains';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': {
       id: '/$locale/$wsId/education/quiz-sets/$setId/linked-modules';
@@ -3940,6 +4040,9 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRouteWithChildren;
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
+  LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
@@ -3985,6 +4088,8 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationCoursesIndexRoute: typeof LocaleWsIdEducationCoursesIndexRoute;
   LocaleWsIdTasksBoardsIndexRoute: typeof LocaleWsIdTasksBoardsIndexRoute;
   LocaleWsIdUsersGroupTagsIndexRoute: typeof LocaleWsIdUsersGroupTagsIndexRoute;
+  LocaleWsIdInfrastructureAiWhitelistDomainsRoute: typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
+  LocaleWsIdInfrastructureAiWhitelistEmailsRoute: typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
 }
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
@@ -4075,6 +4180,12 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdEducationQuizSetsRouteWithChildren,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
   LocaleWsIdEducationValseaRoute: LocaleWsIdEducationValseaRoute,
+  LocaleWsIdInfrastructureAbuseEventsRoute:
+    LocaleWsIdInfrastructureAbuseEventsRoute,
+  LocaleWsIdInfrastructureMobileVersionsRoute:
+    LocaleWsIdInfrastructureMobileVersionsRoute,
+  LocaleWsIdInfrastructureTimezonesRoute:
+    LocaleWsIdInfrastructureTimezonesRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
@@ -4126,6 +4237,10 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdEducationCoursesIndexRoute: LocaleWsIdEducationCoursesIndexRoute,
   LocaleWsIdTasksBoardsIndexRoute: LocaleWsIdTasksBoardsIndexRoute,
   LocaleWsIdUsersGroupTagsIndexRoute: LocaleWsIdUsersGroupTagsIndexRoute,
+  LocaleWsIdInfrastructureAiWhitelistDomainsRoute:
+    LocaleWsIdInfrastructureAiWhitelistDomainsRoute,
+  LocaleWsIdInfrastructureAiWhitelistEmailsRoute:
+    LocaleWsIdInfrastructureAiWhitelistEmailsRoute,
 };
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(

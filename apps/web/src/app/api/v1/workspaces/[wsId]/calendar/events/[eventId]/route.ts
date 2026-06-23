@@ -15,14 +15,20 @@ import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
+  createProviderEvent,
   deleteProviderEvent,
   moveProviderEvent,
   updateProviderEvent,
 } from '@/lib/calendar/provider-writes';
 import {
+  type ResolvedCalendarSource,
   resolveCalendarSource,
   resolveCalendarSourceForEvent,
 } from '@/lib/calendar/source-resolver';
+import {
+  getCalendarSyncPreferences,
+  resolveOutboundSyncSource,
+} from '@/lib/calendar/sync-preferences';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   decryptEventFromStorage,
@@ -61,6 +67,37 @@ interface Params {
     wsId: string;
     eventId: string;
   }>;
+}
+
+function applyProviderSyncFields(
+  updatePayload: TablesUpdate<'workspace_calendar_events'>,
+  args: {
+    error: unknown;
+    settingsAvailable: boolean;
+    synced: boolean;
+  }
+) {
+  if (!args.settingsAvailable) return;
+
+  if (args.synced) {
+    (updatePayload as any).last_synced_at = new Date().toISOString();
+    (updatePayload as any).sync_error = null;
+    (updatePayload as any).sync_status = 'synced';
+    return;
+  }
+
+  if (args.error) {
+    const message =
+      args.error instanceof Error
+        ? args.error.message
+        : 'External calendar sync failed';
+    (updatePayload as any).sync_error = message.slice(0, 1000);
+    (updatePayload as any).sync_status = 'failed';
+    return;
+  }
+
+  (updatePayload as any).sync_error = null;
+  (updatePayload as any).sync_status = 'local_only';
 }
 
 async function authorizeWorkspaceCalendarEventAccess(
@@ -218,6 +255,11 @@ export async function PUT(request: Request, { params }: Params) {
           source: updates.source ?? null,
         })
       : currentSource;
+    const syncPreferences = await getCalendarSyncPreferences({
+      sbAdmin,
+      wsId,
+      userId,
+    });
 
     const sourceChanged =
       currentSource.provider !== targetSource.provider ||
@@ -237,6 +279,8 @@ export async function PUT(request: Request, { params }: Params) {
       sourceChanged;
 
     let providerResult: Awaited<ReturnType<typeof moveProviderEvent>> = null;
+    let providerWriteError: unknown = null;
+    let providerSource: ResolvedCalendarSource = targetSource;
     if (touchesProviderFields) {
       if (sourceChanged) {
         providerResult = await moveProviderEvent({
@@ -251,14 +295,44 @@ export async function PUT(request: Request, { params }: Params) {
           existingEvent,
           event: nextPlainEvent,
         });
+      } else if (!hasSourceUpdate) {
+        const outboundSource = await resolveOutboundSyncSource({
+          sbAdmin,
+          wsId,
+          userId,
+        });
+
+        if (outboundSource) {
+          providerSource = outboundSource;
+          try {
+            providerResult = await createProviderEvent({
+              source: outboundSource,
+              event: nextPlainEvent,
+            });
+          } catch (error) {
+            providerWriteError = error;
+            serverLogger.warn('Failed to mirror native calendar event update', {
+              wsId,
+              eventId,
+              provider: outboundSource.provider,
+              error,
+            });
+          }
+        }
       }
     }
 
-    if (hasSourceUpdate || sourceChanged || providerResult) {
-      updatePayload.provider = targetSource.provider;
-      updatePayload.source_calendar_id = targetSource.workspaceCalendarId;
+    if (
+      hasSourceUpdate ||
+      sourceChanged ||
+      providerResult ||
+      providerWriteError
+    ) {
+      const persistedSource = providerResult ? providerSource : targetSource;
+      updatePayload.provider = persistedSource.provider;
+      updatePayload.source_calendar_id = persistedSource.workspaceCalendarId;
 
-      if (targetSource.provider === 'tuturuuu') {
+      if (persistedSource.provider === 'tuturuuu') {
         updatePayload.external_calendar_id = null;
         updatePayload.external_event_id = null;
         updatePayload.google_calendar_id = null;
@@ -276,10 +350,16 @@ export async function PUT(request: Request, { params }: Params) {
         updatePayload.external_calendar_id = externalCalendarId;
         updatePayload.external_event_id = externalEventId;
         updatePayload.google_calendar_id =
-          targetSource.provider === 'google' ? externalCalendarId : null;
+          persistedSource.provider === 'google' ? externalCalendarId : null;
         updatePayload.google_event_id =
-          targetSource.provider === 'google' ? externalEventId : null;
+          persistedSource.provider === 'google' ? externalEventId : null;
       }
+
+      applyProviderSyncFields(updatePayload, {
+        error: providerWriteError,
+        settingsAvailable: syncPreferences.settingsAvailable,
+        synced: !!providerResult,
+      });
     }
 
     if (hasSensitiveUpdates && workspaceKey) {

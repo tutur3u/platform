@@ -12,6 +12,7 @@ import {
   enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
   getGitHubBotState,
+  getMobileVersionPolicies,
   getObservabilityLogs,
   issueGitHubBotWatcherClient,
   listAIWhitelistDomains,
@@ -371,6 +372,41 @@ describe('AI gateway model internal API helpers', () => {
       data: [rawModel],
       pagination: { limit: 60, page: 1, total: 1 },
     });
+  });
+});
+
+describe('mobile version internal API helpers', () => {
+  it('loads mobile version policies through the infrastructure API', async () => {
+    const payload = {
+      android: {
+        effectiveVersion: '1.2.0',
+        minimumVersion: '1.0.0',
+        otpEnabled: true,
+        storeUrl: 'https://play.google.com/store/apps/details?id=app',
+      },
+      ios: {
+        effectiveVersion: null,
+        minimumVersion: null,
+        otpEnabled: false,
+        storeUrl: null,
+      },
+      webOtpEnabled: true,
+    };
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(payload));
+
+    const result = await getMobileVersionPolicies({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/mobile-versions',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(result).toEqual(payload);
   });
 });
 

@@ -10,6 +10,8 @@ import {
   ExternalLink,
   FileText,
   Filter,
+  Pin,
+  PinOff,
   RotateCcw,
 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -42,6 +44,7 @@ export interface KanbanDeadlineLabels {
   expandSection?: (name: string) => string;
   filter?: string;
   overdue: string;
+  pinSection?: (name: string) => string;
   reset?: string;
   showDocuments?: string;
   showExternalTasks?: string;
@@ -52,6 +55,7 @@ export interface KanbanDeadlineLabels {
   sortDueDesc?: string;
   sortNameAsc?: string;
   sortSourceAsc?: string;
+  unpinSection?: (name: string) => string;
   upcoming: string;
 }
 
@@ -66,11 +70,16 @@ interface KanbanDeadlinePanelsProps {
     section: KanbanDeadlineSection,
     collapsed: boolean
   ) => void;
+  onSectionPinnedChange?: (
+    section: KanbanDeadlineSection,
+    pinned: boolean
+  ) => void;
   onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
   onUpdate: () => void;
   optimisticUpdateInProgress: Set<string>;
   sections: KanbanDeadlineSections;
   collapsedSections?: KanbanDeadlineCollapsedState;
+  pinnedSections?: KanbanDeadlineCollapsedState;
   deadlineNow?: number;
   selectedTasks: Set<string>;
   taskLists: TaskList[];
@@ -219,9 +228,11 @@ function DeadlineSection({
   isPersonalWorkspace,
   onClearSelection,
   onCollapsedChange,
+  onPinnedChange,
   onTaskSelect,
   onUpdate,
   optimisticUpdateInProgress,
+  pinned,
   selectedTasks,
   taskLists,
   tasks,
@@ -241,9 +252,11 @@ function DeadlineSection({
     section: KanbanDeadlineSection,
     collapsed: boolean
   ) => void;
+  onPinnedChange?: (section: KanbanDeadlineSection, pinned: boolean) => void;
   onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
   onUpdate: () => void;
   optimisticUpdateInProgress: Set<string>;
+  pinned?: boolean;
   selectedTasks: Set<string>;
   taskLists: TaskList[];
   tasks: Task[];
@@ -254,6 +267,9 @@ function DeadlineSection({
     labels.collapseSection?.(config.label) ?? `Collapse ${config.label}`;
   const expandLabel =
     labels.expandSection?.(config.label) ?? `Expand ${config.label}`;
+  const pinLabel = pinned
+    ? (labels.unpinSection?.(config.label) ?? `Unpin ${config.label}`)
+    : (labels.pinSection?.(config.label) ?? `Pin ${config.label}`);
   const [includeDocuments, setIncludeDocuments] = useState(true);
   const [includeExternal, setIncludeExternal] = useState(true);
   const [sortBy, setSortBy] = useState<DeadlineTaskSortBy>(
@@ -473,20 +489,43 @@ function DeadlineSection({
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            className={cn(
-              'h-7 w-7 p-0 hover:bg-muted/40',
-              config.titleClassName
-            )}
-            title={collapseLabel}
-            aria-label={collapseLabel}
-            onClick={() => onCollapsedChange?.(config.section, true)}
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </Button>
+          {onPinnedChange ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className={cn(
+                'h-7 w-7 p-0 hover:bg-muted/40',
+                config.titleClassName,
+                pinned && 'bg-muted/40'
+              )}
+              title={pinLabel}
+              aria-label={pinLabel}
+              onClick={() => onPinnedChange(config.section, !pinned)}
+            >
+              {pinned ? (
+                <PinOff className="h-3.5 w-3.5" />
+              ) : (
+                <Pin className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          ) : null}
+          {!pinned && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className={cn(
+                'h-7 w-7 p-0 hover:bg-muted/40',
+                config.titleClassName
+              )}
+              title={collapseLabel}
+              aria-label={collapseLabel}
+              onClick={() => onCollapsedChange?.(config.section, true)}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -537,11 +576,13 @@ export function KanbanDeadlinePanels({
   labels,
   onClearSelection,
   onSectionCollapsedChange,
+  onSectionPinnedChange,
   onTaskSelect,
   onUpdate,
   optimisticUpdateInProgress,
   sections,
   collapsedSections,
+  pinnedSections,
   deadlineNow,
   selectedTasks,
   taskLists,
@@ -588,9 +629,11 @@ export function KanbanDeadlinePanels({
           isPersonalWorkspace={isPersonalWorkspace}
           onClearSelection={onClearSelection}
           onCollapsedChange={onSectionCollapsedChange}
+          onPinnedChange={onSectionPinnedChange}
           onTaskSelect={onTaskSelect}
           onUpdate={onUpdate}
           optimisticUpdateInProgress={optimisticUpdateInProgress}
+          pinned={pinnedSections?.[config.section] === true}
           selectedTasks={selectedTasks}
           taskLists={taskLists}
           tasks={sections[config.section]}

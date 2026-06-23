@@ -338,10 +338,10 @@ Current inventory:
 
 - `306` pages
 - `67` layouts
-- `1,171` route handler artifacts
+- `1,172` route handler artifacts
 - `19` cron handlers
-- `1,549` total tracked route artifacts
-- `350` migrated artifacts, `434` terminal artifacts, and `1,115` remaining
+- `1,550` total tracked route artifacts
+- `357` migrated artifacts, `441` terminal artifacts, and `1,109` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -634,6 +634,17 @@ Recently migrated backend runtime candidates:
 | `PATCH /api/v1/users/me/full-name`       | `migrated` | Rust `handle_backend_request` validates browser Supabase auth, validates the required trimmed `full_name`, and upserts `user_private_details` for the authenticated user with the caller token.                       |
 | `GET /api/cron/discord/daily-report`     | `migrated` | Rust `handle_backend_request` proxies to `DISCORD_APP_DEPLOYMENT_URL/daily-report` with cron bearer auth, upstream status/body passthrough, invalid-JSON fallback, OpenAPI coverage, and native/Worker outbound support.  |
 | `GET /api/cron/discord/wol/daily/remind` | `migrated` | Rust `handle_backend_request` reuses the same proxy contract for `DISCORD_APP_DEPLOYMENT_URL/wol-reminder` with route tests and Cloudflare Worker config requirements for the cron secret and Discord app deployment URL. |
+
+Frontend pages now terminal after backend readiness:
+
+| Legacy route              | Status     | Evidence                                                                                                                                                                                                                                                                                                      |
+| ------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/:locale/:wsId/habits`   | `migrated` | TanStack Start route `/$locale/$wsId/habits` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, checks the Rust-owned `/api/v1/workspaces/:wsId/habits/access` feature probe, and renders the shared `HabitsClientPage`.                           |
+| `/:locale/:wsId/posts`    | `migrated` | TanStack Start route `/$locale/$wsId/posts` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves pass-through URL search state for the shared posts client, and uses internal-api facades including the Rust-owned posts permission probe. |
+| `/:locale/:wsId/infrastructure/abuse-events` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/abuse-events` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves `view_infrastructure` not-found gating, carries URL search filters through TanStack Router, and loads rows through the Rust-owned abuse-events backend facade. |
+| `/:locale/:wsId/infrastructure/ai/whitelist/{domains,emails}` | `migrated` | TanStack Start routes `/$locale/$wsId/infrastructure/ai/whitelist/domains` and `/emails` are registered in `routeTree.gen.ts`, gate anonymous users through `requireCurrentUser`, preserve the `@tuturuuu.com` operator not-found boundary plus root `view_infrastructure` gating, carry URL pagination/search through TanStack Router, and load/mutate rows through the Rust-owned AI whitelist internal-api facade. |
+| `/:locale/:wsId/infrastructure/mobile-versions` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/mobile-versions` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, loads policies through the Rust-owned mobile-versions internal-api facade, and saves updates through TanStack Query mutations. |
+| `/:locale/:wsId/infrastructure/timezones` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/timezones` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, overlays Rust-owned persisted timezone rows onto the bundled timezone catalog, and performs create/update/delete sync mutations through the backend timezones facade. |
 
 Frontend migration candidates blocked on auth/data ownership:
 

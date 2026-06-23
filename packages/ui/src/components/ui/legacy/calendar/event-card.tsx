@@ -22,7 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -34,6 +34,7 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { CalendarEventProviderIcon } from './event-provider-display';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
@@ -58,7 +59,7 @@ interface EventCardProps {
   level?: number; // Level for stacking events
 }
 
-export function EventCard({ dates, event, level = 0 }: EventCardProps) {
+function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
   const {
     id,
     title,
@@ -180,6 +181,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _optimisticStatus === 'creating' ||
     _optimisticStatus === 'updating' ||
     _optimisticStatus === 'deleting';
+  const isOptimisticallyMutating =
+    _optimisticStatus === 'updating' || _optimisticStatus === 'deleting';
 
   // Status feedback timeout
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1006,13 +1009,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const eventId = event._originalId || id;
     const newLockedState = !locked;
 
-    console.log(
-      `Toggling lock status for event ${eventId} from ${locked} to ${newLockedState}`
-    );
-
     updateEvent(eventId, { locked: newLockedState })
       .then(() => {
-        console.log(`Successfully updated lock status to ${newLockedState}`);
         // Update local state immediately for better UX
         setLocalEvent((prev) => ({
           ...prev,
@@ -1085,7 +1083,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
               // Preview-specific styling - dashed border only for NEW/MOVED events (not reused)
               'border-2 border-dashed': _isPreview && !_isReused,
-              'opacity-80 ring-1 ring-primary/30': isOptimisticallyPending,
+              'opacity-60 outline outline-dashed outline-1 outline-primary/50':
+                isOptimisticallyMutating,
+              'opacity-80 ring-1 ring-primary/30':
+                isOptimisticallyPending && !isOptimisticallyMutating,
             },
             level ? 'border border-l-2' : 'border-l-2',
             border,
@@ -1212,7 +1213,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
 
           {/* Status indicators */}
-          {(updateStatus === 'syncing' || isOptimisticallyPending) && (
+          {updateStatus === 'syncing' && !isOptimisticallyPending && (
             <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/5">
               {/* <div
                 className="animate-shimmer h-full w-full bg-linear-to-r from-transparent via-background/10 to-transparent"
@@ -1272,9 +1273,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 {localEvent.locked && !_isPreview && (
                   <Lock className="mr-1 inline-block h-3 w-3 align-middle opacity-70" />
                 )}
-                {isOptimisticallyPending && (
-                  <RefreshCw className="mr-1 inline-block h-3 w-3 animate-spin align-middle opacity-80" />
-                )}
+                <CalendarEventProviderIcon
+                  event={localEvent}
+                  className="mr-1 h-3 w-3 opacity-80"
+                />
                 <span>{localEvent.title || 'Untitled event'}</span>
                 {_isPreview && !_isReused && (
                   <span
@@ -1463,3 +1465,55 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     </ContextMenu>
   );
 }
+
+function datesEqual(left: Date[], right: Date[]) {
+  if (left.length !== right.length) return false;
+  return left.every(
+    (date, index) => date.getTime() === right[index]?.getTime()
+  );
+}
+
+function eventCardPropsEqual(previous: EventCardProps, next: EventCardProps) {
+  if (previous.wsId !== next.wsId || previous.level !== next.level) {
+    return false;
+  }
+
+  if (!datesEqual(previous.dates, next.dates)) return false;
+
+  const left = previous.event as CalendarEvent & {
+    _optimisticStatus?: string;
+    _warning?: string;
+  };
+  const right = next.event as CalendarEvent & {
+    _optimisticStatus?: string;
+    _warning?: string;
+  };
+
+  return (
+    left.id === right.id &&
+    left.title === right.title &&
+    left.description === right.description &&
+    left.start_at === right.start_at &&
+    left.end_at === right.end_at &&
+    left.color === right.color &&
+    left.locked === right.locked &&
+    left.provider === right.provider &&
+    left.external_event_id === right.external_event_id &&
+    left.external_calendar_id === right.external_calendar_id &&
+    left.google_event_id === right.google_event_id &&
+    left.google_calendar_id === right.google_calendar_id &&
+    left.location === right.location &&
+    left._originalId === right._originalId &&
+    left._isMultiDay === right._isMultiDay &&
+    left._dayPosition === right._dayPosition &&
+    left._overlapCount === right._overlapCount &&
+    left._column === right._column &&
+    left._calendarName === right._calendarName &&
+    left._calendarColor === right._calendarColor &&
+    left._level === right._level &&
+    left._optimisticStatus === right._optimisticStatus &&
+    left._warning === right._warning
+  );
+}
+
+export const EventCard = memo(EventCardComponent, eventCardPropsEqual);

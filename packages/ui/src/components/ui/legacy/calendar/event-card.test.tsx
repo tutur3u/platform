@@ -106,4 +106,72 @@ describe('EventCard read-only adapter events', () => {
     expect(calendarMocks.openModal).toHaveBeenCalledWith('event-1');
     expect(calendarMocks.updateEvent).not.toHaveBeenCalled();
   });
+
+  it('shows a Google Calendar provider icon before synced event titles', () => {
+    renderEventCard({
+      id: 'event-google',
+      title: 'Google sync',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      google_event_id: 'google-event-1',
+      provider: 'google',
+      ws_id: 'workspace-1',
+    });
+
+    expect(screen.getByTestId('google-calendar-logo')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('microsoft-outlook-logo')
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a Microsoft Outlook provider icon before Microsoft synced event titles', () => {
+    renderEventCard({
+      id: 'event-microsoft',
+      title: 'Outlook sync',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      external_event_id: 'outlook-event-1',
+      provider: 'microsoft',
+      ws_id: 'workspace-1',
+    });
+
+    expect(screen.getByTestId('microsoft-outlook-logo')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('google-calendar-logo')
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not show provider icons for local calendar events', () => {
+    renderEventCard({
+      id: 'event-local',
+      title: 'Local event',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      provider: 'tuturuuu',
+      ws_id: 'workspace-1',
+    });
+
+    expect(
+      screen.queryByTestId('google-calendar-logo')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('microsoft-outlook-logo')
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders updating events as a subtle dashed pending card', () => {
+    renderEventCard({
+      id: 'event-updating',
+      title: 'Updating event',
+      start_at: '2026-06-26T08:30:00.000Z',
+      end_at: '2026-06-26T09:30:00.000Z',
+      ws_id: 'workspace-1',
+      _optimisticStatus: 'updating',
+    } as CalendarEvent & { _optimisticStatus: 'updating' });
+
+    expect(screen.getByTestId('calendar-event-event-updating')).toHaveClass(
+      'outline-dashed',
+      'opacity-60'
+    );
+  });
 });

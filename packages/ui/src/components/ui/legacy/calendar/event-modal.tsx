@@ -73,7 +73,6 @@ import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
@@ -89,6 +88,10 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
+import {
+  CalendarEventProviderIcon,
+  getCalendarEventProviderDisplay,
+} from './event-provider-display';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(ts);
@@ -955,28 +958,25 @@ export function EventModal() {
     }
   };
 
+  const providerDisplay = getCalendarEventProviderDisplay(event);
+
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2 font-semibold text-xl">
             <span>{isEditing ? 'Edit Event' : 'Create Event'}</span>
-            {event.google_event_id &&
-              typeof event.google_event_id === 'string' &&
-              event.google_event_id.trim() !== '' && (
-                <div className="ml-3 flex items-center gap-2 rounded-md border bg-blue-50 px-3 py-1 text-sm dark:bg-blue-950/30">
-                  <Image
-                    src="/media/google-calendar-icon.png"
-                    alt="Google Calendar"
-                    className="inline-block h-4.5 w-4.5 align-middle"
-                    title="Synced from Google Calendar"
-                    data-testid="google-calendar-logo"
-                    width={18}
-                    height={18}
-                  />
-                  <span className="font-medium text-xs">Google Calendar</span>
-                </div>
-              )}
+            {providerDisplay && (
+              <div className="ml-3 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1 text-sm">
+                <CalendarEventProviderIcon
+                  event={event}
+                  className="h-4.5 w-4.5"
+                />
+                <span className="font-medium text-xs">
+                  {providerDisplay.label}
+                </span>
+              </div>
+            )}
           </DialogTitle>
           <DialogDescription>
             {isEditing

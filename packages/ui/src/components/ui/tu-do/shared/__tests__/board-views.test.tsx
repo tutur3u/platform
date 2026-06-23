@@ -237,6 +237,7 @@ describe('BoardViews', () => {
     listWorkspaceTasksMock.mockReset();
     listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
     window.localStorage.clear();
+    window.history.replaceState({}, '', '/');
   });
 
   it('registers visible hotkey labels for each board view', () => {
@@ -255,6 +256,7 @@ describe('BoardViews', () => {
     expect(boardHeaderProps?.availableViews).toEqual([
       'kanban',
       'list',
+      'my_tasks',
       'timeline',
       'drafts',
       'recycle_bin',

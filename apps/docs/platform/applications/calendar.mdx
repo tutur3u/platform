@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-06-14"
+updatedAt: "2026-06-23"
 ---
 
 ## Overview
@@ -120,3 +120,31 @@ available. The workspace sync route owns Google and Microsoft fan-out, running
 locks, cron cooldown behavior, and `calendar_sync_dashboard` audit rows. Do not
 add provider-specific fetch logic or Trigger.dev scheduled calendar jobs outside
 that route family.
+
+## Two-Way Sync Controls
+
+Calendar sync has two layers of user control:
+
+- Workspace-user preferences in
+  `private.calendar_user_workspace_preferences` enable or disable inbound
+  imports, outbound Tuturuuu-to-provider mirroring, the default outbound
+  provider calendar, and the conflict policy.
+- `calendar_connections` controls each external calendar's import, outbound
+  write, and provider-delete behavior.
+
+Outbound mirroring is opt-in. When enabled, native Tuturuuu event creates and
+edits mirror to the selected writable Google or Microsoft connection, and the
+local event stores provider identity so future updates and deletes propagate
+externally. Manual or cron sync with `direction: "outbound"` or `"both"` may
+also catch up local-only or previously failed Tuturuuu events in the active sync
+window.
+
+Inbound provider deletes are controlled per connection through
+`sync_delete_enabled`. User-initiated deletion of a synced external event still
+deletes the provider event directly because it is explicit CRUD, not passive
+provider import cleanup.
+
+After adding or changing two-way sync columns, prepare migrations in
+`apps/database`; do not run production Supabase push commands from agent
+sessions. Apply locally with `bun sb:up` when feasible, then regenerate database
+types only after the local schema reflects the migration.

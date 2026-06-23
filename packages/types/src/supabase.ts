@@ -613,28 +613,40 @@ export type Database = {
       };
       calendar_user_workspace_preferences: {
         Row: {
+          conflict_policy: string;
           created_at: string;
           default_calendar_connection_id: string | null;
+          default_outbound_calendar_connection_id: string | null;
           default_provider: Database['public']['Enums']['calendar_provider'];
           default_workspace_calendar_id: string | null;
+          inbound_sync_enabled: boolean;
+          outbound_sync_enabled: boolean;
           updated_at: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
+          conflict_policy?: string;
           created_at?: string;
           default_calendar_connection_id?: string | null;
+          default_outbound_calendar_connection_id?: string | null;
           default_provider?: Database['public']['Enums']['calendar_provider'];
           default_workspace_calendar_id?: string | null;
+          inbound_sync_enabled?: boolean;
+          outbound_sync_enabled?: boolean;
           updated_at?: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
+          conflict_policy?: string;
           created_at?: string;
           default_calendar_connection_id?: string | null;
+          default_outbound_calendar_connection_id?: string | null;
           default_provider?: Database['public']['Enums']['calendar_provider'];
           default_workspace_calendar_id?: string | null;
+          inbound_sync_enabled?: boolean;
+          outbound_sync_enabled?: boolean;
           updated_at?: string;
           user_id?: string;
           ws_id?: string;
@@ -13837,6 +13849,9 @@ export type Database = {
           id: string;
           is_enabled: boolean;
           provider: string;
+          sync_delete_enabled: boolean;
+          sync_inbound_enabled: boolean;
+          sync_outbound_enabled: boolean;
           updated_at: string;
           workspace_calendar_id: string | null;
           ws_id: string;
@@ -13851,6 +13866,9 @@ export type Database = {
           id?: string;
           is_enabled?: boolean;
           provider?: string;
+          sync_delete_enabled?: boolean;
+          sync_inbound_enabled?: boolean;
+          sync_outbound_enabled?: boolean;
           updated_at?: string;
           workspace_calendar_id?: string | null;
           ws_id: string;
@@ -13865,6 +13883,9 @@ export type Database = {
           id?: string;
           is_enabled?: boolean;
           provider?: string;
+          sync_delete_enabled?: boolean;
+          sync_inbound_enabled?: boolean;
+          sync_outbound_enabled?: boolean;
           updated_at?: string;
           workspace_calendar_id?: string | null;
           ws_id?: string;
@@ -25781,10 +25802,12 @@ export type Database = {
           end_at: string;
           external_calendar_id: string | null;
           external_event_id: string | null;
+          external_updated_at: string | null;
           google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
           is_encrypted: boolean;
+          last_synced_at: string | null;
           location: string | null;
           locked: boolean;
           provider: Database['public']['Enums']['calendar_provider'] | null;
@@ -25794,6 +25817,8 @@ export type Database = {
             | null;
           source_calendar_id: string | null;
           start_at: string;
+          sync_error: string | null;
+          sync_status: string;
           task_id: string | null;
           title: string;
           ws_id: string;
@@ -25805,10 +25830,12 @@ export type Database = {
           end_at: string;
           external_calendar_id?: string | null;
           external_event_id?: string | null;
+          external_updated_at?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
+          last_synced_at?: string | null;
           location?: string | null;
           locked?: boolean;
           provider?: Database['public']['Enums']['calendar_provider'] | null;
@@ -25818,6 +25845,8 @@ export type Database = {
             | null;
           source_calendar_id?: string | null;
           start_at: string;
+          sync_error?: string | null;
+          sync_status?: string;
           task_id?: string | null;
           title?: string;
           ws_id: string;
@@ -25829,10 +25858,12 @@ export type Database = {
           end_at?: string;
           external_calendar_id?: string | null;
           external_event_id?: string | null;
+          external_updated_at?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
+          last_synced_at?: string | null;
           location?: string | null;
           locked?: boolean;
           provider?: Database['public']['Enums']['calendar_provider'] | null;
@@ -25842,6 +25873,8 @@ export type Database = {
             | null;
           source_calendar_id?: string | null;
           start_at?: string;
+          sync_error?: string | null;
+          sync_status?: string;
           task_id?: string | null;
           title?: string;
           ws_id?: string;

@@ -57,6 +57,24 @@ export interface CalendarDefaultSourceResponse {
   options: CalendarSourceOption[];
 }
 
+export type CalendarConflictPolicy = 'latest_write_wins';
+
+export interface CalendarSyncPreferencesResponse {
+  inboundSyncEnabled: boolean;
+  outboundSyncEnabled: boolean;
+  conflictPolicy: CalendarConflictPolicy;
+  defaultOutboundConnectionId: string | null;
+  options: CalendarSourceOption[];
+  settingsAvailable: boolean;
+}
+
+export interface CalendarSyncPreferencesPayload {
+  inboundSyncEnabled?: boolean;
+  outboundSyncEnabled?: boolean;
+  conflictPolicy?: CalendarConflictPolicy;
+  defaultOutboundConnectionId?: string | null;
+}
+
 export interface WorkspaceCalendarEventCreatePayload {
   title: string;
   start_at: string;
@@ -214,6 +232,9 @@ export interface CalendarConnectionPayload {
   calendarName: string;
   color?: string | null;
   isEnabled?: boolean;
+  syncDeleteEnabled?: boolean;
+  syncInboundEnabled?: boolean;
+  syncOutboundEnabled?: boolean;
 }
 
 export interface CalendarConnectionUpdatePayload
@@ -679,6 +700,37 @@ export async function updateWorkspaceCalendarDefaultSource(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ source }),
+    }
+  );
+}
+
+export async function getWorkspaceCalendarSyncPreferences(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarSyncPreferencesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/sync-preferences`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceCalendarSyncPreferences(
+  wsId: string,
+  payload: CalendarSyncPreferencesPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarSyncPreferencesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/sync-preferences`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     }
   );
 }

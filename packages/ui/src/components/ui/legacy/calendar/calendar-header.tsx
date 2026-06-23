@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Moon,
   MoonStar,
-  RefreshCw,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
@@ -84,7 +83,7 @@ export function CalendarHeader({
       return newDate;
     });
 
-  const { isLoading, isSyncing, syncStatus } = useCalendarSync();
+  const { syncStatus } = useCalendarSync();
   const selectToday = () => setDate(new Date());
   const isTodaySelected = () => dayjs(date).isSame(dayjs(), 'day');
   const isCurrentMonth = () =>
@@ -115,17 +114,14 @@ export function CalendarHeader({
   };
 
   const LunarIcon = showLunar ? MoonStar : Moon;
-  const isBusy = isLoading || isSyncing || syncStatus.state === 'syncing';
   const statusLabel =
     syncStatus.state === 'error'
       ? t('failed_to_load_events')
-      : isBusy
-        ? t(isLoading ? 'loading_calendars' : 'syncing_calendars')
-        : syncStatus.lastSyncTime
-          ? `${t('sync_completed')} ${dayjs(syncStatus.lastSyncTime)
-              .locale(locale)
-              .format('HH:mm')}`
-          : null;
+      : syncStatus.lastSyncTime
+        ? `${t('sync_completed')} ${dayjs(syncStatus.lastSyncTime)
+            .locale(locale)
+            .format('HH:mm')}`
+        : null;
 
   return (
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -142,8 +138,6 @@ export function CalendarHeader({
             >
               {syncStatus.state === 'error' ? (
                 <AlertTriangle className="h-3.5 w-3.5 text-dynamic-red" />
-              ) : isBusy ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />
               ) : (
                 <Check className="h-3.5 w-3.5 text-dynamic-green" />
               )}

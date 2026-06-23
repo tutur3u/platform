@@ -12,8 +12,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
+import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
+import {
+  getCalendarSyncPreferences,
+  resolveOutboundSyncSource,
+} from '@/lib/calendar/sync-preferences';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
 interface RouteParams {
   wsId: string;
@@ -34,10 +40,21 @@ type CalendarConnectionRow = {
   auth_token_id?: string | null;
   workspace_calendar_id?: string | null;
   access_role?: string | null;
+  sync_delete_enabled?: boolean | null;
+  sync_inbound_enabled?: boolean | null;
 };
 type ExistingExternalEventRow = {
   id: string;
   external_event_id: string | null;
+};
+type LocalEventRow = {
+  id: string;
+  title: string;
+  description: string;
+  location: string | null;
+  start_at: string;
+  end_at: string;
+  color: string | null;
 };
 
 const MANUAL_COOLDOWN_MS = 30 * 1000;
@@ -172,6 +189,7 @@ async function syncMicrosoftInbound(args: {
   wsId: string;
   rangeStart: string;
   rangeEnd: string;
+  settingsAvailable: boolean;
 }) {
   const { data: tokenRows, error: tokenError } = await args.sbAdmin
     .from('calendar_auth_tokens')
@@ -192,7 +210,11 @@ async function syncMicrosoftInbound(args: {
   for (const token of tokens) {
     const { data: connections, error: connectionError } = await args.sbAdmin
       .from('calendar_connections')
-      .select('calendar_id, color, workspace_calendar_id, access_role')
+      .select(
+        args.settingsAvailable
+          ? 'calendar_id, color, workspace_calendar_id, access_role, sync_delete_enabled, sync_inbound_enabled'
+          : 'calendar_id, color, workspace_calendar_id, access_role'
+      )
       .eq('ws_id', args.wsId)
       .eq('auth_token_id', token.id)
       .eq('is_enabled', true);
@@ -202,7 +224,11 @@ async function syncMicrosoftInbound(args: {
     }
 
     const graphClient = createGraphClient(token.access_token);
-    for (const connection of (connections ?? []) as CalendarConnectionRow[]) {
+    const enabledConnections = (
+      (connections ?? []) as CalendarConnectionRow[]
+    ).filter((connection) => connection.sync_inbound_enabled !== false);
+
+    for (const connection of enabledConnections) {
       const events = await fetchMicrosoftEvents(
         graphClient,
         connection.calendar_id,
@@ -237,6 +263,14 @@ async function syncMicrosoftInbound(args: {
             source_calendar_id: connection.workspace_calendar_id ?? null,
             google_event_id: null,
             google_calendar_id: null,
+            ...(args.settingsAvailable
+              ? {
+                  external_updated_at: event.lastModifiedDateTime ?? null,
+                  last_synced_at: new Date().toISOString(),
+                  sync_error: null,
+                  sync_status: 'synced',
+                }
+              : {}),
           });
         });
 
@@ -257,38 +291,40 @@ async function syncMicrosoftInbound(args: {
         updated += (upserted as Array<{ id: string }> | null)?.length ?? 0;
       }
 
-      const { data: existingRows, error: existingError } = await args.sbAdmin
-        .from('workspace_calendar_events')
-        .select('id, external_event_id')
-        .eq('ws_id', args.wsId)
-        .eq('provider', 'microsoft')
-        .eq('external_calendar_id', connection.calendar_id)
-        .gte('start_at', args.rangeStart)
-        .lte('start_at', args.rangeEnd);
-
-      if (existingError) {
-        throw existingError;
-      }
-
-      const idsToDelete =
-        ((existingRows ?? []) as ExistingExternalEventRow[])
-          ?.filter(
-            (row) =>
-              row.external_event_id && !eventIds.has(row.external_event_id)
-          )
-          .map((row) => row.id) ?? [];
-
-      if (idsToDelete.length > 0) {
-        const { error: deleteError } = await args.sbAdmin
+      if (connection.sync_delete_enabled !== false) {
+        const { data: existingRows, error: existingError } = await args.sbAdmin
           .from('workspace_calendar_events')
-          .delete()
-          .in('id', idsToDelete);
+          .select('id, external_event_id')
+          .eq('ws_id', args.wsId)
+          .eq('provider', 'microsoft')
+          .eq('external_calendar_id', connection.calendar_id)
+          .gte('start_at', args.rangeStart)
+          .lte('start_at', args.rangeEnd);
 
-        if (deleteError) {
-          throw deleteError;
+        if (existingError) {
+          throw existingError;
         }
 
-        deleted += idsToDelete.length;
+        const idsToDelete =
+          ((existingRows ?? []) as ExistingExternalEventRow[])
+            ?.filter(
+              (row) =>
+                row.external_event_id && !eventIds.has(row.external_event_id)
+            )
+            .map((row) => row.id) ?? [];
+
+        if (idsToDelete.length > 0) {
+          const { error: deleteError } = await args.sbAdmin
+            .from('workspace_calendar_events')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            throw deleteError;
+          }
+
+          deleted += idsToDelete.length;
+        }
       }
 
       inserted += payload.length;
@@ -304,6 +340,7 @@ async function syncGoogleInbound(args: {
   rangeStart: string;
   rangeEnd: string;
   userIdForFallback: string;
+  settingsAvailable: boolean;
 }) {
   const { data: tokenRows, error: tokenError } = await args.sbAdmin
     .from('calendar_auth_tokens')
@@ -331,7 +368,11 @@ async function syncGoogleInbound(args: {
 
   const { data: connections, error: connectionError } = await args.sbAdmin
     .from('calendar_connections')
-    .select('calendar_id, auth_token_id, workspace_calendar_id, access_role')
+    .select(
+      args.settingsAvailable
+        ? 'calendar_id, auth_token_id, workspace_calendar_id, access_role, sync_delete_enabled, sync_inbound_enabled'
+        : 'calendar_id, auth_token_id, workspace_calendar_id, access_role'
+    )
     .eq('ws_id', args.wsId)
     .eq('is_enabled', true)
     .in('auth_token_id', googleTokenIds);
@@ -342,7 +383,10 @@ async function syncGoogleInbound(args: {
 
   const googleConnections = (
     (connections ?? []) as CalendarConnectionRow[]
-  ).filter((connection) => connection.auth_token_id);
+  ).filter(
+    (connection) =>
+      connection.auth_token_id && connection.sync_inbound_enabled !== false
+  );
 
   let inserted = 0;
   let updated = 0;
@@ -357,7 +401,10 @@ async function syncGoogleInbound(args: {
       new Date(args.rangeEnd),
       undefined,
       connection.auth_token_id,
-      connection.workspace_calendar_id ?? null
+      connection.workspace_calendar_id ?? null,
+      {
+        syncDeletes: connection.sync_delete_enabled !== false,
+      }
     );
 
     if (result instanceof NextResponse) {
@@ -375,6 +422,132 @@ async function syncGoogleInbound(args: {
     updated,
     deleted,
     processedConnections: googleConnections.length,
+  };
+}
+
+async function syncTuturuuuOutbound(args: {
+  sbAdmin: any;
+  wsId: string;
+  userId: string;
+  rangeStart: string;
+  rangeEnd: string;
+  settingsAvailable: boolean;
+}) {
+  if (!args.settingsAvailable) {
+    return {
+      created: 0,
+      failed: 0,
+      processedEvents: 0,
+      provider: null as string | null,
+    };
+  }
+
+  const source = await resolveOutboundSyncSource({
+    sbAdmin: args.sbAdmin,
+    wsId: args.wsId,
+    userId: args.userId,
+  });
+
+  if (!source) {
+    return {
+      created: 0,
+      failed: 0,
+      processedEvents: 0,
+      provider: null as string | null,
+    };
+  }
+
+  const { data: rows, error } = await args.sbAdmin
+    .from('workspace_calendar_events')
+    .select('*')
+    .eq('ws_id', args.wsId)
+    .or('provider.eq.tuturuuu,provider.is.null')
+    .is('external_event_id', null)
+    .gte('start_at', args.rangeStart)
+    .lte('start_at', args.rangeEnd)
+    .in('sync_status', ['local_only', 'failed'])
+    .order('start_at', { ascending: true })
+    .limit(250);
+
+  if (error) throw error;
+
+  const localEvents = (await decryptEventsFromStorage(
+    (rows ?? []) as LocalEventRow[],
+    args.wsId
+  )) as LocalEventRow[];
+
+  let created = 0;
+  let failed = 0;
+
+  for (const event of localEvents) {
+    try {
+      const providerResult = await createProviderEvent({
+        source,
+        event: {
+          title: event.title,
+          description: event.description ?? '',
+          location: event.location ?? '',
+          start_at: event.start_at,
+          end_at: event.end_at,
+        },
+      });
+
+      if (!providerResult) continue;
+
+      const { error: updateError } = await args.sbAdmin
+        .from('workspace_calendar_events')
+        .update({
+          provider: providerResult.provider,
+          source_calendar_id: source.workspaceCalendarId,
+          external_calendar_id: providerResult.externalCalendarId,
+          external_event_id: providerResult.externalEventId,
+          google_calendar_id:
+            providerResult.provider === 'google'
+              ? providerResult.externalCalendarId
+              : null,
+          google_event_id:
+            providerResult.provider === 'google'
+              ? providerResult.externalEventId
+              : null,
+          last_synced_at: new Date().toISOString(),
+          sync_error: null,
+          sync_status: 'synced',
+        })
+        .eq('id', event.id)
+        .eq('ws_id', args.wsId);
+
+      if (updateError) throw updateError;
+      created += 1;
+    } catch (syncError) {
+      failed += 1;
+      const message =
+        syncError instanceof Error
+          ? syncError.message
+          : 'External calendar sync failed';
+
+      await args.sbAdmin
+        .from('workspace_calendar_events')
+        .update({
+          sync_error: message.slice(0, 1000),
+          sync_status: 'failed',
+        })
+        .eq('id', event.id)
+        .eq('ws_id', args.wsId);
+
+      serverLogger.warn('Failed to outbound-sync Tuturuuu calendar event', {
+        wsId: args.wsId,
+        eventId: event.id,
+        provider: source.provider,
+        syncError,
+      });
+    }
+  }
+
+  return {
+    created,
+    failed,
+    processedEvents: localEvents.length,
+    provider: source.provider,
   };
 }
 
@@ -466,37 +639,64 @@ export async function POST(
     const rangeEnd = new Date(
       Date.now() + 90 * 24 * 60 * 60 * 1000
     ).toISOString();
+    const syncPreferences = await getCalendarSyncPreferences({
+      sbAdmin,
+      wsId,
+      userId: triggeredBy,
+    });
+    const shouldRunInbound =
+      syncPreferences.inboundSyncEnabled &&
+      (direction === 'inbound' || direction === 'both');
+    const shouldRunOutbound =
+      syncPreferences.outboundSyncEnabled &&
+      (direction === 'outbound' || direction === 'both');
 
-    const googleSummary =
-      direction === 'inbound' || direction === 'both'
-        ? await syncGoogleInbound({
-            sbAdmin,
-            wsId,
-            rangeStart,
-            rangeEnd,
-            userIdForFallback: triggeredBy,
-          })
-        : {
-            inserted: 0,
-            updated: 0,
-            deleted: 0,
-            processedConnections: 0,
-          };
+    const googleSummary = shouldRunInbound
+      ? await syncGoogleInbound({
+          sbAdmin,
+          wsId,
+          rangeStart,
+          rangeEnd,
+          userIdForFallback: triggeredBy,
+          settingsAvailable: syncPreferences.settingsAvailable,
+        })
+      : {
+          inserted: 0,
+          updated: 0,
+          deleted: 0,
+          processedConnections: 0,
+        };
 
-    const microsoftSummary =
-      direction === 'inbound' || direction === 'both'
-        ? await syncMicrosoftInbound({
-            sbAdmin,
-            wsId,
-            rangeStart,
-            rangeEnd,
-          })
-        : {
-            inserted: 0,
-            updated: 0,
-            deleted: 0,
-            processedAccounts: 0,
-          };
+    const microsoftSummary = shouldRunInbound
+      ? await syncMicrosoftInbound({
+          sbAdmin,
+          wsId,
+          rangeStart,
+          rangeEnd,
+          settingsAvailable: syncPreferences.settingsAvailable,
+        })
+      : {
+          inserted: 0,
+          updated: 0,
+          deleted: 0,
+          processedAccounts: 0,
+        };
+
+    const outboundSummary = shouldRunOutbound
+      ? await syncTuturuuuOutbound({
+          sbAdmin,
+          wsId,
+          userId: triggeredBy,
+          rangeStart,
+          rangeEnd,
+          settingsAvailable: syncPreferences.settingsAvailable,
+        })
+      : {
+          created: 0,
+          failed: 0,
+          processedEvents: 0,
+          provider: null as string | null,
+        };
 
     await (sbAdmin as any)
       .from('calendar_sync_dashboard')
@@ -504,7 +704,10 @@ export async function POST(
         status: 'success',
         end_time: new Date().toISOString(),
         inserted_events: googleSummary.inserted + microsoftSummary.inserted,
-        updated_events: googleSummary.updated + microsoftSummary.updated,
+        updated_events:
+          googleSummary.updated +
+          microsoftSummary.updated +
+          outboundSummary.created,
         deleted_events: googleSummary.deleted + microsoftSummary.deleted,
         calendar_connection_count:
           googleSummary.processedConnections +
@@ -518,6 +721,7 @@ export async function POST(
       summary: {
         google: googleSummary,
         microsoft: microsoftSummary,
+        outbound: outboundSummary,
       },
     });
   } catch (error) {

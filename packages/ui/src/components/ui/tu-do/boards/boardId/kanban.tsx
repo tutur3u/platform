@@ -29,6 +29,10 @@ import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-p
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import type { ListStatusFilter } from '../../shared/board-header';
 import { buildEstimationIndices } from '../../shared/estimation-mapping';
+import type {
+  SpecialTaskListPin,
+  SpecialTaskListPinState,
+} from '../../shared/special-task-list-pins';
 import { BoardSelector } from '../board-selector';
 import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
@@ -92,6 +96,11 @@ interface Props {
     section: KanbanDeadlineSection,
     collapsed: boolean
   ) => void;
+  specialTaskListPins?: SpecialTaskListPinState;
+  onSpecialTaskListPinnedChange?: (
+    pin: SpecialTaskListPin,
+    pinned: boolean
+  ) => void;
   onBulkSelectionActiveChange?: (active: boolean) => void;
   readOnly?: boolean;
 }
@@ -113,6 +122,8 @@ export function KanbanBoard({
   onTaskListCollapsedChange,
   deadlineSectionsCollapsed,
   onDeadlineSectionCollapsedChange,
+  specialTaskListPins,
+  onSpecialTaskListPinnedChange,
   onBulkSelectionActiveChange,
   readOnly = false,
 }: Props) {
@@ -201,8 +212,19 @@ export function KanbanBoard({
       (column) => !column.is_external_staging
     );
 
-    return [...externalColumns, ...realColumns];
-  }, [columns]);
+    if (!specialTaskListPins?.closed_tasks) {
+      return [...externalColumns, ...realColumns];
+    }
+
+    const closedColumns = realColumns.filter(
+      (column) => column.status === 'closed'
+    );
+    const otherColumns = realColumns.filter(
+      (column) => column.status !== 'closed'
+    );
+
+    return [...externalColumns, ...closedColumns, ...otherColumns];
+  }, [columns, specialTaskListPins?.closed_tasks]);
   const orderedRealColumns = useMemo(
     () => orderedColumns.filter((column) => !column.is_external_staging),
     [orderedColumns]
@@ -227,6 +249,7 @@ export function KanbanBoard({
       expandSection: (name: string) => tTasks('expand_task_list', { name }),
       filter: tCommon('filters'),
       overdue: tTasks('overdue'),
+      pinSection: (name: string) => tTasks('pin_task_list', { name }),
       reset: tCommon('reset'),
       showDocuments: tTasks('external_tasks_show_documents'),
       showExternalTasks: tTasks('external_tasks'),
@@ -237,6 +260,7 @@ export function KanbanBoard({
       sortDueDesc: tBoards('filters.sort_options.latest_first'),
       sortNameAsc: tTasks('external_tasks_sort_name_asc'),
       sortSourceAsc: tTasks('external_tasks_sort_source_asc'),
+      unpinSection: (name: string) => tTasks('unpin_task_list', { name }),
       upcoming: tTasks('upcoming'),
     }),
     [tBoards, tCommon, tTasks]
@@ -526,6 +550,8 @@ export function KanbanBoard({
             onDeadlineSectionCollapsedChange={onDeadlineSectionCollapsedChange}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
             onTaskListCollapsedChange={onTaskListCollapsedChange}
+            specialTaskListPins={specialTaskListPins}
+            onSpecialTaskListPinnedChange={onSpecialTaskListPinnedChange}
             readOnly={readOnly}
           />
 

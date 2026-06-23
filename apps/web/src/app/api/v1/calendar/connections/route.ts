@@ -18,6 +18,9 @@ const createConnectionSchema = z.object({
   isEnabled: z.boolean().default(true),
   authTokenId: z.guid().optional(),
   accessRole: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
+  syncDeleteEnabled: z.boolean().optional(),
+  syncInboundEnabled: z.boolean().optional(),
+  syncOutboundEnabled: z.boolean().optional(),
 });
 
 const updateConnectionSchema = z
@@ -31,6 +34,9 @@ const updateConnectionSchema = z
     calendarName: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
     color: z.string().max(MAX_COLOR_LENGTH).optional(),
     accessRole: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
+    syncDeleteEnabled: z.boolean().optional(),
+    syncInboundEnabled: z.boolean().optional(),
+    syncOutboundEnabled: z.boolean().optional(),
   })
   .refine((data) => data.id || (data.calendarId && data.wsId), {
     message: 'Either id or both calendarId and wsId are required',
@@ -203,6 +209,9 @@ export async function POST(request: Request) {
       isEnabled,
       authTokenId,
       accessRole,
+      syncDeleteEnabled,
+      syncInboundEnabled,
+      syncOutboundEnabled,
     } = validation.data;
     const accessError = await requireWorkspaceAccess({
       supabase,
@@ -276,6 +285,9 @@ export async function POST(request: Request) {
         provider,
         access_role: accessRole || 'writer',
         workspace_calendar_id: workspaceCalendarId,
+        sync_delete_enabled: syncDeleteEnabled ?? true,
+        sync_inbound_enabled: syncInboundEnabled ?? true,
+        sync_outbound_enabled: syncOutboundEnabled ?? false,
       } as any)
       .select()
       .single();
@@ -352,6 +364,15 @@ export async function PATCH(request: Request) {
     if (updates.color !== undefined) updateData.color = updates.color;
     if (updates.accessRole !== undefined) {
       (updateData as any).access_role = updates.accessRole;
+    }
+    if (updates.syncDeleteEnabled !== undefined) {
+      (updateData as any).sync_delete_enabled = updates.syncDeleteEnabled;
+    }
+    if (updates.syncInboundEnabled !== undefined) {
+      (updateData as any).sync_inbound_enabled = updates.syncInboundEnabled;
+    }
+    if (updates.syncOutboundEnabled !== undefined) {
+      (updateData as any).sync_outbound_enabled = updates.syncOutboundEnabled;
     }
 
     // Build the query based on whether we have id or calendarId+wsId

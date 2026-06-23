@@ -600,9 +600,6 @@ export const CalendarSyncProvider = ({
       const SYNC_COOLDOWN_MS = 30000; // 30 seconds
 
       if (!options?.skipCooldown && timeSinceLastSync < SYNC_COOLDOWN_MS) {
-        console.log(
-          `🔒 Sync skipped - cooldown active (${Math.ceil((SYNC_COOLDOWN_MS - timeSinceLastSync) / 1000)}s remaining)`
-        );
         return;
       }
 
@@ -725,16 +722,8 @@ export const CalendarSyncProvider = ({
         dbLastUpdated: 0,
       });
     }
-
-    // Only invalidate database queries (cheap) - not Google queries (expensive)
-    // Google sync will happen automatically via the 30s cooldown mechanism
-    queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    });
   }, [
     dates,
-    queryClient,
-    wsId,
     calendarCache,
     includesCurrentWeek,
     areDatesEqual,

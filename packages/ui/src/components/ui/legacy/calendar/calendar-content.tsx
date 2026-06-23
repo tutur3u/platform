@@ -9,6 +9,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
+import { CalendarLoadingSkeleton } from './calendar-loading-skeleton';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { EventModal } from './event-modal';
 import { EventPreviewPopover } from './event-preview-popover';
@@ -123,7 +124,7 @@ export const CalendarContent = ({
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendarSettings();
-  const { dates, setDates } = useCalendarSync();
+  const { dates, isLoading, setDates } = useCalendarSync();
 
   // Use ref to always have the latest settings without causing dependency cascades
   const settingsRef = useRef(settings);
@@ -193,7 +194,6 @@ export const CalendarContent = ({
       handleSetView('4-days');
       setDates(dates);
     });
-    console.log('enable4DayView', dates);
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
@@ -634,7 +634,9 @@ export const CalendarContent = ({
           e.currentTarget.focus();
         }}
       >
-        {view === 'month' && dates?.[0] ? (
+        {isLoading ? (
+          <CalendarLoadingSkeleton dates={dates} view={view} />
+        ) : view === 'month' && dates?.[0] ? (
           <MonthCalendar
             date={dates[0]}
             workspace={workspace}

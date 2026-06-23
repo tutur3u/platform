@@ -3,27 +3,32 @@
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
-import dynamic from 'next/dynamic';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import type { ComponentType } from 'react';
 import { useCallback } from 'react';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
-
-const SettingsDialog = dynamic(
-  () =>
-    import('@/components/settings/settings-dialog').then(
-      (module) => module.SettingsDialog
-    ),
-  {
-    loading: () => <SettingsDialogFullscreenSkeleton />,
-    ssr: false,
-  }
-);
+import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 
 interface SettingsDialogHostProps {
   wsId?: string;
   user: WorkspaceUser | null;
   workspace?: Workspace | null;
+}
+
+type SettingsDialogComponent = ComponentType<{
+  boardId?: string;
+  defaultTab?: string;
+  linkedProvider?: string;
+  user: WorkspaceUser | null;
+  workspace?: Workspace | null;
+  wsId?: string;
+}>;
+
+function loadSettingsDialog(): Promise<SettingsDialogComponent> {
+  return import('@/components/settings/settings-dialog').then(
+    (module) => module.SettingsDialog
+  );
 }
 
 export function SettingsDialogHost({
@@ -49,6 +54,10 @@ export function SettingsDialogHost({
   const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
   const requestedSettingsBoardId = settingsQuery.settingsBoardId ?? undefined;
   const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
+  const SettingsDialog = useLazyClientComponent(
+    loadSettingsDialog,
+    requestedSettingsOpen
+  );
 
   const openSettingsDialog = useCallback(() => {
     void setSettingsQuery(
@@ -96,16 +105,19 @@ export function SettingsDialogHost({
       open={requestedSettingsOpen}
       onOpenChange={handleSettingsOpenChange}
     >
-      {requestedSettingsOpen && (
-        <SettingsDialog
-          wsId={wsId}
-          user={user}
-          workspace={workspace}
-          defaultTab={requestedSettingsTab}
-          boardId={requestedSettingsBoardId}
-          linkedProvider={linkedProvider}
-        />
-      )}
+      {requestedSettingsOpen &&
+        (SettingsDialog ? (
+          <SettingsDialog
+            wsId={wsId}
+            user={user}
+            workspace={workspace}
+            defaultTab={requestedSettingsTab}
+            boardId={requestedSettingsBoardId}
+            linkedProvider={linkedProvider}
+          />
+        ) : (
+          <SettingsDialogFullscreenSkeleton />
+        ))}
     </Dialog>
   );
 }

@@ -14945,6 +14945,64 @@
     "utc": "UTC",
     "value": "Value"
   },
+  "timezone-management": {
+    "actions": {
+      "cancel": "Cancel",
+      "create": "Add timezone",
+      "delete": "Delete",
+      "delete_description": "This removes the persisted timezone record. The catalog timezone will remain available to sync again.",
+      "delete_title": "Delete timezone",
+      "edit": "Edit",
+      "resync": "Resync",
+      "save": "Save",
+      "saving": "Saving...",
+      "sync": "Sync"
+    },
+    "columns": {
+      "hours": "Hours",
+      "id": "ID",
+      "priority": "Priority"
+    },
+    "dialog": {
+      "create_description": "Create a custom timezone synchronization record.",
+      "create_title": "Add timezone",
+      "edit_description": "Update the persisted timezone synchronization record.",
+      "edit_title": "Edit timezone"
+    },
+    "filters": {
+      "all_statuses": "All statuses"
+    },
+    "form": {
+      "utc_description": "Separate UTC zone identifiers with commas."
+    },
+    "status": {
+      "error": "Error",
+      "outdated": "Outdated",
+      "pending": "Pending",
+      "synced": "Synced"
+    },
+    "table": {
+      "loading": "Loading",
+      "no_results": "No results",
+      "of": "of",
+      "page": "Page",
+      "refresh": "Refresh",
+      "reset": "Reset",
+      "results": "result(s)",
+      "rows_per_page": "Rows per page"
+    },
+    "toasts": {
+      "create_error": "Failed to create timezone.",
+      "create_success": "Timezone queued for sync.",
+      "delete_error": "Failed to delete timezone.",
+      "delete_success": "Timezone deleted.",
+      "refresh_error": "Failed to refresh timezones.",
+      "sync_error": "Failed to sync timezone.",
+      "sync_success": "Timezone synced.",
+      "update_error": "Failed to update timezone.",
+      "update_success": "Timezone updated."
+    }
+  },
   "transaction-category-data-table": {
     "amount": "Transactions",
     "amount_range": "Amount range",

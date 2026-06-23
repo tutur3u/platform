@@ -1819,6 +1819,7 @@
     "calendar_disabled": "Calendar disabled",
     "calendar_enabled": "Calendar enabled",
     "calendar_reset_failed": "Failed to reset calendar data",
+    "calendar_sync_settings_updated": "Calendar sync settings updated",
     "calendar_sync_started": "Calendar sync started",
     "calendar_toggle_failed": "Failed to toggle calendar",
     "calendars": "Calendars",

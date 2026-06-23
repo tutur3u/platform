@@ -18,6 +18,7 @@ import {
   Settings,
   Share2,
   Trash2,
+  UserStar,
   X,
   Zap,
 } from '@tuturuuu/icons';
@@ -304,6 +305,11 @@ export function BoardHeader({
       icon: CalendarDays,
       label: t('ws-task-boards.views.timeline'),
       description: t('ws-task-boards.views.timeline_description'),
+    },
+    my_tasks: {
+      icon: UserStar,
+      label: t('ws-task-boards.views.my_tasks'),
+      description: t('ws-task-boards.views.my_tasks_description'),
     },
     drafts: {
       icon: Pencil,

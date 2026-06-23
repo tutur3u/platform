@@ -5,6 +5,7 @@ import type { TaskFilters } from '../boards/boardId/task-filter';
 export type StoredBoardView =
   | 'kanban'
   | 'list'
+  | 'my_tasks'
   | 'timeline'
   | 'drafts'
   | 'recycle_bin';

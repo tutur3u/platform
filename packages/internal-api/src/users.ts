@@ -54,6 +54,9 @@ type UserWorkspaceConfigResponse = {
 };
 
 export const SHOW_VERSION_BADGE_CONFIG_ID = 'SHOW_VERSION_BADGE';
+export const TASK_DEFAULT_BOARD_ID_CONFIG_ID = 'TASK_DEFAULT_BOARD_ID';
+export const TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID =
+  'TASK_BOARD_PINNED_SPECIAL_LISTS';
 
 export type RootNavigationTarget =
   | 'workspace_home'
@@ -80,7 +83,6 @@ const ROOT_NAVIGATION_TARGETS: readonly RootNavigationTarget[] = [
   'finance',
 ];
 
-const TASK_SUBMODULES = ['home', 'boards'] as const;
 const FINANCE_SUBMODULES = [
   'home',
   'transactions',
@@ -137,15 +139,9 @@ export function normalizeRootNavigationConfig(
   const parsed = parseRootNavigationConfig(raw);
 
   if (parsed.target === 'tasks') {
-    const submodule = (TASK_SUBMODULES as readonly string[]).includes(
-      parsed.submodule ?? ''
-    )
-      ? (parsed.submodule as string)
-      : 'home';
-
     return {
       target: parsed.target,
-      submodule,
+      submodule: 'home',
       boardId: parsed.boardId?.trim() ? parsed.boardId : 'none',
     };
   }

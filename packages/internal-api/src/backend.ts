@@ -1,3 +1,4 @@
+import type { AbuseEvent } from '@tuturuuu/types';
 import type {
   InternalOtpClient,
   InternalOtpPlatform,
@@ -5,8 +6,10 @@ import type {
 } from './auth';
 import {
   createInternalApiClient,
+  encodePathSegment,
   type InternalApiClientOptions,
   type InternalApiFetchInit,
+  type InternalApiQuery,
   withForwardedInternalApiAuth,
 } from './client';
 import type {
@@ -100,6 +103,66 @@ export type BackendUserFieldType = {
 export type BackendAiWhitelistMeResponse = {
   email: string | null;
   enabled: boolean;
+};
+
+export type BackendInfrastructureAbuseEvent = Pick<
+  AbuseEvent,
+  | 'created_at'
+  | 'email'
+  | 'email_hash'
+  | 'endpoint'
+  | 'event_type'
+  | 'id'
+  | 'ip_address'
+  | 'metadata'
+  | 'success'
+  | 'user_agent'
+>;
+
+export type BackendInfrastructureAbuseEventsQuery = {
+  page?: number | string;
+  pageSize?: number | string;
+  q?: string;
+  success?: string;
+  type?: string;
+};
+
+export type BackendInfrastructureAbuseEventsResponse = {
+  count: number | null;
+  data: BackendInfrastructureAbuseEvent[];
+  page: number | null;
+  pageSize: number | null;
+  totalPages: number | null;
+};
+
+export type BackendInfrastructureTimezone = {
+  abbr: string;
+  created_at: string;
+  id: string;
+  isdst: boolean;
+  offset: number;
+  text: string;
+  utc: string[];
+  value: string;
+};
+
+export type BackendInfrastructureTimezoneCreateRequest = {
+  abbr?: string;
+  id?: string | null;
+  isdst?: boolean;
+  offset?: number;
+  text?: string;
+  utc?: string[] | string;
+  value?: string;
+};
+
+export type BackendInfrastructureTimezoneWriteRequest = Omit<
+  BackendInfrastructureTimezoneCreateRequest,
+  'id'
+>;
+
+export type BackendInfrastructureTimezonesMessage = {
+  message: string;
 };
 
 export type BackendNovaCurrentTeamResponse = {
@@ -548,6 +611,10 @@ function workspacePathSegment(wsId: string) {
   return encodeURIComponent(wsId);
 }
 
+function backendPathSegment(value: string) {
+  return encodePathSegment(value);
+}
+
 export function getBackendLegacyHealth(options: BackendApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendLegacyHealth>(
     '/api/health',
@@ -663,6 +730,101 @@ export function getBackendAiWhitelistMe(options: BackendApiClientOptions = {}) {
     '/api/v1/ai/whitelist/me',
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendInfrastructureAbuseEvents(
+  query: BackendInfrastructureAbuseEventsQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  const apiQuery: InternalApiQuery = {
+    ip: query.q || undefined,
+    page: query.page,
+    pageSize: query.pageSize,
+    success: query.success || undefined,
+    type: query.type || undefined,
+  };
+
+  return createBackendApiClient(
+    options
+  ).json<BackendInfrastructureAbuseEventsResponse>(
+    '/api/v1/infrastructure/abuse-events',
+    {
+      cache: 'no-store',
+      query: apiQuery,
+    }
+  );
+}
+
+export function getBackendInfrastructureTimezones(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendInfrastructureTimezone[]>(
+    '/api/v1/infrastructure/timezones',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function createBackendInfrastructureTimezone(
+  payload: BackendInfrastructureTimezoneCreateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureTimezonesMessage>(
+    '/api/v1/infrastructure/timezones',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateBackendInfrastructureTimezone(
+  timezoneId: string,
+  payload: BackendInfrastructureTimezoneWriteRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureTimezonesMessage>(
+    `/api/v1/infrastructure/timezones/${backendPathSegment(timezoneId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteBackendInfrastructureTimezone(
+  timezoneId: string,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureTimezonesMessage>(
+    `/api/v1/infrastructure/timezones/${backendPathSegment(timezoneId)}`,
+    {
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
+      method: 'DELETE',
     }
   );
 }

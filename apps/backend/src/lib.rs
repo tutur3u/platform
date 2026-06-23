@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod ai_chats_list;
 mod ai_models;
 mod ai_whitelist;
 mod ai_whitelist_delete;
@@ -12,6 +13,7 @@ mod aurora;
 mod auth_me;
 mod auth_mfa;
 mod changelog;
+mod cms_workspaces;
 mod contact;
 mod crawlers;
 #[cfg(test)]
@@ -52,7 +54,10 @@ mod finance_subscription_context;
 #[cfg(test)]
 mod finance_subscription_context_test;
 mod hive_access;
+mod hive_access_requests;
+mod hive_ai_credits;
 mod hive_ai_models;
+mod hive_workspaces;
 mod holidays;
 mod infrastructure_abuse_events;
 mod infrastructure_abuse_intelligence;
@@ -77,6 +82,7 @@ mod infrastructure_user_status_changes;
 mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
 mod inventory;
+mod inventory_orders;
 mod mobile_version;
 mod nova;
 mod onboarding_progress;
@@ -91,18 +97,26 @@ mod user_identities;
 mod user_identities_test;
 mod user_profile;
 mod workspace_education_access;
+mod workspace_external_projects_members_enhanced;
+mod workspace_external_projects_summary;
 mod workspace_habits_access;
 #[cfg(test)]
 mod workspace_habits_access_test;
+mod workspace_inventory_checkouts;
+mod workspace_inventory_costing_analytics;
+mod workspace_inventory_realtime;
+mod workspace_inventory_sales_by_product;
 mod workspace_limits;
 mod workspace_mentions;
 #[cfg(test)]
 mod workspace_mentions_test;
+mod workspace_mind_search;
 mod workspace_mobile_module_flags;
 #[cfg(test)]
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
+mod workspaces_list;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -638,6 +652,101 @@ pub(crate) async fn handle_backend_request(
         return response;
     }
 
+    if let Some(response) =
+        hive_workspaces::handle_hive_workspaces_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_ai_credits::handle_hive_ai_credits_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        cms_workspaces::handle_cms_workspaces_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        ai_chats_list::handle_ai_chats_list_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_access_requests::handle_hive_access_requests_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspace_inventory_realtime::handle_workspace_inventory_realtime_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_inventory_costing_analytics::handle_workspace_inventory_costing_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_list::handle_workspaces_list_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_external_projects_summary::handle_workspace_external_projects_summary_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_external_projects_members_enhanced::handle_workspace_external_projects_members_enhanced_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mind_search::handle_workspace_mind_search_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_inventory_checkouts::handle_workspace_inventory_checkouts_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_inventory_sales_by_product::handle_workspace_inventory_sales_by_product_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
     if let Some(response) = nova::handle_nova_route(config, request, outbound).await {
         return response;
     }
@@ -765,6 +874,12 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         email_blacklist::handle_email_blacklist_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        inventory_orders::handle_inventory_orders_route(config, request, outbound).await
     {
         return response;
     }
