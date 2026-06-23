@@ -40,6 +40,7 @@ const GATED_ROUTES = [
   'chat',
   'cron',
   'education/library/flashcards',
+  'education/library/quiz-sets',
   'education/library/quizzes',
   'education/valsea',
   'habits',
