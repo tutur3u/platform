@@ -168,6 +168,7 @@ export interface TulearnTestAttemptResponse {
 
 export interface TulearnQuizOption {
   id: string;
+  is_correct?: boolean | null;
   value: string;
   explanation?: string | null;
 }

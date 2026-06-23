@@ -16,6 +16,8 @@ import {
   saveTulearnTestAnswer,
   startTulearnTest,
   submitTulearnTest,
+  type TulearnQuiz,
+  type TulearnTestAttemptAnswer,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -35,7 +37,14 @@ interface StudentTestDetailPageProps {
   testId: string;
 }
 
-function getParsedContent(content: unknown): any {
+type MatchingPair = { left: string; right: string };
+type MultipleChoiceOption = { id: string; index: number | null; value: string };
+type LocalTestAnswer = {
+  answer: TulearnTestAttemptAnswer['answer'];
+  selectedOptionId: string | null;
+};
+
+function getParsedContent(content: unknown): unknown {
   if (typeof content === 'string') {
     try {
       return JSON.parse(content);
@@ -74,7 +83,7 @@ function getStringItems(value: unknown, key: string): string[] {
   return getArrayProperty(value, key).map(displayText);
 }
 
-function getMatchingPairs(value: unknown): { left: string; right: string }[] {
+function getMatchingPairs(value: unknown): MatchingPair[] {
   const parsedValue = getParsedContent(value);
   const pairs = Array.isArray(parsedValue)
     ? parsedValue
@@ -90,13 +99,48 @@ function getMatchingPairs(value: unknown): { left: string; right: string }[] {
     .filter((pair) => Boolean(pair.left && pair.right));
 }
 
-function getMultipleChoiceOptions(
-  quiz: any
-): { id: string; value: string; index: number | null }[] {
+function getAnswerOrder(answer: unknown, fallback: string[]): string[] {
+  if (Array.isArray(answer)) return answer.map(displayText).filter(Boolean);
+
+  const order = getStringItems(answer, 'order');
+  return order.length > 0 ? order : fallback;
+}
+
+function getSubmittedPairs(
+  answer: unknown,
+  fallback: MatchingPair[] = []
+): MatchingPair[] {
+  const answerPairs = Array.isArray(answer)
+    ? answer
+    : getArrayProperty(answer, 'pairs');
+  const parsedPairs = answerPairs.map((pair) => {
+    const record = asRecord(pair);
+    return {
+      left: displayText(record?.left),
+      right: displayText(record?.right),
+    };
+  });
+
+  return parsedPairs.length > 0 ? parsedPairs : fallback;
+}
+
+function getParagraphAnswerText(answer: unknown, fallback: string) {
+  const text = asRecord(answer)?.text;
+  return typeof text === 'string' ? text : fallback;
+}
+
+function getSelectedIndexAnswer(answer: unknown) {
+  const selectedIndex = asRecord(answer)?.selectedIndex;
+  return typeof selectedIndex === 'number' ? selectedIndex : null;
+}
+
+function getTrueFalseAnswer(answer: unknown) {
+  return answer === true || asRecord(answer)?.correct === true;
+}
+
+function getMultipleChoiceOptions(quiz: TulearnQuiz): MultipleChoiceOption[] {
   const parsedContent = getParsedContent(quiz?.content);
-  const contentOptions = Array.isArray(parsedContent?.options)
-    ? parsedContent.options
-    : [];
+  const contentOptions = getArrayProperty(parsedContent, 'options');
 
   const parsedContentOptions = contentOptions
     .map((option: unknown, index: number) => ({
@@ -112,7 +156,7 @@ function getMultipleChoiceOptions(
     return parsedContentOptions;
   }
 
-  return (quiz?.quiz_options ?? []).map((option: any) => ({
+  return (quiz?.quiz_options ?? []).map((option) => ({
     id: option.id,
     value: option.value,
     index: null,
@@ -152,7 +196,7 @@ export function StudentTestDetailPage({
 
   // Local state for answers
   const [localAnswers, setLocalAnswers] = useState<
-    Record<string, { selectedOptionId: string | null; answer: any }>
+    Record<string, LocalTestAnswer>
   >({});
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -181,7 +225,7 @@ export function StudentTestDetailPage({
     if (initialAnswers.length > 0) {
       const answersMap: Record<
         string,
-        { selectedOptionId: string | null; answer: any }
+        { selectedOptionId: string | null; answer: unknown }
       > = {};
       for (const ans of initialAnswers) {
         answersMap[ans.quiz_id] = {
@@ -343,7 +387,7 @@ export function StudentTestDetailPage({
       const percentage =
         maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
 
-      const renderQuizReview = (quiz: any) => {
+      const renderQuizReview = (quiz: TulearnQuiz) => {
         const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id) || {
           selected_option_id: null,
           answer: null,
@@ -358,16 +402,14 @@ export function StudentTestDetailPage({
           const options = getMultipleChoiceOptions(quiz);
           return (
             <div className="mt-4 space-y-2.5">
-              {options.map((opt: any) => {
+              {options.map((opt) => {
                 const isSelected =
                   quizAns.selected_option_id === opt.id ||
                   (opt.index !== null &&
-                    (quizAns.answer as any)?.selectedIndex === opt.index);
+                    getSelectedIndexAnswer(quizAns.answer) === opt.index);
 
                 // Find if this option is correct
-                const rawOpt = quiz.quiz_options?.find(
-                  (o: any) => o.id === opt.id
-                );
+                const rawOpt = quiz.quiz_options?.find((o) => o.id === opt.id);
                 const isOptionCorrect = rawOpt?.is_correct ?? false;
 
                 let cardStyle = 'border-border bg-background';
@@ -404,15 +446,13 @@ export function StudentTestDetailPage({
                   </div>
                 );
               })}
-              {quiz.quiz_options?.some((o: any) => o.explanation) && (
+              {quiz.quiz_options?.some((o) => o.explanation) && (
                 <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-muted-foreground text-xs leading-relaxed">
                   <span className="mb-1 block font-black text-[10px] uppercase tracking-wider">
                     Explanation:
                   </span>
-                  {quiz.quiz_options.find((o: any) => o.is_correct)
-                    ?.explanation ||
-                    quiz.quiz_options.find((o: any) => o.explanation)
-                      ?.explanation}
+                  {quiz.quiz_options.find((o) => o.is_correct)?.explanation ||
+                    quiz.quiz_options.find((o) => o.explanation)?.explanation}
                 </div>
               )}
             </div>
@@ -420,9 +460,7 @@ export function StudentTestDetailPage({
         }
 
         if (quiz.type === 'true_false') {
-          const studentVal =
-            quizAns.answer === true ||
-            (quizAns.answer as any)?.correct === true;
+          const studentVal = getTrueFalseAnswer(quizAns.answer);
           const options = [
             { label: t('courses.quizTrue'), value: true },
             { label: t('courses.quizFalse'), value: false },
@@ -462,9 +500,7 @@ export function StudentTestDetailPage({
 
         if (quiz.type === 'ordering') {
           const items = getStringItems(quiz.content, 'items');
-          const submittedOrder = Array.isArray(quizAns.answer)
-            ? quizAns.answer
-            : (quizAns.answer as any)?.order || items;
+          const submittedOrder = getAnswerOrder(quizAns.answer, items);
 
           return (
             <div className="mt-4 space-y-2">
@@ -495,19 +531,17 @@ export function StudentTestDetailPage({
 
         if (quiz.type === 'matching') {
           const pairs = getMatchingPairs(quiz.content);
-          const submittedPairs = Array.isArray(quizAns.answer)
-            ? quizAns.answer
-            : (quizAns.answer as any)?.pairs || [];
+          const submittedPairs = getSubmittedPairs(quizAns.answer);
 
           return (
             <div className="mt-4 space-y-3">
               <p className="mb-2 font-bold text-muted-foreground text-xs">
                 Your Matchings (Status: {isCorrect ? 'Correct' : 'Incorrect'}):
               </p>
-              {pairs.map((pair: any, index: number) => {
+              {pairs.map((pair, index) => {
                 const currentRight =
-                  submittedPairs.find((p: any) => p.left === pair.left)
-                    ?.right || '—';
+                  submittedPairs.find((p) => p.left === pair.left)?.right ||
+                  '—';
                 return (
                   <div
                     key={`${pair.left}-${index}`}
@@ -530,7 +564,7 @@ export function StudentTestDetailPage({
         }
 
         if (quiz.type === 'paragraph') {
-          const textValue = (quizAns.answer as any)?.text || '—';
+          const textValue = getParagraphAnswerText(quizAns.answer, '—');
           return (
             <div className="mt-4 space-y-2">
               <p className="font-bold text-muted-foreground text-xs">
@@ -630,7 +664,7 @@ export function StudentTestDetailPage({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {quizzes.map((quiz: any, index: number) => {
+                  {quizzes.map((quiz, index) => {
                     const quizAns = initialAnswers.find(
                       (a) => a.quiz_id === quiz.id
                     );
@@ -731,7 +765,7 @@ export function StudentTestDetailPage({
 
   // Render Active Test Taking View
   if (attempt) {
-    const renderQuizInput = (quiz: any) => {
+    const renderQuizInput = (quiz: TulearnQuiz) => {
       const quizAns = localAnswers[quiz.id] || {
         selectedOptionId: null,
         answer: null,
@@ -741,7 +775,7 @@ export function StudentTestDetailPage({
         const options = getMultipleChoiceOptions(quiz);
         return (
           <div className="mt-4 space-y-2.5">
-            {options.map((opt: any) => {
+            {options.map((opt) => {
               const isChecked = quizAns.selectedOptionId === opt.id;
               return (
                 <label
@@ -830,7 +864,7 @@ export function StudentTestDetailPage({
       }
 
       if (quiz.type === 'paragraph') {
-        const textValue = (quizAns.answer as any)?.text || '';
+        const textValue = getParagraphAnswerText(quizAns.answer, '');
         return (
           <div className="mt-4">
             <textarea
@@ -863,18 +897,19 @@ export function StudentTestDetailPage({
 
       if (quiz.type === 'ordering') {
         const items = getStringItems(quiz.content, 'items');
-        const orderList = Array.isArray(quizAns.answer)
-          ? quizAns.answer
-          : (quizAns.answer as any)?.order || items;
+        const orderList = getAnswerOrder(quizAns.answer, items);
 
         const moveItem = (index: number, direction: 'up' | 'down') => {
           const targetIndex = direction === 'up' ? index - 1 : index + 1;
           if (targetIndex < 0 || targetIndex >= orderList.length) return;
 
           const newItems = [...orderList];
-          const temp = newItems[index];
-          newItems[index] = newItems[targetIndex];
-          newItems[targetIndex] = temp;
+          const currentItem = newItems[index];
+          const targetItem = newItems[targetIndex];
+          if (currentItem === undefined || targetItem === undefined) return;
+
+          newItems[index] = targetItem;
+          newItems[targetIndex] = currentItem;
 
           const updated = { selectedOptionId: null, answer: newItems };
           setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
@@ -930,13 +965,13 @@ export function StudentTestDetailPage({
             Boolean
           );
         }
-        const submittedPairs = Array.isArray(quizAns.answer)
-          ? quizAns.answer
-          : (quizAns.answer as any)?.pairs ||
-            pairs.map((p) => ({ left: p.left, right: '' }));
+        const submittedPairs = getSubmittedPairs(
+          quizAns.answer,
+          pairs.map((p) => ({ left: p.left, right: '' }))
+        );
 
         const handleMatchingChange = (pairIndex: number, right: string) => {
-          const newPairs = submittedPairs.map((p: any, idx: number) =>
+          const newPairs = submittedPairs.map((p, idx) =>
             idx === pairIndex ? { ...p, right } : p
           );
 
@@ -951,10 +986,9 @@ export function StudentTestDetailPage({
 
         return (
           <div className="mt-4 space-y-3">
-            {pairs.map((pair: any, index: number) => {
+            {pairs.map((pair, index) => {
               const currentRight =
-                submittedPairs.find((p: any) => p.left === pair.left)?.right ||
-                '';
+                submittedPairs.find((p) => p.left === pair.left)?.right || '';
               return (
                 <div
                   key={`${pair.left}-${index}`}
@@ -1020,7 +1054,7 @@ export function StudentTestDetailPage({
                     </span>
                   ) : (
                     <div className="grid grid-cols-4 gap-2">
-                      {quizzes.map((q: any, idx: number) => {
+                      {quizzes.map((q, idx) => {
                         const isAnswered = Boolean(
                           localAnswers[q.id]?.selectedOptionId ||
                             localAnswers[q.id]?.answer
@@ -1071,7 +1105,7 @@ export function StudentTestDetailPage({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {quizzes.map((quiz: any, index: number) => (
+                  {quizzes.map((quiz, index) => (
                     <div
                       key={quiz.id}
                       id={`question-${index}`}

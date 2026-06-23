@@ -28,7 +28,7 @@ export type MatchingPair = {
   right: string;
 };
 
-function getParsedContent(content: unknown): any {
+function getParsedContent(content: unknown): unknown {
   if (typeof content === 'string') {
     try {
       return JSON.parse(content);

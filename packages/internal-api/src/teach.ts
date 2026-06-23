@@ -1,3 +1,5 @@
+import type { Json } from '@tuturuuu/types';
+
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -429,7 +431,7 @@ export interface TeachTestSubmissionDetail {
     id: string;
     question: string;
     type: string | null;
-    content: any;
+    content: Json | null;
     score: number;
     quiz_options?: Array<{
       id: string;
@@ -441,7 +443,7 @@ export interface TeachTestSubmissionDetail {
   answers: Array<{
     quiz_id: string;
     selected_option_id: string | null;
-    answer: any;
+    answer: unknown;
     is_correct: boolean | null;
     score_awarded: number | null;
     feedback: string | null;
@@ -474,7 +476,7 @@ export function updateWorkspaceCourseTestSubmissionFeedback(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ success: boolean; answer: any }>(
+  return client.json<{ success: boolean; answer: unknown }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
     {
       body: JSON.stringify(payload),
