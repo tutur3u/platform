@@ -3,6 +3,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import DocumentPageContent from './document-content';
 
+export const metadata: Metadata = {
+  title: 'Document Preview',
+  description: 'Review an example Tuturuuu document shared from the platform.',
+};
+
 interface Props {
   params: Promise<{
     documentId: string;
@@ -31,19 +36,6 @@ const getDocument = async (documentId: string) => {
 
   return data;
 };
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { documentId } = await params;
-  if (!documentId) notFound();
-
-  const document = await getDocument(documentId);
-
-  return {
-    title: document.name ? `${document.name} | Tuturuuu` : 'Document Preview',
-    description:
-      'Review an example Tuturuuu document shared from the platform.',
-  };
-}
 
 export default async function PublicDocumentPage({ params }: Props) {
   const { documentId } = await params;

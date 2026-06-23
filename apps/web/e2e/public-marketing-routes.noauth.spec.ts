@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, type Response, test } from '@playwright/test';
 import { DEFAULT_LOCALE } from './helpers/constants';
 import {
   expectNoPublicRouteRuntimeError,
@@ -218,6 +218,22 @@ const dynamicNotFoundRoutes = [
   },
 ];
 
+const expectPublicDynamicNotFound = async (
+  page: Page,
+  response: Response | null
+) => {
+  expect(response).toBeTruthy();
+  // App Router can stream not-found boundaries after the shell starts, which
+  // leaves the HTTP status at 200 while still rendering the public 404 UI.
+  expect([200, 404]).toContain(response?.status());
+  await expect(page.getByRole('heading', { name: '404' }).first()).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(
+    page.getByText('The page you are looking for does not exist.').first()
+  ).toBeVisible();
+};
+
 const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
 
 const qrAppRedirectLocation =
@@ -345,7 +361,7 @@ test.describe('Public migrated marketing routes', () => {
         waitUntil: 'domcontentloaded',
       });
 
-      expect(response?.status()).toBe(404);
+      await expectPublicDynamicNotFound(page, response);
       await expectNoPublicRouteRuntimeError(page);
     });
   }

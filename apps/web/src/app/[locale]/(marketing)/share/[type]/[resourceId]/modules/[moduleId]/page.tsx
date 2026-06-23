@@ -12,19 +12,11 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { moduleId, resourceId, type } = await params;
+  const { type } = await params;
 
   if (type !== 'course') {
-    notFound();
+    return { title: 'Shared Content' };
   }
-
-  const sharedCourse = await loadSharedCourseContent(resourceId);
-  if (!sharedCourse) notFound();
-
-  const hasModule = sharedCourse.modules.some(
-    (module) => module.id === moduleId
-  );
-  if (!hasModule) notFound();
 
   return {
     title: 'Course Module',
