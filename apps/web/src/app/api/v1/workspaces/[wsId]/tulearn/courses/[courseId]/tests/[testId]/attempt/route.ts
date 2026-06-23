@@ -99,7 +99,7 @@ export const GET = withSessionAuth<Params>(
 
           const { data: rawAnswers, error: answersErr } = await sbAdmin
             .from('course_test_attempt_answers')
-            .select('quiz_id, selected_option_id, answer, is_correct, score_awarded')
+            .select('quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback')
             .eq('attempt_id', attempt.id);
 
           if (answersErr) throw answersErr;
