@@ -130,7 +130,10 @@ export function StudentTestDetailPage({
   // Initialize local answers when query loads
   useEffect(() => {
     if (initialAnswers.length > 0) {
-      const answersMap: Record<string, { selectedOptionId: string | null; answer: any }> = {};
+      const answersMap: Record<
+        string,
+        { selectedOptionId: string | null; answer: any }
+      > = {};
       for (const ans of initialAnswers) {
         answersMap[ans.quiz_id] = {
           selectedOptionId: ans.selected_option_id,
@@ -250,13 +253,15 @@ export function StudentTestDetailPage({
   if (attempt?.submitted_at) {
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-        <div className="mx-auto max-w-xl border-2 border-border bg-background p-8 text-center shadow-[8px_8px_0_var(--border)] space-y-6">
-          <div className="flex h-16 w-16 mx-auto items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+        <div className="mx-auto max-w-xl space-y-6 border-2 border-border bg-background p-8 text-center shadow-[8px_8px_0_var(--border)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
             <GraduationCap className="h-8 w-8 text-foreground" />
           </div>
-          
+
           <div className="space-y-2">
-            <h2 className="font-black text-2xl uppercase tracking-wider">{t('courses.testSubmitted')}</h2>
+            <h2 className="font-black text-2xl uppercase tracking-wider">
+              {t('courses.testSubmitted')}
+            </h2>
             <p className="text-muted-foreground text-sm">
               {t('courses.testSubmittedDescription')}
             </p>
@@ -264,10 +269,13 @@ export function StudentTestDetailPage({
 
           {attempt.score !== null && attempt.score !== undefined && (
             <div className="border-2 border-border bg-muted/20 p-4 shadow-[4px_4px_0_var(--border)]">
-              <span className="block text-xs uppercase tracking-wider text-muted-foreground font-bold">
-                {t('courses.quizEarnedPoints', { points: attempt.score, total: quizzes.length })}
+              <span className="block font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                {t('courses.quizEarnedPoints', {
+                  points: attempt.score,
+                  total: quizzes.length,
+                })}
               </span>
-              <span className="text-3xl font-black text-foreground mt-1 block">
+              <span className="mt-1 block font-black text-3xl text-foreground">
                 {attempt.score}
               </span>
             </div>
@@ -288,7 +296,10 @@ export function StudentTestDetailPage({
   // Render Active Test Taking View
   if (attempt) {
     const renderQuizInput = (quiz: any) => {
-      const quizAns = localAnswers[quiz.id] || { selectedOptionId: null, answer: null };
+      const quizAns = localAnswers[quiz.id] || {
+        selectedOptionId: null,
+        answer: null,
+      };
 
       if (!quiz.type || quiz.type === 'multiple_choice') {
         const options = quiz.quiz_options || [];
@@ -300,8 +311,8 @@ export function StudentTestDetailPage({
                 <label
                   key={opt.id}
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 border-2 border-border bg-background p-3.5 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0",
-                    isChecked && "bg-dynamic-cyan/10 border-dynamic-cyan"
+                    'flex cursor-pointer items-start gap-3 border-2 border-border bg-background p-3.5 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                    isChecked && 'border-dynamic-cyan bg-dynamic-cyan/10'
                   )}
                 >
                   <input
@@ -309,8 +320,14 @@ export function StudentTestDetailPage({
                     name={`quiz-${quiz.id}`}
                     checked={isChecked}
                     onChange={() => {
-                      const updated = { selectedOptionId: opt.id, answer: null };
-                      setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
+                      const updated = {
+                        selectedOptionId: opt.id,
+                        answer: null,
+                      };
+                      setLocalAnswers((prev) => ({
+                        ...prev,
+                        [quiz.id]: updated,
+                      }));
                       saveAnswerMutation.mutate({
                         attemptId: attempt.id,
                         quizId: quiz.id,
@@ -341,8 +358,14 @@ export function StudentTestDetailPage({
                   key={String(opt.value)}
                   type="button"
                   onClick={() => {
-                    const updated = { selectedOptionId: null, answer: opt.value };
-                    setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
+                    const updated = {
+                      selectedOptionId: null,
+                      answer: opt.value,
+                    };
+                    setLocalAnswers((prev) => ({
+                      ...prev,
+                      [quiz.id]: updated,
+                    }));
                     saveAnswerMutation.mutate({
                       attemptId: attempt.id,
                       quizId: quiz.id,
@@ -350,8 +373,8 @@ export function StudentTestDetailPage({
                     });
                   }}
                   className={cn(
-                    "flex cursor-pointer items-center justify-center border-2 border-border bg-background py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0",
-                    isChecked && "bg-dynamic-cyan/10 border-dynamic-cyan"
+                    'flex cursor-pointer items-center justify-center border-2 border-border bg-background py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                    isChecked && 'border-dynamic-cyan bg-dynamic-cyan/10'
                   )}
                 >
                   {opt.label}
@@ -370,7 +393,10 @@ export function StudentTestDetailPage({
               value={textValue}
               onChange={(e) => {
                 const val = e.target.value;
-                const updated = { selectedOptionId: null, answer: { text: val } };
+                const updated = {
+                  selectedOptionId: null,
+                  answer: { text: val },
+                };
                 setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
               }}
               onBlur={() => {
@@ -384,7 +410,7 @@ export function StudentTestDetailPage({
               className="w-full border-2 border-border bg-background p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] focus:outline-none"
               placeholder="..."
             />
-            <span className="text-[10px] text-muted-foreground italic mt-1 block">
+            <span className="mt-1 block text-[10px] text-muted-foreground italic">
               {t('courses.savingAnswer')}
             </span>
           </div>
@@ -433,7 +459,7 @@ export function StudentTestDetailPage({
                     type="button"
                     disabled={index === 0}
                     onClick={() => moveItem(index, 'up')}
-                    className="h-8 w-8 border-2 border-border bg-background flex items-center justify-center shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center border-2 border-border bg-background shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
                   >
                     ↑
                   </button>
@@ -441,7 +467,7 @@ export function StudentTestDetailPage({
                     type="button"
                     disabled={index === orderList.length - 1}
                     onClick={() => moveItem(index, 'down')}
-                    className="h-8 w-8 border-2 border-border bg-background flex items-center justify-center shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center border-2 border-border bg-background shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
                   >
                     ↓
                   </button>
@@ -457,7 +483,8 @@ export function StudentTestDetailPage({
         const choices = getStringItems(quiz.content, 'choices');
         const submittedPairs = Array.isArray(quizAns.answer)
           ? quizAns.answer
-          : (quizAns.answer as any)?.pairs || pairs.map((p) => ({ left: p.left, right: '' }));
+          : (quizAns.answer as any)?.pairs ||
+            pairs.map((p) => ({ left: p.left, right: '' }));
 
         const handleMatchingChange = (pairIndex: number, right: string) => {
           const newPairs = submittedPairs.map((p: any, idx: number) =>
@@ -476,7 +503,9 @@ export function StudentTestDetailPage({
         return (
           <div className="mt-4 space-y-3">
             {pairs.map((pair: any, index: number) => {
-              const currentRight = submittedPairs.find((p: any) => p.left === pair.left)?.right || '';
+              const currentRight =
+                submittedPairs.find((p: any) => p.left === pair.left)?.right ||
+                '';
               return (
                 <div
                   key={`${pair.left}-${index}`}
@@ -485,8 +514,10 @@ export function StudentTestDetailPage({
                   <span className="font-bold">{pair.left}</span>
                   <select
                     value={currentRight}
-                    onChange={(e) => handleMatchingChange(index, e.target.value)}
-                    className="border-2 border-border bg-background font-bold p-2 shadow-[2px_2px_0_var(--border)] focus:outline-none text-sm"
+                    onChange={(e) =>
+                      handleMatchingChange(index, e.target.value)
+                    }
+                    className="border-2 border-border bg-background p-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] focus:outline-none"
                   >
                     <option value="">{t('courses.quizSelectMatch')}</option>
                     {choices.map((choice: string, choiceIndex: number) => (
@@ -513,40 +544,51 @@ export function StudentTestDetailPage({
             <aside>
               <div className="sticky top-5 space-y-4">
                 <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">{t('courses.timeLeft')}</h3>
-                  <div className="mt-1.5 font-black text-2xl tracking-tight text-foreground">
-                    {timeLeft !== null ? formatTime(timeLeft) : "--:--"}
+                  <h3 className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                    {t('courses.timeLeft')}
+                  </h3>
+                  <div className="mt-1.5 font-black text-2xl text-foreground tracking-tight">
+                    {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
                   </div>
                 </div>
 
                 <button
                   onClick={handleManualSubmit}
                   disabled={submitMutation.isPending}
-                  className="w-full inline-flex items-center justify-center gap-2 border-2 border-border bg-primary py-3 font-bold text-sm text-primary-foreground shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-2 border-2 border-border bg-primary py-3 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
                 >
                   {t('courses.submitTest')}
                 </button>
 
                 <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground mb-3">{t('courses.testTakeQuizzes')}</h3>
+                  <h3 className="mb-3 font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                    {t('courses.testTakeQuizzes')}
+                  </h3>
                   {quizzes.length === 0 ? (
-                    <span className="text-xs text-muted-foreground italic">{t('courses.noQuestions')}</span>
+                    <span className="text-muted-foreground text-xs italic">
+                      {t('courses.noQuestions')}
+                    </span>
                   ) : (
                     <div className="grid grid-cols-4 gap-2">
                       {quizzes.map((q: any, idx: number) => {
                         const isAnswered = Boolean(
-                          localAnswers[q.id]?.selectedOptionId || localAnswers[q.id]?.answer
+                          localAnswers[q.id]?.selectedOptionId ||
+                            localAnswers[q.id]?.answer
                         );
                         return (
                           <button
                             key={q.id}
                             onClick={() => {
-                              const el = document.getElementById(`question-${idx}`);
+                              const el = document.getElementById(
+                                `question-${idx}`
+                              );
                               el?.scrollIntoView({ behavior: 'smooth' });
                             }}
                             className={cn(
-                              "flex h-9 items-center justify-center border-2 border-border font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0",
-                              isAnswered ? "bg-dynamic-cyan/15 text-foreground" : "bg-muted/10 text-muted-foreground"
+                              'flex h-9 items-center justify-center border-2 border-border font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                              isAnswered
+                                ? 'bg-dynamic-cyan/15 text-foreground'
+                                : 'bg-muted/10 text-muted-foreground'
                             )}
                           >
                             {idx + 1}
@@ -562,13 +604,19 @@ export function StudentTestDetailPage({
             {/* Test Sheet Quizzes */}
             <div className="space-y-6">
               <div className="border-2 border-border bg-background p-6 shadow-[6px_6px_0_var(--border)]">
-                <h1 className="font-black text-2xl tracking-tight leading-tight">{test.name}</h1>
-                <p className="text-muted-foreground text-sm mt-1">{test.description}</p>
+                <h1 className="font-black text-2xl leading-tight tracking-tight">
+                  {test.name}
+                </h1>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {test.description}
+                </p>
               </div>
 
               {quizzes.length === 0 ? (
                 <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
-                  <span className="text-muted-foreground text-sm italic">{t('courses.noQuestions')}</span>
+                  <span className="text-muted-foreground text-sm italic">
+                    {t('courses.noQuestions')}
+                  </span>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -576,13 +624,15 @@ export function StudentTestDetailPage({
                     <div
                       key={quiz.id}
                       id={`question-${index}`}
-                      className="border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)] space-y-4"
+                      className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
                     >
                       <div className="flex items-start gap-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-xs text-primary-foreground shadow-[1px_1px_0_var(--border)]">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-primary-foreground text-xs shadow-[1px_1px_0_var(--border)]">
                           {index + 1}
                         </span>
-                        <h3 className="font-bold text-base pt-0.5">{quiz.question}</h3>
+                        <h3 className="pt-0.5 font-bold text-base">
+                          {quiz.question}
+                        </h3>
                       </div>
                       {renderQuizInput(quiz)}
                     </div>
@@ -633,11 +683,13 @@ export function StudentTestDetailPage({
               <button
                 onClick={() => startMutation.mutate()}
                 disabled={startMutation.isPending || !hasStarted}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >
                 <Play className="h-5 w-5" />
-                {hasStarted ? t('courses.startTest') : t('courses.testNotStarted')}
+                {hasStarted
+                  ? t('courses.startTest')
+                  : t('courses.testNotStarted')}
               </button>
             </div>
           </div>
