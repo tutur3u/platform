@@ -101,8 +101,11 @@ mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
 mod inventory;
 mod inventory_orders;
+mod mira_calendar;
+mod mira_focus;
 mod mobile_deployment_bundle;
 mod mobile_version;
+mod notifications_unread_count;
 mod nova;
 mod onboarding_progress;
 mod outbound;
@@ -141,23 +144,29 @@ mod workspace_post_permissions;
 mod workspaces;
 mod workspaces_2;
 mod workspaces_3;
+mod workspaces_billing;
+mod workspaces_boards;
+mod workspaces_boards_estimation;
 mod workspaces_categories;
 mod workspaces_chat_conversations_attachments;
 mod workspaces_chat_conversations_shared_content;
 mod workspaces_chat_directory;
 mod workspaces_chat_search;
+mod workspaces_course_modules_quiz_sets;
 mod workspaces_datasets_full;
 mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
 mod workspaces_external_projects_sync_snapshot;
 mod workspaces_finance_charts_daily;
 mod workspaces_finance_charts_monthly;
+mod workspaces_finance_invoices_count;
 mod workspaces_finance_wallets_expense_count;
 mod workspaces_finance_wallets_expense_sum;
 mod workspaces_finance_wallets_income_count;
 mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms_export;
 mod workspaces_forms_share_link;
+mod workspaces_infrastructure_realtime_analytics;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_product_form_options;
@@ -169,14 +178,18 @@ mod workspaces_mail_mailboxes_messages;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
 mod workspaces_posts_bootstrap;
+mod workspaces_posts_filter_options;
 mod workspaces_posts_status;
+mod workspaces_products_options;
 mod workspaces_promotions_count;
+mod workspaces_quiz_sets_quizzes;
 mod workspaces_settings_permissions_setup_status;
 mod workspaces_storage_analytics;
 mod workspaces_storage_export_assetpath;
 mod workspaces_storage_rollout_state;
 mod workspaces_task_plans_digest;
 mod workspaces_teach_users;
+mod workspaces_time_tracking_templates;
 mod workspaces_transactions_category_breakdown;
 mod workspaces_transactions_spending_trends;
 mod workspaces_tulearn_courses;
@@ -187,6 +200,9 @@ mod workspaces_user_groups_count;
 mod workspaces_user_groups_linked_products;
 mod workspaces_user_groups_managers;
 mod workspaces_user_groups_members_vitals;
+mod workspaces_user_groups_posts_status;
+mod workspaces_user_groups_sessions_group_summaries;
+mod workspaces_user_profile_links_users;
 mod workspaces_users_attendance;
 mod workspaces_users_audit_logs;
 mod workspaces_users_count;
@@ -1384,6 +1400,126 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_sessions_group_summaries::handle_workspaces_user_groups_sessions_group_summaries_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_course_modules_quiz_sets::handle_workspaces_course_modules_quiz_sets_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_posts_status::handle_workspaces_user_groups_posts_status_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_profile_links_users::handle_workspaces_user_profile_links_users_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_invoices_count::handle_workspaces_finance_invoices_count_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_infrastructure_realtime_analytics::handle_workspaces_infrastructure_realtime_analytics_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_posts_filter_options::handle_workspaces_posts_filter_options_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_quiz_sets_quizzes::handle_workspaces_quiz_sets_quizzes_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_time_tracking_templates::handle_workspaces_time_tracking_templates_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = notifications_unread_count::handle_notifications_unread_count_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_boards_estimation::handle_workspaces_boards_estimation_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_products_options::handle_workspaces_products_options_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        mira_calendar::handle_mira_calendar_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = mira_focus::handle_mira_focus_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_billing::handle_workspaces_billing_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_boards::handle_workspaces_boards_route(config, request, outbound).await
     {
         return response;
     }
