@@ -17,6 +17,19 @@ import { requireWorkspacePermission } from '../../../../lib/platform/workspace-p
 const TEMPLATES_BASE_PATH = 'tasks/templates';
 const EMPTY_TEMPLATES: BoardTemplate[] = [];
 
+function getWorkspaceNextPath(
+  params: { locale: string; wsId: string },
+  pathname: string
+) {
+  const localePrefix = `/${params.locale}`;
+
+  if (pathname.startsWith(`${localePrefix}/`)) {
+    return pathname.slice(localePrefix.length);
+  }
+
+  return `/${params.wsId}/${TEMPLATES_BASE_PATH}`;
+}
+
 export const Route = createFileRoute('/$locale/$wsId/tasks/templates')({
   component: TemplatesRoutePage,
   head: ({ params }) => {
@@ -29,11 +42,11 @@ export const Route = createFileRoute('/$locale/$wsId/tasks/templates')({
       title: 'Board Templates',
     });
   },
-  loader: async ({ params }): Promise<ResolvedWorkspace> => {
+  loader: async ({ location, params }): Promise<ResolvedWorkspace> => {
     // Auth gate FIRST, fail closed: legacy getCurrentUser() -> redirect('/login').
     await requireCurrentUser({
       locale: params.locale,
-      nextPath: `/${params.wsId}/tasks/templates`,
+      nextPath: getWorkspaceNextPath(params, location.pathname),
     });
 
     // Legacy getWorkspace() -> notFound() when missing/forbidden.

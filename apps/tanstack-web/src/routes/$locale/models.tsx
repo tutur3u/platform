@@ -30,6 +30,22 @@ type ModelsDirectoryData = {
   initialPage: GatewayModelRowsPage;
 };
 
+const EMPTY_MODELS_DIRECTORY: ModelsDirectoryData = {
+  filterOptions: {
+    providers: [],
+    tags: [],
+    types: [],
+  },
+  initialPage: {
+    data: [],
+    pagination: {
+      limit: MODELS_PAGE_SIZE,
+      page: 1,
+      total: 0,
+    },
+  },
+};
+
 const modelTypes = new Set(['all', 'embedding', 'image', 'language']);
 
 function normalizeModelType(
@@ -99,23 +115,27 @@ const fetchModelsPage = createServerFn({ method: 'GET' })
 
 const loadModelsDirectory = createServerFn({ method: 'GET' }).handler(
   async (): Promise<ModelsDirectoryData> => {
-    const options = await backendApiOptions();
-    const [filterRows, initialPage] = await Promise.all([
-      listAiGatewayModelRows({ type: 'all' }, options),
-      listAiGatewayModelRowsPage(
-        {
-          limit: MODELS_PAGE_SIZE,
-          page: 1,
-          type: 'all',
-        },
-        options
-      ),
-    ]);
+    try {
+      const options = await backendApiOptions();
+      const [filterRows, initialPage] = await Promise.all([
+        listAiGatewayModelRows({ type: 'all' }, options),
+        listAiGatewayModelRowsPage(
+          {
+            limit: MODELS_PAGE_SIZE,
+            page: 1,
+            type: 'all',
+          },
+          options
+        ),
+      ]);
 
-    return {
-      filterOptions: filterOptionsFromRows(filterRows),
-      initialPage,
-    };
+      return {
+        filterOptions: filterOptionsFromRows(filterRows),
+        initialPage,
+      };
+    } catch {
+      return EMPTY_MODELS_DIRECTORY;
+    }
   }
 );
 
