@@ -3,12 +3,47 @@ import type {
   PostLogEntry,
   ReportApprovalItem,
   ReportLogEntry,
+  WorkspaceUser,
 } from '@tuturuuu/types/db';
 import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+
+export interface CurrentWorkspaceUserLink {
+  platform_user_id: string;
+  virtual_user_id: string;
+  ws_id: string;
+  created_at: string;
+  workspace_users?: WorkspaceUser;
+}
+
+export interface CurrentWorkspaceUserResponse {
+  data: CurrentWorkspaceUserLink;
+}
+
+/**
+ * Reads the current authenticated caller's workspace-user link for `wsId` via
+ * `GET /api/v1/workspaces/:wsId/users/me` (forwarded auth). Provides the
+ * `virtual_user_id` user-scoped dashboard pages need without a direct Supabase
+ * read. Returns `null` when the caller has no link (404).
+ */
+export async function getCurrentWorkspaceUserLink(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+): Promise<CurrentWorkspaceUserLink | null> {
+  const client = getInternalApiClient(options);
+  try {
+    const payload = await client.json<CurrentWorkspaceUserResponse>(
+      `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/me`,
+      { cache: 'no-store' }
+    );
+    return payload.data ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type UserConfigResponse = {
   value: string | null;

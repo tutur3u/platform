@@ -1432,6 +1432,8 @@ export {
 } from './user-groups';
 export {
   type CurrentUserHiveAccessResponse,
+  type CurrentWorkspaceUserLink,
+  type CurrentWorkspaceUserResponse,
   createCurrentUserAvatarUploadUrl,
   createSupportInquiry,
   createWorkspaceUserReferral,
@@ -1439,6 +1441,7 @@ export {
   getCurrentUserDefaultWorkspace,
   getCurrentUserHiveAccess,
   getCurrentUserProfile,
+  getCurrentWorkspaceUserLink,
   getUserCalendarSettings,
   getUserConfig,
   getUserWorkspaceConfig,
