@@ -91,6 +91,14 @@ infrastructure dashboard changes.
   allocation. Keep blue/green max parallelism conservative by default, and keep
   direct Compose fallbacks concrete because Compose cannot resolve helper-only
   `auto` values by itself.
+- Blue/green runs that use the root-script default caps may use the adaptive
+  local profile at `tmp/docker-web/buildkit/resource-profile.json`. BuildKit
+  transport/resource failures such as `code = Unavailable`, `closing transport`,
+  `error reading from server: EOF`, `received prior goaway`,
+  `ResourceExhausted`, or `cannot allocate memory` should retry once at the
+  next lower profile and persist that profile for future runs. Explicit build
+  cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
+  `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production
   builds are capped.
 - Containerized watcher handoffs must run from the mirrored host checkout path

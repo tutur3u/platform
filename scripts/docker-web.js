@@ -102,6 +102,12 @@ const {
   ensureBuildkitBuilder,
 } = require('./docker-web/buildkit-builder.js');
 const {
+  applyAdaptiveBuildResourceProfileEnv,
+  createBuildResourceProfileSelection,
+  getBuildResourceConfigForSelection,
+  getBuildResourceProfilePaths,
+} = require('./docker-web/resource-profiles.js');
+const {
   DEPLOYMENT_KIND_ENV,
   DEPLOYMENT_STAGES_FILE_ENV,
   SKIP_WATCH_HISTORY_ENV,
@@ -1128,6 +1134,28 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   composeEnv = applyLowMemoryBuildkitRestartEnv(composeEnv, parsed);
+  const buildResourceProfileSelection = usesBlueGreenStrategy(parsed)
+    ? createBuildResourceProfileSelection({
+        cpus: parsed.buildCpus,
+        env: composeEnv,
+        fsImpl,
+        maxParallelism: parsed.buildMaxParallelism,
+        memory: parsed.buildMemory,
+        paths: getBuildResourceProfilePaths(options.rootDir ?? ROOT_DIR),
+      })
+    : null;
+  composeEnv = applyAdaptiveBuildResourceProfileEnv(
+    composeEnv,
+    buildResourceProfileSelection
+  );
+  const buildResourceConfig = getBuildResourceConfigForSelection(
+    buildResourceProfileSelection,
+    {
+      cpus: parsed.buildCpus,
+      maxParallelism: parsed.buildMaxParallelism,
+      memory: parsed.buildMemory,
+    }
+  );
 
   if (parsed.mode === 'prod') {
     ensureProductionSupabaseOrigin({
@@ -1191,9 +1219,9 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     composeEnv = await ensureBuildkitBuilder(
       {
         builderName: parsed.buildBuilderName,
-        cpus: parsed.buildCpus,
-        maxParallelism: parsed.buildMaxParallelism,
-        memory: parsed.buildMemory,
+        cpus: buildResourceConfig.cpus,
+        maxParallelism: buildResourceConfig.maxParallelism,
+        memory: buildResourceConfig.memory,
       },
       {
         composeFile,
@@ -1537,6 +1565,7 @@ module.exports = {
   getComposeServiceContainerId,
   getComposeServiceContainerName,
   getContainerHealthStatus,
+  getBuildResourceProfilePaths,
   getDockerSupermemoryRuntime,
   formatSupabaseOriginReport,
   getChangedFilesBetweenCommits,

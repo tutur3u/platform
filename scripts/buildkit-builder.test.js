@@ -30,6 +30,19 @@ const {
   shouldStopBuildkitAfterBuild,
   stopBuildkitComposeServiceAfterBuild,
 } = require('./docker-web/buildkit-builder.js');
+const {
+  BUILD_RESOURCE_PROFILES,
+  createBuildResourceProfileSelection,
+  getBuildResourceProfilePaths,
+  getNextLowerBuildResourceProfile,
+  hasExplicitBuildResourceCliConfig,
+  hasExplicitBuildResourceEnv,
+  isBuildkitResourceProfileFallbackError,
+  isDefaultBuildResourceCliConfig,
+  persistBuildResourceProfile,
+  readBuildResourceProfileState,
+  shouldUseAdaptiveBuildResourceProfile,
+} = require('./docker-web/resource-profiles.js');
 const { PROD_COMPOSE_FILE } = require('./docker-web/compose.js');
 
 test('parsePositiveNumber accepts positive numeric values and rejects invalid ones', () => {
@@ -50,6 +63,135 @@ test('parsePositiveInteger only accepts positive integers', () => {
 
 test('normalizeBuilderConfig returns null when no throttling config is present', () => {
   assert.equal(normalizeBuilderConfig({}, {}), null);
+});
+
+test('adaptive build resource profiles treat root defaults as automatic caps', () => {
+  assert.equal(
+    isDefaultBuildResourceCliConfig({
+      cpus: '4',
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    true
+  );
+  assert.equal(
+    hasExplicitBuildResourceCliConfig({
+      cpus: '4',
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    false
+  );
+  assert.equal(
+    hasExplicitBuildResourceCliConfig({
+      cpus: '4',
+      maxParallelism: '2',
+      memory: 'auto',
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '4',
+      env: {},
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    true
+  );
+  assert.equal(shouldUseAdaptiveBuildResourceProfile({ env: {} }), false);
+});
+
+test('adaptive build resource profiles opt out for explicit env or CLI caps', () => {
+  assert.equal(
+    hasExplicitBuildResourceEnv({
+      DOCKER_WEB_BUILD_MEMORY: '12g',
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '4',
+      env: {
+        DOCKER_WEB_BUILD_RESOURCE_PROFILE_ADAPTIVE: '0',
+      },
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '2',
+      env: {},
+      maxParallelism: '1',
+      memory: '8g',
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '4',
+      env: {
+        DOCKER_WEB_BUILD_CPUS: '4',
+      },
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    false
+  );
+});
+
+test('adaptive build resource profile selection reads and persists runtime state', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buildkit-profile-'));
+  const paths = getBuildResourceProfilePaths(tempDir);
+
+  try {
+    const lowProfile = BUILD_RESOURCE_PROFILES.find(
+      (profile) => profile.name === 'low'
+    );
+    persistBuildResourceProfile({
+      previousProfileName: 'stable',
+      profile: lowProfile,
+      reason: 'test',
+      stateFile: paths.stateFile,
+    });
+
+    const selection = createBuildResourceProfileSelection({
+      cpus: '4',
+      env: {},
+      maxParallelism: '1',
+      memory: 'auto',
+      paths,
+    });
+
+    assert.equal(selection.enabled, true);
+    assert.equal(selection.profileName, 'low');
+    assert.equal(selection.profile.memory, '10g');
+    assert.equal(selection.stateFile, paths.stateFile);
+    assert.equal(readBuildResourceProfileState(paths).profileName, 'low');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('adaptive build resource profile fallback classification is specific to BuildKit infrastructure failures', () => {
+  assert.equal(getNextLowerBuildResourceProfile('default')?.name, 'stable');
+  assert.equal(getNextLowerBuildResourceProfile('floor'), null);
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error(
+        'rpc error: code = Unavailable desc = closing transport due to: connection error: desc = "error reading from server: EOF", received prior goaway: code: NO_ERROR'
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error('TypeScript error: Property "foo" does not exist')
+    ),
+    false
+  );
 });
 
 test('normalizeBuilderConfig reads throttling defaults from env', () => {

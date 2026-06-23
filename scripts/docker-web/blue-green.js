@@ -37,6 +37,16 @@ const {
   cleanupBuildkitAfterBuild,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
+const {
+  BUILD_RESOURCE_PROFILE_REASON_ENV,
+  applyBuildResourceProfileToEnv,
+  getBuildResourceProfileFromEnv,
+  getBuildResourceProfilePathsFromEnv,
+  getNextLowerBuildResourceProfile,
+  isAdaptiveBuildResourceProfileEnabled,
+  isBuildkitResourceProfileFallbackError,
+  persistBuildResourceProfile,
+} = require('./resource-profiles.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
@@ -2143,6 +2153,7 @@ async function buildBlueGreenServices({
   composeFile,
   composeGlobalArgs = [],
   env,
+  fsImpl = fs,
   rootDir = ROOT_DIR,
   runCommand: run,
   services,
@@ -2155,20 +2166,24 @@ async function buildBlueGreenServices({
 
   const buildNativeWebServices = async (
     webServices,
-    { noCache = false } = {}
+    { buildEnv = env, noCache = false } = {}
   ) => {
     if (webServices.length === 0) {
       return;
     }
 
     if (!nativeWebArtifactsBuilt) {
-      await buildNativeWebArtifacts({ env, rootDir, runCommand: run });
+      await buildNativeWebArtifacts({
+        env: buildEnv,
+        rootDir,
+        runCommand: run,
+      });
       nativeWebArtifactsBuilt = true;
     }
 
     await buildNativeWebRuntimeImages({
       composeGlobalArgs,
-      env,
+      env: buildEnv,
       noCache,
       rootDir,
       runCommand: run,
@@ -2176,7 +2191,7 @@ async function buildBlueGreenServices({
     });
   };
 
-  const runBuildBatches = async ({ noCache = false } = {}) => {
+  const runBuildBatches = async ({ buildEnv = env, noCache = false } = {}) => {
     for (const serviceBatch of buildServiceBatches) {
       const nativeWebServices = useNativeWebBuild
         ? serviceBatch.filter((serviceName) =>
@@ -2189,7 +2204,7 @@ async function buildBlueGreenServices({
           )
         : serviceBatch;
 
-      await buildNativeWebServices(nativeWebServices, { noCache });
+      await buildNativeWebServices(nativeWebServices, { buildEnv, noCache });
 
       if (dockerBuildServices.length === 0) {
         continue;
@@ -2200,7 +2215,7 @@ async function buildBlueGreenServices({
           ? getBlueGreenBuildxBakeArgs({
               bakeFile,
               composeFile,
-              env,
+              env: buildEnv,
               noCache,
               serviceBatch: dockerBuildServices,
             })
@@ -2213,7 +2228,7 @@ async function buildBlueGreenServices({
             );
 
       await runChecked('docker', args, {
-        env,
+        env: buildEnv,
         runCommand: run,
         stdio: 'pipe',
         teeOutput: true,
@@ -2223,6 +2238,7 @@ async function buildBlueGreenServices({
   };
 
   const runBuildBatchesWithDockerRegistryBackoff = async ({
+    buildEnv = env,
     noCache = false,
   } = {}) => {
     const maxAttempts = getPositiveIntegerEnv(
@@ -2244,7 +2260,7 @@ async function buildBlueGreenServices({
 
     while (attempt <= maxAttempts) {
       try {
-        return await runBuildBatches({ noCache });
+        return await runBuildBatches({ buildEnv, noCache });
       } catch (error) {
         if (attempt >= maxAttempts || !isTransientDockerRegistryError(error)) {
           throw error;
@@ -2264,6 +2280,112 @@ async function buildBlueGreenServices({
     throw new Error('Unable to build blue/green services.');
   };
 
+  const runBuildWithCacheRecovery = async ({
+    buildEnv = env,
+    noCache = false,
+  } = {}) => {
+    try {
+      await runBuildBatchesWithDockerRegistryBackoff({ buildEnv, noCache });
+      return;
+    } catch (error) {
+      const isRecoverableBuildError =
+        isBunTarballExtractionError(error) ||
+        isBuildStallTimeoutError(error) ||
+        isCachedBuildError(error);
+
+      if (!isRecoverableBuildError) {
+        throw error;
+      }
+
+      const recoveryReason = isBuildStallTimeoutError(error)
+        ? BUILD_STALL_RECOVERY_REASON
+        : isCachedBuildError(error)
+          ? CACHED_BUILD_ERROR_RECOVERY_REASON
+          : 'bun-tarball-extraction';
+
+      await recoverBuildkitBunInstallCache({
+        composeFile,
+        composeGlobalArgs,
+        env: buildEnv,
+        reason: recoveryReason,
+        runCommand: run,
+      });
+
+      await runBuildBatchesWithDockerRegistryBackoff({
+        buildEnv,
+        noCache: true,
+      });
+    }
+  };
+
+  const runBuildWithAdaptiveResourceFallback = async () => {
+    try {
+      await runBuildWithCacheRecovery({ buildEnv: env });
+      return;
+    } catch (error) {
+      if (
+        !isAdaptiveBuildResourceProfileEnabled(env) ||
+        !isBuildkitResourceProfileFallbackError(error)
+      ) {
+        throw error;
+      }
+
+      const currentProfile = getBuildResourceProfileFromEnv(env);
+      const nextProfile = getNextLowerBuildResourceProfile(currentProfile.name);
+
+      if (!nextProfile) {
+        throw error;
+      }
+
+      const paths = getBuildResourceProfilePathsFromEnv(env, rootDir);
+      persistBuildResourceProfile({
+        fsImpl,
+        previousProfileName: currentProfile.name,
+        profile: nextProfile,
+        reason: 'buildkit-resource-fallback',
+        stateFile: paths.stateFile,
+      });
+      const retryEnv = {
+        ...applyBuildResourceProfileToEnv(env, nextProfile),
+        [BUILD_RESOURCE_PROFILE_REASON_ENV]: 'buildkit-resource-fallback',
+      };
+
+      process.stderr.write(
+        `BuildKit transport/resource failure detected; retrying with lower build profile ${nextProfile.name} (memory=${nextProfile.memory}, cpus=${nextProfile.cpus}, maxParallelism=${nextProfile.maxParallelism}).\n`
+      );
+
+      await recoverBuildkitBunInstallCache({
+        composeFile,
+        composeGlobalArgs,
+        env: retryEnv,
+        reason: 'buildkit-resource-fallback',
+        runCommand: run,
+      });
+
+      try {
+        await runBuildWithCacheRecovery({ buildEnv: retryEnv });
+      } catch (retryError) {
+        if (isBuildkitResourceProfileFallbackError(retryError)) {
+          const nextRetryProfile = getNextLowerBuildResourceProfile(
+            nextProfile.name
+          );
+
+          if (nextRetryProfile) {
+            persistBuildResourceProfile({
+              fsImpl,
+              previousProfileName: nextProfile.name,
+              profile: nextRetryProfile,
+              reason: 'buildkit-resource-fallback-retry-failed',
+              stateFile: paths.stateFile,
+            });
+          }
+        }
+
+        throw retryError;
+      }
+    }
+  };
+
   await restartBuildkitBeforeBlueGreenBuild({
     composeFile,
     composeGlobalArgs,
@@ -2271,34 +2393,7 @@ async function buildBlueGreenServices({
     runCommand: run,
   });
 
-  try {
-    await runBuildBatchesWithDockerRegistryBackoff();
-  } catch (error) {
-    const isRecoverableBuildError =
-      isBunTarballExtractionError(error) ||
-      isBuildStallTimeoutError(error) ||
-      isCachedBuildError(error);
-
-    if (!isRecoverableBuildError) {
-      throw error;
-    }
-
-    const recoveryReason = isBuildStallTimeoutError(error)
-      ? BUILD_STALL_RECOVERY_REASON
-      : isCachedBuildError(error)
-        ? CACHED_BUILD_ERROR_RECOVERY_REASON
-        : 'bun-tarball-extraction';
-
-    await recoverBuildkitBunInstallCache({
-      composeFile,
-      composeGlobalArgs,
-      env,
-      reason: recoveryReason,
-      runCommand: run,
-    });
-
-    await runBuildBatchesWithDockerRegistryBackoff({ noCache: true });
-  }
+  await runBuildWithAdaptiveResourceFallback();
 }
 
 async function runHiveDbForwardMigrations({
@@ -3357,6 +3452,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
             env: targetEnv,
+            fsImpl,
+            rootDir: options.rootDir ?? ROOT_DIR,
             runCommand: run,
             services: webBuildServices,
           });
@@ -3455,6 +3552,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           composeFile,
           composeGlobalArgs: parsed.composeGlobalArgs,
           env: targetEnv,
+          fsImpl,
+          rootDir: options.rootDir ?? ROOT_DIR,
           runCommand: run,
           services: hiveBuildServices,
         });
@@ -3584,6 +3683,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
             env: targetEnv,
+            fsImpl,
+            rootDir: options.rootDir ?? ROOT_DIR,
             runCommand: run,
             services: supportBuildServices,
           });
@@ -3885,6 +3986,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
+      fsImpl,
       rootDir: buildRootDir,
       runCommand: run,
       services: standbyBuildServices,
