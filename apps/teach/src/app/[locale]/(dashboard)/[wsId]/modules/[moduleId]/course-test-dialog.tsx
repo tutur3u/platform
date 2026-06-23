@@ -15,6 +15,10 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  type CourseTestValidationError,
+  validateCourseTestForm,
+} from './course-test-validation';
 
 interface CourseTestDialogProps {
   courseId: string;
@@ -73,46 +77,25 @@ export function CourseTestDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!testName.trim()) {
-      toast.error(t('teachModules.testNameRequired'));
+    const validation = validateCourseTestForm({
+      description,
+      durationInMinutes,
+      moduleIds: selectedModuleIds,
+      name: testName,
+      requireModules: true,
+      startAt,
+    });
+    if (!validation.success) {
+      toast.error(getCourseTestValidationMessage(validation.error, t));
       return;
-    }
-
-    if (selectedModuleIds.length === 0) {
-      toast.error(t('teachModules.selectModules'));
-      return;
-    }
-
-    let parsedStartAt: string | null = null;
-    if (startAt) {
-      const parsedDate = new Date(startAt);
-      if (isNaN(parsedDate.getTime())) {
-        toast.error(t('teachModules.invalidStartTime'));
-        return;
-      }
-      if (parsedDate < new Date()) {
-        toast.error(t('teachModules.startTimeInPast'));
-        return;
-      }
-      parsedStartAt = parsedDate.toISOString();
-    }
-
-    let parsedDuration: number | null = null;
-    if (durationInMinutes) {
-      const durationVal = parseInt(durationInMinutes, 10);
-      if (isNaN(durationVal) || durationVal < 1 || durationVal > 1440) {
-        toast.error(t('teachModules.invalidDuration'));
-        return;
-      }
-      parsedDuration = durationVal;
     }
 
     createTestMutation.mutate({
-      name: testName.trim(),
-      moduleIds: selectedModuleIds,
-      startAt: parsedStartAt,
-      durationInMinutes: parsedDuration,
-      description: description.trim() || null,
+      name: validation.data.name,
+      moduleIds: validation.data.moduleIds,
+      startAt: validation.data.startAt,
+      durationInMinutes: validation.data.durationInMinutes,
+      description: validation.data.description,
     });
   };
 
@@ -128,7 +111,7 @@ export function CourseTestDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button
-          className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] whitespace-nowrap"
+          className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-dynamic-cyan/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
           type="button"
         >
           <ClipboardCheck className="h-4 w-4" />
@@ -299,4 +282,22 @@ export function CourseTestDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function getCourseTestValidationMessage(
+  error: CourseTestValidationError,
+  t: ReturnType<typeof useTranslations>
+) {
+  switch (error) {
+    case 'invalidDuration':
+      return t('teachModules.invalidDuration');
+    case 'invalidStartTime':
+      return t('teachModules.invalidStartTime');
+    case 'selectModules':
+      return t('teachModules.selectModules');
+    case 'startTimeInPast':
+      return t('teachModules.startTimeInPast');
+    case 'testNameRequired':
+      return t('teachModules.testNameRequired');
+  }
 }

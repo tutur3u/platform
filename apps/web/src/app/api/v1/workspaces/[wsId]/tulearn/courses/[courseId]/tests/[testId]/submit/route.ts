@@ -2,9 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { resolveTulearnSubject, tulearnAccessErrorResponse } from '@/lib/tulearn/service';
-import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@/lib/tulearn/service';
+import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
 
 type Params = {
   courseId: string;
@@ -65,7 +68,10 @@ export const POST = withSessionAuth<Params>(
         .maybeSingle();
 
       if (testErr || !test) {
-        return NextResponse.json({ message: 'Test not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Test not found' },
+          { status: 404 }
+        );
       }
 
       // Fetch attempt session
@@ -78,7 +84,10 @@ export const POST = withSessionAuth<Params>(
         .maybeSingle();
 
       if (attemptErr || !attempt) {
-        return NextResponse.json({ message: 'Attempt not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Attempt not found' },
+          { status: 404 }
+        );
       }
 
       // Grade the attempt (or return if already graded)

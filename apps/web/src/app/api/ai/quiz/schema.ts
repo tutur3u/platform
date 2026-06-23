@@ -31,7 +31,13 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
 export const GeneratedQuizSchema = z
   .object({
     type: z
-      .enum(['multiple_choice', 'true_false', 'matching', 'ordering', 'paragraph'])
+      .enum([
+        'multiple_choice',
+        'true_false',
+        'matching',
+        'ordering',
+        'paragraph',
+      ])
       .describe('The question type.'),
     question: z.string().describe('The quiz question text.'),
     score: z
@@ -52,17 +58,23 @@ export const GeneratedQuizSchema = z
       .min(2)
       .max(6)
       .nullable()
-      .describe('List of options for multiple choice questions. Set to null for other question types.'),
+      .describe(
+        'List of options for multiple choice questions. Set to null for other question types.'
+      ),
     correct_option_index: z
       .number()
       .int()
       .nonnegative()
       .nullable()
-      .describe('Index of the correct option for multiple choice. Set to null for other question types.'),
+      .describe(
+        'Index of the correct option for multiple choice. Set to null for other question types.'
+      ),
     correct_boolean: z
       .boolean()
       .nullable()
-      .describe('Correct answer for true/false questions. Set to null for other question types.'),
+      .describe(
+        'Correct answer for true/false questions. Set to null for other question types.'
+      ),
     matching_pairs: z
       .array(
         z.object({
@@ -79,7 +91,9 @@ export const GeneratedQuizSchema = z
       .array(z.string())
       .min(2)
       .nullable()
-      .describe('Items in their correct ordered sequence. Set to null for other question types.'),
+      .describe(
+        'Items in their correct ordered sequence. Set to null for other question types.'
+      ),
   })
   .superRefine((quiz, ctx) => {
     if (quiz.type === 'multiple_choice') {
@@ -90,13 +104,19 @@ export const GeneratedQuizSchema = z
           message: 'Multiple choice questions require at least 2 options.',
         });
       }
-      if (quiz.correct_option_index === null || quiz.correct_option_index === undefined) {
+      if (
+        quiz.correct_option_index === null ||
+        quiz.correct_option_index === undefined
+      ) {
         ctx.addIssue({
           code: 'custom',
           path: ['correct_option_index'],
           message: 'Multiple choice questions require correct_option_index.',
         });
-      } else if (quiz.options && quiz.correct_option_index >= quiz.options.length) {
+      } else if (
+        quiz.options &&
+        quiz.correct_option_index >= quiz.options.length
+      ) {
         ctx.addIssue({
           code: 'custom',
           path: ['correct_option_index'],

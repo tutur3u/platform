@@ -90,6 +90,7 @@ export default function ClientQuizzes({
   moduleId,
   quizzes,
   previewMode = false,
+  queryKey,
 }: {
   wsId: string;
   moduleId: string;
@@ -118,18 +119,20 @@ export default function ClientQuizzes({
     | undefined
   >;
   previewMode?: boolean;
+  queryKey?: unknown[];
 }) {
   const router = useRouter();
   const t = useTranslations();
   const queryClient = useQueryClient();
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
+  const quizzesQueryKey = queryKey ?? ['module-quizzes', wsId, moduleId];
 
   const onDelete = async (id: string) => {
     try {
       await deleteWorkspaceQuiz(wsId, id);
       toast.success(t('common.success'));
       queryClient.invalidateQueries({
-        queryKey: ['module-quizzes', wsId, moduleId],
+        queryKey: quizzesQueryKey,
       });
       router.refresh();
     } catch (error) {
@@ -289,7 +292,7 @@ export default function ClientQuizzes({
                 {/* Paragraph Rendering */}
                 {quiz?.type === 'paragraph' && (
                   <div className="mt-4 border-2 border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm italic shadow-[2px_2px_0_var(--border)]">
-                    Paragraph Response Area (Students will type their answer here)
+                    {t('ws-quizzes.paragraph')}
                   </div>
                 )}
               </div>

@@ -28,6 +28,7 @@ CREATE UNIQUE INDEX course_test_attempts_test_user_idx ON public.course_test_att
 
 CREATE UNIQUE INDEX course_test_attempt_answers_pkey ON public.course_test_attempt_answers USING btree (id);
 CREATE UNIQUE INDEX course_test_attempt_answers_attempt_quiz_idx ON public.course_test_attempt_answers USING btree (attempt_id, quiz_id);
+CREATE UNIQUE INDEX quiz_options_id_quiz_id_idx ON public.quiz_options USING btree (id, quiz_id);
 
 alter table "public"."course_test_attempts" add constraint "course_test_attempts_pkey" PRIMARY KEY using index "course_test_attempts_pkey";
 alter table "public"."course_test_attempts" add constraint "course_test_attempts_test_id_fkey" FOREIGN KEY (test_id) REFERENCES course_tests(id) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -36,7 +37,7 @@ alter table "public"."course_test_attempts" add constraint "course_test_attempts
 alter table "public"."course_test_attempt_answers" add constraint "course_test_attempt_answers_pkey" PRIMARY KEY using index "course_test_attempt_answers_pkey";
 alter table "public"."course_test_attempt_answers" add constraint "course_test_attempt_answers_attempt_id_fkey" FOREIGN KEY (attempt_id) REFERENCES course_test_attempts(id) ON UPDATE CASCADE ON DELETE CASCADE;
 alter table "public"."course_test_attempt_answers" add constraint "course_test_attempt_answers_quiz_id_fkey" FOREIGN KEY (quiz_id) REFERENCES workspace_quizzes(id) ON UPDATE CASCADE ON DELETE CASCADE;
-alter table "public"."course_test_attempt_answers" add constraint "course_test_attempt_answers_selected_option_id_fkey" FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id) ON UPDATE CASCADE ON DELETE SET NULL;
+alter table "public"."course_test_attempt_answers" add constraint "course_test_attempt_answers_selected_option_id_fkey" FOREIGN KEY (selected_option_id, quiz_id) REFERENCES quiz_options(id, quiz_id) ON UPDATE CASCADE ON DELETE SET NULL (selected_option_id);
 
 -- Grants for course_test_attempts
 grant delete on table "public"."course_test_attempts" to "anon";
@@ -44,7 +45,6 @@ grant insert on table "public"."course_test_attempts" to "anon";
 grant references on table "public"."course_test_attempts" to "anon";
 grant select on table "public"."course_test_attempts" to "anon";
 grant trigger on table "public"."course_test_attempts" to "anon";
-grant truncate on table "public"."course_test_attempts" to "anon";
 grant update on table "public"."course_test_attempts" to "anon";
 
 grant delete on table "public"."course_test_attempts" to "authenticated";
@@ -52,7 +52,6 @@ grant insert on table "public"."course_test_attempts" to "authenticated";
 grant references on table "public"."course_test_attempts" to "authenticated";
 grant select on table "public"."course_test_attempts" to "authenticated";
 grant trigger on table "public"."course_test_attempts" to "authenticated";
-grant truncate on table "public"."course_test_attempts" to "authenticated";
 grant update on table "public"."course_test_attempts" to "authenticated";
 
 grant delete on table "public"."course_test_attempts" to "service_role";
@@ -69,7 +68,6 @@ grant insert on table "public"."course_test_attempt_answers" to "anon";
 grant references on table "public"."course_test_attempt_answers" to "anon";
 grant select on table "public"."course_test_attempt_answers" to "anon";
 grant trigger on table "public"."course_test_attempt_answers" to "anon";
-grant truncate on table "public"."course_test_attempt_answers" to "anon";
 grant update on table "public"."course_test_attempt_answers" to "anon";
 
 grant delete on table "public"."course_test_attempt_answers" to "authenticated";
@@ -77,7 +75,6 @@ grant insert on table "public"."course_test_attempt_answers" to "authenticated";
 grant references on table "public"."course_test_attempt_answers" to "authenticated";
 grant select on table "public"."course_test_attempt_answers" to "authenticated";
 grant trigger on table "public"."course_test_attempt_answers" to "authenticated";
-grant truncate on table "public"."course_test_attempt_answers" to "authenticated";
 grant update on table "public"."course_test_attempt_answers" to "authenticated";
 
 grant delete on table "public"."course_test_attempt_answers" to "service_role";

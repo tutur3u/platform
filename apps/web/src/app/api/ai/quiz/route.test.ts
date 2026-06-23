@@ -260,6 +260,20 @@ describe('quiz generation route', () => {
     );
   });
 
+  it('includes paragraph questions in mixed quiz generation prompts', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(createQuizRequest({ questionType: 'mix' }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.generateObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining(
+          'multiple_choice, true_false, matching, ordering, paragraph'
+        ),
+      })
+    );
+  });
+
   it('returns Teach access errors before checking credits', async () => {
     mocks.requireTeachWorkspaceAccess.mockResolvedValueOnce(
       NextResponse.json(

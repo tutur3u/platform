@@ -137,7 +137,7 @@ export const POST = withSessionAuth(
 
       const typeInstruction =
         questionType === 'mix'
-          ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering).'
+          ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering, paragraph).'
           : `Generate ONLY questions of type "${questionType}".`;
 
       const promptText = `Analyze the following lesson content to create exactly ${count} structured quiz questions.

@@ -64,13 +64,23 @@ function ModuleQuestionsManager({
   const [count, setCount] = useState<number>(5);
   const [teacherContext, setTeacherContext] = useState<string>('');
 
-  const queryKey = ['module-quizzes', wsId, moduleId];
+  const queryKey = ['module-quizzes', wsId, courseId, testId, moduleId];
 
   // Fetch quizzes for this module
-  const { data: quizzesData, isLoading, isError, refetch } = useQuery({
+  const {
+    data: quizzesData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey,
-    queryFn: () => getWorkspaceCourseTestQuestions(wsId, courseId, testId, { moduleId }),
-    enabled: Boolean(wsId) && Boolean(courseId) && Boolean(testId) && Boolean(moduleId),
+    queryFn: () =>
+      getWorkspaceCourseTestQuestions(wsId, courseId, testId, { moduleId }),
+    enabled:
+      Boolean(wsId) &&
+      Boolean(courseId) &&
+      Boolean(testId) &&
+      Boolean(moduleId),
   });
 
   const quizzes = quizzesData?.data ?? [];
@@ -83,7 +93,8 @@ function ModuleQuestionsManager({
         count?: number;
         context?: string;
       } = {}
-    ) => generateQuizFromLesson(wsId, { lessonId: moduleId, testId, ...payload }),
+    ) =>
+      generateQuizFromLesson(wsId, { lessonId: moduleId, testId, ...payload }),
     onSuccess: (res) => {
       if (res.success) {
         toast.success(t('ws-quizzes.generation_success'));
@@ -130,7 +141,7 @@ function ModuleQuestionsManager({
         {!creating && (
           <div className="flex flex-wrap items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50 whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
               onClick={() => setShowAiDialog(true)}
               disabled={generateMutation.isPending}
               type="button"
@@ -149,7 +160,7 @@ function ModuleQuestionsManager({
             </button>
 
             <button
-              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50 whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
               onClick={() => setCreating(true)}
               disabled={generateMutation.isPending}
               type="button"
@@ -195,14 +206,21 @@ function ModuleQuestionsManager({
         )
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          <ClientQuizzes wsId={wsId} moduleId={moduleId} quizzes={quizzes} />
+          <ClientQuizzes
+            wsId={wsId}
+            moduleId={moduleId}
+            quizzes={quizzes}
+            queryKey={queryKey}
+          />
         </div>
       )}
 
       {/* AI Quiz Generation Dialog */}
       <Dialog
         open={showAiDialog}
-        onOpenChange={(open) => !generateMutation.isPending && setShowAiDialog(open)}
+        onOpenChange={(open) =>
+          !generateMutation.isPending && setShowAiDialog(open)
+        }
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -343,7 +361,8 @@ export function TestQuestionsSection({
           Test Questions Manager
         </h2>
         <p className="mt-1 text-muted-foreground text-sm">
-          Prepare and configure assessment questions manually or using AI for each linked course module.
+          Prepare and configure assessment questions manually or using AI for
+          each linked course module.
         </p>
       </div>
 

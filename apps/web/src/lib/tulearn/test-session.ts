@@ -127,7 +127,9 @@ export async function submitTestAttemptInternal(
   // Fetch full details of these quizzes
   const { data: quizzes, error: quizzesErr } = await sbAdmin
     .from('workspace_quizzes')
-    .select('id, question, type, content, answer, score, quiz_options(id, value, is_correct)')
+    .select(
+      'id, question, type, content, answer, score, quiz_options(id, value, is_correct)'
+    )
     .in('id', quizIds);
 
   if (quizzesErr) throw quizzesErr;
@@ -163,9 +165,11 @@ export async function submitTestAttemptInternal(
         if (selectedOptionId) {
           const isOptionUuid = UUID_REGEX.test(selectedOptionId);
           if (isOptionUuid) {
-            const option = (quiz.quiz_options as { id: string; is_correct: boolean }[] | undefined)?.find(
-              (opt) => opt.id === selectedOptionId
-            );
+            const option = (
+              quiz.quiz_options as
+                | { id: string; is_correct: boolean }[]
+                | undefined
+            )?.find((opt) => opt.id === selectedOptionId);
             isCorrect = option?.is_correct ?? false;
           } else {
             const correctAnswer = await loadCorrectAnswer({

@@ -1,8 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { resolveTulearnSubject, tulearnAccessErrorResponse } from '@/lib/tulearn/service';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@/lib/tulearn/service';
 
 type Params = {
   courseId: string;
@@ -39,7 +42,10 @@ export const POST = withSessionAuth<Params>(
         .maybeSingle();
 
       if (testErr || !test) {
-        return NextResponse.json({ message: 'Test not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Test not found' },
+          { status: 404 }
+        );
       }
 
       // Check if current time is before test.start_at

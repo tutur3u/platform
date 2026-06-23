@@ -13,6 +13,10 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import {
+  type CourseTestValidationError,
+  validateCourseTestForm,
+} from '../../course-test-validation';
 
 interface CourseEditTestDialogProps {
   courseId: string;
@@ -96,41 +100,23 @@ export function CourseEditTestDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!testName.trim()) {
-      toast.error(t('teachModules.testNameRequired'));
+    const validation = validateCourseTestForm({
+      description,
+      durationInMinutes,
+      name: testName,
+      startAt,
+    });
+    if (!validation.success) {
+      toast.error(getCourseTestValidationMessage(validation.error, t));
       return;
-    }
-
-    let parsedStartAt: string | null = null;
-    if (startAt) {
-      const parsedDate = new Date(startAt);
-      if (Number.isNaN(parsedDate.getTime())) {
-        toast.error(t('teachModules.invalidStartTime'));
-        return;
-      }
-      if (parsedDate < new Date()) {
-        toast.error(t('teachModules.startTimeInPast'));
-        return;
-      }
-      parsedStartAt = parsedDate.toISOString();
-    }
-
-    let parsedDuration: number | null = null;
-    if (durationInMinutes) {
-      const durationVal = parseInt(durationInMinutes, 10);
-      if (Number.isNaN(durationVal) || durationVal < 1 || durationVal > 1440) {
-        toast.error(t('teachModules.invalidDuration'));
-        return;
-      }
-      parsedDuration = durationVal;
     }
 
     updateTestMutation.mutate({
       id: test.id,
-      name: testName.trim(),
-      startAt: parsedStartAt,
-      durationInMinutes: parsedDuration,
-      description: description.trim() || null,
+      name: validation.data.name,
+      startAt: validation.data.startAt,
+      durationInMinutes: validation.data.durationInMinutes,
+      description: validation.data.description,
     });
   };
 
@@ -262,4 +248,22 @@ export function CourseEditTestDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function getCourseTestValidationMessage(
+  error: CourseTestValidationError,
+  t: ReturnType<typeof useTranslations>
+) {
+  switch (error) {
+    case 'invalidDuration':
+      return t('teachModules.invalidDuration');
+    case 'invalidStartTime':
+      return t('teachModules.invalidStartTime');
+    case 'selectModules':
+      return t('teachModules.selectModules');
+    case 'startTimeInPast':
+      return t('teachModules.startTimeInPast');
+    case 'testNameRequired':
+      return t('teachModules.testNameRequired');
+  }
 }

@@ -97,17 +97,40 @@ export const GET = withSessionAuth(
     );
 
     // Count total quizzes for this test
-    const { count: totalQuizzes } = await access.sbAdmin
+    const { count: totalQuizzes, error: totalQuizzesErr } = await access.sbAdmin
       .from('course_test_quizzes')
       .select('quiz_id', { count: 'exact', head: true })
       .eq('test_id', testId);
+    if (totalQuizzesErr) {
+      serverLogger.error('Failed to count test quizzes for submissions', {
+        error: totalQuizzesErr,
+        testId,
+        wsId: access.normalizedWsId,
+      });
+      return NextResponse.json(
+        { message: 'Error fetching submission quiz counts' },
+        { status: 500 }
+      );
+    }
 
     // Fetch answer counts per attempt
     const attemptIds = attempts.map((a) => a.id);
-    const { data: answerCounts } = await access.sbAdmin
+    const { data: answerCounts, error: answerCountsErr } = await access.sbAdmin
       .from('course_test_attempt_answers')
       .select('attempt_id, is_correct')
       .in('attempt_id', attemptIds);
+    if (answerCountsErr) {
+      serverLogger.error('Failed to fetch test submission answer counts', {
+        attemptIds,
+        error: answerCountsErr,
+        testId,
+        wsId: access.normalizedWsId,
+      });
+      return NextResponse.json(
+        { message: 'Error fetching submission answer counts' },
+        { status: 500 }
+      );
+    }
 
     const answerCountMap = new Map<
       string,

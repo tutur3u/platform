@@ -54,6 +54,87 @@ const QuizCreateSchema = z.object({
   quizzes: z.array(QuizPayloadSchema).min(1),
 });
 
+async function validateCourseTest({
+  access,
+  courseId,
+  testId,
+}: {
+  access: Exclude<
+    Awaited<ReturnType<typeof requireTeachWorkspaceAccess>>,
+    NextResponse
+  >;
+  courseId: string;
+  testId: string;
+}) {
+  const { data, error } = await access.sbAdmin
+    .from('course_tests')
+    .select('id')
+    .eq('id', testId)
+    .eq('course_id', courseId)
+    .maybeSingle();
+
+  if (error) {
+    serverLogger.error('Failed to validate course test', {
+      courseId,
+      error,
+      testId,
+      wsId: access.normalizedWsId,
+    });
+    return NextResponse.json(
+      { message: 'Error validating course test' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json({ message: 'Test not found' }, { status: 404 });
+  }
+
+  return null;
+}
+
+async function validateCourseTestModule({
+  access,
+  moduleId,
+  testId,
+}: {
+  access: Exclude<
+    Awaited<ReturnType<typeof requireTeachWorkspaceAccess>>,
+    NextResponse
+  >;
+  moduleId: string;
+  testId: string;
+}) {
+  const { data, error } = await access.sbAdmin
+    .from('course_test_modules')
+    .select('module_id')
+    .eq('test_id', testId)
+    .eq('module_id', moduleId)
+    .maybeSingle();
+
+  if (error) {
+    serverLogger.error('Failed to validate course test module', {
+      error,
+      moduleId,
+      testId,
+      wsId: access.normalizedWsId,
+    });
+    return NextResponse.json(
+      { message: 'Error validating course test module' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Module not found for test' },
+      { status: 404 }
+    );
+  }
+
+  return null;
+}
+
 export const GET = withSessionAuth(
   async (
     request,
@@ -91,7 +172,31 @@ export const GET = withSessionAuth(
       );
     }
 
-    const moduleId = request.nextUrl.searchParams.get('moduleId')?.trim();
+    const testValidationError = await validateCourseTest({
+      access,
+      courseId,
+      testId,
+    });
+    if (testValidationError) return testValidationError;
+
+    const rawModuleId = request.nextUrl.searchParams.get('moduleId')?.trim();
+    const parsedModuleId = rawModuleId ? z.guid().safeParse(rawModuleId) : null;
+    if (parsedModuleId && !parsedModuleId.success) {
+      return NextResponse.json(
+        { message: 'Invalid module id', errors: parsedModuleId.error.issues },
+        { status: 400 }
+      );
+    }
+    const moduleId = parsedModuleId?.data;
+
+    if (moduleId) {
+      const moduleValidationError = await validateCourseTestModule({
+        access,
+        moduleId,
+        testId,
+      });
+      if (moduleValidationError) return moduleValidationError;
+    }
 
     // Query course_test_quizzes for linked quiz ids
     const query = access.sbAdmin
@@ -199,6 +304,13 @@ export const POST = withSessionAuth(
       );
     }
 
+    const testValidationError = await validateCourseTest({
+      access,
+      courseId,
+      testId,
+    });
+    if (testValidationError) return testValidationError;
+
     let body: unknown;
     try {
       body = await request.json();
@@ -218,6 +330,13 @@ export const POST = withSessionAuth(
     }
 
     const { moduleId, quizzes } = parsedBody.data;
+
+    const moduleValidationError = await validateCourseTestModule({
+      access,
+      moduleId,
+      testId,
+    });
+    if (moduleValidationError) return moduleValidationError;
 
     try {
       for (const quiz of quizzes) {

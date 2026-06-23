@@ -267,8 +267,15 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const { id, is_published, is_score_published, name, startAt, durationInMinutes, description } =
-      parsedBody.data;
+    const {
+      id,
+      is_published,
+      is_score_published,
+      name,
+      startAt,
+      durationInMinutes,
+      description,
+    } = parsedBody.data;
 
     const updatePayload: {
       is_published?: boolean;
@@ -279,7 +286,8 @@ export const PATCH = withSessionAuth(
       description?: string | null;
     } = {};
     if (is_published !== undefined) updatePayload.is_published = is_published;
-    if (is_score_published !== undefined) updatePayload.is_score_published = is_score_published;
+    if (is_score_published !== undefined)
+      updatePayload.is_score_published = is_score_published;
     if (name !== undefined) updatePayload.name = name;
     if (startAt !== undefined) updatePayload.start_at = startAt;
     if (durationInMinutes !== undefined)
