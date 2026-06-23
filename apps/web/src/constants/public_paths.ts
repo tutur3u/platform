@@ -31,6 +31,8 @@ export const APP_PUBLIC_PATHS = [
   '/qr-generator',
   '/docs',
   '/documents',
+  '/share',
+  '/tools',
   '/ui',
   '/shared/forms',
   '/meet',

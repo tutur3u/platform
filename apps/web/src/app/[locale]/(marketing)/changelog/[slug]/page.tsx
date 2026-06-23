@@ -96,9 +96,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const changelog = await getChangelog(slug);
 
   if (!changelog) {
-    return {
-      title: 'Changelog Not Found | Tuturuuu',
-    };
+    notFound();
   }
 
   const title = `${changelog.title} | Changelog | Tuturuuu`;
