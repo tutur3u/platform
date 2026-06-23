@@ -384,7 +384,10 @@ export function StudentTestDetailPage({
                       saveAnswerMutation.mutate({
                         attemptId: attempt.id,
                         quizId: quiz.id,
-                        selectedOptionId: opt.id,
+                        // Content-based options use non-UUID ids (e.g. "content-0");
+                        // the DB column has a FK to quiz_options so we must send null
+                        // and rely on answer.selectedIndex for grading.
+                        selectedOptionId: opt.index !== null ? null : opt.id,
                         answer: updatedAns,
                       });
                     }}
