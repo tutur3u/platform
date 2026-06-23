@@ -607,11 +607,15 @@ export {
   updateWalletRoleAccess,
 } from './finance';
 export {
+  createWorkspaceGroupTag,
   type DeleteWorkspaceGroupTagResponse,
   deleteWorkspaceGroupTag,
   type ListWorkspaceGroupTagsParams,
   type ListWorkspaceGroupTagsResponse,
   listWorkspaceGroupTags,
+  type UpsertWorkspaceGroupTagPayload,
+  type UpsertWorkspaceGroupTagResponse,
+  updateWorkspaceGroupTag,
 } from './group-tags';
 export {
   createWorkspaceHabitTracker,

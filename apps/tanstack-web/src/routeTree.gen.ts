@@ -151,6 +151,7 @@ import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$loc
 import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
 import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
+import { Route as LocaleWsIdUsersGroupTagsIndexRouteImport } from './routes/$locale/$wsId/users/group-tags/index';
 import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
 import { Route as LocaleWsIdEducationCoursesIndexRouteImport } from './routes/$locale/$wsId/education/courses/index';
 import { Route as LocaleWsIdAiChatMyChatbotsIndexRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/index';
@@ -949,6 +950,12 @@ const LocaleWsIdAiChatChatbotsRoute =
     path: '/$wsId/ai-chat/chatbots',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdUsersGroupTagsIndexRoute =
+  LocaleWsIdUsersGroupTagsIndexRouteImport.update({
+    id: '/$wsId/users/group-tags/',
+    path: '/$wsId/users/group-tags/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdTasksBoardsIndexRoute =
   LocaleWsIdTasksBoardsIndexRouteImport.update({
     id: '/$wsId/tasks/boards/',
@@ -1334,6 +1341,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
+  '/$locale/$wsId/users/group-tags/': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
@@ -1512,6 +1520,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/ai-chat/my-chatbots': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
+  '/$locale/$wsId/users/group-tags': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
@@ -1692,6 +1701,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
+  '/$locale/$wsId/users/group-tags/': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
@@ -1873,6 +1883,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/courses/'
     | '/$locale/$wsId/tasks/boards/'
+    | '/$locale/$wsId/users/group-tags/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
@@ -2051,6 +2062,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots'
     | '/$locale/$wsId/education/courses'
     | '/$locale/$wsId/tasks/boards'
+    | '/$locale/$wsId/users/group-tags'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
@@ -2230,6 +2242,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/courses/'
     | '/$locale/$wsId/tasks/boards/'
+    | '/$locale/$wsId/users/group-tags/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
@@ -3245,6 +3258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdAiChatChatbotsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/users/group-tags/': {
+      id: '/$locale/$wsId/users/group-tags/';
+      path: '/$wsId/users/group-tags';
+      fullPath: '/$locale/$wsId/users/group-tags/';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupTagsIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/tasks/boards/': {
       id: '/$locale/$wsId/tasks/boards/';
       path: '/$wsId/tasks/boards';
@@ -3964,6 +3984,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdAiChatMyChatbotsIndexRoute: typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   LocaleWsIdEducationCoursesIndexRoute: typeof LocaleWsIdEducationCoursesIndexRoute;
   LocaleWsIdTasksBoardsIndexRoute: typeof LocaleWsIdTasksBoardsIndexRoute;
+  LocaleWsIdUsersGroupTagsIndexRoute: typeof LocaleWsIdUsersGroupTagsIndexRoute;
 }
 
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
@@ -4104,6 +4125,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdAiChatMyChatbotsIndexRoute: LocaleWsIdAiChatMyChatbotsIndexRoute,
   LocaleWsIdEducationCoursesIndexRoute: LocaleWsIdEducationCoursesIndexRoute,
   LocaleWsIdTasksBoardsIndexRoute: LocaleWsIdTasksBoardsIndexRoute,
+  LocaleWsIdUsersGroupTagsIndexRoute: LocaleWsIdUsersGroupTagsIndexRoute,
 };
 
 const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(

@@ -47,6 +47,59 @@ export async function listWorkspaceGroupTags(
   );
 }
 
+export interface UpsertWorkspaceGroupTagPayload {
+  name: string;
+  color: string;
+  group_ids?: string[];
+}
+
+export interface UpsertWorkspaceGroupTagResponse {
+  message: string;
+}
+
+/**
+ * Creates a workspace user-group tag via
+ * `POST /api/v1/workspaces/:wsId/group-tags`.
+ */
+export async function createWorkspaceGroupTag(
+  workspaceId: string,
+  payload: UpsertWorkspaceGroupTagPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpsertWorkspaceGroupTagResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/group-tags`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+/**
+ * Updates a workspace user-group tag via
+ * `PUT /api/v1/workspaces/:wsId/group-tags/:tagId`.
+ */
+export async function updateWorkspaceGroupTag(
+  workspaceId: string,
+  tagId: string,
+  payload: UpsertWorkspaceGroupTagPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpsertWorkspaceGroupTagResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/group-tags/${encodePathSegment(tagId)}`,
+    {
+      cache: 'no-store',
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 export interface DeleteWorkspaceGroupTagResponse {
   message: string;
 }
