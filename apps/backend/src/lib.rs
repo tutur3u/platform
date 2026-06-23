@@ -181,11 +181,13 @@ mod workspaces_tulearn_courses;
 mod workspaces_tulearn_courses_2;
 mod workspaces_tulearn_reports;
 mod workspaces_user_groups_activity_logs;
+mod workspaces_user_groups_count;
 mod workspaces_user_groups_linked_products;
 mod workspaces_user_groups_managers;
 mod workspaces_user_groups_members_vitals;
 mod workspaces_users_attendance;
 mod workspaces_users_audit_logs;
+mod workspaces_users_count;
 mod workspaces_users_emails;
 mod workspaces_users_referral_discounts;
 mod workspaces_users_reports_groups_bulk_export;
@@ -1348,6 +1350,20 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspaces_users_reports_groups_bulk_export::handle_workspaces_users_reports_groups_bulk_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_count::handle_workspaces_users_count_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_user_groups_count::handle_workspaces_user_groups_count_route(
+        config, request, outbound,
+    )
+    .await
     {
         return response;
     }
