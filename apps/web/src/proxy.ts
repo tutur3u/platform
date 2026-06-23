@@ -590,35 +590,6 @@ async function handleProxyGuardResponse(
 
   const ipAddress = extractIPFromRequest(req.headers);
 
-  if (
-    guardResponse.headers.get('X-Proxy-Block-Reason') === 'route-rate-limit' &&
-    !isExpectedHumanAuthRateLimitPath(req.nextUrl.pathname) &&
-    !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
-    !hasSupabaseSessionCookie(req)
-  ) {
-    const newBlock =
-      ipAddress === 'unknown'
-        ? null
-        : await recordSuspiciousApiRequestEdge(ipAddress);
-
-    if (newBlock) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
-      );
-      const blockResponse = buildProxyBlockResponse(
-        429,
-        'ip-already-blocked',
-        retryAfter
-      );
-      appendRateLimitDebugHeaders(blockResponse, {
-        identity: null,
-        ipAddress,
-      });
-      return blockResponse;
-    }
-  }
-
   const identity = await resolveRateLimitDebugIdentity(req);
   appendRateLimitDebugHeaders(guardResponse, { identity, ipAddress });
 
@@ -826,15 +797,6 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   }
 
   return null;
-}
-
-function isExpectedHumanAuthRateLimitPath(pathname: string) {
-  return (
-    /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/otp\/(?:send|verify)(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp)(?:\/|$)/.test(pathname)
-  );
 }
 
 async function blockSuspiciousAnonymousApiRequest(
