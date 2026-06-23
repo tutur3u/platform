@@ -81,7 +81,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^11.0.0",
-    "@typescript/native-preview": "7.0.0-dev.20260622.1",
+    "@typescript/native-preview": "7.0.0-dev.20260623.1",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
     "babel-plugin-react-compiler": "^1.0.0",
