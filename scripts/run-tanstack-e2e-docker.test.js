@@ -140,12 +140,13 @@ test('getHealthInspectArgs polls Docker health status for a container', () => {
 
 test('getPlaywrightArgs builds the playwright test invocation', () => {
   assert.deepEqual(getPlaywrightArgs({ playwrightArgs: [] }), [
+    'x',
     'playwright',
     'test',
   ]);
   assert.deepEqual(
     getPlaywrightArgs({ playwrightArgs: ['--project', 'chromium'] }),
-    ['playwright', 'test', '--project', 'chromium']
+    ['x', 'playwright', 'test', '--project', 'chromium']
   );
 });
 
@@ -176,8 +177,8 @@ test('buildCommandPlan plans up/build, health, playwright, and teardown', () => 
     )
   );
   assert.deepEqual(plan.playwright, {
-    args: ['playwright', 'test'],
-    command: 'bunx',
+    args: ['x', 'playwright', 'test'],
+    command: 'bun',
     cwd: TANSTACK_WEB_DIR,
     env: {
       BASE_URL: 'http://127.0.0.1:7824',
@@ -220,6 +221,7 @@ test('buildCommandPlan resolves base-url overrides and the compose file', () => 
 
   assert.equal(plan.baseUrl, 'http://custom.localhost:8080');
   assert.deepEqual(plan.playwright.args, [
+    'x',
     'playwright',
     'test',
     '--project',
@@ -327,7 +329,7 @@ test('runTanStackE2EDocker brings up, runs Playwright, then tears down', async (
     calls.map(({ command, args }) => [command, args.join(' ')]),
     [
       ['docker', `compose -f ${DEFAULT_COMPOSE_FILE} up -d --build`],
-      ['bunx', 'playwright test'],
+      ['bun', 'x playwright test'],
       ['docker', `compose -f ${DEFAULT_COMPOSE_FILE} down`],
     ]
   );
@@ -352,7 +354,7 @@ test('runTanStackE2EDocker skips teardown when --keep-up is passed', async () =>
 
   assert.deepEqual(calls, [
     ['docker', `compose -f ${DEFAULT_COMPOSE_FILE} up -d`],
-    ['bunx', 'playwright test'],
+    ['bun', 'x playwright test'],
   ]);
   assert.ok(!calls.some(([, args]) => args.includes('down')));
 });
@@ -371,7 +373,7 @@ test('runTanStackE2EDocker always tears down even when Playwright fails', async 
         run: async (command, args) => {
           calls.push([command, args.join(' ')]);
 
-          if (command === 'bunx') {
+          if (command === 'bun') {
             throw new Error('playwright failed');
           }
         },
@@ -381,7 +383,7 @@ test('runTanStackE2EDocker always tears down even when Playwright fails', async 
 
   assert.deepEqual(calls, [
     ['docker', `compose -f ${DEFAULT_COMPOSE_FILE} up -d --build`],
-    ['bunx', 'playwright test'],
+    ['bun', 'x playwright test'],
     ['docker', `compose -f ${DEFAULT_COMPOSE_FILE} down`],
   ]);
 });

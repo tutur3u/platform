@@ -34,7 +34,7 @@
 //                           Default: docker-compose.tanstack-dual.yml
 //   -h, --help              Print this help and exit.
 //
-// Everything after a literal `--` is forwarded verbatim to `bunx playwright
+// Everything after a literal `--` is forwarded verbatim to `bun x playwright
 // test` in apps/tanstack-web.
 //
 // No secrets are embedded; environment values are referenced by name only.
@@ -202,7 +202,7 @@ function getHealthInspectArgs(container) {
 }
 
 function getPlaywrightArgs(options) {
-  return ['playwright', 'test', ...options.playwrightArgs];
+  return ['x', 'playwright', 'test', ...options.playwrightArgs];
 }
 
 // Build a fully-resolved, side-effect-free description of every command this
@@ -220,7 +220,7 @@ function buildCommandPlan(options, env = process.env) {
     })),
     playwright: {
       args: getPlaywrightArgs(options),
-      command: 'bunx',
+      command: 'bun',
       cwd: TANSTACK_WEB_DIR,
       env: {
         BASE_URL: baseUrl,
