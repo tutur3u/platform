@@ -53,6 +53,7 @@ const GATED_ROUTES = [
   'inventory/warehouses',
   'members',
   'memories',
+  'posts',
   'tasks',
   'tasks/boards',
   'tasks/cycles',
