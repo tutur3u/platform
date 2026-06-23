@@ -7664,6 +7664,112 @@ paths:
                 type: string
                 examples:
                   - GET, PATCH
+  /api/v1/users/calendar-settings:
+    get:
+      summary: Current user calendar settings
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/users/calendar-settings/route.ts GET. The Rust
+        backend accepts calendar app-session tokens or revalidated browser
+        Supabase sessions, reads timezone, first_day_of_week, and time_format
+        from user_private_details, defaults missing values to `auto`, and
+        preserves the legacy private success cache directive.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Calendar settings for the authenticated caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - private, max-age=60, stale-while-revalidate=30
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettings"
+        "401":
+          description: Caller is missing valid calendar app-session or Supabase credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettingsError"
+        "500":
+          description: Calendar settings lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettingsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PATCH
+    patch:
+      summary: Update current user calendar settings
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/users/calendar-settings/route.ts PATCH. The Rust
+        backend accepts calendar app-session tokens or revalidated browser
+        Supabase sessions, validates the legacy timezone, first_day_of_week, and
+        time_format payload fields, ignores unknown fields, updates only the
+        authenticated user's user_private_details row, and returns the selected
+        calendar settings with missing values defaulted to `auto`.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrentUserCalendarSettingsPatchRequest"
+      responses:
+        "200":
+          description: Updated calendar settings for the authenticated caller.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettings"
+        "400":
+          description: The payload failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettingsValidationError"
+        "401":
+          description: Caller is missing valid calendar app-session or Supabase credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettingsError"
+        "411":
+          $ref: "#/components/responses/RequestBodyLengthRequired"
+        "413":
+          $ref: "#/components/responses/RequestBodyTooLarge"
+        "500":
+          description: Calendar settings update failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserCalendarSettingsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET, PATCH
   /api/v1/users/me/identities:
     get:
       summary: Current user linked identities
@@ -9412,6 +9518,85 @@ components:
         user_metadata:
           type: object
           additionalProperties: true
+    CurrentUserCalendarSettings:
+      type: object
+      required:
+        - timezone
+        - first_day_of_week
+        - time_format
+      properties:
+        timezone:
+          type: string
+          examples:
+            - Asia/Ho_Chi_Minh
+            - auto
+        first_day_of_week:
+          type: string
+          enum:
+            - auto
+            - sunday
+            - monday
+            - saturday
+        time_format:
+          type: string
+          enum:
+            - auto
+            - 12h
+            - 24h
+    CurrentUserCalendarSettingsPatchRequest:
+      type: object
+      properties:
+        timezone:
+          type: string
+          maxLength: 100
+        first_day_of_week:
+          type: string
+          enum:
+            - auto
+            - sunday
+            - monday
+            - saturday
+        time_format:
+          type: string
+          enum:
+            - auto
+            - 12h
+            - 24h
+    CurrentUserCalendarSettingsError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Failed to fetch user calendar settings
+            - Failed to update user calendar settings
+    CurrentUserCalendarSettingsValidationError:
+      type: object
+      required:
+        - error
+        - details
+      properties:
+        error:
+          type: string
+          examples:
+            - Invalid request data
+        details:
+          type: array
+          items:
+            type: object
+            required:
+              - message
+              - path
+            properties:
+              message:
+                type: string
+              path:
+                type: array
+                items:
+                  type: string
     UserIdentitiesResponse:
       type: object
       required:

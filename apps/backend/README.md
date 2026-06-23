@@ -133,6 +133,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   raw Supabase Auth `identities` array from the revalidated user JSON, and
   returns `{ "identities": [], "canUnlink": false }` with the legacy private
   cache directive.
+- `GET` / `PATCH` `/api/v1/users/calendar-settings`: legacy-compatible current
+  user calendar settings endpoint. Rust accepts calendar app-session tokens or
+  revalidated browser Supabase sessions, reads and updates
+  `user_private_details.timezone`, `first_day_of_week`, and `time_format`,
+  defaults missing values to `auto`, strips unknown patch fields, validates
+  legacy enum/string limits, and preserves the private read cache plus no-store
+  mutation behavior.
 - `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
   legacy-compatible workspace permission check route. Rust revalidates a normal
   Supabase browser session or non-app-session Bearer token, ignores app-session

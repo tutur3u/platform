@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 915,
-        "migrated": 139,
-        "percentComplete": 19.53,
+        "migrated": 140,
+        "percentComplete": 19.6,
         "remaining": 915,
-        "terminal": 222,
-        "total": 1137,
+        "terminal": 223,
+        "total": 1138,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 933,
-        "migrated": 144,
-        "percentComplete": 19.57,
+        "migrated": 145,
+        "percentComplete": 19.64,
         "remaining": 933,
-        "terminal": 227,
-        "total": 1160,
+        "terminal": 228,
+        "total": 1161,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1108,
-      "migrated": 346,
-      "percentComplete": 27.96,
+      "migrated": 347,
+      "percentComplete": 28.01,
       "remaining": 1108,
-      "terminal": 430,
-      "total": 1538,
+      "terminal": 431,
+      "total": 1539,
       "unknownStatus": 0
     }
   },
@@ -4881,7 +4881,7 @@
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/users/calendar-settings",
       "sourceFile": "apps/web/src/app/api/v1/users/calendar-settings/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -7891,6 +7891,15 @@
       "methods": ["DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/modules/:moduleId",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/[moduleId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/quizzes:apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/quizzes/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/quizzes",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/quizzes/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -14331,13 +14340,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1137,
+    "apiRoutes": 1138,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1160,
+    "routeHandlers": 1161,
     "methodCounts": {
-      "GET": 646,
+      "GET": 647,
       "HEAD": 1,
       "POST": 509,
       "PUT": 173,
@@ -14345,6 +14354,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1538
+    "total": 1539
   }
 }

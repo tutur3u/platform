@@ -16,6 +16,9 @@ mod contact;
 mod crawlers;
 #[cfg(test)]
 mod cron_monitoring_test;
+mod current_user_calendar_settings;
+#[cfg(test)]
+mod current_user_calendar_settings_test;
 mod current_user_default_workspace;
 mod devbox_cache;
 mod email_blacklist;
@@ -465,6 +468,15 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         current_user_default_workspace::handle_current_user_default_workspace_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        current_user_calendar_settings::handle_current_user_calendar_settings_route(
             config, request, outbound,
         )
         .await
@@ -1475,6 +1487,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
         || auth_mfa::should_buffer_request_body(method, path)
         || user_profile::should_buffer_request_body(method, path)
         || current_user_default_workspace::should_buffer_request_body(method, path)
+        || current_user_calendar_settings::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
 }
 
@@ -9889,6 +9902,10 @@ mod tests {
         assert!(should_buffer_request_body(
             "PATCH",
             current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH
+        ));
+        assert!(should_buffer_request_body(
+            "PATCH",
+            current_user_calendar_settings::CURRENT_USER_CALENDAR_SETTINGS_PATH
         ));
         assert!(should_buffer_request_body(
             "PATCH",
