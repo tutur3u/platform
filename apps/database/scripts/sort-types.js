@@ -3,191 +3,264 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from '@typescript/typescript6';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function sortMembers(node, sourceFile) {
-  let members = [];
+const delimiterPairs = new Map([
+  ['{', '}'],
+  ['[', ']'],
+  ['(', ')'],
+]);
 
-  if (ts.isTypeLiteralNode(node)) {
-    members = [...node.members];
-  } else if (ts.isInterfaceDeclaration(node)) {
-    members = [...node.members];
-  } else if (
-    ts.isTypeAliasDeclaration(node) &&
-    ts.isTypeLiteralNode(node.type)
-  ) {
-    members = [...node.type.members];
-  } else if (ts.isUnionTypeNode(node)) {
-    members = [...node.types];
-  } else if (ts.isArrayLiteralExpression(node)) {
-    members = [...node.elements];
-  }
+function readQuotedTextEnd(source, start) {
+  const quote = source[start];
+  let index = start + 1;
 
-  if (members.length > 1) {
-    members.sort((a, b) => {
-      if (ts.isUnionTypeNode(node)) {
-        const aText = a.getText(sourceFile);
-        const bText = b.getText(sourceFile);
-        const aKeys = (aText.match(/:/g) || []).length;
-        const bKeys = (bText.match(/:/g) || []).length;
-        if (aKeys !== bKeys) {
-          return bKeys - aKeys;
-        }
-      }
-
-      let nameA = '';
-      let nameB = '';
-
-      // For properties, enum members, and string literals, use their specific text/name
-      if (
-        ts.isPropertySignature(a) ||
-        ts.isPropertyAssignment(a) ||
-        ts.isEnumMember(a)
-      ) {
-        nameA = a.name ? a.name.getText(sourceFile) : '';
-      } else if (ts.isStringLiteral(a) || ts.isNumericLiteral(a)) {
-        nameA = a.text;
-      } else if (ts.isTypeNode(a)) {
-        // For union types, get the text of the type node
-        nameA = a.getText(sourceFile);
-      } else {
-        // Fallback for other nodes
-        nameA = a.getText(sourceFile);
-      }
-
-      if (
-        ts.isPropertySignature(b) ||
-        ts.isPropertyAssignment(b) ||
-        ts.isEnumMember(b)
-      ) {
-        nameB = b.name ? b.name.getText(sourceFile) : '';
-      } else if (ts.isStringLiteral(b) || ts.isNumericLiteral(b)) {
-        nameB = b.text;
-      } else if (ts.isTypeNode(b)) {
-        // For union types, get the text of the type node
-        nameB = b.getText(sourceFile);
-      } else {
-        // Fallback for other nodes
-        nameB = b.getText(sourceFile);
-      }
-      return nameA.localeCompare(nameB);
-    });
-
-    if (ts.isTypeLiteralNode(node)) {
-      return ts.factory.updateTypeLiteralNode(
-        node,
-        ts.factory.createNodeArray(members)
-      );
-    } else if (ts.isInterfaceDeclaration(node)) {
-      return ts.factory.updateInterfaceDeclaration(
-        node,
-        node.modifiers,
-        node.name,
-        node.typeParameters,
-        node.heritageClauses,
-        ts.factory.createNodeArray(members)
-      );
-    } else if (
-      ts.isTypeAliasDeclaration(node) &&
-      ts.isTypeLiteralNode(node.type)
-    ) {
-      return ts.factory.updateTypeAliasDeclaration(
-        node,
-        node.modifiers,
-        node.name,
-        node.typeParameters,
-        ts.factory.updateTypeLiteralNode(
-          node.type,
-          ts.factory.createNodeArray(members)
-        )
-      );
-    } else if (ts.isUnionTypeNode(node)) {
-      return ts.factory.updateUnionTypeNode(
-        node,
-        ts.factory.createNodeArray(members)
-      );
-    } else if (ts.isArrayLiteralExpression(node)) {
-      return ts.factory.updateArrayLiteralExpression(
-        node,
-        ts.factory.createNodeArray(members)
-      );
+  while (index < source.length) {
+    if (source[index] === '\\') {
+      index += 2;
+      continue;
     }
+
+    if (source[index] === quote) {
+      return index + 1;
+    }
+
+    index += 1;
   }
-  return node;
+
+  return source.length;
+}
+
+function readLineCommentEnd(source, start) {
+  const newlineIndex = source.indexOf('\n', start + 2);
+  return newlineIndex === -1 ? source.length : newlineIndex;
+}
+
+function readBlockCommentEnd(source, start) {
+  const commentEnd = source.indexOf('*/', start + 2);
+  return commentEnd === -1 ? source.length : commentEnd + 2;
+}
+
+function skipTriviaOrString(source, index) {
+  const char = source[index];
+  const nextChar = source[index + 1];
+
+  if (char === '"' || char === "'" || char === '`') {
+    return readQuotedTextEnd(source, index);
+  }
+
+  if (char === '/' && nextChar === '/') {
+    return readLineCommentEnd(source, index);
+  }
+
+  if (char === '/' && nextChar === '*') {
+    return readBlockCommentEnd(source, index);
+  }
+
+  return index;
+}
+
+function findMatchingDelimiter(source, start) {
+  const initialClose = delimiterPairs.get(source[start]);
+
+  if (!initialClose) {
+    throw new Error(`Expected opening delimiter at offset ${start}`);
+  }
+
+  const stack = [initialClose];
+  let index = start + 1;
+
+  while (index < source.length) {
+    const skippedIndex = skipTriviaOrString(source, index);
+
+    if (skippedIndex !== index) {
+      index = skippedIndex;
+      continue;
+    }
+
+    const char = source[index];
+    const close = delimiterPairs.get(char);
+
+    if (close) {
+      stack.push(close);
+      index += 1;
+      continue;
+    }
+
+    if (char === stack.at(-1)) {
+      stack.pop();
+
+      if (stack.length === 0) {
+        return index;
+      }
+    }
+
+    index += 1;
+  }
+
+  throw new Error(`Could not find matching delimiter for offset ${start}`);
+}
+
+function splitTopLevel(source, delimiter) {
+  const segments = [];
+  let segmentStart = 0;
+  let index = 0;
+
+  while (index < source.length) {
+    const skippedIndex = skipTriviaOrString(source, index);
+
+    if (skippedIndex !== index) {
+      index = skippedIndex;
+      continue;
+    }
+
+    const char = source[index];
+
+    if (delimiterPairs.has(char)) {
+      index = findMatchingDelimiter(source, index) + 1;
+      continue;
+    }
+
+    if (char === delimiter) {
+      segments.push(source.slice(segmentStart, index));
+      segmentStart = index + 1;
+    }
+
+    index += 1;
+  }
+
+  segments.push(source.slice(segmentStart));
+  return segments;
+}
+
+function getMemberSortKey(segment) {
+  const trimmed = segment.trimStart();
+  const match =
+    /^(?:readonly\s+)?(?:(['"])((?:\\.|(?!\1).)+)\1|([A-Za-z_$][\w$]*)|(\[[^\]]+\]))\??\s*:/.exec(
+      trimmed
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  return match[2] ?? match[3] ?? match[4] ?? null;
+}
+
+function sortTypeLiteralMembers(source) {
+  const segments = splitTopLevel(source, ';');
+  const hasTrailingWhitespace =
+    segments.length > 1 && segments.at(-1)?.trim() === '';
+  const suffix = hasTrailingWhitespace ? segments.at(-1) : '';
+  const entries = hasTrailingWhitespace ? segments.slice(0, -1) : segments;
+
+  if (entries.length < 2) {
+    return source;
+  }
+
+  const keyedEntries = entries.map((entry, index) => ({
+    entry,
+    index,
+    key: getMemberSortKey(entry),
+  }));
+
+  if (keyedEntries.some(({ key }) => key === null)) {
+    return source;
+  }
+
+  const sortedEntries = keyedEntries
+    .toSorted((a, b) => {
+      const keyComparison = a.key.localeCompare(b.key);
+      return keyComparison === 0 ? a.index - b.index : keyComparison;
+    })
+    .map(({ entry }) => entry);
+
+  const sortedSource =
+    sortedEntries.join(';') + (hasTrailingWhitespace ? `;${suffix}` : '');
+
+  return sortedSource === source ? source : sortedSource;
+}
+
+export function sortGeneratedTypes(source) {
+  let output = '';
+  let index = 0;
+
+  while (index < source.length) {
+    const skippedIndex = skipTriviaOrString(source, index);
+
+    if (skippedIndex !== index) {
+      output += source.slice(index, skippedIndex);
+      index = skippedIndex;
+      continue;
+    }
+
+    const char = source[index];
+    const close = delimiterPairs.get(char);
+
+    if (!close) {
+      output += char;
+      index += 1;
+      continue;
+    }
+
+    const closeIndex = findMatchingDelimiter(source, index);
+    const innerSource = source.slice(index + 1, closeIndex);
+    const sortedInnerSource = sortGeneratedTypes(innerSource);
+    const normalizedInnerSource =
+      char === '{'
+        ? sortTypeLiteralMembers(sortedInnerSource)
+        : sortedInnerSource;
+
+    output += `${char}${normalizedInnerSource}${close}`;
+    index = closeIndex + 1;
+  }
+
+  return output;
+}
+
+function resolveTypesFilePath() {
+  if (process.argv[2]) {
+    return path.resolve(process.cwd(), process.argv[2]);
+  }
+
+  return path.join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'packages',
+    'types',
+    'src',
+    'supabase.ts'
+  );
 }
 
 function main() {
   try {
-    const typesFilePath = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'packages',
-      'types',
-      'src',
-      'supabase.ts'
-    );
+    const typesFilePath = resolveTypesFilePath();
 
-    console.log('🔍 Reading types file:', typesFilePath);
+    console.log('Reading types file:', typesFilePath);
 
     if (!fs.existsSync(typesFilePath)) {
-      console.error('❌ Error: Types file not found at', typesFilePath);
+      console.error('Error: Types file not found at', typesFilePath);
       process.exit(1);
     }
 
     const content = fs.readFileSync(typesFilePath, 'utf8');
-    console.log('📖 Read', content.length, 'characters');
-
-    const sourceFile = ts.createSourceFile(
-      'supabase.ts',
-      content,
-      ts.ScriptTarget.Latest,
-      true
-    );
-
-    const transformer = (context) => (rootNode) => {
-      function visit(node) {
-        // First, visit all children to ensure nested nodes are sorted first
-        node = ts.visitEachChild(node, visit, context);
-
-        // Then, sort the current node if it's a relevant type declaration
-        if (
-          ts.isTypeLiteralNode(node) ||
-          ts.isInterfaceDeclaration(node) ||
-          (ts.isTypeAliasDeclaration(node) &&
-            ts.isTypeLiteralNode(node.type)) ||
-          ts.isUnionTypeNode(node) ||
-          ts.isArrayLiteralExpression(node)
-        ) {
-          return sortMembers(node, sourceFile);
-        }
-        return node;
-      }
-      return ts.visitNode(rootNode, visit);
-    };
-
-    const result = ts.transform(sourceFile, [transformer]);
-    const transformedSourceFile = result.transformed[0];
-
-    const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-    const sortedContent = printer.printFile(transformedSourceFile);
-
-    console.log('🔄 Sorted object keys');
+    const sortedContent = sortGeneratedTypes(content);
 
     if (content !== sortedContent) {
       fs.writeFileSync(typesFilePath, sortedContent, 'utf8');
-      console.log('💾 Wrote sorted content back to file');
+      console.log('Wrote sorted content back to file');
     } else {
-      console.log('✅ No changes detected, file is already sorted.');
+      console.log('No changes detected, file is already sorted.');
     }
 
-    console.log('✅ Successfully sorted object keys in types file');
+    console.log('Successfully sorted object keys in types file');
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Error:', error.message);
     console.error('Stack trace:', error.stack);
     process.exit(1);
   }

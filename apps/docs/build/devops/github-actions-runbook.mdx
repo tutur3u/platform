@@ -447,8 +447,8 @@ Filtered production Docker installs only include the selected app and the
 dependencies that app needs. Workspace packages with direct `tsc` build scripts
 must declare `typescript` in their own `devDependencies`; do not
 rely on the root devDependency for production Docker builds. Programmatic
-compiler API consumers should use `@typescript/typescript6` only as a
-narrow compatibility bridge until TypeScript 7 exposes a stable API.
+compiler API consumers must stay on the active TypeScript 7 toolchain instead
+of carrying legacy compiler compatibility packages.
 
 ### Newer-commit guards
 

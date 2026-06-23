@@ -189,8 +189,11 @@ test('active workspace manifests do not declare native-preview TypeScript', () =
   assert.deepEqual(invalidPackages, []);
 });
 
-test('TypeScript 6 API compatibility package stays scoped to database sort-types', () => {
+test('workspace manifests do not declare legacy compiler compatibility packages', () => {
   const invalidPackages = [];
+  const legacyCompilerPackages = [
+    ['@typescript', 'type' + 'script' + '6'].join('/'),
+  ];
 
   for (const packageJsonPath of [
     'package.json',
@@ -204,22 +207,17 @@ test('TypeScript 6 API compatibility package stays scoped to database sort-types
       'peerDependencies',
       'optionalDependencies',
     ]) {
-      const version = packageJson[dependencyField]?.['@typescript/typescript6'];
+      for (const packageName of legacyCompilerPackages) {
+        const version = packageJson[dependencyField]?.[packageName];
 
-      if (!version) {
-        continue;
-      }
-
-      if (
-        packageJsonPath !== 'apps/database/package.json' ||
-        dependencyField !== 'devDependencies' ||
-        version !== '6.0.1'
-      ) {
-        invalidPackages.push({
-          file: packageJsonPath,
-          dependencyField,
-          version,
-        });
+        if (version) {
+          invalidPackages.push({
+            file: packageJsonPath,
+            dependencyField,
+            packageName,
+            version,
+          });
+        }
       }
     }
   }
