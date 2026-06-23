@@ -1429,6 +1429,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/library ports the legacy static education library card index with localized copy and shared education shell primitives. This marks only the page artifact migrated; parent dashboard layout/session and library resource pages remain legacy-owned."
     },
+    "page:/:locale/:wsId/education/library/flashcards:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/flashcards ports the legacy workspace flashcard library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; flashcard API route ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/education/valsea:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
