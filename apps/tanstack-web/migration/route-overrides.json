@@ -1444,6 +1444,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/valsea ports the legacy Valsea Classroom Studio page as a dynamic authenticated workspace route with fail-closed current-user auth, full workspace resolution, localized education header metadata/content, and the shared ValseaClassroomClient. This marks only the page artifact migrated; parent dashboard/session ownership and the Valsea audio/processing APIs remain separately tracked backend work."
     },
+    "page:/:locale/:wsId/users/group-tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags ports the legacy workspace user group tags table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for group-tag reads, internal-api-backed create/update/delete forms and row actions, localized FeatureSummary content, and canonical locale-prefixed detail hrefs. This marks only the frontend page artifact migrated; group-tag detail page and API route ownership remain separately tracked."
+    },
     "page:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
