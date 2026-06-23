@@ -335,6 +335,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `get_budget_status` with the service-role credential, and preserves the raw
   legacy payload plus Unauthorized, Insufficient permissions, and budget status
   error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/debts/summary`: legacy-compatible debt
+  and loan summary probe. Rust reuses the finance app-session/CLI/Supabase
+  auth boundary, normalizes the workspace identifier, requires
+  `manage_finance`, calls private-schema `get_debt_loan_summary` with the
+  service-role credential, returns the first legacy RPC row or the zero summary,
+  and preserves legacy auth, permission, and summary error bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

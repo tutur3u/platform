@@ -8327,6 +8327,71 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/finance/debts/summary:
+    get:
+      summary: Workspace finance debt and loan summary
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/finance/debts/summary/route.ts
+        GET. The Rust backend accepts finance/platform app-session tokens and
+        CLI app-session tokens before falling back to a normal Supabase browser
+        session or non-app-session Bearer token, normalizes internal, personal,
+        handle, and UUID workspace identifiers, requires `manage_finance`
+        through `has_workspace_permission`, calls private-schema
+        `get_debt_loan_summary` with `_actor_id` and `_ws_id` using the
+        server-owned service-role credential, returns the first legacy RPC row or
+        the legacy zero summary, and preserves the legacy Unauthorized,
+        Insufficient permissions, and Error fetching debt/loan summary bodies.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Debt and loan summary for the workspace caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceDebtSummaryResponse"
+        "401":
+          description: Missing or invalid finance caller credentials, or unresolved workspace access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceDebtSummaryMessage"
+        "403":
+          description: Authenticated caller lacks manage_finance permission for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceDebtSummaryMessage"
+        "500":
+          description: Debt and loan summary lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceDebtSummaryMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/settings/permissions/check:
     get:
       summary: Workspace setting permission check
@@ -9174,6 +9239,44 @@ components:
             - Unauthorized
             - Insufficient permissions
             - Error fetching budget status
+    FinanceDebtSummaryResponse:
+      type: object
+      required:
+        - total_debts
+        - total_loans
+        - active_debt_count
+        - active_loan_count
+        - total_debt_remaining
+        - total_loan_remaining
+        - net_position
+      properties:
+        total_debts:
+          type: number
+        total_loans:
+          type: number
+        active_debt_count:
+          type: integer
+          minimum: 0
+        active_loan_count:
+          type: integer
+          minimum: 0
+        total_debt_remaining:
+          type: number
+        total_loan_remaining:
+          type: number
+        net_position:
+          type: number
+    FinanceDebtSummaryMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - Insufficient permissions
+            - Error fetching debt/loan summary
     UnauthorizedError:
       type: object
       required:

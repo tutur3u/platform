@@ -29,6 +29,9 @@ mod finance_auth;
 mod finance_budget_status;
 #[cfg(test)]
 mod finance_budget_status_test;
+mod finance_debt_summary;
+#[cfg(test)]
+mod finance_debt_summary_test;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
@@ -501,6 +504,12 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         finance_budget_status::handle_finance_budget_status_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        finance_debt_summary::handle_finance_debt_summary_route(config, request, outbound).await
     {
         return response;
     }
