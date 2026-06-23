@@ -38,6 +38,9 @@ mod finance_filter_users_test;
 mod finance_recurring_transactions;
 #[cfg(test)]
 mod finance_recurring_transactions_test;
+mod finance_subscription_context;
+#[cfg(test)]
+mod finance_subscription_context_test;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
@@ -531,6 +534,14 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) = finance_subscription_context::handle_finance_subscription_context_route(
+        config, request, outbound,
+    )
+    .await
     {
         return response;
     }

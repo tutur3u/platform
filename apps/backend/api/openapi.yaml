@@ -8468,6 +8468,96 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/finance/invoices/subscription/context:
+    get:
+      summary: Workspace finance subscription invoice context
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts
+        GET. The Rust backend accepts finance/platform app-session tokens and
+        CLI app-session tokens before falling back to a normal Supabase browser
+        session or non-app-session Bearer token, normalizes internal, personal,
+        handle, and UUID workspace identifiers, requires `create_invoices`
+        through `has_workspace_permission`, preserves the legacy query
+        short-circuit for missing `userId`, `month`, or `groupIds`, validates
+        requested student groups inside the workspace, reads month-scoped
+        attendance and completed subscription invoice coverage with the
+        server-owned service-role credential, returns the legacy attendance and
+        latest paid invoice context shape, and preserves the legacy Unauthorized
+        and Error fetching subscription invoice context bodies.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: string
+            examples:
+              - "2026-06"
+          description: Month identifier used to build the attendance date range.
+        - name: groupIds
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Repeated group IDs to validate and inspect for subscription context.
+      responses:
+        "200":
+          description: Month attendance rows and latest completed invoice coverage per valid group.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceSubscriptionInvoiceContextResponse"
+        "401":
+          description: Missing or invalid finance caller credentials, or unresolved workspace access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceSubscriptionInvoiceContextMessage"
+        "403":
+          description: Authenticated caller lacks create_invoices permission for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceSubscriptionInvoiceContextMessage"
+        "500":
+          description: Subscription invoice context lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceSubscriptionInvoiceContextMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/finance/recurring-transactions/upcoming:
     get:
       summary: Workspace upcoming recurring finance transactions
@@ -9449,6 +9539,44 @@ components:
             - Failed to fetch transaction creators
             - Failed to fetch invoice creators
             - Failed to fetch workspace users
+    FinanceSubscriptionInvoiceContextResponse:
+      type: object
+      required:
+        - attendance
+        - latestInvoices
+      properties:
+        attendance:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        latestInvoices:
+          type: array
+          items:
+            type: object
+            required:
+              - group_id
+              - valid_until
+              - created_at
+            properties:
+              group_id:
+                type: string
+              valid_until:
+                type:
+                  - string
+                  - "null"
+              created_at:
+                type: string
+    FinanceSubscriptionInvoiceContextMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - Error fetching subscription invoice context
     FinanceUpcomingRecurringTransactionsResponse:
       type: object
       required:

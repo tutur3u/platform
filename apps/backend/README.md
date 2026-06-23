@@ -348,6 +348,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   with service-role auth, preserves caller-token reads for workspace users when
   a normal Supabase session is present, and keeps the legacy `{ users }` and
   branch-specific error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/invoices/subscription/context`:
+  legacy-compatible subscription invoice context endpoint. Rust reuses the
+  finance app-session/CLI/Supabase auth boundary, normalizes the workspace
+  identifier, requires `create_invoices`, validates requested student groups,
+  reads month-scoped attendance and completed invoice history with service-role
+  auth, and returns the legacy attendance plus latest paid invoice coverage
+  context.
 - `GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming`:
   legacy-compatible upcoming recurring transaction probe. Rust reuses the
   finance app-session/CLI/Supabase auth boundary, normalizes the workspace
