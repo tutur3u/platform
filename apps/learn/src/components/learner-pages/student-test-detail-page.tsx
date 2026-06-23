@@ -21,7 +21,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   EmptyState,
   LoadingState,
@@ -35,9 +35,26 @@ interface StudentTestDetailPageProps {
   testId: string;
 }
 
+function getParsedContent(content: unknown): any {
+  if (typeof content === 'string') {
+    try {
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  }
+  return content;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
+  const parsedValue = getParsedContent(value);
+  if (
+    !parsedValue ||
+    typeof parsedValue !== 'object' ||
+    Array.isArray(parsedValue)
+  )
+    return null;
+  return parsedValue as Record<string, unknown>;
 }
 
 function displayText(value: unknown): string {
@@ -58,7 +75,10 @@ function getStringItems(value: unknown, key: string): string[] {
 }
 
 function getMatchingPairs(value: unknown): { left: string; right: string }[] {
-  const pairs = Array.isArray(value) ? value : getArrayProperty(value, 'pairs');
+  const parsedValue = getParsedContent(value);
+  const pairs = Array.isArray(parsedValue)
+    ? parsedValue
+    : getArrayProperty(parsedValue, 'pairs');
   return pairs
     .map((pair) => {
       const record = asRecord(pair);
@@ -68,6 +88,35 @@ function getMatchingPairs(value: unknown): { left: string; right: string }[] {
       };
     })
     .filter((pair) => Boolean(pair.left && pair.right));
+}
+
+function getMultipleChoiceOptions(
+  quiz: any
+): { id: string; value: string; index: number | null }[] {
+  const parsedContent = getParsedContent(quiz?.content);
+  const contentOptions = Array.isArray(parsedContent?.options)
+    ? parsedContent.options
+    : [];
+
+  const parsedContentOptions = contentOptions
+    .map((option: unknown, index: number) => ({
+      id: `content-${index}`,
+      value: displayText(option),
+      index,
+    }))
+    .filter((opt: { id: string; value: string; index: number }) =>
+      Boolean(opt.value)
+    );
+
+  if (parsedContentOptions.length > 0) {
+    return parsedContentOptions;
+  }
+
+  return (quiz?.quiz_options ?? []).map((option: any) => ({
+    id: option.id,
+    value: option.value,
+    index: null,
+  }));
 }
 
 export function StudentTestDetailPage({
@@ -184,11 +233,11 @@ export function StudentTestDetailPage({
     },
   });
 
-  const handleAutoSubmit = () => {
+  const handleAutoSubmit = useCallback(() => {
     if (attempt && !attempt.submitted_at && !submitMutation.isPending) {
       submitMutation.mutate({ attemptId: attempt.id });
     }
-  };
+  }, [attempt, submitMutation]);
 
   const handleManualSubmit = () => {
     if (!attempt || attempt.submitted_at || submitMutation.isPending) return;
@@ -220,7 +269,7 @@ export function StudentTestDetailPage({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [attempt, test]);
+  }, [attempt, test, handleAutoSubmit]);
 
   if (courseQuery.isLoading || attemptQuery.isLoading) return <LoadingState />;
 
@@ -302,7 +351,7 @@ export function StudentTestDetailPage({
       };
 
       if (!quiz.type || quiz.type === 'multiple_choice') {
-        const options = quiz.quiz_options || [];
+        const options = getMultipleChoiceOptions(quiz);
         return (
           <div className="mt-4 space-y-2.5">
             {options.map((opt: any) => {
@@ -320,9 +369,13 @@ export function StudentTestDetailPage({
                     name={`quiz-${quiz.id}`}
                     checked={isChecked}
                     onChange={() => {
+                      const updatedAns =
+                        opt.index !== null
+                          ? { selectedIndex: opt.index }
+                          : null;
                       const updated = {
                         selectedOptionId: opt.id,
-                        answer: null,
+                        answer: updatedAns,
                       };
                       setLocalAnswers((prev) => ({
                         ...prev,
@@ -332,6 +385,7 @@ export function StudentTestDetailPage({
                         attemptId: attempt.id,
                         quizId: quiz.id,
                         selectedOptionId: opt.id,
+                        answer: updatedAns,
                       });
                     }}
                     className="mt-1"
@@ -480,7 +534,12 @@ export function StudentTestDetailPage({
 
       if (quiz.type === 'matching') {
         const pairs = getMatchingPairs(quiz.content);
-        const choices = getStringItems(quiz.content, 'choices');
+        let choices = getStringItems(quiz.content, 'choices');
+        if (choices.length === 0) {
+          choices = Array.from(new Set(pairs.map((p) => p.right))).filter(
+            Boolean
+          );
+        }
         const submittedPairs = Array.isArray(quizAns.answer)
           ? quizAns.answer
           : (quizAns.answer as any)?.pairs ||
