@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod admin_ai_credits_entity_detail;
 mod admin_ai_credits_overview;
 mod ai_chats_list;
 mod ai_models;
@@ -65,12 +66,14 @@ mod hive_access_requests;
 mod hive_ai_credits;
 mod hive_ai_models;
 mod hive_servers_economy;
+mod hive_servers_research_sessions_export;
 mod hive_servers_workflows_runs;
 mod hive_workspaces;
 mod holidays;
 mod infrastructure_abuse_events;
 mod infrastructure_abuse_intelligence;
 mod infrastructure_ai_agents_external_threads;
+mod infrastructure_ai_agents_external_threads_messages;
 mod infrastructure_blocked_ips;
 mod infrastructure_catalog_exports;
 mod infrastructure_content_exports;
@@ -97,6 +100,7 @@ mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
 mod inventory;
 mod inventory_orders;
+mod mobile_deployment_bundle;
 mod mobile_version;
 mod nova;
 mod onboarding_progress;
@@ -137,10 +141,18 @@ mod workspaces_2;
 mod workspaces_3;
 mod workspaces_categories;
 mod workspaces_chat_conversations_attachments;
+mod workspaces_chat_conversations_shared_content;
 mod workspaces_chat_directory;
 mod workspaces_chat_search;
 mod workspaces_datasets_full;
 mod workspaces_external_projects;
+mod workspaces_external_projects_delivery;
+mod workspaces_external_projects_sync_snapshot;
+mod workspaces_finance_charts_daily;
+mod workspaces_finance_wallets_expense_count;
+mod workspaces_finance_wallets_expense_sum;
+mod workspaces_finance_wallets_income_count;
+mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms_export;
 mod workspaces_forms_share_link;
 mod workspaces_inventory_access;
@@ -153,10 +165,15 @@ mod workspaces_mail;
 mod workspaces_mail_mailboxes_messages;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
+mod workspaces_posts_bootstrap;
+mod workspaces_posts_status;
+mod workspaces_promotions_count;
 mod workspaces_settings_permissions_setup_status;
 mod workspaces_storage_analytics;
 mod workspaces_storage_export_assetpath;
 mod workspaces_storage_rollout_state;
+mod workspaces_task_plans_digest;
+mod workspaces_teach_users;
 mod workspaces_transactions_category_breakdown;
 mod workspaces_transactions_spending_trends;
 mod workspaces_tulearn_courses;
@@ -1189,6 +1206,134 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        admin_ai_credits_entity_detail::handle_admin_ai_credits_entity_detail_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_servers_research_sessions_export::handle_hive_servers_research_sessions_export_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_ai_agents_external_threads_messages::handle_infrastructure_ai_agents_external_threads_messages_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        mobile_deployment_bundle::handle_mobile_deployment_bundle_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_chat_conversations_shared_content::handle_workspaces_chat_conversations_shared_content_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_delivery::handle_workspaces_external_projects_delivery_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_sync_snapshot::handle_workspaces_external_projects_sync_snapshot_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_charts_daily::handle_workspaces_finance_charts_daily_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_wallets_expense_count::handle_workspaces_finance_wallets_expense_count_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_wallets_expense_sum::handle_workspaces_finance_wallets_expense_sum_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_wallets_income_count::handle_workspaces_finance_wallets_income_count_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_wallets_income_sum::handle_workspaces_finance_wallets_income_sum_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_posts_bootstrap::handle_workspaces_posts_bootstrap_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_posts_status::handle_workspaces_posts_status_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_promotions_count::handle_workspaces_promotions_count_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_task_plans_digest::handle_workspaces_task_plans_digest_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_teach_users::handle_workspaces_teach_users_route(config, request, outbound).await
     {
         return response;
     }
