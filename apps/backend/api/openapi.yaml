@@ -8327,6 +8327,93 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/workspaces/{wsId}/finance/charts/balance:
+    get:
+      summary: Workspace finance balance chart point
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/workspaces/[wsId]/finance/charts/balance/route.ts
+        GET. The Rust backend accepts finance/platform app-session tokens and
+        CLI app-session tokens before falling back to a normal Supabase browser
+        session or non-app-session Bearer token, normalizes internal, personal,
+        handle, and UUID workspace identifiers, requires `view_finance_stats`
+        through `has_workspace_permission`, preserves the legacy required
+        `date` query and `includeConfidential` boolean parsing, calls
+        `get_wallet_balance_at_date`, returns the legacy `{ balance, date }`
+        shape, and preserves the legacy Unauthorized, Forbidden, invalid query,
+        and balance lookup error bodies.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 50
+          description: Date passed through to `get_wallet_balance_at_date`.
+        - name: includeConfidential
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+            default: "true"
+      responses:
+        "200":
+          description: Balance value at the requested date.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceChartBalanceResponse"
+        "400":
+          description: Missing or invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceChartBalanceMessage"
+        "401":
+          description: Missing or invalid finance caller credentials, or unresolved workspace access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceChartBalanceMessage"
+        "403":
+          description: Authenticated caller lacks view_finance_stats permission for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceChartBalanceMessage"
+        "500":
+          description: Balance lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceChartBalanceMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/finance/debts/summary:
     get:
       summary: Workspace finance debt and loan summary
@@ -9479,6 +9566,28 @@ components:
             - Unauthorized
             - Insufficient permissions
             - Error fetching budget status
+    FinanceChartBalanceResponse:
+      type: object
+      required:
+        - balance
+        - date
+      properties:
+        balance:
+          type: number
+        date:
+          type: string
+    FinanceChartBalanceMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Invalid query parameters. "date" is required.
+            - Unauthorized
+            - Forbidden
+            - Internal server error while fetching balance
     FinanceDebtSummaryResponse:
       type: object
       required:

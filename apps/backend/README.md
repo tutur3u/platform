@@ -335,6 +335,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `get_budget_status` with the service-role credential, and preserves the raw
   legacy payload plus Unauthorized, Insufficient permissions, and budget status
   error bodies.
+- `GET /api/workspaces/:wsId/finance/charts/balance`: legacy-compatible
+  balance chart point. Rust reuses the finance app-session/CLI/Supabase auth
+  boundary, normalizes the workspace identifier, requires
+  `view_finance_stats`, preserves the required `date` query plus
+  `includeConfidential` parsing, calls `get_wallet_balance_at_date`, and
+  returns the legacy `{ balance, date }` payload with Unauthorized, Forbidden,
+  invalid-query, and balance lookup error bodies.
 - `GET /api/v1/workspaces/:wsId/finance/debts/summary`: legacy-compatible debt
   and loan summary probe. Rust reuses the finance app-session/CLI/Supabase
   auth boundary, normalizes the workspace identifier, requires

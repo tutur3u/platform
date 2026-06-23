@@ -839,6 +839,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/budgets/status by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling get_budget_status with the service-role credential, returning the raw legacy RPC payload, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching budget status bodies."
     },
+    "api:/api/workspaces/:wsId/finance/charts/balance:apps/web/src/app/api/workspaces/[wsId]/finance/charts/balance/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/workspaces/:wsId/finance/charts/balance by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_finance_stats through has_workspace_permission, preserving the legacy required date query plus includeConfidential boolean parsing, calling get_wallet_balance_at_date, returning the legacy { balance, date } payload, and preserving the legacy Unauthorized, Forbidden, invalid query, and balance lookup error bodies."
+    },
     "api:/api/v1/workspaces/:wsId/finance/debts/summary:apps/web/src/app/api/v1/workspaces/[wsId]/finance/debts/summary/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
