@@ -299,8 +299,8 @@ export const PATCH = withSessionAuth(
         );
       }
 
-      const maxScore = quiz.score ?? 0;
-      if (scoreAwarded != null && scoreAwarded > maxScore) {
+      const maxScore = quiz.score;
+      if (scoreAwarded != null && maxScore != null && scoreAwarded > maxScore) {
         return NextResponse.json(
           { message: 'Score cannot exceed the question maximum' },
           { status: 400 }

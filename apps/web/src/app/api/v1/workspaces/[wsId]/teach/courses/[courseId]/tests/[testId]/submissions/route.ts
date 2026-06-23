@@ -175,8 +175,9 @@ export const GET = withSessionAuth(
     ]);
     if (answeredCountsErr || correctCountsErr) {
       serverLogger.error('Failed to fetch test submission answer counts', {
+        answeredCountsError: answeredCountsErr,
         attemptIds,
-        error: answeredCountsErr ?? correctCountsErr,
+        correctCountsError: correctCountsErr,
         testId,
         wsId: access.normalizedWsId,
       });

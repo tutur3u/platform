@@ -59,8 +59,7 @@ export function TestSubmissionDetailDialog({
             <div className="space-y-1 text-left">
               <DialogTitle>{t('teachModules.submissionDetails')}</DialogTitle>
               <DialogDescription>
-                {t('teachModules.reviewingAnswersForStudent')}{' '}
-                <span className="font-bold text-foreground">{studentName}</span>
+                {t('teachModules.reviewingAnswersForStudent', { studentName })}
               </DialogDescription>
             </div>
 
@@ -232,7 +231,7 @@ function SubmissionContent({
                 >
                   {t('teachModules.questionScore', {
                     score: quizAns.score_awarded ?? 0,
-                    total: quiz.score ?? 1,
+                    total: quiz.score ?? t('teachModules.noScoreLimit'),
                   })}
                 </div>
               </div>
@@ -252,7 +251,7 @@ function SubmissionContent({
                 initialScoreAwarded={quizAns.score_awarded ?? 0}
                 initialFeedback={quizAns.feedback || ''}
                 isParagraph={quiz.type === 'paragraph'}
-                maxScore={quiz.score ?? 1}
+                maxScore={quiz.score}
                 t={t}
               />
             </div>
@@ -575,7 +574,7 @@ function FeedbackForm({
   initialScoreAwarded: number;
   initialFeedback: string;
   isParagraph: boolean;
-  maxScore: number;
+  maxScore: number | null;
   t: ReturnType<typeof useTranslations>;
 }) {
   const qc = useQueryClient();
@@ -589,7 +588,11 @@ function FeedbackForm({
 
   const parseManualScore = () => {
     const parsed = scoreAwarded.trim() ? Number(scoreAwarded) : 0;
-    if (!Number.isFinite(parsed) || parsed < 0 || parsed > maxScore) {
+    if (
+      !Number.isFinite(parsed) ||
+      parsed < 0 ||
+      (maxScore !== null && parsed > maxScore)
+    ) {
       throw new Error(t('teachModules.invalidManualScore'));
     }
 
@@ -664,7 +667,7 @@ function FeedbackForm({
             id={`manual-score-${quizId}`}
             className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
             disabled={feedbackMutation.isPending}
-            max={maxScore}
+            max={maxScore ?? undefined}
             min={0}
             onChange={(event) => setScoreAwarded(event.target.value)}
             step={0.5}

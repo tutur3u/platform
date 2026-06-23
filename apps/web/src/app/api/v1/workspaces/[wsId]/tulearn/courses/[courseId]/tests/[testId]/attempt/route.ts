@@ -113,6 +113,29 @@ export const GET = withSessionAuth<Params>(
         return NextResponse.json({ attempt: null });
       }
 
+      const loadLinkedQuizzes = async <TQuiz extends ActiveQuiz | ReviewQuiz>(
+        select: string
+      ) => {
+        const { data: testQuizzes, error: tqErr } = await sbAdmin
+          .from('course_test_quizzes')
+          .select('quiz_id')
+          .eq('test_id', testId);
+
+        if (tqErr) throw tqErr;
+
+        const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
+        if (quizIds.length === 0) return [];
+
+        const { data: rawQuizzes, error: quizzesErr } = await sbAdmin
+          .from('workspace_quizzes')
+          .select(select)
+          .in('id', quizIds)
+          .order('created_at', { ascending: false });
+
+        if (quizzesErr) throw quizzesErr;
+        return (rawQuizzes ?? []) as unknown as TQuiz[];
+      };
+
       // If submitted, return the final result
       if (attempt.submitted_at) {
         const score = test.is_score_published ? attempt.score : null;
@@ -122,28 +145,9 @@ export const GET = withSessionAuth<Params>(
 
         // If score is published, we can also return quizzes (with is_correct/explanation) and answers so they can review their submission!
         if (test.is_score_published) {
-          // Get quizzes linked to this test
-          const { data: testQuizzes, error: tqErr } = await sbAdmin
-            .from('course_test_quizzes')
-            .select('quiz_id')
-            .eq('test_id', testId);
-
-          if (tqErr) throw tqErr;
-
-          const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
-
-          if (quizIds.length > 0) {
-            const { data: rawQuizzes, error: quizzesErr } = await sbAdmin
-              .from('workspace_quizzes')
-              .select(
-                'id, question, type, content, score, quiz_options(id, value, is_correct, explanation)'
-              )
-              .in('id', quizIds)
-              .order('created_at', { ascending: false });
-
-            if (quizzesErr) throw quizzesErr;
-            quizzes = (rawQuizzes ?? []) as ReviewQuiz[];
-          }
+          quizzes = await loadLinkedQuizzes<ReviewQuiz>(
+            'id, question, type, content, score, quiz_options(id, value, is_correct, explanation)'
+          );
 
           const { data: rawAnswers, error: answersErr } = await sbAdmin
             .from('course_test_attempt_answers')
@@ -167,31 +171,11 @@ export const GET = withSessionAuth<Params>(
       }
 
       // Otherwise, return active attempt, stripped quizzes (no correct indicators), and saved answers
-      // 1. Get quizzes linked to this test
-      const { data: testQuizzes, error: tqErr } = await sbAdmin
-        .from('course_test_quizzes')
-        .select('quiz_id')
-        .eq('test_id', testId);
+      const quizzes = await loadLinkedQuizzes<ActiveQuiz>(
+        'id, question, type, content, score, quiz_options(id, value)'
+      );
 
-      if (tqErr) throw tqErr;
-
-      const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
-
-      let quizzes: ActiveQuiz[] = [];
-      if (quizIds.length > 0) {
-        const { data: rawQuizzes, error: quizzesErr } = await sbAdmin
-          .from('workspace_quizzes')
-          .select(
-            'id, question, type, content, score, quiz_options(id, value)' // Omit explanation and is_correct!
-          )
-          .in('id', quizIds)
-          .order('created_at', { ascending: false });
-
-        if (quizzesErr) throw quizzesErr;
-        quizzes = (rawQuizzes ?? []) as ActiveQuiz[];
-      }
-
-      // 2. Get student's current answers
+      // Get student's current answers
       const { data: answers, error: answersErr } = await sbAdmin
         .from('course_test_attempt_answers')
         .select('quiz_id, selected_option_id, answer') // Omit is_correct and score_awarded!

@@ -206,6 +206,8 @@ export function StudentTestDetailPage({
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [hasStarted, setHasStarted] = useState<boolean>(true);
   const pendingAnswerSavesRef = useRef(new Set<Promise<unknown>>());
+  const failedAnswerSavesRef = useRef(new Set<string>());
+  const submitInFlightRef = useRef(false);
 
   // Check if test has started
   useEffect(() => {
@@ -291,6 +293,14 @@ export function StudentTestDetailPage({
     }) => {
       const savePromise = saveAnswerMutation
         .mutateAsync(payload)
+        .then((result) => {
+          failedAnswerSavesRef.current.delete(payload.quizId);
+          return result;
+        })
+        .catch((error) => {
+          failedAnswerSavesRef.current.add(payload.quizId);
+          throw error;
+        })
         .finally(() => {
           pendingAnswerSavesRef.current.delete(savePromise);
         });
@@ -302,22 +312,47 @@ export function StudentTestDetailPage({
 
   const flushPendingAnswerSaves = useCallback(async () => {
     const pendingSaves = Array.from(pendingAnswerSavesRef.current);
-    if (pendingSaves.length === 0) return;
-    await Promise.allSettled(pendingSaves);
+    if (pendingSaves.length > 0) {
+      await Promise.all(pendingSaves);
+    }
+    if (failedAnswerSavesRef.current.size > 0) {
+      throw new Error('Pending answer save failed');
+    }
   }, []);
 
+  const submitAttempt = useCallback(
+    async (attemptId: string) => {
+      if (submitInFlightRef.current || submitMutation.isPending) return;
+
+      submitInFlightRef.current = true;
+      try {
+        await flushPendingAnswerSaves();
+        await submitMutation.mutateAsync({ attemptId });
+      } catch {
+        // Mutation-level handlers already show the actionable error toast.
+      } finally {
+        submitInFlightRef.current = false;
+      }
+    },
+    [flushPendingAnswerSaves, submitMutation]
+  );
+
   const handleAutoSubmit = useCallback(async () => {
-    if (attempt && !attempt.submitted_at && !submitMutation.isPending) {
-      await flushPendingAnswerSaves();
-      submitMutation.mutate({ attemptId: attempt.id });
+    if (attempt && !attempt.submitted_at) {
+      await submitAttempt(attempt.id);
     }
-  }, [attempt, flushPendingAnswerSaves, submitMutation]);
+  }, [attempt, submitAttempt]);
 
   const handleManualSubmit = async () => {
-    if (!attempt || attempt.submitted_at || submitMutation.isPending) return;
+    if (
+      !attempt ||
+      attempt.submitted_at ||
+      submitMutation.isPending ||
+      submitInFlightRef.current
+    )
+      return;
     if (confirm(t('courses.submitTestConfirm'))) {
-      await flushPendingAnswerSaves();
-      submitMutation.mutate({ attemptId: attempt.id });
+      await submitAttempt(attempt.id);
     }
   };
 
@@ -337,7 +372,7 @@ export function StudentTestDetailPage({
       setTimeLeft(remaining);
 
       if (remaining <= 0) {
-        handleAutoSubmit();
+        void handleAutoSubmit();
       }
     };
 

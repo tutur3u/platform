@@ -113,10 +113,17 @@ begin
       content = case when p_quiz ? 'content' then p_quiz -> 'content' else content end
     where id = v_quiz_id
       and ws_id = p_ws_id
+      and exists (
+        select 1
+        from public.course_test_quizzes ctq
+        where ctq.test_id = p_test_id
+          and ctq.module_id = p_module_id
+          and ctq.quiz_id = v_quiz_id
+      )
     returning id into v_quiz_id;
 
     if not found then
-      raise exception 'Quiz not found' using errcode = 'P0002';
+      raise exception 'Quiz not found for test module' using errcode = 'P0002';
     end if;
   else
     insert into public.workspace_quizzes (
