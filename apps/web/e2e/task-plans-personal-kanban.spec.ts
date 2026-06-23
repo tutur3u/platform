@@ -123,15 +123,18 @@ test.describe('Shareable task plans in personal Kanban', () => {
       await page.goto(`/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`, {
         waitUntil: 'domcontentloaded',
       });
-      await expect(page.getByTestId('kanban-planner-island')).toBeVisible();
+
+      const plannerTrigger = page.getByRole('button', { name: /^planner$/i });
+      await expect(plannerTrigger).toBeVisible();
+      await expect(page.getByPlaceholder('Task title')).toHaveCount(0);
+      await plannerTrigger.click();
+      await expect(
+        page.getByRole('dialog', { name: /planner/i })
+      ).toBeVisible();
       await expect(
         page.getByText(`E2E weekly plan ${timestamp}`)
       ).toBeVisible();
-      await expect(
-        page.getByRole('button', { name: /open planner/i })
-      ).toBeVisible();
-      await expect(page.getByPlaceholder('Task title')).toHaveCount(0);
-      await page.getByRole('button', { name: /open planner/i }).click();
+      await page.getByRole('button', { name: /target workspace/i }).click();
       await expect(page.getByPlaceholder('Task title')).toBeVisible();
 
       const createItem = await request.post(
