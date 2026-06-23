@@ -1338,6 +1338,13 @@ export {
   type TulearnWorkspaceSummary,
   type UpdateTulearnProfilePayload,
   updateTulearnProfile,
+  getTulearnTestAttempt,
+  startTulearnTest,
+  saveTulearnTestAnswer,
+  submitTulearnTest,
+  type TulearnTestAttempt,
+  type TulearnTestAttemptAnswer,
+  type TulearnTestAttemptResponse,
 } from './tulearn';
 export {
   createTutoringSession,
