@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod ai_chats_list;
 mod ai_models;
 mod ai_whitelist;
 mod ai_whitelist_delete;
@@ -53,6 +54,7 @@ mod finance_subscription_context;
 #[cfg(test)]
 mod finance_subscription_context_test;
 mod hive_access;
+mod hive_access_requests;
 mod hive_ai_credits;
 mod hive_ai_models;
 mod hive_workspaces;
@@ -80,6 +82,7 @@ mod infrastructure_user_status_changes;
 mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
 mod inventory;
+mod inventory_orders;
 mod mobile_version;
 mod nova;
 mod onboarding_progress;
@@ -97,6 +100,8 @@ mod workspace_education_access;
 mod workspace_habits_access;
 #[cfg(test)]
 mod workspace_habits_access_test;
+mod workspace_inventory_costing_analytics;
+mod workspace_inventory_realtime;
 mod workspace_limits;
 mod workspace_mentions;
 #[cfg(test)]
@@ -659,6 +664,35 @@ pub(crate) async fn handle_backend_request(
         return response;
     }
 
+    if let Some(response) =
+        ai_chats_list::handle_ai_chats_list_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        hive_access_requests::handle_hive_access_requests_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspace_inventory_realtime::handle_workspace_inventory_realtime_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_inventory_costing_analytics::handle_workspace_inventory_costing_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
     if let Some(response) = nova::handle_nova_route(config, request, outbound).await {
         return response;
     }
@@ -786,6 +820,12 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         email_blacklist::handle_email_blacklist_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        inventory_orders::handle_inventory_orders_route(config, request, outbound).await
     {
         return response;
     }
