@@ -10,6 +10,7 @@ import {
   EyeOff,
   GraduationCap,
   Layers,
+  Pencil,
   Play,
 } from '@tuturuuu/icons';
 import {
@@ -21,6 +22,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { CourseEditTestDialog } from './course-edit-test-dialog';
 import { TestQuestionsSection } from './test-questions-section';
 
 interface TestDetailClientProps {
@@ -38,6 +41,7 @@ export function TestDetailClient({
 }: TestDetailClientProps) {
   const locale = useLocale();
   const t = useTranslations();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Query tests
   const { data: testsData, isLoading: isLoadingTests } = useQuery({
@@ -176,6 +180,15 @@ export function TestDetailClient({
               </button>
 
               <button
+                onClick={() => setEditDialogOpen(true)}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-card px-5 py-3 font-bold text-base shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
+                type="button"
+              >
+                <Pencil className="h-5 w-5" />
+                {t('teachModules.editTest')}
+              </button>
+
+              <button
                 onClick={() => {
                   toast.success('Starting test session...');
                 }}
@@ -286,6 +299,21 @@ export function TestDetailClient({
           courseId={courseId}
           testId={testId}
           testModules={testModules}
+        />
+
+        {/* Edit Test Dialog */}
+        <CourseEditTestDialog
+          courseId={courseId}
+          wsId={wsId}
+          test={{
+            id: test.id,
+            name: test.name,
+            start_at: test.start_at ?? null,
+            duration_in_minutes: test.duration_in_minutes ?? null,
+            description: test.description ?? null,
+          }}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
         />
       </div>
     </main>
