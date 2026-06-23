@@ -85,6 +85,7 @@ import { Route as LocaleWsIdMembersRouteImport } from './routes/$locale/$wsId/me
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet';
 import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations';
 import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive';
+import { Route as LocaleWsIdHabitsRouteImport } from './routes/$locale/$wsId/habits';
 import { Route as LocaleWsIdFinanceRouteImport } from './routes/$locale/$wsId/finance';
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects';
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm';
@@ -564,6 +565,11 @@ const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
 const LocaleWsIdHiveRoute = LocaleWsIdHiveRouteImport.update({
   id: '/$wsId/hive',
   path: '/$wsId/hive',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdHabitsRoute = LocaleWsIdHabitsRouteImport.update({
+  id: '/$wsId/habits',
+  path: '/$wsId/habits',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdFinanceRoute = LocaleWsIdFinanceRouteImport.update({
@@ -1106,6 +1112,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
   '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
+  '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
@@ -1270,6 +1277,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
   '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
+  '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
@@ -1436,6 +1444,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
   '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
+  '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
@@ -1603,6 +1612,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/finance'
+    | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
@@ -1767,6 +1777,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/finance'
+    | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
@@ -1932,6 +1943,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
     | '/$locale/$wsId/finance'
+    | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
@@ -2599,6 +2611,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/hive';
       fullPath: '/$locale/$wsId/hive';
       preLoaderRoute: typeof LocaleWsIdHiveRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/habits': {
+      id: '/$locale/$wsId/habits';
+      path: '/$wsId/habits';
+      fullPath: '/$locale/$wsId/habits';
+      preLoaderRoute: typeof LocaleWsIdHabitsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/finance': {
@@ -3524,6 +3543,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren;
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute;
   LocaleWsIdFinanceRoute: typeof LocaleWsIdFinanceRouteWithChildren;
+  LocaleWsIdHabitsRoute: typeof LocaleWsIdHabitsRoute;
   LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren;
   LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute;
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRouteWithChildren;
@@ -3652,6 +3672,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
   LocaleWsIdFinanceRoute: LocaleWsIdFinanceRouteWithChildren,
+  LocaleWsIdHabitsRoute: LocaleWsIdHabitsRoute,
   LocaleWsIdHiveRoute: LocaleWsIdHiveRouteWithChildren,
   LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,
   LocaleWsIdMeetRoute: LocaleWsIdMeetRouteWithChildren,

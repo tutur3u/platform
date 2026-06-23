@@ -40,6 +40,7 @@ const GATED_ROUTES = [
   'chat',
   'cron',
   'education/valsea',
+  'habits',
   'inventory',
   'inventory/batches',
   'inventory/categories',
