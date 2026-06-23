@@ -14,6 +14,8 @@ mod auth_accounts;
 mod auth_me;
 mod auth_mfa;
 mod auth_mfa_mobile_approvals;
+mod auth_qr_login_challenges;
+mod calendar_auth;
 mod changelog;
 mod cms_workspaces;
 mod contact;
@@ -96,6 +98,7 @@ mod mobile_version;
 mod nova;
 mod onboarding_progress;
 mod outbound;
+mod shared_task_boards;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
@@ -125,7 +128,14 @@ mod workspace_mobile_module_flags;
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
+mod workspaces;
+mod workspaces_2;
+mod workspaces_3;
 mod workspaces_categories;
+mod workspaces_chat_conversations_attachments;
+mod workspaces_chat_directory;
+mod workspaces_chat_search;
+mod workspaces_datasets_full;
 mod workspaces_external_projects;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
@@ -135,6 +145,14 @@ mod workspaces_mail;
 mod workspaces_mail_mailboxes_messages;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
+mod workspaces_storage_rollout_state;
+mod workspaces_tulearn_courses;
+mod workspaces_tulearn_courses_2;
+mod workspaces_tulearn_reports;
+mod workspaces_user_groups_managers;
+mod workspaces_users_emails;
+mod workspaces_users_referral_discounts;
+mod workspaces_users_reports_logs;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -891,6 +909,132 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_chat_conversations_attachments::handle_workspaces_chat_conversations_attachments_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_chat_directory::handle_workspaces_chat_directory_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_chat_search::handle_workspaces_chat_search_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_tulearn_reports::handle_workspaces_tulearn_reports_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_tulearn_courses_2::handle_workspaces_tulearn_courses_2_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_tulearn_courses::handle_workspaces_tulearn_courses_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_referral_discounts::handle_workspaces_users_referral_discounts_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_emails::handle_workspaces_users_emails_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_reports_logs::handle_workspaces_users_reports_logs_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_managers::handle_workspaces_user_groups_managers_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_datasets_full::handle_workspaces_datasets_full_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_storage_rollout_state::handle_workspaces_storage_rollout_state_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        shared_task_boards::handle_shared_task_boards_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        auth_qr_login_challenges::handle_auth_qr_login_challenges_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        calendar_auth::handle_calendar_auth_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces::handle_workspaces_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = workspaces_2::handle_workspaces_2_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_3::handle_workspaces_3_route(config, request, outbound).await
     {
         return response;
     }
