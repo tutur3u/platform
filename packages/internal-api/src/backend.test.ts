@@ -11,6 +11,7 @@ import {
   getBackendCurrentUserDefaultWorkspace,
   getBackendCurrentUserProfile,
   getBackendHiveAccess,
+  getBackendInfrastructureAbuseEvents,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
   getBackendMigrationManifest,
@@ -519,6 +520,53 @@ describe('backend API client', () => {
       })
     );
     expect(getFetchHeaders(fetchMock).has('authorization')).toBe(false);
+  });
+
+  it('reads Rust-owned infrastructure abuse events with legacy-compatible filters', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        count: 1,
+        data: [
+          {
+            created_at: '2026-06-23T07:00:00.000Z',
+            email: 'member@example.com',
+            event_type: 'otp_verify_failed',
+            id: 'event-1',
+            ip_address: '203.0.113.10',
+            success: false,
+          },
+        ],
+        page: 2,
+        pageSize: 50,
+        totalPages: 1,
+      }),
+    });
+
+    const response = await getBackendInfrastructureAbuseEvents(
+      {
+        page: 2,
+        pageSize: 50,
+        q: '203.0.113',
+        success: 'false',
+        type: 'otp_verify_failed',
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(response.count).toBe(1);
+    expect(response.data[0]?.event_type).toBe('otp_verify_failed');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/infrastructure/abuse-events?ip=203.0.113&page=2&pageSize=50&success=false&type=otp_verify_failed',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it('reads the Rust-owned current Nova team including null memberships', async () => {

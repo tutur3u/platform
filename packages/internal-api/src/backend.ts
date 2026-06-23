@@ -1,3 +1,4 @@
+import type { AbuseEvent } from '@tuturuuu/types';
 import type {
   InternalOtpClient,
   InternalOtpPlatform,
@@ -7,6 +8,7 @@ import {
   createInternalApiClient,
   type InternalApiClientOptions,
   type InternalApiFetchInit,
+  type InternalApiQuery,
   withForwardedInternalApiAuth,
 } from './client';
 import type {
@@ -100,6 +102,36 @@ export type BackendUserFieldType = {
 export type BackendAiWhitelistMeResponse = {
   email: string | null;
   enabled: boolean;
+};
+
+export type BackendInfrastructureAbuseEvent = Pick<
+  AbuseEvent,
+  | 'created_at'
+  | 'email'
+  | 'email_hash'
+  | 'endpoint'
+  | 'event_type'
+  | 'id'
+  | 'ip_address'
+  | 'metadata'
+  | 'success'
+  | 'user_agent'
+>;
+
+export type BackendInfrastructureAbuseEventsQuery = {
+  page?: number | string;
+  pageSize?: number | string;
+  q?: string;
+  success?: string;
+  type?: string;
+};
+
+export type BackendInfrastructureAbuseEventsResponse = {
+  count: number | null;
+  data: BackendInfrastructureAbuseEvent[];
+  page: number | null;
+  pageSize: number | null;
+  totalPages: number | null;
 };
 
 export type BackendNovaCurrentTeamResponse = {
@@ -663,6 +695,29 @@ export function getBackendAiWhitelistMe(options: BackendApiClientOptions = {}) {
     '/api/v1/ai/whitelist/me',
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendInfrastructureAbuseEvents(
+  query: BackendInfrastructureAbuseEventsQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  const apiQuery: InternalApiQuery = {
+    ip: query.q || undefined,
+    page: query.page,
+    pageSize: query.pageSize,
+    success: query.success || undefined,
+    type: query.type || undefined,
+  };
+
+  return createBackendApiClient(
+    options
+  ).json<BackendInfrastructureAbuseEventsResponse>(
+    '/api/v1/infrastructure/abuse-events',
+    {
+      cache: 'no-store',
+      query: apiQuery,
     }
   );
 }

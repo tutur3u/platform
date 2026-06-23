@@ -133,6 +133,7 @@ import { Route as LocaleWsIdInventoryProductsRouteImport } from './routes/$local
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
+import { Route as LocaleWsIdInfrastructureAbuseEventsRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-events';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
 import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets';
 import { Route as LocaleWsIdFinanceTransactionsRouteImport } from './routes/$locale/$wsId/finance/transactions';
@@ -845,6 +846,12 @@ const LocaleWsIdInventoryBatchesRoute =
     path: '/$wsId/inventory/batches',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureAbuseEventsRoute =
+  LocaleWsIdInfrastructureAbuseEventsRouteImport.update({
+    id: '/$wsId/infrastructure/abuse-events',
+    path: '/$wsId/infrastructure/abuse-events',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdHiveNotWhitelistedRoute =
   LocaleWsIdHiveNotWhitelistedRouteImport.update({
     id: '/not-whitelisted',
@@ -1277,6 +1284,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1456,6 +1464,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1637,6 +1646,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
+  '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1819,6 +1829,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -1998,6 +2009,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2178,6 +2190,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
+    | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -3132,6 +3145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInventoryBatchesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/abuse-events': {
+      id: '/$locale/$wsId/infrastructure/abuse-events';
+      path: '/$wsId/infrastructure/abuse-events';
+      fullPath: '/$locale/$wsId/infrastructure/abuse-events';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureAbuseEventsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/hive/not-whitelisted': {
       id: '/$locale/$wsId/hive/not-whitelisted';
       path: '/not-whitelisted';
@@ -3940,6 +3960,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRouteWithChildren;
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
+  LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
@@ -4075,6 +4096,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdEducationQuizSetsRouteWithChildren,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
   LocaleWsIdEducationValseaRoute: LocaleWsIdEducationValseaRoute,
+  LocaleWsIdInfrastructureAbuseEventsRoute:
+    LocaleWsIdInfrastructureAbuseEventsRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,

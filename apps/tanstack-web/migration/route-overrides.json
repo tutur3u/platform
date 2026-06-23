@@ -1489,6 +1489,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/infrastructure/abuse-events:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/abuse-events/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/abuse-events ports the legacy authenticated infrastructure abuse-events page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, view_infrastructure not-found gating, URL search filters, shared data table rendering, and data loading through the Rust-owned /api/v1/infrastructure/abuse-events backend facade instead of direct Supabase reads."
+    },
     "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
