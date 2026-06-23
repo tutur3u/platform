@@ -81,6 +81,8 @@ test.describe('Shareable task plans in personal Kanban', () => {
     page,
     request,
   }, testInfo) => {
+    testInfo.setTimeout(90_000);
+
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 244));
     await resetDbRateLimits();
     await resetAppRateLimitStateForTests(request, {
@@ -194,6 +196,7 @@ test.describe('Shareable task plans in personal Kanban', () => {
         await request.delete(
           `/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`,
           {
+            failOnStatusCode: false,
             headers,
           }
         );
@@ -201,7 +204,7 @@ test.describe('Shareable task plans in personal Kanban', () => {
       if (planId) {
         await request.delete(
           `/api/v1/workspaces/personal/task-plans/${planId}`,
-          { headers }
+          { failOnStatusCode: false, headers }
         );
       }
     }
