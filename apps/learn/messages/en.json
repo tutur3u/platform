@@ -161,6 +161,8 @@
     "testExpiredDescription": "Your test session has ended because the time limit was reached.",
     "testSubmitted": "Test submitted",
     "testSubmittedDescription": "Your answers have been graded.",
+    "testMarkingInProgress": "Your test has been submitted successfully. We are currently marking your answers. Results will be available soon.",
+    "testMarking": "Marking in progress...",
     "submittingTest": "Submitting test...",
     "timeLeft": "Time left",
     "minutesSeconds": "{minutes}m {seconds}s",

@@ -347,23 +347,19 @@ export function StudentTestDetailPage({
               {t('courses.testSubmitted')}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {t('courses.testSubmittedDescription')}
+              {t('courses.testMarkingInProgress')}
             </p>
           </div>
 
-          {attempt.score !== null && attempt.score !== undefined && (
-            <div className="border-2 border-border bg-muted/20 p-4 shadow-[4px_4px_0_var(--border)]">
-              <span className="block font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                {t('courses.quizEarnedPoints', {
-                  points: attempt.score,
-                  total: quizzes.length,
-                })}
-              </span>
-              <span className="mt-1 block font-black text-3xl text-foreground">
-                {attempt.score}
-              </span>
-            </div>
-          )}
+          {/* Marking animation */}
+          <div className="flex items-center justify-center gap-2 border-2 border-border bg-muted/20 p-4 shadow-[4px_4px_0_var(--border)]">
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0ms]" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:150ms]" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:300ms]" />
+            <span className="ml-2 font-bold text-muted-foreground text-xs uppercase tracking-wider">
+              {t('courses.testMarking')}
+            </span>
+          </div>
 
           <Link
             href={courseHref}
