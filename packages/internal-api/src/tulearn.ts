@@ -67,6 +67,7 @@ export interface TulearnAssignmentSummary {
   };
   is_completed: boolean;
   approval_status?: string | null;
+  is_test?: boolean;
 }
 
 export interface TulearnMarkSummary {
