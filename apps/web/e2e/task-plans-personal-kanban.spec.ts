@@ -19,6 +19,8 @@ type TaskList = {
   name?: string | null;
 };
 
+const CLEANUP_TIMEOUT_MS = 10_000;
+
 async function getPersonalBoard(
   request: APIRequestContext,
   headers: Record<string, string>
@@ -78,8 +80,8 @@ async function getOrCreateBoardList(
 
 test.describe('Shareable task plans in personal Kanban', () => {
   // This full-stack flow resets auth/rate-limit state, renders the board planner UI,
-  // and exercises plan create/share/update/digest APIs before cleanup in CI.
-  test.setTimeout(180_000);
+  // and exercises plan create/share/update/digest APIs with bounded cleanup in CI.
+  test.setTimeout(240_000);
 
   test('creates, shares, manages, and renders a plan', async ({
     page,
@@ -194,21 +196,28 @@ test.describe('Shareable task plans in personal Kanban', () => {
       const digestBody = (await digest.json()) as { digest?: string };
       expect(digestBody.digest).toContain(`E2E plan task ${timestamp}`);
     } finally {
+      const cleanupRequests: Promise<unknown>[] = [];
+
       if (taskId) {
-        await request.delete(
-          `/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`,
-          {
+        cleanupRequests.push(
+          request.delete(`/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`, {
             failOnStatusCode: false,
             headers,
-          }
+            timeout: CLEANUP_TIMEOUT_MS,
+          })
         );
       }
       if (planId) {
-        await request.delete(
-          `/api/v1/workspaces/personal/task-plans/${planId}`,
-          { failOnStatusCode: false, headers }
+        cleanupRequests.push(
+          request.delete(`/api/v1/workspaces/personal/task-plans/${planId}`, {
+            failOnStatusCode: false,
+            headers,
+            timeout: CLEANUP_TIMEOUT_MS,
+          })
         );
       }
+
+      await Promise.allSettled(cleanupRequests);
     }
   });
 });
