@@ -1069,6 +1069,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/ai-chat/chatbots ports the legacy Chatbots summary page as a dynamic authenticated workspace route with fail-closed current-user auth, workspace resolution, ai_chat permission gating, route metadata, localized FeatureSummary content, and the create action wired to the canonical /$locale/$wsId/ai-chat/my-chatbots/new route instead of the legacy /:wsId/chat alias. This marks only the page artifact migrated; parent dashboard and AI chat session/provider ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/ai-chat/my-chatbots:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/ai-chat/my-chatbots ports the legacy My Chatbots table with fail-closed current-user auth, workspace resolution, ai_chat permission gating from the legacy ai-chat layout, pass-through q/page/pageSize search state, forwarded internal-api auth for workspace group tags, internal-api-backed row delete actions, and localized FeatureSummary/CustomDataTable UI. This marks only the frontend page artifact migrated; group-tag API route ownership remains separately tracked."
+    },
     "layout:/:locale/:wsId/ai-chat/my-chatbots/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
