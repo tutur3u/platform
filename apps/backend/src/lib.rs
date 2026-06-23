@@ -150,6 +150,7 @@ mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
 mod workspaces_external_projects_sync_snapshot;
 mod workspaces_finance_charts_daily;
+mod workspaces_finance_charts_monthly;
 mod workspaces_finance_wallets_expense_count;
 mod workspaces_finance_wallets_expense_sum;
 mod workspaces_finance_wallets_income_count;
@@ -1364,6 +1365,15 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_charts_monthly::handle_workspaces_finance_charts_monthly_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }
