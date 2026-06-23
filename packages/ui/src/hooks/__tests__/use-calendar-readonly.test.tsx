@@ -407,7 +407,7 @@ describe('CalendarProvider Read-Only Mode', () => {
     );
   });
 
-  it('hides a deleted event optimistically before the network promise resolves', async () => {
+  it('marks a deleted event as pending before the network promise resolves', async () => {
     calendarMockState.events = [baseEvent];
     let resolveDelete:
       | ((result: {
@@ -430,9 +430,15 @@ describe('CalendarProvider Read-Only Mode', () => {
       deletePromise = result.current.deleteEvent('event-1');
     });
 
-    expect(calendarMockState.patchVisibleEvents).toHaveBeenCalledWith([], {
-      removeIds: ['event-1'],
-    });
+    expect(calendarMockState.patchVisibleEvents).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          ...baseEvent,
+          _optimisticStatus: 'deleting',
+        }),
+      ],
+      { status: 'deleting' }
+    );
 
     await act(async () => {
       resolveDelete?.({
@@ -447,6 +453,9 @@ describe('CalendarProvider Read-Only Mode', () => {
       'event-1',
       expect.any(Object)
     );
+    expect(calendarMockState.patchVisibleEvents).toHaveBeenLastCalledWith([], {
+      removeIds: ['event-1'],
+    });
   });
 
   it('restores a failed optimistic delete', async () => {

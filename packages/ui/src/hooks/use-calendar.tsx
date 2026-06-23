@@ -1176,7 +1176,15 @@ export const CalendarProvider = ({
       }
 
       if (eventToDelete) {
-        patchVisibleEvents([], { removeIds: [eventId] });
+        patchVisibleEvents(
+          [
+            {
+              ...eventToDelete,
+              _optimisticStatus: 'deleting',
+            } as CalendarEvent & { _optimisticStatus: 'deleting' },
+          ],
+          { status: 'deleting' }
+        );
       }
 
       let deleteResult: {
@@ -1196,6 +1204,8 @@ export const CalendarProvider = ({
         }
         throw error;
       }
+
+      patchVisibleEvents([], { removeIds: [eventId] });
 
       const hasLinkedTask =
         !!deleteResult.linkedTaskId || !!eventToDelete?.task_id;
