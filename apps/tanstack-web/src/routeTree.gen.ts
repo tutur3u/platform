@@ -172,6 +172,7 @@ import { Route as LocaleWsIdFinanceDebtsDebtIdRouteImport } from './routes/$loca
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId';
 import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId';
 import { Route as LocaleWsIdEducationLibraryQuizzesRouteImport } from './routes/$locale/$wsId/education/library/quizzes';
+import { Route as LocaleWsIdEducationLibraryFlashcardsRouteImport } from './routes/$locale/$wsId/education/library/flashcards';
 import { Route as LocaleWsIdEducationCoursesCourseIdRouteImport } from './routes/$locale/$wsId/education/courses/$courseId';
 import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new';
 import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
@@ -1068,6 +1069,12 @@ const LocaleWsIdEducationLibraryQuizzesRoute =
     path: '/quizzes',
     getParentRoute: () => LocaleWsIdEducationLibraryRoute,
   } as any);
+const LocaleWsIdEducationLibraryFlashcardsRoute =
+  LocaleWsIdEducationLibraryFlashcardsRouteImport.update({
+    id: '/flashcards',
+    path: '/flashcards',
+    getParentRoute: () => LocaleWsIdEducationLibraryRoute,
+  } as any);
 const LocaleWsIdEducationCoursesCourseIdRoute =
   LocaleWsIdEducationCoursesCourseIdRouteImport.update({
     id: '/$wsId/education/courses/$courseId',
@@ -1260,6 +1267,7 @@ export interface FileRoutesByFullPath {
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  '/$locale/$wsId/education/library/flashcards': typeof LocaleWsIdEducationLibraryFlashcardsRoute;
   '/$locale/$wsId/education/library/quizzes': typeof LocaleWsIdEducationLibraryQuizzesRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
@@ -1431,6 +1439,7 @@ export interface FileRoutesByTo {
   '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  '/$locale/$wsId/education/library/flashcards': typeof LocaleWsIdEducationLibraryFlashcardsRoute;
   '/$locale/$wsId/education/library/quizzes': typeof LocaleWsIdEducationLibraryQuizzesRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
@@ -1604,6 +1613,7 @@ export interface FileRoutesById {
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  '/$locale/$wsId/education/library/flashcards': typeof LocaleWsIdEducationLibraryFlashcardsRoute;
   '/$locale/$wsId/education/library/quizzes': typeof LocaleWsIdEducationLibraryQuizzesRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
@@ -1778,6 +1788,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/'
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
+    | '/$locale/$wsId/education/library/flashcards'
     | '/$locale/$wsId/education/library/quizzes'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
@@ -1949,6 +1960,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components'
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
+    | '/$locale/$wsId/education/library/flashcards'
     | '/$locale/$wsId/education/library/quizzes'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
@@ -2121,6 +2133,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/'
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
+    | '/$locale/$wsId/education/library/flashcards'
     | '/$locale/$wsId/education/library/quizzes'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
@@ -3301,6 +3314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationLibraryQuizzesRouteImport;
       parentRoute: typeof LocaleWsIdEducationLibraryRoute;
     };
+    '/$locale/$wsId/education/library/flashcards': {
+      id: '/$locale/$wsId/education/library/flashcards';
+      path: '/flashcards';
+      fullPath: '/$locale/$wsId/education/library/flashcards';
+      preLoaderRoute: typeof LocaleWsIdEducationLibraryFlashcardsRouteImport;
+      parentRoute: typeof LocaleWsIdEducationLibraryRoute;
+    };
     '/$locale/$wsId/education/courses/$courseId': {
       id: '/$locale/$wsId/education/courses/$courseId';
       path: '/$wsId/education/courses/$courseId';
@@ -3553,11 +3573,14 @@ const LocaleCalendarMeetTogetherRouteWithChildren =
   );
 
 interface LocaleWsIdEducationLibraryRouteChildren {
+  LocaleWsIdEducationLibraryFlashcardsRoute: typeof LocaleWsIdEducationLibraryFlashcardsRoute;
   LocaleWsIdEducationLibraryQuizzesRoute: typeof LocaleWsIdEducationLibraryQuizzesRoute;
 }
 
 const LocaleWsIdEducationLibraryRouteChildren: LocaleWsIdEducationLibraryRouteChildren =
   {
+    LocaleWsIdEducationLibraryFlashcardsRoute:
+      LocaleWsIdEducationLibraryFlashcardsRoute,
     LocaleWsIdEducationLibraryQuizzesRoute:
       LocaleWsIdEducationLibraryQuizzesRoute,
   };

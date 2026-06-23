@@ -1036,6 +1036,52 @@ export async function getWorkspaceQuizzes(
   );
 }
 
+export interface ListWorkspaceFlashcardsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListWorkspaceFlashcardsResponse {
+  data: Array<{
+    id: string;
+    front: string;
+    back: string;
+    created_at?: string;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of a workspace's flashcard library via
+ * `GET /api/v1/workspaces/:wsId/flashcards`. Forwards the caller's auth.
+ */
+export async function getWorkspaceFlashcards(
+  workspaceId: string,
+  params?: ListWorkspaceFlashcardsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListWorkspaceFlashcardsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function createWorkspaceQuizSet(
   workspaceId: string,
   payload: UpsertWorkspaceQuizSetPayload,
