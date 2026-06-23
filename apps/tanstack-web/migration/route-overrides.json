@@ -1419,6 +1419,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/quiz-sets preserves the legacy 308 redirect to /:wsId/education/library/quiz-sets. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/quiz-sets/:setId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/quiz-sets/$setId ports the legacy quiz-set quizzes table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state with the legacy 10-row default, forwarded internal-api auth, FeatureSummary parity, TanStack Query-backed create/update/delete forms, internal-api-backed AI explanation generation, and CustomDataTable columns. The /education/quiz-sets redirect is split into an exact index route so this detail loader is reachable. This marks only the frontend page artifact migrated; the quiz-set detail layout and quiz create/update/delete/list API ownership remain separately tracked."
+    },
     "page:/:locale/:wsId/education/quiz-sets/:setId/linked-modules:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
