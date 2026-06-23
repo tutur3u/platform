@@ -133,6 +133,7 @@ import { Route as LocaleWsIdInventoryProductsRouteImport } from './routes/$local
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
+import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/$locale/$wsId/infrastructure/timezones';
 import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-versions';
 import { Route as LocaleWsIdInfrastructureAbuseEventsRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-events';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
@@ -849,6 +850,12 @@ const LocaleWsIdInventoryBatchesRoute =
     path: '/$wsId/inventory/batches',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureTimezonesRoute =
+  LocaleWsIdInfrastructureTimezonesRouteImport.update({
+    id: '/$wsId/infrastructure/timezones',
+    path: '/$wsId/infrastructure/timezones',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureMobileVersionsRoute =
   LocaleWsIdInfrastructureMobileVersionsRouteImport.update({
     id: '/$wsId/infrastructure/mobile-versions',
@@ -1307,6 +1314,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1490,6 +1498,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1675,6 +1684,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1861,6 +1871,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2044,6 +2055,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2228,6 +2240,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/timezones'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -3184,6 +3197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInventoryBatchesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/timezones': {
+      id: '/$locale/$wsId/infrastructure/timezones';
+      path: '/$wsId/infrastructure/timezones';
+      fullPath: '/$locale/$wsId/infrastructure/timezones';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureTimezonesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/mobile-versions': {
       id: '/$locale/$wsId/infrastructure/mobile-versions';
       path: '/$wsId/infrastructure/mobile-versions';
@@ -4022,6 +4042,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
   LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
@@ -4163,6 +4184,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdInfrastructureAbuseEventsRoute,
   LocaleWsIdInfrastructureMobileVersionsRoute:
     LocaleWsIdInfrastructureMobileVersionsRoute,
+  LocaleWsIdInfrastructureTimezonesRoute:
+    LocaleWsIdInfrastructureTimezonesRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,

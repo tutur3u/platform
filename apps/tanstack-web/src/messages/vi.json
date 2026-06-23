@@ -14945,6 +14945,64 @@
     "utc": "UTC",
     "value": "Giá trị"
   },
+  "timezone-management": {
+    "actions": {
+      "cancel": "Hủy",
+      "create": "Thêm múi giờ",
+      "delete": "Xóa",
+      "delete_description": "Thao tác này xóa bản ghi múi giờ đã lưu. Múi giờ trong danh mục vẫn có thể đồng bộ lại.",
+      "delete_title": "Xóa múi giờ",
+      "edit": "Chỉnh sửa",
+      "resync": "Đồng bộ lại",
+      "save": "Lưu",
+      "saving": "Đang lưu...",
+      "sync": "Đồng bộ"
+    },
+    "columns": {
+      "hours": "Giờ",
+      "id": "Mã số",
+      "priority": "Ưu tiên"
+    },
+    "dialog": {
+      "create_description": "Tạo bản ghi đồng bộ múi giờ tùy chỉnh.",
+      "create_title": "Thêm múi giờ",
+      "edit_description": "Cập nhật bản ghi đồng bộ múi giờ đã lưu.",
+      "edit_title": "Chỉnh sửa múi giờ"
+    },
+    "filters": {
+      "all_statuses": "Tất cả trạng thái"
+    },
+    "form": {
+      "utc_description": "Phân tách các định danh múi giờ UTC bằng dấu phẩy."
+    },
+    "status": {
+      "error": "Lỗi",
+      "outdated": "Chưa đồng bộ",
+      "pending": "Đang chờ",
+      "synced": "Đã đồng bộ"
+    },
+    "table": {
+      "loading": "Đang tải",
+      "no_results": "Không có kết quả",
+      "of": "trên",
+      "page": "Trang",
+      "refresh": "Làm mới",
+      "reset": "Đặt lại",
+      "results": "kết quả",
+      "rows_per_page": "Số hàng mỗi trang"
+    },
+    "toasts": {
+      "create_error": "Không thể tạo múi giờ.",
+      "create_success": "Múi giờ đã được đưa vào hàng đợi đồng bộ.",
+      "delete_error": "Không thể xóa múi giờ.",
+      "delete_success": "Đã xóa múi giờ.",
+      "refresh_error": "Không thể làm mới múi giờ.",
+      "sync_error": "Không thể đồng bộ múi giờ.",
+      "sync_success": "Đã đồng bộ múi giờ.",
+      "update_error": "Không thể cập nhật múi giờ.",
+      "update_success": "Đã cập nhật múi giờ."
+    }
+  },
   "transaction-category-data-table": {
     "amount": "Giao dịch",
     "amount_range": "Khoảng số tiền",

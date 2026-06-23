@@ -6,6 +6,7 @@ import type {
 } from './auth';
 import {
   createInternalApiClient,
+  encodePathSegment,
   type InternalApiClientOptions,
   type InternalApiFetchInit,
   type InternalApiQuery,
@@ -132,6 +133,36 @@ export type BackendInfrastructureAbuseEventsResponse = {
   page: number | null;
   pageSize: number | null;
   totalPages: number | null;
+};
+
+export type BackendInfrastructureTimezone = {
+  abbr: string;
+  created_at: string;
+  id: string;
+  isdst: boolean;
+  offset: number;
+  text: string;
+  utc: string[];
+  value: string;
+};
+
+export type BackendInfrastructureTimezoneCreateRequest = {
+  abbr?: string;
+  id?: string | null;
+  isdst?: boolean;
+  offset?: number;
+  text?: string;
+  utc?: string[] | string;
+  value?: string;
+};
+
+export type BackendInfrastructureTimezoneWriteRequest = Omit<
+  BackendInfrastructureTimezoneCreateRequest,
+  'id'
+>;
+
+export type BackendInfrastructureTimezonesMessage = {
+  message: string;
 };
 
 export type BackendNovaCurrentTeamResponse = {
@@ -580,6 +611,10 @@ function workspacePathSegment(wsId: string) {
   return encodeURIComponent(wsId);
 }
 
+function backendPathSegment(value: string) {
+  return encodePathSegment(value);
+}
+
 export function getBackendLegacyHealth(options: BackendApiClientOptions = {}) {
   return createBackendApiClient(options).json<BackendLegacyHealth>(
     '/api/health',
@@ -718,6 +753,78 @@ export function getBackendInfrastructureAbuseEvents(
     {
       cache: 'no-store',
       query: apiQuery,
+    }
+  );
+}
+
+export function getBackendInfrastructureTimezones(
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendInfrastructureTimezone[]>(
+    '/api/v1/infrastructure/timezones',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function createBackendInfrastructureTimezone(
+  payload: BackendInfrastructureTimezoneCreateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureTimezonesMessage>(
+    '/api/v1/infrastructure/timezones',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateBackendInfrastructureTimezone(
+  timezoneId: string,
+  payload: BackendInfrastructureTimezoneWriteRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureTimezonesMessage>(
+    `/api/v1/infrastructure/timezones/${backendPathSegment(timezoneId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteBackendInfrastructureTimezone(
+  timezoneId: string,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructureTimezonesMessage>(
+    `/api/v1/infrastructure/timezones/${backendPathSegment(timezoneId)}`,
+    {
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
+      method: 'DELETE',
     }
   );
 }

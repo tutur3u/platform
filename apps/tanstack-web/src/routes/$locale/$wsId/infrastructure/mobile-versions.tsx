@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestHeaders } from '@tanstack/react-start/server';
+import { Smartphone } from '@tuturuuu/icons';
 import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api/client';
 import { getMobileVersionPolicies } from '@tuturuuu/internal-api/infrastructure/mobile';
 import type { MobileVersionPoliciesPayload } from '@tuturuuu/internal-api/infrastructure/types';
-import { Smartphone } from '@tuturuuu/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'use-intl';
