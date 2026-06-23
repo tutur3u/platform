@@ -2,21 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   blockIPEdge: vi.fn(),
-  checkUserSuspension: vi.fn(),
-  suspendUser: vi.fn(),
 }));
 
 vi.mock('../edge', () => ({
   blockIPEdge: (...args: Parameters<typeof mocks.blockIPEdge>) =>
     mocks.blockIPEdge(...args),
-}));
-
-vi.mock('../user-suspension', () => ({
-  checkUserSuspension: (
-    ...args: Parameters<typeof mocks.checkUserSuspension>
-  ) => mocks.checkUserSuspension(...args),
-  suspendUser: (...args: Parameters<typeof mocks.suspendUser>) =>
-    mocks.suspendUser(...args),
 }));
 
 import {
@@ -28,8 +18,6 @@ describe('backend-rate-limit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.blockIPEdge.mockResolvedValue(null);
-    mocks.checkUserSuspension.mockResolvedValue({ suspended: false });
-    mocks.suspendUser.mockResolvedValue(true);
   });
 
   describe('isBackendRateLimitError', () => {
@@ -51,16 +39,7 @@ describe('backend-rate-limit', () => {
   });
 
   describe('cascadeBackendRateLimitToProxyBan', () => {
-    it('blocks the IP without suspending an identified user', async () => {
-      const blockInfo = {
-        id: 'block-1',
-        blockLevel: 1,
-        reason: 'api_abuse',
-        blockedAt: new Date(),
-        expiresAt: new Date(Date.now() + 300_000),
-      };
-      mocks.blockIPEdge.mockResolvedValue(blockInfo);
-
+    it('does not hard-ban a known client IP for a backend rate-limit signal', async () => {
       const result = await cascadeBackendRateLimitToProxyBan({
         endpoint: '/api/ai/chat/new',
         ipAddress: '203.0.113.10',
@@ -68,46 +47,32 @@ describe('backend-rate-limit', () => {
         userId: 'user-1',
       });
 
-      expect(result).toBe(blockInfo);
-      expect(mocks.blockIPEdge).toHaveBeenCalledWith(
-        '203.0.113.10',
-        'api_abuse'
-      );
-      expect(mocks.checkUserSuspension).not.toHaveBeenCalled();
-      expect(mocks.suspendUser).not.toHaveBeenCalled();
+      expect(result).toBeNull();
+      expect(mocks.blockIPEdge).not.toHaveBeenCalled();
     });
 
-    it('does not inspect existing user suspensions', async () => {
-      mocks.checkUserSuspension.mockResolvedValue({
-        suspended: true,
-        reason: 'already suspended',
-      });
-
-      await cascadeBackendRateLimitToProxyBan({
+    it('does not hard-ban auth backend rate-limit signals', async () => {
+      const result = await cascadeBackendRateLimitToProxyBan({
         endpoint: '/api/ai/chat/new',
         ipAddress: '203.0.113.10',
         source: 'auth',
         userId: 'user-1',
       });
 
-      expect(mocks.suspendUser).not.toHaveBeenCalled();
-      expect(mocks.blockIPEdge).toHaveBeenCalledWith(
-        '203.0.113.10',
-        'api_abuse'
-      );
-      expect(mocks.checkUserSuspension).not.toHaveBeenCalled();
+      expect(result).toBeNull();
+      expect(mocks.blockIPEdge).not.toHaveBeenCalled();
     });
 
-    it('does not suspend the user when the client IP is unavailable', async () => {
-      await cascadeBackendRateLimitToProxyBan({
+    it('returns null when the client IP is unavailable', async () => {
+      const result = await cascadeBackendRateLimitToProxyBan({
         endpoint: '/api/ai/chat/new',
         ipAddress: 'unknown',
         source: 'database',
         userId: 'user-1',
       });
 
+      expect(result).toBeNull();
       expect(mocks.blockIPEdge).not.toHaveBeenCalled();
-      expect(mocks.suspendUser).not.toHaveBeenCalled();
     });
   });
 });

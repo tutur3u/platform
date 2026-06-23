@@ -90,13 +90,17 @@ shared-package changes.
   default or placed external cards. Guest source membership is not sufficient
   for personal-board task data.
 - Forward request auth when server-side loaders call internal API helpers.
-- Keep password login, OTP send, and OTP verify on separate proxy route-limit
-  policies for shared-IP classrooms and centers. Do not route these human auth
-  `429`s into `recordSuspiciousApiRequestEdge`; preserve `Retry-After`, retry
+- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on
+  throttles that do not write hard IP blocks for shared-IP classrooms and
+  centers. Do not route human auth or backend-service `429`s into
+  `recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry
   only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on
-  per-email cooldown/failed-attempt controls for account-specific abuse. For a
-  live incident, check the customer public IP in Abuse Intelligence and clear
-  only confirmed false-positive `api_abuse` or `password_login_failed` blocks.
+  per-email cooldown/failed-attempt controls for account-specific abuse. Generic
+  anonymous scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and
+  manual blocks can still hard-block IPs. For a live incident, check the
+  customer public IP in Abuse Intelligence, clear confirmed false-positive
+  blocks, and add a time-bound IP/CIDR trust or rate-limit uplift only when
+  traffic is organic.
 - Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
   mention nodes, or other user-authored content as untrusted hints. Resolve
   stale content through the current route/document workspace or a server-returned

@@ -34,6 +34,18 @@ export * from './user-agent';
 // In-memory fallback store
 const memoryStore = new Map<string, { count: number; expiresAt: number }>();
 
+const SHARED_IP_THROTTLE_ONLY_BLOCK_REASONS = new Set<AbuseEventType>([
+  'otp_send',
+  'otp_verify_failed',
+  'mfa_verify_failed',
+  'reauth_verify_failed',
+  'password_login_failed',
+]);
+
+export function isSharedIpThrottleOnlyBlockReason(reason: AbuseEventType) {
+  return SHARED_IP_THROTTLE_ONLY_BLOCK_REASONS.has(reason);
+}
+
 // Redis client singleton (lazy initialized)
 let redisClient: RedisClient | null = null;
 let redisInitialized = false;
@@ -396,6 +408,10 @@ export async function blockIP(
   reason: AbuseEventType,
   metadata?: Record<string, unknown>
 ): Promise<void> {
+  if (isSharedIpThrottleOnlyBlockReason(reason)) {
+    return;
+  }
+
   try {
     const sbAdmin = await getSupabaseAdmin();
     if (!sbAdmin) return;
@@ -900,17 +916,14 @@ export async function checkOTPSendAllowed(
   const ipLimits = getOTPSendIpLimits();
 
   if (minuteState.count > ipLimits.perMinute) {
-    // Log and potentially block
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
-      metadata: { trigger: 'minute_limit' },
+      metadata: {
+        trigger: 'minute_limit',
+        hard_block_suppressed: minuteState.count >= ipLimits.perMinute * 2,
+      },
     });
-
-    if (minuteState.count >= ipLimits.perMinute * 2) {
-      // Aggressive abuse - block IP
-      void blockIP(ipAddress, 'otp_send', { trigger: 'rate_limit_exceeded' });
-    }
 
     return {
       allowed: false,
@@ -924,10 +937,11 @@ export async function checkOTPSendAllowed(
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
-      metadata: { trigger: 'hourly_rate_limit' },
+      metadata: {
+        trigger: 'hourly_rate_limit',
+        hard_block_suppressed: true,
+      },
     });
-
-    void blockIP(ipAddress, 'otp_send', { trigger: 'hourly_rate_limit' });
 
     return {
       allowed: false,
@@ -941,9 +955,11 @@ export async function checkOTPSendAllowed(
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
-      metadata: { trigger: 'ip_daily_limit' },
+      metadata: {
+        trigger: 'ip_daily_limit',
+        hard_block_suppressed: true,
+      },
     });
-    void blockIP(ipAddress, 'otp_send', { trigger: 'ip_daily_limit' });
 
     return {
       allowed: false,
@@ -1114,16 +1130,35 @@ export async function recordOTPVerifyFailure(
     ),
   ]);
 
-  // Log the failure
-  void logAbuseEvent(ipAddress, 'otp_verify_failed', { email, success: false });
+  void logAbuseEvent(ipAddress, 'otp_verify_failed', {
+    email,
+    success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      ipCount,
+      ABUSE_THRESHOLDS.OTP_VERIFY_FAILED_MAX
+    ),
+  });
+}
 
-  // Block if threshold exceeded
-  if (ipCount >= ABUSE_THRESHOLDS.OTP_VERIFY_FAILED_MAX) {
-    void blockIP(ipAddress, 'otp_verify_failed', {
-      trigger: 'max_failures_exceeded',
-      failedCount: ipCount,
-    });
+/**
+ * Shared NATs can represent a whole classroom, university, or enterprise.
+ * Human-auth counters still throttle the noisy flow, but they must not write a
+ * global IP block that prevents unrelated people on the same public address
+ * from signing in.
+ */
+function createHumanAuthRateLimitMetadata(
+  failedCount: number,
+  maxFailures: number
+): Record<string, unknown> | undefined {
+  if (failedCount < maxFailures) {
+    return undefined;
   }
+
+  return {
+    trigger: 'max_failures_exceeded',
+    failedCount,
+    hard_block_suppressed: true,
+  };
 }
 
 /**
@@ -1221,14 +1256,13 @@ export async function recordMFAVerifyFailure(ipAddress: string): Promise<void> {
     ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_WINDOW_MS
   );
 
-  void logAbuseEvent(ipAddress, 'mfa_verify_failed', { success: false });
-
-  if (count >= ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX) {
-    void blockIP(ipAddress, 'mfa_verify_failed', {
-      trigger: 'max_failures_exceeded',
-      failedCount: count,
-    });
-  }
+  void logAbuseEvent(ipAddress, 'mfa_verify_failed', {
+    success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      count,
+      ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX
+    ),
+  });
 }
 
 /**
@@ -1322,11 +1356,13 @@ export async function recordReauthVerifyFailure(
     ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_WINDOW_MS
   );
 
-  void logAbuseEvent(ipAddress, 'reauth_verify_failed', { success: false });
-
-  if (count >= ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_MAX) {
-    void blockIP(ipAddress, 'reauth_verify_failed');
-  }
+  void logAbuseEvent(ipAddress, 'reauth_verify_failed', {
+    success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      count,
+      ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_MAX
+    ),
+  });
 }
 
 /**
@@ -1431,14 +1467,11 @@ export async function recordPasswordLoginFailure(
   void logAbuseEvent(ipAddress, 'password_login_failed', {
     email: normalizedEmail ?? undefined,
     success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      count,
+      ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX
+    ),
   });
-
-  if (count >= ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX) {
-    void blockIP(ipAddress, 'password_login_failed', {
-      trigger: 'max_failures_exceeded',
-      failedCount: count,
-    });
-  }
 }
 
 /**

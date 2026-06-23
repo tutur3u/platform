@@ -57,12 +57,12 @@ limits.
 ## Backend 429 Cascades
 
 Supabase Auth and PostgREST/backend `429` responses are availability signals,
-not user-scoped abuse proof. Handlers may return `429` to the caller and seed a
-bounded proxy/IP throttle when the client IP is known, but a single backend rate
-limit must not create or extend `user_suspensions` for the authenticated user.
-User suspension requires manual operator action or repeated, user-attributable
-abuse counters, and automated suspensions should be expiry-bound unless a
-separate policy explicitly justifies permanence.
+not user-scoped abuse proof. Handlers return `429` to the caller with
+`Retry-After`, but a single backend rate limit must not create or extend
+`ip:blocked:<ip>`, `blocked_ips`, or `user_suspensions`. User suspension
+requires manual operator action or repeated, user-attributable abuse counters,
+and automated suspensions should be expiry-bound unless a separate policy
+explicitly justifies permanence.
 
 ## Shared-IP Login Traffic
 
@@ -83,7 +83,12 @@ OTP send also has a shared-IP abuse guard with
 place; they are the primary protection against repeated sends to the same
 mailbox. Human auth route `429` responses should return `Retry-After` to the
 caller and must not be converted into `api_abuse` IP blocks by the proxy
-escalation path. Generic anonymous API route-limit hits can still escalate.
+escalation path. Utility-level OTP send, OTP verify, MFA verify, reauth verify,
+and password-login failure counters also throttle without writing `blocked_ips`
+rows; their abuse events include `hard_block_suppressed` metadata when the old
+hard-block threshold would have been crossed. Generic anonymous API route-limit
+hits, malformed auth-cookie abuse, scanner-like requests, `api_auth_failed`, and
+manual operator blocks can still escalate to hard IP blocks.
 
 ## Trusted-Location Read Uplift
 
@@ -163,8 +168,9 @@ When investigating a false positive:
 For a live classroom login incident, ask for the center's current public IP and
 check Infrastructure -> Abuse Intelligence for active IP blocks or abuse events
 with `api_abuse` or `password_login_failed`. If the activity is confirmed
-organic, clear the active false-positive block or reset the affected counters;
-do not relax the per-email OTP cooldown or failed-attempt protections.
+organic, clear the active false-positive block, reset affected counters, or add a
+time-bound IP/CIDR trust or rate-limit uplift. Do not relax the per-email OTP
+cooldown or failed-attempt protections.
 
 Manual overrides require a reason and are written to the audit signal stream.
 Prefer expiry-bound overrides for trust and watch decisions so stale operational
