@@ -96,14 +96,16 @@ export function SettingsDialogHost({
       open={requestedSettingsOpen}
       onOpenChange={handleSettingsOpenChange}
     >
-      <SettingsDialog
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultTab={requestedSettingsTab}
-        boardId={requestedSettingsBoardId}
-        linkedProvider={linkedProvider}
-      />
+      {requestedSettingsOpen && (
+        <SettingsDialog
+          wsId={wsId}
+          user={user}
+          workspace={workspace}
+          defaultTab={requestedSettingsTab}
+          boardId={requestedSettingsBoardId}
+          linkedProvider={linkedProvider}
+        />
+      )}
     </Dialog>
   );
 }
