@@ -18,7 +18,10 @@ import type {
 } from '../../components/models/models-types';
 import { MODELS_PAGE_SIZE } from '../../components/models/models-types';
 import { withTanstackBackendRuntime } from '../../lib/cloudflare/backend';
-import { PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS } from '../../lib/platform/cache';
+import {
+  MODEL_DIRECTORY_FALLBACK_CACHE_HEADERS,
+  PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
+} from '../../lib/platform/cache';
 import { createPageHead } from '../../lib/platform/head';
 import {
   getMessages,
@@ -26,11 +29,13 @@ import {
 } from '../../lib/platform/messages';
 
 type ModelsDirectoryData = {
+  cacheState: 'backend-fallback' | 'public';
   filterOptions: ModelFilterOptions;
   initialPage: GatewayModelRowsPage;
 };
 
 const EMPTY_MODELS_DIRECTORY: ModelsDirectoryData = {
+  cacheState: 'backend-fallback',
   filterOptions: {
     providers: [],
     tags: [],
@@ -130,6 +135,7 @@ const loadModelsDirectory = createServerFn({ method: 'GET' }).handler(
       ]);
 
       return {
+        cacheState: 'public',
         filterOptions: filterOptionsFromRows(filterRows),
         initialPage,
       };
@@ -151,7 +157,10 @@ export const Route = createFileRoute('/$locale/models')({
       title: messages.title,
     });
   },
-  headers: () => PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
+  headers: ({ loaderData }) =>
+    loaderData?.cacheState === 'backend-fallback'
+      ? MODEL_DIRECTORY_FALLBACK_CACHE_HEADERS
+      : PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
   loader: () => loadModelsDirectory(),
 });
 
