@@ -380,8 +380,13 @@ export function ModuleDetailClient({
                       className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
                       onClick={() => setShowAddSection(true)}
                       type="button"
+                      aria-label={t('teachModules.addSection')}
+                      title={t('teachModules.addSection')}
                     >
                       <Plus className="h-4 w-4" />
+                      <span className="sr-only">
+                        {t('teachModules.addSection')}
+                      </span>
                     </button>
                   </div>
                 )}

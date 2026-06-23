@@ -395,6 +395,7 @@ export interface TeachTestSubmission {
   score: number | null;
   answeredCount: number;
   correctCount: number;
+  maxScore: number;
   totalQuizzes: number;
 }
 
@@ -472,6 +473,8 @@ export function updateWorkspaceCourseTestSubmissionFeedback(
   payload: {
     quizId: string;
     feedback: string | null;
+    isCorrect?: boolean | null;
+    scoreAwarded?: number | null;
   },
   options?: InternalApiClientOptions
 ) {

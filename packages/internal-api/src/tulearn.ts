@@ -162,14 +162,17 @@ export interface TulearnTestAttemptAnswer {
 
 export interface TulearnTestAttemptResponse {
   attempt: TulearnTestAttempt | null;
-  quizzes?: TulearnQuiz[];
+  quizzes?: TulearnReviewQuiz[];
   answers?: TulearnTestAttemptAnswer[];
 }
 
 export interface TulearnQuizOption {
   id: string;
-  is_correct?: boolean | null;
   value: string;
+}
+
+export interface TulearnReviewQuizOption extends TulearnQuizOption {
+  is_correct?: boolean | null;
   explanation?: string | null;
 }
 
@@ -180,6 +183,10 @@ export interface TulearnQuiz {
   content: Json | null;
   score: number;
   quiz_options?: TulearnQuizOption[];
+}
+
+export interface TulearnReviewQuiz extends Omit<TulearnQuiz, 'quiz_options'> {
+  quiz_options?: TulearnReviewQuizOption[];
 }
 
 export interface TulearnCourseModuleDetail extends TulearnCourseModuleSummary {

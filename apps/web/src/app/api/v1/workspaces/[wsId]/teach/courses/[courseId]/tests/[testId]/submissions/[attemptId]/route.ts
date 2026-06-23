@@ -17,7 +17,27 @@ const RouteParamsSchema = z.object({
 const UpdateFeedbackSchema = z.object({
   quizId: z.string().uuid(),
   feedback: z.string().nullable(),
+  isCorrect: z.boolean().nullable().optional(),
+  scoreAwarded: z.number().min(0).nullable().optional(),
 });
+
+type SubmissionQuiz = {
+  content: unknown;
+  id: string;
+  question: string | null;
+  quiz_options: {
+    explanation?: string | null;
+    id: string;
+    is_correct?: boolean | null;
+    value: string | null;
+  }[];
+  score: number | null;
+  type: string | null;
+};
+
+type AnswerScoreRow = {
+  score_awarded: number | null;
+};
 
 export const GET = withSessionAuth(
   async (
@@ -112,7 +132,7 @@ export const GET = withSessionAuth(
 
       const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
 
-      let quizzes: any[] = [];
+      let quizzes: SubmissionQuiz[] = [];
       if (quizIds.length > 0) {
         const { data: rawQuizzes, error: quizzesErr } = await access.sbAdmin
           .from('workspace_quizzes')
@@ -123,7 +143,7 @@ export const GET = withSessionAuth(
           .order('created_at', { ascending: false });
 
         if (quizzesErr) throw quizzesErr;
-        quizzes = rawQuizzes ?? [];
+        quizzes = (rawQuizzes ?? []) as SubmissionQuiz[];
       }
 
       // Fetch student's answers (including feedback)
@@ -185,7 +205,7 @@ export const PATCH = withSessionAuth(
 
       const access = await requireTeachWorkspaceAccess({
         context,
-        permission: 'view_user_groups',
+        permission: 'update_user_groups',
         wsId,
       });
       if (access instanceof NextResponse) return access;
@@ -208,7 +228,7 @@ export const PATCH = withSessionAuth(
         );
       }
 
-      const { quizId, feedback } = parsedBody.data;
+      const { feedback, isCorrect, quizId, scoreAwarded } = parsedBody.data;
 
       const course = await validateTeachCourse({
         courseId,
@@ -237,10 +257,71 @@ export const PATCH = withSessionAuth(
         );
       }
 
+      const { data: scopedAttempt, error: scopedAttemptErr } =
+        await access.sbAdmin
+          .from('course_test_attempts')
+          .select('id')
+          .eq('id', attemptId)
+          .eq('test_id', testId)
+          .maybeSingle();
+      if (scopedAttemptErr) throw scopedAttemptErr;
+      if (!scopedAttempt) {
+        return NextResponse.json(
+          { message: 'Attempt not found' },
+          { status: 404 }
+        );
+      }
+
+      const { data: scopedQuiz, error: scopedQuizErr } = await access.sbAdmin
+        .from('course_test_quizzes')
+        .select('quiz_id')
+        .eq('test_id', testId)
+        .eq('quiz_id', quizId)
+        .maybeSingle();
+      if (scopedQuizErr) throw scopedQuizErr;
+      if (!scopedQuiz) {
+        return NextResponse.json(
+          { message: 'Quiz not found for test' },
+          { status: 404 }
+        );
+      }
+
+      const { data: quiz, error: quizErr } = await access.sbAdmin
+        .from('workspace_quizzes')
+        .select('id, score')
+        .eq('id', quizId)
+        .maybeSingle();
+      if (quizErr) throw quizErr;
+      if (!quiz) {
+        return NextResponse.json(
+          { message: 'Quiz not found' },
+          { status: 404 }
+        );
+      }
+
+      const maxScore = quiz.score ?? 0;
+      if (scoreAwarded != null && scoreAwarded > maxScore) {
+        return NextResponse.json(
+          { message: 'Score cannot exceed the question maximum' },
+          { status: 400 }
+        );
+      }
+
+      const answerUpdate: {
+        feedback: string | null;
+        is_correct?: boolean | null;
+        score_awarded?: number | null;
+      } = { feedback };
+      if (scoreAwarded !== undefined) {
+        answerUpdate.score_awarded = scoreAwarded;
+        answerUpdate.is_correct =
+          isCorrect ?? (scoreAwarded !== null ? scoreAwarded > 0 : null);
+      }
+
       // Update answer feedback
       const { data: updated, error: updateErr } = await access.sbAdmin
         .from('course_test_attempt_answers')
-        .update({ feedback })
+        .update(answerUpdate)
         .eq('attempt_id', attemptId)
         .eq('quiz_id', quizId)
         .select(
@@ -258,6 +339,26 @@ export const PATCH = withSessionAuth(
           { message: 'Failed to save feedback' },
           { status: 500 }
         );
+      }
+
+      if (scoreAwarded !== undefined) {
+        const { data: scoreRows, error: scoreRowsErr } = await access.sbAdmin
+          .from('course_test_attempt_answers')
+          .select('score_awarded')
+          .eq('attempt_id', attemptId);
+        if (scoreRowsErr) throw scoreRowsErr;
+
+        const totalScore = ((scoreRows ?? []) as AnswerScoreRow[]).reduce(
+          (sum, answer) => sum + (answer.score_awarded ?? 0),
+          0
+        );
+
+        const { error: attemptScoreErr } = await access.sbAdmin
+          .from('course_test_attempts')
+          .update({ score: totalScore })
+          .eq('id', attemptId)
+          .eq('test_id', testId);
+        if (attemptScoreErr) throw attemptScoreErr;
       }
 
       return NextResponse.json({ success: true, answer: updated });

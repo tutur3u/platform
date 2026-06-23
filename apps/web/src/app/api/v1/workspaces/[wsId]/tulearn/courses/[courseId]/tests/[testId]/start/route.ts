@@ -56,40 +56,41 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      // Check if attempt already exists
-      const { data: existingAttempt, error: attemptErr } = await sbAdmin
+      // Create a single attempt per test/student. Concurrent starts race on the
+      // unique constraint and then re-read the winning attempt.
+      const { error: createErr } = await sbAdmin
+        .from('course_test_attempts')
+        .upsert(
+          {
+            test_id: testId,
+            user_id: subject.studentPlatformUserId,
+            started_at: new Date().toISOString(),
+          },
+          {
+            ignoreDuplicates: true,
+            onConflict: 'test_id,user_id',
+          }
+        );
+
+      if (createErr) throw createErr;
+
+      const { data: attempt, error: attemptErr } = await sbAdmin
         .from('course_test_attempts')
         .select('*')
         .eq('test_id', testId)
         .eq('user_id', subject.studentPlatformUserId)
-        .maybeSingle();
+        .single();
 
       if (attemptErr) throw attemptErr;
 
-      if (existingAttempt) {
-        if (existingAttempt.submitted_at) {
-          return NextResponse.json(
-            { message: 'You have already submitted this test' },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json(existingAttempt);
+      if (attempt.submitted_at) {
+        return NextResponse.json(
+          { message: 'You have already submitted this test' },
+          { status: 400 }
+        );
       }
 
-      // Create new attempt session
-      const { data: newAttempt, error: createErr } = await sbAdmin
-        .from('course_test_attempts')
-        .insert({
-          test_id: testId,
-          user_id: subject.studentPlatformUserId,
-          started_at: new Date().toISOString(),
-        })
-        .select('*')
-        .single();
-
-      if (createErr) throw createErr;
-
-      return NextResponse.json(newAttempt);
+      return NextResponse.json(attempt);
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;

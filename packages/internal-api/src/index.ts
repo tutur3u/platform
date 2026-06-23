@@ -1376,6 +1376,8 @@ export {
   type TulearnQuiz,
   type TulearnQuizOption,
   type TulearnReportSummary,
+  type TulearnReviewQuiz,
+  type TulearnReviewQuizOption,
   type TulearnRole,
   type TulearnStudentSummary,
   type TulearnTestAttempt,

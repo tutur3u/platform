@@ -63,7 +63,9 @@ export function AssignmentsPage({ wsId }: { wsId: string }) {
                   }
                   className="inline-flex h-11 items-center justify-center border-2 border-border bg-dynamic-cyan/15 px-4 font-black text-foreground shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
                 >
-                  {t('courses.startTest')}
+                  {assignment.is_completed
+                    ? t('courses.reviewTest')
+                    : t('courses.startTest')}
                 </Link>
               ) : !assignment.is_completed ? (
                 <Button

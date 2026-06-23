@@ -6,12 +6,51 @@ import {
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
 } from '@/lib/tulearn/service';
-import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
+import {
+  isAttemptExpired,
+  submitTestAttemptInternal,
+} from '@/lib/tulearn/test-session';
 
 type Params = {
   courseId: string;
   testId: string;
   wsId: string;
+};
+
+type ReviewQuiz = {
+  content: unknown;
+  id: string;
+  question: string | null;
+  quiz_options: {
+    explanation?: string | null;
+    id: string;
+    is_correct?: boolean | null;
+    value: string | null;
+  }[];
+  score: number | null;
+  type: string | null;
+};
+
+type ReviewAnswer = {
+  answer: unknown;
+  feedback: string | null;
+  is_correct: boolean | null;
+  quiz_id: string;
+  score_awarded: number | null;
+  selected_option_id: string | null;
+};
+
+type ActiveQuiz = Omit<ReviewQuiz, 'quiz_options'> & {
+  quiz_options: {
+    id: string;
+    value: string | null;
+  }[];
+};
+
+type ActiveAnswer = {
+  answer: unknown;
+  quiz_id: string;
+  selected_option_id: string | null;
 };
 
 export const GET = withSessionAuth<Params>(
@@ -54,19 +93,20 @@ export const GET = withSessionAuth<Params>(
 
       if (attemptErr) throw attemptErr;
 
-      // Handle auto-submit if expired
-      if (attempt && !attempt.submitted_at && test.duration_in_minutes) {
-        const startedTime = new Date(attempt.started_at).getTime();
-        const durationMs = test.duration_in_minutes * 60 * 1000;
-        const graceMs = 60 * 1000; // 1 minute grace period for latencies
-        if (startedTime + durationMs + graceMs < Date.now()) {
-          attempt = await submitTestAttemptInternal(
-            sbAdmin,
-            attempt.id,
-            testId,
-            subject.studentPlatformUserId
-          );
-        }
+      // Handle auto-submit if expired. Read-only callers can inspect state but
+      // must not trigger writes through this GET endpoint.
+      if (
+        attempt &&
+        !attempt.submitted_at &&
+        !subject.readOnly &&
+        isAttemptExpired(attempt, test.duration_in_minutes)
+      ) {
+        attempt = await submitTestAttemptInternal(
+          sbAdmin,
+          attempt.id,
+          testId,
+          subject.studentPlatformUserId
+        );
       }
 
       if (!attempt) {
@@ -77,8 +117,8 @@ export const GET = withSessionAuth<Params>(
       if (attempt.submitted_at) {
         const score = test.is_score_published ? attempt.score : null;
 
-        let quizzes: any[] = [];
-        let answers: any[] = [];
+        let quizzes: ReviewQuiz[] = [];
+        let answers: ReviewAnswer[] = [];
 
         // If score is published, we can also return quizzes (with is_correct/explanation) and answers so they can review their submission!
         if (test.is_score_published) {
@@ -102,7 +142,7 @@ export const GET = withSessionAuth<Params>(
               .order('created_at', { ascending: false });
 
             if (quizzesErr) throw quizzesErr;
-            quizzes = rawQuizzes ?? [];
+            quizzes = (rawQuizzes ?? []) as ReviewQuiz[];
           }
 
           const { data: rawAnswers, error: answersErr } = await sbAdmin
@@ -113,7 +153,7 @@ export const GET = withSessionAuth<Params>(
             .eq('attempt_id', attempt.id);
 
           if (answersErr) throw answersErr;
-          answers = rawAnswers ?? [];
+          answers = (rawAnswers ?? []) as ReviewAnswer[];
         }
 
         return NextResponse.json({
@@ -137,7 +177,7 @@ export const GET = withSessionAuth<Params>(
 
       const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
 
-      let quizzes: any[] = [];
+      let quizzes: ActiveQuiz[] = [];
       if (quizIds.length > 0) {
         const { data: rawQuizzes, error: quizzesErr } = await sbAdmin
           .from('workspace_quizzes')
@@ -148,7 +188,7 @@ export const GET = withSessionAuth<Params>(
           .order('created_at', { ascending: false });
 
         if (quizzesErr) throw quizzesErr;
-        quizzes = rawQuizzes ?? [];
+        quizzes = (rawQuizzes ?? []) as ActiveQuiz[];
       }
 
       // 2. Get student's current answers
@@ -162,7 +202,7 @@ export const GET = withSessionAuth<Params>(
       return NextResponse.json({
         attempt,
         quizzes,
-        answers: answers ?? [],
+        answers: (answers ?? []) as ActiveAnswer[],
       });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);

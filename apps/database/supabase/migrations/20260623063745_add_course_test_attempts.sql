@@ -40,19 +40,13 @@ alter table "public"."course_test_attempt_answers" add constraint "course_test_a
 alter table "public"."course_test_attempt_answers" add constraint "course_test_attempt_answers_selected_option_id_fkey" FOREIGN KEY (selected_option_id, quiz_id) REFERENCES quiz_options(id, quiz_id) ON UPDATE CASCADE ON DELETE SET NULL (selected_option_id);
 
 -- Grants for course_test_attempts
-grant delete on table "public"."course_test_attempts" to "anon";
-grant insert on table "public"."course_test_attempts" to "anon";
 grant references on table "public"."course_test_attempts" to "anon";
 grant select on table "public"."course_test_attempts" to "anon";
 grant trigger on table "public"."course_test_attempts" to "anon";
-grant update on table "public"."course_test_attempts" to "anon";
 
-grant delete on table "public"."course_test_attempts" to "authenticated";
-grant insert on table "public"."course_test_attempts" to "authenticated";
 grant references on table "public"."course_test_attempts" to "authenticated";
 grant select on table "public"."course_test_attempts" to "authenticated";
 grant trigger on table "public"."course_test_attempts" to "authenticated";
-grant update on table "public"."course_test_attempts" to "authenticated";
 
 grant delete on table "public"."course_test_attempts" to "service_role";
 grant insert on table "public"."course_test_attempts" to "service_role";
@@ -63,19 +57,13 @@ grant truncate on table "public"."course_test_attempts" to "service_role";
 grant update on table "public"."course_test_attempts" to "service_role";
 
 -- Grants for course_test_attempt_answers
-grant delete on table "public"."course_test_attempt_answers" to "anon";
-grant insert on table "public"."course_test_attempt_answers" to "anon";
 grant references on table "public"."course_test_attempt_answers" to "anon";
 grant select on table "public"."course_test_attempt_answers" to "anon";
 grant trigger on table "public"."course_test_attempt_answers" to "anon";
-grant update on table "public"."course_test_attempt_answers" to "anon";
 
-grant delete on table "public"."course_test_attempt_answers" to "authenticated";
-grant insert on table "public"."course_test_attempt_answers" to "authenticated";
 grant references on table "public"."course_test_attempt_answers" to "authenticated";
 grant select on table "public"."course_test_attempt_answers" to "authenticated";
 grant trigger on table "public"."course_test_attempt_answers" to "authenticated";
-grant update on table "public"."course_test_attempt_answers" to "authenticated";
 
 grant delete on table "public"."course_test_attempt_answers" to "service_role";
 grant insert on table "public"."course_test_attempt_answers" to "service_role";
@@ -93,21 +81,6 @@ for select
 to authenticated
 using ((auth.uid() = user_id));
 
-create policy "Allow insert for user who owns attempt"
-on "public"."course_test_attempts"
-as permissive
-for insert
-to authenticated
-with check ((auth.uid() = user_id));
-
-create policy "Allow update for user who owns attempt"
-on "public"."course_test_attempts"
-as permissive
-for update
-to authenticated
-using ((auth.uid() = user_id))
-with check ((auth.uid() = user_id));
-
 create policy "Allow select for user who owns attempt answers"
 on "public"."course_test_attempt_answers"
 as permissive
@@ -115,24 +88,113 @@ for select
 to authenticated
 using ((exists (select 1 from public.course_test_attempts cta where cta.id = course_test_attempt_answers.attempt_id and cta.user_id = auth.uid())));
 
-create policy "Allow insert for user who owns attempt answers"
-on "public"."course_test_attempt_answers"
-as permissive
-for insert
-to authenticated
-with check ((exists (select 1 from public.course_test_attempts cta where cta.id = course_test_attempt_answers.attempt_id and cta.user_id = auth.uid())));
+create or replace function "public"."upsert_course_test_question"(
+  "p_ws_id" uuid,
+  "p_test_id" uuid,
+  "p_module_id" uuid,
+  "p_quiz" jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  v_quiz_id uuid;
+  v_option jsonb;
+begin
+  if p_quiz ? 'id' and nullif(p_quiz ->> 'id', '') is not null then
+    v_quiz_id := (p_quiz ->> 'id')::uuid;
 
-create policy "Allow update for user who owns attempt answers"
-on "public"."course_test_attempt_answers"
-as permissive
-for update
-to authenticated
-using ((exists (select 1 from public.course_test_attempts cta where cta.id = course_test_attempt_answers.attempt_id and cta.user_id = auth.uid())))
-with check ((exists (select 1 from public.course_test_attempts cta where cta.id = course_test_attempt_answers.attempt_id and cta.user_id = auth.uid())));
+    update public.workspace_quizzes
+    set
+      question = p_quiz ->> 'question',
+      type = case when p_quiz ? 'type' then p_quiz ->> 'type' else type end,
+      content = case when p_quiz ? 'content' then p_quiz -> 'content' else content end
+    where id = v_quiz_id
+      and ws_id = p_ws_id
+    returning id into v_quiz_id;
 
-create policy "Allow delete for user who owns attempt answers"
-on "public"."course_test_attempt_answers"
-as permissive
-for delete
-to authenticated
-using ((exists (select 1 from public.course_test_attempts cta where cta.id = course_test_attempt_answers.attempt_id and cta.user_id = auth.uid())));
+    if not found then
+      raise exception 'Quiz not found' using errcode = 'P0002';
+    end if;
+  else
+    insert into public.workspace_quizzes (
+      question,
+      ws_id,
+      type,
+      content
+    )
+    values (
+      p_quiz ->> 'question',
+      p_ws_id,
+      coalesce(nullif(p_quiz ->> 'type', ''), 'multiple_choice'),
+      case when p_quiz ? 'content' then p_quiz -> 'content' else null end
+    )
+    returning id into v_quiz_id;
+  end if;
+
+  if p_quiz ? 'answer' then
+    if p_quiz -> 'answer' = 'null'::jsonb then
+      delete from private.workspace_quiz_answers
+      where quiz_id = v_quiz_id;
+
+      update public.workspace_quizzes
+      set answer = null
+      where id = v_quiz_id;
+    else
+      insert into private.workspace_quiz_answers (
+        quiz_id,
+        answer
+      )
+      values (
+        v_quiz_id,
+        p_quiz -> 'answer'
+      )
+      on conflict (quiz_id)
+      do update set
+        answer = excluded.answer,
+        updated_at = now();
+    end if;
+  end if;
+
+  insert into public.course_test_quizzes (
+    test_id,
+    module_id,
+    quiz_id
+  )
+  values (
+    p_test_id,
+    p_module_id,
+    v_quiz_id
+  )
+  on conflict do nothing;
+
+  if p_quiz ? 'quiz_options' then
+    delete from public.quiz_options
+    where quiz_id = v_quiz_id;
+
+    for v_option in
+      select value from jsonb_array_elements(coalesce(p_quiz -> 'quiz_options', '[]'::jsonb))
+    loop
+      insert into public.quiz_options (
+        quiz_id,
+        value,
+        is_correct,
+        explanation
+      )
+      values (
+        v_quiz_id,
+        v_option ->> 'value',
+        coalesce((v_option ->> 'is_correct')::boolean, false),
+        nullif(v_option ->> 'explanation', '')
+      );
+    end loop;
+  end if;
+
+  return v_quiz_id;
+end;
+$$;
+
+revoke all on function "public"."upsert_course_test_question"(uuid, uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function "public"."upsert_course_test_question"(uuid, uuid, uuid, jsonb) to service_role;

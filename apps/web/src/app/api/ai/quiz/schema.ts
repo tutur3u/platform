@@ -96,6 +96,23 @@ export const GeneratedQuizSchema = z
       ),
   })
   .superRefine((quiz, ctx) => {
+    const requireNull = (
+      field:
+        | 'correct_boolean'
+        | 'correct_option_index'
+        | 'matching_pairs'
+        | 'options'
+        | 'ordering_items'
+    ) => {
+      if (quiz[field] !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [field],
+          message: `${field} must be null for ${quiz.type} questions.`,
+        });
+      }
+    };
+
     if (quiz.type === 'multiple_choice') {
       if (!quiz.options || quiz.options.length < 2) {
         ctx.addIssue({
@@ -123,6 +140,9 @@ export const GeneratedQuizSchema = z
           message: 'Correct option index must reference an existing option.',
         });
       }
+      requireNull('correct_boolean');
+      requireNull('matching_pairs');
+      requireNull('ordering_items');
     } else if (quiz.type === 'true_false') {
       if (quiz.correct_boolean === null || quiz.correct_boolean === undefined) {
         ctx.addIssue({
@@ -131,6 +151,10 @@ export const GeneratedQuizSchema = z
           message: 'True/false questions require correct_boolean.',
         });
       }
+      requireNull('correct_option_index');
+      requireNull('matching_pairs');
+      requireNull('options');
+      requireNull('ordering_items');
     } else if (quiz.type === 'matching') {
       if (!quiz.matching_pairs || quiz.matching_pairs.length < 1) {
         ctx.addIssue({
@@ -139,6 +163,10 @@ export const GeneratedQuizSchema = z
           message: 'Matching questions require at least 1 matching pair.',
         });
       }
+      requireNull('correct_boolean');
+      requireNull('correct_option_index');
+      requireNull('options');
+      requireNull('ordering_items');
     } else if (quiz.type === 'ordering') {
       if (!quiz.ordering_items || quiz.ordering_items.length < 2) {
         ctx.addIssue({
@@ -147,6 +175,16 @@ export const GeneratedQuizSchema = z
           message: 'Ordering questions require at least 2 ordering items.',
         });
       }
+      requireNull('correct_boolean');
+      requireNull('correct_option_index');
+      requireNull('matching_pairs');
+      requireNull('options');
+    } else if (quiz.type === 'paragraph') {
+      requireNull('correct_boolean');
+      requireNull('correct_option_index');
+      requireNull('matching_pairs');
+      requireNull('options');
+      requireNull('ordering_items');
     }
   });
 

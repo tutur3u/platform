@@ -59,7 +59,7 @@ export function CourseEditTestDialog({
   const [testName, setTestName] = useState(test.name);
   const [startAt, setStartAt] = useState(formatDateTimeLocal(test.start_at));
   const [durationInMinutes, setDurationInMinutes] = useState(
-    test.duration_in_minutes ? String(test.duration_in_minutes) : '60'
+    test.duration_in_minutes ? String(test.duration_in_minutes) : ''
   );
   const [description, setDescription] = useState(test.description || '');
 
@@ -69,7 +69,7 @@ export function CourseEditTestDialog({
       setTestName(test.name);
       setStartAt(formatDateTimeLocal(test.start_at));
       setDurationInMinutes(
-        test.duration_in_minutes ? String(test.duration_in_minutes) : '60'
+        test.duration_in_minutes ? String(test.duration_in_minutes) : ''
       );
       setDescription(test.description || '');
     }
@@ -101,6 +101,7 @@ export function CourseEditTestDialog({
     e.preventDefault();
 
     const validation = validateCourseTestForm({
+      allowPastStartAt: startAt === formatDateTimeLocal(test.start_at),
       description,
       durationInMinutes,
       name: testName,

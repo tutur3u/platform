@@ -6,6 +6,7 @@ export type CourseTestValidationError =
   | 'testNameRequired';
 
 type CourseTestValidationInput = {
+  allowPastStartAt?: boolean;
   description: string;
   durationInMinutes: string;
   moduleIds?: string[];
@@ -23,6 +24,7 @@ type CourseTestValidationSuccess = {
 };
 
 export function validateCourseTestForm({
+  allowPastStartAt = false,
   description,
   durationInMinutes,
   moduleIds = [],
@@ -47,7 +49,7 @@ export function validateCourseTestForm({
     if (Number.isNaN(parsedDate.getTime())) {
       return { error: 'invalidStartTime', success: false };
     }
-    if (parsedDate < new Date()) {
+    if (!allowPastStartAt && parsedDate < new Date()) {
       return { error: 'startTimeInPast', success: false };
     }
     parsedStartAt = parsedDate.toISOString();

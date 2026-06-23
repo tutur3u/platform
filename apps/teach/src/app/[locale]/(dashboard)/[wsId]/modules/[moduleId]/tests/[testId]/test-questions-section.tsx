@@ -264,7 +264,7 @@ function ModuleQuestionsManager({
                     {t('ws-quizzes.ordering')}
                   </SelectItem>
                   <SelectItem value="paragraph">
-                    {t('ws-quizzes.paragraph') || 'Paragraph'}
+                    {t('ws-quizzes.paragraph')}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -272,7 +272,9 @@ function ModuleQuestionsManager({
 
             {/* Question Count */}
             <div className="space-y-2">
-              <Label htmlFor="ai-question-count">Number of Questions</Label>
+              <Label htmlFor="ai-question-count">
+                {t('ws-quizzes.question_count')}
+              </Label>
               <Input
                 id="ai-question-count"
                 type="number"
@@ -294,11 +296,11 @@ function ModuleQuestionsManager({
             {/* Custom context */}
             <div className="space-y-2">
               <Label htmlFor="ai-teacher-context">
-                Additional Context (Optional)
+                {t('ws-quizzes.additional_context_optional')}
               </Label>
               <Textarea
                 id="ai-teacher-context"
-                placeholder="e.g. Focus on coding examples, make it hard, etc."
+                placeholder={t('ws-quizzes.additional_context_placeholder')}
                 value={teacherContext}
                 onChange={(e) => setTeacherContext(e.target.value)}
                 disabled={generateMutation.isPending}
@@ -354,22 +356,23 @@ export function TestQuestionsSection({
   testId,
   testModules,
 }: TestQuestionsSectionProps) {
+  const t = useTranslations();
+
   return (
     <div className="space-y-6">
       <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
         <h2 className="font-black text-lg uppercase tracking-wider">
-          Test Questions Manager
+          {t('ws-quizzes.test_questions_manager')}
         </h2>
         <p className="mt-1 text-muted-foreground text-sm">
-          Prepare and configure assessment questions manually or using AI for
-          each linked course module.
+          {t('ws-quizzes.test_questions_manager_description')}
         </p>
       </div>
 
       {testModules.length === 0 ? (
         <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
           <p className="text-muted-foreground text-sm">
-            Please link modules to this test first to add questions.
+            {t('ws-quizzes.link_modules_before_questions')}
           </p>
         </div>
       ) : (

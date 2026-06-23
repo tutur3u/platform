@@ -1,12 +1,8 @@
-import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
-import {
-  attachPrivateWorkspaceQuizAnswers,
-  setPrivateWorkspaceQuizAnswer,
-} from '@/lib/education/private-quiz-answers';
+import { attachPrivateWorkspaceQuizAnswers } from '@/lib/education/private-quiz-answers';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
@@ -34,12 +30,6 @@ const QuizTypeSchema = z.enum([
   'paragraph',
 ]);
 
-type QuizMutationData = {
-  question: string;
-  content?: Json;
-  type?: z.infer<typeof QuizTypeSchema>;
-};
-
 const QuizPayloadSchema = z.object({
   id: z.guid().optional(),
   question: z.string().trim().min(1).max(4000),
@@ -53,6 +43,16 @@ const QuizCreateSchema = z.object({
   moduleId: z.guid(),
   quizzes: z.array(QuizPayloadSchema).min(1),
 });
+
+type UntypedRpcClient = {
+  rpc<T>(
+    fn: string,
+    args: Record<string, unknown>
+  ): Promise<{
+    data: T | null;
+    error: { code?: string; message?: string } | null;
+  }>;
+};
 
 async function validateCourseTest({
   access,
@@ -339,85 +339,26 @@ export const POST = withSessionAuth(
     if (moduleValidationError) return moduleValidationError;
 
     try {
+      const rpcClient = access.sbAdmin as unknown as UntypedRpcClient;
+
       for (const quiz of quizzes) {
-        let quizId: string;
-
-        const updateData: QuizMutationData = { question: quiz.question };
-        if (quiz.type !== undefined) updateData.type = quiz.type;
-        if (quiz.content !== undefined) updateData.content = quiz.content;
-
-        if (quiz.id != null) {
-          const { data: updated, error: updateErr } = await access.sbAdmin
-            .from('workspace_quizzes')
-            .update(updateData)
-            .eq('id', quiz.id)
-            .eq('ws_id', access.normalizedWsId)
-            .select('id')
-            .maybeSingle();
-          if (updateErr) throw updateErr;
-          if (!updated) {
-            return NextResponse.json(
-              { message: 'Quiz not found' },
-              { status: 404 }
-            );
+        const { error } = await rpcClient.rpc<string>(
+          'upsert_course_test_question',
+          {
+            p_module_id: moduleId,
+            p_quiz: quiz,
+            p_test_id: testId,
+            p_ws_id: access.normalizedWsId,
           }
-          quizId = updated.id;
-        } else {
-          const insertData: QuizMutationData & { ws_id: string } = {
-            question: quiz.question,
-            ws_id: access.normalizedWsId,
-          };
-          if (quiz.type !== undefined) insertData.type = quiz.type;
-          if (quiz.content !== undefined) insertData.content = quiz.content;
+        );
 
-          const { data: inserted, error: insertErr } = await access.sbAdmin
-            .from('workspace_quizzes')
-            .insert(insertData)
-            .select('id')
-            .single();
-          if (insertErr) throw insertErr;
-          quizId = inserted.id;
+        if (error?.code === 'P0002') {
+          return NextResponse.json(
+            { message: 'Quiz not found' },
+            { status: 404 }
+          );
         }
-
-        await setPrivateWorkspaceQuizAnswer({
-          answer: quiz.answer,
-          db: access.sbAdmin,
-          quizId,
-        });
-
-        // Link with course_test_quizzes
-        const { error: testLinkError } = await access.sbAdmin
-          .from('course_test_quizzes')
-          .insert({
-            test_id: testId,
-            module_id: moduleId,
-            quiz_id: quizId,
-          });
-        if (testLinkError != null && testLinkError.code !== '23505') {
-          throw testLinkError;
-        }
-
-        if (quiz.quiz_options !== undefined) {
-          const { error: deleteOptionsError } = await access.sbAdmin
-            .from('quiz_options')
-            .delete()
-            .eq('quiz_id', quizId);
-          if (deleteOptionsError) throw deleteOptionsError;
-
-          if (quiz.quiz_options.length > 0) {
-            const optionsPayload = quiz.quiz_options.map((option) => ({
-              quiz_id: quizId,
-              value: option.value,
-              is_correct: option.is_correct,
-              explanation: option.explanation ?? null,
-            }));
-
-            const { error: insertOptionsError } = await access.sbAdmin
-              .from('quiz_options')
-              .insert(optionsPayload);
-            if (insertOptionsError) throw insertOptionsError;
-          }
-        }
+        if (error) throw error;
       }
 
       return NextResponse.json({

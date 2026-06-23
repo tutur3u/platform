@@ -17,13 +17,14 @@ import {
   startTulearnTest,
   submitTulearnTest,
   type TulearnQuiz,
+  type TulearnReviewQuiz,
   type TulearnTestAttemptAnswer,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   EmptyState,
   LoadingState,
@@ -135,7 +136,10 @@ function getSelectedIndexAnswer(answer: unknown) {
 }
 
 function getTrueFalseAnswer(answer: unknown) {
-  return answer === true || asRecord(answer)?.correct === true;
+  if (typeof answer === 'boolean') return answer;
+
+  const correct = asRecord(answer)?.correct;
+  return typeof correct === 'boolean' ? correct : null;
 }
 
 function getMultipleChoiceOptions(quiz: TulearnQuiz): MultipleChoiceOption[] {
@@ -201,6 +205,7 @@ export function StudentTestDetailPage({
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [hasStarted, setHasStarted] = useState<boolean>(true);
+  const pendingAnswerSavesRef = useRef(new Set<Promise<unknown>>());
 
   // Check if test has started
   useEffect(() => {
@@ -244,10 +249,10 @@ export function StudentTestDetailPage({
       queryClient.invalidateQueries({
         queryKey: ['tulearn', wsId, studentId, 'test-attempt', testId],
       });
-      toast.success(t('courses.submitTestSuccess'));
+      toast.success(t('courses.startTestSuccess'));
     },
     onError: () => {
-      toast.error('Failed to start test');
+      toast.error(t('courses.startTestError'));
     },
   });
 
@@ -273,19 +278,45 @@ export function StudentTestDetailPage({
       toast.success(t('courses.submitTestSuccess'));
     },
     onError: () => {
-      toast.error('Failed to submit test');
+      toast.error(t('courses.submitTestError'));
     },
   });
 
-  const handleAutoSubmit = useCallback(() => {
+  const queueAnswerSave = useCallback(
+    (payload: {
+      attemptId: string;
+      quizId: string;
+      selectedOptionId?: string | null;
+      answer?: unknown;
+    }) => {
+      const savePromise = saveAnswerMutation
+        .mutateAsync(payload)
+        .finally(() => {
+          pendingAnswerSavesRef.current.delete(savePromise);
+        });
+      pendingAnswerSavesRef.current.add(savePromise);
+      return savePromise;
+    },
+    [saveAnswerMutation]
+  );
+
+  const flushPendingAnswerSaves = useCallback(async () => {
+    const pendingSaves = Array.from(pendingAnswerSavesRef.current);
+    if (pendingSaves.length === 0) return;
+    await Promise.allSettled(pendingSaves);
+  }, []);
+
+  const handleAutoSubmit = useCallback(async () => {
     if (attempt && !attempt.submitted_at && !submitMutation.isPending) {
+      await flushPendingAnswerSaves();
       submitMutation.mutate({ attemptId: attempt.id });
     }
-  }, [attempt, submitMutation]);
+  }, [attempt, flushPendingAnswerSaves, submitMutation]);
 
-  const handleManualSubmit = () => {
+  const handleManualSubmit = async () => {
     if (!attempt || attempt.submitted_at || submitMutation.isPending) return;
     if (confirm(t('courses.submitTestConfirm'))) {
+      await flushPendingAnswerSaves();
       submitMutation.mutate({ attemptId: attempt.id });
     }
   };
@@ -387,7 +418,7 @@ export function StudentTestDetailPage({
       const percentage =
         maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
 
-      const renderQuizReview = (quiz: TulearnQuiz) => {
+      const renderQuizReview = (quiz: TulearnReviewQuiz) => {
         const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id) || {
           selected_option_id: null,
           answer: null,
@@ -434,13 +465,13 @@ export function StudentTestDetailPage({
                     {isSelected && (
                       <span className="ml-auto font-bold text-xs uppercase tracking-wider">
                         {isCorrect
-                          ? '✓ Your Answer (Correct)'
-                          : '✗ Your Answer (Incorrect)'}
+                          ? t('courses.yourAnswerCorrect')
+                          : t('courses.yourAnswerIncorrect')}
                       </span>
                     )}
                     {!isSelected && isOptionCorrect && (
                       <span className="ml-auto font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                        (Correct Answer)
+                        {t('courses.correctAnswerLabel')}
                       </span>
                     )}
                   </div>
@@ -449,7 +480,7 @@ export function StudentTestDetailPage({
               {quiz.quiz_options?.some((o) => o.explanation) && (
                 <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-muted-foreground text-xs leading-relaxed">
                   <span className="mb-1 block font-black text-[10px] uppercase tracking-wider">
-                    Explanation:
+                    {t('courses.quizExplanation')}
                   </span>
                   {quiz.quiz_options.find((o) => o.is_correct)?.explanation ||
                     quiz.quiz_options.find((o) => o.explanation)?.explanation}
@@ -476,7 +507,7 @@ export function StudentTestDetailPage({
                   cardStyle = isCorrect
                     ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
                     : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
-                } else if (!isSelected && !isCorrect) {
+                } else if (studentVal !== null && !isSelected && !isCorrect) {
                   // If student was wrong, the other option is correct
                   cardStyle =
                     'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
@@ -505,7 +536,11 @@ export function StudentTestDetailPage({
           return (
             <div className="mt-4 space-y-2">
               <p className="mb-2 font-bold text-muted-foreground text-xs">
-                Your Answer (Status: {isCorrect ? 'Correct' : 'Incorrect'}):
+                {t('courses.yourAnswerStatus', {
+                  status: isCorrect
+                    ? t('courses.statusCorrect')
+                    : t('courses.statusIncorrect'),
+                })}
               </p>
               {submittedOrder.map((item: string, index: number) => (
                 <div
@@ -536,7 +571,11 @@ export function StudentTestDetailPage({
           return (
             <div className="mt-4 space-y-3">
               <p className="mb-2 font-bold text-muted-foreground text-xs">
-                Your Matchings (Status: {isCorrect ? 'Correct' : 'Incorrect'}):
+                {t('courses.yourMatchingsStatus', {
+                  status: isCorrect
+                    ? t('courses.statusCorrect')
+                    : t('courses.statusIncorrect'),
+                })}
               </p>
               {pairs.map((pair, index) => {
                 const currentRight =
@@ -568,13 +607,13 @@ export function StudentTestDetailPage({
           return (
             <div className="mt-4 space-y-2">
               <p className="font-bold text-muted-foreground text-xs">
-                Your Response:
+                {t('courses.yourResponse')}
               </p>
               <div className="w-full whitespace-pre-wrap border-2 border-border bg-muted/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
                 {textValue}
               </div>
               <span className="mt-1 block text-[10px] text-muted-foreground italic">
-                Paragraph questions are manually graded by the instructor.
+                {t('courses.paragraphManualGradingHint')}
               </span>
             </div>
           );
@@ -616,7 +655,7 @@ export function StudentTestDetailPage({
 
                 <div className="mt-6 border-2 border-border bg-muted/10 p-4 shadow-[4px_4px_0_var(--border)]">
                   <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
-                    Submitted Date & Time
+                    {t('courses.submittedDateTime')}
                   </span>
                   <span className="font-bold text-sm">
                     {new Date(attempt.submitted_at).toLocaleString([], {
@@ -630,7 +669,7 @@ export function StudentTestDetailPage({
               {/* Score visual card */}
               <div className="relative flex min-h-[200px] flex-col items-center justify-center overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center shadow-[8px_8px_0_var(--border)]">
                 <span className="mb-2 block font-black text-muted-foreground text-xs uppercase tracking-wider">
-                  Your Grade
+                  {t('courses.yourGrade')}
                 </span>
 
                 <div className="relative flex items-center justify-center">
@@ -654,7 +693,7 @@ export function StudentTestDetailPage({
             {/* Submissions Review list */}
             <div className="space-y-6">
               <h2 className="border-border border-b-2 pb-2 font-black text-xl uppercase tracking-wider">
-                Questions Review
+                {t('courses.questionsReview')}
               </h2>
               {quizzes.length === 0 ? (
                 <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
@@ -700,14 +739,17 @@ export function StudentTestDetailPage({
                                 : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
                             )}
                           >
-                            Score: {quizScore} / {quiz.score ?? 1}
+                            {t('courses.questionScore', {
+                              score: quizScore,
+                              total: quiz.score ?? 1,
+                            })}
                           </div>
                         </div>
                         {renderQuizReview(quiz)}
                         {quizAns?.feedback && (
                           <div className="mt-4 border-2 border-primary bg-primary/5 p-4 text-left shadow-[2px_2px_0_var(--border)]">
                             <span className="mb-1 block font-black text-[10px] text-primary uppercase tracking-wider">
-                              Teacher's Feedback:
+                              {t('courses.teacherFeedback')}
                             </span>
                             <p className="font-bold text-foreground text-sm">
                               {quizAns.feedback}
@@ -802,7 +844,7 @@ export function StudentTestDetailPage({
                         ...prev,
                         [quiz.id]: updated,
                       }));
-                      saveAnswerMutation.mutate({
+                      queueAnswerSave({
                         attemptId: attempt.id,
                         quizId: quiz.id,
                         // Content-based options use non-UUID ids (e.g. "content-0");
@@ -844,7 +886,7 @@ export function StudentTestDetailPage({
                       ...prev,
                       [quiz.id]: updated,
                     }));
-                    saveAnswerMutation.mutate({
+                    queueAnswerSave({
                       attemptId: attempt.id,
                       quizId: quiz.id,
                       answer: opt.value,
@@ -878,7 +920,7 @@ export function StudentTestDetailPage({
                 setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
               }}
               onBlur={() => {
-                saveAnswerMutation.mutate({
+                queueAnswerSave({
                   attemptId: attempt.id,
                   quizId: quiz.id,
                   answer: { text: textValue },
@@ -913,7 +955,7 @@ export function StudentTestDetailPage({
 
           const updated = { selectedOptionId: null, answer: newItems };
           setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
-          saveAnswerMutation.mutate({
+          queueAnswerSave({
             attemptId: attempt.id,
             quizId: quiz.id,
             answer: newItems,
@@ -977,7 +1019,7 @@ export function StudentTestDetailPage({
 
           const updated = { selectedOptionId: null, answer: newPairs };
           setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
-          saveAnswerMutation.mutate({
+          queueAnswerSave({
             attemptId: attempt.id,
             quizId: quiz.id,
             answer: newPairs,
@@ -1038,7 +1080,9 @@ export function StudentTestDetailPage({
                 <button
                   type="button"
                   onClick={handleManualSubmit}
-                  disabled={submitMutation.isPending}
+                  disabled={
+                    submitMutation.isPending || saveAnswerMutation.isPending
+                  }
                   className="inline-flex w-full items-center justify-center gap-2 border-2 border-border bg-primary py-3 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
                 >
                   {t('courses.submitTest')}

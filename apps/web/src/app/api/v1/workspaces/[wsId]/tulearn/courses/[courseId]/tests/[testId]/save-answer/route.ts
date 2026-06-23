@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -7,7 +8,10 @@ import {
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
 } from '@/lib/tulearn/service';
-import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
+import {
+  isAttemptExpired,
+  submitTestAttemptInternal,
+} from '@/lib/tulearn/test-session';
 
 type Params = {
   courseId: string;
@@ -101,23 +105,18 @@ export const POST = withSessionAuth<Params>(
       }
 
       // Check duration limit with 1-minute grace period
-      if (test.duration_in_minutes) {
-        const startedTime = new Date(attempt.started_at).getTime();
-        const durationMs = test.duration_in_minutes * 60 * 1000;
-        const graceMs = 60 * 1000;
-        if (startedTime + durationMs + graceMs < Date.now()) {
-          // Auto-submit and reject response save
-          await submitTestAttemptInternal(
-            sbAdmin,
-            attempt.id,
-            testId,
-            subject.studentPlatformUserId
-          );
-          return NextResponse.json(
-            { message: 'Time limit reached, test has been submitted' },
-            { status: 400 }
-          );
-        }
+      if (isAttemptExpired(attempt, test.duration_in_minutes)) {
+        // Auto-submit and reject response save
+        await submitTestAttemptInternal(
+          sbAdmin,
+          attempt.id,
+          testId,
+          subject.studentPlatformUserId
+        );
+        return NextResponse.json(
+          { message: 'Time limit reached, test has been submitted' },
+          { status: 400 }
+        );
       }
 
       // Verify quiz belongs to this test
@@ -143,7 +142,7 @@ export const POST = withSessionAuth<Params>(
             attempt_id: attemptId,
             quiz_id: quizId,
             selected_option_id: selectedOptionId ?? null,
-            answer: answer !== undefined ? (answer as any) : null,
+            answer: answer !== undefined ? (answer as Json) : null,
             is_correct: null, // Keep secret until submission
             score_awarded: null,
           },

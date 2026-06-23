@@ -230,8 +230,8 @@ function SubmissionRow({
 }) {
   const isSubmitted = !!submission.submittedAt;
   const scorePercent =
-    submission.totalQuizzes > 0 && submission.score !== null
-      ? Math.round((submission.score / submission.totalQuizzes) * 100)
+    submission.maxScore > 0 && submission.score !== null
+      ? Math.round((submission.score / submission.maxScore) * 100)
       : null;
 
   return (

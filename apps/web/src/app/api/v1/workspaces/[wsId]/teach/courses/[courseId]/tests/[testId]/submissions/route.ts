@@ -13,6 +13,25 @@ const RouteParamsSchema = z.object({
   wsId: z.string().min(1),
 });
 
+type CountAggregateRow = {
+  attempt_id: string;
+  count?: number | string | null;
+};
+
+type QuizScoreRow = {
+  id: string;
+  score: number | null;
+};
+
+function parseAggregateCount(value: number | string | null | undefined) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
 export const GET = withSessionAuth(
   async (
     _request,
@@ -96,33 +115,68 @@ export const GET = withSessionAuth(
       (users ?? []).map((u) => [u.id, u.display_name ?? 'Unknown'])
     );
 
-    // Count total quizzes for this test
-    const { count: totalQuizzes, error: totalQuizzesErr } = await access.sbAdmin
+    const { data: testQuizzes, error: testQuizzesErr } = await access.sbAdmin
       .from('course_test_quizzes')
-      .select('quiz_id', { count: 'exact', head: true })
+      .select('quiz_id')
       .eq('test_id', testId);
-    if (totalQuizzesErr) {
-      serverLogger.error('Failed to count test quizzes for submissions', {
-        error: totalQuizzesErr,
+    if (testQuizzesErr) {
+      serverLogger.error('Failed to fetch test quizzes for submissions', {
+        error: testQuizzesErr,
         testId,
         wsId: access.normalizedWsId,
       });
       return NextResponse.json(
-        { message: 'Error fetching submission quiz counts' },
+        { message: 'Error fetching submission quizzes' },
         { status: 500 }
       );
     }
 
-    // Fetch answer counts per attempt
+    const quizIds = (testQuizzes ?? []).map((quiz) => quiz.quiz_id);
+    const totalQuizzes = quizIds.length;
+    let maxScore = 0;
+    if (quizIds.length > 0) {
+      const { data: quizScores, error: quizScoresErr } = await access.sbAdmin
+        .from('workspace_quizzes')
+        .select('id, score')
+        .in('id', quizIds);
+      if (quizScoresErr) {
+        serverLogger.error('Failed to fetch test quiz scores', {
+          error: quizScoresErr,
+          testId,
+          wsId: access.normalizedWsId,
+        });
+        return NextResponse.json(
+          { message: 'Error fetching submission quiz scores' },
+          { status: 500 }
+        );
+      }
+
+      maxScore = ((quizScores ?? []) as QuizScoreRow[]).reduce(
+        (sum, quiz) => sum + (quiz.score ?? 0),
+        0
+      );
+    }
+
+    // Fetch answer counts per attempt using grouped aggregates in PostgREST.
     const attemptIds = attempts.map((a) => a.id);
-    const { data: answerCounts, error: answerCountsErr } = await access.sbAdmin
-      .from('course_test_attempt_answers')
-      .select('attempt_id, is_correct')
-      .in('attempt_id', attemptIds);
-    if (answerCountsErr) {
+    const [
+      { data: answeredCounts, error: answeredCountsErr },
+      { data: correctCounts, error: correctCountsErr },
+    ] = await Promise.all([
+      access.sbAdmin
+        .from('course_test_attempt_answers')
+        .select('attempt_id, count()')
+        .in('attempt_id', attemptIds),
+      access.sbAdmin
+        .from('course_test_attempt_answers')
+        .select('attempt_id, count()')
+        .in('attempt_id', attemptIds)
+        .eq('is_correct', true),
+    ]);
+    if (answeredCountsErr || correctCountsErr) {
       serverLogger.error('Failed to fetch test submission answer counts', {
         attemptIds,
-        error: answerCountsErr,
+        error: answeredCountsErr ?? correctCountsErr,
         testId,
         wsId: access.normalizedWsId,
       });
@@ -136,14 +190,21 @@ export const GET = withSessionAuth(
       string,
       { answered: number; correct: number }
     >();
-    for (const ans of answerCounts ?? []) {
-      const entry = answerCountMap.get(ans.attempt_id) ?? {
+    for (const row of (answeredCounts ?? []) as CountAggregateRow[]) {
+      const entry = answerCountMap.get(row.attempt_id) ?? {
         answered: 0,
         correct: 0,
       };
-      entry.answered++;
-      if (ans.is_correct === true) entry.correct++;
-      answerCountMap.set(ans.attempt_id, entry);
+      entry.answered = parseAggregateCount(row.count);
+      answerCountMap.set(row.attempt_id, entry);
+    }
+    for (const row of (correctCounts ?? []) as CountAggregateRow[]) {
+      const entry = answerCountMap.get(row.attempt_id) ?? {
+        answered: 0,
+        correct: 0,
+      };
+      entry.correct = parseAggregateCount(row.count);
+      answerCountMap.set(row.attempt_id, entry);
     }
 
     const data = attempts.map((a) => ({
@@ -155,7 +216,8 @@ export const GET = withSessionAuth(
       score: a.score,
       answeredCount: answerCountMap.get(a.id)?.answered ?? 0,
       correctCount: answerCountMap.get(a.id)?.correct ?? 0,
-      totalQuizzes: totalQuizzes ?? 0,
+      maxScore,
+      totalQuizzes,
     }));
 
     return NextResponse.json({ data, count: data.length });

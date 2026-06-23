@@ -57,24 +57,41 @@ function booleanProperty(value: unknown, key: string): boolean | null {
   return typeof property === 'boolean' ? property : null;
 }
 
-async function loadCorrectAnswer({
-  fallbackAnswer,
-  quizId,
+export function isAttemptExpired(
+  attempt: { started_at: string },
+  durationInMinutes: number | null | undefined,
+  now = Date.now()
+) {
+  if (!durationInMinutes) return false;
+
+  const startedTime = new Date(attempt.started_at).getTime();
+  const durationMs = durationInMinutes * 60 * 1000;
+  const graceMs = 60 * 1000;
+
+  return startedTime + durationMs + graceMs < now;
+}
+
+async function loadCorrectAnswerMap({
+  quizIds,
   sbAdmin,
 }: {
-  fallbackAnswer: unknown;
-  quizId: string;
+  quizIds: string[];
   sbAdmin: SupabaseAdmin;
 }) {
-  const { data: privateAnswer, error } = await sbAdmin
+  const { data: privateAnswers, error } = await sbAdmin
     .schema('private')
     .from('workspace_quiz_answers')
-    .select('answer')
-    .eq('quiz_id', quizId)
-    .maybeSingle();
+    .select('quiz_id, answer')
+    .in('quiz_id', quizIds);
 
   if (error) throw error;
-  return privateAnswer?.answer ?? fallbackAnswer ?? null;
+
+  return new Map(
+    (privateAnswers ?? []).map((privateAnswer) => [
+      privateAnswer.quiz_id,
+      privateAnswer.answer,
+    ])
+  );
 }
 
 export async function submitTestAttemptInternal(
@@ -145,6 +162,7 @@ export async function submitTestAttemptInternal(
   const answersMap = new Map(
     (savedAnswers ?? []).map((ans) => [ans.quiz_id, ans])
   );
+  const correctAnswerMap = await loadCorrectAnswerMap({ quizIds, sbAdmin });
 
   let totalScore = 0;
   const gradedAnswers = [];
@@ -172,27 +190,21 @@ export async function submitTestAttemptInternal(
             )?.find((opt) => opt.id === selectedOptionId);
             isCorrect = option?.is_correct ?? false;
           } else {
-            const correctAnswer = await loadCorrectAnswer({
-              fallbackAnswer: quiz.answer,
-              quizId: quiz.id,
-              sbAdmin,
-            });
+            const correctAnswer =
+              correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null;
             const correctIndex = numberProperty(correctAnswer, 'correctIndex');
             const selectedIndex =
               asRecord(answer)?.selectedIndex ??
               (typeof answer === 'number' ? answer : null);
             isCorrect =
-              correctIndex !== undefined &&
+              correctIndex !== null &&
               selectedIndex !== null &&
               Number(correctIndex) === Number(selectedIndex);
           }
         }
       } else if (quiz.type === 'true_false') {
-        const correctAnswer = await loadCorrectAnswer({
-          fallbackAnswer: quiz.answer,
-          quizId: quiz.id,
-          sbAdmin,
-        });
+        const correctAnswer =
+          correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null;
         const clientCorrect =
           typeof answer === 'boolean' ? answer : asRecord(answer)?.correct;
         const correctKey =
@@ -201,11 +213,8 @@ export async function submitTestAttemptInternal(
             : booleanProperty(correctAnswer, 'correct');
         isCorrect = clientCorrect === correctKey;
       } else if (quiz.type === 'ordering') {
-        const correctAnswer = await loadCorrectAnswer({
-          fallbackAnswer: quiz.answer,
-          quizId: quiz.id,
-          sbAdmin,
-        });
+        const correctAnswer =
+          correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null;
         const correctOrder = getStringItems(correctAnswer, 'order');
         const submittedOrder = Array.isArray(answer)
           ? answer.map(displayText)
@@ -219,11 +228,8 @@ export async function submitTestAttemptInternal(
           fallbackOrder.length > 0 &&
           stringArraysMatch(submittedOrder, fallbackOrder);
       } else if (quiz.type === 'matching') {
-        const correctAnswer = await loadCorrectAnswer({
-          fallbackAnswer: quiz.answer,
-          quizId: quiz.id,
-          sbAdmin,
-        });
+        const correctAnswer =
+          correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null;
         const correctPairs = getMatchingPairs(correctAnswer);
         const submittedPairs = getMatchingPairs(answer);
         const fallbackPairs =
@@ -257,10 +263,12 @@ export async function submitTestAttemptInternal(
   }
 
   // 5. Update graded answers
-  for (const graded of gradedAnswers) {
-    await sbAdmin
+  if (gradedAnswers.length > 0) {
+    const { error: upsertErr } = await sbAdmin
       .from('course_test_attempt_answers')
-      .upsert(graded, { onConflict: 'attempt_id,quiz_id' });
+      .upsert(gradedAnswers, { onConflict: 'attempt_id,quiz_id' });
+
+    if (upsertErr) throw upsertErr;
   }
 
   // 6. Complete and score the attempt record
