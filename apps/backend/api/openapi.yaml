@@ -8392,6 +8392,80 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/finance/recurring-transactions/upcoming:
+    get:
+      summary: Workspace upcoming recurring finance transactions
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts
+        GET. The Rust backend accepts finance/platform app-session tokens and
+        CLI app-session tokens before falling back to a normal Supabase browser
+        session or non-app-session Bearer token, normalizes internal, personal,
+        handle, and UUID workspace identifiers, requires `view_transactions`
+        through `has_workspace_permission`, preserves JavaScript
+        `Number.parseInt(..., 10)` handling for `daysAhead` with a fallback of
+        30, calls `get_upcoming_recurring_transactions`, and preserves the
+        legacy `{ upcomingTransactions }`, Unauthorized, and Failed to fetch
+        upcoming recurring transactions bodies. This migrates only the upcoming
+        transactions route; recurring transaction collection and detail
+        mutations remain legacy-owned.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: daysAhead
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+          description: Number of days ahead parsed with JavaScript Number.parseInt semantics.
+      responses:
+        "200":
+          description: Upcoming recurring transactions visible to the workspace caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceUpcomingRecurringTransactionsResponse"
+        "401":
+          description: Missing or invalid finance caller credentials, or unresolved workspace access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceRecurringTransactionsMessage"
+        "403":
+          description: Authenticated caller lacks view_transactions permission for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceRecurringTransactionsMessage"
+        "500":
+          description: Upcoming recurring transactions lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceRecurringTransactionsMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/settings/permissions/check:
     get:
       summary: Workspace setting permission check
@@ -9277,6 +9351,26 @@ components:
             - Unauthorized
             - Insufficient permissions
             - Error fetching debt/loan summary
+    FinanceUpcomingRecurringTransactionsResponse:
+      type: object
+      required:
+        - upcomingTransactions
+      properties:
+        upcomingTransactions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    FinanceRecurringTransactionsMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - Failed to fetch upcoming recurring transactions
     UnauthorizedError:
       type: object
       required:

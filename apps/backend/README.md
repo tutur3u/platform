@@ -341,6 +341,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `manage_finance`, calls private-schema `get_debt_loan_summary` with the
   service-role credential, returns the first legacy RPC row or the zero summary,
   and preserves legacy auth, permission, and summary error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming`:
+  legacy-compatible upcoming recurring transaction probe. Rust reuses the
+  finance app-session/CLI/Supabase auth boundary, normalizes the workspace
+  identifier, requires `view_transactions`, preserves `daysAhead` parseInt
+  behavior, calls `get_upcoming_recurring_transactions`, and returns the legacy
+  `{ upcomingTransactions }` envelope and error bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

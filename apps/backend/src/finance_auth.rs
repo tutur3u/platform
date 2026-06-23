@@ -14,6 +14,7 @@ const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct FinanceAuthorization {
+    pub(crate) access_token: Option<String>,
     pub(crate) user_id: String,
     pub(crate) ws_id: String,
 }
@@ -74,6 +75,7 @@ pub(crate) async fn authorize_finance_permission(
 
     if has_permission {
         Ok(FinanceAuthorization {
+            access_token: user.access_token,
             user_id: user.id,
             ws_id,
         })

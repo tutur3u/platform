@@ -844,6 +844,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/debts/summary by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling private-schema get_debt_loan_summary with _actor_id and _ws_id using the service-role credential, returning the first legacy RPC row or the zero summary, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching debt/loan summary bodies."
     },
+    "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving JavaScript parseInt-style daysAhead parsing with a 30-day fallback, calling get_upcoming_recurring_transactions with caller-token auth for normal Supabase sessions and service-role auth for app sessions, and preserving the legacy upcomingTransactions envelope, 403 Unauthorized body, and Failed to fetch upcoming recurring transactions body. Recurring transaction collection and detail routes remain legacy-owned."
+    },
     "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
       "methods": {
         "GET": {
