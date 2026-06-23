@@ -66,6 +66,7 @@ const GATED_ROUTES = [
   'tasks/templates',
   'tasks/templates/marketplace',
   'users/feedbacks',
+  'users/groups/calendar',
   'users/tutoring',
 ] as const;
 

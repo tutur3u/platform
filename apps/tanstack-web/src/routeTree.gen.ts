@@ -153,6 +153,7 @@ import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/
 import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
 import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
+import { Route as LocaleWsIdUsersGroupsCalendarRouteImport } from './routes/$locale/$wsId/users/groups/calendar';
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
 import { Route as LocaleWsIdTasksTemplatesMarketplaceRouteImport } from './routes/$locale/$wsId/tasks/templates/marketplace';
 import { Route as LocaleWsIdTasksTemplatesTemplateIdRouteImport } from './routes/$locale/$wsId/tasks/templates/$templateId';
@@ -949,6 +950,12 @@ const LocaleWsIdUsersReportsReportIdRoute =
     path: '/$wsId/users/reports/$reportId',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdUsersGroupsCalendarRoute =
+  LocaleWsIdUsersGroupsCalendarRouteImport.update({
+    id: '/$wsId/users/groups/calendar',
+    path: '/$wsId/users/groups/calendar',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdUsersGroupsGroupIdRoute =
   LocaleWsIdUsersGroupsGroupIdRouteImport.update({
     id: '/$wsId/users/groups/$groupId',
@@ -1240,6 +1247,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/tasks/templates/$templateId': typeof LocaleWsIdTasksTemplatesTemplateIdRoute;
   '/$locale/$wsId/tasks/templates/marketplace': typeof LocaleWsIdTasksTemplatesMarketplaceRoute;
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute;
+  '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -1406,6 +1414,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/tasks/templates/$templateId': typeof LocaleWsIdTasksTemplatesTemplateIdRoute;
   '/$locale/$wsId/tasks/templates/marketplace': typeof LocaleWsIdTasksTemplatesMarketplaceRoute;
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute;
+  '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
   '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -1574,6 +1583,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/tasks/templates/$templateId': typeof LocaleWsIdTasksTemplatesTemplateIdRoute;
   '/$locale/$wsId/tasks/templates/marketplace': typeof LocaleWsIdTasksTemplatesMarketplaceRoute;
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRoute;
+  '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -1743,6 +1753,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates/$templateId'
     | '/$locale/$wsId/tasks/templates/marketplace'
     | '/$locale/$wsId/users/groups/$groupId'
+    | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -1909,6 +1920,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates/$templateId'
     | '/$locale/$wsId/tasks/templates/marketplace'
     | '/$locale/$wsId/users/groups/$groupId'
+    | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
     | '/$locale/$wsId/tasks/boards'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -2076,6 +2088,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/tasks/templates/$templateId'
     | '/$locale/$wsId/tasks/templates/marketplace'
     | '/$locale/$wsId/users/groups/$groupId'
+    | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -3101,6 +3114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersReportsReportIdRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/users/groups/calendar': {
+      id: '/$locale/$wsId/users/groups/calendar';
+      path: '/$wsId/users/groups/calendar';
+      fullPath: '/$locale/$wsId/users/groups/calendar';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsCalendarRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/users/groups/$groupId': {
       id: '/$locale/$wsId/users/groups/$groupId';
       path: '/$wsId/users/groups/$groupId';
@@ -3654,6 +3674,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdSettingsInfrastructureAppCoordinationRoute: typeof LocaleWsIdSettingsInfrastructureAppCoordinationRoute;
   LocaleWsIdTasksBoardsBoardIdRoute: typeof LocaleWsIdTasksBoardsBoardIdRoute;
   LocaleWsIdUsersGroupsGroupIdRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
+  LocaleWsIdUsersGroupsCalendarRoute: typeof LocaleWsIdUsersGroupsCalendarRoute;
   LocaleWsIdUsersReportsReportIdRoute: typeof LocaleWsIdUsersReportsReportIdRoute;
   LocaleWsIdTasksBoardsIndexRoute: typeof LocaleWsIdTasksBoardsIndexRoute;
 }
@@ -3789,6 +3810,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdSettingsInfrastructureAppCoordinationRoute,
   LocaleWsIdTasksBoardsBoardIdRoute: LocaleWsIdTasksBoardsBoardIdRoute,
   LocaleWsIdUsersGroupsGroupIdRoute: LocaleWsIdUsersGroupsGroupIdRoute,
+  LocaleWsIdUsersGroupsCalendarRoute: LocaleWsIdUsersGroupsCalendarRoute,
   LocaleWsIdUsersReportsReportIdRoute: LocaleWsIdUsersReportsReportIdRoute,
   LocaleWsIdTasksBoardsIndexRoute: LocaleWsIdTasksBoardsIndexRoute,
 };
