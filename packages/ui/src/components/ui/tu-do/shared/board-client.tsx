@@ -15,7 +15,6 @@ import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
-import { KanbanSkeleton } from '../boards/boardId/kanban/rendering/kanban-skeleton';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -25,6 +24,7 @@ import {
 import { BoardViews } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import { TaskBoardLoadingState } from './task-board-loading-state';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 const BOARD_REVALIDATE_COOLDOWN_MS = 30_000;
@@ -238,11 +238,7 @@ export function BoardClient({
   ]);
 
   if (boardLoading && !board) {
-    return (
-      <div className="h-[calc(100vh-6rem)] min-h-[28rem]">
-        <KanbanSkeleton />
-      </div>
-    );
+    return <TaskBoardLoadingState />;
   }
 
   if (!board?.id) {

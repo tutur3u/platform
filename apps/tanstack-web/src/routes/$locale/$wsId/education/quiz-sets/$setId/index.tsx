@@ -103,12 +103,14 @@ export const Route = createFileRoute(
       throw notFound();
     }
 
+    const page = deps.page ?? 1;
+    const pageSize = deps.pageSize ?? 10;
     const { count, data } = await loadQuizSetQuizzes({
       data: {
         wsId: workspace.workspaceId,
         setId: params.setId,
-        page: deps.page,
-        pageSize: deps.pageSize,
+        page,
+        pageSize,
         q: deps.q,
       },
     });

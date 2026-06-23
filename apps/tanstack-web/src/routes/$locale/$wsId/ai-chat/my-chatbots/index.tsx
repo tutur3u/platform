@@ -12,13 +12,14 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
-import Link from 'next/link';
 import { useTranslations } from 'use-intl';
 import { groupTagColumns } from '@/components/ai-chat/my-chatbots/columns';
 import { requireCurrentUser } from '@/lib/platform/auth-gate';
 import { createPageHead } from '@/lib/platform/head';
 import { resolveMessagesLocale } from '@/lib/platform/messages';
+import { Link } from '@/lib/platform/next-link-shim';
 import { resolveWorkspace } from '@/lib/platform/workspace';
+import { requireWorkspacePermission } from '@/lib/platform/workspace-permission';
 
 type MyChatbotsData = {
   count: number;
@@ -98,6 +99,13 @@ export const Route = createFileRoute('/$locale/$wsId/ai-chat/my-chatbots/')({
       throw notFound();
     }
 
+    // Legacy ai-chat layout withoutPermission('ai_chat') -> redirect(`/${wsId}`).
+    await requireWorkspacePermission({
+      wsId: workspace.workspaceId,
+      permission: 'ai_chat',
+      locale: params.locale,
+    });
+
     const { count, data } = await loadGroupTags({
       data: {
         wsId: workspace.workspaceId,
@@ -113,7 +121,7 @@ export const Route = createFileRoute('/$locale/$wsId/ai-chat/my-chatbots/')({
 
 function MyChatbotsRoutePage() {
   const data = Route.useLoaderData() as MyChatbotsData | undefined;
-  const { wsId } = Route.useParams();
+  const { locale, wsId } = Route.useParams();
   const t = useTranslations();
 
   if (!data) {
@@ -134,7 +142,7 @@ function MyChatbotsRoutePage() {
         createTitle={t('ws-ai-chatbots.create')}
         createDescription={t('ws-ai-chatbots.create_description')}
         action={
-          <Link href={`/${wsId}/chat/my-chatbots/new`}>
+          <Link href={`/${locale}/${wsId}/ai-chat/my-chatbots/new`}>
             <Button>
               <Bot />
               {t('ws-ai-chatbots.create')}

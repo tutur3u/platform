@@ -1,5 +1,5 @@
-import { KanbanSkeleton } from '@tuturuuu/ui/tu-do/boards/boardId/kanban/rendering/kanban-skeleton';
+import { TaskBoardLoadingState } from '@tuturuuu/ui/tu-do/shared/task-board-loading-state';
 
 export default function Loading() {
-  return <KanbanSkeleton />;
+  return <TaskBoardLoadingState />;
 }

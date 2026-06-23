@@ -346,6 +346,39 @@ describe('settings dialog shortcut', () => {
     });
   });
 
+  it('resolves a settings open intent from skeleton to the real dialog', async () => {
+    const { getByTestId } = render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={{ id: 'workspace-1' } as any}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent(
+      window,
+      new CustomEvent('tuturuuu:settings-dialog-open-intent', {
+        detail: {
+          settingsBoardId: 'board-1',
+          settingsTab: 'task_board',
+        },
+      })
+    );
+
+    expect(getByTestId('settings-dialog-skeleton')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(getByTestId('settings-dialog')).toBeInTheDocument();
+      expect(settingsDialogMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          boardId: 'board-1',
+          defaultTab: 'task_board',
+          wsId: 'workspace-1',
+        })
+      );
+    });
+  });
+
   it('opens the query-backed user nav settings dialog', () => {
     render(<UserNavClient locale="en" user={user as any} />);
 

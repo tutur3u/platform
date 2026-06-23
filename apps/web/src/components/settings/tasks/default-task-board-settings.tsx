@@ -13,6 +13,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { RememberLastBoardSettings } from './remember-last-board-settings';
 
 const AUTO_DEFAULT_BOARD_VALUE = '__first_active_board__';
 
@@ -58,39 +59,43 @@ export function DefaultTaskBoardSettings({ wsId }: { wsId: string }) {
   const selected = defaultBoardId || AUTO_DEFAULT_BOARD_VALUE;
 
   return (
-    <SettingItemTab
-      title={t('settings.tasks.default_board')}
-      description={t('settings.tasks.default_board_description')}
-    >
-      <Combobox
-        ariaLabel={t('settings.tasks.default_board')}
-        className="w-full max-w-md"
-        contentWidth="lg"
-        disabled={isLoading || updateConfig.isPending}
-        emptyText={t('settings.tasks.default_board_empty')}
-        onChange={(value) => {
-          const nextValue = Array.isArray(value) ? value[0] : value;
-          if (!nextValue) return;
+    <div className="grid gap-6">
+      <SettingItemTab
+        title={t('settings.tasks.default_board')}
+        description={t('settings.tasks.default_board_description')}
+      >
+        <Combobox
+          ariaLabel={t('settings.tasks.default_board')}
+          className="w-full max-w-md"
+          contentWidth="lg"
+          disabled={isLoading || updateConfig.isPending}
+          emptyText={t('settings.tasks.default_board_empty')}
+          onChange={(value) => {
+            const nextValue = Array.isArray(value) ? value[0] : value;
+            if (!nextValue) return;
 
-          updateConfig.mutate(
-            {
-              configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
-              value: nextValue === AUTO_DEFAULT_BOARD_VALUE ? null : nextValue,
-              workspaceId: wsId,
-            },
-            {
-              onSuccess: () =>
-                toast.success(t('settings.tasks.default_board_saved')),
-              onError: () =>
-                toast.error(t('settings.tasks.default_board_save_failed')),
-            }
-          );
-        }}
-        options={options}
-        placeholder={t('settings.tasks.default_board')}
-        searchPlaceholder={t('common.search_boards')}
-        selected={selected}
-      />
-    </SettingItemTab>
+            updateConfig.mutate(
+              {
+                configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+                value:
+                  nextValue === AUTO_DEFAULT_BOARD_VALUE ? null : nextValue,
+                workspaceId: wsId,
+              },
+              {
+                onSuccess: () =>
+                  toast.success(t('settings.tasks.default_board_saved')),
+                onError: () =>
+                  toast.error(t('settings.tasks.default_board_save_failed')),
+              }
+            );
+          }}
+          options={options}
+          placeholder={t('settings.tasks.default_board')}
+          searchPlaceholder={t('common.search_boards')}
+          selected={selected}
+        />
+      </SettingItemTab>
+      <RememberLastBoardSettings wsId={wsId} />
+    </div>
   );
 }

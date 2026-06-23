@@ -111,7 +111,7 @@ export const Route = createFileRoute('/$locale/$wsId/users/group-tags/')({
 
 function GroupTagsRoutePage() {
   const data = Route.useLoaderData() as GroupTagsData | undefined;
-  const { wsId } = Route.useParams();
+  const { locale, wsId } = Route.useParams();
   const t = useTranslations('ws-user-group-tags');
 
   if (!data) {
@@ -120,7 +120,7 @@ function GroupTagsRoutePage() {
 
   const tags = data.tags.map((tag) => ({
     ...tag,
-    href: `/${wsId}/users/group-tags/${tag.id}`,
+    href: `/${locale}/${wsId}/users/group-tags/${tag.id}`,
   }));
 
   return (

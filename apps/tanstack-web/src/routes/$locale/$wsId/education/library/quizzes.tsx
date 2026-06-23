@@ -102,11 +102,13 @@ export const Route = createFileRoute(
       throw notFound();
     }
 
+    const page = deps.page ?? 1;
+    const pageSize = deps.pageSize ?? 10;
     const { count, data } = await loadLibraryQuizzes({
       data: {
         wsId: workspace.workspaceId,
-        page: deps.page,
-        pageSize: deps.pageSize,
+        page,
+        pageSize,
         q: deps.q,
       },
     });
@@ -123,6 +125,11 @@ function LibraryQuizzesRoutePage() {
   if (!data) {
     throw notFound();
   }
+
+  const quizzes = data.quizzes.map((quiz) => ({
+    ...quiz,
+    ws_id: data.workspaceId,
+  }));
 
   return (
     <div className="space-y-5 p-4">
@@ -169,7 +176,7 @@ function LibraryQuizzesRoutePage() {
 
       <EducationContentSurface pattern>
         <CustomDataTable
-          data={data.quizzes as unknown as WorkspaceQuiz[]}
+          data={quizzes as unknown as WorkspaceQuiz[]}
           columnGenerator={getWorkspaceQuizColumns}
           namespace="quiz-data-table"
           count={data.count}

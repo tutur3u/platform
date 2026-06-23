@@ -115,6 +115,31 @@ describe('BoardClient', () => {
     );
   });
 
+  it('uses the shared task board loading state while the board query resolves', () => {
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('task-board-loading-state')).toBeInTheDocument();
+    expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
+    expect(screen.queryByText('Loading board...')).not.toBeInTheDocument();
+  });
+
   it('can revalidate loaded board lists without invalidating visible task caches', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {

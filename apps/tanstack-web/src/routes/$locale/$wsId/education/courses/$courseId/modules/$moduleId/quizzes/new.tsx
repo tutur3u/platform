@@ -43,7 +43,7 @@ export const Route = createFileRoute(
 
 function NewQuizRoutePage() {
   const workspace = Route.useLoaderData() as ResolvedWorkspace | undefined;
-  const { courseId, moduleId } = Route.useParams();
+  const { courseId, locale, moduleId } = Route.useParams();
   // `ws-quizzes` namespace resolves via the $locale layout's IntlProvider.
   const t = useTranslations('ws-quizzes');
 
@@ -61,6 +61,7 @@ function NewQuizRoutePage() {
       </div>
       <div className="rounded-xl border border-border bg-card p-6 shadow-md">
         <NewQuizClient
+          locale={locale}
           wsId={workspace.workspaceId}
           moduleId={moduleId}
           courseId={courseId}

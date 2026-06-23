@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 144,
-        "migrated": 162,
-        "percentComplete": 52.94,
-        "remaining": 144,
-        "terminal": 162,
+        "legacyNext": 136,
+        "migrated": 170,
+        "percentComplete": 55.56,
+        "remaining": 136,
+        "terminal": 170,
         "total": 306,
         "unknownStatus": 0
       },
@@ -30,11 +30,11 @@
         "acceptedRemoval": 1,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 19,
-        "migrated": 47,
-        "percentComplete": 71.64,
-        "remaining": 19,
-        "terminal": 48,
+        "legacyNext": 18,
+        "migrated": 48,
+        "percentComplete": 73.13,
+        "remaining": 18,
+        "terminal": 49,
         "total": 67,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 163,
-        "migrated": 214,
-        "percentComplete": 56.88,
-        "remaining": 163,
-        "terminal": 215,
+        "legacyNext": 154,
+        "migrated": 223,
+        "percentComplete": 59.26,
+        "remaining": 154,
+        "terminal": 224,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1105,
-      "migrated": 361,
-      "percentComplete": 28.71,
-      "remaining": 1105,
-      "terminal": 445,
+      "legacyNext": 1096,
+      "migrated": 370,
+      "percentComplete": 29.29,
+      "remaining": 1096,
+      "terminal": 454,
       "total": 1550,
       "unknownStatus": 0
     }
@@ -11068,7 +11068,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/crawlers",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11698,7 +11698,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/ai-chat/my-chatbots",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11824,7 +11824,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/crawlers",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11842,7 +11842,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/crawlers/uncrawled",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12058,7 +12058,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quiz-sets",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12076,7 +12076,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes/new",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/new/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12121,7 +12121,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/library/flashcards",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12157,7 +12157,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/education/quiz-sets/:setId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13507,7 +13507,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/group-tags",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

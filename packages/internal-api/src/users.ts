@@ -58,6 +58,17 @@ export const TASK_DEFAULT_BOARD_ID_CONFIG_ID = 'TASK_DEFAULT_BOARD_ID';
 export const TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID =
   'TASK_BOARD_PINNED_SPECIAL_LISTS';
 export const TASK_LAST_BOARD_VIEW_CONFIG_ID = 'TASK_LAST_BOARD_VIEW';
+export const TASK_REMEMBER_LAST_BOARD_CONFIG_ID = 'TASK_REMEMBER_LAST_BOARD';
+
+export function isTaskRememberLastBoardEnabled(
+  value: string | null | undefined
+) {
+  return value !== 'false';
+}
+
+export function serializeTaskRememberLastBoard(enabled: boolean) {
+  return enabled ? 'true' : 'false';
+}
 
 export type RootNavigationTarget =
   | 'workspace_home'

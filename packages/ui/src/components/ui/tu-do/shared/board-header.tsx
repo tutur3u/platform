@@ -252,7 +252,14 @@ export function BoardHeader({
   function announceSettingsOpenIntent() {
     if (typeof window === 'undefined') return;
 
-    window.dispatchEvent(new Event(SETTINGS_DIALOG_OPEN_INTENT_EVENT));
+    window.dispatchEvent(
+      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+        detail: {
+          settingsBoardId: board.id,
+          settingsTab: 'task_board',
+        },
+      })
+    );
   }
 
   function handleBoardSettingsPointerDown() {

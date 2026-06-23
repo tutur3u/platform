@@ -33,6 +33,7 @@ import type {
   SpecialTaskListPin,
   SpecialTaskListPinState,
 } from '../../shared/special-task-list-pins';
+import { TaskBoardLoadingState } from '../../shared/task-board-loading-state';
 import { BoardSelector } from '../board-selector';
 import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
@@ -55,7 +56,6 @@ import type {
   KanbanDeadlineSection,
 } from './kanban/rendering/kanban-deadline-panels';
 import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-tasks';
-import { KanbanSkeleton } from './kanban/rendering/kanban-skeleton';
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
 import type { TaskFilters } from './task-filter';
@@ -453,7 +453,7 @@ export function KanbanBoard({
   );
 
   if (isLoading) {
-    return <KanbanSkeleton />;
+    return <TaskBoardLoadingState />;
   }
 
   return (

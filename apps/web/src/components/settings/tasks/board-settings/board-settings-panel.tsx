@@ -32,6 +32,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useCallback, useMemo, useState } from 'react';
+import { RememberLastBoardSettings } from '../remember-last-board-settings';
 import { BoardActivitySettings } from './board-activity-settings';
 import { BoardCriticalActionsSettings } from './board-critical-actions-settings';
 import { BoardDetailsSettings } from './board-details-settings';
@@ -204,93 +205,96 @@ function BoardSettingsBoardSwitcher({
 
   return (
     <div className="rounded-lg border bg-background p-2.5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-muted/30">
-            <CurrentBoardIcon className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex min-w-0 items-center gap-2">
-              <p className="truncate font-medium text-sm">
-                {selectedBoardName}
-              </p>
-              <Badge
-                className={cn(
-                  'shrink-0 px-2 py-0.5 text-[10px]',
-                  currentStatus === 'deleted' &&
-                    'bg-dynamic-red/10 text-dynamic-red',
-                  currentStatus === 'archived' && 'bg-muted text-foreground',
-                  currentStatus === 'active' &&
-                    'bg-dynamic-green/10 text-dynamic-green'
-                )}
-              >
-                {statusLabel}
-              </Badge>
-              {isDefaultBoard && (
-                <Badge className="shrink-0 bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-                  {t('settings.tasks.default_board_badge')}
-                </Badge>
-              )}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-muted/30">
+              <CurrentBoardIcon className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground text-xs">
-              {t('settings.tasks.board')}
-            </p>
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate font-medium text-sm">
+                  {selectedBoardName}
+                </p>
+                <Badge
+                  className={cn(
+                    'shrink-0 px-2 py-0.5 text-[10px]',
+                    currentStatus === 'deleted' &&
+                      'bg-dynamic-red/10 text-dynamic-red',
+                    currentStatus === 'archived' && 'bg-muted text-foreground',
+                    currentStatus === 'active' &&
+                      'bg-dynamic-green/10 text-dynamic-green'
+                  )}
+                >
+                  {statusLabel}
+                </Badge>
+                {isDefaultBoard && (
+                  <Badge className="shrink-0 bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                    {t('settings.tasks.default_board_badge')}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {t('settings.tasks.board')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+            {!isDefaultBoard && (
+              <Button
+                className="w-full md:w-auto"
+                disabled={updateDefaultBoard.isPending}
+                onClick={() =>
+                  updateDefaultBoard.mutate(
+                    {
+                      configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+                      value: board.id,
+                      workspaceId: wsId,
+                    },
+                    {
+                      onSuccess: () =>
+                        toast.success(t('settings.tasks.default_board_saved')),
+                      onError: () =>
+                        toast.error(
+                          t('settings.tasks.default_board_save_failed')
+                        ),
+                    }
+                  )
+                }
+                size="sm"
+                variant="outline"
+              >
+                {t('settings.tasks.use_as_default_board')}
+              </Button>
+            )}
+            <Combobox
+              ariaLabel={t('common.search_boards')}
+              className="w-full md:w-80"
+              contentWidth="lg"
+              disabled={isLoading}
+              emptyText={
+                isLoading ? t('common.loading') : t('common.no_other_boards')
+              }
+              label={
+                <span className="truncate text-left font-medium text-sm">
+                  {selectedBoardName}
+                </span>
+              }
+              onChange={(value) => {
+                const nextBoardId = Array.isArray(value) ? value[0] : value;
+                if (!nextBoardId || nextBoardId === board.id) return;
+                void setSettingsQuery({ settingsBoardId: nextBoardId });
+              }}
+              onOpenChange={setSwitcherOpen}
+              options={boardOptions}
+              placeholder={selectedBoardName}
+              searchPlaceholder={t('common.search_boards')}
+              selected={board.id}
+            />
           </div>
         </div>
-
-        <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
-          {!isDefaultBoard && (
-            <Button
-              className="w-full md:w-auto"
-              disabled={updateDefaultBoard.isPending}
-              onClick={() =>
-                updateDefaultBoard.mutate(
-                  {
-                    configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
-                    value: board.id,
-                    workspaceId: wsId,
-                  },
-                  {
-                    onSuccess: () =>
-                      toast.success(t('settings.tasks.default_board_saved')),
-                    onError: () =>
-                      toast.error(
-                        t('settings.tasks.default_board_save_failed')
-                      ),
-                  }
-                )
-              }
-              size="sm"
-              variant="outline"
-            >
-              {t('settings.tasks.use_as_default_board')}
-            </Button>
-          )}
-          <Combobox
-            ariaLabel={t('common.search_boards')}
-            className="w-full md:w-80"
-            contentWidth="lg"
-            disabled={isLoading}
-            emptyText={
-              isLoading ? t('common.loading') : t('common.no_other_boards')
-            }
-            label={
-              <span className="truncate text-left font-medium text-sm">
-                {selectedBoardName}
-              </span>
-            }
-            onChange={(value) => {
-              const nextBoardId = Array.isArray(value) ? value[0] : value;
-              if (!nextBoardId || nextBoardId === board.id) return;
-              void setSettingsQuery({ settingsBoardId: nextBoardId });
-            }}
-            onOpenChange={setSwitcherOpen}
-            options={boardOptions}
-            placeholder={selectedBoardName}
-            searchPlaceholder={t('common.search_boards')}
-            selected={board.id}
-          />
-        </div>
+        <RememberLastBoardSettings compact wsId={wsId} />
       </div>
     </div>
   );

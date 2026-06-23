@@ -28,6 +28,12 @@ type SettingsDialogComponent = ComponentType<{
 const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
   'tuturuuu:settings-dialog-open-intent';
 
+type SettingsOpenIntent = {
+  settingsBoardId?: string;
+  settingsLinkedProvider?: string;
+  settingsTab?: string;
+};
+
 let settingsDialogPromise: Promise<SettingsDialogComponent> | null = null;
 
 export function preloadSettingsDialog(): Promise<SettingsDialogComponent> {
@@ -61,19 +67,39 @@ export function SettingsDialogHost({
   );
 
   const requestedSettingsOpen = settingsQuery.settingsDialog === 'open';
-  const [intentOpen, setIntentOpen] = useState(false);
+  const [openIntent, setOpenIntent] = useState<SettingsOpenIntent | null>(null);
   const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
   const requestedSettingsBoardId = settingsQuery.settingsBoardId ?? undefined;
   const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
-  const settingsOpen = requestedSettingsOpen || intentOpen;
+  const settingsOpen = requestedSettingsOpen || Boolean(openIntent);
   const SettingsDialog = useLazyClientComponent(
     loadSettingsDialog,
     settingsOpen
   );
 
   useEffect(() => {
-    const handleSettingsIntent = () => {
-      setIntentOpen(true);
+    const handleSettingsIntent = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent &&
+        event.detail &&
+        typeof event.detail === 'object'
+          ? (event.detail as SettingsOpenIntent)
+          : {};
+
+      setOpenIntent({
+        settingsBoardId:
+          typeof detail.settingsBoardId === 'string'
+            ? detail.settingsBoardId
+            : undefined,
+        settingsLinkedProvider:
+          typeof detail.settingsLinkedProvider === 'string'
+            ? detail.settingsLinkedProvider
+            : undefined,
+        settingsTab:
+          typeof detail.settingsTab === 'string'
+            ? detail.settingsTab
+            : undefined,
+      });
       preloadSettingsDialog();
     };
 
@@ -91,10 +117,10 @@ export function SettingsDialogHost({
   }, []);
 
   useEffect(() => {
-    if (requestedSettingsOpen) {
-      setIntentOpen(false);
+    if (requestedSettingsOpen && SettingsDialog) {
+      setOpenIntent(null);
     }
-  }, [requestedSettingsOpen]);
+  }, [requestedSettingsOpen, SettingsDialog]);
 
   const openSettingsDialog = useCallback(() => {
     void setSettingsQuery(
@@ -119,7 +145,7 @@ export function SettingsDialogHost({
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      setIntentOpen(false);
+      setOpenIntent(null);
       void setSettingsQuery(
         {
           settingsDialog: null,
@@ -138,17 +164,27 @@ export function SettingsDialogHost({
 
   if (!user) return null;
 
+  const dialogBoardId = requestedSettingsOpen
+    ? requestedSettingsBoardId
+    : openIntent?.settingsBoardId;
+  const dialogDefaultTab = requestedSettingsOpen
+    ? requestedSettingsTab
+    : openIntent?.settingsTab;
+  const dialogLinkedProvider = requestedSettingsOpen
+    ? linkedProvider
+    : openIntent?.settingsLinkedProvider;
+
   return (
     <Dialog open={settingsOpen} onOpenChange={handleSettingsOpenChange}>
       {settingsOpen &&
-        (requestedSettingsOpen && SettingsDialog ? (
+        (SettingsDialog ? (
           <SettingsDialog
             wsId={wsId}
             user={user}
             workspace={workspace}
-            defaultTab={requestedSettingsTab}
-            boardId={requestedSettingsBoardId}
-            linkedProvider={linkedProvider}
+            defaultTab={dialogDefaultTab}
+            boardId={dialogBoardId}
+            linkedProvider={dialogLinkedProvider}
           />
         ) : (
           <SettingsDialogFullscreenSkeleton />

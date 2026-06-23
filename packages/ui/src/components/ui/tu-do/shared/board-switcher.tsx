@@ -1,12 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { Archive, CheckCircle2, LayoutGrid, Trash2 } from '@tuturuuu/icons';
 import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
+import {
+  isTaskRememberLastBoardEnabled,
+  TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+  TASK_REMEMBER_LAST_BOARD_CONFIG_ID,
+} from '@tuturuuu/internal-api/users';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
+import {
+  useUpdateUserWorkspaceConfig,
+  useUserWorkspaceConfig,
+} from '../../../../hooks/use-user-workspace-config';
 import {
   getIconComponentByKey,
   type PlatformIconKey,
@@ -54,6 +63,12 @@ function getDaysRemaining(deletedAt: string) {
 export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   const router = useRouter();
   const tasksHref = useTasksHref();
+  const { data: rememberLastBoardRaw } = useUserWorkspaceConfig(
+    board.ws_id,
+    TASK_REMEMBER_LAST_BOARD_CONFIG_ID,
+    'true'
+  );
+  const updateUserWorkspaceConfig = useUpdateUserWorkspaceConfig();
 
   const t = {
     loadingBoards: translations?.loadingBoards ?? 'Loading boards...',
@@ -87,6 +102,8 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
     },
     enabled: !!board.ws_id,
   });
+  const rememberLastBoard =
+    isTaskRememberLastBoardEnabled(rememberLastBoardRaw);
 
   const boardOptions = useMemo(() => {
     const byId = new Map<string, BoardWithStatus>();
@@ -203,6 +220,15 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
       onChange={(value) => {
         const boardId = Array.isArray(value) ? value[0] : value;
         if (!boardId || boardId === board.id) return;
+
+        if (rememberLastBoard) {
+          updateUserWorkspaceConfig.mutate({
+            configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+            value: boardId,
+            workspaceId: board.ws_id,
+          });
+        }
+
         router.push(`/${board.ws_id}${tasksHref(`/boards/${boardId}`)}`);
       }}
       options={boardOptions}

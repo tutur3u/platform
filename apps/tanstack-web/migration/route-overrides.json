@@ -1069,6 +1069,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/ai-chat/chatbots ports the legacy Chatbots summary page as a dynamic authenticated workspace route with fail-closed current-user auth, workspace resolution, ai_chat permission gating, route metadata, localized FeatureSummary content, and the create action wired to the canonical /$locale/$wsId/ai-chat/my-chatbots/new route instead of the legacy /:wsId/chat alias. This marks only the page artifact migrated; parent dashboard and AI chat session/provider ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/ai-chat/my-chatbots:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/ai-chat/my-chatbots ports the legacy My Chatbots table with fail-closed current-user auth, workspace resolution, ai_chat permission gating from the legacy ai-chat layout, pass-through q/page/pageSize search state, forwarded internal-api auth for workspace group tags, internal-api-backed row delete actions, and localized FeatureSummary/CustomDataTable UI. This marks only the frontend page artifact migrated; group-tag API route ownership remains separately tracked."
+    },
     "layout:/:locale/:wsId/ai-chat/my-chatbots/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1269,6 +1274,21 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/chat preserves the legacy authenticated chat shell by resolving the current user, enforcing view_chat through the forwarded-auth internal permission check, and rendering the shared ChatWorkspace client. Conversation and message APIs remain separately tracked because the client self-loads after mount."
     },
+    "layout:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start crawler routes preserve the legacy route-specific layout gate by requiring an authenticated workspace session, resolving the workspace, enforcing ai_lab permission, and rendering a read-only crawled/uncrawled crawler navigation shell. Domains and connections remain unported follow-ups because no TanStack page artifacts exist for those legacy links in this lane."
+    },
+    "page:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/crawlers ports the legacy authenticated crawled URL list as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, quick uncrawled/domain stats, and crawled URL data loaded through Rust-owned backend crawler facades instead of direct Supabase reads, create forms, row actions, or raw browser /api fetches."
+    },
+    "page:/:locale/:wsId/crawlers/uncrawled:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/crawlers/uncrawled ports the legacy authenticated uncrawled URL view as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, grouped URL display, and uncrawled/domain data loaded through Rust-owned backend crawler facades while intentionally omitting Crawl All and per-row crawl POST actions."
+    },
     "page:/:locale/:wsId/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1399,6 +1419,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/quiz-sets preserves the legacy 308 redirect to /:wsId/education/library/quiz-sets. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/quiz-sets/:setId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/quiz-sets/$setId ports the legacy quiz-set quizzes table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state with the legacy 10-row default, forwarded internal-api auth, FeatureSummary parity, TanStack Query-backed create/update/delete forms, internal-api-backed AI explanation generation, and CustomDataTable columns. The /education/quiz-sets redirect is split into an exact index route so this detail loader is reachable. This marks only the frontend page artifact migrated; the quiz-set detail layout and quiz create/update/delete/list API ownership remain separately tracked."
+    },
     "page:/:locale/:wsId/education/quiz-sets/:setId/linked-modules:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1414,10 +1439,20 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/library ports the legacy static education library card index with localized copy and shared education shell primitives. This marks only the page artifact migrated; parent dashboard layout/session and library resource pages remain legacy-owned."
     },
+    "page:/:locale/:wsId/education/library/flashcards:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/flashcards ports the legacy workspace flashcard library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; flashcard API route ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/education/valsea:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/valsea ports the legacy Valsea Classroom Studio page as a dynamic authenticated workspace route with fail-closed current-user auth, full workspace resolution, localized education header metadata/content, and the shared ValseaClassroomClient. This marks only the page artifact migrated; parent dashboard/session ownership and the Valsea audio/processing APIs remain separately tracked backend work."
+    },
+    "page:/:locale/:wsId/users/group-tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags ports the legacy workspace user group tags table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for group-tag reads, internal-api-backed create/update/delete forms and row actions, localized FeatureSummary content, and canonical locale-prefixed detail hrefs. This marks only the frontend page artifact migrated; group-tag detail page and API route ownership remain separately tracked."
     },
     "page:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx": {
       "status": "migrated",
@@ -1428,6 +1463,16 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content ports the legacy Extra Reading placeholder with localized title and disabled AI action. This marks only the page artifact migrated; parent dashboard/course/module data ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets ports the legacy module quiz-set table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth, FeatureSummary parity, TanStack Query-backed create/update/delete forms, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; course-module quiz-set API route ownership remains separately tracked."
+    },
+    "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/new/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new ports the legacy manual quiz creation page with fail-closed current-user auth, workspace resolution, localized shell content, TanStack Query/internal-api-backed quiz creation, and locale-prefixed post-submit navigation back to the module quizzes route. This marks only the frontend page artifact migrated; quiz create/update API ownership and the module quiz list page remain separately tracked."
     },
     "layout:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/layout.tsx": {
       "status": "migrated",
