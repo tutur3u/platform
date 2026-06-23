@@ -1,7 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle, Clock, Eye, EyeOff, User, XCircle } from '@tuturuuu/icons';
+import {
+  CheckCircle,
+  Clock,
+  Eye,
+  EyeOff,
+  User,
+  XCircle,
+} from '@tuturuuu/icons';
 import type { TeachTestSubmission } from '@tuturuuu/internal-api';
 import { listWorkspaceCourseTestSubmissions } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
@@ -29,7 +36,9 @@ export function TestSubmissionsSection({
   const t = useTranslations();
   const locale = useLocale();
 
-  const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(null);
+  const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(
+    null
+  );
   const [selectedStudentName, setSelectedStudentName] = useState<string>('');
 
   const { data, isLoading, isError } = useQuery({
@@ -226,16 +235,10 @@ function SubmissionRow({
       : null;
 
   return (
-    <div
+    <button
       onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onClick();
-        }
-      }}
-      className="flex items-center gap-4 border-2 border-border bg-background p-4 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] cursor-pointer select-none"
+      type="button"
+      className="flex w-full cursor-pointer select-none items-center gap-4 border-2 border-border bg-background p-4 text-left shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
     >
       {/* Status icon */}
       <span
@@ -314,6 +317,6 @@ function SubmissionRow({
           <Clock className="h-4 w-4" />
         </div>
       )}
-    </div>
+    </button>
   );
 }

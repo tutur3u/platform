@@ -1,9 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { resolveTulearnSubject, tulearnAccessErrorResponse } from '@/lib/tulearn/service';
-import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@/lib/tulearn/service';
+import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
 
 type Params = {
   courseId: string;
@@ -26,14 +29,19 @@ export const GET = withSessionAuth<Params>(
       // Verify course and test exist and are published
       const { data: test, error: testErr } = await sbAdmin
         .from('course_tests')
-        .select('id, name, duration_in_minutes, start_at, is_published, is_score_published, course_id')
+        .select(
+          'id, name, duration_in_minutes, start_at, is_published, is_score_published, course_id'
+        )
         .eq('id', testId)
         .eq('course_id', courseId)
         .eq('is_published', true)
         .maybeSingle();
 
       if (testErr || !test) {
-        return NextResponse.json({ message: 'Test not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Test not found' },
+          { status: 404 }
+        );
       }
 
       // Fetch student's attempt
@@ -99,7 +107,9 @@ export const GET = withSessionAuth<Params>(
 
           const { data: rawAnswers, error: answersErr } = await sbAdmin
             .from('course_test_attempt_answers')
-            .select('quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback')
+            .select(
+              'quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback'
+            )
             .eq('attempt_id', attempt.id);
 
           if (answersErr) throw answersErr;

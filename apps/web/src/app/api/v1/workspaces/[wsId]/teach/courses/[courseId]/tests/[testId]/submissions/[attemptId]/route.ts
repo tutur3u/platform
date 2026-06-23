@@ -25,13 +25,21 @@ export const GET = withSessionAuth(
     context,
     params:
       | { wsId: string; courseId: string; testId: string; attemptId: string }
-      | Promise<{ wsId: string; courseId: string; testId: string; attemptId: string }>
+      | Promise<{
+          wsId: string;
+          courseId: string;
+          testId: string;
+          attemptId: string;
+        }>
   ) => {
     try {
       const parsedParams = RouteParamsSchema.safeParse(await params);
       if (!parsedParams.success) {
         return NextResponse.json(
-          { message: 'Invalid route params', errors: parsedParams.error.issues },
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
           { status: 400 }
         );
       }
@@ -66,7 +74,10 @@ export const GET = withSessionAuth(
         .maybeSingle();
 
       if (testErr || !test) {
-        return NextResponse.json({ message: 'Test not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Test not found' },
+          { status: 404 }
+        );
       }
 
       // Fetch attempt details
@@ -78,7 +89,10 @@ export const GET = withSessionAuth(
         .maybeSingle();
 
       if (attemptErr || !attempt) {
-        return NextResponse.json({ message: 'Attempt not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Attempt not found' },
+          { status: 404 }
+        );
       }
 
       // Fetch user profile info
@@ -115,7 +129,9 @@ export const GET = withSessionAuth(
       // Fetch student's answers (including feedback)
       const { data: answers, error: answersErr } = await access.sbAdmin
         .from('course_test_attempt_answers')
-        .select('quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback')
+        .select(
+          'quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback'
+        )
         .eq('attempt_id', attemptId);
 
       if (answersErr) throw answersErr;
@@ -146,13 +162,21 @@ export const PATCH = withSessionAuth(
     context,
     params:
       | { wsId: string; courseId: string; testId: string; attemptId: string }
-      | Promise<{ wsId: string; courseId: string; testId: string; attemptId: string }>
+      | Promise<{
+          wsId: string;
+          courseId: string;
+          testId: string;
+          attemptId: string;
+        }>
   ) => {
     try {
       const parsedParams = RouteParamsSchema.safeParse(await params);
       if (!parsedParams.success) {
         return NextResponse.json(
-          { message: 'Invalid route params', errors: parsedParams.error.issues },
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
           { status: 400 }
         );
       }
@@ -207,7 +231,10 @@ export const PATCH = withSessionAuth(
         .maybeSingle();
 
       if (testErr || !test) {
-        return NextResponse.json({ message: 'Test not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Test not found' },
+          { status: 404 }
+        );
       }
 
       // Update answer feedback
@@ -216,7 +243,9 @@ export const PATCH = withSessionAuth(
         .update({ feedback })
         .eq('attempt_id', attemptId)
         .eq('quiz_id', quizId)
-        .select('quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback')
+        .select(
+          'quiz_id, selected_option_id, answer, is_correct, score_awarded, feedback'
+        )
         .single();
 
       if (updateErr) {

@@ -338,9 +338,10 @@ export function StudentTestDetailPage({
     if (test.is_score_published) {
       const maxScore = quizzes.reduce((sum, q) => sum + (q.score ?? 0), 0);
       const studentScore = attempt.score ?? 0;
-      
+
       // Calculate score percentage
-      const percentage = maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
+      const percentage =
+        maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
 
       const renderQuizReview = (quiz: any) => {
         const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id) || {
@@ -349,7 +350,7 @@ export function StudentTestDetailPage({
           is_correct: false,
           score_awarded: 0,
         };
-        
+
         const isCorrect = quizAns.is_correct ?? false;
 
         // Render choice options helper
@@ -358,11 +359,15 @@ export function StudentTestDetailPage({
           return (
             <div className="mt-4 space-y-2.5">
               {options.map((opt: any) => {
-                const isSelected = quizAns.selected_option_id === opt.id || 
-                  (opt.index !== null && (quizAns.answer as any)?.selectedIndex === opt.index);
-                
+                const isSelected =
+                  quizAns.selected_option_id === opt.id ||
+                  (opt.index !== null &&
+                    (quizAns.answer as any)?.selectedIndex === opt.index);
+
                 // Find if this option is correct
-                const rawOpt = quiz.quiz_options?.find((o: any) => o.id === opt.id);
+                const rawOpt = quiz.quiz_options?.find(
+                  (o: any) => o.id === opt.id
+                );
                 const isOptionCorrect = rawOpt?.is_correct ?? false;
 
                 let cardStyle = 'border-border bg-background';
@@ -371,7 +376,8 @@ export function StudentTestDetailPage({
                     ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
                     : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
                 } else if (isOptionCorrect) {
-                  cardStyle = 'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                  cardStyle =
+                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
                 }
 
                 return (
@@ -384,12 +390,14 @@ export function StudentTestDetailPage({
                   >
                     <span className="font-bold text-sm">{opt.value}</span>
                     {isSelected && (
-                      <span className="ml-auto text-xs font-bold uppercase tracking-wider">
-                        {isCorrect ? '✓ Your Answer (Correct)' : '✗ Your Answer (Incorrect)'}
+                      <span className="ml-auto font-bold text-xs uppercase tracking-wider">
+                        {isCorrect
+                          ? '✓ Your Answer (Correct)'
+                          : '✗ Your Answer (Incorrect)'}
                       </span>
                     )}
                     {!isSelected && isOptionCorrect && (
-                      <span className="ml-auto text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <span className="ml-auto font-bold text-muted-foreground text-xs uppercase tracking-wider">
                         (Correct Answer)
                       </span>
                     )}
@@ -397,9 +405,14 @@ export function StudentTestDetailPage({
                 );
               })}
               {quiz.quiz_options?.some((o: any) => o.explanation) && (
-                <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-xs text-muted-foreground leading-relaxed">
-                  <span className="block font-black uppercase tracking-wider text-[10px] mb-1">Explanation:</span>
-                  {quiz.quiz_options.find((o: any) => o.is_correct)?.explanation || quiz.quiz_options.find((o: any) => o.explanation)?.explanation}
+                <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-muted-foreground text-xs leading-relaxed">
+                  <span className="mb-1 block font-black text-[10px] uppercase tracking-wider">
+                    Explanation:
+                  </span>
+                  {quiz.quiz_options.find((o: any) => o.is_correct)
+                    ?.explanation ||
+                    quiz.quiz_options.find((o: any) => o.explanation)
+                      ?.explanation}
                 </div>
               )}
             </div>
@@ -407,17 +420,19 @@ export function StudentTestDetailPage({
         }
 
         if (quiz.type === 'true_false') {
-          const studentVal = quizAns.answer === true || (quizAns.answer as any)?.correct === true;
+          const studentVal =
+            quizAns.answer === true ||
+            (quizAns.answer as any)?.correct === true;
           const options = [
             { label: t('courses.quizTrue'), value: true },
             { label: t('courses.quizFalse'), value: false },
           ];
-          
+
           return (
             <div className="mt-4 grid grid-cols-2 gap-3">
               {options.map((opt) => {
                 const isSelected = studentVal === opt.value;
-                
+
                 let cardStyle = 'border-border bg-background';
                 if (isSelected) {
                   cardStyle = isCorrect
@@ -425,7 +440,8 @@ export function StudentTestDetailPage({
                     : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
                 } else if (!isSelected && !isCorrect) {
                   // If student was wrong, the other option is correct
-                  cardStyle = 'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                  cardStyle =
+                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
                 }
 
                 return (
@@ -449,16 +465,20 @@ export function StudentTestDetailPage({
           const submittedOrder = Array.isArray(quizAns.answer)
             ? quizAns.answer
             : (quizAns.answer as any)?.order || items;
-          
+
           return (
             <div className="mt-4 space-y-2">
-              <p className="text-xs text-muted-foreground font-bold mb-2">Your Answer (Status: {isCorrect ? 'Correct' : 'Incorrect'}):</p>
+              <p className="mb-2 font-bold text-muted-foreground text-xs">
+                Your Answer (Status: {isCorrect ? 'Correct' : 'Incorrect'}):
+              </p>
               {submittedOrder.map((item: string, index: number) => (
                 <div
                   key={`${item}-${index}`}
                   className={cn(
                     'flex items-center justify-between border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)]',
-                    isCorrect ? 'border-dynamic-green bg-dynamic-green/10' : 'border-dynamic-red bg-dynamic-red/10'
+                    isCorrect
+                      ? 'border-dynamic-green bg-dynamic-green/10'
+                      : 'border-dynamic-red bg-dynamic-red/10'
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -478,18 +498,24 @@ export function StudentTestDetailPage({
           const submittedPairs = Array.isArray(quizAns.answer)
             ? quizAns.answer
             : (quizAns.answer as any)?.pairs || [];
-          
+
           return (
             <div className="mt-4 space-y-3">
-              <p className="text-xs text-muted-foreground font-bold mb-2">Your Matchings (Status: {isCorrect ? 'Correct' : 'Incorrect'}):</p>
+              <p className="mb-2 font-bold text-muted-foreground text-xs">
+                Your Matchings (Status: {isCorrect ? 'Correct' : 'Incorrect'}):
+              </p>
               {pairs.map((pair: any, index: number) => {
-                const currentRight = submittedPairs.find((p: any) => p.left === pair.left)?.right || '—';
+                const currentRight =
+                  submittedPairs.find((p: any) => p.left === pair.left)
+                    ?.right || '—';
                 return (
                   <div
                     key={`${pair.left}-${index}`}
                     className={cn(
                       'grid gap-3 border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
-                      isCorrect ? 'border-dynamic-green bg-dynamic-green/10' : 'border-dynamic-red bg-dynamic-red/10'
+                      isCorrect
+                        ? 'border-dynamic-green bg-dynamic-green/10'
+                        : 'border-dynamic-red bg-dynamic-red/10'
                     )}
                   >
                     <span className="font-bold">{pair.left}</span>
@@ -507,8 +533,10 @@ export function StudentTestDetailPage({
           const textValue = (quizAns.answer as any)?.text || '—';
           return (
             <div className="mt-4 space-y-2">
-              <p className="text-xs text-muted-foreground font-bold">Your Response:</p>
-              <div className="w-full border-2 border-border bg-muted/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] whitespace-pre-wrap">
+              <p className="font-bold text-muted-foreground text-xs">
+                Your Response:
+              </p>
+              <div className="w-full whitespace-pre-wrap border-2 border-border bg-muted/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
                 {textValue}
               </div>
               <span className="mt-1 block text-[10px] text-muted-foreground italic">
@@ -538,20 +566,20 @@ export function StudentTestDetailPage({
             {/* Header / Score Overview */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_18rem]">
               {/* Info panel */}
-              <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8 flex flex-col justify-between">
+              <div className="flex flex-col justify-between border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
                 <div>
                   <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-cyan/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
                     <BookOpenCheck className="h-3.5 w-3.5" />
                     {t('courses.testSubmitted')}
                   </p>
-                  <h1 className="break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal mt-2">
+                  <h1 className="mt-2 break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal">
                     {test.name}
                   </h1>
                   <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
                     {t('courses.testSubmittedDescription')}
                   </p>
                 </div>
-                
+
                 <div className="mt-6 border-2 border-border bg-muted/10 p-4 shadow-[4px_4px_0_var(--border)]">
                   <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
                     Submitted Date & Time
@@ -566,16 +594,18 @@ export function StudentTestDetailPage({
               </div>
 
               {/* Score visual card */}
-              <div className="relative overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center shadow-[8px_8px_0_var(--border)] flex flex-col items-center justify-center min-h-[200px]">
-                <span className="block font-black text-xs text-muted-foreground uppercase tracking-wider mb-2">
+              <div className="relative flex min-h-[200px] flex-col items-center justify-center overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center shadow-[8px_8px_0_var(--border)]">
+                <span className="mb-2 block font-black text-muted-foreground text-xs uppercase tracking-wider">
                   Your Grade
                 </span>
-                
+
                 <div className="relative flex items-center justify-center">
-                  <span className="font-black text-6xl md:text-7xl tracking-tight text-foreground">
+                  <span className="font-black text-6xl text-foreground tracking-tight md:text-7xl">
                     {studentScore}
                   </span>
-                  <span className="font-bold text-2xl text-muted-foreground mx-1">/</span>
+                  <span className="mx-1 font-bold text-2xl text-muted-foreground">
+                    /
+                  </span>
                   <span className="font-black text-3xl text-muted-foreground">
                     {maxScore}
                   </span>
@@ -589,7 +619,7 @@ export function StudentTestDetailPage({
 
             {/* Submissions Review list */}
             <div className="space-y-6">
-              <h2 className="font-black text-xl uppercase tracking-wider border-b-2 border-border pb-2">
+              <h2 className="border-border border-b-2 pb-2 font-black text-xl uppercase tracking-wider">
                 Questions Review
               </h2>
               {quizzes.length === 0 ? (
@@ -601,45 +631,51 @@ export function StudentTestDetailPage({
               ) : (
                 <div className="space-y-6">
                   {quizzes.map((quiz: any, index: number) => {
-                    const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id);
+                    const quizAns = initialAnswers.find(
+                      (a) => a.quiz_id === quiz.id
+                    );
                     const isQuizCorrect = quizAns?.is_correct ?? false;
                     const quizScore = quizAns?.score_awarded ?? 0;
-                    
+
                     return (
                       <div
                         key={quiz.id}
                         className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-border border-dashed pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
                           <div className="flex items-center gap-3">
-                            <span className={cn(
-                              "flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]",
-                              isQuizCorrect
-                                ? "bg-dynamic-green/15 text-dynamic-green-foreground"
-                                : "bg-dynamic-red/15 text-dynamic-red-foreground"
-                            )}>
+                            <span
+                              className={cn(
+                                'flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]',
+                                isQuizCorrect
+                                  ? 'bg-dynamic-green/15 text-dynamic-green-foreground'
+                                  : 'bg-dynamic-red/15 text-dynamic-red-foreground'
+                              )}
+                            >
                               {index + 1}
                             </span>
                             <h3 className="font-bold text-base">
                               {quiz.question}
                             </h3>
                           </div>
-                          <div className={cn(
-                            "border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]",
-                            isQuizCorrect
-                              ? "bg-dynamic-green/10 text-dynamic-green-foreground border-dynamic-green"
-                              : "bg-dynamic-red/10 text-dynamic-red-foreground border-dynamic-red"
-                          )}>
+                          <div
+                            className={cn(
+                              'border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]',
+                              isQuizCorrect
+                                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
+                            )}
+                          >
                             Score: {quizScore} / {quiz.score ?? 1}
                           </div>
                         </div>
                         {renderQuizReview(quiz)}
                         {quizAns?.feedback && (
-                          <div className="mt-4 border-2 border-primary bg-primary/5 p-4 shadow-[2px_2px_0_var(--border)] text-left">
-                            <span className="block font-black uppercase tracking-wider text-[10px] text-primary mb-1">
+                          <div className="mt-4 border-2 border-primary bg-primary/5 p-4 text-left shadow-[2px_2px_0_var(--border)]">
+                            <span className="mb-1 block font-black text-[10px] text-primary uppercase tracking-wider">
                               Teacher's Feedback:
                             </span>
-                            <p className="font-bold text-sm text-foreground">
+                            <p className="font-bold text-foreground text-sm">
                               {quizAns.feedback}
                             </p>
                           </div>

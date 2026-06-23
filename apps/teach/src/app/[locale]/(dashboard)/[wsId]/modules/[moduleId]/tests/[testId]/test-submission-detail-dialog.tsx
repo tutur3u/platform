@@ -56,11 +56,10 @@ export function TestSubmissionDetailDialog({
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1 text-left">
-              <DialogTitle>
-                {t('teachModules.submissionDetails')}
-              </DialogTitle>
+              <DialogTitle>{t('teachModules.submissionDetails')}</DialogTitle>
               <DialogDescription>
-                Reviewing answers for student: <span className="font-bold text-foreground">{studentName}</span>
+                Reviewing answers for student:{' '}
+                <span className="font-bold text-foreground">{studentName}</span>
               </DialogDescription>
             </div>
 
@@ -78,14 +77,14 @@ export function TestSubmissionDetailDialog({
         {isLoading && (
           <div className="flex h-64 flex-col items-center justify-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="text-muted-foreground text-sm font-bold">
+            <span className="font-bold text-muted-foreground text-sm">
               Loading submission...
             </span>
           </div>
         )}
 
         {isError && (
-          <div className="border-2 border-border border-dashed p-8 text-center shadow-[4px_4px_0_var(--border)] my-4">
+          <div className="my-4 border-2 border-border border-dashed p-8 text-center shadow-[4px_4px_0_var(--border)]">
             <p className="font-bold text-muted-foreground text-sm">
               Failed to load submission details.
             </p>
@@ -112,7 +111,9 @@ interface SubmissionContentProps {
   courseId: string;
   testId: string;
   attemptId: string;
-  detail: NonNullable<Awaited<ReturnType<typeof getWorkspaceCourseTestSubmission>>>;
+  detail: NonNullable<
+    Awaited<ReturnType<typeof getWorkspaceCourseTestSubmission>>
+  >;
   t: ReturnType<typeof useTranslations>;
 }
 
@@ -128,16 +129,17 @@ function SubmissionContent({
 
   const maxScore = quizzes.reduce((sum, q) => sum + (q.score ?? 0), 0);
   const studentScore = attempt.score ?? 0;
-  const percentage = maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
+  const percentage =
+    maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
 
   const correctAnswers = answers.filter((a) => a.is_correct === true).length;
   const incorrectAnswers = answers.filter((a) => a.is_correct === false).length;
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="mt-4 space-y-6">
       {/* Stats summary row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)] text-center">
+        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
           <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.attemptScore')}
           </span>
@@ -146,7 +148,7 @@ function SubmissionContent({
           </span>
         </div>
 
-        <div className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)] text-center">
+        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
           <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
             Percentage
           </span>
@@ -155,7 +157,7 @@ function SubmissionContent({
           </span>
         </div>
 
-        <div className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)] text-center">
+        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
           <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.correctAnswers') || 'Correct'}
           </span>
@@ -164,7 +166,7 @@ function SubmissionContent({
           </span>
         </div>
 
-        <div className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)] text-center">
+        <div className="border-2 border-border bg-background p-4 text-center shadow-[3px_3px_0_var(--border)]">
           <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
             {t('teachModules.incorrectAnswers') || 'Incorrect'}
           </span>
@@ -176,7 +178,7 @@ function SubmissionContent({
 
       {/* Quizzes list review */}
       <div className="space-y-6">
-        <h3 className="font-black text-lg uppercase tracking-wider border-b-2 border-border pb-2">
+        <h3 className="border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
           Question Responses & Feedback
         </h3>
 
@@ -195,7 +197,7 @@ function SubmissionContent({
               className="space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]"
             >
               {/* Question header */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-border border-dashed pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
                 <div className="flex items-center gap-3">
                   <span
                     className={cn(
@@ -215,8 +217,8 @@ function SubmissionContent({
                   className={cn(
                     'border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]',
                     quizAns.is_correct
-                      ? 'bg-dynamic-green/10 text-dynamic-green-foreground border-dynamic-green'
-                      : 'bg-dynamic-red/10 text-dynamic-red-foreground border-dynamic-red'
+                      ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                      : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
                   )}
                 >
                   Score: {quizAns.score_awarded ?? 0} / {quiz.score ?? 1}
@@ -224,7 +226,7 @@ function SubmissionContent({
               </div>
 
               {/* Student response render */}
-              <div className="bg-muted/10 p-3.5 border-2 border-border border-dashed text-sm">
+              <div className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm">
                 <ResponseViewer quiz={quiz} answer={quizAns} t={t} />
               </div>
 
@@ -247,7 +249,15 @@ function SubmissionContent({
 }
 
 // Sub-component to render student's responses
-function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any }) {
+function ResponseViewer({
+  quiz,
+  answer,
+  t,
+}: {
+  quiz: any;
+  answer: any;
+  t: any;
+}) {
   const getParsedContent = (content: unknown): any => {
     if (typeof content === 'string') {
       try {
@@ -261,13 +271,19 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
 
   const asRecord = (value: unknown): Record<string, unknown> | null => {
     const parsedValue = getParsedContent(value);
-    if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) return null;
+    if (
+      !parsedValue ||
+      typeof parsedValue !== 'object' ||
+      Array.isArray(parsedValue)
+    )
+      return null;
     return parsedValue as Record<string, unknown>;
   };
 
   const displayText = (value: unknown): string => {
     if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    if (typeof value === 'number' || typeof value === 'boolean')
+      return String(value);
     return '';
   };
 
@@ -280,9 +296,13 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
     return getArrayProperty(value, key).map(displayText);
   };
 
-  const getMatchingPairs = (value: unknown): { left: string; right: string }[] => {
+  const getMatchingPairs = (
+    value: unknown
+  ): { left: string; right: string }[] => {
     const parsedValue = getParsedContent(value);
-    const pairs = Array.isArray(parsedValue) ? parsedValue : getArrayProperty(parsedValue, 'pairs');
+    const pairs = Array.isArray(parsedValue)
+      ? parsedValue
+      : getArrayProperty(parsedValue, 'pairs');
     return pairs
       .map((pair) => {
         const record = asRecord(pair);
@@ -298,7 +318,9 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
     quiz: any
   ): { id: string; value: string; index: number | null }[] => {
     const parsedContent = getParsedContent(quiz?.content);
-    const contentOptions = Array.isArray(parsedContent?.options) ? parsedContent.options : [];
+    const contentOptions = Array.isArray(parsedContent?.options)
+      ? parsedContent.options
+      : [];
 
     const parsedContentOptions = contentOptions
       .map((option: unknown, index: number) => ({
@@ -306,7 +328,9 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
         value: displayText(option),
         index,
       }))
-      .filter((opt: { id: string; value: string; index: number }) => Boolean(opt.value));
+      .filter((opt: { id: string; value: string; index: number }) =>
+        Boolean(opt.value)
+      );
 
     if (parsedContentOptions.length > 0) {
       return parsedContentOptions;
@@ -325,13 +349,14 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
     const options = getMultipleChoiceOptions(quiz);
     return (
       <div className="space-y-2">
-        <p className="font-bold text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
           Student Choice:
         </p>
         {options.map((opt: any) => {
           const isSelected =
             answer.selected_option_id === opt.id ||
-            (opt.index !== null && (answer.answer as any)?.selectedIndex === opt.index);
+            (opt.index !== null &&
+              (answer.answer as any)?.selectedIndex === opt.index);
 
           const rawOpt = quiz.quiz_options?.find((o: any) => o.id === opt.id);
           const isOptionCorrect = rawOpt?.is_correct ?? false;
@@ -342,7 +367,8 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
               ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
               : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
           } else if (isOptionCorrect) {
-            optionStyle = 'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
+            optionStyle =
+              'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
           }
 
           return (
@@ -355,12 +381,14 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
             >
               <span className="font-bold text-sm">{opt.value}</span>
               {isSelected && (
-                <span className="text-xs font-black uppercase tracking-wider">
-                  {isCorrect ? '✓ Correct Answer' : '✗ Selected Incorrect Answer'}
+                <span className="font-black text-xs uppercase tracking-wider">
+                  {isCorrect
+                    ? '✓ Correct Answer'
+                    : '✗ Selected Incorrect Answer'}
                 </span>
               )}
               {!isSelected && isOptionCorrect && (
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
                   (Correct Answer)
                 </span>
               )}
@@ -372,7 +400,8 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
   }
 
   if (quiz.type === 'true_false') {
-    const studentVal = answer.answer === true || (answer.answer as any)?.correct === true;
+    const studentVal =
+      answer.answer === true || (answer.answer as any)?.correct === true;
     const options = [
       { label: t('courses.quizTrue') || 'True', value: true },
       { label: t('courses.quizFalse') || 'False', value: false },
@@ -380,7 +409,7 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
 
     return (
       <div className="space-y-2">
-        <p className="font-bold text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
           Student Answer:
         </p>
         <div className="grid grid-cols-2 gap-3">
@@ -392,7 +421,8 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
                 ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
                 : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
             } else if (!isSelected && !isCorrect) {
-              optionStyle = 'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
+              optionStyle =
+                'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
             }
 
             return (
@@ -420,7 +450,7 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
 
     return (
       <div className="space-y-2">
-        <p className="font-bold text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
           Student Order:
         </p>
         <div className="space-y-2">
@@ -429,7 +459,9 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
               key={`${item}-${idx}`}
               className={cn(
                 'flex items-center gap-3 border-2 p-3 text-sm shadow-[1px_1px_0_var(--border)]',
-                isCorrect ? 'border-dynamic-green bg-dynamic-green/10' : 'border-dynamic-red bg-dynamic-red/10'
+                isCorrect
+                  ? 'border-dynamic-green bg-dynamic-green/10'
+                  : 'border-dynamic-red bg-dynamic-red/10'
               )}
             >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
@@ -445,22 +477,28 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
 
   if (quiz.type === 'matching') {
     const pairs = getMatchingPairs(quiz.content);
-    const submittedPairs = Array.isArray(answer.answer) ? answer.answer : (answer.answer as any)?.pairs || [];
+    const submittedPairs = Array.isArray(answer.answer)
+      ? answer.answer
+      : (answer.answer as any)?.pairs || [];
 
     return (
       <div className="space-y-2">
-        <p className="font-bold text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
           Student Matchings:
         </p>
         <div className="space-y-2">
           {pairs.map((pair: any, idx: number) => {
-            const currentRight = submittedPairs.find((p: any) => p.left === pair.left)?.right || '—';
+            const currentRight =
+              submittedPairs.find((p: any) => p.left === pair.left)?.right ||
+              '—';
             return (
               <div
                 key={`${pair.left}-${idx}`}
                 className={cn(
                   'grid gap-3 border-2 p-3 text-sm shadow-[1px_1px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
-                  isCorrect ? 'border-dynamic-green bg-dynamic-green/10' : 'border-dynamic-red bg-dynamic-red/10'
+                  isCorrect
+                    ? 'border-dynamic-green bg-dynamic-green/10'
+                    : 'border-dynamic-red bg-dynamic-red/10'
                 )}
               >
                 <span className="font-bold">{pair.left}</span>
@@ -479,10 +517,10 @@ function ResponseViewer({ quiz, answer, t }: { quiz: any; answer: any; t: any })
     const textValue = (answer.answer as any)?.text || '—';
     return (
       <div className="space-y-2">
-        <p className="font-bold text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
           Student Response:
         </p>
-        <div className="w-full border-2 border-border bg-background p-3 font-bold text-sm whitespace-pre-wrap">
+        <div className="w-full whitespace-pre-wrap border-2 border-border bg-background p-3 font-bold text-sm">
           {textValue}
         </div>
       </div>
@@ -515,34 +553,52 @@ function FeedbackForm({
 
   const feedbackMutation = useMutation({
     mutationFn: () =>
-      updateWorkspaceCourseTestSubmissionFeedback(wsId, courseId, testId, attemptId, {
-        quizId,
-        feedback: feedback.trim() || null,
-      }),
+      updateWorkspaceCourseTestSubmissionFeedback(
+        wsId,
+        courseId,
+        testId,
+        attemptId,
+        {
+          quizId,
+          feedback: feedback.trim() || null,
+        }
+      ),
     onSuccess: () => {
-      toast.success(t('teachModules.feedbackSaved') || 'Feedback saved successfully');
+      toast.success(
+        t('teachModules.feedbackSaved') || 'Feedback saved successfully'
+      );
       qc.invalidateQueries({
-        queryKey: ['teach-submission-detail', wsId, courseId, testId, attemptId],
+        queryKey: [
+          'teach-submission-detail',
+          wsId,
+          courseId,
+          testId,
+          attemptId,
+        ],
       });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to save feedback');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save feedback'
+      );
     },
   });
 
   const isFeedbackChanged = feedback.trim() !== (initialFeedback || '').trim();
 
   return (
-    <div className="space-y-2 pt-2 border-t border-border">
+    <div className="space-y-2 border-border border-t pt-2">
       <label className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
         {t('teachModules.questionFeedback') || 'Feedback for this question'}
       </label>
-      <div className="flex flex-col sm:flex-row items-end gap-3">
+      <div className="flex flex-col items-end gap-3 sm:flex-row">
         <textarea
           rows={2}
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
-          placeholder={t('teachModules.feedbackPlaceholder') || 'Enter feedback here...'}
+          placeholder={
+            t('teachModules.feedbackPlaceholder') || 'Enter feedback here...'
+          }
           className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
           disabled={feedbackMutation.isPending}
         />
@@ -551,8 +607,10 @@ function FeedbackForm({
           onClick={() => feedbackMutation.mutate()}
           disabled={feedbackMutation.isPending || !isFeedbackChanged}
           className={cn(
-            'inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50 w-full sm:w-auto',
-            isFeedbackChanged ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            'inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50 sm:w-auto',
+            isFeedbackChanged
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
           )}
         >
           {feedbackMutation.isPending ? (

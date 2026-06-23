@@ -166,7 +166,6 @@ export interface TulearnTestAttemptResponse {
   answers?: TulearnTestAttemptAnswer[];
 }
 
-
 export interface TulearnQuizOption {
   id: string;
   value: string;
@@ -583,4 +582,3 @@ export async function submitTulearnTest(
     }
   );
 }
-
