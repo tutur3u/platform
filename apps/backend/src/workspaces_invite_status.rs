@@ -128,13 +128,6 @@ async fn invite_status_response(
                 "invitation": invitation,
             }),
         )),
-        Ok(InviteStatus::None) => no_store_response(json_response(
-            200,
-            json!({
-                "status": "none",
-                "workspace": serde_json::Value::Null,
-            }),
-        )),
         Ok(InviteStatus::WorkspaceNotFound) => not_found_response(),
         Err(()) => lookup_failed_response(),
     }
@@ -148,7 +141,6 @@ enum InviteStatus {
         workspace: WorkspaceSummary,
         invitation: serde_json::Value,
     },
-    None,
     WorkspaceNotFound,
 }
 

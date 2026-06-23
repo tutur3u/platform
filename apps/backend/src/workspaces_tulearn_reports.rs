@@ -171,12 +171,11 @@ async fn resolve_subject_student(
     user_id: &str,
     student_id: Option<&str>,
 ) -> Result<Option<String>, ()> {
-    if student_id.is_none() {
-        if let Some(self_student) =
+    if student_id.is_none()
+        && let Some(self_student) =
             self_student_workspace_user_id(contact_data, outbound, ws_id, user_id).await?
-        {
-            return Ok(Some(self_student));
-        }
+    {
+        return Ok(Some(self_student));
     }
 
     parent_linked_student(contact_data, outbound, ws_id, user_id, student_id).await

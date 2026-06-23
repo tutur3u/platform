@@ -441,7 +441,7 @@ fn build_external_project_sync_snapshot(
             .and_then(Value::as_array)
             .cloned()
             .unwrap_or_default();
-        entry_assets.sort_by(|left, right| sort_order_of(left).cmp(&sort_order_of(right)));
+        entry_assets.sort_by_key(sort_order_of);
         let mapped_assets: Vec<Value> = entry_assets
             .iter()
             .map(|asset| {
@@ -480,7 +480,7 @@ fn build_external_project_sync_snapshot(
             .and_then(Value::as_array)
             .cloned()
             .unwrap_or_default();
-        entry_blocks.sort_by(|left, right| sort_order_of(left).cmp(&sort_order_of(right)));
+        entry_blocks.sort_by_key(sort_order_of);
         let mapped_blocks: Vec<Value> = entry_blocks
             .iter()
             .map(|block| {
@@ -634,10 +634,10 @@ fn get_collection_schema(collection: &Value, canonical_schema: &Value) -> Value 
 fn field_definition_to_sync_field(definition: &Value) -> Value {
     let mut field = Map::new();
     // defaultValue: only present when default_value is not null/absent.
-    if let Some(default_value) = definition.get("default_value") {
-        if !default_value.is_null() {
-            field.insert("defaultValue".to_owned(), default_value.clone());
-        }
+    if let Some(default_value) = definition.get("default_value")
+        && !default_value.is_null()
+    {
+        field.insert("defaultValue".to_owned(), default_value.clone());
     }
     field.insert(
         "description".to_owned(),
@@ -896,16 +896,13 @@ async fn read_binding_state(
             ("ws_id", format!("eq.{ws_id}")),
             ("limit", "1".to_owned()),
         ],
-    ) {
-        if let Ok(response) = send_service_role_request(contact_data, outbound, &url).await {
-            if is_success(response.status) {
-                if let Ok(Some(row)) = decode_first_row::<BindingRow>(&response) {
-                    return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
-                }
-            }
-        }
-        // Any binding-table failure falls through to the secrets dual-read.
+    ) && let Ok(response) = send_service_role_request(contact_data, outbound, &url).await
+        && is_success(response.status)
+        && let Ok(Some(row)) = decode_first_row::<BindingRow>(&response)
+    {
+        return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
     }
+    // Any binding-table failure falls through to the secrets dual-read.
 
     let Some(url) = contact_data.rest_url(
         "workspace_secrets",

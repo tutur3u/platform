@@ -39,10 +39,7 @@ struct WorkspaceIdRow {
 }
 
 #[derive(Deserialize)]
-struct WorkspaceMembershipRow {
-    #[serde(rename = "type")]
-    membership_type: Option<String>,
-}
+struct WorkspaceMembershipRow {}
 
 /// Matches
 /// `/api/v1/workspaces/:wsId/user-groups/:groupId/members/:userId/vitals`.
@@ -271,7 +268,7 @@ async fn normalize_workspace_id(
         .trim()
         .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
     {
-        return Ok(personal_workspace_id(contact_data, outbound, user_id, access_token).await?);
+        return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
     }
 
     if !is_workspace_uuid_literal(&resolved_ws_id) {

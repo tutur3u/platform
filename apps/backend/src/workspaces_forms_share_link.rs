@@ -152,7 +152,7 @@ async fn existing_share_link(
         return Err(());
     }
 
-    Ok(decode_first_row(&response)?)
+    decode_first_row(&response)
 }
 
 async fn insert_share_link(

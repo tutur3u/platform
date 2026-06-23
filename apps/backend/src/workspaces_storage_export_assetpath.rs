@@ -188,7 +188,7 @@ fn verify_workspace_storage_export_token(token: &str) -> Result<VerifiedToken, S
 
     let expected_signature = sign_payload(encoded_payload, &secret);
     // timingSafeEqual: length check then constant-time comparison.
-    if signature.as_bytes().len() != expected_signature.as_bytes().len()
+    if signature.len() != expected_signature.len()
         || !constant_time_eq(signature.as_bytes(), expected_signature.as_bytes())
     {
         return Err(StorageError::new(401, "Invalid export token."));
@@ -217,12 +217,12 @@ fn verify_workspace_storage_export_token(token: &str) -> Result<VerifiedToken, S
         return Err(StorageError::new(401, "Invalid export token."));
     }
 
-    if let Some(ttl) = export_link_ttl_seconds() {
-        if ttl > 0 {
-            let now = unix_seconds();
-            if now.saturating_sub(parsed.iat) > ttl {
-                return Err(StorageError::new(401, "Export link expired."));
-            }
+    if let Some(ttl) = export_link_ttl_seconds()
+        && ttl > 0
+    {
+        let now = unix_seconds();
+        if now.saturating_sub(parsed.iat) > ttl {
+            return Err(StorageError::new(401, "Export link expired."));
         }
     }
 

@@ -94,14 +94,14 @@ async fn resolve_binding(
     let mut adapter: Option<String> = None;
     let mut canonical_project_row: Option<Value> = None;
 
-    if let Some(canonical_id) = canonical_id.as_deref() {
-        if let Some(row) = fetch_canonical_project(contact_data, outbound, canonical_id).await {
-            adapter = row
-                .get("adapter")
-                .and_then(Value::as_str)
-                .map(str::to_owned);
-            canonical_project_row = Some(row);
-        }
+    if let Some(canonical_id) = canonical_id.as_deref()
+        && let Some(row) = fetch_canonical_project(contact_data, outbound, canonical_id).await
+    {
+        adapter = row
+            .get("adapter")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+        canonical_project_row = Some(row);
     }
 
     let is_active = canonical_project_row
@@ -143,26 +143,22 @@ async fn read_binding_state(
             ("ws_id", format!("eq.{ws_id}")),
             ("limit", "1".to_owned()),
         ],
-    ) {
-        if let Ok(response) = send_service_role_get(contact_data, outbound, &url).await {
-            if (200..300).contains(&response.status) {
-                if let Ok(rows) = response.json::<Vec<Value>>() {
-                    if let Some(row) = rows.into_iter().next() {
-                        let canonical_id = row
-                            .get("canonical_project_id")
-                            .and_then(Value::as_str)
-                            .map(str::to_owned);
-                        let enabled = row
-                            .get("is_enabled")
-                            .and_then(Value::as_bool)
-                            .unwrap_or(false);
-                        return Ok((canonical_id, enabled));
-                    }
-                }
-            }
-        }
-        // Any error / no row -> fall through to secrets.
+    ) && let Ok(response) = send_service_role_get(contact_data, outbound, &url).await
+        && (200..300).contains(&response.status)
+        && let Ok(rows) = response.json::<Vec<Value>>()
+        && let Some(row) = rows.into_iter().next()
+    {
+        let canonical_id = row
+            .get("canonical_project_id")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+        let enabled = row
+            .get("is_enabled")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        return Ok((canonical_id, enabled));
     }
+    // Any error / no row -> fall through to secrets.
 
     // Legacy secrets fallback.
     let Some(url) = contact_data.rest_url(

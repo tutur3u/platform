@@ -277,14 +277,14 @@ async fn resolve_tulearn_subject(
         .await
         .map_err(|()| SubjectError::Internal)?;
 
-    if student_id.is_none() {
-        if let Some(workspace_user_id) = self_student {
-            return Ok(TulearnSubject {
-                ws_id: normalized_ws_id,
-                student_platform_user_id: user_id.to_owned(),
-                student_workspace_user_id: workspace_user_id,
-            });
-        }
+    if student_id.is_none()
+        && let Some(workspace_user_id) = self_student
+    {
+        return Ok(TulearnSubject {
+            ws_id: normalized_ws_id,
+            student_platform_user_id: user_id.to_owned(),
+            student_workspace_user_id: workspace_user_id,
+        });
     }
 
     // Parent path.
@@ -740,12 +740,11 @@ async fn normalize_workspace_id(
             return Ok(resolved_ws_id);
         }
 
-        if let Some(token) = access_token {
-            if let Some(workspace_id) =
+        if let Some(token) = access_token
+            && let Some(workspace_id) =
                 workspace_id_by_handle(contact_data, outbound, &handle, token).await?
-            {
-                return Ok(workspace_id);
-            }
+        {
+            return Ok(workspace_id);
         }
         if let Some(workspace_id) =
             workspace_id_by_handle_service_role(contact_data, outbound, &handle).await?
