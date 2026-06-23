@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod admin_ai_credits_overview;
 mod ai_chats_list;
 mod ai_models;
 mod ai_whitelist;
@@ -14,6 +15,7 @@ mod auth_accounts;
 mod auth_me;
 mod auth_mfa;
 mod auth_mfa_mobile_approvals;
+mod auth_mfa_mobile_challenges;
 mod auth_qr_login_challenges;
 mod calendar_auth;
 mod changelog;
@@ -86,6 +88,7 @@ mod infrastructure_paginated_list;
 mod infrastructure_post_email_queue;
 #[cfg(test)]
 mod infrastructure_post_email_queue_test;
+mod infrastructure_rate_limits_live_usage;
 mod infrastructure_related_exports;
 mod infrastructure_root_auth;
 mod infrastructure_suspensions;
@@ -99,6 +102,7 @@ mod nova;
 mod onboarding_progress;
 mod outbound;
 mod shared_task_boards;
+mod storage_analytics;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
@@ -137,19 +141,33 @@ mod workspaces_chat_directory;
 mod workspaces_chat_search;
 mod workspaces_datasets_full;
 mod workspaces_external_projects;
+mod workspaces_forms_export;
+mod workspaces_forms_share_link;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_product_form_options;
+mod workspaces_invitations;
+mod workspaces_invite_status;
 mod workspaces_list;
 mod workspaces_mail;
 mod workspaces_mail_mailboxes_messages;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
+mod workspaces_settings_permissions_setup_status;
+mod workspaces_storage_analytics;
+mod workspaces_storage_export_assetpath;
 mod workspaces_storage_rollout_state;
+mod workspaces_transactions_category_breakdown;
+mod workspaces_transactions_spending_trends;
 mod workspaces_tulearn_courses;
 mod workspaces_tulearn_courses_2;
 mod workspaces_tulearn_reports;
+mod workspaces_user_groups_activity_logs;
+mod workspaces_user_groups_linked_products;
 mod workspaces_user_groups_managers;
+mod workspaces_user_groups_members_vitals;
+mod workspaces_users_attendance;
+mod workspaces_users_audit_logs;
 mod workspaces_users_emails;
 mod workspaces_users_referral_discounts;
 mod workspaces_users_reports_logs;
@@ -1035,6 +1053,142 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = workspaces_3::handle_workspaces_3_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        admin_ai_credits_overview::handle_admin_ai_credits_overview_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) = auth_mfa_mobile_challenges::handle_auth_mfa_mobile_challenges_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_rate_limits_live_usage::handle_infrastructure_rate_limits_live_usage_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        storage_analytics::handle_storage_analytics_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_forms_export::handle_workspaces_forms_export_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_forms_share_link::handle_workspaces_forms_share_link_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_invitations::handle_workspaces_invitations_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_invite_status::handle_workspaces_invite_status_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_settings_permissions_setup_status::handle_workspaces_settings_permissions_setup_status_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_storage_analytics::handle_workspaces_storage_analytics_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_storage_export_assetpath::handle_workspaces_storage_export_assetpath_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_category_breakdown::handle_workspaces_transactions_category_breakdown_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_spending_trends::handle_workspaces_transactions_spending_trends_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_activity_logs::handle_workspaces_user_groups_activity_logs_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_linked_products::handle_workspaces_user_groups_linked_products_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_members_vitals::handle_workspaces_user_groups_members_vitals_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_users_attendance::handle_workspaces_users_attendance_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_users_audit_logs::handle_workspaces_users_audit_logs_route(
+        config, request, outbound,
+    )
+    .await
     {
         return response;
     }
