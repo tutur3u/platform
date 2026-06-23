@@ -1269,6 +1269,21 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/chat preserves the legacy authenticated chat shell by resolving the current user, enforcing view_chat through the forwarded-auth internal permission check, and rendering the shared ChatWorkspace client. Conversation and message APIs remain separately tracked because the client self-loads after mount."
     },
+    "layout:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start crawler routes preserve the legacy route-specific layout gate by requiring an authenticated workspace session, resolving the workspace, enforcing ai_lab permission, and rendering a read-only crawled/uncrawled crawler navigation shell. Domains and connections remain unported follow-ups because no TanStack page artifacts exist for those legacy links in this lane."
+    },
+    "page:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/crawlers ports the legacy authenticated crawled URL list as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, quick uncrawled/domain stats, and crawled URL data loaded through Rust-owned backend crawler facades instead of direct Supabase reads, create forms, row actions, or raw browser /api fetches."
+    },
+    "page:/:locale/:wsId/crawlers/uncrawled:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/crawlers/uncrawled ports the legacy authenticated uncrawled URL view as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, grouped URL display, and uncrawled/domain data loaded through Rust-owned backend crawler facades while intentionally omitting Crawl All and per-row crawl POST actions."
+    },
     "page:/:locale/:wsId/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

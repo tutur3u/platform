@@ -1,4 +1,8 @@
-import type { AbuseEvent, VietnameseHoliday } from '@tuturuuu/types';
+import type {
+  AbuseEvent,
+  CrawledUrl,
+  VietnameseHoliday,
+} from '@tuturuuu/types';
 import type {
   InternalOtpClient,
   InternalOtpPlatform,
@@ -348,6 +352,46 @@ export type BackendWorkspacePermissionCheck = {
 export type BackendWorkspaceCrawlerStatus = {
   crawledUrl: Record<string, unknown> | null;
   relatedUrls: Record<string, unknown>[];
+};
+
+export type BackendWorkspaceCrawledUrl = CrawledUrl;
+
+export type BackendWorkspaceCrawlerQuery = {
+  domain?: string | null;
+  page?: number | string;
+  pageSize?: number | string;
+  search?: string | null;
+};
+
+export type BackendWorkspaceCrawlerListResponse = {
+  count: number;
+  data: BackendWorkspaceCrawledUrl[];
+};
+
+export type BackendWorkspaceCrawlerDomainsResponse = {
+  cached: boolean;
+  domains: string[];
+};
+
+export type BackendWorkspaceCrawlerUncrawledUrl = {
+  created_at: string;
+  origin_id: string;
+  origin_url?: string | null;
+  skipped: boolean;
+  url: string;
+};
+
+export type BackendWorkspaceCrawlerUncrawledPagination = {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+export type BackendWorkspaceCrawlerUncrawledResponse = {
+  groupedUrls: Record<string, BackendWorkspaceCrawlerUncrawledUrl[]>;
+  pagination: BackendWorkspaceCrawlerUncrawledPagination;
+  uncrawledUrls: BackendWorkspaceCrawlerUncrawledUrl[];
 };
 
 export type BackendWorkspaceLimits = {
@@ -1184,6 +1228,61 @@ export function getBackendWorkspaceCrawlerStatus(
     `/api/v1/workspaces/${workspacePathSegment(wsId)}/crawlers/status?${searchParams}`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+function crawlerQuery(query: BackendWorkspaceCrawlerQuery): InternalApiQuery {
+  return {
+    domain: query.domain || undefined,
+    page: query.page,
+    pageSize: query.pageSize,
+    search: query.search || undefined,
+  };
+}
+
+export function getBackendWorkspaceCrawlerList(
+  wsId: string,
+  query: BackendWorkspaceCrawlerQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendWorkspaceCrawlerListResponse>(
+    `/api/${workspacePathSegment(wsId)}/crawlers/list`,
+    {
+      cache: 'no-store',
+      query: crawlerQuery(query),
+    }
+  );
+}
+
+export function getBackendWorkspaceCrawlerDomains(
+  wsId: string,
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendWorkspaceCrawlerDomainsResponse>(
+    `/api/${workspacePathSegment(wsId)}/crawlers/domains`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendWorkspaceCrawlerUncrawled(
+  wsId: string,
+  query: BackendWorkspaceCrawlerQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendWorkspaceCrawlerUncrawledResponse>(
+    `/api/${workspacePathSegment(wsId)}/crawlers/uncrawled`,
+    {
+      cache: 'no-store',
+      query: crawlerQuery(query),
     }
   );
 }

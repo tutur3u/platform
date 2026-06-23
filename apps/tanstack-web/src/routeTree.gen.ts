@@ -93,6 +93,7 @@ import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm';
 import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive';
 import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet';
 import { Route as LocaleWsIdCronRouteImport } from './routes/$locale/$wsId/cron';
+import { Route as LocaleWsIdCrawlersRouteImport } from './routes/$locale/$wsId/crawlers';
 import { Route as LocaleWsIdChatRouteImport } from './routes/$locale/$wsId/chat';
 import { Route as LocaleWsIdChangelogRouteImport } from './routes/$locale/$wsId/changelog';
 import { Route as LocaleWsIdCalendarRouteImport } from './routes/$locale/$wsId/calendar';
@@ -154,6 +155,7 @@ import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale
 import { Route as LocaleWsIdEducationQuizSetsRouteImport } from './routes/$locale/$wsId/education/quiz-sets';
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library';
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards';
+import { Route as LocaleWsIdCrawlersUncrawledRouteImport } from './routes/$locale/$wsId/crawlers/uncrawled';
 import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
 import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
 import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
@@ -630,6 +632,11 @@ const LocaleWsIdCronRoute = LocaleWsIdCronRouteImport.update({
   path: '/$wsId/cron',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdCrawlersRoute = LocaleWsIdCrawlersRouteImport.update({
+  id: '/$wsId/crawlers',
+  path: '/$wsId/crawlers',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleWsIdChatRoute = LocaleWsIdChatRouteImport.update({
   id: '/$wsId/chat',
   path: '/$wsId/chat',
@@ -977,6 +984,12 @@ const LocaleWsIdEducationFlashcardsRoute =
     path: '/$wsId/education/flashcards',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdCrawlersUncrawledRoute =
+  LocaleWsIdCrawlersUncrawledRouteImport.update({
+    id: '/uncrawled',
+    path: '/uncrawled',
+    getParentRoute: () => LocaleWsIdCrawlersRoute,
+  } as any);
 const LocaleWsIdBillingSuccessRoute =
   LocaleWsIdBillingSuccessRouteImport.update({
     id: '/$wsId/billing/success',
@@ -1261,6 +1274,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
   '/$locale/$wsId/changelog': typeof LocaleWsIdChangelogRoute;
   '/$locale/$wsId/chat': typeof LocaleWsIdChatRoute;
+  '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
@@ -1318,6 +1332,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
+  '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRouteWithChildren;
@@ -1448,6 +1463,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
   '/$locale/$wsId/changelog': typeof LocaleWsIdChangelogRoute;
   '/$locale/$wsId/chat': typeof LocaleWsIdChatRoute;
+  '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
@@ -1505,6 +1521,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
+  '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRouteWithChildren;
@@ -1637,6 +1654,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
   '/$locale/$wsId/changelog': typeof LocaleWsIdChangelogRoute;
   '/$locale/$wsId/chat': typeof LocaleWsIdChatRoute;
+  '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
@@ -1694,6 +1712,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
+  '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRouteWithChildren;
@@ -1827,6 +1846,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/calendar'
     | '/$locale/$wsId/changelog'
     | '/$locale/$wsId/chat'
+    | '/$locale/$wsId/crawlers'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
     | '/$locale/$wsId/drive'
@@ -1884,6 +1904,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/chatbots'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/billing/success'
+    | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
@@ -2014,6 +2035,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/calendar'
     | '/$locale/$wsId/changelog'
     | '/$locale/$wsId/chat'
+    | '/$locale/$wsId/crawlers'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
     | '/$locale/$wsId/drive'
@@ -2071,6 +2093,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/chatbots'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/billing/success'
+    | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
@@ -2202,6 +2225,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/calendar'
     | '/$locale/$wsId/changelog'
     | '/$locale/$wsId/chat'
+    | '/$locale/$wsId/crawlers'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
     | '/$locale/$wsId/drive'
@@ -2259,6 +2283,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/chatbots'
     | '/$locale/$wsId/ai-chat/new'
     | '/$locale/$wsId/billing/success'
+    | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quiz-sets'
@@ -2956,6 +2981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdCronRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/crawlers': {
+      id: '/$locale/$wsId/crawlers';
+      path: '/$wsId/crawlers';
+      fullPath: '/$locale/$wsId/crawlers';
+      preLoaderRoute: typeof LocaleWsIdCrawlersRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/chat': {
       id: '/$locale/$wsId/chat';
       path: '/$wsId/chat';
@@ -3383,6 +3415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationFlashcardsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/crawlers/uncrawled': {
+      id: '/$locale/$wsId/crawlers/uncrawled';
+      path: '/uncrawled';
+      fullPath: '/$locale/$wsId/crawlers/uncrawled';
+      preLoaderRoute: typeof LocaleWsIdCrawlersUncrawledRouteImport;
+      parentRoute: typeof LocaleWsIdCrawlersRoute;
+    };
     '/$locale/$wsId/billing/success': {
       id: '/$locale/$wsId/billing/success';
       path: '/$wsId/billing/success';
@@ -3698,6 +3737,17 @@ const LocaleSecurityRouteChildren: LocaleSecurityRouteChildren = {
 const LocaleSecurityRouteWithChildren = LocaleSecurityRoute._addFileChildren(
   LocaleSecurityRouteChildren,
 );
+
+interface LocaleWsIdCrawlersRouteChildren {
+  LocaleWsIdCrawlersUncrawledRoute: typeof LocaleWsIdCrawlersUncrawledRoute;
+}
+
+const LocaleWsIdCrawlersRouteChildren: LocaleWsIdCrawlersRouteChildren = {
+  LocaleWsIdCrawlersUncrawledRoute: LocaleWsIdCrawlersUncrawledRoute,
+};
+
+const LocaleWsIdCrawlersRouteWithChildren =
+  LocaleWsIdCrawlersRoute._addFileChildren(LocaleWsIdCrawlersRouteChildren);
 
 interface LocaleWsIdEpmRouteChildren {
   LocaleWsIdEpmCollectionsCollectionIdRoute: typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
@@ -4041,6 +4091,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdCalendarRoute: typeof LocaleWsIdCalendarRoute;
   LocaleWsIdChangelogRoute: typeof LocaleWsIdChangelogRoute;
   LocaleWsIdChatRoute: typeof LocaleWsIdChatRoute;
+  LocaleWsIdCrawlersRoute: typeof LocaleWsIdCrawlersRouteWithChildren;
   LocaleWsIdCronRoute: typeof LocaleWsIdCronRoute;
   LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute;
   LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute;
@@ -4183,6 +4234,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdCalendarRoute: LocaleWsIdCalendarRoute,
   LocaleWsIdChangelogRoute: LocaleWsIdChangelogRoute,
   LocaleWsIdChatRoute: LocaleWsIdChatRoute,
+  LocaleWsIdCrawlersRoute: LocaleWsIdCrawlersRouteWithChildren,
   LocaleWsIdCronRoute: LocaleWsIdCronRoute,
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,
   LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,

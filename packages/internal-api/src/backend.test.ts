@@ -34,7 +34,10 @@ import {
   getBackendOtpSettings,
   getBackendTaskBoardStatusTemplates,
   getBackendUserFieldTypes,
+  getBackendWorkspaceCrawlerDomains,
+  getBackendWorkspaceCrawlerList,
   getBackendWorkspaceCrawlerStatus,
+  getBackendWorkspaceCrawlerUncrawled,
   getBackendWorkspaceLimits,
   getBackendWorkspacePostPermissions,
   getConfiguredBackendApiBaseUrl,
@@ -1222,6 +1225,132 @@ describe('backend API client', () => {
     expect(status.relatedUrls).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledWith(
       'http://backend:7820/api/v1/workspaces/ws-1/crawlers/status?url=https%3A%2F%2Fexample.com%2Fdocs%3Fx%3D1%26y%3D2',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned crawler list, domain, and uncrawled legacy routes with encoded inputs', async () => {
+    const listResponse = {
+      count: 1,
+      data: [
+        {
+          created_at: '2026-06-23T00:00:00.000Z',
+          html: '<main>Docs</main>',
+          id: 'crawler-1',
+          markdown: '# Docs',
+          url: 'https://docs.example.com/guide/intro',
+        },
+      ],
+    };
+    const domainsResponse = {
+      cached: false,
+      domains: ['docs.example.com'],
+    };
+    const uncrawledResponse = {
+      groupedUrls: {
+        'crawler-1': [
+          {
+            created_at: '2026-06-23T00:00:00.000Z',
+            origin_id: 'crawler-1',
+            origin_url: 'https://docs.example.com',
+            skipped: false,
+            url: 'https://docs.example.com/guide/next',
+          },
+        ],
+      },
+      pagination: {
+        page: 2,
+        pageSize: 25,
+        totalItems: 1,
+        totalPages: 1,
+      },
+      uncrawledUrls: [
+        {
+          created_at: '2026-06-23T00:00:00.000Z',
+          origin_id: 'crawler-1',
+          origin_url: 'https://docs.example.com',
+          skipped: false,
+          url: 'https://docs.example.com/guide/next',
+        },
+      ],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => listResponse,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => domainsResponse,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => uncrawledResponse,
+      });
+
+    await expect(
+      getBackendWorkspaceCrawlerList(
+        'personal workspace',
+        {
+          domain: 'docs.example.com',
+          page: 2,
+          pageSize: 25,
+          search: 'guide/intro',
+        },
+        {
+          baseUrl: 'http://backend:7820',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    ).resolves.toEqual(listResponse);
+    await expect(
+      getBackendWorkspaceCrawlerDomains('personal workspace', {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toEqual(domainsResponse);
+    await expect(
+      getBackendWorkspaceCrawlerUncrawled(
+        'personal workspace',
+        {
+          domain: 'docs.example.com',
+          page: 2,
+          pageSize: 25,
+          search: 'guide/next',
+        },
+        {
+          baseUrl: 'http://backend:7820',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    ).resolves.toEqual(uncrawledResponse);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://backend:7820/api/personal%20workspace/crawlers/list?domain=docs.example.com&page=2&pageSize=25&search=guide%2Fintro',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://backend:7820/api/personal%20workspace/crawlers/domains',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://backend:7820/api/personal%20workspace/crawlers/uncrawled?domain=docs.example.com&page=2&pageSize=25&search=guide%2Fnext',
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),

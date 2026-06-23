@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 144,
-        "migrated": 162,
-        "percentComplete": 52.94,
-        "remaining": 144,
-        "terminal": 162,
+        "legacyNext": 142,
+        "migrated": 164,
+        "percentComplete": 53.59,
+        "remaining": 142,
+        "terminal": 164,
         "total": 306,
         "unknownStatus": 0
       },
@@ -30,11 +30,11 @@
         "acceptedRemoval": 1,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 19,
-        "migrated": 47,
-        "percentComplete": 71.64,
-        "remaining": 19,
-        "terminal": 48,
+        "legacyNext": 18,
+        "migrated": 48,
+        "percentComplete": 73.13,
+        "remaining": 18,
+        "terminal": 49,
         "total": 67,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 163,
-        "migrated": 214,
-        "percentComplete": 56.88,
-        "remaining": 163,
-        "terminal": 215,
+        "legacyNext": 160,
+        "migrated": 217,
+        "percentComplete": 57.67,
+        "remaining": 160,
+        "terminal": 218,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1098,
-      "migrated": 361,
-      "percentComplete": 28.84,
-      "remaining": 1098,
-      "terminal": 445,
+      "legacyNext": 1095,
+      "migrated": 364,
+      "percentComplete": 29.03,
+      "remaining": 1095,
+      "terminal": 448,
       "total": 1543,
       "unknownStatus": 0
     }
@@ -11005,7 +11005,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/crawlers",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11761,7 +11761,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/crawlers",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -11779,7 +11779,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/crawlers/uncrawled",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/uncrawled/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
