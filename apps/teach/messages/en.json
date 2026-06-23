@@ -524,6 +524,7 @@
     "create_manually": "Create Manually",
     "generate_with_ai": "Generate with AI",
     "generate_with_ai_description": "Configure the type and quantity of questions to generate from this lesson.",
+    "generation_count_hint": "Note: Requesting more than 15 questions at once may cause a timeout error.",
     "generating_with_ai": "Generating with AI...",
     "generation_success": "Quizzes generated successfully!",
     "description": "Manage quizzes in your workspace across multiple question types for learning purposes.",

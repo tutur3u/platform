@@ -97,8 +97,12 @@ function ModuleQuestionsManager({
         toast.error(t('ws-quizzes.generation_error'));
       }
     },
-    onError: () => {
-      toast.error(t('ws-quizzes.generation_error'));
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-quizzes.generation_error')
+      );
     },
   });
 
@@ -255,15 +259,18 @@ function ModuleQuestionsManager({
                 id="ai-question-count"
                 type="number"
                 min={1}
-                max={50}
+                max={20}
                 value={count}
                 onChange={(e) =>
                   setCount(
-                    Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1))
+                    Math.min(20, Math.max(1, parseInt(e.target.value, 10) || 1))
                   )
                 }
                 disabled={generateMutation.isPending}
               />
+              <p className="text-muted-foreground text-xs">
+                {t('ws-quizzes.generation_count_hint')}
+              </p>
             </div>
 
             {/* Custom context */}

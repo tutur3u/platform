@@ -11,12 +11,13 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
    - Include clear explanations for the answers if possible.
    - The score field MUST be an integer between 1 and 10 (do NOT generate extremely large numbers).
 4. **Schema Field Names:**
-   - Use 'type' for the question type (allowed values: 'multiple_choice', 'true_false', 'matching', 'ordering'). Do NOT use 'question_type'.
+   - Use 'type' for the question type (allowed values: 'multiple_choice', 'true_false', 'matching', 'ordering', 'paragraph'). Do NOT use 'question_type'.
    - Use 'question' for the question text. Do NOT use 'question_text'.
    - For 'multiple_choice': populate 'options' (array of strings) and 'correct_option_index' (integer, 0-indexed index of the correct option). Do NOT use 'correct_answer_ids'.
    - For 'true_false': populate 'correct_boolean' (boolean).
    - For 'matching': populate 'matching_pairs' (array of objects with 'left' and 'right' keys).
    - For 'ordering': populate 'ordering_items' (array of strings).
+   - For 'paragraph': do NOT populate options, matching_pairs, ordering_items, or correct answers (students will answer in text).
    - Do NOT include any 'id' fields.`;
 
 const BaseGeneratedQuizSchema = z.object({
@@ -76,6 +77,9 @@ export const GeneratedQuizSchema = z
         .min(2)
         .describe('Items in their correct ordered sequence.'),
     }),
+    BaseGeneratedQuizSchema.extend({
+      type: z.literal('paragraph').describe('The question type.'),
+    }),
   ])
   .superRefine((quiz, ctx) => {
     if (
@@ -103,7 +107,14 @@ export const GenerateQuizRequestSchema = z.object({
   wsId: z.string().min(1),
   context: z.string().max(4000).optional(),
   questionType: z
-    .enum(['multiple_choice', 'true_false', 'matching', 'ordering', 'mix'])
+    .enum([
+      'multiple_choice',
+      'true_false',
+      'matching',
+      'ordering',
+      'paragraph',
+      'mix',
+    ])
     .default('mix'),
   count: z.number().int().min(1).max(50).default(5),
 });

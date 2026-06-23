@@ -524,6 +524,7 @@
     "create_manually": "Tạo thủ công",
     "generate_with_ai": "Tạo bằng AI",
     "generate_with_ai_description": "Cấu hình loại và số lượng câu hỏi để tạo từ bài học này.",
+    "generation_count_hint": "Lưu ý: Yêu cầu nhiều hơn 15 câu hỏi cùng lúc có thể gây ra lỗi quá thời gian chờ (timeout).",
     "generating_with_ai": "Đang tạo bằng AI...",
     "generation_success": "Đã tạo câu hỏi trắc nghiệm thành công!",
     "description": "Quản lý bộ câu hỏi trắc nghiệm trong không gian làm việc của bạn với nhiều loại câu hỏi phục vụ học tập.",

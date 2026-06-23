@@ -248,6 +248,9 @@ ${lessonInfo}`;
           } else if (quiz.type === 'ordering') {
             content = { items: quiz.ordering_items ?? [] };
             answer = { order: quiz.ordering_items ?? [] };
+          } else if (quiz.type === 'paragraph') {
+            content = {};
+            answer = {};
           }
 
           return {

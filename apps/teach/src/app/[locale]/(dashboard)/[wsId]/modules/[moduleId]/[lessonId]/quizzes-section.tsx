@@ -227,6 +227,9 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                 }
                 disabled={isGenerating}
               />
+              <p className="text-muted-foreground text-xs">
+                {t('ws-quizzes.generation_count_hint')}
+              </p>
             </div>
 
             {/* Custom context */}
