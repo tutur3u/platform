@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { IPBlockStatus } from '@tuturuuu/utils/abuse-protection';
 import {
   BLOCK_DURATIONS,
@@ -10,7 +11,12 @@ import {
   unblockIP,
   WINDOW_MS,
 } from '@tuturuuu/utils/abuse-protection';
-import { MAX_IP_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  MAX_IP_LENGTH,
+  MAX_SEARCH_LENGTH,
+  ROOT_WORKSPACE_ID,
+} from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -40,6 +46,36 @@ const BlockIPSchema = z.object({
 // 100 years in seconds for permanent blocks
 const PERMANENT_BLOCK_DURATION = 100 * 365 * 24 * 60 * 60;
 
+type AuthenticatedBlockedIpUser = {
+  email?: string | null;
+  id: string;
+};
+
+async function hasRootWorkspaceMembership(
+  supabase: TypedSupabaseClient,
+  userId: string
+) {
+  const { data: rootWorkspaceUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('platform_user_id')
+    .eq('platform_user_id', userId)
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .single();
+
+  return Boolean(rootWorkspaceUser);
+}
+
+async function canDeleteBlockedIp(
+  supabase: TypedSupabaseClient,
+  user: AuthenticatedBlockedIpUser
+) {
+  if (isExactTuturuuuDotComEmail(user.email)) {
+    return true;
+  }
+
+  return hasRootWorkspaceMembership(supabase, user.id);
+}
+
 export async function GET(req: Request) {
   const supabase = await createClient();
 
@@ -55,7 +91,7 @@ export async function GET(req: Request) {
     .from('workspace_user_linked_users')
     .select('*')
     .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
     .single();
 
   if (!rootWorkspaceUser) {
@@ -120,15 +156,9 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
-    .single();
+  const canDelete = await canDeleteBlockedIp(supabase, user);
 
-  if (!rootWorkspaceUser) {
+  if (!canDelete) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
@@ -177,7 +207,7 @@ export async function POST(req: Request) {
     .from('workspace_user_linked_users')
     .select('*')
     .eq('platform_user_id', user.id)
-    .eq('ws_id', '00000000-0000-0000-0000-000000000000')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
     .single();
 
   if (!rootWorkspaceUser) {

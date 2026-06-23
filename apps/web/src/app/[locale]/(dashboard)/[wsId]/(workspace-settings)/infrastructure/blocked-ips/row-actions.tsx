@@ -2,6 +2,8 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye, ShieldOff } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
+import { unblockBlockedIp } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -47,30 +49,22 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
 
     setIsUnblocking(true);
     try {
-      const res = await fetch('/api/v1/infrastructure/blocked-ips', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ip_address: entry.ip_address,
-          reason: unblockReason || undefined,
-        }),
+      await unblockBlockedIp({
+        ipAddress: entry.ip_address,
+        reason: unblockReason || undefined,
       });
 
-      if (res.ok) {
-        toast.success(t('blocked-ips.ip-unblocked'), {
-          description: `${displayIp} ${t('blocked-ips.has-been-unblocked')}`,
-        });
-        setUnblockOpen(false);
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast.error(t('blocked-ips.unblock-failed'), {
-          description: data.message || t('blocked-ips.unblock-error'),
-        });
-      }
-    } catch (_error) {
+      toast.success(t('blocked-ips.ip-unblocked'), {
+        description: `${displayIp} ${t('blocked-ips.has-been-unblocked')}`,
+      });
+      setUnblockOpen(false);
+      router.refresh();
+    } catch (error) {
       toast.error(t('blocked-ips.unblock-failed'), {
-        description: t('blocked-ips.network-error'),
+        description:
+          error instanceof InternalApiError
+            ? error.message
+            : t('blocked-ips.network-error'),
       });
     } finally {
       setIsUnblocking(false);

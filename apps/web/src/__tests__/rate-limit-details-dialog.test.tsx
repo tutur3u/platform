@@ -13,6 +13,7 @@ import type { RateLimitDebugDetails } from '@/lib/fetch-interceptor';
 const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
+  unblockBlockedIp: vi.fn(),
   writeText: vi.fn(),
 }));
 
@@ -27,6 +28,20 @@ vi.mock('@tuturuuu/icons/lucide-static', () => ({
       copy
     </span>
   ),
+  Loader2: (props: Record<string, unknown>) => (
+    <span aria-hidden="true" {...props}>
+      loading
+    </span>
+  ),
+  Shield: (props: Record<string, unknown>) => (
+    <span aria-hidden="true" {...props}>
+      shield
+    </span>
+  ),
+}));
+
+vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
+  unblockBlockedIp: mocks.unblockBlockedIp,
 }));
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
@@ -38,11 +53,17 @@ vi.mock('@tuturuuu/ui/dialog', () => ({
   DialogDescription: ({ children }: { children: ReactNode }) => (
     <p>{children}</p>
   ),
-  DialogFooter: ({ children }: { children: ReactNode }) => (
-    <footer>{children}</footer>
+  DialogFooter: ({
+    children,
+    ...props
+  }: HTMLAttributes<HTMLElement> & { children: ReactNode }) => (
+    <footer {...props}>{children}</footer>
   ),
-  DialogHeader: ({ children }: { children: ReactNode }) => (
-    <header>{children}</header>
+  DialogHeader: ({
+    children,
+    ...props
+  }: HTMLAttributes<HTMLElement> & { children: ReactNode }) => (
+    <header {...props}>{children}</header>
   ),
   DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
@@ -58,6 +79,12 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
       close: 'Close',
+      rate_limited_clear_ip_block: 'Clear IP block',
+      rate_limited_clear_ip_block_failed: 'Failed to clear IP block',
+      rate_limited_clear_ip_block_failed_description:
+        'The IP block could not be cleared.',
+      rate_limited_clear_ip_block_loading: 'Clearing...',
+      rate_limited_clear_ip_block_success: 'IP block cleared',
       rate_limited_copied: 'Rate-limit details copied',
       rate_limited_copy_details: 'Copy details',
       rate_limited_copy_failed: 'Failed to copy rate-limit details',
@@ -108,6 +135,7 @@ const details: RateLimitDebugDetails = {
   headers: {
     'CF-Ray': 'ray-123',
     'Retry-After': '7',
+    'X-Proxy-Block-Reason': 'ip-already-blocked',
     'X-RateLimit-Caller-Class': 'authenticated',
     'X-RateLimit-Client-IP': '203.0.113.10',
     'X-RateLimit-Debug-Bypass': 'tuturuuu-staff',
@@ -142,6 +170,9 @@ describe('RateLimitDetailsDialog', () => {
   beforeEach(() => {
     mocks.toastError.mockClear();
     mocks.toastSuccess.mockClear();
+    mocks.unblockBlockedIp.mockReset().mockResolvedValue({
+      message: 'IP unblocked successfully',
+    });
     mocks.writeText.mockReset().mockResolvedValue(undefined);
 
     Object.defineProperty(navigator, 'clipboard', {
@@ -185,6 +216,80 @@ describe('RateLimitDetailsDialog', () => {
     expect(screen.getByText('Vitest Browser')).toBeVisible();
     expect(screen.getByText('Headers')).toBeVisible();
     expect(screen.queryByText('raw-token')).not.toBeInTheDocument();
+  });
+
+  it('keeps the diagnostic body scrollable inside a fixed header/footer dialog', async () => {
+    render(<RateLimitDetailsDialog />);
+
+    await act(async () => {});
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tuturuuu:rate-limit-details', { detail: details })
+      );
+    });
+
+    const dialog = await screen.findByRole('dialog');
+    const content = dialog.firstElementChild;
+    const scrollArea = content?.children.item(1);
+
+    expect(content).toHaveClass(
+      'grid-rows-[auto_minmax(0,1fr)_auto]',
+      'overflow-hidden'
+    );
+    expect(scrollArea).toHaveClass(
+      'min-h-0',
+      'overflow-y-auto',
+      'overscroll-contain'
+    );
+  });
+
+  it('allows staff diagnostics to clear an already-blocked IP', async () => {
+    render(<RateLimitDetailsDialog />);
+
+    await act(async () => {});
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tuturuuu:rate-limit-details', { detail: details })
+      );
+    });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: /clear ip block/i })
+    );
+
+    await waitFor(() =>
+      expect(mocks.unblockBlockedIp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ipAddress: '203.0.113.10',
+          reason: expect.stringContaining('ip-already-blocked'),
+        })
+      )
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('IP block cleared', {
+      description: '203.0.113.10',
+    });
+  });
+
+  it('does not show the clear action for non-staff diagnostics', async () => {
+    render(<RateLimitDetailsDialog />);
+
+    await act(async () => {});
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tuturuuu:rate-limit-details', {
+          detail: {
+            ...details,
+            debugBypass: undefined,
+            userEmail: 'member@example.com',
+          },
+        })
+      );
+    });
+
+    await expect(screen.findByRole('dialog')).resolves.toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: /clear ip block/i })
+    ).not.toBeInTheDocument();
   });
 
   it('copies the sanitized details payload without secrets, cookies, or request bodies', async () => {
