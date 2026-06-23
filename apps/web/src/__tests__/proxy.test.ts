@@ -1142,7 +1142,7 @@ describe('web proxy api handling', () => {
     expect(response).toBeInstanceOf(NextResponse);
   });
 
-  it('redirects root to a configured workspace board when board config is valid', async () => {
+  it('redirects root to the tasks entry when stale board config is present', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1177,7 +1177,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-1/tasks/boards/board-1'
+      'http://localhost/ws-1/tasks'
     );
   });
 
@@ -1242,7 +1242,7 @@ describe('web proxy api handling', () => {
     );
   });
 
-  it('applies the personal default board preference only from the root redirect', async () => {
+  it('lets the tasks entry resolve the personal default board preference', async () => {
     const workspaceConfigBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1293,13 +1293,13 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/personal/tasks/boards/board-1'
+      'http://localhost/personal/tasks'
     );
-    expect(adminFrom).toHaveBeenCalledWith('user_configs');
-    expect(adminFrom).toHaveBeenCalledWith('workspace_boards');
+    expect(adminFrom).not.toHaveBeenCalledWith('user_configs');
+    expect(adminFrom).not.toHaveBeenCalledWith('workspace_boards');
   });
 
-  it('preserves locale when redirecting root to a configured workspace board', async () => {
+  it('preserves locale when redirecting root to the tasks entry', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1332,7 +1332,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/vi/ws-1/tasks/boards/board-1'
+      'http://localhost/vi/ws-1/tasks'
     );
   });
 
@@ -1579,7 +1579,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-1/tasks/boards'
+      'http://localhost/ws-1/tasks'
     );
     expect(adminUpsert).toHaveBeenCalled();
   });

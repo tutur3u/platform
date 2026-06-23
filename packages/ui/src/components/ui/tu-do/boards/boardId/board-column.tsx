@@ -11,6 +11,8 @@ import {
   Filter,
   GripVertical,
   Loader2,
+  Pin,
+  PinOff,
   RotateCcw,
 } from '@tuturuuu/icons';
 import type { ExternalTaskSortBy } from '@tuturuuu/internal-api/tasks';
@@ -174,6 +176,8 @@ interface BoardColumnProps {
   wsId: string;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
+  specialPinned?: boolean;
+  onSpecialPinnedChange?: (pinned: boolean) => void;
   readOnly?: boolean;
 }
 
@@ -201,6 +205,8 @@ export function BoardColumn({
   wsId,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
+  specialPinned = false,
+  onSpecialPinnedChange,
   readOnly = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
@@ -450,6 +456,9 @@ export function BoardColumn({
     : visibleTasks.length;
   const externalFilterCount =
     (externalIncludeDocuments ? 1 : 0) + (externalIncludeDoneClosed ? 1 : 0);
+  const pinListLabel = specialPinned
+    ? tTasks('unpin_task_list', { name: translateListName(column.name) })
+    : tTasks('pin_task_list', { name: translateListName(column.name) });
 
   // Memoize drag handle for performance
   const DragHandle = useMemo(
@@ -713,39 +722,88 @@ export function BoardColumn({
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
-                title={tTasks('collapse_external_tasks')}
-                aria-label={tTasks('collapse_external_tasks')}
-                onClick={() => onExternalTasksCollapsedChange?.(true)}
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </Button>
-            </>
-          ) : (
-            <>
-              {isClosedCollapsed || column.status === 'closed' ? (
+              {onSpecialPinnedChange ? (
                 <Button
                   type="button"
                   variant="ghost"
                   size="xs"
                   className={cn(
-                    'h-7 w-7 p-0 hover:bg-muted/40',
-                    getListTextColorClass(column.color as SupportedColor)
+                    'h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10',
+                    specialPinned && 'bg-dynamic-cyan/10'
                   )}
-                  title={tTasks('collapse_task_list', {
-                    name: translateListName(column.name),
-                  })}
-                  aria-label={tTasks('collapse_task_list', {
-                    name: translateListName(column.name),
-                  })}
-                  onClick={() => onTaskListCollapsedChange?.(column.id, true)}
+                  title={pinListLabel}
+                  aria-label={pinListLabel}
+                  onClick={() => onSpecialPinnedChange(!specialPinned)}
+                >
+                  {specialPinned ? (
+                    <PinOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Pin className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              ) : null}
+              {!specialPinned && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
+                  title={tTasks('collapse_external_tasks')}
+                  aria-label={tTasks('collapse_external_tasks')}
+                  onClick={() => onExternalTasksCollapsedChange?.(true)}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
+              )}
+            </>
+          ) : (
+            <>
+              {isClosedCollapsed || column.status === 'closed' ? (
+                <>
+                  {onSpecialPinnedChange ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className={cn(
+                        'h-7 w-7 p-0 hover:bg-muted/40',
+                        getListTextColorClass(column.color as SupportedColor),
+                        specialPinned && 'bg-muted/40'
+                      )}
+                      title={pinListLabel}
+                      aria-label={pinListLabel}
+                      onClick={() => onSpecialPinnedChange(!specialPinned)}
+                    >
+                      {specialPinned ? (
+                        <PinOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <Pin className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  ) : null}
+                  {!specialPinned && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className={cn(
+                        'h-7 w-7 p-0 hover:bg-muted/40',
+                        getListTextColorClass(column.color as SupportedColor)
+                      )}
+                      title={tTasks('collapse_task_list', {
+                        name: translateListName(column.name),
+                      })}
+                      aria-label={tTasks('collapse_task_list', {
+                        name: translateListName(column.name),
+                      })}
+                      onClick={() =>
+                        onTaskListCollapsedChange?.(column.id, true)
+                      }
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </>
               ) : null}
               {!readOnly && (
                 <ListActions

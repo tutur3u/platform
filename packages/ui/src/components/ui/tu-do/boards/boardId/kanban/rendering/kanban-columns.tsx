@@ -10,6 +10,10 @@ import { getBoardRealtimeChannelName } from '@tuturuuu/ui/hooks/useBoardRealtime
 import { useLayoutEffect, useRef } from 'react';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
+import type {
+  SpecialTaskListPin,
+  SpecialTaskListPinState,
+} from '../../../../shared/special-task-list-pins';
 import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
@@ -64,6 +68,11 @@ interface KanbanColumnsProps {
     section: KanbanDeadlineSection,
     collapsed: boolean
   ) => void;
+  specialTaskListPins?: SpecialTaskListPinState;
+  onSpecialTaskListPinnedChange?: (
+    pin: SpecialTaskListPin,
+    pinned: boolean
+  ) => void;
   readOnly?: boolean;
 }
 
@@ -98,6 +107,8 @@ export function KanbanColumns({
   deadlineSectionsCollapsed,
   deadlineNow,
   onDeadlineSectionCollapsedChange,
+  specialTaskListPins,
+  onSpecialTaskListPinnedChange,
   readOnly = false,
 }: KanbanColumnsProps) {
   const initialScrollAnchoredBoardRef = useRef<string | null>(null);
@@ -193,6 +204,13 @@ export function KanbanColumns({
               sections={deadlineSections}
               collapsedSections={deadlineSectionsCollapsed}
               deadlineNow={deadlineNow}
+              pinnedSections={{
+                overdue: specialTaskListPins?.overdue,
+                upcoming: specialTaskListPins?.upcoming,
+              }}
+              onSectionPinnedChange={(section, pinned) =>
+                onSpecialTaskListPinnedChange?.(section, pinned)
+              }
               selectedTasks={selectedTasks}
               taskLists={columns}
               workspaceId={workspaceId}
@@ -262,6 +280,23 @@ export function KanbanColumns({
                 wsId={workspaceId}
                 onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
                 onTaskListCollapsedChange={onTaskListCollapsedChange}
+                specialPinned={
+                  list.is_external_staging
+                    ? specialTaskListPins?.external_tasks === true
+                    : list.status === 'closed'
+                      ? specialTaskListPins?.closed_tasks === true
+                      : false
+                }
+                onSpecialPinnedChange={(pinned) => {
+                  if (list.is_external_staging) {
+                    onSpecialTaskListPinnedChange?.('external_tasks', pinned);
+                    return;
+                  }
+
+                  if (list.status === 'closed') {
+                    onSpecialTaskListPinnedChange?.('closed_tasks', pinned);
+                  }
+                }}
                 readOnly={readOnly}
               />
             );

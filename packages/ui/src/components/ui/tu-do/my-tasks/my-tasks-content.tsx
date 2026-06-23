@@ -20,12 +20,30 @@ import { TaskPreviewDialog } from './task-preview-dialog';
 import { useMyTasksState } from './use-my-tasks-state';
 
 interface MyTasksContentProps {
+  disableAutoCreateBoard?: boolean;
+  embedded?: boolean;
+  initialBoard?: {
+    id: string;
+    name: string | null;
+  };
+  initialListId?: string;
+  initialLists?: Array<{
+    deleted?: boolean | null;
+    id: string;
+    name: string | null;
+    position?: number | null;
+  }>;
   wsId: string;
   userId: string;
   isPersonal: boolean;
 }
 
 export default function MyTasksContent({
+  disableAutoCreateBoard = false,
+  embedded = false,
+  initialBoard,
+  initialListId,
+  initialLists,
   wsId,
   userId,
   isPersonal,
@@ -40,13 +58,17 @@ export default function MyTasksContent({
     'enter'
   );
   const state = useMyTasksState({
+    ...(disableAutoCreateBoard ? { disableAutoCreateBoard } : {}),
+    ...(initialBoard ? { initialBoard } : {}),
+    ...(initialListId ? { initialListId } : {}),
+    ...(initialLists ? { initialLists } : {}),
     wsId,
     userId,
     isPersonal,
   });
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className={embedded ? 'space-y-4' : 'space-y-4 md:space-y-6'}>
       {/* Header with greeting + summary cards */}
       <MyTasksHeader
         overdueCount={state.filteredTasks.overdueTasks?.length ?? 0}
@@ -55,7 +77,9 @@ export default function MyTasksContent({
       />
 
       {/* Command Bar */}
-      <div className="mx-auto mb-32 max-w-5xl">
+      <div
+        className={embedded ? 'mx-auto max-w-5xl' : 'mx-auto mb-32 max-w-5xl'}
+      >
         <CommandBar
           value={state.commandBarInput}
           onValueChange={state.setCommandBarInput}

@@ -176,20 +176,15 @@ export async function WorkspaceNavigationLinks({
       {
         id: 'tasks',
         title: t('sidebar_tabs.tasks'),
-        href: `/${personalOrWsId}/tasks/boards`,
-        aliases: [`/${personalOrWsId}/tasks/boards`],
+        href: `/${personalOrWsId}/tasks`,
+        aliases: [
+          `/${personalOrWsId}/tasks`,
+          `/${personalOrWsId}/tasks/boards`,
+        ],
         icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
         experimental: 'beta',
         preferencePlacement: 'root',
         preferenceSectionLabel: sidebarSections.core,
-        children: [
-          {
-            title: t('sidebar_tabs.boards'),
-            href: `/${personalOrWsId}/tasks/boards`,
-            icon: createDashboardNavigationIcon('SquareKanban', 'h-4 w-4'),
-            matchExact: true,
-          },
-        ],
       },
     ] satisfies DashboardNavigationLink[];
   }
@@ -267,36 +262,12 @@ export async function WorkspaceNavigationLinks({
       id: 'tasks',
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
-      aliases: [`/${personalOrWsId}/tasks`],
+      aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/boards`],
       icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
-      children: [
-        {
-          title: t('sidebar_tabs.tasks'),
-          href: `/${personalOrWsId}/tasks`,
-          icon: createDashboardNavigationIcon('UserStar', 'h-4 w-4'),
-          matchExact: true,
-        },
-        null,
-        // {
-        //   title: t('sidebar_tabs.notes'),
-        //   href: `/${personalOrWsId}/tasks/notes`,
-        //   icon: createDashboardNavigationIcon('NotepadText', 'h-4 w-4'),
-        // },
-        {
-          title: t('sidebar_tabs.boards'),
-          href: `/${personalOrWsId}/tasks/boards`,
-          icon: createDashboardNavigationIcon('SquareKanban', 'h-4 w-4'),
-        },
-        // {
-        //   title: t('sidebar_tabs.cycles'),
-        //   href: `/${personalOrWsId}/tasks/cycles`,
-        //   icon: createDashboardNavigationIcon('RotateCcw', 'h-4 w-4'),
-        // },
-      ],
     },
     {
       id: 'habits',

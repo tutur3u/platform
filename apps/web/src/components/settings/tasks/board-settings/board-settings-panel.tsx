@@ -14,12 +14,19 @@ import {
   type WorkspaceTaskBoardDetail,
   type WorkspaceTaskBoardListItem,
 } from '@tuturuuu/internal-api/tasks';
+import { TASK_DEFAULT_BOARD_ID_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
+import {
+  useUpdateUserWorkspaceConfig,
+  useUserWorkspaceConfig,
+} from '@tuturuuu/ui/hooks/use-user-workspace-config';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -59,6 +66,12 @@ function BoardSettingsBoardSwitcher({
 }) {
   const t = useTranslations();
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const { data: defaultBoardId } = useUserWorkspaceConfig(
+    wsId,
+    TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+    null
+  );
+  const updateDefaultBoard = useUpdateUserWorkspaceConfig();
   const [, setSettingsQuery] = useQueryStates(
     {
       settingsBoardId: parseAsString,
@@ -181,6 +194,7 @@ function BoardSettingsBoardSwitcher({
   const CurrentBoardIcon =
     getIconComponentByKey(board.icon as PlatformIconKey | null) ?? LayoutGrid;
   const currentStatus = getBoardStatus(board);
+  const isDefaultBoard = defaultBoardId === board.id;
   const statusLabel =
     currentStatus === 'deleted'
       ? t('common.deleted')
@@ -212,6 +226,11 @@ function BoardSettingsBoardSwitcher({
               >
                 {statusLabel}
               </Badge>
+              {isDefaultBoard && (
+                <Badge className="shrink-0 bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                  {t('settings.tasks.default_board_badge')}
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground text-xs">
               {t('settings.tasks.board')}
@@ -219,30 +238,59 @@ function BoardSettingsBoardSwitcher({
           </div>
         </div>
 
-        <Combobox
-          ariaLabel={t('common.search_boards')}
-          className="w-full md:w-80"
-          contentWidth="lg"
-          disabled={isLoading}
-          emptyText={
-            isLoading ? t('common.loading') : t('common.no_other_boards')
-          }
-          label={
-            <span className="truncate text-left font-medium text-sm">
-              {selectedBoardName}
-            </span>
-          }
-          onChange={(value) => {
-            const nextBoardId = Array.isArray(value) ? value[0] : value;
-            if (!nextBoardId || nextBoardId === board.id) return;
-            void setSettingsQuery({ settingsBoardId: nextBoardId });
-          }}
-          onOpenChange={setSwitcherOpen}
-          options={boardOptions}
-          placeholder={selectedBoardName}
-          searchPlaceholder={t('common.search_boards')}
-          selected={board.id}
-        />
+        <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+          {!isDefaultBoard && (
+            <Button
+              className="w-full md:w-auto"
+              disabled={updateDefaultBoard.isPending}
+              onClick={() =>
+                updateDefaultBoard.mutate(
+                  {
+                    configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+                    value: board.id,
+                    workspaceId: wsId,
+                  },
+                  {
+                    onSuccess: () =>
+                      toast.success(t('settings.tasks.default_board_saved')),
+                    onError: () =>
+                      toast.error(
+                        t('settings.tasks.default_board_save_failed')
+                      ),
+                  }
+                )
+              }
+              size="sm"
+              variant="outline"
+            >
+              {t('settings.tasks.use_as_default_board')}
+            </Button>
+          )}
+          <Combobox
+            ariaLabel={t('common.search_boards')}
+            className="w-full md:w-80"
+            contentWidth="lg"
+            disabled={isLoading}
+            emptyText={
+              isLoading ? t('common.loading') : t('common.no_other_boards')
+            }
+            label={
+              <span className="truncate text-left font-medium text-sm">
+                {selectedBoardName}
+              </span>
+            }
+            onChange={(value) => {
+              const nextBoardId = Array.isArray(value) ? value[0] : value;
+              if (!nextBoardId || nextBoardId === board.id) return;
+              void setSettingsQuery({ settingsBoardId: nextBoardId });
+            }}
+            onOpenChange={setSwitcherOpen}
+            options={boardOptions}
+            placeholder={selectedBoardName}
+            searchPlaceholder={t('common.search_boards')}
+            selected={board.id}
+          />
+        </div>
       </div>
     </div>
   );

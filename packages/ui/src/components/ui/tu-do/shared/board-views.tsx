@@ -10,6 +10,7 @@ import {
   type ListWorkspaceTasksOptions,
   listWorkspaceTasks,
 } from '@tuturuuu/internal-api/tasks';
+import { TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -31,6 +32,10 @@ import {
   useMemo,
   useState,
 } from 'react';
+import {
+  useUpdateUserWorkspaceConfig,
+  useUserWorkspaceConfig,
+} from '../../../../hooks/use-user-workspace-config';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import type {
   KanbanDeadlineCollapsedState,
@@ -40,14 +45,21 @@ import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { DraftsPage } from '../drafts/drafts-page';
 import { useTaskDialog } from '../hooks/useTaskDialog';
+import MyTasksContent from '../my-tasks/my-tasks-content';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
+import {
+  parseSpecialTaskListPins,
+  type SpecialTaskListPin,
+  serializeSpecialTaskListPins,
+} from './special-task-list-pins';
 
 export type ViewType =
   | 'kanban'
   | 'list'
+  | 'my_tasks'
   | 'timeline'
   | 'drafts'
   | 'recycle_bin';
@@ -279,6 +291,34 @@ export function BoardViews({
     useState(false);
   const { createTask } = useTaskDialog();
   const localTaskState = readOnly || publicView;
+  const { data: pinnedSpecialListsRaw } = useUserWorkspaceConfig(
+    effectiveWorkspaceId,
+    TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
+    null,
+    { enabled: !localTaskState }
+  );
+  const updateUserWorkspaceConfig = useUpdateUserWorkspaceConfig();
+  const specialTaskListPins = useMemo(
+    () => parseSpecialTaskListPins(pinnedSpecialListsRaw),
+    [pinnedSpecialListsRaw]
+  );
+  const handleSpecialTaskListPinnedChange = useCallback(
+    (pin: SpecialTaskListPin, pinned: boolean) => {
+      const nextPins = {
+        ...specialTaskListPins,
+        [pin]: pinned,
+      };
+
+      if (!pinned) delete nextPins[pin];
+
+      updateUserWorkspaceConfig.mutate({
+        configId: TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
+        value: serializeSpecialTaskListPins(nextPins),
+        workspaceId: effectiveWorkspaceId,
+      });
+    },
+    [effectiveWorkspaceId, specialTaskListPins, updateUserWorkspaceConfig]
+  );
   const enabledViews = useMemo(
     () =>
       availableViews ??
@@ -287,6 +327,7 @@ export function BoardViews({
         : ([
             'kanban',
             'list',
+            'my_tasks',
             'timeline',
             'drafts',
             'recycle_bin',
@@ -427,6 +468,24 @@ export function BoardViews({
       if (!viewIsEnabled(nextView)) return;
       setCurrentView(nextView);
       primeFullTaskCache(nextView);
+
+      if (typeof window !== 'undefined') {
+        const currentUrl = new URL(window.location.href);
+        if (!currentUrl.pathname.includes('/tasks/boards/')) return;
+
+        const params = currentUrl.searchParams;
+        if (nextView === 'kanban') {
+          params.delete('view');
+        } else {
+          params.set('view', nextView);
+        }
+        const nextQuery = params.toString();
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${currentUrl.pathname}${nextQuery ? `?${nextQuery}` : ''}${currentUrl.hash}`
+        );
+      }
     },
     [primeFullTaskCache, viewIsEnabled]
   );
@@ -457,19 +516,29 @@ export function BoardViews({
 
   useLayoutEffect(() => {
     const savedConfig = loadBoardConfig(board.id);
+    const requestedView =
+      typeof window === 'undefined' ||
+      !window.location.pathname.includes('/tasks/boards/')
+        ? null
+        : (new URLSearchParams(window.location.search).get(
+            'view'
+          ) as ViewType | null);
     const defaultView = enabledViews?.[0] ?? 'kanban';
+    const initialView =
+      requestedView && viewIsEnabled(requestedView) ? requestedView : null;
 
     if (!savedConfig) {
-      setCurrentView(defaultView);
+      setCurrentView(initialView ?? defaultView);
       setFilters(DEFAULT_TASK_FILTERS);
       setListStatusFilter('all');
       return;
     }
 
     setCurrentView(
-      viewIsEnabled(savedConfig.currentView)
-        ? savedConfig.currentView
-        : defaultView
+      initialView ??
+        (viewIsEnabled(savedConfig.currentView)
+          ? savedConfig.currentView
+          : defaultView)
     );
     setFilters({
       ...DEFAULT_TASK_FILTERS,
@@ -497,6 +566,8 @@ export function BoardViews({
 
   const handleExternalTasksCollapsedChange = useCallback(
     (collapsed: boolean) => {
+      if (collapsed && specialTaskListPins.external_tasks) return;
+
       setExternalTasksCollapsed(collapsed);
 
       if (!workspace.personal || typeof window === 'undefined') return;
@@ -506,7 +577,7 @@ export function BoardViews({
         String(collapsed)
       );
     },
-    [board.id, workspace.personal]
+    [board.id, specialTaskListPins.external_tasks, workspace.personal]
   );
 
   useEffect(() => {
@@ -542,6 +613,16 @@ export function BoardViews({
 
   const handleTaskListCollapsedChange = useCallback(
     (listId: string, collapsed: boolean) => {
+      if (
+        collapsed &&
+        specialTaskListPins.closed_tasks &&
+        boardLists.some(
+          (list) => list.id === listId && list.status === 'closed'
+        )
+      ) {
+        return;
+      }
+
       setClosedTaskListsCollapsed((previous) => ({
         ...previous,
         [listId]: collapsed,
@@ -554,7 +635,7 @@ export function BoardViews({
         String(collapsed)
       );
     },
-    [board.id]
+    [board.id, boardLists, specialTaskListPins.closed_tasks]
   );
 
   useEffect(() => {
@@ -581,6 +662,14 @@ export function BoardViews({
 
   const handleDeadlineSectionCollapsedChange = useCallback(
     (section: KanbanDeadlineSection, collapsed: boolean) => {
+      if (
+        collapsed &&
+        ((section === 'overdue' && specialTaskListPins.overdue) ||
+          (section === 'upcoming' && specialTaskListPins.upcoming))
+      ) {
+        return;
+      }
+
       setDeadlineSectionsCollapsed((previous) => ({
         ...previous,
         [section]: collapsed,
@@ -593,7 +682,7 @@ export function BoardViews({
         String(collapsed)
       );
     },
-    [board.id]
+    [board.id, specialTaskListPins.overdue, specialTaskListPins.upcoming]
   );
 
   const externalStagingList = useMemo<TaskList | null>(() => {
@@ -611,12 +700,15 @@ export function BoardViews({
       color: 'CYAN',
       position: Number.MIN_SAFE_INTEGER,
       is_external_staging: true,
-      is_external_collapsed: externalTasksCollapsed,
+      is_external_collapsed: specialTaskListPins.external_tasks
+        ? false
+        : externalTasksCollapsed,
     };
   }, [
     board.created_at,
     board.id,
     externalTasksCollapsed,
+    specialTaskListPins.external_tasks,
     tTasks,
     workspace.personal,
   ]);
@@ -628,14 +720,39 @@ export function BoardViews({
         list.status === 'closed'
           ? {
               ...list,
-              is_collapsed: closedTaskListsCollapsed[list.id] ?? true,
+              is_collapsed: specialTaskListPins.closed_tasks
+                ? false
+                : (closedTaskListsCollapsed[list.id] ?? true),
             }
           : list
       );
     return externalStagingList
       ? [externalStagingList, ...realLists]
       : realLists;
-  }, [boardLists, closedTaskListsCollapsed, externalStagingList]);
+  }, [
+    boardLists,
+    closedTaskListsCollapsed,
+    externalStagingList,
+    specialTaskListPins.closed_tasks,
+  ]);
+
+  const effectiveDeadlineSectionsCollapsed =
+    useMemo<KanbanDeadlineCollapsedState>(
+      () => ({
+        overdue: specialTaskListPins.overdue
+          ? false
+          : deadlineSectionsCollapsed.overdue,
+        upcoming: specialTaskListPins.upcoming
+          ? false
+          : deadlineSectionsCollapsed.upcoming,
+      }),
+      [
+        deadlineSectionsCollapsed.overdue,
+        deadlineSectionsCollapsed.upcoming,
+        specialTaskListPins.overdue,
+        specialTaskListPins.upcoming,
+      ]
+    );
 
   const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =
     useQuery({
@@ -867,13 +984,37 @@ export function BoardViews({
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
-            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            deadlineSectionsCollapsed={effectiveDeadlineSectionsCollapsed}
             onDeadlineSectionCollapsedChange={
               handleDeadlineSectionCollapsedChange
             }
+            specialTaskListPins={specialTaskListPins}
+            onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
             readOnly={readOnly}
           />
+        );
+      case 'my_tasks':
+        return (
+          <div className="h-full overflow-y-auto p-3 sm:p-4">
+            <div className="mx-auto max-w-5xl pb-20">
+              {currentUserId ? (
+                <MyTasksContent
+                  disableAutoCreateBoard
+                  embedded
+                  initialBoard={{
+                    id: board.id,
+                    name: board.name ?? null,
+                  }}
+                  initialLists={boardLists}
+                  initialListId={board.default_list_id ?? undefined}
+                  isPersonal={workspace.personal}
+                  userId={currentUserId}
+                  wsId={effectiveWorkspaceId}
+                />
+              ) : null}
+            </div>
+          </div>
         );
       case 'list':
         return (
@@ -976,10 +1117,12 @@ export function BoardViews({
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
-            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            deadlineSectionsCollapsed={effectiveDeadlineSectionsCollapsed}
             onDeadlineSectionCollapsedChange={
               handleDeadlineSectionCollapsedChange
             }
+            specialTaskListPins={specialTaskListPins}
+            onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
             readOnly={readOnly}
           />
