@@ -304,8 +304,12 @@ export {
 } from './client';
 export type {
   CreateWorkspaceQuizPayload,
+  ListAllWorkspaceCourseModulesParams,
+  ListAllWorkspaceCourseModulesResponse,
   ListCourseModuleQuizSetsParams,
   ListCourseModuleQuizSetsResponse,
+  ListQuizSetLinkedModulesParams,
+  ListQuizSetLinkedModulesResponse,
   ListQuizSetQuizzesParams,
   ListWorkspaceCoursesParams,
   ListWorkspaceCoursesResponse,
@@ -364,6 +368,7 @@ export {
   generateValseaClassroomScenario,
   generateWorkspaceQuizOptionExplanation,
   getCourseModuleQuizSets,
+  getQuizSetLinkedModules,
   getQuizSetQuizzes,
   getValseaClassroomConfig,
   getWorkspaceEducationAttemptDetail,
@@ -371,6 +376,7 @@ export {
   getWorkspaceQuizSets,
   getWorkspaceQuizzes,
   linkQuizSetModules,
+  listAllWorkspaceCourseModules,
   listWorkspaceCourseModuleGroupModules,
   listWorkspaceCourseModuleGroups,
   listWorkspaceCourseModules,
