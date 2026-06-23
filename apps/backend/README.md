@@ -328,6 +328,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   `p_ws_id`/`p_limit`/`p_offset` payload, `taken_at` descending order, and
   `p_include_count=true`, then returns the raw RPC rows plus the first row's
   `total_count` as the legacy `count`.
+- `GET /api/v1/workspaces/:wsId/finance/budgets/status`: legacy-compatible
+  budget status probe. Rust accepts finance/platform app-session or CLI
+  app-session credentials before falling back to a normal Supabase session,
+  normalizes the workspace identifier, requires `manage_finance`, calls
+  `get_budget_status` with the service-role credential, and preserves the raw
+  legacy payload plus Unauthorized, Insufficient permissions, and budget status
+  error bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

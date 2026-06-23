@@ -35,6 +35,12 @@ pub(crate) fn request_access_token(request: BackendRequest<'_>) -> Option<String
         return None;
     }
 
+    request_access_token_allowing_app_sessions(request)
+}
+
+pub(crate) fn request_access_token_allowing_app_sessions(
+    request: BackendRequest<'_>,
+) -> Option<String> {
     bearer_access_token(request.authorization).or_else(|| {
         request
             .cookie

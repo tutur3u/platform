@@ -834,6 +834,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallet-transactions by forwarding the normal Supabase browser session or non-app-session Bearer token to the get_wallet_transactions_with_permissions RPC with the legacy p_ws_id, p_limit, p_offset, p_order_by=taken_at, p_order_direction=DESC, and p_include_count=true payload, preserving caller-token permission/RLS behavior, the required ws_id parameter, parseInt-style limit/offset behavior, raw RPC rows, first-row total_count extraction, and legacy error body."
     },
+    "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/budgets/status by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling get_budget_status with the service-role credential, returning the raw legacy RPC payload, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching budget status bodies."
+    },
     "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
       "methods": {
         "GET": {

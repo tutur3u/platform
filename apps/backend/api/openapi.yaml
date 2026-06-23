@@ -8263,6 +8263,70 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/finance/budgets/status:
+    get:
+      summary: Workspace finance budget status
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts
+        GET. The Rust backend accepts finance/platform app-session tokens and
+        CLI app-session tokens before falling back to a normal Supabase browser
+        session or non-app-session Bearer token, normalizes internal, personal,
+        handle, and UUID workspace identifiers, requires `manage_finance`
+        through `has_workspace_permission`, calls `get_budget_status` with the
+        server-owned service-role credential, returns the raw legacy RPC payload,
+        and preserves the legacy Unauthorized, Insufficient permissions, and
+        Error fetching budget status bodies.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Raw budget status rows returned by the legacy get_budget_status RPC.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetStatusResponse"
+        "401":
+          description: Missing or invalid finance caller credentials, or unresolved workspace access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetStatusMessage"
+        "403":
+          description: Authenticated caller lacks manage_finance permission for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetStatusMessage"
+        "500":
+          description: Budget status lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceBudgetStatusMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/settings/permissions/check:
     get:
       summary: Workspace setting permission check
@@ -9094,6 +9158,22 @@ components:
         enabled:
           type: boolean
           description: Whether the authenticated caller can access education features for the workspace. Legacy workspace, feature-flag, permission, and lookup failures return false.
+    FinanceBudgetStatusResponse:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    FinanceBudgetStatusMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+            - Insufficient permissions
+            - Error fetching budget status
     UnauthorizedError:
       type: object
       required:
