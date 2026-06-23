@@ -216,6 +216,14 @@
     "submittedAt": "Submitted {date}",
     "startedAt": "Started {date}",
     "answeredQuestions": "{answered}/{total} answered",
+    "submissionDetails": "Submission Details",
+    "attemptScore": "Score",
+    "correctAnswers": "Correct Answers",
+    "incorrectAnswers": "Incorrect Answers",
+    "questionFeedback": "Question Feedback",
+    "feedbackPlaceholder": "Add your feedback here...",
+    "saveFeedback": "Save Feedback",
+    "feedbackSaved": "Feedback saved successfully",
     "aiGenerate": {
       "actions": {
         "cancel": "Cancel",

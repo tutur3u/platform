@@ -14765,6 +14765,7 @@ export type Database = {
           answer: Json | null;
           attempt_id: string;
           created_at: string;
+          feedback: string | null;
           id: string;
           is_correct: boolean | null;
           quiz_id: string;
@@ -14775,6 +14776,7 @@ export type Database = {
           answer?: Json | null;
           attempt_id: string;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
           is_correct?: boolean | null;
           quiz_id: string;
@@ -14785,6 +14787,7 @@ export type Database = {
           answer?: Json | null;
           attempt_id?: string;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
           is_correct?: boolean | null;
           quiz_id?: string;

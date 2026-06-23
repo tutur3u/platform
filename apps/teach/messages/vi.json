@@ -216,6 +216,14 @@
     "submittedAt": "Đã nộp {date}",
     "startedAt": "Bắt đầu {date}",
     "answeredQuestions": "{answered}/{total} đã trả lời",
+    "submissionDetails": "Chi tiết bài nộp",
+    "attemptScore": "Điểm số",
+    "correctAnswers": "Đáp án đúng",
+    "incorrectAnswers": "Đáp án sai",
+    "questionFeedback": "Phản hồi câu hỏi",
+    "feedbackPlaceholder": "Nhập phản hồi của bạn tại đây...",
+    "saveFeedback": "Lưu phản hồi",
+    "feedbackSaved": "Đã lưu phản hồi thành công",
     "aiGenerate": {
       "actions": {
         "cancel": "Hủy",

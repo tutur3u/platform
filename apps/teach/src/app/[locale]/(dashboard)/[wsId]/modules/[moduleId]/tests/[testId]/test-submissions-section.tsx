@@ -6,6 +6,8 @@ import type { TeachTestSubmission } from '@tuturuuu/internal-api';
 import { listWorkspaceCourseTestSubmissions } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { TestSubmissionDetailDialog } from './test-submission-detail-dialog';
 
 interface TestSubmissionsSectionProps {
   wsId: string;
@@ -26,6 +28,9 @@ export function TestSubmissionsSection({
 }: TestSubmissionsSectionProps) {
   const t = useTranslations();
   const locale = useLocale();
+
+  const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(null);
+  const [selectedStudentName, setSelectedStudentName] = useState<string>('');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['course-test-submissions', wsId, courseId, testId],
@@ -150,9 +155,28 @@ export function TestSubmissionsSection({
             locale={locale}
             submission={submission}
             t={t}
+            onClick={() => {
+              setSelectedAttemptId(submission.id);
+              setSelectedStudentName(submission.userName);
+            }}
           />
         ))}
       </div>
+
+      <TestSubmissionDetailDialog
+        wsId={wsId}
+        courseId={courseId}
+        testId={testId}
+        attemptId={selectedAttemptId}
+        studentName={selectedStudentName}
+        open={!!selectedAttemptId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedAttemptId(null);
+            setSelectedStudentName('');
+          }
+        }}
+      />
     </div>
   );
 }
@@ -188,10 +212,12 @@ function SubmissionRow({
   submission,
   locale,
   t,
+  onClick,
 }: {
   submission: TeachTestSubmission;
   locale: string;
   t: ReturnType<typeof useTranslations>;
+  onClick: () => void;
 }) {
   const isSubmitted = !!submission.submittedAt;
   const scorePercent =
@@ -200,7 +226,17 @@ function SubmissionRow({
       : null;
 
   return (
-    <div className="flex items-center gap-4 border-2 border-border bg-background p-4 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]">
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
+      className="flex items-center gap-4 border-2 border-border bg-background p-4 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] cursor-pointer select-none"
+    >
       {/* Status icon */}
       <span
         className={cn(

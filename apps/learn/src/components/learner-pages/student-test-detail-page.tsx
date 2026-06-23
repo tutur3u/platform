@@ -350,7 +350,7 @@ export function StudentTestDetailPage({
           score_awarded: 0,
         };
         
-        const isCorrect = quizAns.is_correct;
+        const isCorrect = quizAns.is_correct ?? false;
 
         // Render choice options helper
         if (!quiz.type || quiz.type === 'multiple_choice') {
@@ -634,6 +634,16 @@ export function StudentTestDetailPage({
                           </div>
                         </div>
                         {renderQuizReview(quiz)}
+                        {quizAns?.feedback && (
+                          <div className="mt-4 border-2 border-primary bg-primary/5 p-4 shadow-[2px_2px_0_var(--border)] text-left">
+                            <span className="block font-black uppercase tracking-wider text-[10px] text-primary mb-1">
+                              Teacher's Feedback:
+                            </span>
+                            <p className="font-bold text-sm text-foreground">
+                              {quizAns.feedback}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

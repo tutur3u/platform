@@ -408,3 +408,79 @@ export function listWorkspaceCourseTestSubmissions(
     { cache: 'no-store' }
   );
 }
+
+export interface TeachTestSubmissionDetail {
+  attempt: {
+    id: string;
+    test_id: string;
+    user_id: string;
+    started_at: string;
+    submitted_at: string | null;
+    score: number | null;
+    created_at: string;
+  };
+  student: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+  quizzes: Array<{
+    id: string;
+    question: string;
+    type: string | null;
+    content: any;
+    score: number;
+    quiz_options?: Array<{
+      id: string;
+      value: string;
+      is_correct?: boolean;
+      explanation?: string | null;
+    }>;
+  }>;
+  answers: Array<{
+    quiz_id: string;
+    selected_option_id: string | null;
+    answer: any;
+    is_correct: boolean | null;
+    score_awarded: number | null;
+    feedback: string | null;
+  }>;
+}
+
+export function getWorkspaceCourseTestSubmission(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  attemptId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TeachTestSubmissionDetail>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
+    { cache: 'no-store' }
+  );
+}
+
+export function updateWorkspaceCourseTestSubmissionFeedback(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  attemptId: string,
+  payload: {
+    quizId: string;
+    feedback: string | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean; answer: any }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}

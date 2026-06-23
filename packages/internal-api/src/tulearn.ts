@@ -155,6 +155,9 @@ export interface TulearnTestAttemptAnswer {
   quiz_id: string;
   selected_option_id: string | null;
   answer: unknown;
+  is_correct?: boolean;
+  score_awarded?: number;
+  feedback?: string | null;
 }
 
 export interface TulearnTestAttemptResponse {
