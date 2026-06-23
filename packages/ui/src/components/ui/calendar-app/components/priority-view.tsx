@@ -23,6 +23,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   listWorkspaceTaskLists,
+  listWorkspaceTasks,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -40,7 +41,6 @@ import ActionsDropdown from './actions-dropdown';
 import PriorityDropdown from './priority-dropdown';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SchedulingDialog } from './scheduling-dialog';
-import { getAssignedTasks } from './task-fetcher';
 
 // Priority labels (matching task-properties-section.tsx)
 const PRIORITY_LABELS: Record<TaskPriority, string> = {
@@ -356,8 +356,15 @@ export default function PriorityView({
     setSearchError(null);
 
     try {
-      const results = await getAssignedTasks(assigneeId, searchQuery.trim());
-      setSearchResults(results);
+      const results = await listWorkspaceTasks(wsId, {
+        assigneeIds: [assigneeId],
+        closed: 'exclude',
+        completed: 'exclude',
+        includeArchivedBoards: true,
+        limit: 50,
+        q: searchQuery.trim(),
+      });
+      setSearchResults(results.tasks as ExtendedWorkspaceTask[]);
     } catch (error) {
       console.error('Error searching tasks:', error);
       setSearchError('Failed to search tasks');

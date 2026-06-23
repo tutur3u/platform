@@ -625,10 +625,10 @@ async fn load_message_labels(
 
     let mut label_ids: Vec<String> = Vec::new();
     for link in links {
-        if let Some(id) = link.label_id {
-            if !label_ids.contains(&id) {
-                label_ids.push(id);
-            }
+        if let Some(id) = link.label_id
+            && !label_ids.contains(&id)
+        {
+            label_ids.push(id);
         }
     }
     if label_ids.is_empty() {

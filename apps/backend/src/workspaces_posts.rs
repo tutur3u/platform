@@ -302,15 +302,11 @@ fn parse_posts_query(request_url: Option<&str>) -> PostsQuery {
                     query.page_size = parsed;
                 }
             }
-            "includedGroups" => {
-                if !value.is_empty() {
-                    query.included_groups.push(value);
-                }
+            "includedGroups" if !value.is_empty() => {
+                query.included_groups.push(value);
             }
-            "excludedGroups" => {
-                if !value.is_empty() {
-                    query.excluded_groups.push(value);
-                }
+            "excludedGroups" if !value.is_empty() => {
+                query.excluded_groups.push(value);
             }
             "start" if !start_seen => {
                 start_seen = true;
@@ -418,12 +414,10 @@ async fn send_private_rpc(
     function: &str,
     body: &impl Serialize,
 ) -> Result<OutboundResponse, String> {
-    let rpc_url = contact_data
-        .rpc_url(function)
-        .ok_or_else(|| unknown_message())?;
+    let rpc_url = contact_data.rpc_url(function).ok_or_else(unknown_message)?;
     let service_role_key = contact_data
         .service_role_key()
-        .ok_or_else(|| unknown_message())?;
+        .ok_or_else(unknown_message)?;
     let authorization = format!("Bearer {service_role_key}");
     let serialized = serde_json::to_string(body).map_err(unknown_error)?;
 
@@ -862,10 +856,7 @@ fn non_empty(value: String) -> Option<String> {
 }
 
 fn value_in(value: &str, allowed: &[&str]) -> Option<String> {
-    allowed
-        .iter()
-        .any(|candidate| *candidate == value)
-        .then(|| value.to_owned())
+    allowed.contains(&value).then(|| value.to_owned())
 }
 
 fn unknown_message() -> String {

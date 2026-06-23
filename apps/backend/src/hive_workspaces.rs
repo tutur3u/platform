@@ -179,10 +179,10 @@ async fn fetch_workspace_summaries(
     let normalized_email = private_details
         .as_ref()
         .and_then(|details| normalize_share_email(details.email.as_deref()));
-    if let Some(email) = normalized_email.as_deref() {
-        if let Ok(rows) = guest_shares_by_email(contact_data, outbound, email).await {
-            guest_share_rows.extend(rows);
-        }
+    if let Some(email) = normalized_email.as_deref()
+        && let Ok(rows) = guest_shares_by_email(contact_data, outbound, email).await
+    {
+        guest_share_rows.extend(rows);
     }
 
     // Collect subscription product ids from member + guest workspaces.
@@ -624,10 +624,10 @@ fn resolve_workspace_tier(
     });
 
     for subscription in active {
-        if let Some(product_id) = &subscription.product_id {
-            if let Some(Some(tier)) = product_tiers_by_id.get(product_id) {
-                return Some(tier.clone());
-            }
+        if let Some(product_id) = &subscription.product_id
+            && let Some(Some(tier)) = product_tiers_by_id.get(product_id)
+        {
+            return Some(tier.clone());
         }
     }
     None
@@ -657,10 +657,10 @@ fn resolve_workspace_tier_value(
                 .cmp(&value_str(a, "created_at").unwrap_or_default())
         });
         for subscription in active {
-            if let Some(product_id) = value_str(subscription, "product_id") {
-                if let Some(Some(tier)) = product_tiers_by_id.get(&product_id) {
-                    return Some(Some(tier.clone()));
-                }
+            if let Some(product_id) = value_str(subscription, "product_id")
+                && let Some(Some(tier)) = product_tiers_by_id.get(&product_id)
+            {
+                return Some(Some(tier.clone()));
             }
         }
         Some(None)

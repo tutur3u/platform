@@ -88,7 +88,6 @@ fn read_watcher_log_archive(page: usize, page_size: usize) -> serde_json::Value 
 struct ArchivePage {
     offset: usize,
     page: usize,
-    page_count: usize,
 }
 
 /// Replicates `getArchivePage`.
@@ -101,7 +100,6 @@ fn get_archive_page(page: usize, total: usize, page_size: usize) -> ArchivePage 
     ArchivePage {
         offset: (resolved_page - 1) * page_size,
         page: resolved_page,
-        page_count,
     }
 }
 
