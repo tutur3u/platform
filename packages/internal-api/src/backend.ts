@@ -1,4 +1,4 @@
-import type { AbuseEvent } from '@tuturuuu/types';
+import type { AbuseEvent, VietnameseHoliday } from '@tuturuuu/types';
 import type {
   InternalOtpClient,
   InternalOtpPlatform,
@@ -162,6 +162,38 @@ export type BackendInfrastructureTimezoneWriteRequest = Omit<
 >;
 
 export type BackendInfrastructureTimezonesMessage = {
+  message: string;
+};
+
+export type BackendVietnameseHoliday = VietnameseHoliday;
+
+export type BackendInternalHolidaysQuery = {
+  year?: number | string;
+};
+
+export type BackendInternalHolidayCreateRequest = {
+  date: string;
+  name: string;
+};
+
+export type BackendInternalHolidayUpdateRequest =
+  Partial<BackendInternalHolidayCreateRequest>;
+
+export type BackendInternalHolidayBulkImportItem =
+  BackendInternalHolidayCreateRequest;
+
+export type BackendInternalHolidayBulkImportRequest = {
+  holidays: BackendInternalHolidayBulkImportItem[];
+  replaceExisting?: boolean;
+};
+
+export type BackendInternalHolidayBulkImportResponse = {
+  imported: number;
+  message: string;
+  yearsAffected: number[];
+};
+
+export type BackendInternalHolidayMutationMessage = {
   message: string;
 };
 
@@ -825,6 +857,101 @@ export function deleteBackendInfrastructureTimezone(
       cache: 'no-store',
       headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
       method: 'DELETE',
+    }
+  );
+}
+
+export function getBackendInternalHolidays(
+  query: BackendInternalHolidaysQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  const apiQuery: InternalApiQuery = {
+    year: query.year,
+  };
+
+  return createBackendApiClient(options).json<BackendVietnameseHoliday[]>(
+    '/api/v1/internal/holidays',
+    {
+      cache: 'no-store',
+      query: apiQuery,
+    }
+  );
+}
+
+export function createBackendInternalHoliday(
+  payload: BackendInternalHolidayCreateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(clientOptions).json<BackendVietnameseHoliday>(
+    '/api/v1/internal/holidays',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateBackendInternalHoliday(
+  holidayId: string,
+  payload: BackendInternalHolidayUpdateRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(clientOptions).json<BackendVietnameseHoliday>(
+    `/api/v1/internal/holidays/${backendPathSegment(holidayId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteBackendInternalHoliday(
+  holidayId: string,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInternalHolidayMutationMessage>(
+    `/api/v1/internal/holidays/${backendPathSegment(holidayId)}`,
+    {
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {}),
+      method: 'DELETE',
+    }
+  );
+}
+
+export function bulkImportBackendInternalHolidays(
+  payload: BackendInternalHolidayBulkImportRequest,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInternalHolidayBulkImportResponse>(
+    '/api/v1/internal/holidays/bulk',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
     }
   );
 }

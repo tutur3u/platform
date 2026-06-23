@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  bulkImportBackendInternalHolidays,
   checkBackendWorkspacePermission,
   createBackendApiClient,
   createBackendInfrastructureTimezone,
+  createBackendInternalHoliday,
   createBackendSupportInquiry,
   deleteBackendInfrastructureTimezone,
+  deleteBackendInternalHoliday,
   getBackendAiWhitelistMe,
   getBackendAuthMe,
   getBackendAuthMfaAssuranceLevel,
@@ -15,6 +18,7 @@ import {
   getBackendHiveAccess,
   getBackendInfrastructureAbuseEvents,
   getBackendInfrastructureTimezones,
+  getBackendInternalHolidays,
   getBackendLegacyHealth,
   getBackendMigrationCutoverGates,
   getBackendMigrationManifest,
@@ -30,6 +34,7 @@ import {
   getBackendWorkspacePostPermissions,
   getConfiguredBackendApiBaseUrl,
   updateBackendInfrastructureTimezone,
+  updateBackendInternalHoliday,
   withBackendServiceBinding,
   withForwardedBackendApiAuth,
 } from './backend';
@@ -689,6 +694,130 @@ describe('backend API client', () => {
     expect(postHeaders.get('origin')).toBe('http://backend:7820');
     expect(putHeaders.get('content-type')).toBe('application/json');
     expect(deleteHeaders.get('origin')).toBe('http://backend:7820');
+  });
+
+  it('reads and mutates Rust-owned internal holidays with encoded detail paths', async () => {
+    const holiday = {
+      created_at: '2026-01-01 00:00:00+00',
+      date: '2026-01-01',
+      id: 'holiday/id',
+      name: 'New Year',
+      year: 2026,
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => holiday,
+    });
+
+    await getBackendInternalHolidays(
+      { year: 2026 },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await createBackendInternalHoliday(
+      {
+        date: '2026-01-01',
+        name: 'New Year',
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await updateBackendInternalHoliday(
+      'holiday/id',
+      {
+        name: 'Updated New Year',
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await deleteBackendInternalHoliday('holiday/id', {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await bulkImportBackendInternalHolidays(
+      {
+        holidays: [{ date: '2026-01-01', name: 'New Year' }],
+        replaceExisting: true,
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://backend:7820/api/v1/internal/holidays?year=2026',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://backend:7820/api/v1/internal/holidays',
+      expect.objectContaining({
+        body: JSON.stringify({
+          date: '2026-01-01',
+          name: 'New Year',
+        }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://backend:7820/api/v1/internal/holidays/holiday%2Fid',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Updated New Year',
+        }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://backend:7820/api/v1/internal/holidays/holiday%2Fid',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'DELETE',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'http://backend:7820/api/v1/internal/holidays/bulk',
+      expect.objectContaining({
+        body: JSON.stringify({
+          holidays: [{ date: '2026-01-01', name: 'New Year' }],
+          replaceExisting: true,
+        }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+
+    const createHeaders = new Headers(getFetchInit(fetchMock, 1)?.headers);
+    const updateHeaders = new Headers(getFetchInit(fetchMock, 2)?.headers);
+    const deleteHeaders = new Headers(getFetchInit(fetchMock, 3)?.headers);
+    const bulkHeaders = new Headers(getFetchInit(fetchMock, 4)?.headers);
+
+    expect(createHeaders.get('content-type')).toBe('application/json');
+    expect(createHeaders.get('origin')).toBe('http://backend:7820');
+    expect(updateHeaders.get('content-type')).toBe('application/json');
+    expect(deleteHeaders.get('origin')).toBe('http://backend:7820');
+    expect(bulkHeaders.get('content-type')).toBe('application/json');
   });
 
   it('reads the Rust-owned current Nova team including null memberships', async () => {
