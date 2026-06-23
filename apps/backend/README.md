@@ -112,6 +112,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   reads `workspace_users.email` with the caller token, and preserves the legacy
   `{ "email": [...] }` success payload plus `{ "error": ... }` auth,
   membership, and Supabase failure bodies.
+- `GET /api/v1/workspaces/:wsId/habits/access`: legacy-compatible habits
+  feature access probe. Rust revalidates a normal Supabase browser session or
+  non-app-session Bearer token, resolves `internal`, `personal`, UUID, and
+  direct handle workspace identifiers, requires exact `MEMBER` workspace
+  membership through the service-role Supabase REST adapter, reads
+  `ENABLE_HABITS` from `workspace_secrets`, and preserves the exact
+  `value === "true"` enabled contract.
 - `GET /api/v1/workspaces/:wsId/mobile/module-flags`: legacy-compatible mobile
   module visibility endpoint. Rust revalidates a normal Supabase browser
   session or non-app-session Bearer token, resolves the legacy `internal`

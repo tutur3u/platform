@@ -84,6 +84,9 @@ mod user_identities;
 mod user_identities_test;
 mod user_profile;
 mod workspace_education_access;
+mod workspace_habits_access;
+#[cfg(test)]
+mod workspace_habits_access_test;
 mod workspace_limits;
 mod workspace_mentions;
 #[cfg(test)]
@@ -525,6 +528,13 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_habits_access::handle_workspace_habits_access_route(config, request, outbound)
+            .await
     {
         return response;
     }

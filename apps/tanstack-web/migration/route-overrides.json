@@ -844,6 +844,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/Mention by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, requiring exact MEMBER workspace membership through the caller-token workspace_members read, reading workspace_users.email with the caller token, returning the legacy singular email array payload, and preserving the legacy Unauthorized, Forbidden, Failed to verify workspace access, and Supabase error bodies."
     },
+    "api:/api/v1/workspaces/:wsId/habits/access:apps/web/src/app/api/v1/workspaces/[wsId]/habits/access/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/habits/access by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, preserving internal, personal, UUID, and handle workspace normalization, requiring exact MEMBER workspace membership through the service-role workspace_members read, reading ENABLE_HABITS from workspace_secrets through the service-role Supabase REST adapter with exact value=true matching, returning the legacy enabled payload, and preserving Unauthorized, Forbidden, workspace-access lookup, and disabled-secret behavior."
+    },
     "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

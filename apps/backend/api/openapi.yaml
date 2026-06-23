@@ -8289,6 +8289,71 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/habits/access:
+    get:
+      summary: Workspace habits feature access
+      description: >-
+        Migrated replacement for
+        apps/web/src/app/api/v1/workspaces/[wsId]/habits/access/route.ts GET.
+        The Rust backend revalidates a normal Supabase browser session or
+        non-app-session Bearer token, resolves `internal`, `personal`, UUID, and
+        direct handle workspace identifiers, requires exact `MEMBER` workspace
+        membership through the service-role Supabase REST adapter, reads
+        `ENABLE_HABITS` from `workspace_secrets`, and preserves the legacy exact
+        `value === "true"` enabled contract.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Whether the habits feature is enabled for the workspace.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHabitsAccessResponse"
+        "401":
+          description: Supabase session is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHabitsAccessMessage"
+        "403":
+          description: Caller is not a MEMBER of the requested workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHabitsAccessMessage"
+        "500":
+          description: Workspace normalization or membership lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceHabitsAccessMessage"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/mobile/module-flags:
     get:
       summary: Workspace mobile module flags
@@ -9775,6 +9840,25 @@ components:
         - error
       properties:
         error:
+          type: string
+          examples:
+            - Unauthorized
+            - Forbidden
+            - Failed to verify workspace access
+    WorkspaceHabitsAccessResponse:
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: True only when the latest ENABLE_HABITS workspace secret has exact value "true".
+    WorkspaceHabitsAccessMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
           type: string
           examples:
             - Unauthorized
