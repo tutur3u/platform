@@ -6,6 +6,8 @@
     "moduleResolution": "Bundler",
     "paths": {
       "@/*": ["./src/*"],
+      "next/link": ["./src/lib/platform/next-link-shim.tsx"],
+      "next/navigation": ["./src/lib/platform/next-navigation-shim.tsx"],
       "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
       "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
       "@tuturuuu/supabase": ["../../packages/supabase/src/index.ts"],

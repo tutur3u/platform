@@ -3,19 +3,27 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
+  checkMFAVerifyLimit,
   checkOTPSendAllowed,
+  checkOTPVerifyLimit,
   checkPasswordLoginLimit,
+  checkReauthVerifyLimit,
   classifyPotentialSpamUserAgent,
   clearPasswordLoginFailures,
   extractIPFromHeaders,
   hashEmail,
+  isSharedIpThrottleOnlyBlockReason,
   MAX_BLOCK_LEVEL,
   REDIS_KEYS,
+  recordMFAVerifyFailure,
   recordOTPSendSuccess,
+  recordOTPVerifyFailure,
   recordPasswordLoginFailure,
+  recordReauthVerifyFailure,
   resetOtpLimitsForEmail,
   WINDOW_MS,
 } from '../index';
@@ -251,6 +259,23 @@ describe('abuse-protection', () => {
     });
   });
 
+  describe('shared-IP hard block suppression', () => {
+    it('keeps human-auth failure reasons throttle-only', () => {
+      expect(isSharedIpThrottleOnlyBlockReason('otp_send')).toBe(true);
+      expect(isSharedIpThrottleOnlyBlockReason('otp_verify_failed')).toBe(true);
+      expect(isSharedIpThrottleOnlyBlockReason('mfa_verify_failed')).toBe(true);
+      expect(isSharedIpThrottleOnlyBlockReason('reauth_verify_failed')).toBe(
+        true
+      );
+      expect(isSharedIpThrottleOnlyBlockReason('password_login_failed')).toBe(
+        true
+      );
+      expect(isSharedIpThrottleOnlyBlockReason('api_auth_failed')).toBe(false);
+      expect(isSharedIpThrottleOnlyBlockReason('api_abuse')).toBe(false);
+      expect(isSharedIpThrottleOnlyBlockReason('manual')).toBe(false);
+    });
+  });
+
   describe('password login failure limits', () => {
     it('keeps the IP-wide failure counter after another account succeeds', async () => {
       const ipAddress = '203.0.113.41';
@@ -292,6 +317,33 @@ describe('abuse-protection', () => {
         allowed: true,
         remainingAttempts: 10,
       });
+    });
+
+    it('throttles shared-IP password failures without writing a hard IP block', async () => {
+      const ipAddress = '203.0.113.42';
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordPasswordLoginFailure(
+          ipAddress,
+          `password-shared-ip-${attempt}@example.com`
+        );
+      }
+
+      const result = await checkPasswordLoginLimit(
+        ipAddress,
+        'another-user@example.com'
+      );
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed login attempts',
+        remainingAttempts: 0,
+      });
+      expect(result.blocked).not.toBe(true);
     });
   });
 
@@ -467,6 +519,90 @@ describe('abuse-protection', () => {
 
       expect(blockedAttempt.allowed).toBe(false);
       expect(blockedAttempt.retryAfter).toBeGreaterThan(0);
+    });
+
+    it('throttles aggressive shared-IP OTP sends without writing a hard IP block', async () => {
+      vi.stubEnv('ABUSE_OTP_SEND_IP_LIMIT_MINUTE', '1');
+      const ipAddress = '198.51.100.12';
+
+      await expect(
+        checkOTPSendAllowed(ipAddress, 'otp-shared-ip-1@example.com')
+      ).resolves.toMatchObject({ allowed: true });
+
+      const blockedAttempt = await checkOTPSendAllowed(
+        ipAddress,
+        'otp-shared-ip-2@example.com'
+      );
+
+      expect(blockedAttempt).toMatchObject({
+        allowed: false,
+        remainingAttempts: 0,
+      });
+      expect(blockedAttempt.blocked).not.toBe(true);
+    });
+
+    it('throttles shared-IP OTP verify failures without writing a hard IP block', async () => {
+      const ipAddress = '198.51.100.13';
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.OTP_VERIFY_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordOTPVerifyFailure(
+          ipAddress,
+          `otp-verify-shared-ip-${attempt}@example.com`
+        );
+      }
+
+      const result = await checkOTPVerifyLimit(
+        ipAddress,
+        'legit-teacher@example.com'
+      );
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed verification attempts from this IP',
+        remainingAttempts: 0,
+      });
+      expect(result.blocked).not.toBe(true);
+    });
+
+    it('throttles shared-IP MFA and reauth failures without writing a hard IP block', async () => {
+      const mfaIpAddress = '198.51.100.14';
+      const reauthIpAddress = '198.51.100.15';
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordMFAVerifyFailure(mfaIpAddress);
+      }
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordReauthVerifyFailure(reauthIpAddress);
+      }
+
+      const mfaResult = await checkMFAVerifyLimit(mfaIpAddress);
+      const reauthResult = await checkReauthVerifyLimit(reauthIpAddress);
+
+      expect(mfaResult).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed MFA verification attempts',
+        remainingAttempts: 0,
+      });
+      expect(reauthResult).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed reauthentication attempts',
+        remainingAttempts: 0,
+      });
+      expect(mfaResult.blocked).not.toBe(true);
+      expect(reauthResult.blocked).not.toBe(true);
     });
 
     it('caps successful sends for the same email across distributed IPs within an hour', async () => {

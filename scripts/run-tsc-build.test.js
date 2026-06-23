@@ -7,10 +7,10 @@ const path = require('node:path');
 const {
   buildInfoMarkerPath,
   syncBuildInfoCache,
-} = require('./run-tsgo-build.js');
+} = require('./run-tsc-build.js');
 
 function createTempRepo() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'run-tsgo-build-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'run-tsc-build-'));
 }
 
 function writeFile(filePath, contents) {

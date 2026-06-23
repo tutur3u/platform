@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { describe, expect, it } from 'vitest';
 import { mergeWorkspaceSelectWorkspaces } from '../workspace-select-helpers';
@@ -35,5 +37,22 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
     expect(mergeWorkspaceSelectWorkspaces([workspace], workspace)).toEqual([
       workspace,
     ]);
+  });
+
+  it('keeps workspace fallback images outside Radix AvatarImage context', () => {
+    const workspaceSelectSource = readFileSync(
+      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
+      'utf8'
+    );
+    const workspaceIconSource = workspaceSelectSource.slice(
+      workspaceSelectSource.indexOf('function WorkspaceIcon'),
+      workspaceSelectSource.indexOf('export function WorkspaceSelect')
+    );
+
+    expect(workspaceIconSource).toContain('<AvatarFallback');
+    expect(workspaceIconSource).toContain('<Image');
+    expect(workspaceIconSource).not.toMatch(
+      /<AvatarFallback[\s\S]*<AvatarImage/u
+    );
   });
 });

@@ -3,7 +3,7 @@
   "version": "0.9.0",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsgo-build.js --build",
+    "type-check": "node ../../scripts/run-tsc-build.js --build",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7811} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
@@ -31,7 +31,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tiptap/react": "^3.26.1",
+    "@tiptap/react": "^3.27.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -48,7 +48,7 @@
     "cmdk": "^1.1.1",
     "cookies-next": "^6.1.1",
     "dayjs": "^1.11.20",
-    "nanoid": "^5.1.11",
+    "nanoid": "^5.1.15",
     "negotiator": "^1.0.0",
     "next": "^16.2.9",
     "next-intl": "^4.13.0",
@@ -57,7 +57,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.79.0",
+    "react-hook-form": "^7.80.0",
     "remark-gfm": "^4.0.1",
     "zod": "^4.4.3"
   },
@@ -67,14 +67,15 @@
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "7.0.0-dev.20260614.1",
     "@vitejs/plugin-react": "^6.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.14",
-    "typescript": "^6.0.3"
+    "typescript": "7.0.1-rc"
   },
   "packageManager": "bun@1.3.14",
   "portless": {

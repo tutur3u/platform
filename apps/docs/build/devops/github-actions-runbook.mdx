@@ -444,9 +444,18 @@ successful `vercel-production-platform` deployment marker for the same SHA
 before it can run production migrations.
 
 Filtered production Docker installs only include the selected app and the
-dependencies that app needs. Workspace packages with direct `tsgo` build scripts
-must declare `@typescript/native-preview` in their own `devDependencies`; do not
-rely on the root devDependency for production Docker builds.
+dependencies that app needs. Workspace packages with direct `tsc` build scripts
+must declare `typescript` in their own `devDependencies`; do not
+rely on the root devDependency for production Docker builds. Programmatic
+compiler API consumers must stay on the active TypeScript 7 toolchain instead
+of carrying legacy compiler compatibility packages.
+
+Next.js production apps also declare `@typescript/native-preview` in their own
+`devDependencies` while the repo uses the TypeScript 7 native compiler package.
+The TS7 `typescript` package does not ship the legacy
+`typescript/lib/typescript.js` API file that Next checks during build-time
+TypeScript setup; the native-preview marker makes Next use its supported TS7
+native compiler path instead of trying to auto-install classic TypeScript.
 
 ### Newer-commit guards
 

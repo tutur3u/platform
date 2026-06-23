@@ -5,6 +5,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod ai_models;
 mod ai_whitelist;
+mod ai_whitelist_delete;
+#[cfg(test)]
+mod ai_whitelist_test;
 mod aurora;
 mod auth_me;
 mod auth_mfa;
@@ -13,11 +16,66 @@ mod contact;
 mod crawlers;
 #[cfg(test)]
 mod cron_monitoring_test;
+mod current_user_calendar_settings;
+#[cfg(test)]
+mod current_user_calendar_settings_test;
 mod current_user_default_workspace;
 mod devbox_cache;
+mod education_course_module_reads;
+mod education_course_module_reads_query;
+#[cfg(test)]
+mod education_course_module_reads_test;
+mod email_blacklist;
+#[cfg(test)]
+mod email_blacklist_test;
+mod email_blacklist_validation;
+mod email_blacklist_write;
+#[cfg(test)]
+mod email_blacklist_write_test;
+mod finance_auth;
+mod finance_budget_status;
+#[cfg(test)]
+mod finance_budget_status_test;
+mod finance_chart_balance;
+#[cfg(test)]
+mod finance_chart_balance_test;
+mod finance_debt_summary;
+#[cfg(test)]
+mod finance_debt_summary_test;
+mod finance_filter_users;
+#[cfg(test)]
+mod finance_filter_users_test;
+mod finance_recurring_transactions;
+#[cfg(test)]
+mod finance_recurring_transactions_test;
+mod finance_subscription_context;
+#[cfg(test)]
+mod finance_subscription_context_test;
 mod hive_access;
 mod hive_ai_models;
 mod holidays;
+mod infrastructure_abuse_events;
+mod infrastructure_abuse_intelligence;
+mod infrastructure_blocked_ips;
+mod infrastructure_catalog_exports;
+mod infrastructure_content_exports;
+#[cfg(test)]
+mod infrastructure_content_exports_test;
+mod infrastructure_finance_exports;
+mod infrastructure_inventory_exports;
+#[cfg(test)]
+mod infrastructure_inventory_exports_test;
+mod infrastructure_migration_exports;
+mod infrastructure_paginated_list;
+mod infrastructure_post_email_queue;
+#[cfg(test)]
+mod infrastructure_post_email_queue_test;
+mod infrastructure_related_exports;
+mod infrastructure_root_auth;
+mod infrastructure_suspensions;
+mod infrastructure_user_status_changes;
+mod infrastructure_workspace_exports;
+mod infrastructure_workspace_users;
 mod inventory;
 mod mobile_version;
 mod nova;
@@ -26,9 +84,23 @@ mod outbound;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
+mod timezones;
 mod topic_announcements;
+mod user_identities;
+#[cfg(test)]
+mod user_identities_test;
 mod user_profile;
+mod workspace_education_access;
+mod workspace_habits_access;
+#[cfg(test)]
+mod workspace_habits_access_test;
 mod workspace_limits;
+mod workspace_mentions;
+#[cfg(test)]
+mod workspace_mentions_test;
+mod workspace_mobile_module_flags;
+#[cfg(test)]
+mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
 
@@ -258,6 +330,7 @@ const SUPABASE_REFERENCE_KEYS: [&str; 7] = [
 pub struct BackendConfig {
     pub app_coordination_secrets: Vec<String>,
     pub aurora_external_url: String,
+    pub aurora_external_workspace_id: String,
     pub(crate) contact_data: contact::ContactDataConfig,
     pub cron_secret: String,
     pub deployment_target: String,
@@ -277,6 +350,7 @@ impl BackendConfig {
         Self {
             app_coordination_secrets: Vec::new(),
             aurora_external_url: String::new(),
+            aurora_external_workspace_id: String::new(),
             contact_data: contact::ContactDataConfig::disabled(),
             cron_secret: String::new(),
             deployment_target: default_deployment_target().to_owned(),
@@ -304,6 +378,7 @@ impl BackendConfig {
                 .trim()
                 .trim_end_matches('/')
                 .to_owned(),
+            aurora_external_workspace_id: env("AURORA_EXTERNAL_WSID", "").trim().to_owned(),
             contact_data: contact::contact_data_config_from_env(),
             cron_secret: cron_secret_from_env(),
             deployment_target: env("BACKEND_DEPLOYMENT_TARGET", default_deployment_target()),
@@ -384,6 +459,12 @@ pub(crate) async fn handle_backend_request(
         return response;
     }
 
+    if let Some(response) =
+        user_identities::handle_user_identities_route(config, request, outbound).await
+    {
+        return response;
+    }
+
     if let Some(response) = user_profile::handle_user_profile_route(config, request, outbound).await
     {
         return response;
@@ -391,6 +472,15 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         current_user_default_workspace::handle_current_user_default_workspace_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        current_user_calendar_settings::handle_current_user_calendar_settings_route(
             config, request, outbound,
         )
         .await
@@ -450,10 +540,90 @@ pub(crate) async fn handle_backend_request(
         return response;
     }
 
+    if let Some(response) = workspace_education_access::handle_workspace_education_access_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        education_course_module_reads::handle_education_course_module_reads_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_habits_access::handle_workspace_habits_access_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mobile_module_flags::handle_workspace_mobile_module_flags_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        finance_budget_status::handle_finance_budget_status_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        finance_chart_balance::handle_finance_chart_balance_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        finance_debt_summary::handle_finance_debt_summary_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        finance_filter_users::handle_finance_filter_users_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        finance_recurring_transactions::handle_finance_recurring_transactions_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = finance_subscription_context::handle_finance_subscription_context_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
     if let Some(response) = workspace_permission_check::handle_workspace_permission_check_route(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mentions::handle_workspace_mentions_route(config, request, outbound).await
     {
         return response;
     }
@@ -490,6 +660,111 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         topic_announcements::handle_topic_announcement_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = timezones::handle_timezones_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = infrastructure_user_status_changes::handle_user_status_changes_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_workspace_users::handle_workspace_users_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_catalog_exports::handle_catalog_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_content_exports::handle_content_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_workspace_exports::handle_workspace_export_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_finance_exports::handle_finance_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_post_email_queue::handle_post_email_queue_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_inventory_exports::handle_inventory_export_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_related_exports::handle_related_export_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_migration_exports::handle_infrastructure_migration_export_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = infrastructure_abuse_intelligence::handle_abuse_intelligence_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_abuse_events::handle_abuse_events_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_blocked_ips::handle_blocked_ips_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_suspensions::handle_suspensions_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        email_blacklist::handle_email_blacklist_route(config, request, outbound).await
     {
         return response;
     }
@@ -1225,6 +1500,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
         || auth_mfa::should_buffer_request_body(method, path)
         || user_profile::should_buffer_request_body(method, path)
         || current_user_default_workspace::should_buffer_request_body(method, path)
+        || current_user_calendar_settings::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
 }
 
@@ -2680,6 +2956,7 @@ pub mod worker_runtime {
                 .trim()
                 .trim_end_matches('/')
                 .to_owned(),
+            aurora_external_workspace_id: var(env, "AURORA_EXTERNAL_WSID", "").trim().to_owned(),
             contact_data: contact_data_config_from_worker_env(env),
             cron_secret: cron_secret_from_worker_env(env),
             deployment_target: "cloudflare-workers".to_owned(),
@@ -2869,6 +3146,7 @@ mod tests {
     fn backend_config_with_aurora_health() -> BackendConfig {
         let mut config = backend_config_with_contact_data();
         config.aurora_external_url = "https://aurora.example.test/".to_owned();
+        config.aurora_external_workspace_id = "aurora-workspace".to_owned();
         config
     }
 
@@ -4913,6 +5191,331 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn aurora_ml_metrics_post_ingests_external_metrics() {
+        let config = backend_config_with_aurora_health();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"ada@tuturuuu.com"}"#),
+            outbound_response(
+                200,
+                r#"{
+                    "lstm": {
+                        "RMSE": 0.42,
+                        "Directional_Accuracy": 0.75,
+                        "Turning_Point_Accuracy": 0.5,
+                        "Weighted_Score": 0.91
+                    }
+                }"#,
+            ),
+            outbound_response(201, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/ml-metrics",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+        assert_eq!(response.body["message"], "Success");
+        assert_eq!(response.body["data"]["lstm"]["Weighted_Score"], 0.91);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert_eq!(
+            recorded_header(&calls[0], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Get);
+        assert_eq!(calls[1].url, "https://aurora.example.test/ml_metrics");
+        assert_eq!(calls[2].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_ml_metrics"
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Content-Type"),
+            Some(APPLICATION_JSON)
+        );
+        assert_eq!(recorded_header(&calls[2], "Prefer"), Some("return=minimal"));
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer browser-access-token")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[2].body.as_deref().unwrap()).unwrap(),
+            json!([
+                {
+                    "ws_id": "aurora-workspace",
+                    "model": "lstm",
+                    "rmse": 0.42,
+                    "directional_accuracy": 0.75,
+                    "turning_point_accuracy": 0.5,
+                    "weighted_score": 0.91
+                }
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn aurora_statistical_metrics_post_ingests_scaling_buckets() {
+        let config = backend_config_with_aurora_health();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"ada@tuturuuu.com"}"#),
+            outbound_response(
+                200,
+                r#"{
+                    "no_scaling": [
+                        {
+                            "Model": "AutoARIMA",
+                            "RMSE": 1.2,
+                            "Weighted_Score": 0.8
+                        }
+                    ],
+                    "with_scaling": [
+                        {
+                            "Model": "AutoETS",
+                            "RMSE": 0.9,
+                            "Directional_Accuracy": 0.7,
+                            "Turning_Point_Accuracy": 0.6,
+                            "Weighted_Score": 0.95
+                        }
+                    ]
+                }"#,
+            ),
+            outbound_response(201, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/statistical-metrics",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert_eq!(
+            calls[1].url,
+            "https://aurora.example.test/statistical_metrics"
+        );
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_statistical_metrics"
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[2].body.as_deref().unwrap()).unwrap(),
+            json!([
+                {
+                    "ws_id": "aurora-workspace",
+                    "model": "AutoARIMA",
+                    "rmse": 1.2,
+                    "weighted_score": 0.8,
+                    "no_scaling": true
+                },
+                {
+                    "ws_id": "aurora-workspace",
+                    "model": "AutoETS",
+                    "rmse": 0.9,
+                    "directional_accuracy": 0.7,
+                    "turning_point_accuracy": 0.6,
+                    "weighted_score": 0.95,
+                    "no_scaling": false
+                }
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn aurora_forecast_post_ingests_statistical_and_ml_forecasts() {
+        let config = backend_config_with_aurora_health();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1","email":"ada@tuturuuu.com"}"#),
+            outbound_response(
+                200,
+                r#"{
+                    "statistical_forecast": [
+                        {
+                            "AutoARIMA": 1.1,
+                            "AutoARIMA-lo-90": 0.9,
+                            "AutoARIMA-hi-90": 1.3,
+                            "AutoETS": 1.0,
+                            "AutoETS-lo-90": 0.8,
+                            "AutoETS-hi-90": 1.2,
+                            "AutoTheta": 1.4,
+                            "AutoTheta-lo-90": 1.1,
+                            "AutoTheta-hi-90": 1.7,
+                            "CES": 1.5,
+                            "CES-lo-90": 1.2,
+                            "CES-hi-90": 1.8,
+                            "date": "2026-01-02"
+                        }
+                    ],
+                    "ml_forecast": [
+                        {
+                            "elasticnet": 2.1,
+                            "lightgbm": 2.2,
+                            "xgboost": 2.3,
+                            "catboost": 2.4,
+                            "date": "2026-01-03"
+                        }
+                    ]
+                }"#,
+            ),
+            outbound_response(201, ""),
+            outbound_response(201, ""),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/forecast",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "Success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(calls[1].url, "https://aurora.example.test/forecast");
+        assert_eq!(
+            calls[2].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_statistical_forecast"
+        );
+        assert_eq!(
+            calls[3].url,
+            "https://project-ref.supabase.co/rest/v1/aurora_ml_forecast"
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[2].body.as_deref().unwrap()).unwrap(),
+            json!([
+                {
+                    "ws_id": "aurora-workspace",
+                    "auto_arima": 1.1,
+                    "auto_arima_lo_90": 0.9,
+                    "auto_arima_hi_90": 1.3,
+                    "auto_ets": 1.0,
+                    "auto_ets_lo_90": 0.8,
+                    "auto_ets_hi_90": 1.2,
+                    "auto_theta": 1.4,
+                    "auto_theta_lo_90": 1.1,
+                    "auto_theta_hi_90": 1.7,
+                    "ces": 1.5,
+                    "ces_lo_90": 1.2,
+                    "ces_hi_90": 1.8,
+                    "date": "2026-01-02"
+                }
+            ])
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>(calls[3].body.as_deref().unwrap()).unwrap(),
+            json!([
+                {
+                    "ws_id": "aurora-workspace",
+                    "elasticnet": 2.1,
+                    "lightgbm": 2.2,
+                    "xgboost": 2.3,
+                    "catboost": 2.4,
+                    "date": "2026-01-03"
+                }
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn aurora_ingest_post_preserves_legacy_config_and_auth_errors() {
+        let mut missing_url = backend_config_with_aurora_health();
+        missing_url.aurora_external_url.clear();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &missing_url,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/ml-metrics",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Aurora API URL not configured");
+        assert_eq!(outbound.calls().len(), 0);
+
+        let mut missing_workspace = backend_config_with_aurora_health();
+        missing_workspace.aurora_external_workspace_id.clear();
+        let response = handle_backend_request(
+            &missing_workspace,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/ml-metrics",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body["message"],
+            "Aurora workspace ID not configured"
+        );
+        assert_eq!(outbound.calls().len(), 0);
+
+        let config = backend_config_with_aurora_health();
+        let response = handle_backend_request(
+            &config,
+            request("POST", "/api/v1/aurora/ml-metrics"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Not authenticated");
+        assert_eq!(outbound.calls().len(), 0);
+
+        let outbound = RecordingOutboundClient::with_response(
+            200,
+            r#"{"id":"user-1","email":"ada@example.com"}"#,
+        );
+        let response = handle_backend_request(
+            &config,
+            request_with_bearer(
+                "POST",
+                "/api/v1/aurora/ml-metrics",
+                "browser-access-token".to_owned(),
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["message"], "Unauthorized email domain");
+        assert_eq!(outbound.calls().len(), 1);
+    }
+
+    #[tokio::test]
     async fn aurora_health_post_requires_authenticated_supabase_user() {
         let config = backend_config_with_aurora_health();
         let outbound = RecordingOutboundClient::default();
@@ -5057,10 +5660,11 @@ mod tests {
             "/api/v1/aurora/ml-metrics",
             "/api/v1/aurora/statistical-metrics",
         ] {
-            let response = handle_backend_request(&config, request("POST", path), &outbound).await;
+            let response =
+                handle_backend_request(&config, request("DELETE", path), &outbound).await;
 
             assert_eq!(response.status, 405, "{path}");
-            assert_eq!(response.allow, Some("GET"), "{path}");
+            assert_eq!(response.allow, Some("GET, POST"), "{path}");
             assert_eq!(response.body["error"], "method not allowed", "{path}");
         }
         assert_eq!(outbound.calls().len(), 0);
@@ -7902,6 +8506,385 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn infrastructure_mobile_versions_rejects_missing_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request("GET", mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_rejects_missing_root_permission() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "false"),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("GET", mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["message"], "Forbidden");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert!(calls[0].url.ends_with("/auth/v1/user"));
+        assert!(
+            calls[1]
+                .url
+                .ends_with("/rest/v1/rpc/has_workspace_permission")
+        );
+        assert_eq!(calls[1].method, OutboundMethod::Post);
+        assert_eq!(
+            calls[1].body.as_deref(),
+            Some(
+                r#"{"p_permission":"manage_workspace_roles","p_user_id":"user-1","p_ws_id":"00000000-0000-0000-0000-000000000000"}"#
+            )
+        );
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_returns_admin_policy_snapshot() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(
+                200,
+                r#"[
+                    {"id":"MOBILE_IOS_EFFECTIVE_VERSION","value":"1.2.0"},
+                    {"id":"MOBILE_IOS_MINIMUM_VERSION","value":"1.1.0"},
+                    {"id":"MOBILE_IOS_OTP_ENABLED","value":true},
+                    {"id":"MOBILE_IOS_STORE_URL","value":"https://apps.apple.com/app/id1"},
+                    {"id":"MOBILE_ANDROID_EFFECTIVE_VERSION","value":"1.3.0"},
+                    {"id":"MOBILE_ANDROID_MINIMUM_VERSION","value":"1.2.0"},
+                    {"id":"MOBILE_ANDROID_OTP_ENABLED","value":"no"},
+                    {"id":"MOBILE_ANDROID_STORE_URL","value":"https://play.google.com/store/apps/details?id=example.app"},
+                    {"id":"WEB_OTP_ENABLED","value":"yes"}
+                ]"#,
+            ),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["ios"]["effectiveVersion"], "1.2.0");
+        assert_eq!(response.body["ios"]["minimumVersion"], "1.1.0");
+        assert_eq!(response.body["ios"]["otpEnabled"], true);
+        assert_eq!(
+            response.body["ios"]["storeUrl"],
+            "https://apps.apple.com/app/id1"
+        );
+        assert_eq!(response.body["android"]["effectiveVersion"], "1.3.0");
+        assert_eq!(response.body["android"]["minimumVersion"], "1.2.0");
+        assert_eq!(response.body["android"]["otpEnabled"], false);
+        assert_eq!(response.body["webOtpEnabled"], true);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert!(calls[2].url.contains("select=id%2Cvalue"));
+        assert!(calls[2].url.contains("MOBILE_IOS_EFFECTIVE_VERSION"));
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "apikey"),
+            Some("test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_rejects_missing_auth_before_body_validation() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PUT",
+                mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                r#"{"ios":null}"#,
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_upserts_normalized_policy_rows() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{
+                        "ios": {
+                            "effectiveVersion": " 2.0.0 ",
+                            "minimumVersion": "1.5.0",
+                            "otpEnabled": true,
+                            "storeUrl": " https://apps.apple.com/app/id1 "
+                        },
+                        "android": {
+                            "effectiveVersion": null,
+                            "minimumVersion": null,
+                            "otpEnabled": false,
+                            "storeUrl": ""
+                        },
+                        "webOtpEnabled": true
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+        assert_eq!(response.body["data"]["ios"]["effectiveVersion"], "2.0.0");
+        assert_eq!(response.body["data"]["ios"]["minimumVersion"], "1.5.0");
+        assert_eq!(response.body["data"]["ios"]["otpEnabled"], true);
+        assert_eq!(
+            response.body["data"]["ios"]["storeUrl"],
+            "https://apps.apple.com/app/id1"
+        );
+        assert_eq!(
+            response.body["data"]["android"]["effectiveVersion"],
+            Value::Null
+        );
+        assert_eq!(
+            response.body["data"]["android"]["minimumVersion"],
+            Value::Null
+        );
+        assert_eq!(response.body["data"]["android"]["otpEnabled"], false);
+        assert_eq!(response.body["data"]["android"]["storeUrl"], Value::Null);
+        assert_eq!(response.body["data"]["webOtpEnabled"], true);
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let upsert_call = &calls[2];
+        assert_eq!(upsert_call.method, OutboundMethod::Post);
+        assert!(
+            upsert_call
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_configs?")
+        );
+        assert!(upsert_call.url.contains("on_conflict=ws_id%2Cid"));
+        assert_eq!(
+            recorded_header(upsert_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(upsert_call, "apikey"),
+            Some("test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(upsert_call, "Content-Type"),
+            Some(APPLICATION_JSON)
+        );
+        assert_eq!(
+            recorded_header(upsert_call, "Prefer"),
+            Some("resolution=merge-duplicates,return=minimal")
+        );
+
+        let rows: Vec<Value> = serde_json::from_str(upsert_call.body.as_deref().unwrap()).unwrap();
+        assert_eq!(rows.len(), 9);
+        assert_mobile_version_policy_row(&rows, "MOBILE_IOS_EFFECTIVE_VERSION", "2.0.0");
+        assert_mobile_version_policy_row(&rows, "MOBILE_IOS_MINIMUM_VERSION", "1.5.0");
+        assert_mobile_version_policy_row(&rows, "MOBILE_IOS_OTP_ENABLED", "true");
+        assert_mobile_version_policy_row(
+            &rows,
+            "MOBILE_IOS_STORE_URL",
+            "https://apps.apple.com/app/id1",
+        );
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_EFFECTIVE_VERSION", "");
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_MINIMUM_VERSION", "");
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_OTP_ENABLED", "false");
+        assert_mobile_version_policy_row(&rows, "MOBILE_ANDROID_STORE_URL", "");
+        assert_mobile_version_policy_row(&rows, "WEB_OTP_ENABLED", "true");
+        assert!(rows.iter().all(|row| {
+            row["ws_id"] == "00000000-0000-0000-0000-000000000000"
+                && row["updated_at"]
+                    .as_str()
+                    .is_some_and(|value| value.ends_with('Z'))
+        }));
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_returns_invalid_body_errors_after_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{"ios":{},"android":{"otpEnabled":"yes"}}"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid request body");
+        assert_eq!(response.body["errors"][0]["path"][0], "otpEnabled");
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_returns_policy_validation_errors() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{
+                        "ios": {
+                            "effectiveVersion": "1.0",
+                            "minimumVersion": "2.0.0"
+                        },
+                        "android": {
+                            "effectiveVersion": "1.0.0"
+                        }
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body["message"], "Invalid mobile version policy");
+        assert!(
+            response.body["errors"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|error| error == "ios: effective version must use x.y.z format")
+        );
+        assert!(
+            response.body["errors"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|error| error == "android: store URL is required when a version is set")
+        );
+        assert_eq!(outbound.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_put_returns_legacy_save_error() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH,
+                    r#"{
+                        "ios": {},
+                        "android": {},
+                        "webOtpEnabled": false
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body["message"],
+            "Failed to save mobile version policies"
+        );
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_mobile_versions_returns_legacy_load_error_after_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(
+                200,
+                r#"[{"id":"MOBILE_IOS_EFFECTIVE_VERSION","value":"1.2.0"}]"#,
+            ),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("GET", mobile_version::INFRASTRUCTURE_MOBILE_VERSIONS_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(
+            response.body["message"],
+            "Failed to load mobile version policies"
+        );
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
     async fn mobile_version_check_reads_policy_and_returns_update_recommendation() {
         let config = backend_config_with_contact_data();
         let outbound = RecordingOutboundClient::with_response(
@@ -8304,6 +9287,446 @@ mod tests {
         assert_eq!(outbound.calls().len(), 0);
     }
 
+    #[tokio::test]
+    async fn infrastructure_timezones_rejects_missing_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request("GET", timezones::INFRASTRUCTURE_TIMEZONES_PATH),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_rejects_missing_root_operator_permission() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "false"),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("GET", timezones::INFRASTRUCTURE_TIMEZONES_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(response.body["message"], "Forbidden");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 2);
+        assert!(calls[0].url.ends_with("/auth/v1/user"));
+        assert!(
+            calls[1]
+                .url
+                .ends_with("/rest/v1/rpc/has_workspace_permission")
+        );
+        assert_eq!(
+            calls[1].body.as_deref(),
+            Some(
+                r#"{"p_permission":"manage_workspace_roles","p_user_id":"user-1","p_ws_id":"00000000-0000-0000-0000-000000000000"}"#
+            )
+        );
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_reads_private_rows_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let cookie_value = supabase_auth_cookie_value("browser-access-token");
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(
+                200,
+                r#"[
+                    {
+                        "id":"timezone-1",
+                        "value":"Asia/Ho_Chi_Minh",
+                        "abbr":"+07",
+                        "offset":7,
+                        "isdst":false,
+                        "text":"Ho Chi Minh",
+                        "utc":["Asia/Ho_Chi_Minh"],
+                        "created_at":"2026-01-01 00:00:00+00"
+                    }
+                ]"#,
+            ),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                cookie: Some(leaked_test_str(format!(
+                    "sb-project-ref-auth-token={cookie_value}"
+                ))),
+                ..request("GET", timezones::INFRASTRUCTURE_TIMEZONES_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body[0]["value"], "Asia/Ho_Chi_Minh");
+        assert_eq!(response.body[0]["utc"][0], "Asia/Ho_Chi_Minh");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        assert!(calls[2].url.contains("/rest/v1/timezones?"));
+        assert!(
+            calls[2]
+                .url
+                .contains("select=id%2Cvalue%2Cabbr%2Coffset%2Cisdst%2Ctext%2Cutc%2Ccreated_at")
+        );
+        assert!(calls[2].url.contains("order=value.asc"));
+        assert_eq!(
+            recorded_header(&calls[2], "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(&calls[2], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_returns_legacy_load_error_after_auth() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("GET", timezones::INFRASTRUCTURE_TIMEZONES_PATH)
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 500);
+        assert_eq!(response.body["message"], "Error fetching timezones");
+        assert_eq!(outbound.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_put_rejects_missing_auth_before_body_parse() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body(
+                "PUT",
+                "/api/v1/infrastructure/timezones/timezone-1",
+                "not json",
+            ),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_post_rejects_missing_auth_before_body_parse() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+        let response = handle_backend_request(
+            &config,
+            request_with_body("POST", timezones::INFRASTRUCTURE_TIMEZONES_PATH, "not json"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 401);
+        assert_eq!(response.body["message"], "Unauthorized");
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_post_inserts_private_row_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(201, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "POST",
+                    timezones::INFRASTRUCTURE_TIMEZONES_PATH,
+                    r#"{
+                        "id": null,
+                        "value":"Asia/Ho_Chi_Minh",
+                        "abbr":"+07",
+                        "offset":7,
+                        "isdst":false,
+                        "text":"Ho Chi Minh",
+                        "utc":"Asia/Ho_Chi_Minh, UTC"
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let insert_call = &calls[2];
+        assert_eq!(insert_call.method, OutboundMethod::Post);
+        assert!(insert_call.url.contains("/rest/v1/timezones"));
+        assert_eq!(
+            recorded_header(insert_call, "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(insert_call, "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(insert_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(insert_call, "Prefer"),
+            Some("return=minimal")
+        );
+
+        let body: Value = serde_json::from_str(insert_call.body.as_deref().unwrap()).unwrap();
+        assert!(body.get("id").is_none());
+        assert_eq!(body["value"], "Asia/Ho_Chi_Minh");
+        assert_eq!(body["abbr"], "+07");
+        assert_eq!(body["offset"], 7);
+        assert_eq!(body["isdst"], false);
+        assert_eq!(body["text"], "Ho Chi Minh");
+        assert_eq!(body["utc"], json!(["Asia/Ho_Chi_Minh", "UTC"]));
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_put_patches_private_row_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/infrastructure/timezones/timezone-1",
+                    r#"{
+                        "value":"Asia/Ho_Chi_Minh",
+                        "abbr":"+07",
+                        "offset":7,
+                        "isdst":false,
+                        "text":"Ho Chi Minh",
+                        "utc":"Asia/Ho_Chi_Minh, UTC"
+                    }"#,
+                )
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let update_call = &calls[2];
+        assert_eq!(update_call.method, OutboundMethod::Patch);
+        assert!(update_call.url.contains("/rest/v1/timezones?"));
+        assert!(update_call.url.contains("id=eq.timezone-1"));
+        assert_eq!(
+            recorded_header(update_call, "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(update_call, "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(update_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(update_call, "Prefer"),
+            Some("return=minimal")
+        );
+
+        let body: Value = serde_json::from_str(update_call.body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["value"], "Asia/Ho_Chi_Minh");
+        assert_eq!(body["abbr"], "+07");
+        assert_eq!(body["offset"], 7);
+        assert_eq!(body["isdst"], false);
+        assert_eq!(body["text"], "Ho Chi Minh");
+        assert_eq!(body["utc"], json!(["Asia/Ho_Chi_Minh", "UTC"]));
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_delete_removes_private_row_for_root_operators() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(204, ""),
+        ]);
+        let response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("DELETE", "/api/v1/infrastructure/timezones/timezone-1")
+            },
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body["message"], "success");
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 3);
+        let delete_call = &calls[2];
+        assert_eq!(delete_call.method, OutboundMethod::Delete);
+        assert!(delete_call.url.contains("/rest/v1/timezones?"));
+        assert!(delete_call.url.contains("id=eq.timezone-1"));
+        assert_eq!(delete_call.body, None);
+        assert_eq!(
+            recorded_header(delete_call, "Accept-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(delete_call, "Content-Profile"),
+            Some("private")
+        );
+        assert_eq!(
+            recorded_header(delete_call, "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+        assert_eq!(
+            recorded_header(delete_call, "Prefer"),
+            Some("return=minimal")
+        );
+    }
+
+    #[tokio::test]
+    async fn infrastructure_timezones_writes_return_legacy_errors_after_auth() {
+        let config = backend_config_with_contact_data();
+        let create_invalid_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let create_invalid_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body("POST", timezones::INFRASTRUCTURE_TIMEZONES_PATH, "not json")
+            },
+            &create_invalid_outbound,
+        )
+        .await;
+
+        assert_eq!(create_invalid_response.status, 500);
+        assert_eq!(
+            create_invalid_response.body["message"],
+            "Error creating timezone"
+        );
+        assert_eq!(create_invalid_outbound.calls().len(), 2);
+
+        let create_save_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let create_save_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "POST",
+                    timezones::INFRASTRUCTURE_TIMEZONES_PATH,
+                    r#"{"value":"Asia/Ho_Chi_Minh"}"#,
+                )
+            },
+            &create_save_outbound,
+        )
+        .await;
+
+        assert_eq!(create_save_response.status, 500);
+        assert_eq!(
+            create_save_response.body["message"],
+            "Error creating timezone"
+        );
+        assert_eq!(create_save_outbound.calls().len(), 3);
+
+        let update_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+        ]);
+        let update_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request_with_body(
+                    "PUT",
+                    "/api/v1/infrastructure/timezones/timezone-1",
+                    "not json",
+                )
+            },
+            &update_outbound,
+        )
+        .await;
+
+        assert_eq!(update_response.status, 500);
+        assert_eq!(update_response.body["message"], "Error updating timezone");
+        assert_eq!(update_outbound.calls().len(), 2);
+
+        let delete_outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, "true"),
+            outbound_response(500, r#"{"message":"failed"}"#),
+        ]);
+        let delete_response = handle_backend_request(
+            &config,
+            BackendRequest {
+                authorization: Some("Bearer browser-access-token"),
+                ..request("DELETE", "/api/v1/infrastructure/timezones/timezone-1")
+            },
+            &delete_outbound,
+        )
+        .await;
+
+        assert_eq!(delete_response.status, 500);
+        assert_eq!(delete_response.body["message"], "Error deleting timezone");
+        assert_eq!(delete_outbound.calls().len(), 3);
+    }
+
     #[test]
     fn native_outbound_client_installs_tls_provider_before_construction() {
         let _client = outbound::NativeOutboundHttpClient::default();
@@ -8406,6 +9829,15 @@ mod tests {
             .map(|(_, value)| value.as_str())
     }
 
+    fn assert_mobile_version_policy_row(rows: &[Value], id: &str, value: &str) {
+        let row = rows
+            .iter()
+            .find(|row| row["id"] == id)
+            .unwrap_or_else(|| panic!("missing mobile version policy row {id}"));
+
+        assert_eq!(row["value"], value);
+    }
+
     fn sha256_hex_for_test(value: &str) -> String {
         let digest = <sha2::Sha256 as sha2::Digest>::digest(value.as_bytes());
         let mut encoded = String::with_capacity(64);
@@ -8483,6 +9915,10 @@ mod tests {
         assert!(should_buffer_request_body(
             "PATCH",
             current_user_default_workspace::CURRENT_USER_DEFAULT_WORKSPACE_PATH
+        ));
+        assert!(should_buffer_request_body(
+            "PATCH",
+            current_user_calendar_settings::CURRENT_USER_CALENDAR_SETTINGS_PATH
         ));
         assert!(should_buffer_request_body(
             "PATCH",

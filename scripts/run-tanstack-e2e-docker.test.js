@@ -36,6 +36,11 @@ test('parseArgs returns dual-stack defaults', () => {
     playwrightArgs: [],
   });
   assert.equal(DEFAULT_COMPOSE_FILE, 'docker-compose.tanstack-dual.yml');
+  assert.match(
+    HELP_TEXT,
+    /apps\/docs\/build\/devops\/tanstack-rust-cutover-runbook\.mdx/u
+  );
+  assert.doesNotMatch(HELP_TEXT, /docs\/CUTOVER-RUNBOOK\.md/u);
 });
 
 test('parseArgs handles each flag', () => {

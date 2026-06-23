@@ -84,10 +84,10 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsgo --project tsconfig.build.json",
-    "dev": "tsgo --project tsconfig.build.json --watch --incremental",
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch --incremental",
     "ttr": "bun src/cli/index.ts",
-    "type-check": "tsgo --project tsconfig.build.json",
+    "type-check": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo tsconfig.build.tsbuildinfo",
     "prepack": "bun run clean && bun run build",
     "prepublishOnly": "bun run test",
@@ -102,10 +102,9 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
-    "@typescript/native-preview": "^7.0.0-dev.20260614.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "@types/node": "^26.0.0",
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
   },
   "engines": {
     "node": ">=18.0.0"

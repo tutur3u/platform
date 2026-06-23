@@ -213,6 +213,15 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   );
   assert.match(
     validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'bun run --filter @tuturuuu/internal-api build && \\\n',
+        ''
+      )
+    ).join('\n'),
+    /@tuturuuu\/internal-api build/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
       dockerfileContent.replace("body.includes('Backend reachable')", 'true')
     ).join('\n'),
     /Backend reachable/u

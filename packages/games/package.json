@@ -6,7 +6,7 @@
     "access": "public"
   },
   "scripts": {
-    "type-check": "tsgo --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
@@ -15,16 +15,16 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwind-merge": "^3.6.0",
-    "uuid": "^14.0.0",
+    "uuid": "^14.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "@vitejs/plugin-react": "^6.0.2",
-    "typescript": "^6.0.3",
+    "typescript": "7.0.1-rc",
     "vite": "^8.0.16"
   },
   "packageManager": "bun@1.3.14"

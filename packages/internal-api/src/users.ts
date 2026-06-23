@@ -1,8 +1,49 @@
+import type {
+  PostApprovalItem,
+  PostLogEntry,
+  ReportApprovalItem,
+  ReportLogEntry,
+  WorkspaceUser,
+} from '@tuturuuu/types/db';
 import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+
+export interface CurrentWorkspaceUserLink {
+  platform_user_id: string;
+  virtual_user_id: string;
+  ws_id: string;
+  created_at: string;
+  workspace_users?: WorkspaceUser;
+}
+
+export interface CurrentWorkspaceUserResponse {
+  data: CurrentWorkspaceUserLink;
+}
+
+/**
+ * Reads the current authenticated caller's workspace-user link for `wsId` via
+ * `GET /api/v1/workspaces/:wsId/users/me` (forwarded auth). Provides the
+ * `virtual_user_id` user-scoped dashboard pages need without a direct Supabase
+ * read. Returns `null` when the caller has no link (404).
+ */
+export async function getCurrentWorkspaceUserLink(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+): Promise<CurrentWorkspaceUserLink | null> {
+  const client = getInternalApiClient(options);
+  try {
+    const payload = await client.json<CurrentWorkspaceUserResponse>(
+      `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/me`,
+      { cache: 'no-store' }
+    );
+    return payload.data ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type UserConfigResponse = {
   value: string | null;
@@ -587,6 +628,20 @@ export async function listWorkspaceBasicUsers(
   );
 }
 
+export async function getWorkspaceUser(
+  workspaceId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceBasicUserRecord>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listWorkspaceUserReferralCandidates(
   workspaceId: string,
   userId: string,
@@ -658,6 +713,123 @@ export async function deleteWorkspaceUserReferral(
       method: 'DELETE',
       query: {
         referredUserId,
+      },
+    }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User approvals (reports + posts)
+// ---------------------------------------------------------------------------
+
+export type WorkspaceUserApprovalKind = 'reports' | 'posts';
+
+export type WorkspaceUserApprovalStatusFilter =
+  | 'all'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
+export interface ListWorkspaceUserApprovalsParams {
+  kind: WorkspaceUserApprovalKind;
+  status?: WorkspaceUserApprovalStatusFilter;
+  page?: number;
+  limit?: number;
+  groupId?: string;
+  userId?: string;
+  creatorId?: string;
+}
+
+export interface ListWorkspaceUserApprovalsResponse<
+  TItem = ReportApprovalItem | PostApprovalItem,
+> {
+  items: TItem[];
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface UpdateWorkspaceUserApprovalPayload {
+  action: 'approve' | 'reject' | 'approveAll' | 'unapprove';
+  kind: WorkspaceUserApprovalKind;
+  itemId?: string;
+  reason?: string;
+  filters?: {
+    groupId?: string;
+    userId?: string;
+    creatorId?: string;
+  };
+}
+
+export interface UpdateWorkspaceUserApprovalResponse {
+  success: boolean;
+}
+
+export interface ListWorkspaceUserApprovalLogsParams {
+  kind: WorkspaceUserApprovalKind;
+  reportId?: string;
+  postId?: string;
+}
+
+export async function listWorkspaceUserApprovals<
+  TItem = ReportApprovalItem | PostApprovalItem,
+>(
+  workspaceId: string,
+  params: ListWorkspaceUserApprovalsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceUserApprovalsResponse<TItem>>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals`,
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        status: params.status,
+        page: params.page,
+        limit: params.limit,
+        groupId: params.groupId,
+        userId: params.userId,
+        creatorId: params.creatorId,
+      },
+    }
+  );
+}
+
+export async function updateWorkspaceUserApproval(
+  workspaceId: string,
+  payload: UpdateWorkspaceUserApprovalPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateWorkspaceUserApprovalResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function listWorkspaceUserApprovalLogs<
+  TLog = ReportLogEntry | PostLogEntry,
+>(
+  workspaceId: string,
+  params: ListWorkspaceUserApprovalLogsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TLog | null>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals/logs`,
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        reportId: params.reportId,
+        postId: params.postId,
       },
     }
   );

@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const buildInfoMarkerPath = path.join('.turbo', 'tsgo-build-cache-key.json');
+const buildInfoMarkerPath = path.join('.turbo', 'tsc-build-cache-key.json');
 const buildInfoPaths = [
   'tsconfig.tsbuildinfo',
   'tsconfig.build.tsbuildinfo',
@@ -114,13 +114,13 @@ function syncBuildInfoCache(cwd = process.cwd()) {
   };
 }
 
-function runTsgo(argv = process.argv.slice(2), cwd = process.cwd()) {
+function runTsc(argv = process.argv.slice(2), cwd = process.cwd()) {
   const repoRoot = findRepoRoot(cwd);
-  const tsgoBinary = path.join(repoRoot, 'node_modules/.bin/tsgo');
+  const tscBinary = path.join(repoRoot, 'node_modules/.bin/tsc');
 
   syncBuildInfoCache(cwd);
 
-  const result = spawnSync(tsgoBinary, argv, {
+  const result = spawnSync(tscBinary, argv, {
     cwd,
     stdio: 'inherit',
   });
@@ -133,7 +133,7 @@ function runTsgo(argv = process.argv.slice(2), cwd = process.cwd()) {
 }
 
 if (require.main === module) {
-  process.exit(runTsgo());
+  process.exit(runTsc());
 }
 
 module.exports = {
@@ -143,6 +143,6 @@ module.exports = {
   computeBuildCacheKey,
   findRepoRoot,
   listJsonFilesRecursively,
-  runTsgo,
+  runTsc,
   syncBuildInfoCache,
 };

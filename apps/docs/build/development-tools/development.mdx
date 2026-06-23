@@ -92,9 +92,10 @@ generated output and local dependency trees, especially `node_modules`,
 Keep large generated directories in `file_scan_exclusions`. Zed's
 `file_scan_exclusions` setting replaces the default list instead of extending
 it, so include Zed's default VCS/system exclusions whenever adding project
-exclusions. The project also uses a single TypeScript language server path for
-TypeScript, TSX, and JavaScript; avoid enabling both `tsgo` and `vtsls` for the
-same language unless you are deliberately comparing language server behavior.
+exclusions. The project uses TypeScript 7 RC's `tsc` for compiler checks and a
+single TypeScript language server path for TypeScript, TSX, and JavaScript;
+avoid enabling competing TypeScript language servers for the same language
+unless you are deliberately comparing language server behavior.
 
 ## Development
 

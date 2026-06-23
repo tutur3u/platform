@@ -8,7 +8,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsgo --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@serwist/build": "10.0.0-preview.14",
@@ -23,12 +23,12 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "next": "^16.2.9",
     "react": "^19.2.7",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
   },
   "exports": {
     "./worker": "./src/worker/index.ts",

@@ -113,8 +113,11 @@ ENV TANSTACK_WEB_RUNTIME=node
 
 COPY --from=deps /workspace ./
 COPY . .
+COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
 
 RUN --mount=type=cache,id=platform-tanstack-web-vite,target=/workspace/apps/tanstack-web/.vite \
+  bun run --filter @tuturuuu/types build && \
+  bun run --filter @tuturuuu/internal-api build && \
   cd apps/tanstack-web && \
   node node_modules/vite/bin/vite.js build && \
   node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json

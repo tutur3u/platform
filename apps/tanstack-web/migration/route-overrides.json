@@ -134,6 +134,62 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/ai/whitelist/me by preserving the legacy app-session-first auth behavior for satellite app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only the enabled flag for the authenticated email from private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the derived legacy email/enabled payload."
     },
+    "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, preserving the legacy Zod-style payload validation message, trimming domain and optional description fields, defaulting enabled to true, inserting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and returning the legacy 201 data wrapper or plain-text 500 body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/ai/whitelist/domain/:domain:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts": {
+      "methods": {
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, applying legacy Boolean(enabled) truthiness, patching private.ai_whitelisted_domains.enabled through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body."
+        },
+        "DELETE": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, deleting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, preserving the legacy Zod-style payload validation message, defaulting enabled to true, inserting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the legacy 201 data wrapper or plain-text 500 body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/ai/whitelist/:email:apps/web/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts": {
+      "methods": {
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, applying legacy Boolean(enabled) truthiness, patching private.ai_whitelisted_emails.enabled through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body."
+        },
+        "DELETE": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, deleting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body."
+        }
+      }
+    },
     "api:/api/v1/users/me/hive-access:apps/web/src/app/api/v1/users/me/hive-access/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -179,7 +235,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Aurora forecast GET through the server-owned Supabase REST adapter, preserving statistical_forecast and ml_forecast table reads, date ascending ordering, YYYY-MM-DD date normalization, no-store JSON responses, and the legacy 500 error body. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts forecast rows."
+          "note": "Rust backend handle_backend_request handles the public Aurora forecast GET through the server-owned Supabase REST adapter, preserving statistical_forecast and ml_forecast table reads, date ascending ordering, YYYY-MM-DD date normalization, no-store JSON responses, and the legacy 500 error body."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles protected POST /api/v1/aurora/forecast by preserving the legacy AURORA_EXTERNAL_URL and AURORA_EXTERNAL_WSID config checks, validating the browser Supabase session with Supabase Auth, enforcing the exact @tuturuuu.com email-domain gate, fetching AURORA_EXTERNAL_URL/forecast, inserting normalized statistical and ML forecast rows with the caller token, and returning the legacy success and error JSON bodies."
         }
       }
     },
@@ -188,7 +249,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Aurora ML metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts metric rows."
+          "note": "Rust backend handle_backend_request handles the public Aurora ML metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles protected POST /api/v1/aurora/ml-metrics by preserving the legacy Aurora config checks, Supabase session auth, exact @tuturuuu.com email-domain gate, AURORA_EXTERNAL_URL/ml_metrics fetch, normalized metric-row insert with the caller token, and legacy success and error JSON bodies."
         }
       }
     },
@@ -197,7 +263,12 @@
         "GET": {
           "status": "migrated",
           "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Aurora statistical metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses. POST remains legacy-owned because it fetches external Aurora data, enforces Tuturuuu email auth, and inserts metric rows."
+          "note": "Rust backend handle_backend_request handles the public Aurora statistical metrics list GET through the server-owned Supabase REST adapter and returns the raw legacy row array with no-store JSON responses."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request handles protected POST /api/v1/aurora/statistical-metrics by preserving the legacy Aurora config checks, Supabase session auth, exact @tuturuuu.com email-domain gate, AURORA_EXTERNAL_URL/statistical_metrics fetch, normalized scaled and unscaled metric-row inserts with the caller token, and legacy success and error JSON bodies."
         }
       }
     },
@@ -374,10 +445,30 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token."
     },
+    "api:/api/v1/users/calendar-settings:apps/web/src/app/api/v1/users/calendar-settings/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/calendar-settings. GET accepts calendar app-session tokens or revalidated browser Supabase sessions, reads timezone, first_day_of_week, and time_format from user_private_details, defaults missing values to auto, and keeps the legacy private success cache. PATCH uses the same auth modes, strips unknown JSON fields, validates the legacy enum/string limits, updates only the authenticated user's settings through Supabase REST, and keeps mutation responses no-store."
+    },
+    "api:/api/v1/users/me/identities:apps/web/src/app/api/v1/users/me/identities/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/users/me/identities by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, extracting the Auth JS-compatible identities array from the revalidated Supabase user JSON, returning the legacy identities plus canUnlink payload, and keeping the legacy private cache directive plus Unauthorized, Supabase Auth rejection, and internal error bodies."
+    },
     "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
+    },
+    "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/course-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving workspace permissions for ai_lab, requiring the ENABLE_EDUCATION workspace secret, reading workspace_course_modules through service-role Supabase REST with exact-count pagination, and preserving the legacy { data, count, page, pageSize } envelope."
+    },
+    "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving ai_lab workspace permission and ENABLE_EDUCATION, verifying the quiz set belongs to the resolved workspace before service-role linked-module reads, applying legacy page/pageSize/q parsing, and returning the legacy paginated envelope."
     },
     "loading:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/loading.tsx": {
       "status": "migrated",
@@ -525,6 +616,326 @@
         }
       }
     },
+    "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/abuse-intelligence by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace view_infrastructure through the shared workspace permission helper, reading abuse_reputation_subjects, abuse_activity_signals, and abuse_step_up_challenges with caller-token Supabase REST, reading active abuse_trust_overrides with the service-role Supabase adapter, and preserving the legacy limit/signalLimit parsing, summary, topRiskySubjects sorting, and legacy auth/error bodies. POST remains legacy-owned until trust override mutations move to Rust."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/abuse-events:apps/web/src/app/api/v1/infrastructure/abuse-events/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/abuse-events by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, reading abuse_events with caller-token Supabase REST, and preserving the legacy ip/type/success filters, page/pageSize parseInt-style range behavior, exact-count pagination, raw row list response shape, and legacy auth/error bodies."
+    },
+    "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/blocked-ips by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, reading blocked_ips with the legacy unblocked_by_user embed, and preserving the legacy status/ip filters, page/pageSize parseInt-style range behavior, exact-count pagination, raw row list response shape, and legacy auth/error bodies. POST/DELETE remain legacy-owned until Redis cache mutation parity moves to Rust."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/suspensions by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace manage_workspace_roles through has_workspace_permission with the caller token, reading active user_suspensions rows through the service-role Supabase REST adapter, and preserving the legacy raw array success body plus Unauthorized, Forbidden, and Failed to fetch suspensions error bodies. POST remains legacy-owned until suspension mutations move to Rust."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/classes:apps/web/src/app/api/v1/infrastructure/classes/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/classes through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/lessons:apps/web/src/app/api/v1/infrastructure/lessons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/lessons by preserving the legacy no-auth service-role export contract, reading private.user_group_posts with the workspace_user_groups inner ws_id filter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and Error fetching user_group_posts body."
+    },
+    "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/mobile-versions by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading the fixed root workspace mobile policy config IDs through the server-owned Supabase REST adapter, validating legacy policy invariants, and returning the legacy admin policy snapshot."
+        },
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/mobile-versions by reusing the root workspace manage_workspace_roles gate, validating and normalizing the legacy mobile policy payload, upserting the nine root workspace policy config rows through the server-owned Supabase REST adapter, and preserving the legacy success, invalid body, invalid policy, and save failure response bodies."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/packages:apps/web/src/app/api/v1/infrastructure/packages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/packages by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring the view_inventory workspace permission through the shared workspace permission resolver, reading workspace_products through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+    },
+    "api:/api/v1/infrastructure/post-email-queue:apps/web/src/app/api/v1/infrastructure/post-email-queue/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/post-email-queue by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace membership, reading post_email_queue through the service-role Supabase REST adapter, preserving the legacy queue status, workspace, and recent batch aggregation shape, keeping workspace and batch breakdown read failures non-fatal, and returning the legacy summary error body when the primary queue status read fails."
+    },
+    "api:/api/v1/infrastructure/product-categories:apps/web/src/app/api/v1/infrastructure/product-categories/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-categories through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so product_categories RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/product-prices:apps/web/src/app/api/v1/infrastructure/product-prices/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-prices by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_products through the service-role Supabase REST adapter with the workspace_products inner workspace filter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+    },
+    "api:/api/v1/infrastructure/product-units:apps/web/src/app/api/v1/infrastructure/product-units/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-units by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_units through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+    },
+    "api:/api/v1/infrastructure/score-names:apps/web/src/app/api/v1/infrastructure/score-names/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/score-names through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so user_group_metrics RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bills through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so finance_invoices RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/roles through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/transaction-categories through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so transaction_categories RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/warehouses:apps/web/src/app/api/v1/infrastructure/warehouses/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/warehouses by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_warehouses through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+    },
+    "api:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, and returning the legacy ordered email_blacklist row array."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 Forbidden, validating the legacy Zod-shaped entry_type/value/reason payload, preserving the shared email/domain blacklist regex behavior, inserting email_blacklist rows with added_by_user_id from the revalidated caller through caller-token Supabase REST, mapping PostgREST 23505 duplicates to 409, and returning the inserted raw row with status 201."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reading the singular email_blacklist row with caller-token Supabase REST, and mapping PGRST116 to the legacy 404 body."
+        },
+        "PUT": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 Unauthorized, validating the legacy Zod-shaped optional reason payload, prefetching the singular email_blacklist row before update, mapping prefetch misses and errors to the legacy Email blacklist entry not found body, updating with the caller token, and returning the updated raw row."
+        },
+        "DELETE": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 with the Unauthorized body, prefetching the singular email_blacklist row with caller-token Supabase REST, mapping prefetch misses and errors to the legacy Email blacklist entry not found body, deleting with the caller token, and returning the legacy Entry deleted successfully body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/bill-coupons:apps/web/src/app/api/v1/infrastructure/bill-coupons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bill-coupons through the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/bill-packages:apps/web/src/app/api/v1/infrastructure/bill-packages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bill-packages through the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/class-attendance:apps/web/src/app/api/v1/infrastructure/class-attendance/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-attendance through the shared caller-token paginated export helper with the legacy workspace_user_groups!user_group_attendance_group_id_fkey inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/class-members:apps/web/src/app/api/v1/infrastructure/class-members/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-members through the shared caller-token paginated export helper with the legacy workspace_user_groups!workspace_user_roles_users_role_id_fkey inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/class-packages:apps/web/src/app/api/v1/infrastructure/class-packages/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-packages through the shared caller-token paginated export helper with the legacy workspace_user_groups inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/class-scores:apps/web/src/app/api/v1/infrastructure/class-scores/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-scores through the shared caller-token paginated export helper with the legacy workspace_users!user_indicators_user_id_fkey inner select and workspace_users.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/package-stock-changes:apps/web/src/app/api/v1/infrastructure/package-stock-changes/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/package-stock-changes through the shared caller-token paginated export helper with the legacy workspace_products!product_id inner select and workspace_products.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/student-feedbacks:apps/web/src/app/api/v1/infrastructure/student-feedbacks/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/student-feedbacks through the shared caller-token paginated export helper with the legacy workspace_users!user_feedbacks_user_id_fkey inner select and workspace_users.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+    },
+    "api:/api/v1/infrastructure/user-monthly-report-logs:apps/web/src/app/api/v1/infrastructure/user-monthly-report-logs/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-monthly-report-logs by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.external_user_monthly_report_logs_workspace_view through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
+    "api:/api/v1/infrastructure/user-monthly-reports:apps/web/src/app/api/v1/infrastructure/user-monthly-reports/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-monthly-reports by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.external_user_monthly_reports_workspace_view through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
+    "api:/api/v1/infrastructure/coupons:apps/web/src/app/api/v1/infrastructure/coupons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/coupons by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.workspace_promotions through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
+    "api:/api/v1/infrastructure/user-coupons:apps/web/src/app/api/v1/infrastructure/user-coupons/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-coupons by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.workspace_promotions and private.user_linked_promotions through the server-owned Supabase REST adapter with private-schema headers, preserving the empty-promotion short-circuit, reattaching the legacy workspace_promotions relation object, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
+    "api:/api/v1/infrastructure/payment-methods:apps/web/src/app/api/v1/infrastructure/payment-methods/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/payment-methods by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring view_transactions through the shared workspace permission resolver, reading private.workspace_wallets through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
+    "api:/api/v1/infrastructure/wallets:apps/web/src/app/api/v1/infrastructure/wallets/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallets by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring view_transactions through the shared workspace permission resolver, reading private.workspace_wallets through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+    },
+    "api:/api/v1/infrastructure/wallet-transactions:apps/web/src/app/api/v1/infrastructure/wallet-transactions/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallet-transactions by forwarding the normal Supabase browser session or non-app-session Bearer token to the get_wallet_transactions_with_permissions RPC with the legacy p_ws_id, p_limit, p_offset, p_order_by=taken_at, p_order_direction=DESC, and p_include_count=true payload, preserving caller-token permission/RLS behavior, the required ws_id parameter, parseInt-style limit/offset behavior, raw RPC rows, first-row total_count extraction, and legacy error body."
+    },
+    "api:/api/v1/workspaces/:wsId/Mention:apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/Mention by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, requiring exact MEMBER workspace membership through the caller-token workspace_members read, reading workspace_users.email with the caller token, returning the legacy singular email array payload, and preserving the legacy Unauthorized, Forbidden, Failed to verify workspace access, and Supabase error bodies."
+    },
+    "api:/api/v1/workspaces/:wsId/habits/access:apps/web/src/app/api/v1/workspaces/[wsId]/habits/access/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/habits/access by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, preserving internal, personal, UUID, and handle workspace normalization, requiring exact MEMBER workspace membership through the service-role workspace_members read, reading ENABLE_HABITS from workspace_secrets through the service-role Supabase REST adapter with exact value=true matching, returning the legacy enabled payload, and preserving Unauthorized, Forbidden, workspace-access lookup, and disabled-secret behavior."
+    },
+    "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/mobile/module-flags by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving the legacy internal workspace slug, requiring workspace membership through a caller-token workspace_members read, reading MOBILE_HIDE_EXPERIMENTAL_MODULES and MOBILE_HIDDEN_MODULES from workspace_secrets through the server-owned Supabase REST adapter, preserving JSON-array and comma-separated hidden-module parsing, returning sorted hiddenModuleIds, and keeping the legacy private cache directive plus Unauthorized, workspace-access, membership lookup, and module-flag lookup error bodies."
+    },
+    "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/budgets/status by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling get_budget_status with the service-role credential, returning the raw legacy RPC payload, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching budget status bodies."
+    },
+    "api:/api/workspaces/:wsId/finance/charts/balance:apps/web/src/app/api/workspaces/[wsId]/finance/charts/balance/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/workspaces/:wsId/finance/charts/balance by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_finance_stats through has_workspace_permission, preserving the legacy required date query plus includeConfidential boolean parsing, calling get_wallet_balance_at_date, returning the legacy { balance, date } payload, and preserving the legacy Unauthorized, Forbidden, invalid query, and balance lookup error bodies."
+    },
+    "api:/api/v1/workspaces/:wsId/finance/debts/summary:apps/web/src/app/api/v1/workspaces/[wsId]/finance/debts/summary/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/debts/summary by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling private-schema get_debt_loan_summary with _actor_id and _ws_id using the service-role credential, returning the first legacy RPC row or the zero summary, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching debt/loan summary bodies."
+    },
+    "api:/api/v1/workspaces/:wsId/finance/filter-users:apps/web/src/app/api/v1/workspaces/[wsId]/finance/filter-users/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/filter-users by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving the legacy type query branches, reading distinct_transaction_creators and distinct_invoice_creators with service-role auth and explicit ws_id filters, reading workspace_users with caller-token auth for normal Supabase sessions and service-role auth for app sessions, returning the legacy users envelope, and preserving the legacy Unauthorized and branch-specific failure bodies."
+    },
+    "api:/api/v1/workspaces/:wsId/finance/invoices/subscription/context:apps/web/src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/invoices/subscription/context by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring create_invoices through has_workspace_permission, preserving the legacy missing-query short-circuit, validating requested STUDENT groups inside the workspace, reading user_group_attendance and finance_invoice_user_groups with service-role auth and explicit workspace/user/group filters, returning the legacy attendance and latestInvoices envelope, and preserving the legacy Unauthorized and Error fetching subscription invoice context bodies."
+    },
+    "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving JavaScript parseInt-style daysAhead parsing with a 30-day fallback, calling get_upcoming_recurring_transactions with caller-token auth for normal Supabase sessions and service-role auth for app sessions, and preserving the legacy upcomingTransactions envelope, 403 Unauthorized body, and Failed to fetch upcoming recurring transactions body. Recurring transaction collection and detail routes remain legacy-owned."
+    },
+    "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array."
+        },
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, normalizing the legacy create payload, omitting missing/null IDs so the database default generates a UUID, inserting private.timezones through the server-owned private-schema Supabase REST adapter, and preserving the legacy success and create failure response bodies."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/timezones/:timezoneId:apps/web/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns PUT and DELETE /api/v1/infrastructure/timezones/:timezoneId by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, normalizing the legacy timezone update payload, patching and deleting private.timezones through the server-owned private-schema Supabase REST adapter, and preserving the legacy success plus method-specific update/delete failure response bodies."
+    },
+    "api:/api/v1/infrastructure/user-status-changes:apps/web/src/app/api/v1/infrastructure/user-status-changes/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-status-changes by requiring a normal Supabase browser session or non-app-session Bearer token, forwarding that caller token to Supabase REST so workspace_user_status_changes RLS remains active, preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
+    "api:/api/v1/infrastructure/users:apps/web/src/app/api/v1/infrastructure/users/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/users by requiring a normal Supabase browser session or non-app-session Bearer token, forwarding that caller token to Supabase REST so workspace_users RLS remains active, preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+        }
+      }
+    },
     "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
       "methods": {
         "GET": {
@@ -557,6 +968,16 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
+    },
+    "api:/api/v1/workspaces/:wsId/education/access:apps/web/src/app/api/v1/workspaces/[wsId]/education/access/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/education/access by preserving the legacy access-probe contract: missing or invalid Supabase sessions return 401, while invalid workspaces, missing workspace access, disabled ENABLE_EDUCATION workspace secrets, missing ai_lab permission, permission lookup failures, and secret lookup failures all return HTTP 200 with enabled=false. Enabled workspaces require a normal Supabase browser session or non-app-session Bearer token, getPermissions-compatible workspace permission resolution, and a server-owned workspace_secrets ENABLE_EDUCATION=true read."
+    },
+    "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, and manage_workspace_members flags with the private 30-second success cache directive."
     },
     "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",
@@ -643,6 +1064,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/ai-chat/new preserves the legacy 307 redirect to /:wsId/chat. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/ai-chat/chatbots:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/chatbots/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/ai-chat/chatbots ports the legacy Chatbots summary page as a dynamic authenticated workspace route with fail-closed current-user auth, workspace resolution, ai_chat permission gating, route metadata, localized FeatureSummary content, and the create action wired to the canonical /$locale/$wsId/ai-chat/my-chatbots/new route instead of the legacy /:wsId/chat alias. This marks only the page artifact migrated; parent dashboard and AI chat session/provider ownership remains legacy-owned."
+    },
     "layout:/:locale/:wsId/ai-chat/my-chatbots/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -677,6 +1103,26 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/inventory/manufacturers ports the legacy authenticated inventory manufacturers setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and manufacturer create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/manufacturers endpoint remains separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/products:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/products ports the legacy authenticated products list page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory and stock permission parity, route metadata, localized access-denied state, and TanStack Query product table loading plus quick edit/delete flows through the internal-api inventory facades. The backing workspace inventory product APIs remain separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/products/:productId:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/[productId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/products/$productId ports the legacy authenticated product detail/new form page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory and stock permission parity, route metadata, localized access-denied state, and TanStack Query form loading/mutations through the internal-api inventory facades. The backing workspace inventory product APIs remain separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/promotions:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/promotions ports the legacy authenticated inventory promotions page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission context, route metadata, and TanStack Query CRUD through the internal-api promotion facades. The underlying workspace promotion API routes remain separately tracked backend migration work."
+    },
+    "page:/:locale/:wsId/inventory/storefronts:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/storefronts/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/inventory/storefronts ports the legacy authenticated storefront management page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory catalog permission parity, route metadata, localized access-denied state, and TanStack Query reads/mutations through the internal-api inventory storefront facades. The protected workspace storefront, listing, option-template, product, and public storefront API routes remain separately tracked backend migration work."
     },
     "page:/:locale/:wsId/inventory/suppliers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx": {
       "status": "migrated",
@@ -918,6 +1364,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/finance/wallets/$walletId preserves the legacy 307 redirect to /:wsId/finance/wallets/:walletId with encoded dynamic IDs and forwarded wallet detail query parameters. This marks only the page handoff artifact migrated; parent dashboard/session and Finance wallet data routes remain legacy-owned."
     },
+    "layout:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx": {
+      "status": "accepted-removal",
+      "targetOwner": "tanstack-start",
+      "note": "Accepted replacement/removal: TanStack Start mail leaf routes /$locale/$wsId/mail and /$locale/$wsId/mail/sent are already migrated as 307 handoffs to the standalone Mail app via buildMailRedirectHref. The legacy Next mail layout's workspace/user gate is replaced by the Mail app centralized auth proxy and workspace-normalization boundary, so no route-specific dashboard layout is rendered in the Start runtime. Parent dashboard/session/provider ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -938,6 +1389,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/quiz-sets preserves the legacy 308 redirect to /:wsId/education/library/quiz-sets. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/quiz-sets/:setId/linked-modules:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/education/quiz-sets/$setId/linked-modules ports the legacy linked course modules table and link/unlink workflow with an auth-gated loader, forwarded internal-api auth, CustomDataTable, and shared quiz-set linked-module components."
+    },
     "page:/:locale/:wsId/education/quizzes:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quizzes/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -947,6 +1403,11 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/library ports the legacy static education library card index with localized copy and shared education shell primitives. This marks only the page artifact migrated; parent dashboard layout/session and library resource pages remain legacy-owned."
+    },
+    "page:/:locale/:wsId/education/valsea:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/education/valsea ports the legacy Valsea Classroom Studio page as a dynamic authenticated workspace route with fail-closed current-user auth, full workspace resolution, localized education header metadata/content, and the shared ValseaClassroomClient. This marks only the page artifact migrated; parent dashboard/session ownership and the Valsea audio/processing APIs remain separately tracked backend work."
     },
     "page:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx": {
       "status": "migrated",
@@ -1018,6 +1479,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/changelog ports the legacy authenticated dashboard changelog leaf as a dynamic no-store workspace route with fail-closed auth, workspace resolution, TanStack Query hydration, and changelog data loaded through the Rust-owned /api/v1/infrastructure/changelog backend facade instead of direct Supabase reads."
+    },
     "page:/:locale/:wsId/users/topic-announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1027,6 +1493,16 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/structure ports the legacy local-state organizational-structure mock page, metadata, localized messages, canvas interactions, and dialogs without adding Supabase or app API access. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/users/feedbacks:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/feedbacks/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/feedbacks ports the legacy feedback management page as a dynamic authenticated workspace route with fail-closed current-user auth, full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared UserFeedbacksClient backed by internal-api user facades. This marks only the page artifact migrated; feedback data APIs remain separately tracked backend/internal-api migration work."
+    },
+    "page:/:locale/:wsId/users/tutoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/users/tutoring preserves the legacy tutoring page with fail-closed current-user auth, forwarded-auth full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared tutoring client. Tutoring data access stays behind existing internal-api helpers and the backing APIs remain separately tracked Rust migration work."
     },
     "page:/:locale/:wsId/diet:apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx": {
       "status": "migrated",

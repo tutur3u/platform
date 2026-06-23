@@ -76,7 +76,7 @@ app-local duplicates.
 | APIs | Next.js Route Handlers, tRPC, `@tuturuuu/internal-api` |
 | AI | Vercel AI SDK and provider-specific packages |
 | Mobile | Flutter, Dart, BLoC/Cubit |
-| Tests and checks | Vitest, Playwright, Biome, tsgo, Flutter checks |
+| Tests and checks | Vitest, Playwright, Biome, tsc, Flutter checks |
 | Deployment | Vercel, GitHub Actions, Docker blue/green workflow |
 
 ## Quick Start

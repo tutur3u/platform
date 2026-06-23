@@ -23,9 +23,9 @@ import {
   toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -98,6 +98,7 @@ function WorkspaceIcon({
     avatarUrl,
     fallbackLogoUrl
   );
+  const shouldSkipFallbackOptimization = /^https?:\/\//u.test(fallbackLogoUrl);
 
   return (
     <Avatar
@@ -124,11 +125,15 @@ function WorkspaceIcon({
           resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
         )}
       >
-        <AvatarImage
+        <Image
+          alt=""
+          aria-hidden="true"
           className="h-full w-full object-cover"
+          height={20}
           src={fallbackLogoUrl}
+          unoptimized={shouldSkipFallbackOptimization}
+          width={20}
         />
-        {name ? getInitials(name) : '?'}
       </AvatarFallback>
     </Avatar>
   );

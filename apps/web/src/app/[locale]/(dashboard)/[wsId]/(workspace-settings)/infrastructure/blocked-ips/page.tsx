@@ -1,17 +1,20 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import type { IPBlockStatus } from '@tuturuuu/utils/abuse-protection';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { z } from 'zod';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import AddBlockedIPDialog from './add-blocked-ip-dialog';
 import { getBlockedIPsColumns } from './columns';
 import Filters from './filters';
+import {
+  type BlockedIpSearchParams,
+  BlockedIpSearchParamsSchema,
+  shouldApplyBlockedIpStatusFilter,
+} from './search-params';
 
 export const metadata: Metadata = {
   title: 'Blocked IPs',
@@ -24,15 +27,6 @@ interface SearchParams {
   pageSize?: number;
   status?: string;
 }
-
-const SearchParamsSchema = z.object({
-  q: z.string().default(''),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
-  status: z
-    .enum(['active', 'expired', 'manually_unblocked', ''])
-    .default('active'),
-});
 
 interface Props {
   params: Promise<{
@@ -56,7 +50,7 @@ export default async function BlockedIPsPage({ params, searchParams }: Props) {
           notFound();
         }
 
-        const sp = SearchParamsSchema.parse(await searchParams);
+        const sp = BlockedIpSearchParamsSchema.parse(await searchParams);
 
         const { data, count } = await getData(sp);
 
@@ -102,7 +96,7 @@ async function getData({
   pageSize = 10,
   status,
   retry = true,
-}: SearchParams & { retry?: boolean } = {}) {
+}: Partial<BlockedIpSearchParams> & { retry?: boolean } = {}) {
   const supabase = await createClient();
 
   let queryBuilder = supabase
@@ -122,8 +116,8 @@ async function getData({
     .order('blocked_at', { ascending: false });
 
   // Filter by status if provided
-  if (status && status !== '') {
-    queryBuilder = queryBuilder.eq('status', status as IPBlockStatus);
+  if (status && shouldApplyBlockedIpStatusFilter(status)) {
+    queryBuilder = queryBuilder.eq('status', status);
   }
 
   // Search filter

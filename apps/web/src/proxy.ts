@@ -147,6 +147,21 @@ const SCANNER_PATH_PATTERN =
   /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
 const ROOT_DEFAULT_NAVIGATION_CONFIG_ID = 'ROOT_DEFAULT_NAVIGATION';
 const TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID = 'TASKS_OPEN_DEFAULT_BOARD';
+const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
+  'Retry-After',
+  'X-Proxy-Block-Reason',
+  'X-RateLimit-Caller-Class',
+  'X-RateLimit-Limit',
+  'X-RateLimit-Policy',
+  'X-RateLimit-Remaining',
+  'X-RateLimit-Reset',
+  'X-RateLimit-Window',
+  'X-Request-Id',
+  'X-Vercel-Id',
+  'CF-Ray',
+] as const;
+const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
+const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
 
 type RootNavigationTarget = 'workspace_home' | 'tasks' | 'calendar' | 'finance';
 
@@ -477,6 +492,117 @@ function getBearerToken(headers: Headers) {
   return token || null;
 }
 
+function hasVerifiableSessionCredential(req: NextRequest) {
+  const bearerToken = getBearerToken(req.headers);
+  return (
+    hasSupabaseSessionCookie(req) ||
+    (!!bearerToken && looksLikeSupabaseJwt(bearerToken))
+  );
+}
+
+async function resolveRateLimitDebugIdentity(req: NextRequest): Promise<{
+  isStaff: boolean;
+  userEmail: string | null;
+  userId: string | null;
+} | null> {
+  if (!hasVerifiableSessionCredential(req)) {
+    return null;
+  }
+
+  try {
+    const supabase = await createClient(req);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user) {
+      return null;
+    }
+
+    const userEmail = user.email ?? null;
+    return {
+      isStaff: isExactTuturuuuDotComEmail(userEmail),
+      userEmail,
+      userId: user.id,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function appendRateLimitDebugHeaders(
+  response: NextResponse,
+  {
+    identity,
+    ipAddress,
+  }: {
+    identity: Awaited<ReturnType<typeof resolveRateLimitDebugIdentity>>;
+    ipAddress: string;
+  }
+) {
+  if (ipAddress && ipAddress !== 'unknown') {
+    response.headers.set('X-RateLimit-Client-IP', ipAddress);
+  }
+
+  if (identity?.userId) {
+    response.headers.set('X-RateLimit-User-Id', identity.userId);
+  }
+
+  if (identity?.userEmail) {
+    response.headers.set('X-RateLimit-User-Email', identity.userEmail);
+  }
+}
+
+function buildStaffRateLimitWarningResponse(
+  guardResponse: NextResponse,
+  {
+    identity,
+    ipAddress,
+  }: {
+    identity: NonNullable<
+      Awaited<ReturnType<typeof resolveRateLimitDebugIdentity>>
+    >;
+    ipAddress: string;
+  }
+) {
+  const headers = new Headers();
+  for (const headerName of RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES) {
+    const value = guardResponse.headers.get(headerName);
+    if (value) {
+      headers.set(headerName, value);
+    }
+  }
+
+  headers.set('X-RateLimit-Warning', STAFF_RATE_LIMIT_WARNING);
+  headers.set('X-RateLimit-Debug-Bypass', STAFF_RATE_LIMIT_DEBUG_BYPASS);
+  headers.set('X-RateLimit-Original-Status', `${guardResponse.status}`);
+
+  const response = NextResponse.next({ headers });
+  appendRateLimitDebugHeaders(response, { identity, ipAddress });
+  return response;
+}
+
+async function handleProxyGuardResponse(
+  req: NextRequest,
+  guardResponse: NextResponse
+) {
+  if (guardResponse.status !== 429) {
+    return guardResponse;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+
+  const identity = await resolveRateLimitDebugIdentity(req);
+  appendRateLimitDebugHeaders(guardResponse, { identity, ipAddress });
+
+  if (identity?.isStaff) {
+    return buildStaffRateLimitWarningResponse(guardResponse, {
+      identity,
+      ipAddress,
+    });
+  }
+
+  return guardResponse;
+}
+
 function isTrustedCliTuturuuuRateLimitBypass(
   _pathname: string,
   headers: Headers
@@ -671,15 +797,6 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   }
 
   return null;
-}
-
-function isExpectedHumanAuthRateLimitPath(pathname: string) {
-  return (
-    /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/otp\/(?:send|verify)(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp)(?:\/|$)/.test(pathname)
-  );
 }
 
 async function blockSuspiciousAnonymousApiRequest(
@@ -1015,30 +1132,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       ],
     });
     if (guardResponse) {
-      if (
-        guardResponse.status === 429 &&
-        guardResponse.headers.get('X-Proxy-Block-Reason') ===
-          'route-rate-limit' &&
-        !isExpectedHumanAuthRateLimitPath(req.nextUrl.pathname) &&
-        !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
-        !hasSupabaseSessionCookie(req)
-      ) {
-        const ipAddress = extractIPFromRequest(req.headers);
-        const newBlock =
-          ipAddress === 'unknown'
-            ? null
-            : await recordSuspiciousApiRequestEdge(ipAddress);
-
-        if (newBlock) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
-          );
-          return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
-        }
-      }
-
-      return guardResponse;
+      return handleProxyGuardResponse(req, guardResponse);
     }
 
     return NextResponse.next();

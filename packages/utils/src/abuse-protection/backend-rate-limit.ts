@@ -1,4 +1,3 @@
-import { blockIPEdge } from './edge';
 import type { BlockInfo } from './types';
 
 type BackendRateLimitSource = 'auth' | 'database';
@@ -37,8 +36,10 @@ export function isBackendRateLimitError(
 }
 
 export async function cascadeBackendRateLimitToProxyBan({
-  ipAddress,
+  ipAddress: _ipAddress,
 }: BackendRateLimitEscalationOptions): Promise<BlockInfo | null> {
-  const shouldBlockIp = ipAddress && ipAddress !== 'unknown';
-  return shouldBlockIp ? blockIPEdge(ipAddress, 'api_abuse') : null;
+  // A backend 429 is an availability/backpressure signal. It is not enough
+  // evidence to hard-ban a public NAT IP that may represent a classroom,
+  // university, or enterprise office.
+  return null;
 }

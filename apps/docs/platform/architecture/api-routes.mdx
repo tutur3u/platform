@@ -1,7 +1,7 @@
 ---
 title: "API Route Patterns"
 description: "Implementing and organizing API routes in the Tuturuuu platform"
-updatedAt: "2026-06-21"
+updatedAt: "2026-06-23"
 ---
 
 The Tuturuuu platform uses Next.js App Router API routes with consistent patterns for versioning, authentication, error handling, and workspace isolation.
@@ -545,6 +545,18 @@ minute, 12000 per hour, and 80000 per day, and can be tuned with
 `API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE`,
 `API_PROXY_TASK_BOARD_READ_LIMIT_HOUR`, and
 `API_PROXY_TASK_BOARD_READ_LIMIT_DAY`.
+
+Proxy-side `429` responses include support diagnostics when available:
+`X-RateLimit-Client-IP`, `X-RateLimit-User-Id`, and
+`X-RateLimit-User-Email`, plus the selected policy/window headers emitted by the
+proxy guard. Exact server-verified browser sessions ending in `@tuturuuu.com`
+are allowed through proxy-side rate-limit blocks for debugging with
+`X-RateLimit-Warning: staff-debug-bypass`,
+`X-RateLimit-Debug-Bypass: tuturuuu-staff`, and
+`X-RateLimit-Original-Status: 429`. This bypass only applies after the server
+revalidates the Supabase session, only to proxy guard rate-limit blocks, and does
+not bypass malformed auth, permissions, payload-size checks, route-handler
+errors, or non-staff/anonymous requests.
 
 Finance invoice creation support reads use a separate
 `finance-invoice-create-read` proxy bucket for the shared-IP burst created by

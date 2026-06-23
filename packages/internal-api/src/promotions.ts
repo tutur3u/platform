@@ -115,6 +115,21 @@ export async function updateWorkspacePromotion(
   );
 }
 
+export async function deleteWorkspacePromotion(
+  workspaceId: string,
+  promotionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/promotions/${encodePathSegment(promotionId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
 export async function listWorkspaceUserLinkedPromotions(
   workspaceId: string,
   userId: string,

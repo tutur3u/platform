@@ -13,6 +13,7 @@ let setRateLimitDetailsHandler: (
   handler: ((details: unknown) => void) | null
 ) => void;
 let setRateLimitMessage: (fn: (seconds: number) => string) => void;
+let setRateLimitWarningMessage: (fn: () => string) => void;
 
 describe('fetch-interceptor', () => {
   let originalFetch: typeof globalThis.fetch;
@@ -29,6 +30,7 @@ describe('fetch-interceptor', () => {
     installFetchInterceptor = mod.installFetchInterceptor;
     setRateLimitDetailsHandler = mod.setRateLimitDetailsHandler;
     setRateLimitMessage = mod.setRateLimitMessage;
+    setRateLimitWarningMessage = mod.setRateLimitWarningMessage;
 
     mockWarning.mockClear();
     vi.useFakeTimers();
@@ -57,6 +59,62 @@ describe('fetch-interceptor', () => {
     expect(response.status).toBe(200);
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockWarning).not.toHaveBeenCalled();
+  });
+
+  it('should show staff debug warnings on non-429 responses without retrying', async () => {
+    const detailsHandler = vi.fn();
+    const mockResponse = new Response(JSON.stringify({ data: 'ok' }), {
+      headers: {
+        'Retry-After': '9',
+        'X-Proxy-Block-Reason': 'route-rate-limit',
+        'X-RateLimit-Caller-Class': 'authenticated',
+        'X-RateLimit-Client-IP': '203.0.113.10',
+        'X-RateLimit-Debug-Bypass': 'tuturuuu-staff',
+        'X-RateLimit-Original-Status': '429',
+        'X-RateLimit-Policy': 'users-me',
+        'X-RateLimit-User-Email': 'member@tuturuuu.com',
+        'X-RateLimit-User-Id': 'user-123',
+        'X-RateLimit-Warning': 'staff-debug-bypass',
+        'X-RateLimit-Window': 'minute',
+      },
+      status: 200,
+    });
+    const mockFetch = vi.fn().mockResolvedValue(mockResponse);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    setRateLimitWarningMessage(() => 'Staff debug warning');
+    installFetchInterceptor();
+    const response = await globalThis.fetch('/api/v1/users/me/profile');
+
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockWarning).toHaveBeenCalledTimes(1);
+    expect(mockWarning.mock.calls[0]?.[0]).toBe('Staff debug warning');
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientIp: '203.0.113.10',
+        debugBypass: 'tuturuuu-staff',
+        headers: expect.objectContaining({
+          'X-RateLimit-Original-Status': '429',
+          'X-RateLimit-Warning': 'staff-debug-bypass',
+        }),
+        rateLimitStatus: 429,
+        retryAfterSeconds: 9,
+        retryAttempt: 0,
+        status: 200,
+        userEmail: 'member@tuturuuu.com',
+        userId: 'user-123',
+        warning: 'staff-debug-bypass',
+        willRetry: false,
+      })
+    );
   });
 
   it('should retry on 429 and return successful response', async () => {

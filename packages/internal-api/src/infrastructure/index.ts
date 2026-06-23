@@ -1,6 +1,7 @@
 export * from './abuse';
 export * from './ai';
 export * from './apps';
+export * from './blocked-ips';
 export * from './github-bot';
 export * from './mobile';
 export * from './monitoring';

@@ -460,6 +460,39 @@ export async function generateValseaClassroomScenario(
   );
 }
 
+export interface GenerateQuizOptionExplanationPayload {
+  question: string;
+  option: unknown;
+}
+
+export interface GenerateQuizOptionExplanationResponse {
+  explanation?: string;
+}
+
+/**
+ * Generate an AI explanation for a single quiz option via
+ * `POST /api/ai/objects/quizzes/explanation` (note: not under `/api/v1`; the
+ * workspace id travels in the body as `wsId`). Forwards the caller's auth.
+ */
+export async function generateWorkspaceQuizOptionExplanation(
+  workspaceId: string,
+  payload: GenerateQuizOptionExplanationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<GenerateQuizOptionExplanationResponse>(
+    '/api/ai/objects/quizzes/explanation',
+    {
+      body: JSON.stringify({ wsId: workspaceId, ...payload }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
 export async function synthesizeValseaClassroomSpeech(
   workspaceId: string,
   payload: ValseaClassroomSpeechPayload,
@@ -994,6 +1027,273 @@ export async function getWorkspaceQuizzes(
   const query = searchParams.toString();
   return client.json<ListWorkspaceQuizzesResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListWorkspaceFlashcardsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListWorkspaceFlashcardsResponse {
+  data: Array<{
+    id: string;
+    front: string;
+    back: string;
+    created_at?: string;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of a workspace's flashcard library via
+ * `GET /api/v1/workspaces/:wsId/flashcards`. Forwards the caller's auth.
+ */
+export async function getWorkspaceFlashcards(
+  workspaceId: string,
+  params?: ListWorkspaceFlashcardsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListWorkspaceFlashcardsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListAllWorkspaceCourseModulesParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListAllWorkspaceCourseModulesResponse {
+  data: Array<{
+    id: string;
+    name?: string | null;
+    is_public?: boolean | null;
+    is_published?: boolean | null;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of EVERY course module in a workspace (across all course
+ * groups) via `GET /api/v1/workspaces/:wsId/course-modules`.
+ */
+export async function listAllWorkspaceCourseModules(
+  workspaceId: string,
+  params?: ListAllWorkspaceCourseModulesParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListAllWorkspaceCourseModulesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListQuizSetLinkedModulesParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListQuizSetLinkedModulesResponse {
+  data: Array<{
+    id: string;
+    group_id?: string | null;
+    name?: string | null;
+    is_public?: boolean | null;
+    is_published?: boolean | null;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of the course modules linked to a quiz set via
+ * `GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules`.
+ */
+export async function getQuizSetLinkedModules(
+  workspaceId: string,
+  setId: string,
+  params?: ListQuizSetLinkedModulesParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListQuizSetLinkedModulesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}/linked-modules${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListQuizSetQuizzesParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+/**
+ * Paginated read of the quizzes (with options) that belong to a quiz set via
+ * `GET /api/v1/workspaces/:wsId/quiz-sets/:setId/quizzes`.
+ */
+export async function getQuizSetQuizzes(
+  workspaceId: string,
+  setId: string,
+  params?: ListQuizSetQuizzesParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListWorkspaceQuizzesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}/quizzes${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListCourseModuleQuizSetsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListCourseModuleQuizSetsResponse {
+  data: Array<{
+    id: string;
+    name: string;
+    created_at?: string;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of the quiz sets linked to a single course module via
+ * `GET /api/v1/workspaces/:wsId/course-modules/:moduleId/quiz-sets`.
+ */
+export async function getCourseModuleQuizSets(
+  workspaceId: string,
+  moduleId: string,
+  params?: ListCourseModuleQuizSetsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListCourseModuleQuizSetsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules/${encodePathSegment(moduleId)}/quiz-sets${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListWorkspaceQuizSetsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface ListWorkspaceQuizSetsResponse {
+  data: Array<{
+    id: string;
+    name: string;
+    created_at?: string;
+    course_module_quiz_sets?: Array<{ module_id: string }>;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated read of a workspace's quiz-set library via
+ * `GET /api/v1/workspaces/:wsId/quiz-sets`. Forwards the caller's auth.
+ */
+export async function getWorkspaceQuizSets(
+  workspaceId: string,
+  params?: ListWorkspaceQuizSetsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+
+  const query = searchParams.toString();
+  return client.json<ListWorkspaceQuizSetsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets${
       query ? `?${query}` : ''
     }`,
     {

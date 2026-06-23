@@ -7,15 +7,46 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 100;
+
+export async function GET(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
-  const { data, error } = await supabase
+  const url = new URL(request.url);
+  const q = url.searchParams.get('q')?.trim();
+  const page = Math.max(
+    Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1,
+    1
+  );
+  const pageSize = Math.min(
+    Math.max(
+      Number.parseInt(
+        url.searchParams.get('pageSize') ?? `${DEFAULT_PAGE_SIZE}`,
+        10
+      ) || DEFAULT_PAGE_SIZE,
+      1
+    ),
+    MAX_PAGE_SIZE
+  );
+
+  const queryBuilder = supabase
     .from('workspace_user_group_tags')
-    .select('*')
+    .select('*, group_ids:workspace_user_group_tag_groups(group_id)', {
+      count: 'exact',
+    })
     .eq('ws_id', id)
-    .single();
+    .order('created_at', { ascending: false });
+
+  if ((q?.length ?? 0) > 0) {
+    queryBuilder.ilike('name', `%${q}%`);
+  }
+
+  const from = (page - 1) * pageSize;
+  queryBuilder.range(from, from + pageSize - 1);
+
+  const { data, error, count } = await queryBuilder;
 
   if (error) {
     console.log(error);
@@ -25,7 +56,17 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({
+    data: (data ?? []).map(({ group_ids, ...tag }) => ({
+      ...tag,
+      group_ids: (group_ids ?? []).map(
+        (group: { group_id: string }) => group.group_id
+      ),
+    })),
+    count: count ?? 0,
+    page,
+    pageSize,
+  });
 }
 
 export async function POST(req: Request, { params }: Params) {

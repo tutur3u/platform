@@ -72,11 +72,74 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   falls back to browser Supabase cookies only when no app-session token is
   present, reads only `enabled` from `private.ai_whitelisted_emails`, and
   returns the derived `{ email, enabled }` payload.
+- `GET` / `POST` `/api/v1/infrastructure/ai/whitelist/emails` and
+  `GET` / `POST` `/api/v1/infrastructure/ai/whitelist/domains`:
+  legacy-compatible infrastructure AI whitelist collection routes. Rust
+  revalidates a normal Supabase browser session or non-app-session Bearer
+  token, requires a `@tuturuuu.com` operator email, reads and inserts private
+  whitelist table rows through the server-owned private-schema REST adapter,
+  preserves `page`/`pageSize`/`q`, `created_at.desc` ordering, exact-count
+  pagination, raw row lists, Zod-style create validation messages, `enabled`
+  defaults, 201 create wrappers, and plain-text collection failure bodies.
+- `PUT` / `DELETE` `/api/v1/infrastructure/ai/whitelist/{email}` and
+  `PUT` / `DELETE` `/api/v1/infrastructure/ai/whitelist/domain/{domain}`:
+  legacy-compatible protected AI whitelist detail routes. Rust revalidates the
+  same operator session boundary as the list routes, decodes the path segment,
+  patches or deletes matching private whitelist rows through the service-role
+  private-schema REST adapter, and preserves the legacy success and failure
+  bodies.
+- `GET /api/v1/infrastructure/post-email-queue`: legacy-compatible protected
+  post email queue infrastructure summary. Rust revalidates a normal Supabase
+  browser session or non-app-session Bearer token, requires root workspace
+  membership, reads `post_email_queue` through the service-role Supabase REST
+  adapter, preserves the legacy queue status, workspace, and recent batch
+  aggregation shape, and keeps workspace/batch read failures non-fatal.
 - `GET /api/v1/workspaces/limits`: legacy-compatible workspace creation limit
   check. Rust validates browser Supabase auth cookies with Supabase Auth,
   bypasses counting for `tuturuuu.com` and `xwf.tuturuuu.com` emails, otherwise
   reads only an exact count of non-deleted workspaces created by the
   authenticated user, and returns the derived legacy limit payload.
+- `GET /api/v1/workspaces/:wsId/education/access`: legacy-compatible education
+  feature access probe. Rust revalidates a normal Supabase browser session or
+  non-app-session Bearer token, resolves workspace access and the `ai_lab`
+  permission with the shared workspace permission helper, reads
+  `ENABLE_EDUCATION` from `workspace_secrets` through the server-owned Supabase
+  REST adapter, and preserves the legacy `{ "enabled": false }` response for
+  workspace, feature-flag, permission, or lookup failures.
+- `GET /api/v1/workspaces/:wsId/Mention`: legacy-compatible mention email
+  endpoint. Rust revalidates a normal Supabase browser session or
+  non-app-session Bearer token, requires exact `MEMBER` workspace membership,
+  reads `workspace_users.email` with the caller token, and preserves the legacy
+  `{ "email": [...] }` success payload plus `{ "error": ... }` auth,
+  membership, and Supabase failure bodies.
+- `GET /api/v1/workspaces/:wsId/habits/access`: legacy-compatible habits
+  feature access probe. Rust revalidates a normal Supabase browser session or
+  non-app-session Bearer token, resolves `internal`, `personal`, UUID, and
+  direct handle workspace identifiers, requires exact `MEMBER` workspace
+  membership through the service-role Supabase REST adapter, reads
+  `ENABLE_HABITS` from `workspace_secrets`, and preserves the exact
+  `value === "true"` enabled contract.
+- `GET /api/v1/workspaces/:wsId/mobile/module-flags`: legacy-compatible mobile
+  module visibility endpoint. Rust revalidates a normal Supabase browser
+  session or non-app-session Bearer token, resolves the legacy `internal`
+  workspace slug, requires workspace membership through a caller-token
+  `workspace_members` read, reads `MOBILE_HIDE_EXPERIMENTAL_MODULES` and
+  `MOBILE_HIDDEN_MODULES` from `workspace_secrets` through the server-owned
+  Supabase REST adapter, and returns the sorted legacy `{ "hiddenModuleIds": [] }`
+  payload with the private cache directive.
+- `GET /api/v1/users/me/identities`: legacy-compatible linked identity reader.
+  Rust revalidates a normal Supabase browser session or non-app-session Bearer
+  token with Supabase Auth, rejects Tuturuuu app-session tokens, extracts the
+  raw Supabase Auth `identities` array from the revalidated user JSON, and
+  returns `{ "identities": [], "canUnlink": false }` with the legacy private
+  cache directive.
+- `GET` / `PATCH` `/api/v1/users/calendar-settings`: legacy-compatible current
+  user calendar settings endpoint. Rust accepts calendar app-session tokens or
+  revalidated browser Supabase sessions, reads and updates
+  `user_private_details.timezone`, `first_day_of_week`, and `time_format`,
+  defaults missing values to `auto`, strips unknown patch fields, validates
+  legacy enum/string limits, and preserves the private read cache plus no-store
+  mutation behavior.
 - `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
   legacy-compatible workspace permission check route. Rust revalidates a normal
   Supabase browser session or non-app-session Bearer token, ignores app-session
@@ -84,6 +147,20 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   identifiers, requires workspace access, and returns the derived
   `{ "hasPermission": boolean }` result from role, default, creator, and admin
   permission context.
+- `GET /api/v1/workspaces/:wsId/settings/permissions`: legacy-compatible
+  workspace settings permission flags. Rust shares the same permission resolver
+  as the permission check route, rejects app-session tokens, resolves
+  personal/workspace identifiers, returns `manage_subscription`,
+  `manage_workspace_settings`, and `manage_workspace_members`, and preserves the
+  legacy private 30-second success cache directive.
+- `GET /api/v1/workspaces/:wsId/course-modules` and
+  `GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules`:
+  legacy-compatible education course-module readers. Rust revalidates a normal
+  Supabase browser session or non-app-session Bearer token, resolves workspace
+  `ai_lab` permission, requires the `ENABLE_EDUCATION` workspace secret, reads
+  course-module rows through the server-owned Supabase REST adapter with
+  exact-count pagination, and verifies linked quiz sets belong to the resolved
+  workspace before listing linked modules.
 - `GET /api/v1/workspaces/:wsId/crawlers/status`: legacy-compatible crawler
   status lookup. Rust preserves the legacy workspace-agnostic behavior,
   validates the required `url` query parameter, reads the exact `crawled_urls`
@@ -152,6 +229,193 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   root workspace mobile policy config IDs through the server-owned Supabase REST
   adapter, and returns the legacy `supported` / `update-recommended` /
   `update-required` payload with wildcard CORS headers.
+- `GET` / `PUT` `/api/v1/infrastructure/mobile-versions`: protected admin
+  mobile policy route. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, requires root workspace
+  `manage_workspace_roles` through `has_workspace_permission`, reads and
+  validates the fixed root workspace mobile policy config IDs for snapshots,
+  and upserts the nine root workspace policy config rows for writes while
+  preserving the legacy `{ ios, android, webOtpEnabled }` and success/error
+  bodies.
+- `GET` / `POST` `/api/v1/infrastructure/timezones` and `PUT` / `DELETE`
+  `/api/v1/infrastructure/timezones/:timezoneId`: protected infrastructure
+  timezone routes. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, requires root workspace
+  `manage_workspace_roles`, reads and writes `private.timezones` through the
+  server-owned private-schema Supabase REST adapter, preserves `value` ordering
+  for reads, normalizes legacy create/update payloads, omits missing/null
+  create IDs so the database UUID default is used, and preserves the legacy
+  success and failure bodies.
+- `GET /api/v1/infrastructure/user-status-changes`: legacy-compatible
+  workspace user status change list. Rust requires a normal Supabase browser
+  session cookie or non-app-session Bearer token, forwards that caller token to
+  Supabase REST so `workspace_user_status_changes` RLS remains active, preserves
+  the required `ws_id` query parameter, parseInt-style `limit`/`offset` range
+  behavior, exact-count pagination, and legacy
+  `{ data, count }` / error-response bodies.
+- `GET /api/v1/infrastructure/users`: legacy-compatible workspace user export
+  list. Rust uses the same caller-token paginated list helper for
+  `workspace_users`, so RLS remains active while preserving the legacy required
+  `ws_id`, parseInt-style `limit`/`offset`, exact-count pagination, raw row list,
+  and `{ data, count }` / error-response bodies.
+- `GET /api/v1/infrastructure/classes`,
+  `GET /api/v1/infrastructure/product-categories`, and
+  `GET /api/v1/infrastructure/score-names`: legacy-compatible catalog export
+  lists for `workspace_user_groups`, `product_categories`, and
+  `user_group_metrics`. Rust uses the shared caller-token paginated list helper
+  so RLS remains active while preserving the required `ws_id`, parseInt-style
+  `limit`/`offset`, exact-count pagination, raw row lists, and legacy error
+  bodies.
+- `GET /api/v1/infrastructure/lessons` and
+  `GET /api/v1/infrastructure/packages`: legacy-compatible content export
+  lists for `private.user_group_posts` and `workspace_products`. Lessons
+  preserves the legacy no-auth service-role private-schema export with the
+  `workspace_user_groups.ws_id` inner filter. Packages revalidates the browser
+  Supabase session cookie or non-app-session Bearer token, normalizes workspace
+  identifiers, requires `view_inventory`, and reads `workspace_products` through
+  the service-role Supabase REST adapter. Both preserve the required `ws_id`,
+  parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
+  legacy error bodies.
+- `GET /api/v1/infrastructure/product-prices`,
+  `GET /api/v1/infrastructure/product-units`, and
+  `GET /api/v1/infrastructure/warehouses`: legacy-compatible inventory setup
+  export lists for `private.inventory_products`, `private.inventory_units`, and
+  `private.inventory_warehouses`. Product prices scope through the
+  `workspace_products` inner workspace filter. Rust accepts inventory
+  app-session credentials or normal Supabase browser/non-app-session Bearer
+  credentials, normalizes workspace identifiers, requires inventory
+  catalog/setup read permissions, and preserves the required `ws_id`,
+  parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
+  legacy error bodies.
+- `GET /api/v1/infrastructure/bills`,
+  `GET /api/v1/infrastructure/roles`, and
+  `GET /api/v1/infrastructure/transaction-categories`: legacy-compatible
+  workspace export lists for `finance_invoices`, `workspace_user_groups`, and
+  `transaction_categories`. Rust uses the shared caller-token paginated list
+  helper so RLS remains active while preserving the required `ws_id`,
+  parseInt-style `limit`/`offset`, exact-count pagination, raw row lists, and
+  legacy error bodies.
+- `GET /api/v1/infrastructure/abuse-intelligence`: legacy-compatible protected
+  abuse intelligence snapshot. Rust revalidates the browser Supabase session
+  cookie or non-app-session Bearer token, requires root workspace
+  `view_infrastructure`, reads reputation subjects, activity signals, and
+  step-up challenges with the caller token, reads active trust overrides with
+  the service-role Supabase adapter, and preserves the legacy summary,
+  `topRiskySubjects`, `limit`, `signalLimit`, and auth/error behavior. POST
+  remains legacy-owned until trust override mutations move to Rust.
+- `GET /api/v1/infrastructure/abuse-events`: legacy-compatible root-workspace
+  abuse event list. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, checks root workspace membership with the
+  caller token, reads `abuse_events` through Supabase REST so RLS remains
+  active, and preserves the legacy `ip`, `type`, `success`, `page`, and
+  `pageSize` query behavior plus the `{ data, count, page, pageSize,
+  totalPages }` response envelope.
+- `GET /api/v1/infrastructure/blocked-ips`: legacy-compatible root-workspace
+  blocked IP list. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, checks root workspace membership with the caller
+  token, reads `blocked_ips` with the legacy `unblocked_by_user` embed through
+  Supabase REST so RLS remains active, and preserves the legacy `status`, `ip`,
+  `page`, and `pageSize` query behavior plus the `{ data, count, page,
+  pageSize, totalPages }` response envelope. POST/DELETE remain legacy-owned
+  until Redis cache mutation parity moves to Rust.
+- `GET /api/v1/infrastructure/suspensions`: legacy-compatible active user
+  suspension list. Rust revalidates the browser Supabase session cookie or
+  non-app-session Bearer token, requires root workspace
+  `manage_workspace_roles` through `has_workspace_permission` with the caller
+  token, reads active `user_suspensions` rows through the server-owned Supabase
+  REST adapter ordered by `suspended_at`, and returns the legacy raw row array.
+  POST and detail DELETE remain legacy-owned until suspension mutations move to
+  Rust.
+- `GET` / `POST` `/api/v1/infrastructure/email-blacklist` and `GET` / `PUT` /
+  `DELETE` `/api/v1/infrastructure/email-blacklist/:entryId`:
+  legacy-compatible root-workspace email blacklist reads and writes. Rust
+  revalidates the browser Supabase session cookie or non-app-session Bearer
+  token, checks root workspace membership with the caller token, reads, inserts,
+  updates, and deletes `email_blacklist` through Supabase REST so RLS remains
+  active, preserves collection ordering, preserves the detail GET non-root `401`
+  quirk, maps `PGRST116` detail GET misses to the legacy `404` body, preserves
+  POST/PUT Zod-style validation responses, maps duplicate creates to `409`, and
+  preserves detail update/delete prefetch/not-found behavior.
+- `GET /api/v1/infrastructure/bill-coupons`,
+  `GET /api/v1/infrastructure/bill-packages`,
+  `GET /api/v1/infrastructure/class-attendance`,
+  `GET /api/v1/infrastructure/class-members`,
+  `GET /api/v1/infrastructure/class-packages`,
+  `GET /api/v1/infrastructure/class-scores`,
+  `GET /api/v1/infrastructure/package-stock-changes`, and
+  `GET /api/v1/infrastructure/student-feedbacks`: legacy-compatible
+  related-filter export lists. Rust reuses the caller-token paginated list
+  helper with route-specific embedded select strings and related-table
+  workspace filters such as `finance_invoices.ws_id`,
+  `workspace_user_groups.ws_id`, `workspace_products.ws_id`, and
+  `workspace_users.ws_id`, preserving Supabase RLS, exact-count pagination, raw
+  row list responses, and legacy error bodies.
+- `GET /api/v1/infrastructure/coupons`,
+  `GET /api/v1/infrastructure/user-coupons`,
+  `GET /api/v1/infrastructure/user-monthly-reports`, and
+  `GET /api/v1/infrastructure/user-monthly-report-logs`: legacy-compatible
+  protected migration export reads for private promotion and monthly report
+  data. Rust
+  revalidates the browser Supabase session cookie or non-app-session Bearer
+  token, normalizes workspace identifiers, requires `manage_external_migrations`
+  through the shared workspace permission resolver, reads the private
+  `workspace_promotions` / `user_linked_promotions` tables and monthly report
+  views through the server-owned Supabase REST adapter, reattaches the legacy
+  `workspace_promotions: { ws_id }` object to linked promotion rows, and
+  preserves exact-count pagination plus legacy error bodies.
+- `GET /api/v1/infrastructure/payment-methods` and
+  `GET /api/v1/infrastructure/wallets`: legacy-compatible protected finance
+  export reads for `private.workspace_wallets`. Rust revalidates the browser
+  Supabase session cookie or non-app-session Bearer token, normalizes workspace
+  identifiers, requires `view_transactions` through the shared workspace
+  permission resolver, and preserves exact-count pagination plus legacy error
+  bodies.
+- `GET /api/v1/infrastructure/wallet-transactions`: legacy-compatible protected
+  wallet transaction export. Rust forwards the caller's Supabase token to the
+  `get_wallet_transactions_with_permissions` RPC with the legacy
+  `p_ws_id`/`p_limit`/`p_offset` payload, `taken_at` descending order, and
+  `p_include_count=true`, then returns the raw RPC rows plus the first row's
+  `total_count` as the legacy `count`.
+- `GET /api/v1/workspaces/:wsId/finance/budgets/status`: legacy-compatible
+  budget status probe. Rust accepts finance/platform app-session or CLI
+  app-session credentials before falling back to a normal Supabase session,
+  normalizes the workspace identifier, requires `manage_finance`, calls
+  `get_budget_status` with the service-role credential, and preserves the raw
+  legacy payload plus Unauthorized, Insufficient permissions, and budget status
+  error bodies.
+- `GET /api/workspaces/:wsId/finance/charts/balance`: legacy-compatible
+  balance chart point. Rust reuses the finance app-session/CLI/Supabase auth
+  boundary, normalizes the workspace identifier, requires
+  `view_finance_stats`, preserves the required `date` query plus
+  `includeConfidential` parsing, calls `get_wallet_balance_at_date`, and
+  returns the legacy `{ balance, date }` payload with Unauthorized, Forbidden,
+  invalid-query, and balance lookup error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/debts/summary`: legacy-compatible debt
+  and loan summary probe. Rust reuses the finance app-session/CLI/Supabase
+  auth boundary, normalizes the workspace identifier, requires
+  `manage_finance`, calls private-schema `get_debt_loan_summary` with the
+  service-role credential, returns the first legacy RPC row or the zero summary,
+  and preserves legacy auth, permission, and summary error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/filter-users`: legacy-compatible
+  finance user filter endpoint. Rust reuses the finance
+  app-session/CLI/Supabase auth boundary, normalizes the workspace identifier,
+  requires `view_transactions`, reads transaction and invoice creator filters
+  with service-role auth, preserves caller-token reads for workspace users when
+  a normal Supabase session is present, and keeps the legacy `{ users }` and
+  branch-specific error bodies.
+- `GET /api/v1/workspaces/:wsId/finance/invoices/subscription/context`:
+  legacy-compatible subscription invoice context endpoint. Rust reuses the
+  finance app-session/CLI/Supabase auth boundary, normalizes the workspace
+  identifier, requires `create_invoices`, validates requested student groups,
+  reads month-scoped attendance and completed invoice history with service-role
+  auth, and returns the legacy attendance plus latest paid invoice coverage
+  context.
+- `GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming`:
+  legacy-compatible upcoming recurring transaction probe. Rust reuses the
+  finance app-session/CLI/Supabase auth boundary, normalizes the workspace
+  identifier, requires `view_transactions`, preserves `daysAhead` parseInt
+  behavior, calls `get_upcoming_recurring_transactions`, and returns the legacy
+  `{ upcomingTransactions }` envelope and error bodies.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates
@@ -176,8 +440,14 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   reader backed by the server-owned Supabase REST adapter. Rust reads the
   statistical and ML forecast tables with `date.asc` ordering, normalizes row
   `date` fields to the legacy `YYYY-MM-DD` response shape, and returns the
-  combined `{ statistical_forecast, ml_forecast }` object. Forecast `POST`
-  ingestion remains legacy-owned until external Aurora writes move behind Rust.
+  combined `{ statistical_forecast, ml_forecast }` object.
+- `POST /api/v1/aurora/forecast`, `POST /api/v1/aurora/ml-metrics`, and
+  `POST /api/v1/aurora/statistical-metrics`: legacy-compatible protected
+  Aurora ingestion routes. Rust preserves the legacy `AURORA_EXTERNAL_URL` and
+  `AURORA_EXTERNAL_WSID` config checks, revalidates the browser Supabase
+  session, enforces the exact `@tuturuuu.com` email-domain gate, fetches the
+  Aurora external forecast or metric payloads, and inserts the normalized rows
+  into the Aurora Supabase tables with the caller token.
 - `POST /api/v1/aurora/health`: legacy-compatible protected Aurora health
   probe. Rust revalidates the browser Supabase session, preserves the legacy
   exact `@tuturuuu.com` email-domain gate, calls
@@ -308,19 +578,22 @@ bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler
 bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put AURORA_EXTERNAL_WSID --config apps/backend/wrangler.jsonc
 bun wrangler deploy --config apps/backend/wrangler.jsonc
 ```
 
 `apps/backend/wrangler.jsonc` declares `BACKEND_INTERNAL_TOKEN`,
 `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and
-`DISCORD_APP_DEPLOYMENT_URL`, and `AURORA_EXTERNAL_URL` under
+`DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL`, and
+`AURORA_EXTERNAL_WSID` under
 `secrets.required`. Wrangler prompts for values during `secret put`; do not
 commit those values in `wrangler.jsonc`, `vars`, docs, or shell history.
 `/readyz` reports not-ready until `BACKEND_INTERNAL_TOKEN` exists.
 Contact/profile preview APIs also require the Supabase secrets, the Rust-owned
 Discord cron proxy requires `CRON_SECRET` plus `DISCORD_APP_DEPLOYMENT_URL`,
-and the Rust-owned Aurora health probe requires `AURORA_EXTERNAL_URL`.
+and the Rust-owned Aurora health/ingest routes require `AURORA_EXTERNAL_URL`
+with `AURORA_EXTERNAL_WSID` for ingestion.
 
 After deployment, smoke-test the returned Worker origin. Before the TanStack
 Worker is deployed, the backend-only curl checks are enough:
