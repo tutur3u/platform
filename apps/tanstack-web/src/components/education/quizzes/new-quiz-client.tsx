@@ -4,12 +4,18 @@ import { useRouter } from 'next/navigation';
 import DynamicQuizForm from './dynamic-form';
 
 interface Props {
+  locale: string;
   wsId: string;
   moduleId: string;
   courseId: string;
 }
 
-export default function NewQuizClient({ wsId, moduleId, courseId }: Props) {
+export default function NewQuizClient({
+  locale,
+  wsId,
+  moduleId,
+  courseId,
+}: Props) {
   const router = useRouter();
 
   return (
@@ -18,7 +24,7 @@ export default function NewQuizClient({ wsId, moduleId, courseId }: Props) {
       moduleId={moduleId}
       onFinish={() =>
         router.push(
-          `/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`
+          `/${locale}/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`
         )
       }
     />
