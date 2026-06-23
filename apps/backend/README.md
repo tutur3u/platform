@@ -140,6 +140,12 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   identifiers, requires workspace access, and returns the derived
   `{ "hasPermission": boolean }` result from role, default, creator, and admin
   permission context.
+- `GET /api/v1/workspaces/:wsId/settings/permissions`: legacy-compatible
+  workspace settings permission flags. Rust shares the same permission resolver
+  as the permission check route, rejects app-session tokens, resolves
+  personal/workspace identifiers, returns `manage_subscription`,
+  `manage_workspace_settings`, and `manage_workspace_members`, and preserves the
+  legacy private 30-second success cache directive.
 - `GET /api/v1/workspaces/:wsId/crawlers/status`: legacy-compatible crawler
   status lookup. Rust preserves the legacy workspace-agnostic behavior,
   validates the required `url` query parameter, reads the exact `crawled_urls`

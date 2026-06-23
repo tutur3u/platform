@@ -7,11 +7,11 @@
         "key": "api",
         "label": "api",
         "legacyNext": 915,
-        "migrated": 138,
-        "percentComplete": 19.45,
+        "migrated": 139,
+        "percentComplete": 19.53,
         "remaining": 915,
-        "terminal": 221,
-        "total": 1136,
+        "terminal": 222,
+        "total": 1137,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "rust-backend",
         "label": "Rust backend",
         "legacyNext": 933,
-        "migrated": 143,
-        "percentComplete": 19.5,
+        "migrated": 144,
+        "percentComplete": 19.57,
         "remaining": 933,
-        "terminal": 226,
-        "total": 1159,
+        "terminal": 227,
+        "total": 1160,
         "unknownStatus": 0
       },
       {
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 1108,
-      "migrated": 345,
-      "percentComplete": 27.91,
+      "migrated": 346,
+      "percentComplete": 27.96,
       "remaining": 1108,
-      "terminal": 429,
-      "total": 1537,
+      "terminal": 430,
+      "total": 1538,
       "unknownStatus": 0
     }
   },
@@ -5713,6 +5713,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/course-modules/:moduleId/quiz-sets:apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/quiz-sets/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/course-modules/:moduleId/quiz-sets",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/quiz-sets/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/courses:apps/web/src/app/api/v1/workspaces/[wsId]/courses/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -8008,7 +8017,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/settings/permissions",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -14322,13 +14331,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1136,
+    "apiRoutes": 1137,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1159,
+    "routeHandlers": 1160,
     "methodCounts": {
-      "GET": 645,
+      "GET": 646,
       "HEAD": 1,
       "POST": 509,
       "PUT": 173,
@@ -14336,6 +14345,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1537
+    "total": 1538
   }
 }

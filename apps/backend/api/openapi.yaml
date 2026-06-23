@@ -8965,6 +8965,52 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/settings/permissions:
+    get:
+      summary: Workspace settings permission flags
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts GET. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejects app-session tokens, resolves personal and workspace handles, verifies workspace access, mirrors getPermissions-style role/default/creator/admin behavior, and returns the three legacy settings permission flags.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workspace settings permission flags for the authenticated caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - private, max-age=30, stale-while-revalidate=30
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceSettingsPermissionsResponse"
+        "403":
+          description: Workspace access denied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePermissionCheckError"
+        "500":
+          description: Internal permission lookup error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspacePermissionCheckError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/workspaces/{wsId}/settings/permissions/check:
     get:
       summary: Workspace setting permission check
@@ -10067,6 +10113,22 @@ components:
         hasPermission:
           type: boolean
           description: Whether the authenticated workspace caller has the requested permission. Workspace creators and callers with admin permission follow the legacy all-permission shortcut.
+    WorkspaceSettingsPermissionsResponse:
+      type: object
+      required:
+        - manage_subscription
+        - manage_workspace_settings
+        - manage_workspace_members
+      properties:
+        manage_subscription:
+          type: boolean
+          description: Whether the caller can manage the workspace subscription.
+        manage_workspace_settings:
+          type: boolean
+          description: Whether the caller can manage workspace settings.
+        manage_workspace_members:
+          type: boolean
+          description: Whether the caller can manage workspace members.
     WorkspacePermissionCheckError:
       type: object
       required:

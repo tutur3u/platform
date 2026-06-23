@@ -959,6 +959,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/education/access by preserving the legacy access-probe contract: missing or invalid Supabase sessions return 401, while invalid workspaces, missing workspace access, disabled ENABLE_EDUCATION workspace secrets, missing ai_lab permission, permission lookup failures, and secret lookup failures all return HTTP 200 with enabled=false. Enabled workspaces require a normal Supabase browser session or non-app-session Bearer token, getPermissions-compatible workspace permission resolution, and a server-owned workspace_secrets ENABLE_EDUCATION=true read."
     },
+    "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, and manage_workspace_members flags with the private 30-second success cache directive."
+    },
     "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

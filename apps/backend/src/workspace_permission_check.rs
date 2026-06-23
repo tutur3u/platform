@@ -17,9 +17,11 @@ const INTERNAL_WORKSPACE_SLUG: &str = "internal";
 const MISSING_PERMISSION_MESSAGE: &str = "Missing permission";
 const PERSONAL_WORKSPACE_SLUG: &str = "personal";
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
+const WORKSPACE_PERMISSIONS_CACHE_CONTROL: &str = "private, max-age=30, stale-while-revalidate=30";
 const SUPABASE_AUTH_COOKIE_BASE64_PREFIX: &str = "base64-";
 const WORKSPACE_PERMISSION_CHECK_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const WORKSPACE_PERMISSION_CHECK_PATH_SUFFIX: &str = "/settings/permissions/check";
+const WORKSPACE_SETTINGS_PERMISSIONS_PATH_SUFFIX: &str = "/settings/permissions";
 
 #[derive(Clone, Debug, Default)]
 struct SupabaseAuthCookieGroup {
@@ -79,11 +81,27 @@ struct WorkspacePermissionCheckResponse {
     has_permission: bool,
 }
 
+#[derive(Serialize)]
+struct WorkspaceSettingsPermissionsResponse {
+    manage_subscription: bool,
+    manage_workspace_settings: bool,
+    manage_workspace_members: bool,
+}
+
 pub(crate) async fn handle_workspace_permission_check_route(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
+    if let Some(ws_id) = workspace_settings_permissions_ws_id(request.path) {
+        return Some(match request.method {
+            "GET" => {
+                workspace_settings_permissions_response(config, request, ws_id, outbound).await
+            }
+            method => no_store_response(method_not_allowed(method, "GET")),
+        });
+    }
+
     let ws_id = workspace_permission_check_ws_id(request.path)?;
 
     Some(match request.method {
@@ -170,6 +188,19 @@ async fn workspace_permission_check_response(
                     .iter()
                     .any(|value| value == &permission),
         ),
+        Ok(None) => workspace_access_denied_response(),
+        Err(()) => internal_server_error_response(),
+    }
+}
+
+async fn workspace_settings_permissions_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    ws_id: &str,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    match effective_workspace_permissions(&config.contact_data, request, ws_id, outbound).await {
+        Ok(Some(permissions)) => workspace_settings_permissions_success_response(&permissions),
         Ok(None) => workspace_access_denied_response(),
         Err(()) => internal_server_error_response(),
     }
@@ -705,6 +736,14 @@ fn permission_query_value(request_url: Option<&str>) -> Option<String> {
         })
 }
 
+fn workspace_settings_permissions_ws_id(path: &str) -> Option<&str> {
+    let ws_id = path
+        .strip_prefix(WORKSPACE_PERMISSION_CHECK_PATH_PREFIX)?
+        .strip_suffix(WORKSPACE_SETTINGS_PERMISSIONS_PATH_SUFFIX)?;
+
+    (!ws_id.is_empty() && !ws_id.contains('/')).then_some(ws_id)
+}
+
 fn workspace_permission_check_ws_id(path: &str) -> Option<&str> {
     let ws_id = path
         .strip_prefix(WORKSPACE_PERMISSION_CHECK_PATH_PREFIX)?
@@ -775,6 +814,33 @@ fn permission_check_response(has_permission: bool) -> BackendResponse {
         200,
         WorkspacePermissionCheckResponse { has_permission },
     ))
+}
+
+fn workspace_settings_permissions_success_response(
+    permissions: &EffectiveWorkspacePermissions,
+) -> BackendResponse {
+    let mut response = json_response(
+        200,
+        WorkspaceSettingsPermissionsResponse {
+            manage_subscription: permissions.has_all_permissions
+                || permissions
+                    .permissions
+                    .iter()
+                    .any(|value| value == "manage_subscription"),
+            manage_workspace_settings: permissions.has_all_permissions
+                || permissions
+                    .permissions
+                    .iter()
+                    .any(|value| value == "manage_workspace_settings"),
+            manage_workspace_members: permissions.has_all_permissions
+                || permissions
+                    .permissions
+                    .iter()
+                    .any(|value| value == "manage_workspace_members"),
+        },
+    );
+    response.cache_control = Some(WORKSPACE_PERMISSIONS_CACHE_CONTROL);
+    response
 }
 
 fn workspace_access_denied_response() -> BackendResponse {
@@ -900,6 +966,24 @@ mod tests {
         }
     }
 
+    fn settings_permissions_request(method: &'static str) -> BackendRequest<'static> {
+        BackendRequest {
+            authorization: None,
+            body_text: None,
+            cookie: None,
+            method,
+            origin: None,
+            path: leaked_test_str(format!(
+                "/api/v1/workspaces/{WORKSPACE_ID}/settings/permissions"
+            )),
+            referer: None,
+            request_id: None,
+            url: Some(leaked_test_str(format!(
+                "https://tuturuuu.localhost/api/v1/workspaces/{WORKSPACE_ID}/settings/permissions"
+            ))),
+        }
+    }
+
     fn authorized_request(permission: &'static str) -> BackendRequest<'static> {
         BackendRequest {
             authorization: Some("Bearer user-access-token"),
@@ -908,6 +992,13 @@ mod tests {
                 WORKSPACE_ID,
                 leaked_test_str(format!("?permission={permission}")),
             )
+        }
+    }
+
+    fn authorized_settings_permissions_request() -> BackendRequest<'static> {
+        BackendRequest {
+            authorization: Some("Bearer user-access-token"),
+            ..settings_permissions_request("GET")
         }
     }
 
@@ -955,6 +1046,90 @@ mod tests {
             outbound_response(200, role_permissions_body),
             outbound_response(200, r#"[]"#),
         ]
+    }
+
+    #[tokio::test]
+    async fn workspace_settings_permissions_returns_legacy_permission_flags() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"{"id":"user-1"}"#),
+            outbound_response(200, r#"[{"type":"MEMBER"}]"#),
+            outbound_response(200, r#"[{"creator_id":"owner-1"}]"#),
+            outbound_response(
+                200,
+                r#"[{"workspace_roles":{"workspace_role_permissions":[{"permission":"manage_subscription"},{"permission":"manage_workspace_members"}]}}]"#,
+            ),
+            outbound_response(200, r#"[{"permission":"manage_workspace_settings"}]"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            authorized_settings_permissions_request(),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "manage_subscription": true,
+                "manage_workspace_settings": true,
+                "manage_workspace_members": true,
+            })
+        );
+        assert_eq!(
+            response.cache_control,
+            Some(WORKSPACE_PERMISSIONS_CACHE_CONTROL)
+        );
+
+        let calls = outbound.calls();
+        assert_eq!(calls.len(), 5);
+        assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+        assert!(
+            calls[1]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_members?")
+        );
+        assert!(
+            calls[3]
+                .url
+                .starts_with("https://project-ref.supabase.co/rest/v1/workspace_role_members?")
+        );
+        assert!(
+            calls[4].url.starts_with(
+                "https://project-ref.supabase.co/rest/v1/workspace_default_permissions?"
+            )
+        );
+    }
+
+    #[tokio::test]
+    async fn workspace_settings_permissions_denies_missing_supabase_session() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, settings_permissions_request("GET"), &outbound).await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(
+            response.body,
+            json!({ "message": "Workspace access denied" })
+        );
+        assert_eq!(outbound.calls().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn workspace_settings_permissions_rejects_unsupported_methods() {
+        let config = backend_config_with_contact_data();
+        let outbound = RecordingOutboundClient::default();
+
+        let response =
+            handle_backend_request(&config, settings_permissions_request("POST"), &outbound).await;
+
+        assert_eq!(response.status, 405);
+        assert_eq!(response.allow, Some("GET"));
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]
