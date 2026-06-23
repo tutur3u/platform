@@ -77,6 +77,8 @@ async function getOrCreateBoardList(
 }
 
 test.describe('Shareable task plans in personal Kanban', () => {
+  // This full-stack flow resets auth/rate-limit state, renders the board planner UI,
+  // and exercises plan create/share/update/digest APIs before cleanup in CI.
   test.setTimeout(180_000);
 
   test('creates, shares, manages, and renders a plan', async ({
