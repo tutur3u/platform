@@ -3,9 +3,11 @@ import {
   bulkImportBackendInternalHolidays,
   checkBackendWorkspacePermission,
   createBackendApiClient,
+  createBackendInfrastructureEmailBlacklistEntry,
   createBackendInfrastructureTimezone,
   createBackendInternalHoliday,
   createBackendSupportInquiry,
+  deleteBackendInfrastructureEmailBlacklistEntry,
   deleteBackendInfrastructureTimezone,
   deleteBackendInternalHoliday,
   getBackendAiWhitelistMe,
@@ -17,6 +19,8 @@ import {
   getBackendCurrentUserProfile,
   getBackendHiveAccess,
   getBackendInfrastructureAbuseEvents,
+  getBackendInfrastructureEmailBlacklistEntries,
+  getBackendInfrastructureEmailBlacklistEntry,
   getBackendInfrastructureTimezones,
   getBackendInternalHolidays,
   getBackendLegacyHealth,
@@ -33,6 +37,7 @@ import {
   getBackendWorkspaceLimits,
   getBackendWorkspacePostPermissions,
   getConfiguredBackendApiBaseUrl,
+  updateBackendInfrastructureEmailBlacklistEntry,
   updateBackendInfrastructureTimezone,
   updateBackendInternalHoliday,
   withBackendServiceBinding,
@@ -818,6 +823,118 @@ describe('backend API client', () => {
     expect(updateHeaders.get('content-type')).toBe('application/json');
     expect(deleteHeaders.get('origin')).toBe('http://backend:7820');
     expect(bulkHeaders.get('content-type')).toBe('application/json');
+  });
+
+  it('reads and mutates Rust-owned infrastructure email blacklist entries with encoded detail paths', async () => {
+    const entry = {
+      added_by_user_id: 'user-1',
+      created_at: '2026-01-01 00:00:00+00',
+      entry_type: 'email' as const,
+      id: 'entry/id',
+      reason: 'spam',
+      updated_at: '2026-01-01 00:00:00+00',
+      value: 'blocked@example.com',
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => entry,
+    });
+
+    await getBackendInfrastructureEmailBlacklistEntries({
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await getBackendInfrastructureEmailBlacklistEntry('entry/id', {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await createBackendInfrastructureEmailBlacklistEntry(
+      {
+        entry_type: 'email',
+        reason: 'spam',
+        value: 'blocked@example.com',
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await updateBackendInfrastructureEmailBlacklistEntry(
+      'entry/id',
+      {
+        reason: 'policy violation',
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await deleteBackendInfrastructureEmailBlacklistEntry('entry/id', {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://backend:7820/api/v1/infrastructure/email-blacklist',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://backend:7820/api/v1/infrastructure/email-blacklist/entry%2Fid',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://backend:7820/api/v1/infrastructure/email-blacklist',
+      expect.objectContaining({
+        body: JSON.stringify({
+          entry_type: 'email',
+          reason: 'spam',
+          value: 'blocked@example.com',
+        }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://backend:7820/api/v1/infrastructure/email-blacklist/entry%2Fid',
+      expect.objectContaining({
+        body: JSON.stringify({
+          reason: 'policy violation',
+        }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'http://backend:7820/api/v1/infrastructure/email-blacklist/entry%2Fid',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'DELETE',
+      })
+    );
+
+    const createHeaders = new Headers(getFetchInit(fetchMock, 2)?.headers);
+    const updateHeaders = new Headers(getFetchInit(fetchMock, 3)?.headers);
+    const deleteHeaders = new Headers(getFetchInit(fetchMock, 4)?.headers);
+
+    expect(createHeaders.get('content-type')).toBe('application/json');
+    expect(createHeaders.get('origin')).toBe('http://backend:7820');
+    expect(updateHeaders.get('content-type')).toBe('application/json');
+    expect(deleteHeaders.get('origin')).toBe('http://backend:7820');
   });
 
   it('reads the Rust-owned current Nova team including null memberships', async () => {

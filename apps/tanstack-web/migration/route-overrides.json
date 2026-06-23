@@ -1524,6 +1524,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/infrastructure/holidays ports the legacy authenticated root infrastructure holidays CRUD page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, URL year filtering, localized TanStack Query mutations, and list/create/update/delete/bulk-import calls through the Rust-owned backend holidays facade instead of raw /api fetches."
     },
+    "page:/:locale/:wsId/infrastructure/email-blacklist:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/email-blacklist/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/email-blacklist ports the legacy authenticated infrastructure email blacklist page as a dynamic no-store dashboard route with workspace resolution, root and workspace view_infrastructure gating, URL search/type/pagination filtering, localized TanStack Query mutations, and list/create/update/delete calls through the Rust-owned backend email-blacklist facade instead of direct Supabase reads or raw /api fetches."
+    },
     "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
