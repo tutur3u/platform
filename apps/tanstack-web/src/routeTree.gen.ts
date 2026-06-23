@@ -171,6 +171,7 @@ import { Route as LocaleWsIdFinanceInvoicesInvoiceIdRouteImport } from './routes
 import { Route as LocaleWsIdFinanceDebtsDebtIdRouteImport } from './routes/$locale/$wsId/finance/debts/$debtId';
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId';
 import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId';
+import { Route as LocaleWsIdEducationLibraryQuizzesRouteImport } from './routes/$locale/$wsId/education/library/quizzes';
 import { Route as LocaleWsIdEducationCoursesCourseIdRouteImport } from './routes/$locale/$wsId/education/courses/$courseId';
 import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new';
 import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
@@ -1061,6 +1062,12 @@ const LocaleWsIdEpmCollectionsCollectionIdRoute =
     path: '/collections/$collectionId',
     getParentRoute: () => LocaleWsIdEpmRoute,
   } as any);
+const LocaleWsIdEducationLibraryQuizzesRoute =
+  LocaleWsIdEducationLibraryQuizzesRouteImport.update({
+    id: '/quizzes',
+    path: '/quizzes',
+    getParentRoute: () => LocaleWsIdEducationLibraryRoute,
+  } as any);
 const LocaleWsIdEducationCoursesCourseIdRoute =
   LocaleWsIdEducationCoursesCourseIdRouteImport.update({
     id: '/$wsId/education/courses/$courseId',
@@ -1200,7 +1207,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
-  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
+  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
   '/$locale/$wsId/education/valsea': typeof LocaleWsIdEducationValseaRoute;
@@ -1253,6 +1260,7 @@ export interface FileRoutesByFullPath {
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  '/$locale/$wsId/education/library/quizzes': typeof LocaleWsIdEducationLibraryQuizzesRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
   '/$locale/$wsId/finance/debts/$debtId': typeof LocaleWsIdFinanceDebtsDebtIdRoute;
@@ -1370,7 +1378,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
-  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
+  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
   '/$locale/$wsId/education/valsea': typeof LocaleWsIdEducationValseaRoute;
@@ -1423,6 +1431,7 @@ export interface FileRoutesByTo {
   '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  '/$locale/$wsId/education/library/quizzes': typeof LocaleWsIdEducationLibraryQuizzesRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
   '/$locale/$wsId/finance/debts/$debtId': typeof LocaleWsIdFinanceDebtsDebtIdRoute;
@@ -1542,7 +1551,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/ai-chat/new': typeof LocaleWsIdAiChatNewRoute;
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
-  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRoute;
+  '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsRoute;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
   '/$locale/$wsId/education/valsea': typeof LocaleWsIdEducationValseaRoute;
@@ -1595,6 +1604,7 @@ export interface FileRoutesById {
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/education/courses/$courseId': typeof LocaleWsIdEducationCoursesCourseIdRouteWithChildren;
+  '/$locale/$wsId/education/library/quizzes': typeof LocaleWsIdEducationLibraryQuizzesRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
   '/$locale/$wsId/finance/debts/$debtId': typeof LocaleWsIdFinanceDebtsDebtIdRoute;
@@ -1768,6 +1778,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/'
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
+    | '/$locale/$wsId/education/library/quizzes'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/debts/$debtId'
@@ -1938,6 +1949,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components'
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
+    | '/$locale/$wsId/education/library/quizzes'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/debts/$debtId'
@@ -2109,6 +2121,7 @@ export interface FileRouteTypes {
     | '/$locale/ui/components/'
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/education/courses/$courseId'
+    | '/$locale/$wsId/education/library/quizzes'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
     | '/$locale/$wsId/finance/debts/$debtId'
@@ -3281,6 +3294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEpmCollectionsCollectionIdRouteImport;
       parentRoute: typeof LocaleWsIdEpmRoute;
     };
+    '/$locale/$wsId/education/library/quizzes': {
+      id: '/$locale/$wsId/education/library/quizzes';
+      path: '/quizzes';
+      fullPath: '/$locale/$wsId/education/library/quizzes';
+      preLoaderRoute: typeof LocaleWsIdEducationLibraryQuizzesRouteImport;
+      parentRoute: typeof LocaleWsIdEducationLibraryRoute;
+    };
     '/$locale/$wsId/education/courses/$courseId': {
       id: '/$locale/$wsId/education/courses/$courseId';
       path: '/$wsId/education/courses/$courseId';
@@ -3532,6 +3552,21 @@ const LocaleCalendarMeetTogetherRouteWithChildren =
     LocaleCalendarMeetTogetherRouteChildren,
   );
 
+interface LocaleWsIdEducationLibraryRouteChildren {
+  LocaleWsIdEducationLibraryQuizzesRoute: typeof LocaleWsIdEducationLibraryQuizzesRoute;
+}
+
+const LocaleWsIdEducationLibraryRouteChildren: LocaleWsIdEducationLibraryRouteChildren =
+  {
+    LocaleWsIdEducationLibraryQuizzesRoute:
+      LocaleWsIdEducationLibraryQuizzesRoute,
+  };
+
+const LocaleWsIdEducationLibraryRouteWithChildren =
+  LocaleWsIdEducationLibraryRoute._addFileChildren(
+    LocaleWsIdEducationLibraryRouteChildren,
+  );
+
 interface LocaleWsIdInventoryProductsRouteChildren {
   LocaleWsIdInventoryProductsProductIdRoute: typeof LocaleWsIdInventoryProductsProductIdRoute;
 }
@@ -3714,7 +3749,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdAiChatNewRoute: typeof LocaleWsIdAiChatNewRoute;
   LocaleWsIdBillingSuccessRoute: typeof LocaleWsIdBillingSuccessRoute;
   LocaleWsIdEducationFlashcardsRoute: typeof LocaleWsIdEducationFlashcardsRoute;
-  LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRoute;
+  LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRouteWithChildren;
   LocaleWsIdEducationQuizSetsRoute: typeof LocaleWsIdEducationQuizSetsRoute;
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
@@ -3845,7 +3880,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdAiChatNewRoute: LocaleWsIdAiChatNewRoute,
   LocaleWsIdBillingSuccessRoute: LocaleWsIdBillingSuccessRoute,
   LocaleWsIdEducationFlashcardsRoute: LocaleWsIdEducationFlashcardsRoute,
-  LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRoute,
+  LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRouteWithChildren,
   LocaleWsIdEducationQuizSetsRoute: LocaleWsIdEducationQuizSetsRoute,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
   LocaleWsIdEducationValseaRoute: LocaleWsIdEducationValseaRoute,

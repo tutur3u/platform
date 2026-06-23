@@ -39,6 +39,7 @@ const GATED_ROUTES = [
   'changelog',
   'chat',
   'cron',
+  'education/library/quizzes',
   'education/valsea',
   'habits',
   'inventory',

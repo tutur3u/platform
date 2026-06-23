@@ -355,6 +355,7 @@ export {
   deleteWorkspaceQuizSet,
   generateValseaClassroomArtifact,
   generateValseaClassroomScenario,
+  generateWorkspaceQuizOptionExplanation,
   getValseaClassroomConfig,
   getWorkspaceEducationAttemptDetail,
   getWorkspaceQuizzes,

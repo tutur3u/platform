@@ -460,6 +460,39 @@ export async function generateValseaClassroomScenario(
   );
 }
 
+export interface GenerateQuizOptionExplanationPayload {
+  question: string;
+  option: unknown;
+}
+
+export interface GenerateQuizOptionExplanationResponse {
+  explanation?: string;
+}
+
+/**
+ * Generate an AI explanation for a single quiz option via
+ * `POST /api/ai/objects/quizzes/explanation` (note: not under `/api/v1`; the
+ * workspace id travels in the body as `wsId`). Forwards the caller's auth.
+ */
+export async function generateWorkspaceQuizOptionExplanation(
+  workspaceId: string,
+  payload: GenerateQuizOptionExplanationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<GenerateQuizOptionExplanationResponse>(
+    '/api/ai/objects/quizzes/explanation',
+    {
+      body: JSON.stringify({ wsId: workspaceId, ...payload }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
 export async function synthesizeValseaClassroomSpeech(
   workspaceId: string,
   payload: ValseaClassroomSpeechPayload,
