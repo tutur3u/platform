@@ -20,6 +20,7 @@ mod auth_mfa_mobile_approvals;
 mod auth_mfa_mobile_challenges;
 mod auth_qr_login_challenges;
 mod calendar_auth;
+mod calendar_auth_microsoft;
 mod changelog;
 mod cms_workspaces;
 mod contact;
@@ -73,6 +74,7 @@ mod hive_workspaces;
 mod holidays;
 mod infrastructure_abuse_events;
 mod infrastructure_abuse_intelligence;
+mod infrastructure_ai_agents_discord_gateway_watcher_config;
 mod infrastructure_ai_agents_external_threads;
 mod infrastructure_ai_agents_external_threads_messages;
 mod infrastructure_blocked_ips;
@@ -100,6 +102,7 @@ mod infrastructure_suspensions;
 mod infrastructure_user_status_changes;
 mod infrastructure_workspace_exports;
 mod infrastructure_workspace_users;
+mod integrations_discord_available_members;
 mod inventory;
 mod inventory_orders;
 mod mira_achievements;
@@ -114,6 +117,7 @@ mod onboarding_progress;
 mod outbound;
 mod shared_task_boards;
 mod storage_analytics;
+mod storage_download_path;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
@@ -150,7 +154,9 @@ mod workspaces_3;
 mod workspaces_billing;
 mod workspaces_boards;
 mod workspaces_boards_estimation;
+mod workspaces_boards_with_lists;
 mod workspaces_calendar_habit_events;
+mod workspaces_calendar_sync_status;
 mod workspaces_categories;
 mod workspaces_chat_conversations_attachments;
 mod workspaces_chat_conversations_shared_content;
@@ -163,6 +169,7 @@ mod workspaces_external_projects_delivery;
 mod workspaces_external_projects_sync_snapshot;
 mod workspaces_finance_charts_balance_trend;
 mod workspaces_finance_charts_daily;
+mod workspaces_finance_charts_income_expense_summary;
 mod workspaces_finance_charts_monthly;
 mod workspaces_finance_invoices_count;
 mod workspaces_finance_wallets_expense_count;
@@ -170,11 +177,13 @@ mod workspaces_finance_wallets_expense_sum;
 mod workspaces_finance_wallets_income_count;
 mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms_export;
+mod workspaces_forms_responses_export;
 mod workspaces_forms_share_link;
 mod workspaces_infrastructure_realtime_analytics;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_product_form_options;
+mod workspaces_inventory_sales;
 mod workspaces_inventory_statistics;
 mod workspaces_invitations;
 mod workspaces_invite_status;
@@ -196,10 +205,14 @@ mod workspaces_settings_approvals_pending_summary;
 mod workspaces_settings_permissions_setup_status;
 mod workspaces_storage_analytics;
 mod workspaces_storage_export_assetpath;
+mod workspaces_storage_list;
 mod workspaces_storage_object;
 mod workspaces_storage_rollout_state;
 mod workspaces_task_plans_digest;
+mod workspaces_tasks_snapshot;
 mod workspaces_teach_users;
+mod workspaces_templates;
+mod workspaces_time_tracking_analytics;
 mod workspaces_time_tracking_requests_activity;
 mod workspaces_time_tracking_requests_users;
 mod workspaces_time_tracking_sessions_breaks_active;
@@ -207,6 +220,7 @@ mod workspaces_time_tracking_tasks;
 mod workspaces_time_tracking_templates;
 mod workspaces_transactions_category_breakdown;
 mod workspaces_transactions_spending_trends;
+mod workspaces_transactions_stats;
 mod workspaces_tulearn_courses;
 mod workspaces_tulearn_courses_2;
 mod workspaces_tulearn_reports;
@@ -220,6 +234,7 @@ mod workspaces_user_groups_sessions_group_summaries;
 mod workspaces_user_profile_links_users;
 mod workspaces_users_approvals_logs;
 mod workspaces_users_attendance;
+mod workspaces_users_attendance_export;
 mod workspaces_users_audit_logs;
 mod workspaces_users_count;
 mod workspaces_users_emails;
@@ -1651,6 +1666,121 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         mira_achievements::handle_mira_achievements_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        infrastructure_ai_agents_discord_gateway_watcher_config::handle_infrastructure_ai_agents_discord_gateway_watcher_config_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_charts_income_expense_summary::handle_workspaces_finance_charts_income_expense_summary_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        integrations_discord_available_members::handle_integrations_discord_available_members_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_boards_with_lists::handle_workspaces_boards_with_lists_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_calendar_sync_status::handle_workspaces_calendar_sync_status_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_forms_responses_export::handle_workspaces_forms_responses_export_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_time_tracking_analytics::handle_workspaces_time_tracking_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_attendance_export::handle_workspaces_users_attendance_export_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        calendar_auth_microsoft::handle_calendar_auth_microsoft_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        storage_download_path::handle_storage_download_path_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_inventory_sales::handle_workspaces_inventory_sales_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_storage_list::handle_workspaces_storage_list_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks_snapshot::handle_workspaces_tasks_snapshot_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_stats::handle_workspaces_transactions_stats_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_templates::handle_workspaces_templates_route(config, request, outbound).await
     {
         return response;
     }
