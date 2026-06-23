@@ -74,6 +74,7 @@ export async function getLearnerAssignments({
       )
       .in('group_id', courseIds)
       .eq('workspace_user_groups.ws_id', wsId)
+      .eq('post_approval_status', 'APPROVED')
       .order('created_at', { ascending: false })
       .limit(12),
     sbAdmin
