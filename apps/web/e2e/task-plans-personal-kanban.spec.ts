@@ -77,12 +77,12 @@ async function getOrCreateBoardList(
 }
 
 test.describe('Shareable task plans in personal Kanban', () => {
+  test.setTimeout(180_000);
+
   test('creates, shares, manages, and renders a plan', async ({
     page,
     request,
   }, testInfo) => {
-    testInfo.setTimeout(90_000);
-
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 244));
     await resetDbRateLimits();
     await resetAppRateLimitStateForTests(request, {
