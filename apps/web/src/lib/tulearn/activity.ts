@@ -98,6 +98,8 @@ export async function getLearnerAssignments({
         .select('platform_user_id')
         .eq('virtual_user_id', studentWorkspaceUserId)
         .eq('ws_id', wsId)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ]);
 

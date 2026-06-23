@@ -55,8 +55,17 @@ export function validateCourseTestForm({
 
   let parsedDuration: number | null = null;
   if (durationInMinutes) {
-    const durationVal = parseInt(durationInMinutes, 10);
-    if (Number.isNaN(durationVal) || durationVal < 1 || durationVal > 1440) {
+    const trimmedDuration = durationInMinutes.trim();
+    if (!/^\d+$/.test(trimmedDuration)) {
+      return { error: 'invalidDuration', success: false };
+    }
+
+    const durationVal = Number(trimmedDuration);
+    if (
+      !Number.isSafeInteger(durationVal) ||
+      durationVal < 1 ||
+      durationVal > 1440
+    ) {
       return { error: 'invalidDuration', success: false };
     }
     parsedDuration = durationVal;

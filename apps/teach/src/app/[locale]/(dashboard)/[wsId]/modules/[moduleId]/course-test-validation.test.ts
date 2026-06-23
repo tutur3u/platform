@@ -46,5 +46,23 @@ describe('validateCourseTestForm', () => {
         startAt: '',
       })
     ).toEqual({ error: 'invalidDuration', success: false });
+
+    expect(
+      validateCourseTestForm({
+        description: '',
+        durationInMinutes: '30.5',
+        name: 'Midterm',
+        startAt: '',
+      })
+    ).toEqual({ error: 'invalidDuration', success: false });
+
+    expect(
+      validateCourseTestForm({
+        description: '',
+        durationInMinutes: '30 minutes',
+        name: 'Midterm',
+        startAt: '',
+      })
+    ).toEqual({ error: 'invalidDuration', success: false });
   });
 });
