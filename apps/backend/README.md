@@ -321,8 +321,13 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   Supabase session cookie or non-app-session Bearer token, normalizes workspace
   identifiers, requires `view_transactions` through the shared workspace
   permission resolver, and preserves exact-count pagination plus legacy error
-  bodies. `GET /api/v1/infrastructure/wallet-transactions` remains legacy-owned
-  until its RPC-backed permission/query behavior is migrated separately.
+  bodies.
+- `GET /api/v1/infrastructure/wallet-transactions`: legacy-compatible protected
+  wallet transaction export. Rust forwards the caller's Supabase token to the
+  `get_wallet_transactions_with_permissions` RPC with the legacy
+  `p_ws_id`/`p_limit`/`p_offset` payload, `taken_at` descending order, and
+  `p_include_count=true`, then returns the raw RPC rows plus the first row's
+  `total_count` as the legacy `count`.
 - `GET /api/v1/topic-announcement-verifications/:token`: public Topic
   Announcements email verification route. Rust decodes the token path segment,
   hashes it with SHA-256, reads and updates

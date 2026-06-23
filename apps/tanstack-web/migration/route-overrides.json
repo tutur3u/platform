@@ -829,6 +829,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallets by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring view_transactions through the shared workspace permission resolver, reading private.workspace_wallets through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
     },
+    "api:/api/v1/infrastructure/wallet-transactions:apps/web/src/app/api/v1/infrastructure/wallet-transactions/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallet-transactions by forwarding the normal Supabase browser session or non-app-session Bearer token to the get_wallet_transactions_with_permissions RPC with the legacy p_ws_id, p_limit, p_offset, p_order_by=taken_at, p_order_direction=DESC, and p_include_count=true payload, preserving caller-token permission/RLS behavior, the required ws_id parameter, parseInt-style limit/offset behavior, raw RPC rows, first-row total_count extraction, and legacy error body."
+    },
     "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
       "methods": {
         "GET": {
