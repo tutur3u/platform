@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 mod admin_ai_credits_entity_detail;
 mod admin_ai_credits_overview;
+mod admin_ai_credits_transactions;
 mod ai_chats_list;
 mod ai_models;
 mod ai_whitelist;
@@ -1371,6 +1372,15 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspaces_finance_charts_monthly::handle_workspaces_finance_charts_monthly_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        admin_ai_credits_transactions::handle_admin_ai_credits_transactions_route(
             config, request, outbound,
         )
         .await
