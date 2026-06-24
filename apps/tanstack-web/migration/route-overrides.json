@@ -1309,6 +1309,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/queues ports the legacy authenticated crawler-backed queue page as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, quick uncrawled/domain stats, and crawled URL data loaded through Rust-owned backend crawler facades instead of direct Supabase reads, create forms, row actions, or raw browser /api fetches."
     },
+    "layout:/:locale/:wsId/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/cron preserves the legacy cron route-specific layout gate and exact-match section navigation for Overview, Cron jobs, and Executions while keeping child cron pages separately tracked. The /cron/jobs, /cron/executions, and /cron/jobs/:jobId page artifacts remain legacy-owned until their data tables and mutation flows move behind shared internal-api or Rust facades."
+    },
     "page:/:locale/:wsId/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
