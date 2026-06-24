@@ -212,6 +212,11 @@
       "import": "./dist/users.js",
       "require": "./dist/users.js"
     },
+    "./users-server": {
+      "types": "./dist/users-server.d.ts",
+      "import": "./dist/users-server.js",
+      "require": "./dist/users-server.js"
+    },
     "./users-feedbacks": {
       "types": "./dist/users-feedbacks.d.ts",
       "import": "./dist/users-feedbacks.js",
@@ -241,6 +246,7 @@
   },
   "packageManager": "bun@1.3.14",
   "dependencies": {
+    "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*"
   }
 }

@@ -2598,6 +2598,11 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start owns the public shared user-profile fill page at /:locale/shared/user-profile/:code. The route ports the legacy profile-link loader, noindex head metadata, fail-closed auth redirect for requires_auth links, unavailable shell for 404/410 links, localized form shell, TanStack Query mutations through packages/internal-api facades, and allowlist-scoped prefill behavior. Submit/avatar API endpoints remain separate Rust-backend migration work."
+    },
+    "page:/:locale/users/:handle:apps/web/src/app/[locale]/(marketing)/users/[handle]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/users/$handle ports the legacy auth-gated community profile page. The loader runs the shared fail-closed current-user auth gate before any profile lookup, redirects anonymous visitors to the locale login route with nextUrl, sets private no-store route headers, reads only the legacy public profile fields for the requested handle through a caller-scoped internal-api users-server facade that preserves Supabase RLS, renders the profile header with TanStack-safe image/avatar primitives, and has explicit no-auth Playwright coverage. A dedicated Rust/backend reader remains a follow-up backend migration boundary."
     }
   }
 }

@@ -20,6 +20,12 @@ const TANSTACK_ROOT_REDIRECT_PATHS = [
   '/qr-generator',
 ];
 
+const AUTH_GATED_MARKETING_ROUTE_PATHS = new Set([
+  '/:locale/account/delete',
+  '/:locale/logout',
+  '/:locale/users/:handle',
+]);
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -36,6 +42,10 @@ function isMigratedPublicTanStackPage(route) {
   const sourceFile = route.sourceFile ?? '';
 
   if (sourceFile.includes('/(auth)/') || sourceFile.includes('/(dashboard)/')) {
+    return false;
+  }
+
+  if (AUTH_GATED_MARKETING_ROUTE_PATHS.has(route.routePath)) {
     return false;
   }
 

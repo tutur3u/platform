@@ -1582,6 +1582,7 @@
       "name": "@tuturuuu/internal-api",
       "version": "0.9.0",
       "dependencies": {
+        "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
       },
       "devDependencies": {

@@ -42,6 +42,7 @@ import { Route as LocaleAcceptableUseRouteImport } from './routes/$locale/accept
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about';
 import { Route as LocaleUiIndexRouteImport } from './routes/$locale/ui/index';
 import { Route as LocaleVisualizationsHorseRacingRouteImport } from './routes/$locale/visualizations/horse-racing';
+import { Route as LocaleUsersHandleRouteImport } from './routes/$locale/users/$handle';
 import { Route as LocaleUiSetupRouteImport } from './routes/$locale/ui/setup';
 import { Route as LocaleUiContributingRouteImport } from './routes/$locale/ui/contributing';
 import { Route as LocaleToolsRandomRouteImport } from './routes/$locale/tools/random';
@@ -392,6 +393,11 @@ const LocaleVisualizationsHorseRacingRoute =
     path: '/visualizations/horse-racing',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleUsersHandleRoute = LocaleUsersHandleRouteImport.update({
+  id: '/users/$handle',
+  path: '/users/$handle',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleUiSetupRoute = LocaleUiSetupRouteImport.update({
   id: '/ui/setup',
   path: '/ui/setup',
@@ -1518,6 +1524,7 @@ export interface FileRoutesByFullPath {
   '/$locale/tools/random': typeof LocaleToolsRandomRoute;
   '/$locale/ui/contributing': typeof LocaleUiContributingRoute;
   '/$locale/ui/setup': typeof LocaleUiSetupRoute;
+  '/$locale/users/$handle': typeof LocaleUsersHandleRoute;
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui/': typeof LocaleUiIndexRoute;
   '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
@@ -1734,6 +1741,7 @@ export interface FileRoutesByTo {
   '/$locale/tools/random': typeof LocaleToolsRandomRoute;
   '/$locale/ui/contributing': typeof LocaleUiContributingRoute;
   '/$locale/ui/setup': typeof LocaleUiSetupRoute;
+  '/$locale/users/$handle': typeof LocaleUsersHandleRoute;
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui': typeof LocaleUiIndexRoute;
   '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
@@ -1951,6 +1959,7 @@ export interface FileRoutesById {
   '/$locale/tools/random': typeof LocaleToolsRandomRoute;
   '/$locale/ui/contributing': typeof LocaleUiContributingRoute;
   '/$locale/ui/setup': typeof LocaleUiSetupRoute;
+  '/$locale/users/$handle': typeof LocaleUsersHandleRoute;
   '/$locale/visualizations/horse-racing': typeof LocaleVisualizationsHorseRacingRoute;
   '/$locale/ui/': typeof LocaleUiIndexRoute;
   '/$locale/$wsId/ai-chat/chatbots': typeof LocaleWsIdAiChatChatbotsRoute;
@@ -2170,6 +2179,7 @@ export interface FileRouteTypes {
     | '/$locale/tools/random'
     | '/$locale/ui/contributing'
     | '/$locale/ui/setup'
+    | '/$locale/users/$handle'
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui/'
     | '/$locale/$wsId/ai-chat/chatbots'
@@ -2386,6 +2396,7 @@ export interface FileRouteTypes {
     | '/$locale/tools/random'
     | '/$locale/ui/contributing'
     | '/$locale/ui/setup'
+    | '/$locale/users/$handle'
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui'
     | '/$locale/$wsId/ai-chat/chatbots'
@@ -2602,6 +2613,7 @@ export interface FileRouteTypes {
     | '/$locale/tools/random'
     | '/$locale/ui/contributing'
     | '/$locale/ui/setup'
+    | '/$locale/users/$handle'
     | '/$locale/visualizations/horse-racing'
     | '/$locale/ui/'
     | '/$locale/$wsId/ai-chat/chatbots'
@@ -2970,6 +2982,13 @@ declare module '@tanstack/react-router' {
       path: '/visualizations/horse-racing';
       fullPath: '/$locale/visualizations/horse-racing';
       preLoaderRoute: typeof LocaleVisualizationsHorseRacingRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/users/$handle': {
+      id: '/$locale/users/$handle';
+      path: '/users/$handle';
+      fullPath: '/$locale/users/$handle';
+      preLoaderRoute: typeof LocaleUsersHandleRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/ui/setup': {
@@ -4714,6 +4733,7 @@ interface LocaleRouteRouteChildren {
   LocaleToolsRandomRoute: typeof LocaleToolsRandomRoute;
   LocaleUiContributingRoute: typeof LocaleUiContributingRoute;
   LocaleUiSetupRoute: typeof LocaleUiSetupRoute;
+  LocaleUsersHandleRoute: typeof LocaleUsersHandleRoute;
   LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute;
   LocaleUiIndexRoute: typeof LocaleUiIndexRoute;
   LocaleWsIdAiChatChatbotsRoute: typeof LocaleWsIdAiChatChatbotsRoute;
@@ -4873,6 +4893,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleToolsRandomRoute: LocaleToolsRandomRoute,
   LocaleUiContributingRoute: LocaleUiContributingRoute,
   LocaleUiSetupRoute: LocaleUiSetupRoute,
+  LocaleUsersHandleRoute: LocaleUsersHandleRoute,
   LocaleVisualizationsHorseRacingRoute: LocaleVisualizationsHorseRacingRoute,
   LocaleUiIndexRoute: LocaleUiIndexRoute,
   LocaleWsIdAiChatChatbotsRoute: LocaleWsIdAiChatChatbotsRoute,
