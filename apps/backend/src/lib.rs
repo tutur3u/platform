@@ -6,6 +6,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod admin_ai_credits_entity_detail;
 mod admin_ai_credits_overview;
 mod admin_ai_credits_transactions;
+mod admin_external_project_audits;
+mod admin_external_project_bindings;
 mod ai_chats_list;
 mod ai_models;
 mod ai_whitelist;
@@ -32,6 +34,7 @@ mod current_user_calendar_settings;
 mod current_user_calendar_settings_test;
 mod current_user_default_workspace;
 mod devbox_cache;
+mod devboxes_run_logs;
 mod devboxes_runs;
 mod education_course_module_reads;
 mod education_course_module_reads_query;
@@ -124,11 +127,14 @@ mod task_embeddings;
 mod time_tracking_export;
 mod timezones;
 mod topic_announcements;
+mod tulearn_bootstrap;
 mod user_identities;
 #[cfg(test)]
 mod user_identities_test;
 mod user_profile;
+mod users_me_identity_link;
 mod workspace_education_access;
+mod workspace_external_projects_members;
 mod workspace_external_projects_members_enhanced;
 mod workspace_external_projects_summary;
 mod workspace_habits_access;
@@ -139,6 +145,7 @@ mod workspace_inventory_costing_analytics;
 mod workspace_inventory_realtime;
 mod workspace_inventory_sales_by_product;
 mod workspace_limits;
+mod workspace_mail_bootstrap;
 mod workspace_mentions;
 #[cfg(test)]
 mod workspace_mentions_test;
@@ -148,6 +155,8 @@ mod workspace_mobile_module_flags;
 mod workspace_mobile_module_flags_test;
 mod workspace_permission_check;
 mod workspace_post_permissions;
+mod workspace_user_group_member_count;
+mod workspace_users_me;
 mod workspaces;
 mod workspaces_2;
 mod workspaces_3;
@@ -224,6 +233,8 @@ mod workspaces_transactions_spending_trends;
 mod workspaces_transactions_stats;
 mod workspaces_tulearn_courses;
 mod workspaces_tulearn_courses_2;
+mod workspaces_tulearn_home;
+mod workspaces_tulearn_marks;
 mod workspaces_tulearn_reports;
 mod workspaces_user_groups_activity_logs;
 mod workspaces_user_groups_count;
@@ -1933,6 +1944,87 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = inventory::handle_inventory_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_external_projects_members::handle_workspace_external_projects_members_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_mail_bootstrap::handle_workspace_mail_bootstrap_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        admin_external_project_audits::handle_admin_external_project_audits_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        admin_external_project_bindings::handle_admin_external_project_bindings_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        devboxes_run_logs::handle_devboxes_run_logs_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        tulearn_bootstrap::handle_tulearn_bootstrap_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_users_me::handle_workspace_users_me_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tulearn_marks::handle_workspaces_tulearn_marks_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        users_me_identity_link::handle_users_me_identity_link_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tulearn_home::handle_workspaces_tulearn_home_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspace_user_group_member_count::handle_workspace_user_group_member_count_route(
+            config, request, outbound,
+        )
+        .await
+    {
         return response;
     }
 
