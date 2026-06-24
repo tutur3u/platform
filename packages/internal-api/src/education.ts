@@ -1352,16 +1352,82 @@ export interface ListWorkspaceQuizSetsParams {
   q?: string;
 }
 
+const LINKED_MODULES_PAGE_SIZE = 100;
+const COURSE_LOOKUP_PAGE_SIZE = 100;
+
+export interface WorkspaceQuizSetLinkedModule {
+  course_id: string;
+  course_name: string;
+  module_id: string;
+  module_name: string;
+}
+
+export interface WorkspaceQuizSetListItem {
+  id: string;
+  name: string;
+  created_at?: string;
+  course_module_quiz_sets?: Array<{ module_id: string }>;
+  linked_modules?: WorkspaceQuizSetLinkedModule[];
+  linked_modules_count?: number;
+}
+
 export interface ListWorkspaceQuizSetsResponse {
-  data: Array<{
-    id: string;
-    name: string;
-    created_at?: string;
-    course_module_quiz_sets?: Array<{ module_id: string }>;
-  }>;
+  data: WorkspaceQuizSetListItem[];
   count: number;
   page: number;
   pageSize: number;
+}
+
+async function listAllQuizSetLinkedModules(
+  workspaceId: string,
+  setId: string,
+  options?: InternalApiClientOptions
+) {
+  const modules: ListQuizSetLinkedModulesResponse['data'] = [];
+  let page = 1;
+  let count = 0;
+
+  do {
+    const result = await getQuizSetLinkedModules(
+      workspaceId,
+      setId,
+      { page, pageSize: LINKED_MODULES_PAGE_SIZE },
+      options
+    );
+
+    modules.push(...result.data);
+    count = result.count;
+    page += 1;
+
+    if (result.data.length === 0) break;
+  } while (modules.length < count);
+
+  return modules;
+}
+
+async function listAllWorkspaceCoursesForLookup(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const courses: WorkspaceCourseListItem[] = [];
+  let page = 1;
+  let count = 0;
+
+  do {
+    const result = await listWorkspaceCourses(
+      workspaceId,
+      { page, pageSize: COURSE_LOOKUP_PAGE_SIZE, status: 'all' },
+      options
+    );
+
+    courses.push(...result.data);
+    count = result.count;
+    page += 1;
+
+    if (result.data.length === 0) break;
+  } while (courses.length < count);
+
+  return new Map(courses.map((course) => [course.id, course.name]));
 }
 
 /**
@@ -1381,7 +1447,7 @@ export async function getWorkspaceQuizSets(
   if (params?.q) searchParams.set('q', params.q);
 
   const query = searchParams.toString();
-  return client.json<ListWorkspaceQuizSetsResponse>(
+  const result = await client.json<ListWorkspaceQuizSetsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets${
       query ? `?${query}` : ''
     }`,
@@ -1390,6 +1456,66 @@ export async function getWorkspaceQuizSets(
       cache: 'no-store',
     }
   );
+
+  if (result.data.length === 0) {
+    return result;
+  }
+
+  const linkedModulesBySetId = await Promise.all(
+    result.data.map(async (quizSet) => {
+      const knownLinkedModulesCount =
+        quizSet.linked_modules_count ?? quizSet.course_module_quiz_sets?.length;
+
+      return {
+        quizSetId: quizSet.id,
+        linkedModules:
+          knownLinkedModulesCount === 0
+            ? []
+            : await listAllQuizSetLinkedModules(
+                workspaceId,
+                quizSet.id,
+                options
+              ),
+      };
+    })
+  );
+  const courseIds = new Set(
+    linkedModulesBySetId.flatMap(({ linkedModules }) =>
+      linkedModules
+        .map((module) => module.group_id)
+        .filter((groupId): groupId is string => Boolean(groupId))
+    )
+  );
+  const courseNameById =
+    courseIds.size > 0
+      ? await listAllWorkspaceCoursesForLookup(workspaceId, options)
+      : new Map<string, string>();
+
+  return {
+    ...result,
+    data: result.data.map((quizSet) => {
+      const linkedModules =
+        linkedModulesBySetId.find(({ quizSetId }) => quizSetId === quizSet.id)
+          ?.linkedModules ?? [];
+
+      return {
+        ...quizSet,
+        linked_modules: linkedModules.flatMap((module) => {
+          const courseId = module.group_id;
+
+          if (!courseId) return [];
+
+          return {
+            course_id: courseId,
+            course_name: courseNameById.get(courseId) ?? courseId,
+            module_id: module.id,
+            module_name: module.name ?? '',
+          };
+        }),
+        linked_modules_count: linkedModules.length,
+      };
+    }),
+  };
 }
 
 export async function createWorkspaceQuizSet(

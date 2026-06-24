@@ -1464,6 +1464,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/quizzes ports the legacy workspace quiz library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state with the legacy 10-row default, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, internal-api-backed AI explanation generation, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; quiz create/update/delete/list API ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/education/library/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quiz-sets/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/quiz-sets ports the legacy workspace quiz-set library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state with the legacy 10-row default, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, linked module/course label hydration, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; quiz-set create/update/delete/list and linked-module API ownership remain separately tracked."
+    },
     "page:/:locale/:wsId/education/attempts:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
