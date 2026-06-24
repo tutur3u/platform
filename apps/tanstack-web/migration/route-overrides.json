@@ -1779,6 +1779,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/infrastructure/timezones ports the legacy authenticated root infrastructure timezone sync page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, bundled timezone pagination/search, server row status overlay, and create/update/delete mutations through the Rust-owned backend timezones facade instead of raw /api fetches."
     },
+    "page:/:locale/:wsId/infrastructure/translations:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/translations/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/translations ports the legacy bundled English/Vietnamese translation comparison as a dynamic no-store root infrastructure page with fail-closed auth, root workspace redirect parity, root view_infrastructure gating, localized copy, search/status/namespace filtering, pagination, copy, detail, CSV, and JSON export. The legacy AI translation generator is intentionally omitted until a safe internal-api or Rust backend facade replaces the raw /api/ai/translate path."
+    },
     "layout:/:locale/:wsId/infrastructure/holidays:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/holidays/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

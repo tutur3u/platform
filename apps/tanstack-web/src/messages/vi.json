@@ -4752,33 +4752,33 @@
           "placeholder": "Chọn loại"
         }
       },
-      "title": "Gửi Tin Nhắn",
       "status": {
-        "success": {
-          "type": "success",
-          "title": "Đã gửi tin nhắn",
-          "description": "Chúng tôi đã nhận được yêu cầu của bạn và sẽ phản hồi sớm nhất có thể."
+        "authRequired": {
+          "description": "Vui lòng đăng nhập để gửi yêu cầu.",
+          "title": "Yêu cầu đăng nhập",
+          "type": "error"
         },
         "error": {
-          "type": "error",
+          "description": "Vui lòng thử lại sau hoặc liên hệ trực tiếp qua email.",
           "title": "Đã xảy ra lỗi",
-          "description": "Vui lòng thử lại sau hoặc liên hệ trực tiếp qua email."
+          "type": "error"
         },
-        "authRequired": {
-          "type": "error",
-          "title": "Yêu cầu đăng nhập",
-          "description": "Vui lòng đăng nhập để gửi yêu cầu."
+        "success": {
+          "description": "Chúng tôi đã nhận được yêu cầu của bạn và sẽ phản hồi sớm nhất có thể.",
+          "title": "Đã gửi tin nhắn",
+          "type": "success"
         }
       },
+      "title": "Gửi Tin Nhắn",
       "validation": {
         "email": "Vui lòng nhập email hợp lệ",
         "emailMax": "Email quá dài",
-        "messageMin": "Tin nhắn phải có ít nhất 10 ký tự",
         "messageMax": "Tin nhắn quá dài",
-        "nameMin": "Tên phải có ít nhất 2 ký tự",
+        "messageMin": "Tin nhắn phải có ít nhất 10 ký tự",
         "nameMax": "Tên quá dài",
-        "subjectMin": "Tiêu đề phải có ít nhất 5 ký tự",
+        "nameMin": "Tên phải có ít nhất 2 ký tự",
         "subjectMax": "Tiêu đề quá dài",
+        "subjectMin": "Tiêu đề phải có ít nhất 5 ký tự",
         "type": "Vui lòng chọn loại yêu cầu"
       }
     },
@@ -5913,8 +5913,8 @@
     "dark_mode_warning": "Lưu ý: Đây là chế độ tối giả lập. Hiển thị thực tế có thể khác nhau tùy theo ứng dụng email.",
     "description": "Xem trước và kiểm tra tất cả mẫu email có sẵn với các đầu vào tùy chỉnh.",
     "light_mode": "Chế độ Sáng",
-    "loading_preview": "Đang render bản xem trước...",
     "live_preview": "Xem trước Trực tiếp",
+    "loading_preview": "Đang render bản xem trước...",
     "no_templates": "Không có mẫu nào",
     "preview": "Xem trước",
     "render_failed": "Không thể render mẫu này.",
@@ -7866,11 +7866,6 @@
     "workspaces": "Không gian làm việc"
   },
   "integrations-page": {
-    "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
-    "sepay-connected-title": "SePay đã được kết nối",
-    "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",
-    "sepay-error-provisioning-description": "SePay đã kết nối, nhưng bước đồng bộ tài khoản ngân hàng hoặc cấu hình webhook ban đầu chưa hoàn tất. Hãy thử lại các thao tác thiết lập từ không gian làm việc này.",
-    "sepay-error-title": "Thiết lập SePay cần được xử lý",
     "actions": {
       "comingSoon": "Sắp ra mắt",
       "configure": "Cấu hình tích hợp"
@@ -7913,6 +7908,11 @@
       "title": "Chưa có tích hợp nào"
     },
     "features": "Tính năng",
+    "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
+    "sepay-connected-title": "SePay đã được kết nối",
+    "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",
+    "sepay-error-provisioning-description": "SePay đã kết nối, nhưng bước đồng bộ tài khoản ngân hàng hoặc cấu hình webhook ban đầu chưa hoàn tất. Hãy thử lại các thao tác thiết lập từ không gian làm việc này.",
+    "sepay-error-title": "Thiết lập SePay cần được xử lý",
     "status": {
       "available": "Khả dụng",
       "comingSoon": "Sắp ra mắt"
@@ -9400,6 +9400,7 @@
     "filter_provider": "Tất cả nhà cung cấp",
     "filter_tag": "Tất cả thẻ",
     "filter_type": "Tất cả loại",
+    "free": "Miễn phí",
     "generation_price_label": "Giá tạo ảnh",
     "input_price_label": "Đầu vào",
     "load_failed": "Không thể tải mô hình. Vui lòng thử lại.",
@@ -9407,17 +9408,16 @@
     "loading_more": "Đang tải thêm...",
     "max_output_label": "Đầu ra tối đa",
     "no_results": "Không tìm thấy mô hình phù hợp.",
+    "not_available": "Không có",
     "output_price_label": "Đầu ra",
+    "per_image": "/ ảnh",
     "search_placeholder": "Tìm kiếm mô hình...",
     "showing_count": "Đang hiển thị {count} / {total} mô hình",
     "subtitle": "Khám phá đầy đủ các mô hình AI được cung cấp bởi Tuturuuu.",
     "title": "Danh mục Mô hình AI",
     "view_grid": "Xem dạng lưới",
     "view_list": "Xem dạng danh sách",
-    "view_mode": "Chế độ xem",
-    "free": "Miễn phí",
-    "not_available": "Không có",
-    "per_image": "/ ảnh"
+    "view_mode": "Chế độ xem"
   },
   "meet-together": {
     "agenda": "Nội dung cuộc họp",
@@ -15152,6 +15152,34 @@
     "transfer_mode": "Chuyển khoản",
     "user": "Người tạo",
     "wallet": "Ví"
+  },
+  "translations-inspector": {
+    "actions": "Thao tác",
+    "all_namespaces": "Tất cả namespace",
+    "all_statuses": "Tất cả trạng thái",
+    "copied": "Đã sao chép khóa bản dịch",
+    "copy_key": "Sao chép khóa",
+    "description": "Kiểm tra độ phủ thông điệp tiếng Anh và tiếng Việt trong các bundle nền tảng đã migrate.",
+    "empty": "Không có bản dịch nào khớp với bộ lọc hiện tại.",
+    "english": "Tiếng Anh",
+    "export_csv": "CSV",
+    "export_json": "JSON",
+    "exported": "Đã xuất {count} dòng bản dịch",
+    "key": "Khóa",
+    "namespace": "Namespace",
+    "next": "Tiếp",
+    "page_size": "Số dòng",
+    "previous": "Trước",
+    "search": "Tìm khóa hoặc nội dung",
+    "showing": "Đang hiển thị {count} / {total}",
+    "status": "Trạng thái",
+    "status_complete": "Đầy đủ",
+    "status_missing_en": "Thiếu tiếng Anh",
+    "status_missing_vi": "Thiếu tiếng Việt",
+    "title": "Bản dịch",
+    "total": "Tổng số khóa",
+    "vietnamese": "Tiếng Việt",
+    "view_details": "Xem chi tiết"
   },
   "ui-showcase": {
     "categories": {

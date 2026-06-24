@@ -4752,33 +4752,33 @@
           "placeholder": "Select type"
         }
       },
-      "title": "Send Us a Message",
       "status": {
-        "success": {
-          "type": "success",
-          "title": "Message sent",
-          "description": "We received your inquiry and will get back to you as soon as possible."
+        "authRequired": {
+          "description": "Please log in to submit an inquiry.",
+          "title": "Authentication required",
+          "type": "error"
         },
         "error": {
-          "type": "error",
+          "description": "Please try again later or contact us directly by email.",
           "title": "Something went wrong",
-          "description": "Please try again later or contact us directly by email."
+          "type": "error"
         },
-        "authRequired": {
-          "type": "error",
-          "title": "Authentication required",
-          "description": "Please log in to submit an inquiry."
+        "success": {
+          "description": "We received your inquiry and will get back to you as soon as possible.",
+          "title": "Message sent",
+          "type": "success"
         }
       },
+      "title": "Send Us a Message",
       "validation": {
         "email": "Please enter a valid email",
         "emailMax": "Email is too long",
-        "messageMin": "Message must be at least 10 characters",
         "messageMax": "Message is too long",
-        "nameMin": "Name must be at least 2 characters",
+        "messageMin": "Message must be at least 10 characters",
         "nameMax": "Name is too long",
-        "subjectMin": "Subject must be at least 5 characters",
+        "nameMin": "Name must be at least 2 characters",
         "subjectMax": "Subject is too long",
+        "subjectMin": "Subject must be at least 5 characters",
         "type": "Please select an inquiry type"
       }
     },
@@ -5913,8 +5913,8 @@
     "dark_mode_warning": "Note: This is a simulated dark mode. Actual rendering may vary across email clients.",
     "description": "Preview and test all available email templates with customizable inputs.",
     "light_mode": "Light Mode",
-    "loading_preview": "Rendering preview...",
     "live_preview": "Live Preview",
+    "loading_preview": "Rendering preview...",
     "no_templates": "No templates available",
     "preview": "Preview",
     "render_failed": "Failed to render this template.",
@@ -7866,11 +7866,6 @@
     "workspaces": "Workspaces"
   },
   "integrations-page": {
-    "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
-    "sepay-connected-title": "SePay connected",
-    "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",
-    "sepay-error-provisioning-description": "SePay connected, but the initial bank-account sync or webhook provisioning did not finish. Retry the setup actions from this workspace.",
-    "sepay-error-title": "SePay setup needs attention",
     "actions": {
       "comingSoon": "Coming Soon",
       "configure": "Configure Integration"
@@ -7913,6 +7908,11 @@
       "title": "No integrations available"
     },
     "features": "Features",
+    "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
+    "sepay-connected-title": "SePay connected",
+    "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",
+    "sepay-error-provisioning-description": "SePay connected, but the initial bank-account sync or webhook provisioning did not finish. Retry the setup actions from this workspace.",
+    "sepay-error-title": "SePay setup needs attention",
     "status": {
       "available": "Available",
       "comingSoon": "Coming Soon"
@@ -9400,6 +9400,7 @@
     "filter_provider": "All Providers",
     "filter_tag": "All Tags",
     "filter_type": "All Types",
+    "free": "Free",
     "generation_price_label": "Generation Price",
     "input_price_label": "Input",
     "load_failed": "Failed to load models. Please try again.",
@@ -9407,17 +9408,16 @@
     "loading_more": "Loading more...",
     "max_output_label": "Max Output",
     "no_results": "No models found matching your criteria.",
+    "not_available": "N/A",
     "output_price_label": "Output",
+    "per_image": "/ image",
     "search_placeholder": "Search models...",
     "showing_count": "Showing {count} of {total} models",
     "subtitle": "Explore the full range of AI models powered by Tuturuuu.",
     "title": "AI Models Directory",
     "view_grid": "Grid view",
     "view_list": "List view",
-    "view_mode": "View mode",
-    "free": "Free",
-    "not_available": "N/A",
-    "per_image": "/ image"
+    "view_mode": "View mode"
   },
   "meet-together": {
     "agenda": "Agenda",
@@ -15152,6 +15152,34 @@
     "transfer_mode": "Transfer",
     "user": "Creator",
     "wallet": "Wallet"
+  },
+  "translations-inspector": {
+    "actions": "Actions",
+    "all_namespaces": "All namespaces",
+    "all_statuses": "All statuses",
+    "copied": "Translation key copied",
+    "copy_key": "Copy key",
+    "description": "Review English and Vietnamese message coverage across the migrated platform bundles.",
+    "empty": "No translations match the current filters.",
+    "english": "English",
+    "export_csv": "CSV",
+    "export_json": "JSON",
+    "exported": "Exported {count} translation rows",
+    "key": "Key",
+    "namespace": "Namespace",
+    "next": "Next",
+    "page_size": "Rows",
+    "previous": "Previous",
+    "search": "Search keys or values",
+    "showing": "Showing {count} of {total}",
+    "status": "Status",
+    "status_complete": "Complete",
+    "status_missing_en": "Missing English",
+    "status_missing_vi": "Missing Vietnamese",
+    "title": "Translations",
+    "total": "Total keys",
+    "vietnamese": "Vietnamese",
+    "view_details": "View details"
   },
   "ui-showcase": {
     "categories": {

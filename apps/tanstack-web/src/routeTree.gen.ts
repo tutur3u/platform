@@ -149,6 +149,7 @@ import { Route as LocaleWsIdInventoryProductsRouteImport } from './routes/$local
 import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
 import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
 import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
+import { Route as LocaleWsIdInfrastructureTranslationsRouteImport } from './routes/$locale/$wsId/infrastructure/translations';
 import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/$locale/$wsId/infrastructure/timezones';
 import { Route as LocaleWsIdInfrastructureRealtimeRouteImport } from './routes/$locale/$wsId/infrastructure/realtime';
 import { Route as LocaleWsIdInfrastructureRateLimitsRouteImport } from './routes/$locale/$wsId/infrastructure/rate-limits';
@@ -985,6 +986,12 @@ const LocaleWsIdInventoryBatchesRoute =
     path: '/$wsId/inventory/batches',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureTranslationsRoute =
+  LocaleWsIdInfrastructureTranslationsRouteImport.update({
+    id: '/$wsId/infrastructure/translations',
+    path: '/$wsId/infrastructure/translations',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureTimezonesRoute =
   LocaleWsIdInfrastructureTimezonesRouteImport.update({
     id: '/$wsId/infrastructure/timezones',
@@ -1691,6 +1698,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/realtime': typeof LocaleWsIdInfrastructureRealtimeRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
+  '/$locale/$wsId/infrastructure/translations': typeof LocaleWsIdInfrastructureTranslationsRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -1925,6 +1933,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/realtime': typeof LocaleWsIdInfrastructureRealtimeRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
+  '/$locale/$wsId/infrastructure/translations': typeof LocaleWsIdInfrastructureTranslationsRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -2162,6 +2171,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/realtime': typeof LocaleWsIdInfrastructureRealtimeRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
+  '/$locale/$wsId/infrastructure/translations': typeof LocaleWsIdInfrastructureTranslationsRoute;
   '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
   '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
   '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
@@ -2400,6 +2410,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/realtime'
     | '/$locale/$wsId/infrastructure/timezones'
+    | '/$locale/$wsId/infrastructure/translations'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2634,6 +2645,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/realtime'
     | '/$locale/$wsId/infrastructure/timezones'
+    | '/$locale/$wsId/infrastructure/translations'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -2870,6 +2882,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/realtime'
     | '/$locale/$wsId/infrastructure/timezones'
+    | '/$locale/$wsId/infrastructure/translations'
     | '/$locale/$wsId/inventory/batches'
     | '/$locale/$wsId/inventory/categories'
     | '/$locale/$wsId/inventory/manufacturers'
@@ -3959,6 +3972,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/inventory/batches';
       fullPath: '/$locale/$wsId/inventory/batches';
       preLoaderRoute: typeof LocaleWsIdInventoryBatchesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure/translations': {
+      id: '/$locale/$wsId/infrastructure/translations';
+      path: '/$wsId/infrastructure/translations';
+      fullPath: '/$locale/$wsId/infrastructure/translations';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureTranslationsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/infrastructure/timezones': {
@@ -5165,6 +5185,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInfrastructureRateLimitsRoute: typeof LocaleWsIdInfrastructureRateLimitsRoute;
   LocaleWsIdInfrastructureRealtimeRoute: typeof LocaleWsIdInfrastructureRealtimeRoute;
   LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
+  LocaleWsIdInfrastructureTranslationsRoute: typeof LocaleWsIdInfrastructureTranslationsRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
@@ -5350,6 +5371,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdInfrastructureRealtimeRoute: LocaleWsIdInfrastructureRealtimeRoute,
   LocaleWsIdInfrastructureTimezonesRoute:
     LocaleWsIdInfrastructureTimezonesRoute,
+  LocaleWsIdInfrastructureTranslationsRoute:
+    LocaleWsIdInfrastructureTranslationsRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
