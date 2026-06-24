@@ -105,6 +105,20 @@ Every terminal route must be classified as one of:
 - redirect
 - accepted removal
 
+### 2026-06-25 Frontend Scout Handoff
+
+The first frontend-only scout wave deliberately rejected several compact-looking
+routes because they would otherwise become shell-only migrations. Keep these
+handoffs visible so parallel workers do not repeat the same audit:
+
+| Candidate lane | Current finding | Next unblock |
+| --- | --- | --- |
+| `/:locale/meet` and `/:locale/meet-together` | TanStack public preview shells exist, but legacy also shows authenticated meeting plans and creates plans through Supabase/server-action paths. | Add typed plan list/create APIs through Rust or TanStack server functions, then prove unauthenticated and authenticated parity with focused E2E. |
+| `/:locale/:wsId/users/topic-announcements/*` | The parent redirect is migrated and the tab wrappers are tiny, but the shared shell still depends on workspace secret gates, send permissions, calendar timezone/E2EE setup, contacts/templates/announcement APIs, scheduling, and import mutations. | Port the route family only after the calendar setup dialog and topic-announcement API lane use typed internal-api or backend facades end to end. |
+| `/:locale/:wsId/billing` | Rust owns the initial billing read, but the client still needs payment cancellation, continuation, checkout, seat, credit, invoice, and billing-details actions. | Add typed payment/billing facades for all client mutations, or explicitly split a read-only page from separately tracked disabled actions before marking terminal. |
+| `/:locale/:wsId/usage` | The page wrapper is small, but the content is a broad Supabase/RPC workspace usage dashboard. | Create a usage-summary backend contract or server-function bundle that returns permission-masked stats without direct Supabase reads in TanStack. |
+| `/:locale/:wsId/ai/spark`, `/:locale/:wsId/mira`, `/:locale/:wsId/assistant` | Page files are compact, but the behavior is coupled to AI object APIs, Mira API routes, voice/live API helpers, or assistant providers. | Treat these as dedicated product lanes with typed AI/Mira/assistant facades and focused browser evidence. |
+
 ## Coordinator-Owned Artifacts
 
 Only the migration coordinator should edit generated or contract artifacts:
