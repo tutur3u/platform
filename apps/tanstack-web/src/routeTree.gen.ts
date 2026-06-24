@@ -74,6 +74,7 @@ import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm
 import { Route as LocaleDocumentsDocumentIdRouteImport } from './routes/$locale/documents/$documentId';
 import { Route as LocaleChangelogSlugRouteImport } from './routes/$locale/changelog.$slug';
 import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together';
+import { Route as LocaleAccountDeleteRouteImport } from './routes/$locale/account/delete';
 import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts';
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce';
 import { Route as LocaleWsIdRolesRouteImport } from './routes/$locale/$wsId/roles';
@@ -569,6 +570,11 @@ const LocaleCalendarMeetTogetherRoute =
     path: '/calendar/meet-together',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleAccountDeleteRoute = LocaleAccountDeleteRouteImport.update({
+  id: '/account/delete',
+  path: '/account/delete',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleWsIdWorkoutsRoute = LocaleWsIdWorkoutsRouteImport.update({
   id: '/$wsId/workouts',
   path: '/$wsId/workouts',
@@ -1529,6 +1535,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute;
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute;
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute;
+  '/$locale/account/delete': typeof LocaleAccountDeleteRoute;
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren;
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute;
   '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute;
@@ -1751,6 +1758,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute;
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute;
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute;
+  '/$locale/account/delete': typeof LocaleAccountDeleteRoute;
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren;
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute;
   '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute;
@@ -1974,6 +1982,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute;
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute;
   '/$locale/$wsId/workouts': typeof LocaleWsIdWorkoutsRoute;
+  '/$locale/account/delete': typeof LocaleAccountDeleteRoute;
   '/$locale/calendar/meet-together': typeof LocaleCalendarMeetTogetherRouteWithChildren;
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute;
   '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute;
@@ -2199,6 +2208,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
+    | '/$locale/account/delete'
     | '/$locale/calendar/meet-together'
     | '/$locale/changelog/$slug'
     | '/$locale/documents/$documentId'
@@ -2421,6 +2431,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
+    | '/$locale/account/delete'
     | '/$locale/calendar/meet-together'
     | '/$locale/changelog/$slug'
     | '/$locale/documents/$documentId'
@@ -2643,6 +2654,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
     | '/$locale/$wsId/workouts'
+    | '/$locale/account/delete'
     | '/$locale/calendar/meet-together'
     | '/$locale/changelog/$slug'
     | '/$locale/documents/$documentId'
@@ -3270,6 +3282,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar/meet-together';
       fullPath: '/$locale/calendar/meet-together';
       preLoaderRoute: typeof LocaleCalendarMeetTogetherRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/account/delete': {
+      id: '/$locale/account/delete';
+      path: '/account/delete';
+      fullPath: '/$locale/account/delete';
+      preLoaderRoute: typeof LocaleAccountDeleteRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/workouts': {
@@ -4806,6 +4825,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdRolesRoute: typeof LocaleWsIdRolesRoute;
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute;
   LocaleWsIdWorkoutsRoute: typeof LocaleWsIdWorkoutsRoute;
+  LocaleAccountDeleteRoute: typeof LocaleAccountDeleteRoute;
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren;
   LocaleDocumentsDocumentIdRoute: typeof LocaleDocumentsDocumentIdRoute;
   LocaleGamesFarmRoute: typeof LocaleGamesFarmRoute;
@@ -4971,6 +4991,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdRolesRoute: LocaleWsIdRolesRoute,
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
   LocaleWsIdWorkoutsRoute: LocaleWsIdWorkoutsRoute,
+  LocaleAccountDeleteRoute: LocaleAccountDeleteRoute,
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
   LocaleDocumentsDocumentIdRoute: LocaleDocumentsDocumentIdRoute,
   LocaleGamesFarmRoute: LocaleGamesFarmRoute,
