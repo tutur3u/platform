@@ -1619,6 +1619,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/stress-tests ports the legacy stress-test monitoring leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed snapshot, queue, abort, run-detail polling, metrics, and history controls. Stress-test API ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/infrastructure/monitoring/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/cron/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/cron ports the legacy cron monitoring leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed cron snapshot, execution archive, manual run queueing, control toggles, and console log detail. Cron API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/infrastructure/timezones:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/timezones/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

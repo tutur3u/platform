@@ -12,6 +12,8 @@ import {
   deployAiAgentChannel,
   enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
+  getCronMonitoringExecutionArchive,
+  getCronMonitoringSnapshot,
   getGitHubBotState,
   getInfrastructureStressTestRun,
   getInfrastructureStressTestSnapshot,
@@ -25,6 +27,7 @@ import {
   listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
   pauseAiAgentChannel,
+  queueCronRun,
   queueInfrastructureStressTest,
   revokeGitHubBotWatcherClient,
   rotateAiAgentChannelSecret,
@@ -38,6 +41,7 @@ import {
   testGitHubBotConfiguration,
   updateAIWhitelistDomain,
   updateAIWhitelistEmail,
+  updateCronMonitoringControl,
 } from './infrastructure';
 
 function createJsonResponse(data: unknown) {
@@ -827,6 +831,133 @@ describe('observability internal API helpers', () => {
         cache: 'no-store',
         headers: expect.any(Headers),
       })
+    );
+  });
+
+  it('loads cron monitoring snapshots through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        control: { enabled: true, jobs: {}, updatedAt: null },
+        enabled: true,
+        jobs: [],
+        lastExecution: null,
+        nextRunAt: null,
+        overview: {
+          enabledJobs: 0,
+          failedExecutions: 0,
+          failedJobs: 0,
+          processingRuns: 0,
+          queuedRuns: 0,
+          retainedExecutions: 0,
+          totalJobs: 0,
+        },
+        retainedExecutionCount: 0,
+        runs: [],
+        source: {
+          configAvailable: true,
+          controlAvailable: true,
+          runtimeDirAvailable: true,
+          statusAvailable: true,
+        },
+        status: 'live',
+        updatedAt: null,
+      })
+    );
+
+    await getCronMonitoringSnapshot({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('passes cron execution archive filters through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        hasNextPage: false,
+        hasPreviousPage: false,
+        items: [],
+        limit: 25,
+        offset: 25,
+        page: 2,
+        pageCount: 1,
+        total: 0,
+        window: {
+          newestAt: null,
+          oldestAt: null,
+        },
+      })
+    );
+
+    await getCronMonitoringExecutionArchive(
+      {
+        jobId: 'daily-report',
+        page: 2,
+        pageSize: 25,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/executions?page=2&pageSize=25&jobId=daily-report',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('queues cron runs and updates cron controls through JSON mutations', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await queueCronRun(
+      { jobId: 'daily-report' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await updateCronMonitoringControl(
+      { enabled: false, jobId: 'daily-report' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/run',
+      expect.objectContaining({
+        body: JSON.stringify({ jobId: 'daily-report' }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/control',
+      expect.objectContaining({
+        body: JSON.stringify({ enabled: false, jobId: 'daily-report' }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(getCalledHeaders(fetchMock, 1).get('Content-Type')).toBe(
+      'application/json'
     );
   });
 

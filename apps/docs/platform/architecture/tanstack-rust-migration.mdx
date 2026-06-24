@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-23"
+updatedAt: "2026-06-24"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -341,7 +341,7 @@ Current inventory:
 - `1,165` route handler artifacts
 - `19` cron handlers
 - `1,543` total tracked route artifacts
-- `384` migrated artifacts, `468` terminal artifacts, and `1,075` remaining
+- `385` migrated artifacts, `469` terminal artifacts, and `1,074` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -656,6 +656,7 @@ Frontend pages now terminal:
 | `/:locale/:wsId/infrastructure/mobile-versions` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/mobile-versions` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, loads policies through the Rust-owned mobile-versions internal-api facade, and saves updates through TanStack Query mutations. |
 | `/:locale/:wsId/infrastructure/mobile-deployment` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/mobile-deployment` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves the legacy root-workspace redirect boundary, requires root `manage_mobile_deployment_vault`, loads the initial vault state through forwarded internal-api auth, and renders localized secret, file, activation, rollback, and CI token controls through TanStack Query/internal-api facades. Mobile Deployment APIs remain separately tracked. |
 | `/:locale/:wsId/infrastructure/monitoring/stress-tests` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/monitoring/stress-tests` is registered under the TanStack monitoring layout in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves the legacy root-workspace redirect boundary and root `view_infrastructure` not-found gate, renders the localized monitoring hero/section navigation, and uses TanStack Query/internal-api facades for stress-test snapshots, queue, abort, run detail polling, metrics, and history. Stress-test APIs remain separately tracked. |
+| `/:locale/:wsId/infrastructure/monitoring/cron` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/monitoring/cron` is registered under the TanStack monitoring layout in `routeTree.gen.ts`, relies on the parent current-user, root-workspace redirect, and root `view_infrastructure` gates, and uses TanStack Query/internal-api facades for cron snapshots, execution archives, manual run queueing, control toggles, and console-log detail. Cron APIs remain separately tracked. |
 | `/:locale/:wsId/infrastructure/timezones` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/timezones` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, overlays Rust-owned persisted timezone rows onto the bundled timezone catalog, and performs create/update/delete sync mutations through the backend timezones facade. |
 | `/:locale/:wsId/infrastructure/holidays` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/holidays` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, carries the year filter through TanStack Router search state, and performs list/create/update/delete/bulk-import work through the Rust-owned holidays backend facade. |
 | `/:locale/:wsId/infrastructure/email-blacklist` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/email-blacklist` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves `view_infrastructure` not-found gating, carries URL search/type/pagination filters through TanStack Router, and loads/mutates rows through the Rust-owned email blacklist backend facade. |
