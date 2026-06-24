@@ -107,4 +107,21 @@ test.describe('Dashboard auth gate (unauthenticated)', () => {
       ).toBe(`/${WS_ID}/${route}`);
     });
   }
+
+  test('redirects anonymous logout page access to login', async ({ page }) => {
+    const target = `/${DEFAULT_LOCALE}/logout`;
+
+    await page.goto(target, { waitUntil: 'domcontentloaded' });
+
+    const url = new URL(page.url());
+
+    expect(
+      url.pathname,
+      'Expected anonymous logout access to redirect to the login route'
+    ).toBe(`/${DEFAULT_LOCALE}/login`);
+    expect(
+      url.searchParams.get('nextUrl'),
+      'Expected logout login redirect to preserve the localized return path'
+    ).toBe(target);
+  });
 });

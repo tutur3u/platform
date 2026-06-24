@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   listWebAccountsWithInternalApi,
   logoutAllWebAccountsWithInternalApi,
+  logoutBrowserSessionWithInternalApi,
   passwordLoginWithInternalApi,
   saveCurrentWebAccountWithInternalApi,
   switchWebAccountWithInternalApi,
@@ -185,6 +186,27 @@ describe('auth internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/auth/accounts/logout-all',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('logs out the browser session through the legacy session route facade', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        success: true,
+      })
+    );
+
+    await logoutBrowserSessionWithInternalApi({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/auth/logout',
       expect.objectContaining({
         cache: 'no-store',
         method: 'POST',

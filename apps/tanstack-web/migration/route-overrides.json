@@ -2007,7 +2007,12 @@
     "layout:/:locale/logout:apps/web/src/app/[locale]/(marketing)/logout/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/logout defines the legacy logout metadata through createPageHead. This marks only the metadata layout artifact migrated; the logout page and session-clearing behavior remain legacy-owned until account logout APIs and redirect behavior move behind TanStack/Rust ownership."
+      "note": "TanStack Start route /$locale/logout defines the legacy logout metadata through createPageHead. The matching page artifact is migrated separately; the underlying /api/auth/logout session-clearing route remains legacy-owned until the auth backend wave."
+    },
+    "page:/:locale/logout:apps/web/src/app/[locale]/(marketing)/logout/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/logout ports the legacy localized confirmation page with a fail-closed current-user loader, preserved from-app copy, typed internal-api browser-session logout facade, best-effort redirect to localized login, and no raw protected app API or Supabase access in TanStack source. The facade still targets the legacy /api/auth/logout route, so that API artifact remains legacy-owned until the auth backend wave ports session clearing to Rust."
     },
     "layout:/:locale/women-in-tech:apps/web/src/app/[locale]/(marketing)/women-in-tech/layout.tsx": {
       "status": "migrated",

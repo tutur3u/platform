@@ -228,6 +228,11 @@ export interface WebAccountMutationResponse extends WebAccountsResponse {
   success: boolean;
 }
 
+export interface BrowserSessionLogoutResponse {
+  error?: unknown;
+  success?: boolean;
+}
+
 export interface SaveCurrentWebAccountPayload {
   returnUrl?: string | null;
   route?: string | null;
@@ -439,6 +444,17 @@ export async function logoutAllWebAccountsWithInternalApi(
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
+}
+
+export async function logoutBrowserSessionWithInternalApi(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/auth/logout', {
+    cache: 'no-store',
+    method: 'POST',
+  });
+  return parseAuthResponse<BrowserSessionLogoutResponse>(response);
 }
 
 export async function createQrLoginChallengeWithInternalApi(
