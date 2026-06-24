@@ -12,6 +12,8 @@ import {
   deployAiAgentChannel,
   enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
+  getBlueGreenMonitoringSnapshot,
+  getBlueGreenMonitoringWatcherLogArchive,
   getCronMonitoringExecutionArchive,
   getCronMonitoringSnapshot,
   getGitHubBotState,
@@ -772,6 +774,42 @@ describe('observability internal API helpers', () => {
     );
   });
 
+  it('loads blue-green monitoring snapshots through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        deployments: [],
+        dockerResources: {
+          containers: [],
+          services: [],
+        },
+        requests: [],
+        watcher: {
+          health: 'live',
+        },
+        watcherLogs: [],
+      })
+    );
+
+    await getBlueGreenMonitoringSnapshot(
+      {
+        requestPreviewLimit: 0,
+        watcherLogLimit: 0,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green?requestPreviewLimit=0&watcherLogLimit=0',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
   it('passes blue-green request archive cursor params through the apps/web API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
@@ -827,6 +865,44 @@ describe('observability internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/requests?page=1&pageSize=25&q=login&status=5xx&route=%2Flogin&since=1710000000000&render=rsc&traffic=external&until=1777856523000',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('passes blue-green watcher log archive pagination through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        hasNextPage: false,
+        hasPreviousPage: false,
+        items: [],
+        limit: 50,
+        offset: 100,
+        page: 3,
+        pageCount: 1,
+        total: 0,
+        window: {
+          newestAt: null,
+          oldestAt: null,
+        },
+      })
+    );
+
+    await getBlueGreenMonitoringWatcherLogArchive(
+      {
+        page: 3,
+        pageSize: 50,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/watcher-logs?page=3&pageSize=50',
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),
