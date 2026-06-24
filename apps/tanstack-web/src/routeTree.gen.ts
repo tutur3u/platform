@@ -167,6 +167,7 @@ import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/
 import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
 import { Route as LocaleWsIdUsersGroupTagsIndexRouteImport } from './routes/$locale/$wsId/users/group-tags/index';
 import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
+import { Route as LocaleWsIdInfrastructureMonitoringIndexRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/index';
 import { Route as LocaleWsIdEducationQuizSetsIndexRouteImport } from './routes/$locale/$wsId/education/quiz-sets/index';
 import { Route as LocaleWsIdEducationCoursesIndexRouteImport } from './routes/$locale/$wsId/education/courses/index';
 import { Route as LocaleWsIdAiChatMyChatbotsIndexRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/index';
@@ -184,8 +185,14 @@ import { Route as LocaleWsIdInventoryProductsProductIdRouteImport } from './rout
 import { Route as LocaleWsIdInfrastructureMonitoringWatcherLogsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/watcher-logs';
 import { Route as LocaleWsIdInfrastructureMonitoringStressTestsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/stress-tests';
 import { Route as LocaleWsIdInfrastructureMonitoringRolloutsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/rollouts';
+import { Route as LocaleWsIdInfrastructureMonitoringResourcesRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/resources';
 import { Route as LocaleWsIdInfrastructureMonitoringRequestsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/requests';
+import { Route as LocaleWsIdInfrastructureMonitoringProjectsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/projects';
+import { Route as LocaleWsIdInfrastructureMonitoringObservabilityRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/observability';
+import { Route as LocaleWsIdInfrastructureMonitoringLogsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/logs';
+import { Route as LocaleWsIdInfrastructureMonitoringDeploymentsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/deployments';
 import { Route as LocaleWsIdInfrastructureMonitoringCronRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/cron';
+import { Route as LocaleWsIdInfrastructureMonitoringAnalyticsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/analytics';
 import { Route as LocaleWsIdFinanceWalletsWalletIdRouteImport } from './routes/$locale/$wsId/finance/wallets/$walletId';
 import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories';
 import { Route as LocaleWsIdFinanceTransactionsTransactionIdRouteImport } from './routes/$locale/$wsId/finance/transactions/$transactionId';
@@ -1068,6 +1075,12 @@ const LocaleWsIdTasksBoardsIndexRoute =
     path: '/$wsId/tasks/boards/',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureMonitoringIndexRoute =
+  LocaleWsIdInfrastructureMonitoringIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
 const LocaleWsIdEducationQuizSetsIndexRoute =
   LocaleWsIdEducationQuizSetsIndexRouteImport.update({
     id: '/$wsId/education/quiz-sets/',
@@ -1170,16 +1183,52 @@ const LocaleWsIdInfrastructureMonitoringRolloutsRoute =
     path: '/rollouts',
     getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
   } as any);
+const LocaleWsIdInfrastructureMonitoringResourcesRoute =
+  LocaleWsIdInfrastructureMonitoringResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
 const LocaleWsIdInfrastructureMonitoringRequestsRoute =
   LocaleWsIdInfrastructureMonitoringRequestsRouteImport.update({
     id: '/requests',
     path: '/requests',
     getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
   } as any);
+const LocaleWsIdInfrastructureMonitoringProjectsRoute =
+  LocaleWsIdInfrastructureMonitoringProjectsRouteImport.update({
+    id: '/projects',
+    path: '/projects',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
+const LocaleWsIdInfrastructureMonitoringObservabilityRoute =
+  LocaleWsIdInfrastructureMonitoringObservabilityRouteImport.update({
+    id: '/observability',
+    path: '/observability',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
+const LocaleWsIdInfrastructureMonitoringLogsRoute =
+  LocaleWsIdInfrastructureMonitoringLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
+const LocaleWsIdInfrastructureMonitoringDeploymentsRoute =
+  LocaleWsIdInfrastructureMonitoringDeploymentsRouteImport.update({
+    id: '/deployments',
+    path: '/deployments',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
 const LocaleWsIdInfrastructureMonitoringCronRoute =
   LocaleWsIdInfrastructureMonitoringCronRouteImport.update({
     id: '/cron',
     path: '/cron',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
+const LocaleWsIdInfrastructureMonitoringAnalyticsRoute =
+  LocaleWsIdInfrastructureMonitoringAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
     getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
   } as any);
 const LocaleWsIdFinanceWalletsWalletIdRoute =
@@ -1503,8 +1552,14 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/infrastructure/monitoring/analytics': typeof LocaleWsIdInfrastructureMonitoringAnalyticsRoute;
   '/$locale/$wsId/infrastructure/monitoring/cron': typeof LocaleWsIdInfrastructureMonitoringCronRoute;
+  '/$locale/$wsId/infrastructure/monitoring/deployments': typeof LocaleWsIdInfrastructureMonitoringDeploymentsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/logs': typeof LocaleWsIdInfrastructureMonitoringLogsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/observability': typeof LocaleWsIdInfrastructureMonitoringObservabilityRoute;
+  '/$locale/$wsId/infrastructure/monitoring/projects': typeof LocaleWsIdInfrastructureMonitoringProjectsRoute;
   '/$locale/$wsId/infrastructure/monitoring/requests': typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/resources': typeof LocaleWsIdInfrastructureMonitoringResourcesRoute;
   '/$locale/$wsId/infrastructure/monitoring/rollouts': typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/infrastructure/monitoring/watcher-logs': typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
@@ -1522,6 +1577,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/education/quiz-sets/': typeof LocaleWsIdEducationQuizSetsIndexRoute;
+  '/$locale/$wsId/infrastructure/monitoring/': typeof LocaleWsIdInfrastructureMonitoringIndexRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/users/group-tags/': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
@@ -1651,7 +1707,6 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
-  '/$locale/$wsId/infrastructure/monitoring': typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
@@ -1705,8 +1760,14 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/infrastructure/monitoring/analytics': typeof LocaleWsIdInfrastructureMonitoringAnalyticsRoute;
   '/$locale/$wsId/infrastructure/monitoring/cron': typeof LocaleWsIdInfrastructureMonitoringCronRoute;
+  '/$locale/$wsId/infrastructure/monitoring/deployments': typeof LocaleWsIdInfrastructureMonitoringDeploymentsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/logs': typeof LocaleWsIdInfrastructureMonitoringLogsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/observability': typeof LocaleWsIdInfrastructureMonitoringObservabilityRoute;
+  '/$locale/$wsId/infrastructure/monitoring/projects': typeof LocaleWsIdInfrastructureMonitoringProjectsRoute;
   '/$locale/$wsId/infrastructure/monitoring/requests': typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/resources': typeof LocaleWsIdInfrastructureMonitoringResourcesRoute;
   '/$locale/$wsId/infrastructure/monitoring/rollouts': typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/infrastructure/monitoring/watcher-logs': typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
@@ -1724,6 +1785,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/ai-chat/my-chatbots': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/education/quiz-sets': typeof LocaleWsIdEducationQuizSetsIndexRoute;
+  '/$locale/$wsId/infrastructure/monitoring': typeof LocaleWsIdInfrastructureMonitoringIndexRoute;
   '/$locale/$wsId/tasks/boards': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/users/group-tags': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
@@ -1909,8 +1971,14 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/infrastructure/monitoring/analytics': typeof LocaleWsIdInfrastructureMonitoringAnalyticsRoute;
   '/$locale/$wsId/infrastructure/monitoring/cron': typeof LocaleWsIdInfrastructureMonitoringCronRoute;
+  '/$locale/$wsId/infrastructure/monitoring/deployments': typeof LocaleWsIdInfrastructureMonitoringDeploymentsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/logs': typeof LocaleWsIdInfrastructureMonitoringLogsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/observability': typeof LocaleWsIdInfrastructureMonitoringObservabilityRoute;
+  '/$locale/$wsId/infrastructure/monitoring/projects': typeof LocaleWsIdInfrastructureMonitoringProjectsRoute;
   '/$locale/$wsId/infrastructure/monitoring/requests': typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/resources': typeof LocaleWsIdInfrastructureMonitoringResourcesRoute;
   '/$locale/$wsId/infrastructure/monitoring/rollouts': typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/infrastructure/monitoring/watcher-logs': typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
@@ -1928,6 +1996,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
   '/$locale/$wsId/education/quiz-sets/': typeof LocaleWsIdEducationQuizSetsIndexRoute;
+  '/$locale/$wsId/infrastructure/monitoring/': typeof LocaleWsIdInfrastructureMonitoringIndexRoute;
   '/$locale/$wsId/tasks/boards/': typeof LocaleWsIdTasksBoardsIndexRoute;
   '/$locale/$wsId/users/group-tags/': typeof LocaleWsIdUsersGroupTagsIndexRoute;
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
@@ -2114,8 +2183,14 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/infrastructure/monitoring/analytics'
     | '/$locale/$wsId/infrastructure/monitoring/cron'
+    | '/$locale/$wsId/infrastructure/monitoring/deployments'
+    | '/$locale/$wsId/infrastructure/monitoring/logs'
+    | '/$locale/$wsId/infrastructure/monitoring/observability'
+    | '/$locale/$wsId/infrastructure/monitoring/projects'
     | '/$locale/$wsId/infrastructure/monitoring/requests'
+    | '/$locale/$wsId/infrastructure/monitoring/resources'
     | '/$locale/$wsId/infrastructure/monitoring/rollouts'
     | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/infrastructure/monitoring/watcher-logs'
@@ -2133,6 +2208,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/courses/'
     | '/$locale/$wsId/education/quiz-sets/'
+    | '/$locale/$wsId/infrastructure/monitoring/'
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/$wsId/users/group-tags/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
@@ -2262,7 +2338,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
-    | '/$locale/$wsId/infrastructure/monitoring'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
@@ -2316,8 +2391,14 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/infrastructure/monitoring/analytics'
     | '/$locale/$wsId/infrastructure/monitoring/cron'
+    | '/$locale/$wsId/infrastructure/monitoring/deployments'
+    | '/$locale/$wsId/infrastructure/monitoring/logs'
+    | '/$locale/$wsId/infrastructure/monitoring/observability'
+    | '/$locale/$wsId/infrastructure/monitoring/projects'
     | '/$locale/$wsId/infrastructure/monitoring/requests'
+    | '/$locale/$wsId/infrastructure/monitoring/resources'
     | '/$locale/$wsId/infrastructure/monitoring/rollouts'
     | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/infrastructure/monitoring/watcher-logs'
@@ -2335,6 +2416,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots'
     | '/$locale/$wsId/education/courses'
     | '/$locale/$wsId/education/quiz-sets'
+    | '/$locale/$wsId/infrastructure/monitoring'
     | '/$locale/$wsId/tasks/boards'
     | '/$locale/$wsId/users/group-tags'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
@@ -2519,8 +2601,14 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/infrastructure/monitoring/analytics'
     | '/$locale/$wsId/infrastructure/monitoring/cron'
+    | '/$locale/$wsId/infrastructure/monitoring/deployments'
+    | '/$locale/$wsId/infrastructure/monitoring/logs'
+    | '/$locale/$wsId/infrastructure/monitoring/observability'
+    | '/$locale/$wsId/infrastructure/monitoring/projects'
     | '/$locale/$wsId/infrastructure/monitoring/requests'
+    | '/$locale/$wsId/infrastructure/monitoring/resources'
     | '/$locale/$wsId/infrastructure/monitoring/rollouts'
     | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/infrastructure/monitoring/watcher-logs'
@@ -2538,6 +2626,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/courses/'
     | '/$locale/$wsId/education/quiz-sets/'
+    | '/$locale/$wsId/infrastructure/monitoring/'
     | '/$locale/$wsId/tasks/boards/'
     | '/$locale/$wsId/users/group-tags/'
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
@@ -3670,6 +3759,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdTasksBoardsIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/monitoring/': {
+      id: '/$locale/$wsId/infrastructure/monitoring/';
+      path: '/';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringIndexRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
     '/$locale/$wsId/education/quiz-sets/': {
       id: '/$locale/$wsId/education/quiz-sets/';
       path: '/$wsId/education/quiz-sets';
@@ -3789,6 +3885,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringRolloutsRouteImport;
       parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
     };
+    '/$locale/$wsId/infrastructure/monitoring/resources': {
+      id: '/$locale/$wsId/infrastructure/monitoring/resources';
+      path: '/resources';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/resources';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringResourcesRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
     '/$locale/$wsId/infrastructure/monitoring/requests': {
       id: '/$locale/$wsId/infrastructure/monitoring/requests';
       path: '/requests';
@@ -3796,11 +3899,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringRequestsRouteImport;
       parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
     };
+    '/$locale/$wsId/infrastructure/monitoring/projects': {
+      id: '/$locale/$wsId/infrastructure/monitoring/projects';
+      path: '/projects';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/projects';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringProjectsRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
+    '/$locale/$wsId/infrastructure/monitoring/observability': {
+      id: '/$locale/$wsId/infrastructure/monitoring/observability';
+      path: '/observability';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/observability';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringObservabilityRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
+    '/$locale/$wsId/infrastructure/monitoring/logs': {
+      id: '/$locale/$wsId/infrastructure/monitoring/logs';
+      path: '/logs';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/logs';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringLogsRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
+    '/$locale/$wsId/infrastructure/monitoring/deployments': {
+      id: '/$locale/$wsId/infrastructure/monitoring/deployments';
+      path: '/deployments';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/deployments';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringDeploymentsRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
     '/$locale/$wsId/infrastructure/monitoring/cron': {
       id: '/$locale/$wsId/infrastructure/monitoring/cron';
       path: '/cron';
       fullPath: '/$locale/$wsId/infrastructure/monitoring/cron';
       preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringCronRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
+    '/$locale/$wsId/infrastructure/monitoring/analytics': {
+      id: '/$locale/$wsId/infrastructure/monitoring/analytics';
+      path: '/analytics';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/analytics';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringAnalyticsRouteImport;
       parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
     };
     '/$locale/$wsId/finance/wallets/$walletId': {
@@ -4206,25 +4344,46 @@ const LocaleWsIdEducationLibraryRouteWithChildren =
   );
 
 interface LocaleWsIdInfrastructureMonitoringRouteChildren {
+  LocaleWsIdInfrastructureMonitoringAnalyticsRoute: typeof LocaleWsIdInfrastructureMonitoringAnalyticsRoute;
   LocaleWsIdInfrastructureMonitoringCronRoute: typeof LocaleWsIdInfrastructureMonitoringCronRoute;
+  LocaleWsIdInfrastructureMonitoringDeploymentsRoute: typeof LocaleWsIdInfrastructureMonitoringDeploymentsRoute;
+  LocaleWsIdInfrastructureMonitoringLogsRoute: typeof LocaleWsIdInfrastructureMonitoringLogsRoute;
+  LocaleWsIdInfrastructureMonitoringObservabilityRoute: typeof LocaleWsIdInfrastructureMonitoringObservabilityRoute;
+  LocaleWsIdInfrastructureMonitoringProjectsRoute: typeof LocaleWsIdInfrastructureMonitoringProjectsRoute;
   LocaleWsIdInfrastructureMonitoringRequestsRoute: typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  LocaleWsIdInfrastructureMonitoringResourcesRoute: typeof LocaleWsIdInfrastructureMonitoringResourcesRoute;
   LocaleWsIdInfrastructureMonitoringRolloutsRoute: typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   LocaleWsIdInfrastructureMonitoringStressTestsRoute: typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   LocaleWsIdInfrastructureMonitoringWatcherLogsRoute: typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
+  LocaleWsIdInfrastructureMonitoringIndexRoute: typeof LocaleWsIdInfrastructureMonitoringIndexRoute;
 }
 
 const LocaleWsIdInfrastructureMonitoringRouteChildren: LocaleWsIdInfrastructureMonitoringRouteChildren =
   {
+    LocaleWsIdInfrastructureMonitoringAnalyticsRoute:
+      LocaleWsIdInfrastructureMonitoringAnalyticsRoute,
     LocaleWsIdInfrastructureMonitoringCronRoute:
       LocaleWsIdInfrastructureMonitoringCronRoute,
+    LocaleWsIdInfrastructureMonitoringDeploymentsRoute:
+      LocaleWsIdInfrastructureMonitoringDeploymentsRoute,
+    LocaleWsIdInfrastructureMonitoringLogsRoute:
+      LocaleWsIdInfrastructureMonitoringLogsRoute,
+    LocaleWsIdInfrastructureMonitoringObservabilityRoute:
+      LocaleWsIdInfrastructureMonitoringObservabilityRoute,
+    LocaleWsIdInfrastructureMonitoringProjectsRoute:
+      LocaleWsIdInfrastructureMonitoringProjectsRoute,
     LocaleWsIdInfrastructureMonitoringRequestsRoute:
       LocaleWsIdInfrastructureMonitoringRequestsRoute,
+    LocaleWsIdInfrastructureMonitoringResourcesRoute:
+      LocaleWsIdInfrastructureMonitoringResourcesRoute,
     LocaleWsIdInfrastructureMonitoringRolloutsRoute:
       LocaleWsIdInfrastructureMonitoringRolloutsRoute,
     LocaleWsIdInfrastructureMonitoringStressTestsRoute:
       LocaleWsIdInfrastructureMonitoringStressTestsRoute,
     LocaleWsIdInfrastructureMonitoringWatcherLogsRoute:
       LocaleWsIdInfrastructureMonitoringWatcherLogsRoute,
+    LocaleWsIdInfrastructureMonitoringIndexRoute:
+      LocaleWsIdInfrastructureMonitoringIndexRoute,
   };
 
 const LocaleWsIdInfrastructureMonitoringRouteWithChildren =

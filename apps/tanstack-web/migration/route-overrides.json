@@ -1614,6 +1614,41 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring owns the legacy monitoring layout shell and section navigation with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure not-found gating, localized hero copy, and locale-prefixed monitoring section links."
     },
+    "page:/:locale/:wsId/infrastructure/monitoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring ports the legacy observability overview leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed project scope, overview metrics, status/source/route summaries, recent errors, and watcher context. Observability and monitoring APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/analytics:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/analytics/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/analytics ports the legacy observability analytics leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed status distribution, route pressure, source mix, and cron hotspot summaries. Observability APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/deployments:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/deployments/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/deployments ports the legacy observability deployments leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed deployment history, cache/rebuild summaries, runtime state, stage metadata, and blue-green watcher context. Deployment APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/logs:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/logs/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/logs ports the legacy observability logs leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed grouped log search, level/source/status/route filters, request/user/deployment filters, pagination, pause/resume refresh, and expandable log metadata. Log-drain APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/observability:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/observability/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/observability ports the legacy observability signal leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed health signals, server-error and slow-request summaries, route/source pressure, cron hotspots, and recent errors. Observability APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/projects/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/projects ports the legacy observability projects leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed project registry import, branch/app-root/hostname edits, addon toggles, repository sync, deploy queueing, and active project scope. Project deletion remains a parity follow-up."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/resources:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/resources/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/resources ports the legacy observability resources leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed Docker resource totals, runtime CPU and memory trends, build resource signals, live container inventory, and project-scoped service filtering. Resource sampling APIs remain separately tracked."
+    },
     "page:/:locale/:wsId/infrastructure/monitoring/stress-tests:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/stress-tests/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

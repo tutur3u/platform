@@ -18,11 +18,11 @@
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 119,
-        "migrated": 187,
-        "percentComplete": 61.11,
-        "remaining": 119,
-        "terminal": 187,
+        "legacyNext": 112,
+        "migrated": 194,
+        "percentComplete": 63.4,
+        "remaining": 112,
+        "terminal": 194,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 136,
-        "migrated": 241,
-        "percentComplete": 64.02,
-        "remaining": 136,
-        "terminal": 242,
+        "legacyNext": 129,
+        "migrated": 248,
+        "percentComplete": 65.87,
+        "remaining": 129,
+        "terminal": 249,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1071,
-      "migrated": 388,
-      "percentComplete": 30.59,
-      "remaining": 1071,
-      "terminal": 472,
+      "legacyNext": 1064,
+      "migrated": 395,
+      "percentComplete": 31.04,
+      "remaining": 1064,
+      "terminal": 479,
       "total": 1543,
       "unknownStatus": 0
     }
@@ -12571,7 +12571,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12580,7 +12580,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring/analytics",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/analytics/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12598,7 +12598,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring/deployments",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/deployments/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12607,7 +12607,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring/logs",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/logs/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12616,7 +12616,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring/observability",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/observability/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12625,7 +12625,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring/projects",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/projects/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12643,7 +12643,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/monitoring/resources",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/resources/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
