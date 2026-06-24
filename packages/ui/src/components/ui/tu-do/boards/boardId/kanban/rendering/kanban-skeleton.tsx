@@ -75,7 +75,7 @@ export function KanbanSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="h-full overflow-hidden bg-background"
+      className="h-full overflow-hidden bg-transparent"
       data-testid="kanban-skeleton"
     >
       <div className="flex h-full gap-2 overflow-hidden p-2 sm:gap-3">

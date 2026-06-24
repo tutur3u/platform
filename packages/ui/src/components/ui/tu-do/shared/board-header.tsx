@@ -515,6 +515,9 @@ export function BoardHeader({
                 daysLeft: t('common.days_left', { count: '{count}' }),
                 searchBoards: t('common.search_boards'),
                 tasks: t('common.tasks'),
+                createBoard: t('ws-task-boards.create'),
+                creatingBoard: t('common.creating'),
+                createBoardError: t('ws-task-boards.errors.unexpected'),
               }}
             />
           )}

@@ -1,6 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, CheckCircle2, LayoutGrid, Trash2 } from '@tuturuuu/icons';
-import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
+import {
+  createWorkspaceTaskBoard,
+  listWorkspaceTaskBoards,
+} from '@tuturuuu/internal-api/tasks';
 import {
   isTaskRememberLastBoardEnabled,
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
@@ -9,6 +12,7 @@ import {
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
@@ -39,6 +43,9 @@ interface BoardSwitcherProps {
     daysLeft?: string;
     searchBoards?: string;
     tasks?: string;
+    createBoard?: string;
+    creatingBoard?: string;
+    createBoardError?: string;
   };
 }
 
@@ -62,6 +69,7 @@ function getDaysRemaining(deletedAt: string) {
 
 export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const tasksHref = useTasksHref();
   const { data: rememberLastBoardRaw } = useUserWorkspaceConfig(
     board.ws_id,
@@ -83,6 +91,10 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
     daysLeft: translations?.daysLeft ?? '{count} days left',
     searchBoards: translations?.searchBoards ?? 'Search boards',
     tasks: translations?.tasks ?? 'Tasks',
+    createBoard: translations?.createBoard ?? 'Create board',
+    creatingBoard: translations?.creatingBoard ?? 'Creating',
+    createBoardError:
+      translations?.createBoardError ?? 'Could not create board',
   };
 
   const translateBoardName = useCallback(
@@ -104,6 +116,54 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   });
   const rememberLastBoard =
     isTaskRememberLastBoardEnabled(rememberLastBoardRaw);
+
+  const selectBoard = useCallback(
+    (value: string | string[]) => {
+      const boardId = Array.isArray(value) ? value[0] : value;
+      if (!boardId || boardId === board.id) return;
+
+      if (rememberLastBoard) {
+        updateUserWorkspaceConfig.mutate({
+          configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+          value: boardId,
+          workspaceId: board.ws_id,
+        });
+      }
+
+      router.push(`/${board.ws_id}${tasksHref(`/boards/${boardId}`)}`);
+    },
+    [
+      board.id,
+      board.ws_id,
+      rememberLastBoard,
+      router,
+      tasksHref,
+      updateUserWorkspaceConfig,
+    ]
+  );
+
+  const createBoard = useCallback(
+    async (value: string) => {
+      const name = value.trim();
+      if (!name) return;
+
+      try {
+        const payload = await createWorkspaceTaskBoard(board.ws_id, { name });
+        await queryClient.invalidateQueries({
+          queryKey: ['other-boards', board.ws_id],
+        });
+
+        return {
+          label: translateBoardName(payload.board.name ?? name),
+          value: payload.board.id,
+        };
+      } catch (error) {
+        toast.error(t.createBoardError);
+        throw error;
+      }
+    },
+    [board.ws_id, queryClient, t.createBoardError, translateBoardName]
+  );
 
   const boardOptions = useMemo(() => {
     const byId = new Map<string, BoardWithStatus>();
@@ -210,6 +270,8 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   return (
     <Combobox
       className="w-[min(22rem,70vw)] [&_button]:h-7 [&_button]:min-h-7 [&_button]:px-2 sm:[&_button]:h-8 sm:[&_button]:min-h-8"
+      createText={t.createBoard}
+      creatingText={t.creatingBoard}
       disabled={isFetchingBoards}
       emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
       label={
@@ -217,20 +279,8 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
           {translateBoardName(board.name)}
         </span>
       }
-      onChange={(value) => {
-        const boardId = Array.isArray(value) ? value[0] : value;
-        if (!boardId || boardId === board.id) return;
-
-        if (rememberLastBoard) {
-          updateUserWorkspaceConfig.mutate({
-            configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
-            value: boardId,
-            workspaceId: board.ws_id,
-          });
-        }
-
-        router.push(`/${board.ws_id}${tasksHref(`/boards/${boardId}`)}`);
-      }}
+      onChange={selectBoard}
+      onCreate={createBoard}
       options={boardOptions}
       placeholder={translateBoardName(board.name)}
       searchPlaceholder={t.searchBoards}
