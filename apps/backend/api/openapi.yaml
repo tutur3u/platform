@@ -387,6 +387,114 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/workspaces/{wsId}/billing:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Workspace ID or supported workspace alias.
+    get:
+      summary: Workspace billing summary
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/billing/route.ts GET. The Rust backend revalidates the caller's Supabase browser session or non-app-session Bearer token, requires the workspace manage_subscription permission, reads subscription, credit-pack, order, and seat-limit data through server-owned Supabase REST, and fetches Polar seat/catalog data best-effort when native runtime credentials are available.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Billing snapshot for the workspace.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceBillingResponse"
+        "401":
+          description: Caller is missing a valid Supabase browser session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceBillingError"
+        "403":
+          description: Caller lacks manage_subscription for the workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceBillingError"
+        "404":
+          description: No active workspace subscription could be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceBillingError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/workspaces/{wsId}/ai/credits:
+    parameters:
+      - name: wsId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Workspace ID, `personal`, or `internal`.
+    get:
+      summary: Workspace AI credit status
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts GET. The Rust backend accepts Supabase browser/Bearer credentials or allowed chat, mind, and tasks app-session credentials, resolves personal/internal workspace aliases, verifies workspace membership, reads current credit balances and allocation policy through server-owned Supabase REST/RPC calls, and returns the legacy AI-credit status shape without browser-side Supabase access.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+      responses:
+        "200":
+          description: AI credit allocation and usage snapshot.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceAiCreditsResponse"
+        "401":
+          description: Caller is missing valid Supabase or allowed app-session credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceAiCreditsError"
+        "403":
+          description: Caller is not a workspace member.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceAiCreditsError"
+        "500":
+          description: Workspace resolution, membership verification, or credit balance lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceAiCreditsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/user/onboarding-progress:
     get:
       summary: Current user onboarding progress
@@ -10222,6 +10330,327 @@ components:
           type: string
           examples:
             - Error checking workspace limit
+    WorkspaceBillingJsonValue:
+      description: JSON value returned from legacy-compatible billing rows.
+      oneOf:
+        - type: string
+        - type: number
+        - type: boolean
+        - type: object
+          additionalProperties: true
+        - type: array
+          items: {}
+        - type: "null"
+    WorkspaceBillingProduct:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - price
+        - recurring_interval
+        - tier
+        - pricing_model
+        - price_per_seat
+        - max_seats
+      properties:
+        id:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        name:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        description:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        price:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        recurring_interval:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        tier:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        pricing_model:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        price_per_seat:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        max_seats:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+    WorkspaceBillingSubscription:
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+        - currentPeriodStart
+        - currentPeriodEnd
+        - cancelAtPeriodEnd
+        - product
+        - seatCount
+        - seatList
+      properties:
+        id:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        status:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        createdAt:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        currentPeriodStart:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        currentPeriodEnd:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        cancelAtPeriodEnd:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        product:
+          $ref: "#/components/schemas/WorkspaceBillingProduct"
+        seatCount:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        seatList:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+    WorkspaceBillingCreditPack:
+      type: object
+      required:
+        - name
+        - price
+        - currency
+        - tokens
+        - expiryDays
+        - archived
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        price:
+          type: number
+        currency:
+          type: string
+        tokens:
+          type: number
+        expiryDays:
+          type: number
+        archived:
+          type: boolean
+    WorkspaceBillingOrder:
+      type: object
+      required:
+        - id
+        - createdAt
+        - billingReason
+        - totalAmount
+        - originalAmount
+        - currency
+        - status
+        - productName
+      properties:
+        id:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        createdAt:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        billingReason:
+          type: string
+        totalAmount:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        originalAmount:
+          type: number
+        currency:
+          type: string
+        status:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        productName:
+          type: string
+    WorkspaceBillingSeatStatus:
+      type: object
+      required:
+        - isSeatBased
+        - seatCount
+        - memberCount
+        - availableSeats
+        - canAddMember
+        - pricePerSeat
+      properties:
+        isSeatBased:
+          type: boolean
+        seatCount:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+        memberCount:
+          type: integer
+          minimum: 0
+        availableSeats:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+        canAddMember:
+          type: boolean
+        pricePerSeat:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+    WorkspaceBillingResponse:
+      type: object
+      required:
+        - isPersonalWorkspace
+        - subscription
+        - products
+        - creditPacks
+        - orders
+        - seatList
+        - seatStatus
+      properties:
+        isPersonalWorkspace:
+          type: boolean
+        subscription:
+          $ref: "#/components/schemas/WorkspaceBillingSubscription"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        creditPacks:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceBillingCreditPack"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceBillingOrder"
+        seatList:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        seatStatus:
+          $ref: "#/components/schemas/WorkspaceBillingSeatStatus"
+    WorkspaceBillingError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - SUBSCRIPTION_NOT_FOUND
+    WorkspaceAiCreditsIncluded:
+      type: object
+      required:
+        - totalAllocated
+        - totalUsed
+        - bonusCredits
+        - remaining
+      properties:
+        totalAllocated:
+          type: number
+        totalUsed:
+          type: number
+        bonusCredits:
+          type: number
+        remaining:
+          type: number
+    WorkspaceAiCreditsPayg:
+      type: object
+      required:
+        - totalGranted
+        - totalUsed
+        - remaining
+        - nextExpiry
+      properties:
+        totalGranted:
+          type: number
+        totalUsed:
+          type: number
+        remaining:
+          type: number
+        nextExpiry:
+          type:
+            - string
+            - "null"
+    WorkspaceAiCreditsResponse:
+      type: object
+      required:
+        - totalAllocated
+        - totalUsed
+        - remaining
+        - bonusCredits
+        - percentUsed
+        - included
+        - payg
+        - periodStart
+        - periodEnd
+        - tier
+        - allowedModels
+        - allowedFeatures
+        - defaultImageModel
+        - defaultLanguageModel
+        - dailyLimit
+        - dailyUsed
+        - maxOutputTokens
+        - balanceScope
+        - seatCount
+      properties:
+        totalAllocated:
+          type: number
+        totalUsed:
+          type: number
+        remaining:
+          type: number
+        bonusCredits:
+          type: number
+        percentUsed:
+          type: number
+        included:
+          $ref: "#/components/schemas/WorkspaceAiCreditsIncluded"
+        payg:
+          $ref: "#/components/schemas/WorkspaceAiCreditsPayg"
+        periodStart:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        periodEnd:
+          $ref: "#/components/schemas/WorkspaceBillingJsonValue"
+        tier:
+          type: string
+        allowedModels:
+          type: array
+          items:
+            type: string
+        allowedFeatures:
+          type: array
+          items:
+            type: string
+        defaultImageModel:
+          type: string
+        defaultLanguageModel:
+          type: string
+        dailyLimit:
+          type:
+            - number
+            - "null"
+        dailyUsed:
+          type: number
+        maxOutputTokens:
+          type:
+            - number
+            - "null"
+        balanceScope:
+          type: string
+          enum:
+            - user
+            - workspace
+        seatCount:
+          type:
+            - number
+            - "null"
+    WorkspaceAiCreditsError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Workspace access denied
+            - Failed to get AI credit status
     WorkspacePostPermissionsResponse:
       type: object
       required:

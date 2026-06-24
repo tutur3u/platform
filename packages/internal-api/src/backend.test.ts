@@ -35,6 +35,8 @@ import {
   getBackendOtpSettings,
   getBackendTaskBoardStatusTemplates,
   getBackendUserFieldTypes,
+  getBackendWorkspaceAiCredits,
+  getBackendWorkspaceBilling,
   getBackendWorkspaceCrawlerDomains,
   getBackendWorkspaceCrawlerList,
   getBackendWorkspaceCrawlerStatus,
@@ -1436,6 +1438,136 @@ describe('backend API client', () => {
     expect(limits.remaining).toBeNull();
     expect(fetchMock).toHaveBeenCalledWith(
       'http://backend:7820/api/v1/workspaces/limits',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned workspace billing details', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        creditPacks: [
+          {
+            archived: false,
+            currency: 'usd',
+            expiryDays: 30,
+            id: 'pack-1',
+            name: 'Starter credits',
+            price: 1000,
+            tokens: 5000,
+          },
+        ],
+        isPersonalWorkspace: false,
+        orders: [
+          {
+            billingReason: 'subscription_cycle',
+            createdAt: '2026-06-01T00:00:00Z',
+            currency: 'usd',
+            id: 'order-1',
+            originalAmount: 2000,
+            productName: 'Pro',
+            status: 'paid',
+            totalAmount: 2000,
+          },
+        ],
+        products: [],
+        seatList: [],
+        seatStatus: {
+          availableSeats: 3,
+          canAddMember: true,
+          isSeatBased: true,
+          memberCount: 2,
+          pricePerSeat: 1000,
+          seatCount: 5,
+        },
+        subscription: {
+          cancelAtPeriodEnd: false,
+          createdAt: '2026-06-01T00:00:00Z',
+          currentPeriodEnd: '2026-07-01T00:00:00Z',
+          currentPeriodStart: '2026-06-01T00:00:00Z',
+          id: 'sub-1',
+          product: {
+            description: 'Team plan',
+            id: 'product-1',
+            max_seats: 5,
+            name: 'Pro',
+            price: 2000,
+            price_per_seat: 1000,
+            pricing_model: 'seat_based',
+            recurring_interval: 'month',
+            tier: 'PRO',
+          },
+          seatCount: 2,
+          seatList: [],
+          status: 'active',
+        },
+      }),
+    });
+
+    const billing = await getBackendWorkspaceBilling('personal workspace', {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(billing.subscription.product.name).toBe('Pro');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/workspaces/personal%20workspace/billing',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('reads Rust-owned workspace AI credit status', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        allowedFeatures: ['chat'],
+        allowedModels: ['gpt-5-mini'],
+        balanceScope: 'workspace',
+        bonusCredits: 25,
+        dailyLimit: 1000,
+        dailyUsed: 42,
+        defaultImageModel: 'gpt-image-1',
+        defaultLanguageModel: 'gpt-5-mini',
+        included: {
+          bonusCredits: 25,
+          remaining: 983,
+          totalAllocated: 1000,
+          totalUsed: 42,
+        },
+        maxOutputTokens: 8192,
+        payg: {
+          nextExpiry: null,
+          remaining: 0,
+          totalGranted: 0,
+          totalUsed: 0,
+        },
+        percentUsed: 4.1,
+        periodEnd: '2026-07-01T00:00:00Z',
+        periodStart: '2026-06-01T00:00:00Z',
+        remaining: 983,
+        seatCount: 2,
+        tier: 'PRO',
+        totalAllocated: 1000,
+        totalUsed: 42,
+      }),
+    });
+
+    const credits = await getBackendWorkspaceAiCredits('ws/with slash', {
+      baseUrl: 'http://backend:7820',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(credits.balanceScope).toBe('workspace');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/workspaces/ws%2Fwith%20slash/ai/credits',
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),

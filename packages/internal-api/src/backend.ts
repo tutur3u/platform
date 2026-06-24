@@ -444,6 +444,107 @@ export type BackendWorkspaceLimits = {
   remaining: number | null;
 };
 
+export type BackendWorkspaceBillingProduct = {
+  description: BackendJsonValue;
+  id: BackendJsonValue;
+  max_seats: BackendJsonValue;
+  name: BackendJsonValue;
+  price: BackendJsonValue;
+  price_per_seat: BackendJsonValue;
+  pricing_model: BackendJsonValue;
+  recurring_interval: BackendJsonValue;
+  tier: BackendJsonValue;
+};
+
+export type BackendWorkspaceBillingSubscription = {
+  cancelAtPeriodEnd: BackendJsonValue;
+  createdAt: BackendJsonValue;
+  currentPeriodEnd: BackendJsonValue;
+  currentPeriodStart: BackendJsonValue;
+  id: BackendJsonValue;
+  product: BackendWorkspaceBillingProduct;
+  seatCount: BackendJsonValue;
+  seatList: BackendJsonValue;
+  status: BackendJsonValue;
+};
+
+export type BackendWorkspaceBillingCreditPack = {
+  archived: boolean;
+  currency: string;
+  description?: string | null;
+  expiryDays: number;
+  id?: string | null;
+  name: string;
+  price: number;
+  tokens: number;
+};
+
+export type BackendWorkspaceBillingOrder = {
+  billingReason: string;
+  createdAt: BackendJsonValue;
+  currency: string;
+  id: BackendJsonValue;
+  originalAmount: number;
+  productName: string;
+  status: BackendJsonValue;
+  totalAmount: BackendJsonValue;
+};
+
+export type BackendWorkspaceBillingSeatStatus = {
+  availableSeats: number | null;
+  canAddMember: boolean;
+  isSeatBased: boolean;
+  memberCount: number;
+  pricePerSeat: BackendJsonValue;
+  seatCount: number | null;
+};
+
+export type BackendWorkspaceBillingResponse = {
+  creditPacks: BackendWorkspaceBillingCreditPack[];
+  isPersonalWorkspace: boolean;
+  orders: BackendWorkspaceBillingOrder[];
+  products: BackendJsonValue[];
+  seatList: BackendJsonValue;
+  seatStatus: BackendWorkspaceBillingSeatStatus;
+  subscription: BackendWorkspaceBillingSubscription;
+};
+
+export type BackendWorkspaceAiCreditsIncluded = {
+  bonusCredits: number;
+  remaining: number;
+  totalAllocated: number;
+  totalUsed: number;
+};
+
+export type BackendWorkspaceAiCreditsPayg = {
+  nextExpiry: string | null;
+  remaining: number;
+  totalGranted: number;
+  totalUsed: number;
+};
+
+export type BackendWorkspaceAiCreditsResponse = {
+  allowedFeatures: string[];
+  allowedModels: string[];
+  balanceScope: 'user' | 'workspace';
+  bonusCredits: number;
+  dailyLimit: number | null;
+  dailyUsed: number;
+  defaultImageModel: string;
+  defaultLanguageModel: string;
+  included: BackendWorkspaceAiCreditsIncluded;
+  maxOutputTokens: number | null;
+  payg: BackendWorkspaceAiCreditsPayg;
+  percentUsed: number;
+  periodEnd: BackendJsonValue;
+  periodStart: BackendJsonValue;
+  remaining: number;
+  seatCount: number | null;
+  tier: string;
+  totalAllocated: number;
+  totalUsed: number;
+};
+
 export type BackendRouteManifestSummary = {
   apiRoutes: number;
   cronRoutes: number;
@@ -1358,6 +1459,32 @@ export function getBackendWorkspaceLimits(
 ) {
   return createBackendApiClient(options).json<BackendWorkspaceLimits>(
     '/api/v1/workspaces/limits',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendWorkspaceBilling(
+  wsId: string,
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(options).json<BackendWorkspaceBillingResponse>(
+    `/api/v1/workspaces/${workspacePathSegment(wsId)}/billing`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getBackendWorkspaceAiCredits(
+  wsId: string,
+  options: BackendApiClientOptions = {}
+) {
+  return createBackendApiClient(
+    options
+  ).json<BackendWorkspaceAiCreditsResponse>(
+    `/api/v1/workspaces/${workspacePathSegment(wsId)}/ai/credits`,
     {
       cache: 'no-store',
     }
