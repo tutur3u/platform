@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  abortInfrastructureStressTest,
   clearMobileDeploymentEnvKeyValue,
   clearMobileDeploymentScalarValue,
   clearMobileDeploymentSecret,
@@ -12,6 +13,8 @@ import {
   enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
   getGitHubBotState,
+  getInfrastructureStressTestRun,
+  getInfrastructureStressTestSnapshot,
   getMobileVersionPolicies,
   getObservabilityLogs,
   issueGitHubBotWatcherClient,
@@ -22,6 +25,7 @@ import {
   listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
   pauseAiAgentChannel,
+  queueInfrastructureStressTest,
   revokeGitHubBotWatcherClient,
   rotateAiAgentChannelSecret,
   saveAiAgent,
@@ -823,6 +827,107 @@ describe('observability internal API helpers', () => {
         cache: 'no-store',
         headers: expect.any(Headers),
       })
+    );
+  });
+
+  it('loads stress-test snapshots through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        activeRun: null,
+        canManage: false,
+        profiles: [],
+        recentRuns: [],
+        targets: [],
+      })
+    );
+
+    await getInfrastructureStressTestSnapshot({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('queues stress tests and reads encoded run details', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await queueInfrastructureStressTest(
+      {
+        concurrency: 8,
+        durationSeconds: 60,
+        maxRequestsPerSecond: 20,
+        path: '/login',
+        profileId: 'smoke',
+        targetId: 'platform-web',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await getInfrastructureStressTestRun('run 1/alpha', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests',
+      expect.objectContaining({
+        body: JSON.stringify({
+          concurrency: 8,
+          durationSeconds: 60,
+          maxRequestsPerSecond: 20,
+          path: '/login',
+          profileId: 'smoke',
+          targetId: 'platform-web',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests/run%201%2Falpha',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('aborts stress tests through encoded run routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await abortInfrastructureStressTest(
+      'run 1/alpha',
+      { reason: 'operator abort' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests/run%201%2Falpha/abort',
+      expect.objectContaining({
+        body: JSON.stringify({ reason: 'operator abort' }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
     );
   });
 });

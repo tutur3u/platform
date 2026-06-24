@@ -1609,6 +1609,16 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/mobile-deployment ports the legacy root-workspace Mobile Deployment vault page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_mobile_deployment_vault gating, forwarded-auth initial vault state loading, setup-guide link parity, and TanStack Query/internal-api backed secret, file, activation, rollback, and CI token controls. Mobile Deployment API ownership remains separately tracked."
     },
+    "layout:/:locale/:wsId/infrastructure/monitoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring owns the legacy monitoring layout shell and section navigation with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure not-found gating, localized hero copy, and locale-prefixed monitoring section links."
+    },
+    "page:/:locale/:wsId/infrastructure/monitoring/stress-tests:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/stress-tests/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/stress-tests ports the legacy stress-test monitoring leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed snapshot, queue, abort, run-detail polling, metrics, and history controls. Stress-test API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/infrastructure/timezones:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/timezones/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

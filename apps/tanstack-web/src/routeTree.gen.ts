@@ -137,6 +137,7 @@ import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale
 import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/$locale/$wsId/infrastructure/timezones';
 import { Route as LocaleWsIdInfrastructureRateLimitsRouteImport } from './routes/$locale/$wsId/infrastructure/rate-limits';
 import { Route as LocaleWsIdInfrastructurePostEmailQueueRouteImport } from './routes/$locale/$wsId/infrastructure/post-email-queue';
+import { Route as LocaleWsIdInfrastructureMonitoringRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring';
 import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-versions';
 import { Route as LocaleWsIdInfrastructureMobileDeploymentRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-deployment';
 import { Route as LocaleWsIdInfrastructureHolidaysRouteImport } from './routes/$locale/$wsId/infrastructure/holidays';
@@ -180,6 +181,7 @@ import { Route as LocaleWsIdSettingsInfrastructureAppCoordinationRouteImport } f
 import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId';
 import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId';
 import { Route as LocaleWsIdInventoryProductsProductIdRouteImport } from './routes/$locale/$wsId/inventory/products/$productId';
+import { Route as LocaleWsIdInfrastructureMonitoringStressTestsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/stress-tests';
 import { Route as LocaleWsIdFinanceWalletsWalletIdRouteImport } from './routes/$locale/$wsId/finance/wallets/$walletId';
 import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories';
 import { Route as LocaleWsIdFinanceTransactionsTransactionIdRouteImport } from './routes/$locale/$wsId/finance/transactions/$transactionId';
@@ -885,6 +887,12 @@ const LocaleWsIdInfrastructurePostEmailQueueRoute =
     path: '/$wsId/infrastructure/post-email-queue',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureMonitoringRoute =
+  LocaleWsIdInfrastructureMonitoringRouteImport.update({
+    id: '/$wsId/infrastructure/monitoring',
+    path: '/$wsId/infrastructure/monitoring',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureMobileVersionsRoute =
   LocaleWsIdInfrastructureMobileVersionsRouteImport.update({
     id: '/$wsId/infrastructure/mobile-versions',
@@ -1139,6 +1147,12 @@ const LocaleWsIdInventoryProductsProductIdRoute =
     id: '/$productId',
     path: '/$productId',
     getParentRoute: () => LocaleWsIdInventoryProductsRoute,
+  } as any);
+const LocaleWsIdInfrastructureMonitoringStressTestsRoute =
+  LocaleWsIdInfrastructureMonitoringStressTestsRouteImport.update({
+    id: '/stress-tests',
+    path: '/stress-tests',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
   } as any);
 const LocaleWsIdFinanceWalletsWalletIdRoute =
   LocaleWsIdFinanceWalletsWalletIdRouteImport.update({
@@ -1407,6 +1421,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/monitoring': typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
@@ -1460,6 +1475,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
@@ -1603,6 +1619,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/monitoring': typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
@@ -1656,6 +1673,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
@@ -1801,6 +1819,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
   '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  '/$locale/$wsId/infrastructure/monitoring': typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
   '/$locale/$wsId/infrastructure/timezones': typeof LocaleWsIdInfrastructureTimezonesRoute;
@@ -1854,6 +1873,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
+  '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
@@ -2000,6 +2020,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/monitoring'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
@@ -2053,6 +2074,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
@@ -2196,6 +2218,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/monitoring'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
@@ -2249,6 +2272,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
@@ -2393,6 +2417,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/holidays'
     | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
+    | '/$locale/$wsId/infrastructure/monitoring'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
     | '/$locale/$wsId/infrastructure/timezones'
@@ -2446,6 +2471,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
+    | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
@@ -3382,6 +3408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/monitoring': {
+      id: '/$locale/$wsId/infrastructure/monitoring';
+      path: '/$wsId/infrastructure/monitoring';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/mobile-versions': {
       id: '/$locale/$wsId/infrastructure/mobile-versions';
       path: '/$wsId/infrastructure/mobile-versions';
@@ -3682,6 +3715,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/$wsId/inventory/products/$productId';
       preLoaderRoute: typeof LocaleWsIdInventoryProductsProductIdRouteImport;
       parentRoute: typeof LocaleWsIdInventoryProductsRoute;
+    };
+    '/$locale/$wsId/infrastructure/monitoring/stress-tests': {
+      id: '/$locale/$wsId/infrastructure/monitoring/stress-tests';
+      path: '/stress-tests';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/stress-tests';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringStressTestsRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
     };
     '/$locale/$wsId/finance/wallets/$walletId': {
       id: '/$locale/$wsId/finance/wallets/$walletId';
@@ -4085,6 +4125,21 @@ const LocaleWsIdEducationLibraryRouteWithChildren =
     LocaleWsIdEducationLibraryRouteChildren,
   );
 
+interface LocaleWsIdInfrastructureMonitoringRouteChildren {
+  LocaleWsIdInfrastructureMonitoringStressTestsRoute: typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
+}
+
+const LocaleWsIdInfrastructureMonitoringRouteChildren: LocaleWsIdInfrastructureMonitoringRouteChildren =
+  {
+    LocaleWsIdInfrastructureMonitoringStressTestsRoute:
+      LocaleWsIdInfrastructureMonitoringStressTestsRoute,
+  };
+
+const LocaleWsIdInfrastructureMonitoringRouteWithChildren =
+  LocaleWsIdInfrastructureMonitoringRoute._addFileChildren(
+    LocaleWsIdInfrastructureMonitoringRouteChildren,
+  );
+
 interface LocaleWsIdInventoryProductsRouteChildren {
   LocaleWsIdInventoryProductsProductIdRoute: typeof LocaleWsIdInventoryProductsProductIdRoute;
 }
@@ -4286,6 +4341,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
   LocaleWsIdInfrastructureMobileDeploymentRoute: typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  LocaleWsIdInfrastructureMonitoringRoute: typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
   LocaleWsIdInfrastructurePostEmailQueueRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   LocaleWsIdInfrastructureRateLimitsRoute: typeof LocaleWsIdInfrastructureRateLimitsRoute;
   LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
@@ -4445,6 +4501,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdInfrastructureMobileDeploymentRoute,
   LocaleWsIdInfrastructureMobileVersionsRoute:
     LocaleWsIdInfrastructureMobileVersionsRoute,
+  LocaleWsIdInfrastructureMonitoringRoute:
+    LocaleWsIdInfrastructureMonitoringRouteWithChildren,
   LocaleWsIdInfrastructurePostEmailQueueRoute:
     LocaleWsIdInfrastructurePostEmailQueueRoute,
   LocaleWsIdInfrastructureRateLimitsRoute:
