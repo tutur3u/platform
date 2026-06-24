@@ -2644,6 +2644,11 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
     },
+    "page:/:locale/:wsId/infrastructure/realtime:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/realtime/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/infrastructure/realtime ports the legacy realtime analytics page as a dynamic no-store infrastructure page. The loader runs the fail-closed current-user auth gate, resolves the workspace alias, enforces root and workspace view_infrastructure permissions, and renders the realtime TanStack Query analytics surface through createServerFn wrappers plus @tuturuuu/internal-api facades instead of raw protected /api fetches. The dependent analytics and summary API artifacts remain separately tracked backend migration work."
+    },
     "page:/:locale/shared/task/:shareCode:apps/web/src/app/[locale]/shared/task/[shareCode]/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

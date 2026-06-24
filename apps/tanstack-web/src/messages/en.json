@@ -11191,12 +11191,28 @@
       "top_workspace": "Top Workspace Share"
     },
     "description": "Monitor realtime connections and activity across workspaces and channels",
+    "errors": {
+      "failed_load": "Failed to load analytics data",
+      "unknown": "Unknown error occurred"
+    },
     "filters": {
       "all_workspaces": "All Workspaces",
       "channel": "Channel",
       "channel_placeholder": "Enter channel ID",
+      "daily": "Daily",
       "date_range": "Date Range",
+      "end_date": "End Date",
+      "hourly": "Hourly",
+      "last_24h": "Last 24 hours",
+      "last_30d": "Last 30 days",
+      "last_7d": "Last 7 days",
       "metric_toggle": "Metric Type",
+      "quick_select": "Quick select",
+      "select_date": "Select Date",
+      "start_date": "Start Date",
+      "title": "Filters",
+      "unnamed_workspace": "Unnamed Workspace",
+      "view_mode": "View Mode",
       "workspace": "Workspace",
       "workspace_placeholder": "Select workspace"
     },

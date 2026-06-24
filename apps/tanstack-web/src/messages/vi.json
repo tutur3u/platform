@@ -11191,12 +11191,28 @@
       "top_workspace": "Tỷ Trọng Không Gian Hàng Đầu"
     },
     "description": "Giám sát kết nối và hoạt động thời gian thực trên các không gian làm việc và kênh",
+    "errors": {
+      "failed_load": "Không tải được dữ liệu phân tích",
+      "unknown": "Đã xảy ra lỗi không xác định"
+    },
     "filters": {
       "all_workspaces": "Tất cả không gian làm việc",
       "channel": "Kênh",
       "channel_placeholder": "Nhập ID kênh",
+      "daily": "Theo ngày",
       "date_range": "Khoảng thời gian",
+      "end_date": "Ngày kết thúc",
+      "hourly": "Theo giờ",
+      "last_24h": "24 giờ qua",
+      "last_30d": "30 ngày qua",
+      "last_7d": "7 ngày qua",
       "metric_toggle": "Loại chỉ số",
+      "quick_select": "Chọn nhanh",
+      "select_date": "Chọn ngày",
+      "start_date": "Ngày bắt đầu",
+      "title": "Bộ lọc",
+      "unnamed_workspace": "Không gian chưa đặt tên",
+      "view_mode": "Chế độ xem",
       "workspace": "Không gian làm việc",
       "workspace_placeholder": "Chọn không gian làm việc"
     },

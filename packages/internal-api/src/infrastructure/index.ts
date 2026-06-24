@@ -5,5 +5,6 @@ export * from './blocked-ips';
 export * from './github-bot';
 export * from './mobile';
 export * from './monitoring';
+export * from './realtime';
 export * from './types';
 export * from './workspace';

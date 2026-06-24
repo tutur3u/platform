@@ -22,6 +22,8 @@ import {
   getInfrastructureStressTestSnapshot,
   getMobileVersionPolicies,
   getObservabilityLogs,
+  getWorkspaceRealtimeAnalytics,
+  getWorkspaceRealtimeAnalyticsSummary,
   issueGitHubBotWatcherClient,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
@@ -154,6 +156,83 @@ describe('AI whitelist domain internal API helpers', () => {
       'https://internal.example.com/api/v1/infrastructure/ai/whitelist/domain/example.com',
       expect.objectContaining({
         method: 'DELETE',
+      })
+    );
+  });
+});
+
+describe('realtime analytics internal API helpers', () => {
+  it('loads workspace realtime analytics with filters through the infrastructure API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        metric: 'requests',
+      })
+    );
+
+    await getWorkspaceRealtimeAnalytics(
+      'workspace/id',
+      {
+        channelId: 'room/general',
+        endDate: '2026-06-25T23:59:59.999Z',
+        metric: 'requests',
+        startDate: '2026-06-25T00:00:00.000Z',
+        viewMode: 'hourly',
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%2Fid/infrastructure/realtime/analytics?channelId=room%2Fgeneral&endDate=2026-06-25T23%3A59%3A59.999Z&metric=requests&startDate=2026-06-25T00%3A00%3A00.000Z&viewMode=hourly&workspaceId=00000000-0000-0000-0000-000000000001',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('loads workspace realtime analytics summaries without chart-only filters', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        errorBreakdown: [],
+        summary: {
+          avgRequestsPerHour: 0,
+          errorRate: 0,
+          peakHour: null,
+          peakHourCount: 0,
+          totalErrors: 0,
+          totalRequests: 0,
+          uniqueChannels: 0,
+          uniqueUsers: 0,
+          uniqueWorkspaces: 0,
+        },
+        topChannels: [],
+        topUsers: [],
+        topWorkspaces: [],
+      })
+    );
+
+    await getWorkspaceRealtimeAnalyticsSummary(
+      'workspace/id',
+      {
+        endDate: '2026-06-25T23:59:59.999Z',
+        startDate: '2026-06-25T00:00:00.000Z',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%2Fid/infrastructure/realtime/analytics/summary?endDate=2026-06-25T23%3A59%3A59.999Z&startDate=2026-06-25T00%3A00%3A00.000Z',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
       })
     );
   });

@@ -5,5 +5,6 @@ export * from './infrastructure/blocked-ips';
 export * from './infrastructure/github-bot';
 export * from './infrastructure/mobile';
 export * from './infrastructure/monitoring';
+export * from './infrastructure/realtime';
 export * from './infrastructure/types';
 export * from './infrastructure/workspace';
