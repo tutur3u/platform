@@ -49,6 +49,7 @@ const GATED_ROUTES = [
   'education/library/quizzes',
   'education/valsea',
   'habits',
+  'infrastructure/ai-agents',
   'inventory',
   'inventory/batches',
   'inventory/categories',

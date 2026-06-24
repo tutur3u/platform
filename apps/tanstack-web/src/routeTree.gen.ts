@@ -159,6 +159,7 @@ import { Route as LocaleWsIdInfrastructureEmailBlacklistRouteImport } from './ro
 import { Route as LocaleWsIdInfrastructureChangelogRouteImport } from './routes/$locale/$wsId/infrastructure/changelog';
 import { Route as LocaleWsIdInfrastructureBlockedIpsRouteImport } from './routes/$locale/$wsId/infrastructure/blocked-ips';
 import { Route as LocaleWsIdInfrastructureAppCoordinationRouteImport } from './routes/$locale/$wsId/infrastructure/app-coordination';
+import { Route as LocaleWsIdInfrastructureAiAgentsRouteImport } from './routes/$locale/$wsId/infrastructure/ai-agents';
 import { Route as LocaleWsIdInfrastructureAbuseIntelligenceRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-intelligence';
 import { Route as LocaleWsIdInfrastructureAbuseEventsRouteImport } from './routes/$locale/$wsId/infrastructure/abuse-events';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
@@ -1038,6 +1039,12 @@ const LocaleWsIdInfrastructureAppCoordinationRoute =
     path: '/$wsId/infrastructure/app-coordination',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureAiAgentsRoute =
+  LocaleWsIdInfrastructureAiAgentsRouteImport.update({
+    id: '/$wsId/infrastructure/ai-agents',
+    path: '/$wsId/infrastructure/ai-agents',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureAbuseIntelligenceRoute =
   LocaleWsIdInfrastructureAbuseIntelligenceRouteImport.update({
     id: '/$wsId/infrastructure/abuse-intelligence',
@@ -1603,6 +1610,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/abuse-intelligence': typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  '/$locale/$wsId/infrastructure/ai-agents': typeof LocaleWsIdInfrastructureAiAgentsRoute;
   '/$locale/$wsId/infrastructure/app-coordination': typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   '/$locale/$wsId/infrastructure/blocked-ips': typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   '/$locale/$wsId/infrastructure/changelog': typeof LocaleWsIdInfrastructureChangelogRoute;
@@ -1828,6 +1836,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/abuse-intelligence': typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  '/$locale/$wsId/infrastructure/ai-agents': typeof LocaleWsIdInfrastructureAiAgentsRoute;
   '/$locale/$wsId/infrastructure/app-coordination': typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   '/$locale/$wsId/infrastructure/blocked-ips': typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   '/$locale/$wsId/infrastructure/changelog': typeof LocaleWsIdInfrastructureChangelogRoute;
@@ -2054,6 +2063,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/infrastructure/abuse-events': typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   '/$locale/$wsId/infrastructure/abuse-intelligence': typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  '/$locale/$wsId/infrastructure/ai-agents': typeof LocaleWsIdInfrastructureAiAgentsRoute;
   '/$locale/$wsId/infrastructure/app-coordination': typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   '/$locale/$wsId/infrastructure/blocked-ips': typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   '/$locale/$wsId/infrastructure/changelog': typeof LocaleWsIdInfrastructureChangelogRoute;
@@ -2282,6 +2292,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/abuse-intelligence'
+    | '/$locale/$wsId/infrastructure/ai-agents'
     | '/$locale/$wsId/infrastructure/app-coordination'
     | '/$locale/$wsId/infrastructure/blocked-ips'
     | '/$locale/$wsId/infrastructure/changelog'
@@ -2507,6 +2518,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/abuse-intelligence'
+    | '/$locale/$wsId/infrastructure/ai-agents'
     | '/$locale/$wsId/infrastructure/app-coordination'
     | '/$locale/$wsId/infrastructure/blocked-ips'
     | '/$locale/$wsId/infrastructure/changelog'
@@ -2732,6 +2744,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/infrastructure/abuse-events'
     | '/$locale/$wsId/infrastructure/abuse-intelligence'
+    | '/$locale/$wsId/infrastructure/ai-agents'
     | '/$locale/$wsId/infrastructure/app-coordination'
     | '/$locale/$wsId/infrastructure/blocked-ips'
     | '/$locale/$wsId/infrastructure/changelog'
@@ -3903,6 +3916,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureAppCoordinationRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/ai-agents': {
+      id: '/$locale/$wsId/infrastructure/ai-agents';
+      path: '/$wsId/infrastructure/ai-agents';
+      fullPath: '/$locale/$wsId/infrastructure/ai-agents';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureAiAgentsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/abuse-intelligence': {
       id: '/$locale/$wsId/infrastructure/abuse-intelligence';
       path: '/$wsId/infrastructure/abuse-intelligence';
@@ -4905,6 +4925,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
   LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
   LocaleWsIdInfrastructureAbuseIntelligenceRoute: typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  LocaleWsIdInfrastructureAiAgentsRoute: typeof LocaleWsIdInfrastructureAiAgentsRoute;
   LocaleWsIdInfrastructureAppCoordinationRoute: typeof LocaleWsIdInfrastructureAppCoordinationRoute;
   LocaleWsIdInfrastructureBlockedIpsRoute: typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   LocaleWsIdInfrastructureChangelogRoute: typeof LocaleWsIdInfrastructureChangelogRoute;
@@ -5075,6 +5096,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdInfrastructureAbuseEventsRoute,
   LocaleWsIdInfrastructureAbuseIntelligenceRoute:
     LocaleWsIdInfrastructureAbuseIntelligenceRoute,
+  LocaleWsIdInfrastructureAiAgentsRoute: LocaleWsIdInfrastructureAiAgentsRoute,
   LocaleWsIdInfrastructureAppCoordinationRoute:
     LocaleWsIdInfrastructureAppCoordinationRoute,
   LocaleWsIdInfrastructureBlockedIpsRoute:

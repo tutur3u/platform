@@ -1619,6 +1619,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/abuse-intelligence ports the legacy root-workspace Abuse Intelligence page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure gating, localized header parity, and shared TanStack Query/internal-api backed subject, signal, and trust override controls. Abuse Intelligence mutation API ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/infrastructure/ai-agents:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai-agents/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/ai-agents ports the legacy root-workspace AI Agents page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets gating, forwarded-auth initial agent and identity loading, localized header parity, and shared TanStack Query/internal-api backed Discord, Zalo, identity, secret, and external-thread controls. AI Agents API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/infrastructure/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/changelog/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
