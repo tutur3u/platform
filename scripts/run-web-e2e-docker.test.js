@@ -1113,6 +1113,19 @@ test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () 
   );
   assert.equal(
     getWebProxyHealthUrl({
+      DOCKER_WEB_FRONTEND: 'tanstack',
+    }),
+    'http://127.0.0.1:7803/__platform/drain-status'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+    }),
+    'http://127.0.0.1:17803/__platform/drain-status'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
       E2E_WEB_PROXY_HEALTH_URL: 'http://docker-host.localhost/ready',
     }),
     'http://docker-host.localhost/ready'

@@ -49,6 +49,7 @@ const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const DEFAULT_DOCKER_BUILD_CPUS = '4';
 const DEFAULT_DOCKER_BUILD_MAX_PARALLELISM = '1';
 const DEFAULT_E2E_DOCKER_NATIVE_BUILD = '1';
+const TANSTACK_WEB_PROXY_HEALTH_PATH = '/__platform/drain-status';
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL = 'http://127.0.0.1:8079/';
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL =
   'http://host.docker.internal:8079';
@@ -582,7 +583,12 @@ function getWebProxyHealthUrl(env = process.env) {
     return value;
   }
 
-  return `http://127.0.0.1:${getWebProxyHostPort(env)}/login`;
+  const healthPath =
+    env.DOCKER_WEB_FRONTEND === 'tanstack'
+      ? TANSTACK_WEB_PROXY_HEALTH_PATH
+      : '/login';
+
+  return `http://127.0.0.1:${getWebProxyHostPort(env)}${healthPath}`;
 }
 
 function getPortlessProxyStartArgs(env = process.env) {
@@ -978,7 +984,7 @@ async function printE2EFailureDiagnostics({
     { cwd: rootDir, env, output, runCommand: run }
   );
   await runDiagnosticCommand(
-    'Docker web proxy login probe',
+    'Docker web proxy readiness probe',
     'curl',
     ['-i', '--max-time', '10', getWebProxyHealthUrl(env)],
     { cwd: rootDir, env, output, runCommand: run }
