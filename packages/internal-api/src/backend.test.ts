@@ -19,6 +19,7 @@ import {
   getBackendCurrentUserProfile,
   getBackendHiveAccess,
   getBackendInfrastructureAbuseEvents,
+  getBackendInfrastructureChangelogEntries,
   getBackendInfrastructureEmailBlacklistEntries,
   getBackendInfrastructureEmailBlacklistEntry,
   getBackendInfrastructurePostEmailQueue,
@@ -939,6 +940,63 @@ describe('backend API client', () => {
     expect(createHeaders.get('origin')).toBe('http://backend:7820');
     expect(updateHeaders.get('content-type')).toBe('application/json');
     expect(deleteHeaders.get('origin')).toBe('http://backend:7820');
+  });
+
+  it('reads the Rust-owned infrastructure changelog list with admin filters', async () => {
+    const response = {
+      data: [
+        {
+          category: 'security',
+          content: null,
+          cover_image_url: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          creator_id: 'user-1',
+          id: 'entry-1',
+          is_published: false,
+          published_at: null,
+          slug: 'security-draft',
+          summary: 'Security draft',
+          title: 'Security draft',
+          updated_at: '2026-06-01T00:00:00.000Z',
+          version: null,
+        },
+      ],
+      pagination: {
+        page: 2,
+        pageSize: 5,
+        total: 6,
+        totalPages: 2,
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => response,
+    });
+
+    const changelogs = await getBackendInfrastructureChangelogEntries(
+      {
+        category: 'security',
+        page: 2,
+        pageSize: 5,
+        published: false,
+        q: 'security fix',
+      },
+      {
+        baseUrl: 'http://backend:7820',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(changelogs.pagination.total).toBe(6);
+    expect(changelogs.data[0]?.slug).toBe('security-draft');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/infrastructure/changelog?category=security&page=2&pageSize=5&published=false&q=security+fix',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it('reads the Rust-owned infrastructure post email queue summary', async () => {

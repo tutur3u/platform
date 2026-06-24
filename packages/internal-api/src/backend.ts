@@ -139,6 +139,49 @@ export type BackendInfrastructureAbuseEventsResponse = {
   totalPages: number | null;
 };
 
+export type BackendJsonValue =
+  | boolean
+  | null
+  | number
+  | string
+  | BackendJsonValue[]
+  | { [key: string]: BackendJsonValue };
+
+export type BackendInfrastructureChangelogEntry = {
+  category: string;
+  content?: BackendJsonValue;
+  cover_image_url: string | null;
+  created_at: string | null;
+  creator_id: string;
+  creator_name?: string | null;
+  id: string;
+  is_published: boolean | null;
+  published_at: string | null;
+  slug: string;
+  summary: string | null;
+  title: string;
+  updated_at: string | null;
+  version: string | null;
+};
+
+export type BackendInfrastructureChangelogEntriesQuery = {
+  category?: string;
+  page?: number | string;
+  pageSize?: number | string;
+  published?: boolean | string;
+  q?: string;
+};
+
+export type BackendInfrastructureChangelogEntriesResponse = {
+  data: BackendInfrastructureChangelogEntry[];
+  pagination: {
+    page: number | null;
+    pageSize: number | null;
+    total: number;
+    totalPages: number | null;
+  };
+};
+
 export type BackendInfrastructureTimezone = {
   abbr: string;
   created_at: string;
@@ -885,6 +928,29 @@ export function getBackendInfrastructureAbuseEvents(
     options
   ).json<BackendInfrastructureAbuseEventsResponse>(
     '/api/v1/infrastructure/abuse-events',
+    {
+      cache: 'no-store',
+      query: apiQuery,
+    }
+  );
+}
+
+export function getBackendInfrastructureChangelogEntries(
+  query: BackendInfrastructureChangelogEntriesQuery = {},
+  options: BackendApiClientOptions = {}
+) {
+  const apiQuery: InternalApiQuery = {
+    category: query.category || undefined,
+    page: query.page,
+    pageSize: query.pageSize,
+    published: query.published === '' ? undefined : query.published,
+    q: query.q || undefined,
+  };
+
+  return createBackendApiClient(
+    options
+  ).json<BackendInfrastructureChangelogEntriesResponse>(
+    '/api/v1/infrastructure/changelog',
     {
       cache: 'no-store',
       query: apiQuery,
