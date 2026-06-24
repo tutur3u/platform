@@ -1589,6 +1589,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/external-apps ports the legacy root-workspace External Apps page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets/manage_workspace_roles gating, localized header parity, and shared TanStack Query/internal-api backed app registration and secret rotation controls. External Apps API ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/infrastructure/github-bot:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/github-bot/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/github-bot ports the legacy root-workspace GitHub Bot settings page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets gating, forwarded-auth initial state loading, localized header parity, and shared TanStack Query/internal-api backed configuration, validation, watcher client, and audit controls. GitHub Bot API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/infrastructure/ai/whitelist/domains:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/domains/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

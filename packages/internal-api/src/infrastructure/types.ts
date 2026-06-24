@@ -163,7 +163,7 @@ export interface GitHubBotAuditEvent {
   createdAt: string;
   eventType: string;
   id: string;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, InfrastructureJsonValue>;
 }
 
 export interface GitHubBotState {
