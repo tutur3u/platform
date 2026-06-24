@@ -1594,6 +1594,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/settings/reports:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/reports/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/settings/reports preserves fail-closed auth, workspace resolution, manage_user_report_templates gating, q search state, report and lead-generation template tabs, preview panels, and edit/reset actions through TanStack Query server functions and the shared workspace-config internal-api facade instead of direct Supabase reads or raw browser /api fetches."
+    },
     "page:/:locale/:wsId/infrastructure/abuse-events:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/abuse-events/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

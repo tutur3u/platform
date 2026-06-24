@@ -32,6 +32,8 @@ type WorkspaceConfigResponse = {
   value: string | null;
 };
 
+export type WorkspaceConfigsResponse = Record<string, string | null>;
+
 export function parseWorkspaceConfigIdList(
   value: string | null | undefined
 ): string[] {
@@ -51,6 +53,29 @@ export async function getWorkspaceConfig(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/${encodePathSegment(configId)}`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceConfigs(
+  workspaceId: string,
+  configIds: readonly string[],
+  options?: InternalApiClientOptions
+) {
+  const ids = [...new Set(configIds.map((id) => id.trim()).filter(Boolean))];
+
+  if (ids.length === 0) {
+    return {};
+  }
+
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceConfigsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/configs`,
+    {
+      cache: 'no-store',
+      query: {
+        ids: ids.join(','),
+      },
     }
   );
 }
@@ -115,15 +140,10 @@ export async function getWorkspaceUserProfileLinkDefaultConfigs(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<Record<string, string | null>>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/configs`,
-    {
-      cache: 'no-store',
-      query: {
-        ids: WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS.join(','),
-      },
-    }
+  return getWorkspaceConfigs(
+    workspaceId,
+    WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
+    options
   );
 }
 

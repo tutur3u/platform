@@ -1539,6 +1539,7 @@ export {
   getOptionalWorkspaceConfig,
   getWorkspaceConfig,
   getWorkspaceConfigIdList,
+  getWorkspaceConfigs,
   getWorkspaceUsersDatabaseFilterSettings,
   parseWorkspaceConfigIdList,
   updateWorkspaceConfig,
