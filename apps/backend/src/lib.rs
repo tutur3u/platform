@@ -212,6 +212,7 @@ mod workspaces_task_plans_digest;
 mod workspaces_tasks_snapshot;
 mod workspaces_teach_users;
 mod workspaces_templates;
+mod workspaces_time_tracker_stats;
 mod workspaces_time_tracking_analytics;
 mod workspaces_time_tracking_requests_activity;
 mod workspaces_time_tracking_requests_users;
@@ -1781,6 +1782,15 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspaces_templates::handle_workspaces_templates_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_time_tracker_stats::handle_workspaces_time_tracker_stats_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }
