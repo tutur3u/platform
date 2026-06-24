@@ -17,6 +17,7 @@ import { requireCurrentUser } from '@/lib/platform/auth-gate';
 import { createPageHead } from '@/lib/platform/head';
 import { resolveMessagesLocale } from '@/lib/platform/messages';
 import { resolveWorkspace } from '@/lib/platform/workspace';
+import { hasWorkspacePermission } from '@/lib/platform/workspace-permission';
 
 type ModuleQuizzesData = {
   count: number;
@@ -105,6 +106,16 @@ export const Route = createFileRoute(
     // Legacy resolveRouteWorkspace -> notFound when the workspace is missing.
     const workspace = await resolveWorkspace({ data: { wsId: params.wsId } });
     if (!workspace.exists) {
+      throw notFound();
+    }
+
+    const canUpdateUserGroups = await hasWorkspacePermission({
+      data: {
+        permission: 'update_user_groups',
+        wsId: workspace.workspaceId,
+      },
+    });
+    if (!canUpdateUserGroups) {
       throw notFound();
     }
 
