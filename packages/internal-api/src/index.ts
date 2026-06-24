@@ -51,6 +51,27 @@ export {
   updateWorkspaceAiMemorySettings,
 } from './ai-memory';
 export {
+  createWorkspaceApiKey,
+  deleteWorkspaceApiKey,
+  getWorkspaceApiKey,
+  type ListWorkspaceApiKeyRolesResponse,
+  type ListWorkspaceApiKeysParams,
+  type ListWorkspaceApiKeysResponse,
+  type ListWorkspaceApiKeyUsageLogsResponse,
+  listWorkspaceApiKeyRoles,
+  listWorkspaceApiKeys,
+  listWorkspaceApiKeyUsageLogs,
+  rotateWorkspaceApiKey,
+  updateWorkspaceApiKey,
+  type WorkspaceApiKeyMutationResponse,
+  type WorkspaceApiKeyPayload,
+  type WorkspaceApiKeyResponse,
+  type WorkspaceApiKeyRole,
+  type WorkspaceApiKeySecretResponse,
+  type WorkspaceApiKeyUsageLogStats,
+  type WorkspaceApiKeyUsageLogsParams,
+} from './api-keys';
+export {
   type ApproveMfaMobileApprovalPayload,
   type ApproveMfaMobileApprovalResponse,
   approveMfaMobileApprovalWithInternalApi,

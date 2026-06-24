@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 924,
+        "legacyNext": 925,
         "migrated": 142,
-        "percentComplete": 19.58,
-        "remaining": 924,
+        "percentComplete": 19.57,
+        "remaining": 925,
         "terminal": 225,
-        "total": 1149,
+        "total": 1150,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 942,
+        "legacyNext": 943,
         "migrated": 147,
-        "percentComplete": 19.62,
-        "remaining": 942,
+        "percentComplete": 19.61,
+        "remaining": 943,
         "terminal": 230,
-        "total": 1172,
+        "total": 1173,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1038,
+      "legacyNext": 1039,
       "migrated": 427,
-      "percentComplete": 33.03,
-      "remaining": 1038,
+      "percentComplete": 33.01,
+      "remaining": 1039,
       "terminal": 512,
-      "total": 1550,
+      "total": 1551,
       "unknownStatus": 0
     }
   },
@@ -5229,7 +5229,7 @@
     {
       "id": "api:/api/v1/workspaces/:wsId/api-keys/:keyId:apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[keyId]/route.ts",
       "kind": "api",
-      "methods": ["PUT", "DELETE"],
+      "methods": ["GET", "PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/api-keys/:keyId",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[keyId]/route.ts",
       "status": "legacy-next",
@@ -5250,6 +5250,15 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/api-keys/:keyId/usage-logs",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[keyId]/usage-logs/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/api-keys/roles:apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/roles/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/api-keys/roles",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/roles/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -14439,13 +14448,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1149,
+    "apiRoutes": 1150,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1172,
+    "routeHandlers": 1173,
     "methodCounts": {
-      "GET": 655,
+      "GET": 657,
       "HEAD": 1,
       "POST": 513,
       "PUT": 173,
@@ -14453,6 +14462,6 @@
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1550
+    "total": 1551
   }
 }

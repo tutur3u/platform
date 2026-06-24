@@ -19,6 +19,7 @@ const UsageLogsQuerySchema = z.object({
   from: z.string().max(MAX_COLOR_LENGTH).optional(),
   to: z.string().max(MAX_COLOR_LENGTH).optional(),
   status: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
+  method: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
   endpoint: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
 });
 
@@ -43,7 +44,8 @@ export const GET = withSessionAuth<RouteParams>(
       );
     }
 
-    const { page, pageSize, from, to, status, endpoint } = validation.data;
+    const { page, pageSize, from, to, status, method, endpoint } =
+      validation.data;
 
     try {
       const wsId = await normalizeWorkspaceId(rawParams.wsId, supabase);
@@ -87,10 +89,21 @@ export const GET = withSessionAuth<RouteParams>(
         queryBuilder = queryBuilder.lte('created_at', to);
       }
 
-      if (status) {
-        const statusCode = parseInt(status, 10);
-        if (!Number.isNaN(statusCode)) {
-          queryBuilder = queryBuilder.eq('status_code', statusCode);
+      if (status && status !== 'all') {
+        if (status.endsWith('xx')) {
+          const rangePrefix = Number.parseInt(status.charAt(0), 10);
+          if (!Number.isNaN(rangePrefix)) {
+            const rangeStart = rangePrefix * 100;
+            const rangeEnd = rangeStart + 99;
+            queryBuilder = queryBuilder
+              .gte('status_code', rangeStart)
+              .lte('status_code', rangeEnd);
+          }
+        } else {
+          const statusCode = Number.parseInt(status, 10);
+          if (!Number.isNaN(statusCode)) {
+            queryBuilder = queryBuilder.eq('status_code', statusCode);
+          }
         }
       }
 
@@ -98,8 +111,12 @@ export const GET = withSessionAuth<RouteParams>(
         queryBuilder = queryBuilder.ilike('endpoint', `%${endpoint}%`);
       }
 
-      const parsedPage = parseInt(page, 10);
-      const parsedSize = parseInt(pageSize, 10);
+      if (method && method !== 'all') {
+        queryBuilder = queryBuilder.eq('method', method);
+      }
+
+      const parsedPage = Math.max(1, Number.parseInt(page, 10) || 1);
+      const parsedSize = Math.max(1, Number.parseInt(pageSize, 10) || 10);
       const start = (parsedPage - 1) * parsedSize;
       const end = parsedPage * parsedSize - 1;
       queryBuilder = queryBuilder.range(start, end);
@@ -125,6 +142,29 @@ export const GET = withSessionAuth<RouteParams>(
       }
       if (to) {
         statsQuery = statsQuery.lte('created_at', to);
+      }
+      if (status && status !== 'all') {
+        if (status.endsWith('xx')) {
+          const rangePrefix = Number.parseInt(status.charAt(0), 10);
+          if (!Number.isNaN(rangePrefix)) {
+            const rangeStart = rangePrefix * 100;
+            const rangeEnd = rangeStart + 99;
+            statsQuery = statsQuery
+              .gte('status_code', rangeStart)
+              .lte('status_code', rangeEnd);
+          }
+        } else {
+          const statusCode = Number.parseInt(status, 10);
+          if (!Number.isNaN(statusCode)) {
+            statsQuery = statsQuery.eq('status_code', statusCode);
+          }
+        }
+      }
+      if (endpoint) {
+        statsQuery = statsQuery.ilike('endpoint', `%${endpoint}%`);
+      }
+      if (method && method !== 'all') {
+        statsQuery = statsQuery.eq('method', method);
       }
 
       const { data: statsData } = await statsQuery;

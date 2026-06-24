@@ -42,6 +42,57 @@ interface RouteParams {
   keyId: string;
 }
 
+const SAFE_COLUMNS =
+  'id, ws_id, name, description, key_prefix, role_id, last_used_at, expires_at, created_at, updated_at, created_by';
+
+export const GET = withSessionAuth<RouteParams>(
+  async (_req, { user, supabase }, rawParams) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawParams.wsId, supabase);
+      const { keyId } = rawParams;
+
+      const denied = await assertWorkspaceApiKeysAccess(
+        supabase,
+        user.id,
+        wsId
+      );
+      if (denied) return denied;
+
+      const sbAdmin = await createAdminClient();
+
+      const { data, error } = await sbAdmin
+        .from('workspace_api_keys')
+        .select(SAFE_COLUMNS)
+        .eq('id', keyId)
+        .eq('ws_id', wsId)
+        .maybeSingle();
+
+      if (!error && !data) {
+        return NextResponse.json(
+          { message: 'API key not found' },
+          { status: 404 }
+        );
+      }
+
+      if (error) {
+        console.error('Error fetching API key:', error);
+        return NextResponse.json(
+          { message: 'Error fetching workspace API key' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ data });
+    } catch (error) {
+      console.error('Error in GET workspace API key:', error);
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  }
+);
+
 export const PUT = withSessionAuth<RouteParams>(
   async (req: NextRequest, { user, supabase }, rawParams) => {
     try {
