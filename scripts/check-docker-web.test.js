@@ -38,6 +38,7 @@ const {
   SUPERMEMORY_DOCKERFILE_PATH,
   TANSTACK_DUAL_COMPOSE_FILE_PATH,
   TANSTACK_WEB_DOCKERFILE_PATH,
+  TANSTACK_WEB_SERVER_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -65,6 +66,7 @@ const {
   validateSupermemoryDockerfile,
   validateTanstackDualCompose,
   validateTanstackWebDockerfile,
+  validateTanstackWebServer,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -280,6 +282,18 @@ test('tanstack web healthcheck fails when the backend probe is not ok', async ()
           }),
       }),
     /Backend healthcheck returned HTTP 503/u
+  );
+});
+
+test('validateTanstackWebServer requires the internal drain-status route', () => {
+  const serverContent = fs.readFileSync(TANSTACK_WEB_SERVER_PATH, 'utf8');
+
+  assert.deepEqual(validateTanstackWebServer(serverContent), []);
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace('/__platform/drain-status', '/api/health')
+    ).join('\n'),
+    /__platform\/drain-status/u
   );
 });
 
@@ -1337,6 +1351,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web', 'docker'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -1404,6 +1421,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'tanstack-web', 'Dockerfile'),
       'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'tanstack-web', 'docker', 'server.mjs'),
+      ''
     );
     fs.writeFileSync(
       path.join(tempDir, 'docker-compose.web.yml'),

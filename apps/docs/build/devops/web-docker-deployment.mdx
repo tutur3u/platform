@@ -158,7 +158,10 @@ parallel `apps/tanstack-web` migration runtime.
   The TanStack image and production Compose healthchecks run
   `apps/tanstack-web/docker/healthcheck.mjs`, which requires the local
   TanStack HTTP runner to answer below `500` and the configured
-  `BACKEND_INTERNAL_URL` to pass `/healthz`.
+  `BACKEND_INTERNAL_URL` to pass `/healthz`. The TanStack Node runner also
+  answers `/__platform/drain-status` directly so the shared nginx
+  `web-proxy` healthcheck can use the same internal readiness path in
+  `DOCKER_WEB_FRONTEND=tanstack` mode.
   Use `DOCKER_WEB_FRONTEND=next|tanstack` to select the default web frontend in
   migration-aware scripts. The default is still `next`; setting `tanstack`
   keeps nginx on the public `web-proxy:7803` listener but routes the active

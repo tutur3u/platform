@@ -11,6 +11,7 @@ const clientDir = path.join(appDir, 'dist', 'client');
 const serverEntryUrl = pathToFileURL(
   path.join(appDir, 'dist', 'server', 'server.js')
 ).href;
+const INTERNAL_DRAIN_STATUS_PATH = '/__platform/drain-status';
 
 const host = process.env.HOST || '0.0.0.0';
 const port = Number.parseInt(process.env.PORT || '7824', 10);
@@ -60,6 +61,35 @@ function getStaticFilePath(url) {
   }
 
   return candidate;
+}
+
+function tryServeInternalDrainStatus(request, response, url) {
+  if (
+    url.pathname !== INTERNAL_DRAIN_STATUS_PATH ||
+    (request.method !== 'GET' && request.method !== 'HEAD')
+  ) {
+    return false;
+  }
+
+  const body = JSON.stringify({
+    draining: false,
+    frontend: 'tanstack',
+    ok: true,
+  });
+
+  response.statusCode = 200;
+  response.setHeader('cache-control', 'no-store');
+  response.setHeader('content-type', 'application/json; charset=utf-8');
+  response.setHeader('content-length', Buffer.byteLength(body));
+  response.setHeader('x-platform-drain-status', 'ready');
+
+  if (request.method === 'HEAD') {
+    response.end();
+    return true;
+  }
+
+  response.end(body);
+  return true;
 }
 
 async function tryServeStatic(request, response, url) {
@@ -150,6 +180,10 @@ async function writeFetchResponse(fetchResponse, nodeResponse) {
 const server = createServer(async (request, response) => {
   try {
     const url = getRequestUrl(request);
+
+    if (tryServeInternalDrainStatus(request, response, url)) {
+      return;
+    }
 
     if (await tryServeStatic(request, response, url)) {
       return;
