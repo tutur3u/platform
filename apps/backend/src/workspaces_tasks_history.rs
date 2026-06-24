@@ -171,22 +171,21 @@ async fn task_history_response(
     }
 
     let mut list_names_by_id = BTreeMap::<String, String>::new();
-    if !list_ids.is_empty() {
-        if let Ok(lists) = fetch_task_list_names(
+    if !list_ids.is_empty()
+        && let Ok(lists) = fetch_task_list_names(
             contact_data,
             outbound,
             &access_token,
             list_ids.iter().cloned().collect::<Vec<_>>(),
         )
         .await
-        {
-            for (id, name) in lists {
-                list_names_by_id.insert(id, name);
-            }
+    {
+        for (id, name) in lists {
+            list_names_by_id.insert(id, name);
         }
-        // On failure we fall back to empty names, mirroring the legacy code which
-        // ignores `task_lists` query errors.
     }
+    // On failure we fall back to empty names, mirroring the legacy code which
+    // ignores `task_lists` query errors.
 
     let formatted: Vec<Value> = history
         .into_iter()
@@ -298,10 +297,10 @@ async fn fetch_task_list_names(
     for row in rows {
         let id = row.get("id").and_then(Value::as_str);
         let name = row.get("name").and_then(Value::as_str);
-        if let (Some(id), Some(name)) = (id, name) {
-            if !name.is_empty() {
-                result.push((id.to_owned(), name.to_owned()));
-            }
+        if let (Some(id), Some(name)) = (id, name)
+            && !name.is_empty()
+        {
+            result.push((id.to_owned(), name.to_owned()));
         }
     }
     Ok(result)
@@ -438,12 +437,11 @@ fn list_id_from_history_value(value: &Value) -> Option<String> {
         }
         return None;
     }
-    if let Value::Object(map) = value {
-        if let Some(id) = map.get("id").and_then(Value::as_str) {
-            if is_guid(id) {
-                return Some(id.to_owned());
-            }
-        }
+    if let Value::Object(map) = value
+        && let Some(id) = map.get("id").and_then(Value::as_str)
+        && is_guid(id)
+    {
+        return Some(id.to_owned());
     }
     None
 }

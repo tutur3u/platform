@@ -69,7 +69,6 @@ struct ApiKeyRow {
     ws_id: Option<String>,
     key_hash: Option<String>,
     role_id: Option<String>,
-    expires_at: Option<String>,
 }
 
 #[derive(Deserialize)]

@@ -136,12 +136,9 @@ async fn members_response(
         Err(()) => return message_response(401, UNAUTHORIZED_MESSAGE),
     }
 
-    let creator_id = match workspace_creator_id(contact_data, outbound, &resolved_ws_id).await {
-        Ok(creator_id) => creator_id,
-        // Legacy ignores the workspace fetch error (uses optional chaining), so
-        // a failure simply yields no creator match.
-        Err(()) => None,
-    };
+    let creator_id: Option<String> = workspace_creator_id(contact_data, outbound, &resolved_ws_id)
+        .await
+        .unwrap_or_default();
 
     match fetch_members(contact_data, outbound, &resolved_ws_id).await {
         Ok(member_rows) => {

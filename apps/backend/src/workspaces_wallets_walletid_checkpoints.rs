@@ -42,8 +42,8 @@ use serde_json::{Map, Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
-    finance_auth::{FinanceAuthorization, FinanceAuthorizationError, authorize_finance_permission},
-    json_response, method_not_allowed, no_store_response,
+    finance_auth::{FinanceAuthorizationError, authorize_finance_permission},
+    json_response, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
 };
 
@@ -81,12 +81,6 @@ struct RoleMemberRow {
 }
 
 #[derive(Deserialize)]
-struct WhitelistIdRow {
-    #[serde(default)]
-    wallet_id: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct WhitelistWindowRow {
     #[serde(default)]
     wallet_id: Option<String>,
@@ -94,12 +88,6 @@ struct WhitelistWindowRow {
     viewing_window: Option<String>,
     #[serde(default)]
     custom_days: Option<i64>,
-}
-
-#[derive(Deserialize)]
-struct WalletIdRow {
-    #[serde(default)]
-    id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -294,13 +282,6 @@ async fn checkpoints_response(
     .await
     {
         Ok(payload) => no_store_response(json_response(200, payload)),
-        Err(BuildError::StorageMissing) => {
-            // checkpointDatabaseErrorResponse(error) for a storage-missing error.
-            no_store_response(json_response(
-                503,
-                json!({ "message": "Wallet checkpoint storage is not ready" }),
-            ))
-        }
         Err(BuildError::Internal) => message_response(500, ERROR_CALCULATING_BALANCES_MESSAGE),
     }
 }
@@ -310,8 +291,6 @@ async fn checkpoints_response(
 // ---------------------------------------------------------------------------
 
 enum BuildError {
-    /// Storage missing while enriching/listing -> 503 "storage is not ready".
-    StorageMissing,
     /// Any other failure -> 500 "Error calculating wallet checkpoint balances".
     Internal,
 }
@@ -415,10 +394,7 @@ async fn wallet_in_whitelist(
         return Err(());
     }
 
-    Ok(!response
-        .json::<Vec<WhitelistIdRow>>()
-        .map_err(|_| ())?
-        .is_empty())
+    Ok(!response.json::<Vec<Value>>().map_err(|_| ())?.is_empty())
 }
 
 async fn wallet_exists(
@@ -445,10 +421,7 @@ async fn wallet_exists(
         return Err(());
     }
 
-    Ok(!response
-        .json::<Vec<WalletIdRow>>()
-        .map_err(|_| ())?
-        .is_empty())
+    Ok(!response.json::<Vec<Value>>().map_err(|_| ())?.is_empty())
 }
 
 // ---------------------------------------------------------------------------

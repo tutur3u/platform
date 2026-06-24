@@ -192,10 +192,10 @@ async fn transactions_infinite_response(
 
     // Generate next cursor from the last item's taken_at/created_at.
     let next_cursor = if has_more {
-        transactions.last().and_then(|last| {
+        transactions.last().map(|last| {
             let taken_at = value_to_cursor_part(last.get("taken_at"));
             let created_at = value_to_cursor_part(last.get("created_at"));
-            Some(format!("{taken_at}_{created_at}"))
+            format!("{taken_at}_{created_at}")
         })
     } else {
         None

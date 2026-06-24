@@ -20,9 +20,9 @@
 //!   * the analytics `timeframe` window (derived from `timeframeDays`, clamped to
 //!     `[1, 30]`, default 7, against the current time), and
 //!   * the `timeframeDays` 400 validation.
-//! `page` always normalizes to 1 when `total === 0`. The filter params (`q`,
-//! `status`, `route`, `render`, `traffic`, `since`, `until`) never change the
-//! empty output, so they are parsed only insofar as `timeframeDays` requires.
+//!     `page` always normalizes to 1 when `total === 0`. The filter params (`q`,
+//!     `status`, `route`, `render`, `traffic`, `since`, `until`) never change the
+//!     empty output, so they are parsed only insofar as `timeframeDays` requires.
 //!
 //! Auth and permission resolution mirror `infrastructure_monitoring_blue_green.rs`
 //! (which itself mirrors `getPermissions`). That module's permission helpers are

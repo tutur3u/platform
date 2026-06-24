@@ -293,10 +293,10 @@ fn append_log_filters(params: &mut Vec<(&'static str, String)>, query: &UsageLog
     if let Some(to) = query.to.as_deref().filter(|value| !value.is_empty()) {
         params.push(("created_at", format!("lte.{to}")));
     }
-    if let Some(status) = query.status.as_deref().filter(|value| !value.is_empty()) {
-        if let Some(status_code) = parse_int_prefix(status) {
-            params.push(("status_code", format!("eq.{status_code}")));
-        }
+    if let Some(status) = query.status.as_deref().filter(|value| !value.is_empty())
+        && let Some(status_code) = parse_int_prefix(status)
+    {
+        params.push(("status_code", format!("eq.{status_code}")));
     }
     if let Some(endpoint) = query.endpoint.as_deref().filter(|value| !value.is_empty()) {
         params.push(("endpoint", format!("ilike.*{endpoint}*")));

@@ -569,10 +569,10 @@ fn apply_effective_value(
     override_field: &str,
     target_field: &str,
 ) {
-    if let Some(value) = override_obj.get(override_field) {
-        if !value.is_null() {
-            base.insert(target_field.to_owned(), value.clone());
-        }
+    if let Some(value) = override_obj.get(override_field)
+        && !value.is_null()
+    {
+        base.insert(target_field.to_owned(), value.clone());
     }
 }
 
@@ -608,27 +608,24 @@ fn is_personally_hidden(task: &Value, board_list_overrides: &[Value]) -> bool {
         .and_then(|l| l.get("board"))
         .and_then(|b| b.get("id"))
         .and_then(Value::as_str)
-    {
-        if let Some(over) = board_list_overrides.iter().find(|o| {
+        && let Some(over) = board_list_overrides.iter().find(|o| {
             scope_type(o) == Some("board")
                 && o.get("board_id").and_then(Value::as_str) == Some(board_id)
-        }) {
-            if matches!(personal_status(over), Some("done") | Some("closed")) {
-                return true;
-            }
-        }
+        })
+        && matches!(personal_status(over), Some("done") | Some("closed"))
+    {
+        return true;
     }
 
     // List-level override.
-    if let Some(list_id) = list.and_then(|l| l.get("id")).and_then(Value::as_str) {
-        if let Some(over) = board_list_overrides.iter().find(|o| {
+    if let Some(list_id) = list.and_then(|l| l.get("id")).and_then(Value::as_str)
+        && let Some(over) = board_list_overrides.iter().find(|o| {
             scope_type(o) == Some("list")
                 && o.get("list_id").and_then(Value::as_str) == Some(list_id)
-        }) {
-            if matches!(personal_status(over), Some("done") | Some("closed")) {
-                return true;
-            }
-        }
+        })
+        && matches!(personal_status(over), Some("done") | Some("closed"))
+    {
+        return true;
     }
 
     false
@@ -779,12 +776,11 @@ fn parse_int(value: &str) -> Option<i64> {
         return None;
     }
     let mut chars = trimmed.char_indices();
-    let mut end = 0;
     let (first_idx, first) = chars.next()?;
     if first != '-' && first != '+' && !first.is_ascii_digit() {
         return None;
     }
-    end = first_idx + first.len_utf8();
+    let mut end = first_idx + first.len_utf8();
     for (idx, ch) in chars {
         if ch.is_ascii_digit() {
             end = idx + ch.len_utf8();

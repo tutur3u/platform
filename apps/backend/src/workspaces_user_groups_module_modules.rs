@@ -15,11 +15,11 @@
 //!        - normalize `wsId` (personal/internal/handle aliases),
 //!        - require a `workspace_members` row for the caller,
 //!        - require the `manage_users` permission.
-//!      This port reuses `workspace_permission_check::authorize_workspace_permission`
-//!      which performs the same normalize + membership + effective-permission
-//!      computation. NOTE: the legacy route distinguishes 403 (no membership / no
-//!      permission) from 500 (membership lookup error); the shared helper maps
-//!      missing-membership to `NotFound`. See notes for the exact mapping chosen.
+//!          This port reuses `workspace_permission_check::authorize_workspace_permission`
+//!          which performs the same normalize + membership + effective-permission
+//!          computation. NOTE: the legacy route distinguishes 403 (no membership / no
+//!          permission) from 500 (membership lookup error); the shared helper maps
+//!          missing-membership to `NotFound`. See notes for the exact mapping chosen.
 //!   3. Validate the group belongs to the workspace
 //!      (`workspace_user_groups` where `id = groupId AND ws_id = wsId`). Missing ->
 //!      `404 { "message": "Group not found" }`, REST error -> `500`.

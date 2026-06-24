@@ -114,12 +114,6 @@ struct WorkspaceIdRow {
 }
 
 #[derive(Deserialize)]
-struct WorkspaceMembershipRow {
-    #[serde(rename = "type")]
-    membership_type: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct MailMailboxRow {
     id: Option<String>,
     address: Option<String>,
@@ -664,12 +658,11 @@ async fn normalize_workspace_id(
             return Ok(resolved_ws_id);
         }
 
-        if let Some(access_token) = access_token {
-            if let Some(workspace_id) =
+        if let Some(access_token) = access_token
+            && let Some(workspace_id) =
                 workspace_id_by_handle_caller(contact_data, outbound, &handle, access_token).await?
-            {
-                return Ok(workspace_id);
-            }
+        {
+            return Ok(workspace_id);
         }
         if let Some(workspace_id) =
             workspace_id_by_handle_service_role(contact_data, outbound, &handle).await?
@@ -808,7 +801,7 @@ async fn verify_workspace_membership_any(
     }
 
     Ok(!response
-        .json::<Vec<WorkspaceMembershipRow>>()
+        .json::<Vec<serde_json::Value>>()
         .map_err(|_| ())?
         .is_empty())
 }

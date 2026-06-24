@@ -43,7 +43,7 @@ use serde_json::{Map, Value, json};
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
     finance_auth::{FinanceAuthorization, FinanceAuthorizationError, authorize_finance_permission},
-    json_response, method_not_allowed, no_store_response,
+    json_response, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
 };
 

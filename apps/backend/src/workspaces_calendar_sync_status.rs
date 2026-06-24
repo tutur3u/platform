@@ -17,7 +17,6 @@ const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const MEMBERSHIP_LOOKUP_FAILED_MESSAGE: &str = "Failed to verify workspace access";
 const NO_ACCESS_MESSAGE: &str = "You don't have access to this workspace";
 const LOAD_FAILED_MESSAGE: &str = "Failed to load sync status";
-const INTERNAL_ERROR_MESSAGE: &str = "Internal server error";
 
 // Mirrors apps/web/src/lib/calendar/sync-health.ts constants.
 const TOKEN_EXPIRY_WARNING_SECONDS: i64 = 5 * 60;
@@ -561,9 +560,7 @@ fn parse_rfc3339_epoch_seconds(value: &str) -> Option<i64> {
         rest = &rest[frac_end..];
     }
 
-    let offset_seconds = if rest.is_empty() {
-        0
-    } else if rest == "Z" || rest == "z" {
+    let offset_seconds = if rest.is_empty() || rest == "Z" || rest == "z" {
         0
     } else {
         let sign = match rest.as_bytes().first() {

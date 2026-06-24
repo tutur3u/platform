@@ -53,7 +53,7 @@ async fn quiz_sets_response(
     route: QuizSetsRoute<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let authorization =
+    let _authorization =
         match authorize_education_workspace(config, request, route.ws_id, outbound).await {
             Ok(authorization) => authorization,
             Err(response) => return response,

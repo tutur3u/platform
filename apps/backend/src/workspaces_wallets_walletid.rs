@@ -41,12 +41,6 @@ struct RoleMembershipRow {
 }
 
 #[derive(Deserialize)]
-struct WhitelistRow {
-    #[serde(default)]
-    wallet_id: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct CreditWalletRow {
     #[serde(default)]
     limit: Option<Value>,
@@ -278,10 +272,7 @@ async fn wallet_in_whitelist(
         return Err(());
     }
 
-    Ok(!response
-        .json::<Vec<WhitelistRow>>()
-        .map_err(|_| ())?
-        .is_empty())
+    Ok(!response.json::<Vec<Value>>().map_err(|_| ())?.is_empty())
 }
 
 async fn fetch_wallet(

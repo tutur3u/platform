@@ -87,10 +87,10 @@ async fn billing_get_response(
         .await
         .unwrap_or(false);
 
-    let subscription = match fetch_subscription(contact_data, outbound, &ws_id).await {
-        Ok(value) => value,
-        Err(()) => None,
-    };
+    let subscription: Option<SubscriptionPayload> =
+        fetch_subscription(contact_data, outbound, &ws_id)
+            .await
+            .unwrap_or_default();
 
     // Subscription creation/lookup failure -> 404 (matches legacy).
     let Some(subscription) = subscription else {
@@ -496,18 +496,17 @@ async fn fetch_workspace_orders(
     let mut subscription_product_ids: Vec<String> = Vec::new();
     let mut credit_pack_ids: Vec<String> = Vec::new();
     for order in &order_rows {
-        if let Some(id) = order.product_id.as_ref().filter(|id| !id.is_empty()) {
-            if !subscription_product_ids
+        if let Some(id) = order.product_id.as_ref().filter(|id| !id.is_empty())
+            && !subscription_product_ids
                 .iter()
                 .any(|existing| existing == id)
-            {
-                subscription_product_ids.push(id.clone());
-            }
+        {
+            subscription_product_ids.push(id.clone());
         }
-        if let Some(id) = order.credit_pack_id.as_ref().filter(|id| !id.is_empty()) {
-            if !credit_pack_ids.iter().any(|existing| existing == id) {
-                credit_pack_ids.push(id.clone());
-            }
+        if let Some(id) = order.credit_pack_id.as_ref().filter(|id| !id.is_empty())
+            && !credit_pack_ids.iter().any(|existing| existing == id)
+        {
+            credit_pack_ids.push(id.clone());
         }
     }
 
@@ -794,12 +793,11 @@ async fn count_workspace_members(
     }
 
     // Parse total from Content-Range: `0-0/<total>` or `*/<total>`.
-    if let Some(content_range) = response.header("content-range") {
-        if let Some(total) = content_range.rsplit('/').next() {
-            if let Ok(parsed) = total.trim().parse::<i64>() {
-                return Ok(parsed);
-            }
-        }
+    if let Some(content_range) = response.header("content-range")
+        && let Some(total) = content_range.rsplit('/').next()
+        && let Ok(parsed) = total.trim().parse::<i64>()
+    {
+        return Ok(parsed);
     }
 
     // Fallback: count returned rows (no Range cap was effectively applied).

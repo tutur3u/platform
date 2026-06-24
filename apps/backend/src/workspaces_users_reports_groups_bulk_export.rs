@@ -68,6 +68,7 @@ struct BulkExportParams {
     status: ReportStatus,
 }
 
+#[allow(clippy::result_large_err)]
 fn parse_bulk_export_params(
     request_url: Option<&str>,
 ) -> Result<BulkExportParams, BackendResponse> {

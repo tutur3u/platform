@@ -1384,6 +1384,7 @@ function validateTanstackWebDockerfile(
       'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
     ),
     'bun run --filter @tuturuuu/types build',
+    'bun run --filter @tuturuuu/supabase build',
     'bun run --filter @tuturuuu/internal-api build',
     'node node_modules/vite/bin/vite.js build',
     'node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json',

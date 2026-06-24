@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::json;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
@@ -14,7 +14,6 @@ use crate::{
 const MIRA_TASKS_PATH: &str = "/api/v1/mira/tasks";
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const FETCH_TASKS_FAILED_MESSAGE: &str = "Failed to fetch tasks";
-const INTERNAL_SERVER_ERROR_MESSAGE: &str = "Internal server error";
 
 const GET_USER_ACCESSIBLE_TASKS_RPC: &str = "get_user_accessible_tasks";
 const LIST_STATUSES: [&str; 4] = ["not_started", "active", "review", "done"];
@@ -144,10 +143,10 @@ async fn mira_tasks_response(
     let mut seen_list_ids: HashSet<String> = HashSet::new();
     let mut list_ids: Vec<String> = Vec::new();
     for task in &rpc_tasks {
-        if let Some(list_id) = task.task_list_id.as_deref() {
-            if seen_list_ids.insert(list_id.to_owned()) {
-                list_ids.push(list_id.to_owned());
-            }
+        if let Some(list_id) = task.task_list_id.as_deref()
+            && seen_list_ids.insert(list_id.to_owned())
+        {
+            list_ids.push(list_id.to_owned());
         }
     }
 
@@ -240,10 +239,7 @@ async fn mira_tasks_response(
 
     // upcoming = upcomingWithDate ++ noDueDate
     let upcoming_len = upcoming_with_date.len() + no_due_date.len();
-    let upcoming: Vec<&MappedTask> = upcoming_with_date
-        .into_iter()
-        .chain(no_due_date.into_iter())
-        .collect();
+    let upcoming: Vec<&MappedTask> = upcoming_with_date.into_iter().chain(no_due_date).collect();
 
     // Today's completed task count from daily stats (errors -> 0).
     let today_str = utc_date_string(now_ms);
@@ -533,20 +529,19 @@ fn parse_epoch_ms(value: &str) -> Option<i64> {
 
     let mut offset_seconds: i64 = 0;
     let tz = &rest[idx..];
-    if !(tz == "Z" || tz == "z" || tz.is_empty()) {
-        if let Some(sign_char) = tz.chars().next() {
-            if sign_char == '+' || sign_char == '-' {
-                let sign = if sign_char == '-' { -1 } else { 1 };
-                let digits: String = tz[1..].chars().filter(|c| c.is_ascii_digit()).collect();
-                if digits.len() >= 4 {
-                    let oh: i64 = digits[0..2].parse().unwrap_or(0);
-                    let om: i64 = digits[2..4].parse().unwrap_or(0);
-                    offset_seconds = sign * (oh * 3600 + om * 60);
-                } else if digits.len() >= 2 {
-                    let oh: i64 = digits[0..2].parse().unwrap_or(0);
-                    offset_seconds = sign * oh * 3600;
-                }
-            }
+    if !(tz == "Z" || tz == "z" || tz.is_empty())
+        && let Some(sign_char) = tz.chars().next()
+        && (sign_char == '+' || sign_char == '-')
+    {
+        let sign = if sign_char == '-' { -1 } else { 1 };
+        let digits: String = tz[1..].chars().filter(|c| c.is_ascii_digit()).collect();
+        if digits.len() >= 4 {
+            let oh: i64 = digits[0..2].parse().unwrap_or(0);
+            let om: i64 = digits[2..4].parse().unwrap_or(0);
+            offset_seconds = sign * (oh * 3600 + om * 60);
+        } else if digits.len() >= 2 {
+            let oh: i64 = digits[0..2].parse().unwrap_or(0);
+            offset_seconds = sign * oh * 3600;
         }
     }
 

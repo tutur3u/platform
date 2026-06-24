@@ -145,10 +145,9 @@ async fn load_visible_wallets(
         has_manage_finance || permissions.has("view_transactions");
 
     let default_invoice_wallet_id = if has_create_invoices {
-        match workspace_config_value(contact_data, outbound, ws_id, "default_wallet_id").await {
-            Ok(value) => value,
-            Err(()) => None,
-        }
+        workspace_config_value(contact_data, outbound, ws_id, "default_wallet_id")
+            .await
+            .unwrap_or_default()
     } else {
         None
     };
@@ -229,10 +228,10 @@ async fn load_visible_wallets(
 
     let mut wallet_ids: Vec<String> = Vec::new();
     for row in &whitelist_rows {
-        if let Some(id) = row.wallet_id.as_ref() {
-            if !wallet_ids.iter().any(|existing| existing == id) {
-                wallet_ids.push(id.clone());
-            }
+        if let Some(id) = row.wallet_id.as_ref()
+            && !wallet_ids.iter().any(|existing| existing == id)
+        {
+            wallet_ids.push(id.clone());
         }
     }
     for id in &default_invoice_wallet_ids {
@@ -271,10 +270,7 @@ async fn load_visible_wallets(
                         );
                         object.insert(
                             "custom_days".to_owned(),
-                            window
-                                .custom_days
-                                .map(|days| Value::from(days))
-                                .unwrap_or(Value::Null),
+                            window.custom_days.map(Value::from).unwrap_or(Value::Null),
                         );
                     }
                     None => {
@@ -355,10 +351,10 @@ async fn attach_wallet_credit_data(
 ) -> Result<(), ()> {
     let mut wallet_ids: Vec<String> = Vec::new();
     for wallet in wallets.iter() {
-        if let Some(id) = wallet.get("id").and_then(Value::as_str) {
-            if !wallet_ids.iter().any(|existing| existing == id) {
-                wallet_ids.push(id.to_owned());
-            }
+        if let Some(id) = wallet.get("id").and_then(Value::as_str)
+            && !wallet_ids.iter().any(|existing| existing == id)
+        {
+            wallet_ids.push(id.to_owned());
         }
     }
 
@@ -419,10 +415,10 @@ async fn attach_wallet_audit_data(
 ) {
     let mut wallet_ids: Vec<String> = Vec::new();
     for wallet in wallets.iter() {
-        if let Some(id) = wallet.get("id").and_then(Value::as_str) {
-            if !wallet_ids.iter().any(|existing| existing == id) {
-                wallet_ids.push(id.to_owned());
-            }
+        if let Some(id) = wallet.get("id").and_then(Value::as_str)
+            && !wallet_ids.iter().any(|existing| existing == id)
+        {
+            wallet_ids.push(id.to_owned());
         }
     }
 
@@ -579,10 +575,10 @@ async fn workspace_user_role_ids(
     let rows = response.json::<Vec<RoleMemberRow>>().map_err(|_| ())?;
     let mut role_ids: Vec<String> = Vec::new();
     for row in rows {
-        if let Some(id) = row.role_id {
-            if !role_ids.iter().any(|existing| existing == &id) {
-                role_ids.push(id);
-            }
+        if let Some(id) = row.role_id
+            && !role_ids.iter().any(|existing| existing == &id)
+        {
+            role_ids.push(id);
         }
     }
     Ok(role_ids)

@@ -49,18 +49,12 @@ struct TimeTrackerStatsRpcRequest<'a> {
     p_days_back: i64,
 }
 
-// File-local copies of the workspace-id resolution rows (the same shape is used
-// by `workspace_habits_access::WorkspaceIdRow` / `WorkspaceMembershipRow`, but
-// per the one-file constraint they are duplicated here rather than shared).
+// File-local copy of the workspace-id resolution row used by
+// `workspace_habits_access::WorkspaceIdRow`; per the one-file constraint it is
+// duplicated here rather than shared.
 #[derive(Deserialize)]
 struct WorkspaceIdRow {
     id: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct WorkspaceMembershipRow {
-    #[serde(rename = "type")]
-    membership_type: Option<String>,
 }
 
 // RPC row shape (snake_case as returned by `get_time_tracker_stats`). Only rows
@@ -370,12 +364,7 @@ async fn verify_workspace_membership(
         return Err(());
     }
 
-    Ok(response
-        .json::<Vec<WorkspaceMembershipRow>>()
-        .map_err(|_| ())?
-        .first()
-        .map(|row| row.membership_type.is_some() || true)
-        .unwrap_or(false))
+    Ok(!response.json::<Vec<Value>>().map_err(|_| ())?.is_empty())
 }
 
 async fn send_caller_rest_request(

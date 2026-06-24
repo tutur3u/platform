@@ -14,8 +14,8 @@
 //!   * `from`: RFC3339 datetime (required, must be valid `z.string().datetime()`).
 //!   * `groupIds`: comma-separated UUIDs, de-duplicated, max 100.
 //!   * `timezone`: IANA timezone name (default `Asia/Ho_Chi_Minh`), 1..=128 chars.
-//! Invalid query -> `400 { "message": "Invalid request query", "errors": [...] }`.
-//! Empty `groupIds` -> `200 { "data": [] }`.
+//!     Invalid query -> `400 { "message": "Invalid request query", "errors": [...] }`.
+//!     Empty `groupIds` -> `200 { "data": [] }`.
 //!
 //! On success it returns `200 { "data": [ {groupId, managerCount, nonManagerCount,
 //! upcomingCount, exceptionCount, patterns: [...] }, ... ] }` ordered by the

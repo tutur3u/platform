@@ -21,7 +21,6 @@ const UNAUTHORIZED_MESSAGE: &str = "Please sign in to view templates";
 const MEMBERSHIP_LOOKUP_FAILED_MESSAGE: &str = "Failed to verify workspace membership";
 const ACCESS_DENIED_MESSAGE: &str = "Access denied to workspace";
 const FETCH_FAILED_MESSAGE: &str = "Failed to fetch templates";
-const INTERNAL_ERROR_MESSAGE: &str = "Internal server error";
 
 #[derive(Deserialize)]
 struct WorkspaceIdRow {

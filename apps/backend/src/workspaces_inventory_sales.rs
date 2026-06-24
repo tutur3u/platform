@@ -212,7 +212,7 @@ async fn sales_response(
 
     // Sort by `completed_at ?? created_at` descending (most recent first).
     // `sort_by` is stable; the legacy `Array.prototype.sort` is also stable.
-    data.sort_by(|a, b| sale_timestamp(b).cmp(&sale_timestamp(a)));
+    data.sort_by_key(|sale| std::cmp::Reverse(sale_timestamp(sale)));
 
     // `.slice(offset, offset + limit)`.
     let start = offset.max(0) as usize;

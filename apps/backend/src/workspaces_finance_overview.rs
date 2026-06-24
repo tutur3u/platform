@@ -360,7 +360,7 @@ fn parse_finance_date(value: Option<&str>) -> ParsedDate {
     };
 
     let date_part = trimmed
-        .split_once(|c| c == 'T' || c == ' ')
+        .split_once(['T', ' '])
         .map_or(trimmed, |(date, _)| date);
 
     let mut segments = date_part.split('-');

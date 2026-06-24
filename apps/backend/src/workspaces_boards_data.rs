@@ -430,11 +430,11 @@ async fn fetch_boards(
         ("order", "name.asc,created_at.desc".to_owned()),
     ];
 
-    if let Some(query) = q {
-        if !query.is_empty() {
-            // PostgREST ilike wildcard is `*`; legacy uses `%${q}%`.
-            params.push(("name", format!("ilike.*{}*", escape_like_value(query))));
-        }
+    if let Some(query) = q
+        && !query.is_empty()
+    {
+        // PostgREST ilike wildcard is `*`; legacy uses `%${q}%`.
+        params.push(("name", format!("ilike.*{}*", escape_like_value(query))));
     }
 
     if let Some(ids) = restrict_board_ids {

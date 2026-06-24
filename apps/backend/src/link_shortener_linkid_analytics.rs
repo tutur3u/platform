@@ -415,7 +415,7 @@ fn top_n<T>(counts: BTreeMap<String, u64>, make: impl Fn(String, u64) -> T) -> V
     let mut entries: Vec<(String, u64)> = counts.into_iter().collect();
     // Sort by count descending; ties keep their (key-ascending) relative order
     // from the BTreeMap via a stable sort.
-    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    entries.sort_by_key(|entry| std::cmp::Reverse(entry.1));
     entries
         .into_iter()
         .take(10)

@@ -243,20 +243,20 @@ async fn reports_groups_response(
         .and_then(|id| groups.iter().find(|group| group.id.as_deref() == Some(id)))
         .map(report_group_to_value);
 
-    if let Some(selected_id) = selected_group_id.as_deref() {
-        if selected_group.is_none() {
-            match fetch_selected_report_group(
-                contact_data,
-                outbound,
-                &resolved_ws_id,
-                selected_id,
-                accessible_group_ids.as_deref(),
-            )
-            .await
-            {
-                Ok(group) => selected_group = group.as_ref().map(report_group_to_value),
-                Err(()) => return error_fetching_response(),
-            }
+    if let Some(selected_id) = selected_group_id.as_deref()
+        && selected_group.is_none()
+    {
+        match fetch_selected_report_group(
+            contact_data,
+            outbound,
+            &resolved_ws_id,
+            selected_id,
+            accessible_group_ids.as_deref(),
+        )
+        .await
+        {
+            Ok(group) => selected_group = group.as_ref().map(report_group_to_value),
+            Err(()) => return error_fetching_response(),
         }
     }
 
@@ -298,6 +298,7 @@ async fn reports_groups_response(
 /// Parses the `q` and `selectedGroupId` query parameters, mirroring the legacy
 /// zod schema (`q.max(500).optional()`, `selectedGroupId.max(100).optional()`).
 /// Returns `Err(response)` with the legacy `400` payload when validation fails.
+#[allow(clippy::result_large_err)]
 fn parse_search_params(
     request_url: Option<&str>,
 ) -> Result<(Option<String>, Option<String>), BackendResponse> {
@@ -316,16 +317,16 @@ fn parse_search_params(
 
     let mut issues = Vec::new();
 
-    if let Some(value) = q.as_deref() {
-        if value.chars().count() > MAX_SEARCH_LENGTH {
-            issues.push(too_big_issue("q", MAX_SEARCH_LENGTH));
-        }
+    if let Some(value) = q.as_deref()
+        && value.chars().count() > MAX_SEARCH_LENGTH
+    {
+        issues.push(too_big_issue("q", MAX_SEARCH_LENGTH));
     }
 
-    if let Some(value) = selected_group_id.as_deref() {
-        if value.chars().count() > MAX_SHORT_TEXT_LENGTH {
-            issues.push(too_big_issue("selectedGroupId", MAX_SHORT_TEXT_LENGTH));
-        }
+    if let Some(value) = selected_group_id.as_deref()
+        && value.chars().count() > MAX_SHORT_TEXT_LENGTH
+    {
+        issues.push(too_big_issue("selectedGroupId", MAX_SHORT_TEXT_LENGTH));
     }
 
     if !issues.is_empty() {
@@ -430,10 +431,10 @@ async fn user_group_memberships(
         .json::<Vec<GroupMembershipRow>>()
         .map_err(|_| ())?
     {
-        if let Some(group_id) = row.group_id.filter(|id| !id.is_empty()) {
-            if !group_ids.iter().any(|existing| existing == &group_id) {
-                group_ids.push(group_id);
-            }
+        if let Some(group_id) = row.group_id.filter(|id| !id.is_empty())
+            && !group_ids.iter().any(|existing| existing == &group_id)
+        {
+            group_ids.push(group_id);
         }
     }
 

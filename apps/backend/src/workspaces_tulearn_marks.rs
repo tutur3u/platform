@@ -23,7 +23,7 @@ const NO_LEARNER_ACCESS_MESSAGE: &str = "You don't have access to this learner";
 const LOAD_FAILED_MESSAGE: &str = "Failed to load marks";
 
 // Limits mirroring the legacy TS service.
-const ASSIGNED_COURSES_LIMIT: usize = 0; // no explicit limit in TS; 0 = unbounded sentinel
+const ASSIGNED_COURSES_LIMIT: Option<usize> = None;
 const MARKS_LIMIT: i64 = 24;
 
 #[derive(Serialize)]
@@ -196,13 +196,13 @@ async fn resolve_tulearn_subject(
     let self_student =
         self_student_workspace_user_id(contact_data, outbound, user_id, &normalized_ws_id).await?;
 
-    if student_id.is_none() {
-        if let Some(self_workspace_user_id) = self_student {
-            return Ok(SubjectOutcome::Subject(TulearnSubject {
-                ws_id: normalized_ws_id,
-                student_workspace_user_id: self_workspace_user_id,
-            }));
-        }
+    if student_id.is_none()
+        && let Some(self_workspace_user_id) = self_student
+    {
+        return Ok(SubjectOutcome::Subject(TulearnSubject {
+            ws_id: normalized_ws_id,
+            student_workspace_user_id: self_workspace_user_id,
+        }));
     }
 
     // Parent link lookup (tulearn_parent_student_links).
@@ -440,8 +440,8 @@ async fn assigned_course_ids(
             "eq.true".to_owned(),
         ),
     ];
-    if ASSIGNED_COURSES_LIMIT > 0 {
-        params.push(("limit", ASSIGNED_COURSES_LIMIT.to_string()));
+    if let Some(limit) = ASSIGNED_COURSES_LIMIT {
+        params.push(("limit", limit.to_string()));
     }
 
     let url = contact_data

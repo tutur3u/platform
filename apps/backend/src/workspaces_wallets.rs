@@ -129,11 +129,9 @@ async fn wallets_response(
     let can_read_wallet_financial_fields = has_manage_finance || has_view_transactions;
 
     let default_invoice_wallet_id = if has_create_invoices {
-        match workspace_config(contact_data, outbound, &ws_id, DEFAULT_WALLET_CONFIG_ID).await {
-            Ok(value) => value,
-            // getWorkspaceConfig swallows errors and returns null.
-            Err(()) => None,
-        }
+        workspace_config(contact_data, outbound, &ws_id, DEFAULT_WALLET_CONFIG_ID)
+            .await
+            .unwrap_or_default()
     } else {
         None
     };

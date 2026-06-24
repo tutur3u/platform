@@ -373,12 +373,10 @@ async fn groups_response(
             .filter_map(|group| group.get("id").and_then(Value::as_str).map(str::to_owned))
             .collect();
 
-        let managers_by_group =
-            match fetch_managers_for_groups(&config.contact_data, outbound, &group_id_list).await {
-                Ok(map) => map,
-                // The legacy util swallows manager-fetch errors and returns {}.
-                Err(()) => Vec::new(),
-            };
+        let managers_by_group: Vec<ManagerGroupRow> =
+            fetch_managers_for_groups(&config.contact_data, outbound, &group_id_list)
+                .await
+                .unwrap_or_default();
 
         let count_managers_in_attendance =
             should_count_managers_in_attendance(&config.contact_data, outbound, &ws_id)

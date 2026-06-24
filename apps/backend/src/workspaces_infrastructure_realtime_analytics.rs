@@ -211,24 +211,24 @@ fn validate_params(request_url: Option<&str>) -> Result<ValidatedParams, Vec<Val
 
     // workspaceId: optional uuid (empty string treated as undefined).
     let workspace_id = get("workspaceId").filter(|value| !value.is_empty());
-    if let Some(value) = workspace_id.as_deref() {
-        if !is_uuid(value) {
-            issues.push(ValidationIssue {
-                field: "workspaceId".to_owned(),
-                message: "Invalid UUID".to_owned(),
-            });
-        }
+    if let Some(value) = workspace_id.as_deref()
+        && !is_uuid(value)
+    {
+        issues.push(ValidationIssue {
+            field: "workspaceId".to_owned(),
+            message: "Invalid UUID".to_owned(),
+        });
     }
 
     // channelId: optional string max 255 (empty string treated as undefined).
     let channel_id = get("channelId").filter(|value| !value.is_empty());
-    if let Some(value) = channel_id.as_deref() {
-        if value.chars().count() > MAX_NAME_LENGTH {
-            issues.push(ValidationIssue {
-                field: "channelId".to_owned(),
-                message: format!("Too big: expected string to have <={MAX_NAME_LENGTH} characters"),
-            });
-        }
+    if let Some(value) = channel_id.as_deref()
+        && value.chars().count() > MAX_NAME_LENGTH
+    {
+        issues.push(ValidationIssue {
+            field: "channelId".to_owned(),
+            message: format!("Too big: expected string to have <={MAX_NAME_LENGTH} characters"),
+        });
     }
 
     // startDate: required ISO datetime.

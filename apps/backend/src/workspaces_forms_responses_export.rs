@@ -523,10 +523,9 @@ impl<'a> StoredAnswerResolver<'a> {
             .get("question_id")
             .and_then(Value::as_str)
             .filter(|value| !value.is_empty())
+            && let Some(question) = self.by_id.get(question_id)
         {
-            if let Some(question) = self.by_id.get(question_id) {
-                return Some(*question);
-            }
+            return Some(*question);
         }
 
         let title_key = normalize_stored_question_title(
@@ -535,10 +534,10 @@ impl<'a> StoredAnswerResolver<'a> {
                 .and_then(Value::as_str)
                 .unwrap_or(""),
         );
-        let question_type = answer.get("question_type").and_then(Value::as_str);
-        let Some(question_type) = question_type.filter(|value| !value.is_empty()) else {
-            return None;
-        };
+        let question_type = answer
+            .get("question_type")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())?;
         if title_key.is_empty() {
             return None;
         }
@@ -560,10 +559,10 @@ enum StoredAnswerValue {
 }
 
 fn extract_stored_answer_value(answer: &Value) -> StoredAnswerValue {
-    if let Some(text) = answer.get("answer_text").and_then(Value::as_str) {
-        if !text.trim().is_empty() {
-            return StoredAnswerValue::Text(text.to_owned());
-        }
+    if let Some(text) = answer.get("answer_text").and_then(Value::as_str)
+        && !text.trim().is_empty()
+    {
+        return StoredAnswerValue::Text(text.to_owned());
     }
 
     if let Some(json_value) = answer.get("answer_json") {
@@ -574,10 +573,10 @@ fn extract_stored_answer_value(answer: &Value) -> StoredAnswerValue {
                 .collect();
             return StoredAnswerValue::List(strings);
         }
-        if let Some(number) = json_value.as_f64() {
-            if json_value.is_number() {
-                return StoredAnswerValue::Number(number);
-            }
+        if let Some(number) = json_value.as_f64()
+            && json_value.is_number()
+        {
+            return StoredAnswerValue::Number(number);
         }
     }
 
@@ -798,10 +797,10 @@ fn strip_list_marker(line: &str) -> String {
     let trimmed = line.trim_start();
     // Unordered list markers.
     for marker in ['-', '*', '+'] {
-        if let Some(rest) = trimmed.strip_prefix(marker) {
-            if rest.starts_with(' ') {
-                return rest.trim_start().to_owned();
-            }
+        if let Some(rest) = trimmed.strip_prefix(marker)
+            && rest.starts_with(' ')
+        {
+            return rest.trim_start().to_owned();
         }
     }
     // Ordered list marker `\d+. `.

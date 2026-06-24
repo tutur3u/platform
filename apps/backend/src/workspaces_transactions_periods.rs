@@ -685,10 +685,8 @@ fn parse_query(request_url: Option<&str>) -> PeriodsQuery {
         for (key, value) in url.query_pairs() {
             let value = value.into_owned();
             match key.as_ref() {
-                "viewMode" => {
-                    if !value.is_empty() {
-                        view_mode = value;
-                    }
+                "viewMode" if !value.is_empty() => {
+                    view_mode = value;
                 }
                 "cursor" => cursor = Some(value),
                 "limit" => {
@@ -705,10 +703,8 @@ fn parse_query(request_url: Option<&str>) -> PeriodsQuery {
                 "transactionType" => transaction_type = Some(value),
                 "start" => start_date = Some(value),
                 "end" => end_date = Some(value),
-                "timezone" => {
-                    if !value.is_empty() {
-                        timezone = value;
-                    }
+                "timezone" if !value.is_empty() => {
+                    timezone = value;
                 }
                 _ => {}
             }

@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
 };
@@ -453,14 +453,13 @@ async fn binding_state(
         ],
     ) {
         let response = service_role_get(contact_data, outbound, &url).await?;
-        if (200..300).contains(&response.status) {
-            if let Some(row) = response
+        if (200..300).contains(&response.status)
+            && let Some(row) = response
                 .json::<Vec<WorkspaceBindingRow>>()
                 .ok()
                 .and_then(|rows| rows.into_iter().next())
-            {
-                return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
-            }
+        {
+            return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
         }
     }
 

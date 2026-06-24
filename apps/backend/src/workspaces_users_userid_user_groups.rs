@@ -261,10 +261,10 @@ async fn fetch_session_dates(
 fn collect_group_ids(rows: &[Value]) -> Vec<String> {
     let mut ids: Vec<String> = Vec::new();
     for row in rows {
-        if let Some(id) = embedded_group_id(row) {
-            if !ids.iter().any(|existing| existing == &id) {
-                ids.push(id);
-            }
+        if let Some(id) = embedded_group_id(row)
+            && !ids.iter().any(|existing| existing == &id)
+        {
+            ids.push(id);
         }
     }
     ids
@@ -641,7 +641,7 @@ fn parse_timestamp(value: &str) -> Option<(i64, u32, u32, u32, u32, i64)> {
     let value = value.trim();
 
     // Split date and time on 'T' or a space.
-    let sep_idx = value.find(|c| c == 'T' || c == 't' || c == ' ')?;
+    let sep_idx = value.find(['T', 't', ' '])?;
     let date_part = &value[..sep_idx];
     let time_and_offset = &value[sep_idx + 1..];
 

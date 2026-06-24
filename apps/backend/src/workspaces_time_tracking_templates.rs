@@ -195,7 +195,7 @@ fn build_templates(sessions: Vec<RecentSessionRow>) -> Vec<TemplateOut> {
 
     // Stable sort by usage_count descending (preserves first-seen order on ties,
     // matching the JS Array.from(...).sort behavior for equal usage counts).
-    templates.sort_by(|a, b| b.usage_count.cmp(&a.usage_count));
+    templates.sort_by_key(|template| std::cmp::Reverse(template.usage_count));
     templates.truncate(5);
 
     templates

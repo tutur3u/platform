@@ -940,7 +940,7 @@ fn parse_iso_millis(value: &str) -> Option<i128> {
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     let days = era * 146097 + doe - 719468;
 
-    Some(((days * 86400 + hour * 3600 + minute * 60 + second) * 1000) as i128)
+    Some((days * 86400 + hour * 3600 + minute * 60 + second) * 1000)
 }
 
 fn current_time_millis() -> i128 {
@@ -1039,8 +1039,9 @@ fn supabase_access_token_from_cookie_header(cookie_header: &str) -> Option<Strin
 
     // Collect chunked `sb-*-auth-token[.N]` cookies into ordered groups.
     use std::collections::BTreeMap;
-    let mut groups: BTreeMap<String, (Option<String>, BTreeMap<usize, String>, bool)> =
-        BTreeMap::new();
+    type CookieChunkGroup = (Option<String>, BTreeMap<usize, String>, bool);
+    type CookieChunkGroups = BTreeMap<String, CookieChunkGroup>;
+    let mut groups: CookieChunkGroups = BTreeMap::new();
 
     for (name, value) in cookie_header
         .split(';')

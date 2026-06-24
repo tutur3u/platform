@@ -44,18 +44,6 @@ struct RoleMembershipRow {
     role_id: Option<String>,
 }
 
-#[derive(Deserialize)]
-struct WhitelistRow {
-    #[serde(default)]
-    wallet_id: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct WalletIdRow {
-    #[serde(default)]
-    id: Option<String>,
-}
-
 pub(crate) async fn handle_workspaces_wallets_walletid_credit_summary_route(
     config: &BackendConfig,
     request: BackendRequest<'_>,
@@ -241,10 +229,7 @@ async fn wallet_in_whitelist(
         return Err(());
     }
 
-    Ok(!response
-        .json::<Vec<WhitelistRow>>()
-        .map_err(|_| ())?
-        .is_empty())
+    Ok(!response.json::<Vec<Value>>().map_err(|_| ())?.is_empty())
 }
 
 async fn wallet_exists(
@@ -281,10 +266,7 @@ async fn wallet_exists(
         return Err(());
     }
 
-    Ok(!response
-        .json::<Vec<WalletIdRow>>()
-        .map_err(|_| ())?
-        .is_empty())
+    Ok(!response.json::<Vec<Value>>().map_err(|_| ())?.is_empty())
 }
 
 async fn fetch_credit_summary(

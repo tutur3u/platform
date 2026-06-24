@@ -201,10 +201,9 @@ async fn build_audit_logs(
             .as_deref()
             .map(str::trim)
             .filter(|id| !id.is_empty())
+            && !actor_ids.iter().any(|existing| existing == actor_id)
         {
-            if !actor_ids.iter().any(|existing| existing == actor_id) {
-                actor_ids.push(actor_id.to_owned());
-            }
+            actor_ids.push(actor_id.to_owned());
         }
     }
 
@@ -498,7 +497,7 @@ fn format_us_number(value: f64) -> String {
     let digits: Vec<char> = integer_string.chars().collect();
     let len = digits.len();
     for (index, digit) in digits.iter().enumerate() {
-        if index > 0 && (len - index) % 3 == 0 {
+        if index > 0 && (len - index).is_multiple_of(3) {
             grouped.push(',');
         }
         grouped.push(*digit);

@@ -510,21 +510,21 @@ fn parse_query_params(request_url: Option<&str>) -> Result<QueryParams, Vec<Valu
 
     // workspaceId: optional uuid (z.guid()).
     let workspace_id = get("workspaceId");
-    if let Some(ref ws) = workspace_id {
-        if !is_uuid(ws) {
-            errors.push(json!({ "field": "workspaceId", "message": "Invalid UUID" }));
-        }
+    if let Some(ref ws) = workspace_id
+        && !is_uuid(ws)
+    {
+        errors.push(json!({ "field": "workspaceId", "message": "Invalid UUID" }));
     }
 
     // channelId: optional, max 255.
     let channel_id = get("channelId");
-    if let Some(ref ch) = channel_id {
-        if ch.chars().count() > MAX_NAME_LENGTH {
-            errors.push(json!({
-                "field": "channelId",
-                "message": format!("String must contain at most {MAX_NAME_LENGTH} character(s)"),
-            }));
-        }
+    if let Some(ref ch) = channel_id
+        && ch.chars().count() > MAX_NAME_LENGTH
+    {
+        errors.push(json!({
+            "field": "channelId",
+            "message": format!("String must contain at most {MAX_NAME_LENGTH} character(s)"),
+        }));
     }
 
     // startDate: required ISO datetime.

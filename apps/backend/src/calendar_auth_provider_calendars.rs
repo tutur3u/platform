@@ -32,7 +32,7 @@
 //!   pattern), with an explicit `user_id = caller` filter to preserve the
 //!   RLS-equivalent scoping the legacy authenticated client relied on.
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
@@ -85,7 +85,7 @@ fn microsoft_color_hex(color: Option<&str>) -> &'static str {
         "lightBrown" => "#D2691E",
         "lightRed" => "#FF6347",
         // "auto" and "maxColor" both map to the default brand blue.
-        _ => "#0078D4",
+        _ => MICROSOFT_DEFAULT_BACKGROUND,
     }
 }
 

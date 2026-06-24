@@ -502,11 +502,11 @@ async fn fetch_members(
         ("ws_id", format!("eq.{ws_id}")),
         ("order", "pending.asc,created_at.desc,id.asc".to_owned()),
     ];
-    if let Some(status) = status {
-        if status != "all" {
-            let pending = status == "invited";
-            params.push(("pending", format!("eq.{pending}")));
-        }
+    if let Some(status) = status
+        && status != "all"
+    {
+        let pending = status == "invited";
+        params.push(("pending", format!("eq.{pending}")));
     }
 
     let Some(url) = contact_data.rest_url("workspace_members_and_invites", &params) else {
@@ -740,10 +740,10 @@ async fn fetch_profiles_by_email(
         }
     }
     for (email, profiles) in by_email {
-        if profiles.len() == 1 {
-            if let Some(profile) = profiles.into_iter().next() {
-                map.insert(email, profile);
-            }
+        if profiles.len() == 1
+            && let Some(profile) = profiles.into_iter().next()
+        {
+            map.insert(email, profile);
         }
     }
 

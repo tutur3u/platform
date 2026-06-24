@@ -671,13 +671,7 @@ fn value_to_number(value: Option<&Value>) -> f64 {
     match value {
         Some(Value::Number(number)) => number.as_f64().unwrap_or(0.0),
         Some(Value::String(text)) => text.trim().parse::<f64>().unwrap_or(0.0),
-        Some(Value::Bool(flag)) => {
-            if *flag {
-                1.0
-            } else {
-                0.0
-            }
-        }
+        Some(Value::Bool(flag)) if *flag => 1.0,
         _ => 0.0,
     }
 }

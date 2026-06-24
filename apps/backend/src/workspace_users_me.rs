@@ -268,10 +268,10 @@ fn data_response(row: LinkedUserRow) -> BackendResponse {
         "created_at": row.created_at,
     });
 
-    if let Some(workspace_users) = row.workspace_users.filter(|value| !value.is_null()) {
-        if let Some(object) = data.as_object_mut() {
-            object.insert("workspace_users".to_owned(), workspace_users);
-        }
+    if let Some(workspace_users) = row.workspace_users.filter(|value| !value.is_null())
+        && let Some(object) = data.as_object_mut()
+    {
+        object.insert("workspace_users".to_owned(), workspace_users);
     }
 
     no_store_response(json_response(200, json!({ "data": data })))

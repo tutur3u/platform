@@ -27,7 +27,7 @@
 //!      (500 `{ "error": "Failed to fetch recording transcripts" }`) and attach
 //!      each transcript (or `null`) to its session.
 //!   8. Return 200 `{ success: true, sessions: [ { ..., transcript } ] }`.
-//!   Any unexpected failure returns 500 `{ "error": "Internal server error" }`.
+//!      Any unexpected failure returns 500 `{ "error": "Internal server error" }`.
 //!
 //! Notes / assumptions:
 //!   - The legacy route relies on RLS via the caller's session for every read.
@@ -367,10 +367,10 @@ async fn distinct_recording_statuses(
     let rows = response.json::<Vec<StatusRow>>().map_err(|_| ())?;
     let mut statuses: Vec<String> = Vec::new();
     for row in rows {
-        if let Some(status) = row.status {
-            if !statuses.contains(&status) {
-                statuses.push(status);
-            }
+        if let Some(status) = row.status
+            && !statuses.contains(&status)
+        {
+            statuses.push(status);
         }
     }
     Ok(statuses)

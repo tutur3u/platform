@@ -634,16 +634,13 @@ async fn read_binding_state(
             ("ws_id", format!("eq.{ws_id}")),
             ("limit", "1".to_owned()),
         ],
-    ) {
-        if let Ok(response) = service_role_get(contact_data, outbound, &url).await {
-            if is_success(response.status) {
-                if let Ok(Some(row)) = decode_first_row::<BindingRow>(&response) {
-                    return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
-                }
-            }
-        }
-        // Any binding-table failure falls through to the secrets dual-read.
+    ) && let Ok(response) = service_role_get(contact_data, outbound, &url).await
+        && is_success(response.status)
+        && let Ok(Some(row)) = decode_first_row::<BindingRow>(&response)
+    {
+        return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
     }
+    // Any binding-table failure falls through to the secrets dual-read.
 
     let Some(url) = contact_data.rest_url(
         "workspace_secrets",

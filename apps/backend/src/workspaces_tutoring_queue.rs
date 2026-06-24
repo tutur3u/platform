@@ -479,20 +479,20 @@ fn build_queue_response(
     let filtered_queue: Vec<QueueItem> = full_queue
         .into_iter()
         .filter(|item| {
-            if let Some(reason_type) = &query.reason_type {
-                if &item.reason_type != reason_type {
-                    return false;
-                }
+            if let Some(reason_type) = &query.reason_type
+                && &item.reason_type != reason_type
+            {
+                return false;
             }
-            if let Some(group_id) = &query.group_id {
-                if &item.group_id != group_id {
-                    return false;
-                }
+            if let Some(group_id) = &query.group_id
+                && &item.group_id != group_id
+            {
+                return false;
             }
-            if let Some(student_user_id) = &query.student_user_id {
-                if &item.student_user_id != student_user_id {
-                    return false;
-                }
+            if let Some(student_user_id) = &query.student_user_id
+                && &item.student_user_id != student_user_id
+            {
+                return false;
             }
             if search_term.is_empty() {
                 return true;

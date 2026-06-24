@@ -253,10 +253,8 @@ async fn relationships_response(
         match relationship.relationship_type.as_deref() {
             Some("parent_child") => result.parent_task = Some(task_info),
             Some("blocks") => result.blocked_by.push(task_info),
-            Some("related") => {
-                if !result.related_tasks.iter().any(|t| t.id == task_info.id) {
-                    result.related_tasks.push(task_info);
-                }
+            Some("related") if !result.related_tasks.iter().any(|t| t.id == task_info.id) => {
+                result.related_tasks.push(task_info);
             }
             _ => {}
         }

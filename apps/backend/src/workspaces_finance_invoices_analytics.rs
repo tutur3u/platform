@@ -633,15 +633,15 @@ fn analytics_query_from_url(request_url: Option<&str>) -> Option<AnalyticsQuery>
     }
 
     // start/end: optional ISO datetime (with offset) or YYYY-MM-DD.
-    if let Some(value) = start.as_deref() {
-        if !is_valid_analytics_date(value) {
-            return None;
-        }
+    if let Some(value) = start.as_deref()
+        && !is_valid_analytics_date(value)
+    {
+        return None;
     }
-    if let Some(value) = end.as_deref() {
-        if !is_valid_analytics_date(value) {
-            return None;
-        }
+    if let Some(value) = end.as_deref()
+        && !is_valid_analytics_date(value)
+    {
+        return None;
     }
 
     // granularity: enum('daily','weekly','monthly') optional.

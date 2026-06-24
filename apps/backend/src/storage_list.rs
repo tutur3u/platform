@@ -186,19 +186,14 @@ async fn storage_list_response(
     };
 
     // 3. Permission gate: hasAnyPermission(['manage_drive']) (admin is wildcard).
-    let permissions = match resolve_permissions(
+    let permissions: Vec<String> = resolve_permissions(
         contact_data,
         outbound,
         &context.ws_id,
         context.role_id.as_deref(),
     )
     .await
-    {
-        Ok(permissions) => permissions,
-        // The legacy permission fetch ignores errors (defaults to empty), which
-        // collapses to INSUFFICIENT_PERMISSIONS. Preserve that fail-closed shape.
-        Err(()) => Vec::new(),
-    };
+    .unwrap_or_default();
     let has_access = permissions
         .iter()
         .any(|value| value == ADMIN_PERMISSION || value == MANAGE_DRIVE_PERMISSION);
@@ -362,7 +357,7 @@ fn parse_list_query(request_url: Option<&str>) -> Result<ListQuery, ()> {
         Some(raw) => coerce_int(&raw).ok_or(())?,
         None => DEFAULT_LIMIT,
     };
-    if limit_value < 1 || limit_value > MAX_SHORT_TEXT_LENGTH {
+    if !(1..=MAX_SHORT_TEXT_LENGTH).contains(&limit_value) {
         return Err(());
     }
 
@@ -960,8 +955,7 @@ fn iso8601_to_millis(value: &str) -> Option<i64> {
     let jdn = day + (153 * m + 2) / 5 + 365 * y + y / 4 - y / 100 + y / 400 - 32045;
     let days_since_epoch = jdn - 2440588;
 
-    let millis =
-        ((days_since_epoch * 86400 + hour * 3600 + minute * 60 + second) * 1000).max(i64::MIN);
+    let millis = (days_since_epoch * 86400 + hour * 3600 + minute * 60 + second) * 1000;
     Some(millis)
 }
 
@@ -984,7 +978,7 @@ fn parse_uint(bytes: &[u8]) -> Option<u64> {
 // ---------------------------------------------------------------------------
 
 fn hex_decode(input: &str) -> Option<Vec<u8>> {
-    if input.len() % 2 != 0 {
+    if !input.len().is_multiple_of(2) {
         return None;
     }
     let bytes = input.as_bytes();

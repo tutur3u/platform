@@ -65,11 +65,6 @@ struct WalletWhitelistWindowRow {
 }
 
 #[derive(Deserialize)]
-struct WalletWhitelistIdRow {
-    wallet_id: Option<String>,
-}
-
-#[derive(Deserialize)]
 struct SummaryWalletRow {
     id: Option<String>,
     name: Option<String>,
@@ -215,15 +210,12 @@ async fn history_response(
 
     match build_history(config, outbound, &authorization, limit).await {
         Ok(body) => no_store_response(json_response(200, body)),
-        Err(BuildError::StorageMissing) => no_store_response(json_response(200, empty_payload())),
         Err(BuildError::Checkpoints) => message_response(500, ERROR_FETCHING_CHECKPOINTS),
         Err(BuildError::Internal) => message_response(500, ERROR_FETCHING_HISTORY),
     }
 }
 
 enum BuildError {
-    /// Checkpoint storage / RPC missing -> empty 200 payload.
-    StorageMissing,
     /// Checkpoint table query failed -> 500 "Error fetching wallet checkpoints".
     Checkpoints,
     /// Any other failure -> 500 "Error fetching wallet checkpoint history".
@@ -411,10 +403,10 @@ async fn list_accessible_checkpoint_wallets(
         let mut seen: HashMap<String, ()> = HashMap::new();
         let mut ids = Vec::new();
         for row in &whitelist_rows {
-            if let Some(wallet_id) = row.wallet_id.as_ref() {
-                if seen.insert(wallet_id.clone(), ()).is_none() {
-                    ids.push(wallet_id.clone());
-                }
+            if let Some(wallet_id) = row.wallet_id.as_ref()
+                && seen.insert(wallet_id.clone(), ()).is_none()
+            {
+                ids.push(wallet_id.clone());
             }
         }
 
@@ -779,10 +771,11 @@ async fn list_wallet_audit_statuses(
 }
 
 fn normalize_audit_status_value(row: &AuditStatusRow) -> Value {
-    let status = match row.status.as_deref() {
-        Some(s @ ("clean" | "no_checkpoint" | "unresolved")) => s,
-        _ => "no_checkpoint",
-    };
+    let status = row
+        .status
+        .as_deref()
+        .filter(|status| matches!(*status, "clean" | "no_checkpoint" | "unresolved"))
+        .unwrap_or("no_checkpoint");
 
     json!({
         "audited_balance": to_number(&row.audited_balance),

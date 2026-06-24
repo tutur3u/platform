@@ -217,6 +217,15 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
+        '  bun run --filter @tuturuuu/supabase build && \\\n',
+        ''
+      )
+    ).join('\n'),
+    /@tuturuuu\/supabase build/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
         'bun run --filter @tuturuuu/internal-api build && \\\n',
         ''
       )

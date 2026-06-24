@@ -36,7 +36,7 @@
 //! (`sanitizePendingInvoiceAvatarRows`). It is reproduced here rather than
 //! shared, per the single-file constraint.
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{Value, json};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -276,6 +276,7 @@ async fn fetch_count(
     Ok(js_number_or_zero(&value))
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_rows(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
@@ -370,7 +371,7 @@ fn current_month_utc() -> String {
 ///   * array -> use entries as strings;
 ///   * comma-delimited string -> split + trim;
 ///   * otherwise -> empty.
-/// Returns true when `current_month` is present.
+///     Returns true when `current_month` is present.
 fn row_owes_current_month(row: &Value, current_month: &str) -> bool {
     match row.get("months_owed") {
         Some(Value::Array(items)) => items.iter().any(|item| {

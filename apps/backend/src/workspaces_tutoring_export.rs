@@ -92,15 +92,11 @@ struct ExportQuery {
     teacher_id: Option<String>,
 }
 
+#[derive(Default)]
 enum ExportMode {
+    #[default]
     Detailed,
     Payroll,
-}
-
-impl Default for ExportMode {
-    fn default() -> Self {
-        Self::Detailed
-    }
 }
 
 pub(crate) async fn handle_workspaces_tutoring_export_route(
@@ -468,12 +464,13 @@ fn name_of(user: Option<&UserRow>) -> String {
         return "N/A".to_owned();
     };
 
-    for candidate in [&user.full_name, &user.display_name, &user.email] {
-        if let Some(value) = candidate {
-            let trimmed = value.trim();
-            if !trimmed.is_empty() {
-                return trimmed.to_owned();
-            }
+    for value in [&user.full_name, &user.display_name, &user.email]
+        .into_iter()
+        .flatten()
+    {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return trimmed.to_owned();
         }
     }
 

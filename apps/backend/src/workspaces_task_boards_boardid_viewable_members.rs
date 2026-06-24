@@ -289,7 +289,7 @@ fn member_has_manage_projects(
         return true;
     }
 
-    let mut has = |permission: &str| {
+    let has = |permission: &str| {
         default_permissions.iter().any(|p| p == permission)
             || roles.iter().any(|role| {
                 role.permissions
@@ -538,12 +538,11 @@ async fn normalize_workspace_id(
 
     if !is_uuid_literal(&resolved) {
         let handle = raw_ws_id.trim().to_lowercase();
-        if is_workspace_handle(&handle) {
-            if let Some(workspace_id) =
+        if is_workspace_handle(&handle)
+            && let Some(workspace_id) =
                 workspace_id_by_handle(contact_data, outbound, &handle).await?
-            {
-                return Ok(workspace_id);
-            }
+        {
+            return Ok(workspace_id);
         }
     }
 

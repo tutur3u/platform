@@ -230,17 +230,17 @@ async fn resolve_tulearn_subject(
         .await
         .map_err(|()| TulearnError::Internal)?;
 
-    if student_id.is_none() {
-        if let Some(self_student) = self_student {
-            return Ok(TulearnSubject {
-                role: "student",
-                read_only: false,
-                ws_id,
-                student_platform_user_id: user_id.to_owned(),
-                student_workspace_user_id: self_student.workspace_user_id,
-                student_name: self_student.name,
-            });
-        }
+    if student_id.is_none()
+        && let Some(self_student) = self_student
+    {
+        return Ok(TulearnSubject {
+            role: "student",
+            read_only: false,
+            ws_id,
+            student_platform_user_id: user_id.to_owned(),
+            student_workspace_user_id: self_student.workspace_user_id,
+            student_name: self_student.name,
+        });
     }
 
     // Parent link lookup.
@@ -280,7 +280,6 @@ struct SelfStudent {
 
 #[derive(Deserialize)]
 struct WorkspaceUserRow {
-    id: Option<String>,
     full_name: Option<String>,
     display_name: Option<String>,
     email: Option<String>,
@@ -542,25 +541,23 @@ async fn get_learner_state(
     // has elapsed since `last_heart_refill_at`.
     let hearts = row.hearts.unwrap_or(0);
     let max_hearts = row.max_hearts.unwrap_or(0);
-    if hearts < max_hearts {
-        if let Some(last_refill_iso) = row.last_heart_refill_at.as_deref() {
-            if let Some(last_refill_ms) = parse_iso_millis(last_refill_iso) {
-                if last_refill_ms > 0 {
-                    let now_ms = now_millis();
-                    if now_ms - last_refill_ms >= HEART_REFILL_MS {
-                        return refill_hearts(
-                            contact_data,
-                            outbound,
-                            ws_id,
-                            user_id,
-                            hearts,
-                            max_hearts,
-                            last_refill_iso,
-                        )
-                        .await;
-                    }
-                }
-            }
+    if hearts < max_hearts
+        && let Some(last_refill_iso) = row.last_heart_refill_at.as_deref()
+        && let Some(last_refill_ms) = parse_iso_millis(last_refill_iso)
+        && last_refill_ms > 0
+    {
+        let now_ms = now_millis();
+        if now_ms - last_refill_ms >= HEART_REFILL_MS {
+            return refill_hearts(
+                contact_data,
+                outbound,
+                ws_id,
+                user_id,
+                hearts,
+                max_hearts,
+                last_refill_iso,
+            )
+            .await;
         }
     }
 

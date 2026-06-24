@@ -223,10 +223,10 @@ fn insert_if_present(
     key: &str,
     value: Option<&Value>,
 ) {
-    if let Some(value) = value {
-        if !value.is_null() {
-            object.insert(key.to_owned(), value.clone());
-        }
+    if let Some(value) = value
+        && !value.is_null()
+    {
+        object.insert(key.to_owned(), value.clone());
     }
 }
 

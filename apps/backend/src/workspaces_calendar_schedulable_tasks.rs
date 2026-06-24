@@ -842,18 +842,18 @@ fn parse_epoch_ms(value: &str) -> Result<f64, ()> {
     let tz = &rest[idx..];
     if tz == "Z" || tz == "z" || tz.is_empty() {
         offset_seconds = 0;
-    } else if let Some(sign_char) = tz.chars().next() {
-        if sign_char == '+' || sign_char == '-' {
-            let sign = if sign_char == '-' { -1 } else { 1 };
-            let digits: String = tz[1..].chars().filter(|c| c.is_ascii_digit()).collect();
-            if digits.len() >= 4 {
-                let oh: i64 = digits[0..2].parse().unwrap_or(0);
-                let om: i64 = digits[2..4].parse().unwrap_or(0);
-                offset_seconds = sign * (oh * 3600 + om * 60);
-            } else if digits.len() >= 2 {
-                let oh: i64 = digits[0..2].parse().unwrap_or(0);
-                offset_seconds = sign * oh * 3600;
-            }
+    } else if let Some(sign_char) = tz.chars().next()
+        && (sign_char == '+' || sign_char == '-')
+    {
+        let sign = if sign_char == '-' { -1 } else { 1 };
+        let digits: String = tz[1..].chars().filter(|c| c.is_ascii_digit()).collect();
+        if digits.len() >= 4 {
+            let oh: i64 = digits[0..2].parse().unwrap_or(0);
+            let om: i64 = digits[2..4].parse().unwrap_or(0);
+            offset_seconds = sign * (oh * 3600 + om * 60);
+        } else if digits.len() >= 2 {
+            let oh: i64 = digits[0..2].parse().unwrap_or(0);
+            offset_seconds = sign * oh * 3600;
         }
     }
 

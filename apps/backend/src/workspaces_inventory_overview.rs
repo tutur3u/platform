@@ -715,7 +715,7 @@ async fn fetch_dashboard_snapshot(
         return Err(());
     }
 
-    Ok(response.json::<Value>().map_err(|_| ())?)
+    response.json::<Value>().map_err(|_| ())
 }
 
 async fn fetch_low_stock_products(
@@ -750,7 +750,7 @@ async fn fetch_overview_metrics(
         return Err(());
     }
 
-    Ok(response.json::<Value>().map_err(|_| ())?)
+    response.json::<Value>().map_err(|_| ())
 }
 
 async fn inventory_realtime_enabled(

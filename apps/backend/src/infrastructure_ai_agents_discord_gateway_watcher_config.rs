@@ -274,13 +274,13 @@ fn parse_registry_row_name(name: &str) -> ParsedRow {
         },
         Some("channel") => {
             let channel_id = parts.get(3).copied().filter(|value| !value.is_empty());
-            if parts.get(4).copied() == Some("meta") {
-                if let Some(channel_id) = channel_id {
-                    return ParsedRow::ChannelMeta {
-                        agent_id: agent_id.to_owned(),
-                        channel_id: channel_id.to_owned(),
-                    };
-                }
+            if parts.get(4).copied() == Some("meta")
+                && let Some(channel_id) = channel_id
+            {
+                return ParsedRow::ChannelMeta {
+                    agent_id: agent_id.to_owned(),
+                    channel_id: channel_id.to_owned(),
+                };
             }
             ParsedRow::Other
         }
@@ -348,10 +348,10 @@ fn build_targets(rows: &[SecretRow], requested_channel_id: Option<&str>) -> Vec<
                 .as_deref()
                 .filter(|value| !value.is_empty());
 
-            if let Some(requested) = requested_channel_id {
-                if channel_id.as_str() != requested {
-                    continue;
-                }
+            if let Some(requested) = requested_channel_id
+                && channel_id.as_str() != requested
+            {
+                continue;
             }
 
             let passes = agent_enabled
