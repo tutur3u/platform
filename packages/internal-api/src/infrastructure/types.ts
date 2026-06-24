@@ -41,6 +41,13 @@ export type MobileDeploymentScalarName =
   | 'APP_STORE_CONNECT_ISSUER_ID';
 export type MobileDeploymentEnvKeyName = string;
 export type MobileDeploymentSecretKind = 'env' | 'scalar';
+export type InfrastructureJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | InfrastructureJsonValue[]
+  | { [key: string]: InfrastructureJsonValue };
 
 export interface SaveMobileDeploymentSecretPayload {
   kind: MobileDeploymentSecretKind;
@@ -96,7 +103,7 @@ export interface MobileDeploymentAuditEvent {
   createdAt: string;
   eventType: string;
   id: string;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, InfrastructureJsonValue>;
   resourceKind: string | null;
 }
 

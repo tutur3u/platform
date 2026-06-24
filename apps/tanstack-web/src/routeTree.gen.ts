@@ -138,6 +138,7 @@ import { Route as LocaleWsIdInfrastructureTimezonesRouteImport } from './routes/
 import { Route as LocaleWsIdInfrastructureRateLimitsRouteImport } from './routes/$locale/$wsId/infrastructure/rate-limits';
 import { Route as LocaleWsIdInfrastructurePostEmailQueueRouteImport } from './routes/$locale/$wsId/infrastructure/post-email-queue';
 import { Route as LocaleWsIdInfrastructureMobileVersionsRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-versions';
+import { Route as LocaleWsIdInfrastructureMobileDeploymentRouteImport } from './routes/$locale/$wsId/infrastructure/mobile-deployment';
 import { Route as LocaleWsIdInfrastructureHolidaysRouteImport } from './routes/$locale/$wsId/infrastructure/holidays';
 import { Route as LocaleWsIdInfrastructureExternalAppsRouteImport } from './routes/$locale/$wsId/infrastructure/external-apps';
 import { Route as LocaleWsIdInfrastructureEmailBlacklistRouteImport } from './routes/$locale/$wsId/infrastructure/email-blacklist';
@@ -890,6 +891,12 @@ const LocaleWsIdInfrastructureMobileVersionsRoute =
     path: '/$wsId/infrastructure/mobile-versions',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureMobileDeploymentRoute =
+  LocaleWsIdInfrastructureMobileDeploymentRouteImport.update({
+    id: '/$wsId/infrastructure/mobile-deployment',
+    path: '/$wsId/infrastructure/mobile-deployment',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureHolidaysRoute =
   LocaleWsIdInfrastructureHolidaysRouteImport.update({
     id: '/$wsId/infrastructure/holidays',
@@ -1398,6 +1405,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
+  '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
@@ -1593,6 +1601,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
+  '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
@@ -1790,6 +1799,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
+  '/$locale/$wsId/infrastructure/mobile-deployment': typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   '/$locale/$wsId/infrastructure/mobile-versions': typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   '/$locale/$wsId/infrastructure/post-email-queue': typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   '/$locale/$wsId/infrastructure/rate-limits': typeof LocaleWsIdInfrastructureRateLimitsRoute;
@@ -1988,6 +1998,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/email-blacklist'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/holidays'
+    | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
@@ -2183,6 +2194,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/email-blacklist'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/holidays'
+    | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
@@ -2379,6 +2391,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/email-blacklist'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/holidays'
+    | '/$locale/$wsId/infrastructure/mobile-deployment'
     | '/$locale/$wsId/infrastructure/mobile-versions'
     | '/$locale/$wsId/infrastructure/post-email-queue'
     | '/$locale/$wsId/infrastructure/rate-limits'
@@ -3376,6 +3389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureMobileVersionsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/mobile-deployment': {
+      id: '/$locale/$wsId/infrastructure/mobile-deployment';
+      path: '/$wsId/infrastructure/mobile-deployment';
+      fullPath: '/$locale/$wsId/infrastructure/mobile-deployment';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMobileDeploymentRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/holidays': {
       id: '/$locale/$wsId/infrastructure/holidays';
       path: '/$wsId/infrastructure/holidays';
@@ -4264,6 +4284,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInfrastructureEmailBlacklistRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
   LocaleWsIdInfrastructureExternalAppsRoute: typeof LocaleWsIdInfrastructureExternalAppsRoute;
   LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
+  LocaleWsIdInfrastructureMobileDeploymentRoute: typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
   LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
   LocaleWsIdInfrastructurePostEmailQueueRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
   LocaleWsIdInfrastructureRateLimitsRoute: typeof LocaleWsIdInfrastructureRateLimitsRoute;
@@ -4420,6 +4441,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdInfrastructureExternalAppsRoute:
     LocaleWsIdInfrastructureExternalAppsRoute,
   LocaleWsIdInfrastructureHolidaysRoute: LocaleWsIdInfrastructureHolidaysRoute,
+  LocaleWsIdInfrastructureMobileDeploymentRoute:
+    LocaleWsIdInfrastructureMobileDeploymentRoute,
   LocaleWsIdInfrastructureMobileVersionsRoute:
     LocaleWsIdInfrastructureMobileVersionsRoute,
   LocaleWsIdInfrastructurePostEmailQueueRoute:
