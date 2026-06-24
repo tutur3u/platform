@@ -1629,6 +1629,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/platform/external-projects preserves the legacy 307 redirect to the CMS internal admin route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "layout:/:locale/:wsId/infrastructure:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start parent route /$locale/$wsId/infrastructure now owns the legacy infrastructure layout gate by requiring an authenticated user, resolving the route workspace, requiring root view_infrastructure permission, and rendering an Outlet for migrated infrastructure children. The exact infrastructure analytics page and remaining infrastructure children stay separately tracked as legacy-next artifacts until their data loaders and APIs are migrated."
+    },
+    "layout:/:locale/:wsId/platform:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start parent route /$locale/$wsId/platform now owns the legacy platform settings layout gate by requiring an authenticated user, resolving the route workspace, requiring root view_infrastructure permission, and rendering an Outlet for migrated platform children. The platform billing and roles pages stay separately tracked as legacy-next artifacts until their data loaders, mutations, and APIs are migrated."
+    },
     "page:/:locale/:wsId/notifications:apps/web/src/app/[locale]/(dashboard)/[wsId]/notifications/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

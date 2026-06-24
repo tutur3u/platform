@@ -84,6 +84,7 @@ import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsI
 import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/progress';
 import { Route as LocaleWsIdPostsRouteImport } from './routes/$locale/$wsId/posts';
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls';
+import { Route as LocaleWsIdPlatformRouteImport } from './routes/$locale/$wsId/platform';
 import { Route as LocaleWsIdPipelinesRouteImport } from './routes/$locale/$wsId/pipelines';
 import { Route as LocaleWsIdNotificationsRouteImport } from './routes/$locale/$wsId/notifications';
 import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind';
@@ -93,6 +94,7 @@ import { Route as LocaleWsIdMemoriesRouteImport } from './routes/$locale/$wsId/m
 import { Route as LocaleWsIdMembersRouteImport } from './routes/$locale/$wsId/members';
 import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet';
 import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations';
+import { Route as LocaleWsIdInfrastructureRouteImport } from './routes/$locale/$wsId/infrastructure';
 import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive';
 import { Route as LocaleWsIdHabitsRouteImport } from './routes/$locale/$wsId/habits';
 import { Route as LocaleWsIdFinanceRouteImport } from './routes/$locale/$wsId/finance';
@@ -633,6 +635,11 @@ const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
   path: '/$wsId/polls',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdPlatformRoute = LocaleWsIdPlatformRouteImport.update({
+  id: '/$wsId/platform',
+  path: '/$wsId/platform',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleWsIdPipelinesRoute = LocaleWsIdPipelinesRouteImport.update({
   id: '/$wsId/pipelines',
   path: '/$wsId/pipelines',
@@ -678,6 +685,12 @@ const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
   path: '/$wsId/integrations',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdInfrastructureRoute =
+  LocaleWsIdInfrastructureRouteImport.update({
+    id: '/$wsId/infrastructure',
+    path: '/$wsId/infrastructure',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdHiveRoute = LocaleWsIdHiveRouteImport.update({
   id: '/$wsId/hive',
   path: '/$wsId/hive',
@@ -913,9 +926,9 @@ const LocaleWsIdSettingsNotificationsRoute =
   } as any);
 const LocaleWsIdPlatformExternalProjectsRoute =
   LocaleWsIdPlatformExternalProjectsRouteImport.update({
-    id: '/$wsId/platform/external-projects',
-    path: '/$wsId/platform/external-projects',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/external-projects',
+    path: '/external-projects',
+    getParentRoute: () => LocaleWsIdPlatformRoute,
   } as any);
 const LocaleWsIdMeetPlansRoute = LocaleWsIdMeetPlansRouteImport.update({
   id: '/plans',
@@ -988,117 +1001,117 @@ const LocaleWsIdInventoryBatchesRoute =
   } as any);
 const LocaleWsIdInfrastructureTranslationsRoute =
   LocaleWsIdInfrastructureTranslationsRouteImport.update({
-    id: '/$wsId/infrastructure/translations',
-    path: '/$wsId/infrastructure/translations',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/translations',
+    path: '/translations',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureTimezonesRoute =
   LocaleWsIdInfrastructureTimezonesRouteImport.update({
-    id: '/$wsId/infrastructure/timezones',
-    path: '/$wsId/infrastructure/timezones',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/timezones',
+    path: '/timezones',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureRealtimeRoute =
   LocaleWsIdInfrastructureRealtimeRouteImport.update({
-    id: '/$wsId/infrastructure/realtime',
-    path: '/$wsId/infrastructure/realtime',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/realtime',
+    path: '/realtime',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureRateLimitsRoute =
   LocaleWsIdInfrastructureRateLimitsRouteImport.update({
-    id: '/$wsId/infrastructure/rate-limits',
-    path: '/$wsId/infrastructure/rate-limits',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/rate-limits',
+    path: '/rate-limits',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructurePostEmailQueueRoute =
   LocaleWsIdInfrastructurePostEmailQueueRouteImport.update({
-    id: '/$wsId/infrastructure/post-email-queue',
-    path: '/$wsId/infrastructure/post-email-queue',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/post-email-queue',
+    path: '/post-email-queue',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureMonitoringRoute =
   LocaleWsIdInfrastructureMonitoringRouteImport.update({
-    id: '/$wsId/infrastructure/monitoring',
-    path: '/$wsId/infrastructure/monitoring',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/monitoring',
+    path: '/monitoring',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureMobileVersionsRoute =
   LocaleWsIdInfrastructureMobileVersionsRouteImport.update({
-    id: '/$wsId/infrastructure/mobile-versions',
-    path: '/$wsId/infrastructure/mobile-versions',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/mobile-versions',
+    path: '/mobile-versions',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureMobileDeploymentRoute =
   LocaleWsIdInfrastructureMobileDeploymentRouteImport.update({
-    id: '/$wsId/infrastructure/mobile-deployment',
-    path: '/$wsId/infrastructure/mobile-deployment',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/mobile-deployment',
+    path: '/mobile-deployment',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureHolidaysRoute =
   LocaleWsIdInfrastructureHolidaysRouteImport.update({
-    id: '/$wsId/infrastructure/holidays',
-    path: '/$wsId/infrastructure/holidays',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/holidays',
+    path: '/holidays',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureGithubBotRoute =
   LocaleWsIdInfrastructureGithubBotRouteImport.update({
-    id: '/$wsId/infrastructure/github-bot',
-    path: '/$wsId/infrastructure/github-bot',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/github-bot',
+    path: '/github-bot',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureExternalAppsRoute =
   LocaleWsIdInfrastructureExternalAppsRouteImport.update({
-    id: '/$wsId/infrastructure/external-apps',
-    path: '/$wsId/infrastructure/external-apps',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/external-apps',
+    path: '/external-apps',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureEmailTemplatesRoute =
   LocaleWsIdInfrastructureEmailTemplatesRouteImport.update({
-    id: '/$wsId/infrastructure/email-templates',
-    path: '/$wsId/infrastructure/email-templates',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/email-templates',
+    path: '/email-templates',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureEmailBlacklistRoute =
   LocaleWsIdInfrastructureEmailBlacklistRouteImport.update({
-    id: '/$wsId/infrastructure/email-blacklist',
-    path: '/$wsId/infrastructure/email-blacklist',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/email-blacklist',
+    path: '/email-blacklist',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureChangelogRoute =
   LocaleWsIdInfrastructureChangelogRouteImport.update({
-    id: '/$wsId/infrastructure/changelog',
-    path: '/$wsId/infrastructure/changelog',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/changelog',
+    path: '/changelog',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureBlockedIpsRoute =
   LocaleWsIdInfrastructureBlockedIpsRouteImport.update({
-    id: '/$wsId/infrastructure/blocked-ips',
-    path: '/$wsId/infrastructure/blocked-ips',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/blocked-ips',
+    path: '/blocked-ips',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureAppCoordinationRoute =
   LocaleWsIdInfrastructureAppCoordinationRouteImport.update({
-    id: '/$wsId/infrastructure/app-coordination',
-    path: '/$wsId/infrastructure/app-coordination',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/app-coordination',
+    path: '/app-coordination',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureAiAgentsRoute =
   LocaleWsIdInfrastructureAiAgentsRouteImport.update({
-    id: '/$wsId/infrastructure/ai-agents',
-    path: '/$wsId/infrastructure/ai-agents',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/ai-agents',
+    path: '/ai-agents',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureAbuseIntelligenceRoute =
   LocaleWsIdInfrastructureAbuseIntelligenceRouteImport.update({
-    id: '/$wsId/infrastructure/abuse-intelligence',
-    path: '/$wsId/infrastructure/abuse-intelligence',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/abuse-intelligence',
+    path: '/abuse-intelligence',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureAbuseEventsRoute =
   LocaleWsIdInfrastructureAbuseEventsRouteImport.update({
-    id: '/$wsId/infrastructure/abuse-events',
-    path: '/$wsId/infrastructure/abuse-events',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/abuse-events',
+    path: '/abuse-events',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdHiveNotWhitelistedRoute =
   LocaleWsIdHiveNotWhitelistedRouteImport.update({
@@ -1500,15 +1513,15 @@ const LocaleWsIdUsersGroupsGroupIdRequestsRoute =
   } as any);
 const LocaleWsIdInfrastructureAiWhitelistEmailsRoute =
   LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport.update({
-    id: '/$wsId/infrastructure/ai/whitelist/emails',
-    path: '/$wsId/infrastructure/ai/whitelist/emails',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/ai/whitelist/emails',
+    path: '/ai/whitelist/emails',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdInfrastructureAiWhitelistDomainsRoute =
   LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport.update({
-    id: '/$wsId/infrastructure/ai/whitelist/domains',
-    path: '/$wsId/infrastructure/ai/whitelist/domains',
-    getParentRoute: () => LocaleRouteRoute,
+    id: '/ai/whitelist/domains',
+    path: '/ai/whitelist/domains',
+    getParentRoute: () => LocaleWsIdInfrastructureRoute,
   } as any);
 const LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute =
   LocaleWsIdEducationQuizSetsSetIdLinkedModulesRouteImport.update({
@@ -1608,6 +1621,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
   '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
+  '/$locale/$wsId/infrastructure': typeof LocaleWsIdInfrastructureRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
   '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
@@ -1617,6 +1631,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
   '/$locale/$wsId/notifications': typeof LocaleWsIdNotificationsRoute;
   '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
+  '/$locale/$wsId/platform': typeof LocaleWsIdPlatformRouteWithChildren;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
   '/$locale/$wsId/posts': typeof LocaleWsIdPostsRoute;
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute;
@@ -1844,6 +1859,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
   '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
+  '/$locale/$wsId/infrastructure': typeof LocaleWsIdInfrastructureRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
   '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
@@ -1853,6 +1869,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
   '/$locale/$wsId/notifications': typeof LocaleWsIdNotificationsRoute;
   '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
+  '/$locale/$wsId/platform': typeof LocaleWsIdPlatformRouteWithChildren;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
   '/$locale/$wsId/posts': typeof LocaleWsIdPostsRoute;
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute;
@@ -2081,6 +2098,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
   '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
+  '/$locale/$wsId/infrastructure': typeof LocaleWsIdInfrastructureRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
   '/$locale/$wsId/meet': typeof LocaleWsIdMeetRouteWithChildren;
   '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
@@ -2090,6 +2108,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
   '/$locale/$wsId/notifications': typeof LocaleWsIdNotificationsRoute;
   '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
+  '/$locale/$wsId/platform': typeof LocaleWsIdPlatformRouteWithChildren;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
   '/$locale/$wsId/posts': typeof LocaleWsIdPostsRoute;
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute;
@@ -2320,6 +2339,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance'
     | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
+    | '/$locale/$wsId/infrastructure'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/members'
@@ -2329,6 +2349,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/mind'
     | '/$locale/$wsId/notifications'
     | '/$locale/$wsId/pipelines'
+    | '/$locale/$wsId/platform'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/posts'
     | '/$locale/$wsId/progress'
@@ -2556,6 +2577,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance'
     | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
+    | '/$locale/$wsId/infrastructure'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/members'
@@ -2565,6 +2587,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/mind'
     | '/$locale/$wsId/notifications'
     | '/$locale/$wsId/pipelines'
+    | '/$locale/$wsId/platform'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/posts'
     | '/$locale/$wsId/progress'
@@ -2792,6 +2815,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance'
     | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
+    | '/$locale/$wsId/infrastructure'
     | '/$locale/$wsId/integrations'
     | '/$locale/$wsId/meet'
     | '/$locale/$wsId/members'
@@ -2801,6 +2825,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/mind'
     | '/$locale/$wsId/notifications'
     | '/$locale/$wsId/pipelines'
+    | '/$locale/$wsId/platform'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/posts'
     | '/$locale/$wsId/progress'
@@ -3519,6 +3544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdPollsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/platform': {
+      id: '/$locale/$wsId/platform';
+      path: '/$wsId/platform';
+      fullPath: '/$locale/$wsId/platform';
+      preLoaderRoute: typeof LocaleWsIdPlatformRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/pipelines': {
       id: '/$locale/$wsId/pipelines';
       path: '/$wsId/pipelines';
@@ -3580,6 +3612,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/integrations';
       fullPath: '/$locale/$wsId/integrations';
       preLoaderRoute: typeof LocaleWsIdIntegrationsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/infrastructure': {
+      id: '/$locale/$wsId/infrastructure';
+      path: '/$wsId/infrastructure';
+      fullPath: '/$locale/$wsId/infrastructure';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/hive': {
@@ -3885,10 +3924,10 @@ declare module '@tanstack/react-router' {
     };
     '/$locale/$wsId/platform/external-projects': {
       id: '/$locale/$wsId/platform/external-projects';
-      path: '/$wsId/platform/external-projects';
+      path: '/external-projects';
       fullPath: '/$locale/$wsId/platform/external-projects';
       preLoaderRoute: typeof LocaleWsIdPlatformExternalProjectsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdPlatformRoute;
     };
     '/$locale/$wsId/meet/plans': {
       id: '/$locale/$wsId/meet/plans';
@@ -3976,136 +4015,136 @@ declare module '@tanstack/react-router' {
     };
     '/$locale/$wsId/infrastructure/translations': {
       id: '/$locale/$wsId/infrastructure/translations';
-      path: '/$wsId/infrastructure/translations';
+      path: '/translations';
       fullPath: '/$locale/$wsId/infrastructure/translations';
       preLoaderRoute: typeof LocaleWsIdInfrastructureTranslationsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/timezones': {
       id: '/$locale/$wsId/infrastructure/timezones';
-      path: '/$wsId/infrastructure/timezones';
+      path: '/timezones';
       fullPath: '/$locale/$wsId/infrastructure/timezones';
       preLoaderRoute: typeof LocaleWsIdInfrastructureTimezonesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/realtime': {
       id: '/$locale/$wsId/infrastructure/realtime';
-      path: '/$wsId/infrastructure/realtime';
+      path: '/realtime';
       fullPath: '/$locale/$wsId/infrastructure/realtime';
       preLoaderRoute: typeof LocaleWsIdInfrastructureRealtimeRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/rate-limits': {
       id: '/$locale/$wsId/infrastructure/rate-limits';
-      path: '/$wsId/infrastructure/rate-limits';
+      path: '/rate-limits';
       fullPath: '/$locale/$wsId/infrastructure/rate-limits';
       preLoaderRoute: typeof LocaleWsIdInfrastructureRateLimitsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/post-email-queue': {
       id: '/$locale/$wsId/infrastructure/post-email-queue';
-      path: '/$wsId/infrastructure/post-email-queue';
+      path: '/post-email-queue';
       fullPath: '/$locale/$wsId/infrastructure/post-email-queue';
       preLoaderRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/monitoring': {
       id: '/$locale/$wsId/infrastructure/monitoring';
-      path: '/$wsId/infrastructure/monitoring';
+      path: '/monitoring';
       fullPath: '/$locale/$wsId/infrastructure/monitoring';
       preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/mobile-versions': {
       id: '/$locale/$wsId/infrastructure/mobile-versions';
-      path: '/$wsId/infrastructure/mobile-versions';
+      path: '/mobile-versions';
       fullPath: '/$locale/$wsId/infrastructure/mobile-versions';
       preLoaderRoute: typeof LocaleWsIdInfrastructureMobileVersionsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/mobile-deployment': {
       id: '/$locale/$wsId/infrastructure/mobile-deployment';
-      path: '/$wsId/infrastructure/mobile-deployment';
+      path: '/mobile-deployment';
       fullPath: '/$locale/$wsId/infrastructure/mobile-deployment';
       preLoaderRoute: typeof LocaleWsIdInfrastructureMobileDeploymentRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/holidays': {
       id: '/$locale/$wsId/infrastructure/holidays';
-      path: '/$wsId/infrastructure/holidays';
+      path: '/holidays';
       fullPath: '/$locale/$wsId/infrastructure/holidays';
       preLoaderRoute: typeof LocaleWsIdInfrastructureHolidaysRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/github-bot': {
       id: '/$locale/$wsId/infrastructure/github-bot';
-      path: '/$wsId/infrastructure/github-bot';
+      path: '/github-bot';
       fullPath: '/$locale/$wsId/infrastructure/github-bot';
       preLoaderRoute: typeof LocaleWsIdInfrastructureGithubBotRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/external-apps': {
       id: '/$locale/$wsId/infrastructure/external-apps';
-      path: '/$wsId/infrastructure/external-apps';
+      path: '/external-apps';
       fullPath: '/$locale/$wsId/infrastructure/external-apps';
       preLoaderRoute: typeof LocaleWsIdInfrastructureExternalAppsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/email-templates': {
       id: '/$locale/$wsId/infrastructure/email-templates';
-      path: '/$wsId/infrastructure/email-templates';
+      path: '/email-templates';
       fullPath: '/$locale/$wsId/infrastructure/email-templates';
       preLoaderRoute: typeof LocaleWsIdInfrastructureEmailTemplatesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/email-blacklist': {
       id: '/$locale/$wsId/infrastructure/email-blacklist';
-      path: '/$wsId/infrastructure/email-blacklist';
+      path: '/email-blacklist';
       fullPath: '/$locale/$wsId/infrastructure/email-blacklist';
       preLoaderRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/changelog': {
       id: '/$locale/$wsId/infrastructure/changelog';
-      path: '/$wsId/infrastructure/changelog';
+      path: '/changelog';
       fullPath: '/$locale/$wsId/infrastructure/changelog';
       preLoaderRoute: typeof LocaleWsIdInfrastructureChangelogRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/blocked-ips': {
       id: '/$locale/$wsId/infrastructure/blocked-ips';
-      path: '/$wsId/infrastructure/blocked-ips';
+      path: '/blocked-ips';
       fullPath: '/$locale/$wsId/infrastructure/blocked-ips';
       preLoaderRoute: typeof LocaleWsIdInfrastructureBlockedIpsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/app-coordination': {
       id: '/$locale/$wsId/infrastructure/app-coordination';
-      path: '/$wsId/infrastructure/app-coordination';
+      path: '/app-coordination';
       fullPath: '/$locale/$wsId/infrastructure/app-coordination';
       preLoaderRoute: typeof LocaleWsIdInfrastructureAppCoordinationRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/ai-agents': {
       id: '/$locale/$wsId/infrastructure/ai-agents';
-      path: '/$wsId/infrastructure/ai-agents';
+      path: '/ai-agents';
       fullPath: '/$locale/$wsId/infrastructure/ai-agents';
       preLoaderRoute: typeof LocaleWsIdInfrastructureAiAgentsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/abuse-intelligence': {
       id: '/$locale/$wsId/infrastructure/abuse-intelligence';
-      path: '/$wsId/infrastructure/abuse-intelligence';
+      path: '/abuse-intelligence';
       fullPath: '/$locale/$wsId/infrastructure/abuse-intelligence';
       preLoaderRoute: typeof LocaleWsIdInfrastructureAbuseIntelligenceRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/abuse-events': {
       id: '/$locale/$wsId/infrastructure/abuse-events';
-      path: '/$wsId/infrastructure/abuse-events';
+      path: '/abuse-events';
       fullPath: '/$locale/$wsId/infrastructure/abuse-events';
       preLoaderRoute: typeof LocaleWsIdInfrastructureAbuseEventsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/hive/not-whitelisted': {
       id: '/$locale/$wsId/hive/not-whitelisted';
@@ -4578,17 +4617,17 @@ declare module '@tanstack/react-router' {
     };
     '/$locale/$wsId/infrastructure/ai/whitelist/emails': {
       id: '/$locale/$wsId/infrastructure/ai/whitelist/emails';
-      path: '/$wsId/infrastructure/ai/whitelist/emails';
+      path: '/ai/whitelist/emails';
       fullPath: '/$locale/$wsId/infrastructure/ai/whitelist/emails';
       preLoaderRoute: typeof LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/infrastructure/ai/whitelist/domains': {
       id: '/$locale/$wsId/infrastructure/ai/whitelist/domains';
-      path: '/$wsId/infrastructure/ai/whitelist/domains';
+      path: '/ai/whitelist/domains';
       fullPath: '/$locale/$wsId/infrastructure/ai/whitelist/domains';
       preLoaderRoute: typeof LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      parentRoute: typeof LocaleWsIdInfrastructureRoute;
     };
     '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': {
       id: '/$locale/$wsId/education/quiz-sets/$setId/linked-modules';
@@ -4838,81 +4877,6 @@ const LocaleWsIdHiveRouteWithChildren = LocaleWsIdHiveRoute._addFileChildren(
   LocaleWsIdHiveRouteChildren,
 );
 
-interface LocaleWsIdMeetMeetingsRouteChildren {
-  LocaleWsIdMeetMeetingsMeetingIdRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
-}
-
-const LocaleWsIdMeetMeetingsRouteChildren: LocaleWsIdMeetMeetingsRouteChildren =
-  {
-    LocaleWsIdMeetMeetingsMeetingIdRoute: LocaleWsIdMeetMeetingsMeetingIdRoute,
-  };
-
-const LocaleWsIdMeetMeetingsRouteWithChildren =
-  LocaleWsIdMeetMeetingsRoute._addFileChildren(
-    LocaleWsIdMeetMeetingsRouteChildren,
-  );
-
-interface LocaleWsIdMeetRouteChildren {
-  LocaleWsIdMeetMeetingsRoute: typeof LocaleWsIdMeetMeetingsRouteWithChildren;
-  LocaleWsIdMeetPlansRoute: typeof LocaleWsIdMeetPlansRoute;
-}
-
-const LocaleWsIdMeetRouteChildren: LocaleWsIdMeetRouteChildren = {
-  LocaleWsIdMeetMeetingsRoute: LocaleWsIdMeetMeetingsRouteWithChildren,
-  LocaleWsIdMeetPlansRoute: LocaleWsIdMeetPlansRoute,
-};
-
-const LocaleWsIdMeetRouteWithChildren = LocaleWsIdMeetRoute._addFileChildren(
-  LocaleWsIdMeetRouteChildren,
-);
-
-interface LocaleWsIdMindRouteChildren {
-  LocaleWsIdMindBoardsBoardIdRoute: typeof LocaleWsIdMindBoardsBoardIdRoute;
-}
-
-const LocaleWsIdMindRouteChildren: LocaleWsIdMindRouteChildren = {
-  LocaleWsIdMindBoardsBoardIdRoute: LocaleWsIdMindBoardsBoardIdRoute,
-};
-
-const LocaleWsIdMindRouteWithChildren = LocaleWsIdMindRoute._addFileChildren(
-  LocaleWsIdMindRouteChildren,
-);
-
-interface LocaleCalendarMeetTogetherRouteChildren {
-  LocaleCalendarMeetTogetherSplatRoute: typeof LocaleCalendarMeetTogetherSplatRoute;
-}
-
-const LocaleCalendarMeetTogetherRouteChildren: LocaleCalendarMeetTogetherRouteChildren =
-  {
-    LocaleCalendarMeetTogetherSplatRoute: LocaleCalendarMeetTogetherSplatRoute,
-  };
-
-const LocaleCalendarMeetTogetherRouteWithChildren =
-  LocaleCalendarMeetTogetherRoute._addFileChildren(
-    LocaleCalendarMeetTogetherRouteChildren,
-  );
-
-interface LocaleWsIdEducationLibraryRouteChildren {
-  LocaleWsIdEducationLibraryFlashcardsRoute: typeof LocaleWsIdEducationLibraryFlashcardsRoute;
-  LocaleWsIdEducationLibraryQuizSetsRoute: typeof LocaleWsIdEducationLibraryQuizSetsRoute;
-  LocaleWsIdEducationLibraryQuizzesRoute: typeof LocaleWsIdEducationLibraryQuizzesRoute;
-}
-
-const LocaleWsIdEducationLibraryRouteChildren: LocaleWsIdEducationLibraryRouteChildren =
-  {
-    LocaleWsIdEducationLibraryFlashcardsRoute:
-      LocaleWsIdEducationLibraryFlashcardsRoute,
-    LocaleWsIdEducationLibraryQuizSetsRoute:
-      LocaleWsIdEducationLibraryQuizSetsRoute,
-    LocaleWsIdEducationLibraryQuizzesRoute:
-      LocaleWsIdEducationLibraryQuizzesRoute,
-  };
-
-const LocaleWsIdEducationLibraryRouteWithChildren =
-  LocaleWsIdEducationLibraryRoute._addFileChildren(
-    LocaleWsIdEducationLibraryRouteChildren,
-  );
-
 interface LocaleWsIdInfrastructureMonitoringRouteChildren {
   LocaleWsIdInfrastructureMonitoringAnalyticsRoute: typeof LocaleWsIdInfrastructureMonitoringAnalyticsRoute;
   LocaleWsIdInfrastructureMonitoringCronRoute: typeof LocaleWsIdInfrastructureMonitoringCronRoute;
@@ -4959,6 +4923,168 @@ const LocaleWsIdInfrastructureMonitoringRouteChildren: LocaleWsIdInfrastructureM
 const LocaleWsIdInfrastructureMonitoringRouteWithChildren =
   LocaleWsIdInfrastructureMonitoringRoute._addFileChildren(
     LocaleWsIdInfrastructureMonitoringRouteChildren,
+  );
+
+interface LocaleWsIdInfrastructureRouteChildren {
+  LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
+  LocaleWsIdInfrastructureAbuseIntelligenceRoute: typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
+  LocaleWsIdInfrastructureAiAgentsRoute: typeof LocaleWsIdInfrastructureAiAgentsRoute;
+  LocaleWsIdInfrastructureAppCoordinationRoute: typeof LocaleWsIdInfrastructureAppCoordinationRoute;
+  LocaleWsIdInfrastructureBlockedIpsRoute: typeof LocaleWsIdInfrastructureBlockedIpsRoute;
+  LocaleWsIdInfrastructureChangelogRoute: typeof LocaleWsIdInfrastructureChangelogRoute;
+  LocaleWsIdInfrastructureEmailBlacklistRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  LocaleWsIdInfrastructureEmailTemplatesRoute: typeof LocaleWsIdInfrastructureEmailTemplatesRoute;
+  LocaleWsIdInfrastructureExternalAppsRoute: typeof LocaleWsIdInfrastructureExternalAppsRoute;
+  LocaleWsIdInfrastructureGithubBotRoute: typeof LocaleWsIdInfrastructureGithubBotRoute;
+  LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
+  LocaleWsIdInfrastructureMobileDeploymentRoute: typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
+  LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
+  LocaleWsIdInfrastructureMonitoringRoute: typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
+  LocaleWsIdInfrastructurePostEmailQueueRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
+  LocaleWsIdInfrastructureRateLimitsRoute: typeof LocaleWsIdInfrastructureRateLimitsRoute;
+  LocaleWsIdInfrastructureRealtimeRoute: typeof LocaleWsIdInfrastructureRealtimeRoute;
+  LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
+  LocaleWsIdInfrastructureTranslationsRoute: typeof LocaleWsIdInfrastructureTranslationsRoute;
+  LocaleWsIdInfrastructureAiWhitelistDomainsRoute: typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
+  LocaleWsIdInfrastructureAiWhitelistEmailsRoute: typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
+}
+
+const LocaleWsIdInfrastructureRouteChildren: LocaleWsIdInfrastructureRouteChildren =
+  {
+    LocaleWsIdInfrastructureAbuseEventsRoute:
+      LocaleWsIdInfrastructureAbuseEventsRoute,
+    LocaleWsIdInfrastructureAbuseIntelligenceRoute:
+      LocaleWsIdInfrastructureAbuseIntelligenceRoute,
+    LocaleWsIdInfrastructureAiAgentsRoute:
+      LocaleWsIdInfrastructureAiAgentsRoute,
+    LocaleWsIdInfrastructureAppCoordinationRoute:
+      LocaleWsIdInfrastructureAppCoordinationRoute,
+    LocaleWsIdInfrastructureBlockedIpsRoute:
+      LocaleWsIdInfrastructureBlockedIpsRoute,
+    LocaleWsIdInfrastructureChangelogRoute:
+      LocaleWsIdInfrastructureChangelogRoute,
+    LocaleWsIdInfrastructureEmailBlacklistRoute:
+      LocaleWsIdInfrastructureEmailBlacklistRoute,
+    LocaleWsIdInfrastructureEmailTemplatesRoute:
+      LocaleWsIdInfrastructureEmailTemplatesRoute,
+    LocaleWsIdInfrastructureExternalAppsRoute:
+      LocaleWsIdInfrastructureExternalAppsRoute,
+    LocaleWsIdInfrastructureGithubBotRoute:
+      LocaleWsIdInfrastructureGithubBotRoute,
+    LocaleWsIdInfrastructureHolidaysRoute:
+      LocaleWsIdInfrastructureHolidaysRoute,
+    LocaleWsIdInfrastructureMobileDeploymentRoute:
+      LocaleWsIdInfrastructureMobileDeploymentRoute,
+    LocaleWsIdInfrastructureMobileVersionsRoute:
+      LocaleWsIdInfrastructureMobileVersionsRoute,
+    LocaleWsIdInfrastructureMonitoringRoute:
+      LocaleWsIdInfrastructureMonitoringRouteWithChildren,
+    LocaleWsIdInfrastructurePostEmailQueueRoute:
+      LocaleWsIdInfrastructurePostEmailQueueRoute,
+    LocaleWsIdInfrastructureRateLimitsRoute:
+      LocaleWsIdInfrastructureRateLimitsRoute,
+    LocaleWsIdInfrastructureRealtimeRoute:
+      LocaleWsIdInfrastructureRealtimeRoute,
+    LocaleWsIdInfrastructureTimezonesRoute:
+      LocaleWsIdInfrastructureTimezonesRoute,
+    LocaleWsIdInfrastructureTranslationsRoute:
+      LocaleWsIdInfrastructureTranslationsRoute,
+    LocaleWsIdInfrastructureAiWhitelistDomainsRoute:
+      LocaleWsIdInfrastructureAiWhitelistDomainsRoute,
+    LocaleWsIdInfrastructureAiWhitelistEmailsRoute:
+      LocaleWsIdInfrastructureAiWhitelistEmailsRoute,
+  };
+
+const LocaleWsIdInfrastructureRouteWithChildren =
+  LocaleWsIdInfrastructureRoute._addFileChildren(
+    LocaleWsIdInfrastructureRouteChildren,
+  );
+
+interface LocaleWsIdMeetMeetingsRouteChildren {
+  LocaleWsIdMeetMeetingsMeetingIdRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
+}
+
+const LocaleWsIdMeetMeetingsRouteChildren: LocaleWsIdMeetMeetingsRouteChildren =
+  {
+    LocaleWsIdMeetMeetingsMeetingIdRoute: LocaleWsIdMeetMeetingsMeetingIdRoute,
+  };
+
+const LocaleWsIdMeetMeetingsRouteWithChildren =
+  LocaleWsIdMeetMeetingsRoute._addFileChildren(
+    LocaleWsIdMeetMeetingsRouteChildren,
+  );
+
+interface LocaleWsIdMeetRouteChildren {
+  LocaleWsIdMeetMeetingsRoute: typeof LocaleWsIdMeetMeetingsRouteWithChildren;
+  LocaleWsIdMeetPlansRoute: typeof LocaleWsIdMeetPlansRoute;
+}
+
+const LocaleWsIdMeetRouteChildren: LocaleWsIdMeetRouteChildren = {
+  LocaleWsIdMeetMeetingsRoute: LocaleWsIdMeetMeetingsRouteWithChildren,
+  LocaleWsIdMeetPlansRoute: LocaleWsIdMeetPlansRoute,
+};
+
+const LocaleWsIdMeetRouteWithChildren = LocaleWsIdMeetRoute._addFileChildren(
+  LocaleWsIdMeetRouteChildren,
+);
+
+interface LocaleWsIdMindRouteChildren {
+  LocaleWsIdMindBoardsBoardIdRoute: typeof LocaleWsIdMindBoardsBoardIdRoute;
+}
+
+const LocaleWsIdMindRouteChildren: LocaleWsIdMindRouteChildren = {
+  LocaleWsIdMindBoardsBoardIdRoute: LocaleWsIdMindBoardsBoardIdRoute,
+};
+
+const LocaleWsIdMindRouteWithChildren = LocaleWsIdMindRoute._addFileChildren(
+  LocaleWsIdMindRouteChildren,
+);
+
+interface LocaleWsIdPlatformRouteChildren {
+  LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute;
+}
+
+const LocaleWsIdPlatformRouteChildren: LocaleWsIdPlatformRouteChildren = {
+  LocaleWsIdPlatformExternalProjectsRoute:
+    LocaleWsIdPlatformExternalProjectsRoute,
+};
+
+const LocaleWsIdPlatformRouteWithChildren =
+  LocaleWsIdPlatformRoute._addFileChildren(LocaleWsIdPlatformRouteChildren);
+
+interface LocaleCalendarMeetTogetherRouteChildren {
+  LocaleCalendarMeetTogetherSplatRoute: typeof LocaleCalendarMeetTogetherSplatRoute;
+}
+
+const LocaleCalendarMeetTogetherRouteChildren: LocaleCalendarMeetTogetherRouteChildren =
+  {
+    LocaleCalendarMeetTogetherSplatRoute: LocaleCalendarMeetTogetherSplatRoute,
+  };
+
+const LocaleCalendarMeetTogetherRouteWithChildren =
+  LocaleCalendarMeetTogetherRoute._addFileChildren(
+    LocaleCalendarMeetTogetherRouteChildren,
+  );
+
+interface LocaleWsIdEducationLibraryRouteChildren {
+  LocaleWsIdEducationLibraryFlashcardsRoute: typeof LocaleWsIdEducationLibraryFlashcardsRoute;
+  LocaleWsIdEducationLibraryQuizSetsRoute: typeof LocaleWsIdEducationLibraryQuizSetsRoute;
+  LocaleWsIdEducationLibraryQuizzesRoute: typeof LocaleWsIdEducationLibraryQuizzesRoute;
+}
+
+const LocaleWsIdEducationLibraryRouteChildren: LocaleWsIdEducationLibraryRouteChildren =
+  {
+    LocaleWsIdEducationLibraryFlashcardsRoute:
+      LocaleWsIdEducationLibraryFlashcardsRoute,
+    LocaleWsIdEducationLibraryQuizSetsRoute:
+      LocaleWsIdEducationLibraryQuizSetsRoute,
+    LocaleWsIdEducationLibraryQuizzesRoute:
+      LocaleWsIdEducationLibraryQuizzesRoute,
+  };
+
+const LocaleWsIdEducationLibraryRouteWithChildren =
+  LocaleWsIdEducationLibraryRoute._addFileChildren(
+    LocaleWsIdEducationLibraryRouteChildren,
   );
 
 interface LocaleWsIdInventoryProductsRouteChildren {
@@ -5113,6 +5239,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdFinanceRoute: typeof LocaleWsIdFinanceRouteWithChildren;
   LocaleWsIdHabitsRoute: typeof LocaleWsIdHabitsRoute;
   LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren;
+  LocaleWsIdInfrastructureRoute: typeof LocaleWsIdInfrastructureRouteWithChildren;
   LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute;
   LocaleWsIdMeetRoute: typeof LocaleWsIdMeetRouteWithChildren;
   LocaleWsIdMembersRoute: typeof LocaleWsIdMembersRoute;
@@ -5122,6 +5249,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren;
   LocaleWsIdNotificationsRoute: typeof LocaleWsIdNotificationsRoute;
   LocaleWsIdPipelinesRoute: typeof LocaleWsIdPipelinesRoute;
+  LocaleWsIdPlatformRoute: typeof LocaleWsIdPlatformRouteWithChildren;
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute;
   LocaleWsIdPostsRoute: typeof LocaleWsIdPostsRoute;
   LocaleWsIdProgressRoute: typeof LocaleWsIdProgressRoute;
@@ -5167,25 +5295,6 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdEducationLibraryRoute: typeof LocaleWsIdEducationLibraryRouteWithChildren;
   LocaleWsIdEducationQuizzesRoute: typeof LocaleWsIdEducationQuizzesRoute;
   LocaleWsIdEducationValseaRoute: typeof LocaleWsIdEducationValseaRoute;
-  LocaleWsIdInfrastructureAbuseEventsRoute: typeof LocaleWsIdInfrastructureAbuseEventsRoute;
-  LocaleWsIdInfrastructureAbuseIntelligenceRoute: typeof LocaleWsIdInfrastructureAbuseIntelligenceRoute;
-  LocaleWsIdInfrastructureAiAgentsRoute: typeof LocaleWsIdInfrastructureAiAgentsRoute;
-  LocaleWsIdInfrastructureAppCoordinationRoute: typeof LocaleWsIdInfrastructureAppCoordinationRoute;
-  LocaleWsIdInfrastructureBlockedIpsRoute: typeof LocaleWsIdInfrastructureBlockedIpsRoute;
-  LocaleWsIdInfrastructureChangelogRoute: typeof LocaleWsIdInfrastructureChangelogRoute;
-  LocaleWsIdInfrastructureEmailBlacklistRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
-  LocaleWsIdInfrastructureEmailTemplatesRoute: typeof LocaleWsIdInfrastructureEmailTemplatesRoute;
-  LocaleWsIdInfrastructureExternalAppsRoute: typeof LocaleWsIdInfrastructureExternalAppsRoute;
-  LocaleWsIdInfrastructureGithubBotRoute: typeof LocaleWsIdInfrastructureGithubBotRoute;
-  LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
-  LocaleWsIdInfrastructureMobileDeploymentRoute: typeof LocaleWsIdInfrastructureMobileDeploymentRoute;
-  LocaleWsIdInfrastructureMobileVersionsRoute: typeof LocaleWsIdInfrastructureMobileVersionsRoute;
-  LocaleWsIdInfrastructureMonitoringRoute: typeof LocaleWsIdInfrastructureMonitoringRouteWithChildren;
-  LocaleWsIdInfrastructurePostEmailQueueRoute: typeof LocaleWsIdInfrastructurePostEmailQueueRoute;
-  LocaleWsIdInfrastructureRateLimitsRoute: typeof LocaleWsIdInfrastructureRateLimitsRoute;
-  LocaleWsIdInfrastructureRealtimeRoute: typeof LocaleWsIdInfrastructureRealtimeRoute;
-  LocaleWsIdInfrastructureTimezonesRoute: typeof LocaleWsIdInfrastructureTimezonesRoute;
-  LocaleWsIdInfrastructureTranslationsRoute: typeof LocaleWsIdInfrastructureTranslationsRoute;
   LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
   LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
   LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
@@ -5196,7 +5305,6 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInventoryUnitsRoute: typeof LocaleWsIdInventoryUnitsRoute;
   LocaleWsIdInventoryWarehousesRoute: typeof LocaleWsIdInventoryWarehousesRoute;
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute;
-  LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute;
   LocaleWsIdSettingsNotificationsRoute: typeof LocaleWsIdSettingsNotificationsRoute;
   LocaleWsIdSettingsReportsRoute: typeof LocaleWsIdSettingsReportsRoute;
   LocaleWsIdTasksTaskIdRoute: typeof LocaleWsIdTasksTaskIdRoute;
@@ -5238,8 +5346,6 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdTasksBoardsIndexRoute: typeof LocaleWsIdTasksBoardsIndexRoute;
   LocaleWsIdUsersGroupTagsIndexRoute: typeof LocaleWsIdUsersGroupTagsIndexRoute;
   LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute: typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
-  LocaleWsIdInfrastructureAiWhitelistDomainsRoute: typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
-  LocaleWsIdInfrastructureAiWhitelistEmailsRoute: typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
   LocaleWsIdEducationQuizSetsSetIdIndexRoute: typeof LocaleWsIdEducationQuizSetsSetIdIndexRoute;
 }
 
@@ -5284,6 +5390,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdFinanceRoute: LocaleWsIdFinanceRouteWithChildren,
   LocaleWsIdHabitsRoute: LocaleWsIdHabitsRoute,
   LocaleWsIdHiveRoute: LocaleWsIdHiveRouteWithChildren,
+  LocaleWsIdInfrastructureRoute: LocaleWsIdInfrastructureRouteWithChildren,
   LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,
   LocaleWsIdMeetRoute: LocaleWsIdMeetRouteWithChildren,
   LocaleWsIdMembersRoute: LocaleWsIdMembersRoute,
@@ -5293,6 +5400,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdMindRoute: LocaleWsIdMindRouteWithChildren,
   LocaleWsIdNotificationsRoute: LocaleWsIdNotificationsRoute,
   LocaleWsIdPipelinesRoute: LocaleWsIdPipelinesRoute,
+  LocaleWsIdPlatformRoute: LocaleWsIdPlatformRouteWithChildren,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
   LocaleWsIdPostsRoute: LocaleWsIdPostsRoute,
   LocaleWsIdProgressRoute: LocaleWsIdProgressRoute,
@@ -5338,41 +5446,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdEducationLibraryRoute: LocaleWsIdEducationLibraryRouteWithChildren,
   LocaleWsIdEducationQuizzesRoute: LocaleWsIdEducationQuizzesRoute,
   LocaleWsIdEducationValseaRoute: LocaleWsIdEducationValseaRoute,
-  LocaleWsIdInfrastructureAbuseEventsRoute:
-    LocaleWsIdInfrastructureAbuseEventsRoute,
-  LocaleWsIdInfrastructureAbuseIntelligenceRoute:
-    LocaleWsIdInfrastructureAbuseIntelligenceRoute,
-  LocaleWsIdInfrastructureAiAgentsRoute: LocaleWsIdInfrastructureAiAgentsRoute,
-  LocaleWsIdInfrastructureAppCoordinationRoute:
-    LocaleWsIdInfrastructureAppCoordinationRoute,
-  LocaleWsIdInfrastructureBlockedIpsRoute:
-    LocaleWsIdInfrastructureBlockedIpsRoute,
-  LocaleWsIdInfrastructureChangelogRoute:
-    LocaleWsIdInfrastructureChangelogRoute,
-  LocaleWsIdInfrastructureEmailBlacklistRoute:
-    LocaleWsIdInfrastructureEmailBlacklistRoute,
-  LocaleWsIdInfrastructureEmailTemplatesRoute:
-    LocaleWsIdInfrastructureEmailTemplatesRoute,
-  LocaleWsIdInfrastructureExternalAppsRoute:
-    LocaleWsIdInfrastructureExternalAppsRoute,
-  LocaleWsIdInfrastructureGithubBotRoute:
-    LocaleWsIdInfrastructureGithubBotRoute,
-  LocaleWsIdInfrastructureHolidaysRoute: LocaleWsIdInfrastructureHolidaysRoute,
-  LocaleWsIdInfrastructureMobileDeploymentRoute:
-    LocaleWsIdInfrastructureMobileDeploymentRoute,
-  LocaleWsIdInfrastructureMobileVersionsRoute:
-    LocaleWsIdInfrastructureMobileVersionsRoute,
-  LocaleWsIdInfrastructureMonitoringRoute:
-    LocaleWsIdInfrastructureMonitoringRouteWithChildren,
-  LocaleWsIdInfrastructurePostEmailQueueRoute:
-    LocaleWsIdInfrastructurePostEmailQueueRoute,
-  LocaleWsIdInfrastructureRateLimitsRoute:
-    LocaleWsIdInfrastructureRateLimitsRoute,
-  LocaleWsIdInfrastructureRealtimeRoute: LocaleWsIdInfrastructureRealtimeRoute,
-  LocaleWsIdInfrastructureTimezonesRoute:
-    LocaleWsIdInfrastructureTimezonesRoute,
-  LocaleWsIdInfrastructureTranslationsRoute:
-    LocaleWsIdInfrastructureTranslationsRoute,
   LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
   LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
   LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
@@ -5384,8 +5457,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdInventoryUnitsRoute: LocaleWsIdInventoryUnitsRoute,
   LocaleWsIdInventoryWarehousesRoute: LocaleWsIdInventoryWarehousesRoute,
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,
-  LocaleWsIdPlatformExternalProjectsRoute:
-    LocaleWsIdPlatformExternalProjectsRoute,
   LocaleWsIdSettingsNotificationsRoute: LocaleWsIdSettingsNotificationsRoute,
   LocaleWsIdSettingsReportsRoute: LocaleWsIdSettingsReportsRoute,
   LocaleWsIdTasksTaskIdRoute: LocaleWsIdTasksTaskIdRoute,
@@ -5433,10 +5504,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdUsersGroupTagsIndexRoute: LocaleWsIdUsersGroupTagsIndexRoute,
   LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute:
     LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute,
-  LocaleWsIdInfrastructureAiWhitelistDomainsRoute:
-    LocaleWsIdInfrastructureAiWhitelistDomainsRoute,
-  LocaleWsIdInfrastructureAiWhitelistEmailsRoute:
-    LocaleWsIdInfrastructureAiWhitelistEmailsRoute,
   LocaleWsIdEducationQuizSetsSetIdIndexRoute:
     LocaleWsIdEducationQuizSetsSetIdIndexRoute,
 };
