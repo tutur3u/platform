@@ -5,12 +5,20 @@ import {
   listWorkspaceCourseModules,
   updateWorkspaceCourseModule,
 } from '@tuturuuu/internal-api/education';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
 const SAVE_DEBOUNCE_MS = 800;
+
+type LessonUpdatePayload = Partial<
+  Pick<
+    WorkspaceCourseModule,
+    'content' | 'is_published' | 'name' | 'youtube_links'
+  >
+>;
 
 // ─── Query key ────────────────────────────────────────────────────────────────
 
@@ -124,13 +132,13 @@ export function useLessonDetail(
   // ─── Save mutation ──────────────────────────────────────────────────────────
 
   const saveMutation = useMutation({
-    mutationFn: async (payload: Record<string, unknown>) =>
+    mutationFn: async (payload: LessonUpdatePayload) =>
       updateWorkspaceCourseModule(wsId, lessonId, payload),
     onError: () => {
       toast.error('Failed to save lesson. Please try again.');
     },
     onSuccess: (_, variables) => {
-      qc.setQueryData<any[] | undefined>(
+      qc.setQueryData<WorkspaceCourseModule[] | undefined>(
         lessonQueryKey(wsId, courseId),
         (old) => {
           if (!old) return old;
@@ -139,6 +147,7 @@ export function useLessonDetail(
           );
         }
       );
+      void qc.invalidateQueries({ queryKey: lessonQueryKey(wsId, courseId) });
     },
   });
 

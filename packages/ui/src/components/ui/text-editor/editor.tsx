@@ -42,6 +42,22 @@ const hasContent = (node: JSONContent): boolean => {
   return false;
 };
 
+function syncEditorContent(editor: Editor, nextContent: JSONContent | null) {
+  const migratedContent = migrateInlineImagesToBlock(nextContent);
+  const currentContent = editor.getJSON();
+  const contentChanged =
+    JSON.stringify(currentContent) !== JSON.stringify(migratedContent);
+
+  if (contentChanged) {
+    editor.commands.setContent(
+      migratedContent || { type: 'doc', content: [] },
+      {
+        emitUpdate: false,
+      }
+    );
+  }
+}
+
 interface RichTextEditorProps {
   content: JSONContent | null;
   onChange?: (content: JSONContent | null) => void;
@@ -127,6 +143,8 @@ export function RichTextEditor({
   const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
   // Track when we're in a programmatic update to skip content sync
   const isProgrammaticUpdateRef = useRef(false);
+  const hasDeferredExternalContentRef = useRef(false);
+  const deferredExternalContentRef = useRef<JSONContent | null>(null);
   const getDelegatedImageUpload = useCallback(
     () => onImageUploadRef.current,
     []
@@ -562,34 +580,44 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor || allowCollaboration) return;
 
-    // Skip sync if the editor is focused to prevent cursor jumping/content flickering while typing
-    if (editor.isFocused) {
-      return;
-    }
-
     // Skip sync if we're in a programmatic update (e.g., after converting text to task)
     // This prevents the effect from reverting editor content before state update propagates
     if (isProgrammaticUpdateRef.current) {
       isProgrammaticUpdateRef.current = false;
+      hasDeferredExternalContentRef.current = false;
+      deferredExternalContentRef.current = null;
       return;
     }
 
-    // Migrate inline images to block-level for backward compatibility
-    const migratedContent = migrateInlineImagesToBlock(content);
-    const currentContent = editor.getJSON();
-    const contentChanged =
-      JSON.stringify(currentContent) !== JSON.stringify(migratedContent);
-
-    if (contentChanged) {
-      // Update editor content without triggering onChange
-      editor.commands.setContent(
-        migratedContent || { type: 'doc', content: [] },
-        {
-          emitUpdate: false,
-        }
-      );
+    if (editor.isFocused) {
+      hasDeferredExternalContentRef.current = true;
+      deferredExternalContentRef.current = content;
+      return;
     }
+
+    hasDeferredExternalContentRef.current = false;
+    deferredExternalContentRef.current = null;
+    syncEditorContent(editor, content);
   }, [editor, content, allowCollaboration]);
+
+  useEffect(() => {
+    if (!editor || allowCollaboration) return;
+
+    const syncDeferredContent = () => {
+      if (!hasDeferredExternalContentRef.current) return;
+
+      hasDeferredExternalContentRef.current = false;
+      const deferredContent = deferredExternalContentRef.current;
+      deferredExternalContentRef.current = null;
+      syncEditorContent(editor, deferredContent);
+    };
+
+    editor.on('blur', syncDeferredContent);
+
+    return () => {
+      editor.off('blur', syncDeferredContent);
+    };
+  }, [editor, allowCollaboration]);
 
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
