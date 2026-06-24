@@ -5730,6 +5730,7 @@
     "title": "Devbox Control"
   },
   "documents": {
+    "back-to-documents": "Back to documents",
     "cancel": "Cancel",
     "create": "Create",
     "create-document-error": "An error occurred while creating the document.",
@@ -5742,6 +5743,7 @@
     "document-name-placeholder": "Enter document name",
     "documents": "Documents",
     "edit": "Edit",
+    "empty-preview": "No content yet",
     "new-document": "New document",
     "no-documents": "No documents in this workspace",
     "preview": "Preview",

@@ -1,4 +1,9 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  notFound,
+  Outlet,
+  useLocation,
+} from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestHeaders } from '@tanstack/react-start/server';
 import {
@@ -72,9 +77,15 @@ export const Route = createFileRoute('/$locale/$wsId/documents')({
 function DocumentsRoutePage() {
   const data = Route.useLoaderData() as DocumentsRouteData | undefined;
   const { locale } = Route.useParams();
+  const pathname = useLocation({ select: (location) => location.pathname });
 
   if (!data) {
     throw notFound();
+  }
+
+  const documentsHref = `/${locale}/${data.routeWorkspaceId}/documents`;
+  if (pathname !== documentsHref && pathname !== `${documentsHref}/`) {
+    return <Outlet />;
   }
 
   return (

@@ -334,10 +334,13 @@ export {
   createWorkspaceDocument,
   type DeleteWorkspaceDocumentResponse,
   deleteWorkspaceDocument,
+  type GetWorkspaceDocumentResponse,
+  getWorkspaceDocument,
   type ListWorkspaceDocumentsParams,
   type ListWorkspaceDocumentsResponse,
   listAllWorkspaceDocuments,
   listWorkspaceDocuments,
+  type WorkspaceDocumentDetail,
   type WorkspaceDocumentSummary,
 } from './documents';
 export type {

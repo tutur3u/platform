@@ -10,6 +10,8 @@ export type WorkspaceDocumentSummary = Pick<
   'content' | 'created_at' | 'id' | 'is_public' | 'name'
 >;
 
+export type WorkspaceDocumentDetail = WorkspaceDocumentSummary;
+
 export type ListWorkspaceDocumentsParams = {
   limit?: number;
   offset?: number;
@@ -36,12 +38,20 @@ export type CreateWorkspaceDocumentResponse = {
   message: string;
 };
 
+export type GetWorkspaceDocumentResponse = {
+  data: WorkspaceDocumentDetail;
+};
+
 export type DeleteWorkspaceDocumentResponse = {
   message: string;
 };
 
 function workspaceDocumentsPath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/documents`;
+}
+
+function workspaceDocumentPath(workspaceId: string, documentId: string) {
+  return `${workspaceDocumentsPath(workspaceId)}/${encodePathSegment(documentId)}`;
 }
 
 export function listWorkspaceDocuments(
@@ -119,6 +129,21 @@ export function createWorkspaceDocument(
   );
 }
 
+export function getWorkspaceDocument(
+  workspaceId: string,
+  documentId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<GetWorkspaceDocumentResponse>(
+    workspaceDocumentPath(workspaceId, documentId),
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export function deleteWorkspaceDocument(
   workspaceId: string,
   documentId: string,
@@ -127,7 +152,7 @@ export function deleteWorkspaceDocument(
   const client = getInternalApiClient(options);
 
   return client.json<DeleteWorkspaceDocumentResponse>(
-    `${workspaceDocumentsPath(workspaceId)}/${encodePathSegment(documentId)}`,
+    workspaceDocumentPath(workspaceId, documentId),
     {
       cache: 'no-store',
       method: 'DELETE',

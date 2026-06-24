@@ -5711,6 +5711,7 @@
     "title": "Điều khiển Devbox"
   },
   "documents": {
+    "back-to-documents": "Quay lại tài liệu",
     "cancel": "Hủy",
     "create": "Tạo",
     "create-document-error": "Đã xảy ra lỗi khi tạo tài liệu.",
@@ -5723,6 +5724,7 @@
     "document-name-placeholder": "Nhập tên tài liệu",
     "documents": "Tài liệu",
     "edit": "Chỉnh sửa",
+    "empty-preview": "Chưa có nội dung",
     "new-document": "Tài liệu mới",
     "no-documents": "Không có tài liệu nào trong không gian làm việc này",
     "preview": "Xem trước",

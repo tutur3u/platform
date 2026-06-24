@@ -1872,12 +1872,17 @@
     "page:/:locale/:wsId/documents:apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/documents is registered in routeTree.gen.ts, gates anonymous users through requireCurrentUser, resolves the workspace, preserves the legacy manage_documents permission gate, and renders the workspace document list/create/delete flow through TanStack Query plus the typed documents internal-api facade. Document detail editor pages and workspace document API ownership remain separately tracked."
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/documents is registered in routeTree.gen.ts, gates anonymous users through requireCurrentUser, resolves the workspace, preserves the legacy manage_documents permission gate, and renders the workspace document list/create/delete flow through TanStack Query plus the typed documents internal-api facade. Document editor mutations and workspace document API ownership remain separately tracked."
     },
     "layout:/:locale/:wsId/documents/:documentId:apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start can own the static Document Details metadata for /$locale/$wsId/documents/$documentId. The legacy layout only exports static title/description metadata and returns children, so this marks only the metadata layout artifact migrated; the document detail page, workspace dashboard/session ownership, and document data/API routes remain legacy-owned."
+      "note": "TanStack Start can own the static Document Details metadata for /$locale/$wsId/documents/$documentId. The legacy layout only exports static title/description metadata and returns children, so this marks only the metadata layout artifact migrated; workspace dashboard/session ownership and document data/API routes remain separately tracked."
+    },
+    "page:/:locale/:wsId/documents/:documentId:apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/documents/$documentId gates anonymous users through requireCurrentUser, resolves the workspace, preserves the legacy manage_documents permission gate, loads the protected document row through the typed documents internal-api facade with forwarded request auth, and renders the document metadata plus read-only rich-text preview. Document edit/share/delete/autosave behavior and workspace document API ownership remain separately tracked."
     },
     "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
       "status": "accepted-removal",

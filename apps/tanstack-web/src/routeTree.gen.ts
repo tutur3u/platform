@@ -181,6 +181,7 @@ import { Route as LocaleWsIdEducationValseaRouteImport } from './routes/$locale/
 import { Route as LocaleWsIdEducationQuizzesRouteImport } from './routes/$locale/$wsId/education/quizzes';
 import { Route as LocaleWsIdEducationLibraryRouteImport } from './routes/$locale/$wsId/education/library';
 import { Route as LocaleWsIdEducationFlashcardsRouteImport } from './routes/$locale/$wsId/education/flashcards';
+import { Route as LocaleWsIdDocumentsDocumentIdRouteImport } from './routes/$locale/$wsId/documents/$documentId';
 import { Route as LocaleWsIdCronJobsRouteImport } from './routes/$locale/$wsId/cron/jobs';
 import { Route as LocaleWsIdCrawlersUncrawledRouteImport } from './routes/$locale/$wsId/crawlers/uncrawled';
 import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
@@ -1174,6 +1175,12 @@ const LocaleWsIdEducationFlashcardsRoute =
     path: '/$wsId/education/flashcards',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdDocumentsDocumentIdRoute =
+  LocaleWsIdDocumentsDocumentIdRouteImport.update({
+    id: '/$documentId',
+    path: '/$documentId',
+    getParentRoute: () => LocaleWsIdDocumentsRoute,
+  } as any);
 const LocaleWsIdCronJobsRoute = LocaleWsIdCronJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -1587,7 +1594,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRouteWithChildren;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
-  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRoute;
+  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRouteWithChildren;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
@@ -1651,6 +1658,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/cron/jobs': typeof LocaleWsIdCronJobsRoute;
+  '/$locale/$wsId/documents/$documentId': typeof LocaleWsIdDocumentsDocumentIdRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
@@ -1821,7 +1829,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRouteWithChildren;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
-  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRoute;
+  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRouteWithChildren;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
@@ -1885,6 +1893,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/cron/jobs': typeof LocaleWsIdCronJobsRoute;
+  '/$locale/$wsId/documents/$documentId': typeof LocaleWsIdDocumentsDocumentIdRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
@@ -2056,7 +2065,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRouteWithChildren;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
-  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRoute;
+  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRouteWithChildren;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
@@ -2120,6 +2129,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/billing/success': typeof LocaleWsIdBillingSuccessRoute;
   '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/cron/jobs': typeof LocaleWsIdCronJobsRoute;
+  '/$locale/$wsId/documents/$documentId': typeof LocaleWsIdDocumentsDocumentIdRoute;
   '/$locale/$wsId/education/flashcards': typeof LocaleWsIdEducationFlashcardsRoute;
   '/$locale/$wsId/education/library': typeof LocaleWsIdEducationLibraryRouteWithChildren;
   '/$locale/$wsId/education/quizzes': typeof LocaleWsIdEducationQuizzesRoute;
@@ -2357,6 +2367,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/cron/jobs'
+    | '/$locale/$wsId/documents/$documentId'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quizzes'
@@ -2591,6 +2602,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/cron/jobs'
+    | '/$locale/$wsId/documents/$documentId'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quizzes'
@@ -2825,6 +2837,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/billing/success'
     | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/cron/jobs'
+    | '/$locale/$wsId/documents/$documentId'
     | '/$locale/$wsId/education/flashcards'
     | '/$locale/$wsId/education/library'
     | '/$locale/$wsId/education/quizzes'
@@ -4172,6 +4185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationFlashcardsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/documents/$documentId': {
+      id: '/$locale/$wsId/documents/$documentId';
+      path: '/$documentId';
+      fullPath: '/$locale/$wsId/documents/$documentId';
+      preLoaderRoute: typeof LocaleWsIdDocumentsDocumentIdRouteImport;
+      parentRoute: typeof LocaleWsIdDocumentsRoute;
+    };
     '/$locale/$wsId/cron/jobs': {
       id: '/$locale/$wsId/cron/jobs';
       path: '/jobs';
@@ -4668,6 +4688,17 @@ const LocaleWsIdCronRouteWithChildren = LocaleWsIdCronRoute._addFileChildren(
   LocaleWsIdCronRouteChildren,
 );
 
+interface LocaleWsIdDocumentsRouteChildren {
+  LocaleWsIdDocumentsDocumentIdRoute: typeof LocaleWsIdDocumentsDocumentIdRoute;
+}
+
+const LocaleWsIdDocumentsRouteChildren: LocaleWsIdDocumentsRouteChildren = {
+  LocaleWsIdDocumentsDocumentIdRoute: LocaleWsIdDocumentsDocumentIdRoute,
+};
+
+const LocaleWsIdDocumentsRouteWithChildren =
+  LocaleWsIdDocumentsRoute._addFileChildren(LocaleWsIdDocumentsRouteChildren);
+
 interface LocaleWsIdEpmRouteChildren {
   LocaleWsIdEpmCollectionsCollectionIdRoute: typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   LocaleWsIdEpmEntriesEntryIdRoute: typeof LocaleWsIdEpmEntriesEntryIdRoute;
@@ -5055,7 +5086,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdCrawlersRoute: typeof LocaleWsIdCrawlersRouteWithChildren;
   LocaleWsIdCronRoute: typeof LocaleWsIdCronRouteWithChildren;
   LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute;
-  LocaleWsIdDocumentsRoute: typeof LocaleWsIdDocumentsRoute;
+  LocaleWsIdDocumentsRoute: typeof LocaleWsIdDocumentsRouteWithChildren;
   LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute;
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren;
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute;
@@ -5225,7 +5256,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdCrawlersRoute: LocaleWsIdCrawlersRouteWithChildren,
   LocaleWsIdCronRoute: LocaleWsIdCronRouteWithChildren,
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,
-  LocaleWsIdDocumentsRoute: LocaleWsIdDocumentsRoute,
+  LocaleWsIdDocumentsRoute: LocaleWsIdDocumentsRouteWithChildren,
   LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,

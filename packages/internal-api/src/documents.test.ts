@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createWorkspaceDocument,
   deleteWorkspaceDocument,
+  getWorkspaceDocument,
   listAllWorkspaceDocuments,
   listWorkspaceDocuments,
 } from './documents';
@@ -104,6 +105,25 @@ describe('documents internal API helpers', () => {
       })
     );
     expect(headers.get('content-type')).toBe('application/json');
+  });
+
+  it('loads a workspace document detail with encoded route params', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { id: 'document / 1', name: 'Launch plan' },
+      })
+    );
+
+    await getWorkspaceDocument(
+      'workspace 1',
+      'document / 1',
+      options(fetchMock)
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%201/documents/document%20%2F%201',
+      expect.objectContaining({ cache: 'no-store' })
+    );
   });
 
   it('deletes workspace documents with encoded route params', async () => {
