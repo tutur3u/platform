@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/apis-v0.5.0...apis-v0.6.0) (2026-06-24)
+
+
+### Features
+
+* **task-boards:** improve public board sharing UX ([930ceb4](https://github.com/tutur3u/platform/commit/930ceb49ef72fad22e3f412c2ff5648fd6b3c417))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/apis-v0.4.2...apis-v0.5.0) (2026-06-17)
 
 

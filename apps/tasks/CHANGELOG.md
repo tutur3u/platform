@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/tasks-v0.7.0...tasks-v0.8.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** add calendar sync status key ([0c0f503](https://github.com/tutur3u/platform/commit/0c0f503af9413925f2de8f90b2f335d36b5de4fd))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/tasks-v0.6.0...tasks-v0.7.0) (2026-06-13)
 
 

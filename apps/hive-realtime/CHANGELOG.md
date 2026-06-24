@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.2.3...hive-realtime-v0.3.0) (2026-06-24)
+
+
+### Features
+
+* add tanstack rust migration foundation ([da7e58a](https://github.com/tutur3u/platform/commit/da7e58a2a6c7eefff5df74859e991872b5195132))
+
 ## [0.2.3](https://github.com/tutur3u/platform/compare/hive-realtime-v0.2.2...hive-realtime-v0.2.3) (2026-06-11)
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/teach-v0.2.0...teach-v0.3.0) (2026-06-24)
+
+
+### Features
+
+* add paragrph type ([1a45cbf](https://github.com/tutur3u/platform/commit/1a45cbfaf4d99af39236d837ecdb58f53cb80843))
+* add submissions tab and data fetching to test detail view ([0f3dfa2](https://github.com/tutur3u/platform/commit/0f3dfa2561e168464d97dc012c65a56177f00e29))
+* implement teach test submission review and student question feedback ([11cb373](https://github.com/tutur3u/platform/commit/11cb3736d3c35c18f0ed341f807f5df5a5775c31))
+* implement test score visibility control and add submission review functionality ([2ce0416](https://github.com/tutur3u/platform/commit/2ce0416d6f192f539a859e5b66d7b8333dbe7b63))
+* **teach:** enable editing test details on test details page ([5957283](https://github.com/tutur3u/platform/commit/5957283c3437235d6e095db19289a2e70c6caf4f))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* inficate wrong date ([b23ef41](https://github.com/tutur3u/platform/commit/b23ef41b6f85f30ed81356a495fb1bfba212475f))
+* **teach:** address assessment generation review ([54cf837](https://github.com/tutur3u/platform/commit/54cf83731bb540d4f6bd6b3acf0c55564ce165d0))
+* **teach:** address follow-up review comments ([8cdb9c0](https://github.com/tutur3u/platform/commit/8cdb9c0385fe0fd374cba3b6a30463ce94f4f340))
+* **teach:** address review follow-ups ([464d409](https://github.com/tutur3u/platform/commit/464d40975449868fc7002520af34ec0eed443f44))
+* **teach:** address test review follow-ups ([bfc6c12](https://github.com/tutur3u/platform/commit/bfc6c12eade212bf8775b78cc2853fd8b14601e7))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/teach-v0.1.3...teach-v0.2.0) (2026-06-17)
 
 

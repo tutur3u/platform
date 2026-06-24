@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/hive-v0.2.4...hive-v0.3.0) (2026-06-24)
+
+
+### Features
+
+* add tanstack rust migration foundation ([da7e58a](https://github.com/tutur3u/platform/commit/da7e58a2a6c7eefff5df74859e991872b5195132))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+
 ## [0.2.4](https://github.com/tutur3u/platform/compare/hive-v0.2.3...hive-v0.2.4) (2026-06-17)
 
 

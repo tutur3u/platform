@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/inventory-v0.7.0...inventory-v0.8.0) (2026-06-24)
+
+
+### Features
+
+* **inventory:** surface storefront checkout sales ([c8e813c](https://github.com/tutur3u/platform/commit/c8e813caa23e7e77e94aa94c9f0059b95cd5ba1c))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **inventory:** add warehouse stock management ([ca758e6](https://github.com/tutur3u/platform/commit/ca758e67edf70cc0c7794be7c02ed941943e462e))
+* **inventory:** authenticate satellite app-session on product stock routes ([fbe1d7b](https://github.com/tutur3u/platform/commit/fbe1d7ba55927aaab188a4318f726ada8e17de9a))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/inventory-v0.6.0...inventory-v0.7.0) (2026-06-17)
 
 

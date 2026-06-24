@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/meet-v0.5.2...meet-v0.6.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/meet-v0.5.1...meet-v0.5.2) (2026-06-13)
 
 

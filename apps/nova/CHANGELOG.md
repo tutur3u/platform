@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/nova-v0.18.3...nova-v0.19.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+* **tasks:** polish board activity and history diffs ([cdc1c2c](https://github.com/tutur3u/platform/commit/cdc1c2cbdcc283ee30e959435b70f03e84b999de))
+
 ## [0.18.3](https://github.com/tutur3u/platform/compare/nova-v0.18.2...nova-v0.18.3) (2026-06-17)
 
 

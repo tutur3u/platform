@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/tutur3u/platform/compare/mind-v0.1.3...mind-v0.1.4) (2026-06-24)
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+
 ## [0.1.3](https://github.com/tutur3u/platform/compare/mind-v0.1.2...mind-v0.1.3) (2026-06-13)
 
 

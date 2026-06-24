@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/meet",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
