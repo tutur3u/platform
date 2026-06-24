@@ -95,6 +95,24 @@ un-migrated method shows COVER, the handler is wrongly claiming it — fix befor
 commit. (Verified pattern: batch of 14 multi-method routes, all GET COVER + all
 POST FRESH.)
 
+## The dispatcher must stay chunked (stack-overflow cliff)
+
+`handle_backend_request` dispatches by calling `dispatch_chunk_NN` sub-fns, each
+holding ~40 `if let Some(response) = mod::handle(...).await { return Some(...) }`
+arms and ending in `None`. DO NOT collapse them back into one giant async fn:
+~292 awaited handler futures in a single async fn made the cumulative future
+size overflow the debug-test thread stack (SIGABRT "has overflowed its stack")
+and risks the Worker stack too. Chunking keeps only one chunk's future live per
+await. When you add a handler, append its arm to the LAST chunk (or add a new
+chunk once a chunk passes ~40 arms) and add the matching call in
+`handle_backend_request`. Arms inside a chunk use `return Some(response);` (the
+chunk returns `Option`), not `return response;`.
+
+The eager `.then_some(segments[i])` panic (see above) RECURS in fleet-authored
+handlers despite this doc — make it a mechanical integration step:
+`grep -rl '.then_some(segments[' src/ | xargs perl -i -pe 's/\.then_some\((segments\[\d+\])\)/.then(|| $1)/g'`
+before `cargo test --lib`.
+
 ## Verify
 
 - `cd apps/backend && cargo check` after each extraction (fast; sub-second when
