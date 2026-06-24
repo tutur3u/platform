@@ -194,6 +194,7 @@ mod workspaces_education_attempts;
 mod workspaces_education_attempts_attemptid;
 mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
+mod workspaces_external_projects_members_roles_roleid_members;
 mod workspaces_external_projects_storage_analytics;
 mod workspaces_external_projects_sync_snapshot;
 mod workspaces_finance_charts_balance_trend;
@@ -201,6 +202,8 @@ mod workspaces_finance_charts_categories;
 mod workspaces_finance_charts_daily;
 mod workspaces_finance_charts_income_expense_summary;
 mod workspaces_finance_charts_monthly;
+mod workspaces_finance_debts;
+mod workspaces_finance_debts_debtid;
 mod workspaces_finance_invoices_analytics;
 mod workspaces_finance_invoices_count;
 mod workspaces_finance_invoices_pending;
@@ -230,6 +233,7 @@ mod workspaces_mail;
 mod workspaces_mail_mailboxes_messages;
 mod workspaces_meetings_meetingid_recordings;
 mod workspaces_meetings_recordings_play;
+mod workspaces_members;
 mod workspaces_members_enhanced;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
@@ -247,12 +251,15 @@ mod workspaces_storage_export_assetpath;
 mod workspaces_storage_list;
 mod workspaces_storage_object;
 mod workspaces_storage_rollout_state;
+mod workspaces_tags;
 mod workspaces_tags_stats;
+mod workspaces_tags_tagid;
 mod workspaces_task_boards_boardid_viewable_members;
 mod workspaces_task_plans_digest;
 mod workspaces_tasks_history;
 mod workspaces_tasks_snapshot;
 mod workspaces_tasks_taskid_history;
+mod workspaces_tasks_taskid_relationships;
 mod workspaces_tasks_taskid_schedule_history;
 mod workspaces_teach_users;
 mod workspaces_templates;
@@ -264,6 +271,9 @@ mod workspaces_time_tracking_sessions_breaks_active;
 mod workspaces_time_tracking_stats_period;
 mod workspaces_time_tracking_tasks;
 mod workspaces_time_tracking_templates;
+mod workspaces_transactions;
+mod workspaces_transactions_categories;
+mod workspaces_transactions_categories_categoryid;
 mod workspaces_transactions_category_breakdown;
 mod workspaces_transactions_export;
 mod workspaces_transactions_infinite;
@@ -300,8 +310,12 @@ mod workspaces_users_reports_groups_bulk_export;
 mod workspaces_users_reports_groups_groupid_dashboard;
 mod workspaces_users_reports_logs;
 mod workspaces_users_userid_user_groups;
+mod workspaces_wallets;
+mod workspaces_wallets_checkpoints;
 mod workspaces_wallets_checkpoints_history;
 mod workspaces_wallets_infinite;
+mod workspaces_wallets_walletid;
+mod workspaces_wallets_walletid_checkpoints;
 mod workspaces_wallets_walletid_credit_summary;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
@@ -2459,6 +2473,109 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         workspaces_users_reports_groups_groupid_dashboard::handle_workspaces_users_reports_groups_groupid_dashboard_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks_taskid_relationships::handle_workspaces_tasks_taskid_relationships_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_debts::handle_workspaces_finance_debts_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_wallets::handle_workspaces_wallets_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tags::handle_workspaces_tags_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions::handle_workspaces_transactions_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_categories::handle_workspaces_transactions_categories_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_wallets_walletid_checkpoints::handle_workspaces_wallets_walletid_checkpoints_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_wallets_checkpoints::handle_workspaces_wallets_checkpoints_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_debts_debtid::handle_workspaces_finance_debts_debtid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tags_tagid::handle_workspaces_tags_tagid_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_categories_categoryid::handle_workspaces_transactions_categories_categoryid_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_wallets_walletid::handle_workspaces_wallets_walletid_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_members::handle_workspaces_members_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_members_roles_roleid_members::handle_workspaces_external_projects_members_roles_roleid_members_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }
