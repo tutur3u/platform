@@ -93,7 +93,9 @@ mod infrastructure_catalog_exports;
 mod infrastructure_content_exports;
 #[cfg(test)]
 mod infrastructure_content_exports_test;
+mod infrastructure_external_apps;
 mod infrastructure_finance_exports;
+mod infrastructure_github_bot;
 mod infrastructure_inventory_exports;
 #[cfg(test)]
 mod infrastructure_inventory_exports_test;
@@ -121,6 +123,7 @@ mod mira_achievements;
 mod mira_calendar;
 mod mira_focus;
 mod mira_focus_history;
+mod mira_soul;
 mod mira_tasks;
 mod mobile_deployment_bundle;
 mod mobile_version;
@@ -175,6 +178,7 @@ mod workspaces;
 mod workspaces_2;
 mod workspaces_3;
 mod workspaces_ai_credits;
+mod workspaces_ai_model_favorites;
 mod workspaces_ai_prompts_promptid;
 mod workspaces_api_keys_keyid_usage_logs;
 mod workspaces_billing;
@@ -186,17 +190,23 @@ mod workspaces_calendar_habit_events;
 mod workspaces_calendar_schedulable_tasks;
 mod workspaces_calendar_sync_status;
 mod workspaces_categories;
+mod workspaces_chat_channels;
+mod workspaces_chat_channels_channelid_messages;
 mod workspaces_chat_channels_channelid_participants;
 mod workspaces_chat_conversations_attachments;
 mod workspaces_chat_conversations_conversationid_ai_observability;
 mod workspaces_chat_conversations_shared_content;
 mod workspaces_chat_directory;
+mod workspaces_chat_friend_requests;
 mod workspaces_chat_realtime;
 mod workspaces_chat_search;
 mod workspaces_course_modules_quiz_sets;
 mod workspaces_courses_courseid_modules;
 mod workspaces_cron_jobs;
 mod workspaces_cron_jobs_jobid;
+mod workspaces_datasets;
+mod workspaces_datasets_datasetid_cells;
+mod workspaces_datasets_datasetid_columns;
 mod workspaces_datasets_full;
 mod workspaces_deleted;
 mod workspaces_education_attempts;
@@ -204,6 +214,7 @@ mod workspaces_education_attempts_attemptid;
 mod workspaces_external_projects;
 mod workspaces_external_projects_collections;
 mod workspaces_external_projects_delivery;
+mod workspaces_external_projects_entries;
 mod workspaces_external_projects_members_roles;
 mod workspaces_external_projects_members_roles_default;
 mod workspaces_external_projects_members_roles_roleid;
@@ -222,6 +233,7 @@ mod workspaces_finance_invoices_analytics;
 mod workspaces_finance_invoices_count;
 mod workspaces_finance_invoices_pending;
 mod workspaces_finance_overview;
+mod workspaces_finance_recurring_transactions;
 mod workspaces_finance_wallets_expense_count;
 mod workspaces_finance_wallets_expense_sum;
 mod workspaces_finance_wallets_income_count;
@@ -271,6 +283,7 @@ mod workspaces_posts;
 mod workspaces_posts_bootstrap;
 mod workspaces_posts_filter_options;
 mod workspaces_posts_status;
+mod workspaces_product_suppliers;
 mod workspaces_products_count;
 mod workspaces_products_options;
 mod workspaces_promotions_count;
@@ -337,6 +350,7 @@ mod workspaces_users_approvals_logs;
 mod workspaces_users_attendance;
 mod workspaces_users_attendance_export;
 mod workspaces_users_audit_logs;
+mod workspaces_users_avatar;
 mod workspaces_users_count;
 mod workspaces_users_emails;
 mod workspaces_users_groups;
@@ -729,6 +743,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_08(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_09(config, request, outbound).await {
         return response;
     }
 
@@ -2997,6 +3015,114 @@ async fn dispatch_chunk_08(
 
     if let Some(response) =
         workspaces_forms_formid_analytics::handle_workspaces_forms_formid_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_09(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_users_avatar::handle_workspaces_users_avatar_route(config, request, outbound)
+            .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_chat_channels::handle_workspaces_chat_channels_route(config, request, outbound)
+            .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_finance_recurring_transactions::handle_workspaces_finance_recurring_transactions_route(config, request, outbound).await {
+        return Some(response);
+    }
+
+    if let Some(response) = infrastructure_external_apps::handle_infrastructure_external_apps_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_chat_friend_requests::handle_workspaces_chat_friend_requests_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_datasets::handle_workspaces_datasets_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_chat_channels_channelid_messages::handle_workspaces_chat_channels_channelid_messages_route(config, request, outbound).await {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_datasets_datasetid_cells::handle_workspaces_datasets_datasetid_cells_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_datasets_datasetid_columns::handle_workspaces_datasets_datasetid_columns_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_entries::handle_workspaces_external_projects_entries_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = mira_soul::handle_mira_soul_route(config, request, outbound).await {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_product_suppliers::handle_workspaces_product_suppliers_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        infrastructure_github_bot::handle_infrastructure_github_bot_route(config, request, outbound)
+            .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_ai_model_favorites::handle_workspaces_ai_model_favorites_route(
             config, request, outbound,
         )
         .await
