@@ -79,6 +79,22 @@ search — both over- and under-count. The ground truth is the runtime dispatche
   authors a duplicate handler. (Measured: of 121 filename-"unmigrated" small GETs,
   the probe found only 16 genuinely fresh.)
 
+## Migrating ONE method of a multi-method route (GET now, mutations later)
+
+Many routes define GET + POST/PUT/DELETE. You can migrate just the GET to Rust
+and leave the mutations on Next.js — but the handler MUST return `None` (NOT
+`method_not_allowed`/405) for every method it does not own, so the worker falls
+through to the still-active Next.js route for those. Use
+`Some(match request.method { "GET" => ..., _ => return None })`. A 405 here would
+break a live mutation.
+
+Verify with a DUAL probe (extend the coverage probe to loop methods): the
+migrated method must be COVER, and each un-migrated method (POST/PUT/DELETE) must
+be FRESH (the 404 `{"error":"not found"}` sentinel = fell through). If an
+un-migrated method shows COVER, the handler is wrongly claiming it — fix before
+commit. (Verified pattern: batch of 14 multi-method routes, all GET COVER + all
+POST FRESH.)
+
 ## Verify
 
 - `cd apps/backend && cargo check` after each extraction (fast; sub-second when
