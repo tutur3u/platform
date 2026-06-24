@@ -8,6 +8,7 @@ mod admin_ai_credits_overview;
 mod admin_ai_credits_transactions;
 mod admin_external_project_audits;
 mod admin_external_project_bindings;
+mod admin_external_projects;
 mod ai_chats_list;
 mod ai_models;
 mod ai_whitelist;
@@ -171,6 +172,7 @@ mod workspaces;
 mod workspaces_2;
 mod workspaces_3;
 mod workspaces_ai_credits;
+mod workspaces_ai_prompts_promptid;
 mod workspaces_api_keys_keyid_usage_logs;
 mod workspaces_billing;
 mod workspaces_boards;
@@ -190,6 +192,7 @@ mod workspaces_chat_search;
 mod workspaces_course_modules_quiz_sets;
 mod workspaces_courses_courseid_modules;
 mod workspaces_cron_jobs;
+mod workspaces_cron_jobs_jobid;
 mod workspaces_datasets_full;
 mod workspaces_deleted;
 mod workspaces_education_attempts;
@@ -202,6 +205,7 @@ mod workspaces_external_projects_members_roles_roleid;
 mod workspaces_external_projects_members_roles_roleid_members;
 mod workspaces_external_projects_storage_analytics;
 mod workspaces_external_projects_sync_snapshot;
+mod workspaces_finance_budgets;
 mod workspaces_finance_charts_balance_trend;
 mod workspaces_finance_charts_categories;
 mod workspaces_finance_charts_daily;
@@ -221,6 +225,7 @@ mod workspaces_forms_export;
 mod workspaces_forms_responses_export;
 mod workspaces_forms_share_link;
 mod workspaces_habit_trackers;
+mod workspaces_habit_trackers_trackerid_entries;
 mod workspaces_habits_habitid_schedule_history;
 mod workspaces_habits_habitid_stats;
 mod workspaces_infrastructure_realtime_analytics;
@@ -228,16 +233,21 @@ mod workspaces_infrastructure_realtime_analytics_summary;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_audit_logs;
+mod workspaces_inventory_costing;
 mod workspaces_inventory_option_templates;
 mod workspaces_inventory_overview;
+mod workspaces_inventory_polar_product_sync;
+mod workspaces_inventory_polar_settings;
 mod workspaces_inventory_product_form_options;
 mod workspaces_inventory_sales;
 mod workspaces_inventory_statistics;
+mod workspaces_inventory_storefronts;
 mod workspaces_invitations;
 mod workspaces_invite_status;
 mod workspaces_list;
 mod workspaces_mail;
 mod workspaces_mail_mailboxes_mailboxid_members;
+mod workspaces_mail_mailboxes_mailboxid_messages;
 mod workspaces_mail_mailboxes_messages;
 mod workspaces_meetings_meetingid_recordings;
 mod workspaces_meetings_recordings_play;
@@ -322,6 +332,7 @@ mod workspaces_users_reports_groups;
 mod workspaces_users_reports_groups_bulk_export;
 mod workspaces_users_reports_groups_groupid_dashboard;
 mod workspaces_users_reports_logs;
+mod workspaces_users_userid;
 mod workspaces_users_userid_user_groups;
 mod workspaces_wallets;
 mod workspaces_wallets_checkpoints;
@@ -672,29 +683,69 @@ pub(crate) async fn handle_backend_request(
     request: BackendRequest<'_>,
     outbound: &impl outbound::OutboundHttpClient,
 ) -> BackendResponse {
+    if let Some(response) = dispatch_chunk_00(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_01(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_02(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_03(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_04(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_05(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_06(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_07(config, request, outbound).await {
+        return response;
+    }
+
+    route_request(config, request)
+}
+
+async fn dispatch_chunk_00(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) =
         mobile_version::handle_mobile_version_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = auth_me::handle_auth_me_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = auth_mfa::handle_auth_mfa_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         user_identities::handle_user_identities_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = user_profile::handle_user_profile_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -703,7 +754,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -712,51 +763,51 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = contact::handle_contact_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = devbox_cache::handle_devbox_cache_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         onboarding_progress::handle_onboarding_progress_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = aurora::handle_aurora_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = ai_whitelist::handle_ai_whitelist_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = ai_models::handle_ai_models_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = changelog::handle_changelog_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         task_embeddings::handle_task_embeddings_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspace_limits::handle_workspace_limits_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspace_post_permissions::handle_workspace_post_permissions_route(
@@ -764,7 +815,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspace_education_access::handle_workspace_education_access_route(
@@ -772,7 +823,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -781,14 +832,14 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspace_habits_access::handle_workspace_habits_access_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -797,31 +848,31 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         finance_budget_status::handle_finance_budget_status_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         finance_chart_balance::handle_finance_chart_balance_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         finance_debt_summary::handle_finance_debt_summary_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         finance_filter_users::handle_finance_filter_users_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -830,7 +881,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = finance_subscription_context::handle_finance_subscription_context_route(
@@ -838,7 +889,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspace_permission_check::handle_workspace_permission_check_route(
@@ -846,53 +897,53 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspace_mentions::handle_workspace_mentions_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = hive_access::handle_hive_access_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         hive_ai_models::handle_hive_ai_models_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         hive_workspaces::handle_hive_workspaces_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         hive_ai_credits::handle_hive_ai_credits_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         cms_workspaces::handle_cms_workspaces_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         ai_chats_list::handle_ai_chats_list_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         hive_access_requests::handle_hive_access_requests_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspace_inventory_realtime::handle_workspace_inventory_realtime_route(
@@ -900,7 +951,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -909,13 +960,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_list::handle_workspaces_list_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -924,22 +975,30 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
+    None
+}
+
+async fn dispatch_chunk_01(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) =
         workspace_external_projects_members_enhanced::handle_workspace_external_projects_members_enhanced_route(
             config, request, outbound,
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspace_mind_search::handle_workspace_mind_search_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -948,7 +1007,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -957,7 +1016,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -966,32 +1025,32 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_mail::handle_workspaces_mail_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         devboxes_runs::handle_devboxes_runs_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_categories::handle_workspaces_categories_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         auth_mfa_mobile_approvals::handle_auth_mfa_mobile_approvals_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1000,7 +1059,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = hive_servers_workflows_runs::handle_hive_servers_workflows_runs_route(
@@ -1008,19 +1067,19 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         auth_accounts::handle_auth_accounts_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         hive_servers_economy::handle_hive_servers_economy_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1029,13 +1088,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_inventory_product_form_options::handle_workspaces_inventory_product_form_options_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_inventory_access::handle_workspaces_inventory_access_route(
@@ -1043,7 +1102,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_external_projects::handle_workspaces_external_projects_route(
@@ -1051,13 +1110,13 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_monitoring_blue_green_watcher_logs::handle_infrastructure_monitoring_blue_green_watcher_logs_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1066,19 +1125,19 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_posts::handle_workspaces_posts_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_ai_agents_external_threads::handle_infrastructure_ai_agents_external_threads_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1087,26 +1146,26 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_chat_conversations_attachments::handle_workspaces_chat_conversations_attachments_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_chat_directory::handle_workspaces_chat_directory_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_chat_search::handle_workspaces_chat_search_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_tulearn_reports::handle_workspaces_tulearn_reports_route(
@@ -1114,7 +1173,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_tulearn_courses_2::handle_workspaces_tulearn_courses_2_route(
@@ -1122,7 +1181,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_tulearn_courses::handle_workspaces_tulearn_courses_route(
@@ -1130,7 +1189,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1139,14 +1198,14 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_users_emails::handle_workspaces_users_emails_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1155,7 +1214,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1164,14 +1223,14 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_datasets_full::handle_workspaces_datasets_full_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1180,47 +1239,55 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         shared_task_boards::handle_shared_task_boards_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         auth_qr_login_challenges::handle_auth_qr_login_challenges_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         calendar_auth::handle_calendar_auth_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces::handle_workspaces_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_2::handle_workspaces_2_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_3::handle_workspaces_3_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
+    None
+}
+
+async fn dispatch_chunk_02(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) =
         admin_ai_credits_overview::handle_admin_ai_credits_overview_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = auth_mfa_mobile_challenges::handle_auth_mfa_mobile_challenges_route(
@@ -1228,7 +1295,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1237,20 +1304,20 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         storage_analytics::handle_storage_analytics_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_forms_export::handle_workspaces_forms_export_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_forms_share_link::handle_workspaces_forms_share_link_route(
@@ -1258,26 +1325,26 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_invitations::handle_workspaces_invitations_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_invite_status::handle_workspaces_invite_status_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_settings_permissions_setup_status::handle_workspaces_settings_permissions_setup_status_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_storage_analytics::handle_workspaces_storage_analytics_route(
@@ -1285,7 +1352,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1294,19 +1361,19 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_transactions_category_breakdown::handle_workspaces_transactions_category_breakdown_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_transactions_spending_trends::handle_workspaces_transactions_spending_trends_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1315,7 +1382,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1324,7 +1391,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1333,7 +1400,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_users_attendance::handle_workspaces_users_attendance_route(
@@ -1341,7 +1408,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_users_audit_logs::handle_workspaces_users_audit_logs_route(
@@ -1349,7 +1416,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1358,7 +1425,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1367,26 +1434,26 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_ai_agents_external_threads_messages::handle_infrastructure_ai_agents_external_threads_messages_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         mobile_deployment_bundle::handle_mobile_deployment_bundle_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_chat_conversations_shared_content::handle_workspaces_chat_conversations_shared_content_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1395,13 +1462,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_external_projects_sync_snapshot::handle_workspaces_external_projects_sync_snapshot_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1410,13 +1477,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_finance_wallets_expense_count::handle_workspaces_finance_wallets_expense_count_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1425,13 +1492,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_finance_wallets_income_count::handle_workspaces_finance_wallets_income_count_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1440,7 +1507,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_posts_bootstrap::handle_workspaces_posts_bootstrap_route(
@@ -1448,14 +1515,14 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_posts_status::handle_workspaces_posts_status_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_promotions_count::handle_workspaces_promotions_count_route(
@@ -1463,7 +1530,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_task_plans_digest::handle_workspaces_task_plans_digest_route(
@@ -1471,31 +1538,31 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_teach_users::handle_workspaces_teach_users_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         time_tracking_export::handle_time_tracking_export_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_users_reports_groups_bulk_export::handle_workspaces_users_reports_groups_bulk_export_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_users_count::handle_workspaces_users_count_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_user_groups_count::handle_workspaces_user_groups_count_route(
@@ -1503,7 +1570,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1512,22 +1579,30 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
+    None
+}
+
+async fn dispatch_chunk_03(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) =
         admin_ai_credits_transactions::handle_admin_ai_credits_transactions_route(
             config, request, outbound,
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_user_groups_sessions_group_summaries::handle_workspaces_user_groups_sessions_group_summaries_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1536,7 +1611,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1545,7 +1620,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1554,7 +1629,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1563,13 +1638,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_infrastructure_realtime_analytics::handle_workspaces_infrastructure_realtime_analytics_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1578,7 +1653,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_quiz_sets_quizzes::handle_workspaces_quiz_sets_quizzes_route(
@@ -1586,7 +1661,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1595,7 +1670,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = notifications_unread_count::handle_notifications_unread_count_route(
@@ -1603,7 +1678,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_boards_estimation::handle_workspaces_boards_estimation_route(
@@ -1611,7 +1686,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_products_options::handle_workspaces_products_options_route(
@@ -1619,65 +1694,65 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         mira_calendar::handle_mira_calendar_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = mira_focus::handle_mira_focus_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_billing::handle_workspaces_billing_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_boards::handle_workspaces_boards_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_time_tracking_sessions_breaks_active::handle_workspaces_time_tracking_sessions_breaks_active_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_monitoring_blue_green_requests::handle_infrastructure_monitoring_blue_green_requests_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_finance_charts_balance_trend::handle_workspaces_finance_charts_balance_trend_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_settings_approvals_pending_summary::handle_workspaces_settings_approvals_pending_summary_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_time_tracking_requests_activity::handle_workspaces_time_tracking_requests_activity_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_time_tracking_requests_users::handle_workspaces_time_tracking_requests_users_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1686,7 +1761,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1695,7 +1770,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1704,7 +1779,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1713,13 +1788,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         mira_focus_history::handle_mira_focus_history_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1728,7 +1803,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_members_enhanced::handle_workspaces_members_enhanced_route(
@@ -1736,39 +1811,39 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_products_count::handle_workspaces_products_count_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_storage_object::handle_workspaces_storage_object_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         mira_achievements::handle_mira_achievements_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_ai_agents_discord_gateway_watcher_config::handle_infrastructure_ai_agents_discord_gateway_watcher_config_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_finance_charts_income_expense_summary::handle_workspaces_finance_charts_income_expense_summary_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1777,7 +1852,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_boards_with_lists::handle_workspaces_boards_with_lists_route(
@@ -1785,7 +1860,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1794,7 +1869,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1803,7 +1878,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1812,29 +1887,37 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
+    None
+}
+
+async fn dispatch_chunk_04(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) =
         workspaces_users_attendance_export::handle_workspaces_users_attendance_export_route(
             config, request, outbound,
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         calendar_auth_microsoft::handle_calendar_auth_microsoft_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         storage_download_path::handle_storage_download_path_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_inventory_sales::handle_workspaces_inventory_sales_route(
@@ -1842,21 +1925,21 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_storage_list::handle_workspaces_storage_list_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tasks_snapshot::handle_workspaces_tasks_snapshot_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1865,13 +1948,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_templates::handle_workspaces_templates_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1880,11 +1963,11 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = nova::handle_nova_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = task_board_status_templates::handle_task_board_status_templates_route(
@@ -1892,25 +1975,25 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = crawlers::handle_crawler_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = holidays::handle_holidays_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         topic_announcements::handle_topic_announcement_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = timezones::handle_timezones_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = infrastructure_user_status_changes::handle_user_status_changes_route(
@@ -1918,59 +2001,59 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_workspace_users::handle_workspace_users_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_catalog_exports::handle_catalog_export_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_content_exports::handle_content_export_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_workspace_exports::handle_workspace_export_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_finance_exports::handle_finance_export_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_post_email_queue::handle_post_email_queue_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_inventory_exports::handle_inventory_export_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_related_exports::handle_related_export_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -1979,7 +2062,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = infrastructure_abuse_intelligence::handle_abuse_intelligence_route(
@@ -1987,41 +2070,41 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_abuse_events::handle_abuse_events_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_blocked_ips::handle_blocked_ips_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         infrastructure_suspensions::handle_suspensions_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         email_blacklist::handle_email_blacklist_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         inventory_orders::handle_inventory_orders_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = inventory::handle_inventory_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2030,14 +2113,14 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspace_mail_bootstrap::handle_workspace_mail_bootstrap_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2046,7 +2129,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2055,45 +2138,53 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         devboxes_run_logs::handle_devboxes_run_logs_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         tulearn_bootstrap::handle_tulearn_bootstrap_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspace_users_me::handle_workspace_users_me_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tulearn_marks::handle_workspaces_tulearn_marks_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
+    None
+}
+
+async fn dispatch_chunk_05(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) =
         users_me_identity_link::handle_users_me_identity_link_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tulearn_home::handle_workspaces_tulearn_home_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2102,7 +2193,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_wallets_infinite::handle_workspaces_wallets_infinite_route(
@@ -2110,19 +2201,19 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tags_stats::handle_workspaces_tags_stats_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_transactions_transactionid_tags::handle_workspaces_transactions_transactionid_tags_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2131,13 +2222,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_wallets_walletid_credit_summary::handle_workspaces_wallets_walletid_credit_summary_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2146,31 +2237,31 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         devboxes_agents_poll::handle_devboxes_agents_poll_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         exchange_rates::handle_exchange_rates_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_chat_realtime::handle_workspaces_chat_realtime_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = storage_list::handle_storage_list_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2179,7 +2270,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2188,7 +2279,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2197,7 +2288,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_finance_overview::handle_workspaces_finance_overview_route(
@@ -2205,7 +2296,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2214,7 +2305,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2223,7 +2314,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2232,7 +2323,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2241,7 +2332,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2250,7 +2341,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2259,7 +2350,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2268,7 +2359,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2277,13 +2368,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_deleted::handle_workspaces_deleted_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2292,7 +2383,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2301,13 +2392,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_boards_data::handle_workspaces_boards_data_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2316,13 +2407,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         users_me_tasks_taskid::handle_users_me_tasks_taskid_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2331,7 +2422,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2340,7 +2431,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2349,7 +2440,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = calendar_auth_list_calendars::handle_calendar_auth_list_calendars_route(
@@ -2357,7 +2448,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2366,7 +2457,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2375,7 +2466,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2384,7 +2475,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2393,18 +2484,26 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_users_groups::handle_workspaces_users_groups_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
+    None
+}
+
+async fn dispatch_chunk_06(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
     if let Some(response) = mira_tasks::handle_mira_tasks_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_tutoring_export::handle_workspaces_tutoring_export_route(
@@ -2412,7 +2511,7 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2421,14 +2520,14 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tasks_history::handle_workspaces_tasks_history_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2437,35 +2536,35 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = course::handle_course_route(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         users_me_tasks::handle_users_me_tasks_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_ai_credits::handle_workspaces_ai_credits_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_chat_conversations_conversationid_ai_observability::handle_workspaces_chat_conversations_conversationid_ai_observability_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_infrastructure_realtime_analytics_summary::handle_workspaces_infrastructure_realtime_analytics_summary_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2474,20 +2573,20 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tutoring_queue::handle_workspaces_tutoring_queue_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_users_reports_groups_groupid_dashboard::handle_workspaces_users_reports_groups_groupid_dashboard_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2496,33 +2595,33 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_finance_debts::handle_workspaces_finance_debts_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_wallets::handle_workspaces_wallets_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tags::handle_workspaces_tags_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_transactions::handle_workspaces_transactions_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2531,13 +2630,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_wallets_walletid_checkpoints::handle_workspaces_wallets_walletid_checkpoints_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2546,7 +2645,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2555,19 +2654,19 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tags_tagid::handle_workspaces_tags_tagid_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_transactions_categories_categoryid::handle_workspaces_transactions_categories_categoryid_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) = workspaces_wallets_walletid::handle_workspaces_wallets_walletid_route(
@@ -2575,13 +2674,13 @@ pub(crate) async fn handle_backend_request(
     )
     .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_members::handle_workspaces_members_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2590,13 +2689,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tasks::handle_workspaces_tasks_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2605,7 +2704,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2614,13 +2713,13 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_cron_jobs::handle_workspaces_cron_jobs_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2629,7 +2728,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2638,7 +2737,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2647,26 +2746,26 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_mind_boards::handle_workspaces_mind_boards_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_tasks_taskid::handle_workspaces_tasks_taskid_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_secrets::handle_workspaces_secrets_route(config, request, outbound).await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2675,7 +2774,7 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
@@ -2684,21 +2783,118 @@ pub(crate) async fn handle_backend_request(
         )
         .await
     {
-        return response;
+        return Some(response);
     }
 
     if let Some(response) =
         workspaces_habit_trackers::handle_workspaces_habit_trackers_route(config, request, outbound)
             .await
     {
-        return response;
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_07(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_inventory_storefronts::handle_workspaces_inventory_storefronts_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_users_userid::handle_workspaces_users_userid_route(config, request, outbound)
+            .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_mail_mailboxes_mailboxid_messages::handle_workspaces_mail_mailboxes_mailboxid_messages_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_ai_prompts_promptid::handle_workspaces_ai_prompts_promptid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_finance_budgets::handle_workspaces_finance_budgets_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_habit_trackers_trackerid_entries::handle_workspaces_habit_trackers_trackerid_entries_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_cron_jobs_jobid::handle_workspaces_cron_jobs_jobid_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_inventory_polar_settings::handle_workspaces_inventory_polar_settings_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        admin_external_projects::handle_admin_external_projects_route(config, request, outbound)
+            .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_inventory_costing::handle_workspaces_inventory_costing_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_inventory_polar_product_sync::handle_workspaces_inventory_polar_product_sync_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
     }
 
     if let Some(response) = handle_discord_cron_proxy(config, request, outbound).await {
-        return response;
+        return Some(response);
     }
 
-    route_request(config, request)
+    None
 }
 
 async fn handle_discord_cron_proxy(
