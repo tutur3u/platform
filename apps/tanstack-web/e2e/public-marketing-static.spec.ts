@@ -37,11 +37,11 @@ const staticRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/branding`,
-    heading: 'Brand guidelines and assets',
+    heading: 'Tuturuuu Branding',
   },
   {
     path: `/${DEFAULT_LOCALE}/careers`,
-    heading: 'Build the Future of Focused Work',
+    heading: 'Build the Future of Human Potential',
   },
   {
     path: `/${DEFAULT_LOCALE}/changelog`,
