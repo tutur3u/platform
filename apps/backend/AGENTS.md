@@ -49,6 +49,13 @@ ONE handler's path guard crashes unrelated routes/tests, not just its own.
 - Guard length before any `segments[i]`; prefer `segments.get(i)` + `?`.
 - After authoring a handler, run `cargo test --lib`: a green-compile handler can
   still panic at runtime and turn dozens of unrelated tests red.
+- **Match the ACTUAL legacy mount path, not an assumed `/api/v1/` prefix.** Many
+  routes are mounted at `/api/workspaces/...` (no `v1`); others at
+  `/api/v1/workspaces/...`. A handler that hardcodes the wrong prefix compiles
+  and passes tests but silently never matches (falls through to the 404
+  sentinel). The coverage probe (below) catches this — every newly-integrated
+  route must show COVER, not FRESH. Take the prefix verbatim from the legacy
+  route's on-disk path / the manifest `routePath`.
 
 ## Detecting which routes are already migrated (precise, not by filename)
 
