@@ -822,7 +822,7 @@ function validateTanstackDualCompose(composeContent) {
       '}',
     '      - PORT=${' + 'TANSTACK_WEB_PORT:-7824' + '}',
     '          "node",',
-    "body.includes('Backend reachable')",
+    '          "docker/healthcheck.mjs",',
     '      - "127.0.0.1:${' +
       'TANSTACK_WEB_PORT:-7824' +
       '}:${' +
@@ -1034,7 +1034,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
     "http://127.0.0.1:'' + port + path",
-    "body.includes(''Backend reachable'')",
+    '        "docker/healthcheck.mjs",',
     '      test: ["CMD", "/app/backend", "healthcheck"]',
     '      - BACKEND_ENV=production\n      - BACKEND_INTERNAL_TOKEN\n      - PORT=7820',
     '      - PORT=8000\n      - SUPABASE_URL',
@@ -1386,8 +1386,9 @@ function validateTanstackWebDockerfile(
     'COPY --from=builder /workspace/apps/tanstack-web/node_modules ./node_modules',
     'COPY --from=builder /workspace/packages /app/packages',
     'COPY --from=builder /workspace/apps/tanstack-web/dist ./dist',
+    'COPY --from=builder /workspace/apps/tanstack-web/docker/healthcheck.mjs ./docker/healthcheck.mjs',
     'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs',
-    "body.includes('Backend reachable')",
+    'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "docker/healthcheck.mjs"]',
     'CMD ["node", "docker/server.mjs"]',
   ];
 

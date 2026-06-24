@@ -135,10 +135,11 @@ COPY --from=builder /workspace/node_modules/.bun /app/node_modules/.bun
 COPY --from=builder /workspace/apps/tanstack-web/node_modules ./node_modules
 COPY --from=builder /workspace/packages /app/packages
 COPY --from=builder /workspace/apps/tanstack-web/dist ./dist
+COPY --from=builder /workspace/apps/tanstack-web/docker/healthcheck.mjs ./docker/healthcheck.mjs
 COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs
 
 EXPOSE 7824
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 7824}/`).then(async (response) => { const body = await response.text(); process.exit(response.status < 500 && body.includes('Backend reachable') ? 0 : 1); }).catch(() => process.exit(1))"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "docker/healthcheck.mjs"]
 
 CMD ["node", "docker/server.mjs"]

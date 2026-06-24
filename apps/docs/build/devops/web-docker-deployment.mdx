@@ -155,9 +155,10 @@ parallel `apps/tanstack-web` migration runtime.
   proxy-routing experiment. Production TanStack services wait on the Rust
   backend `service_healthy` check before starting, because the Start runtime
   uses `BACKEND_INTERNAL_URL=http://backend:7820` for server-owned API calls.
-  The TanStack image and production Compose healthchecks also require the root
-  readiness page to include `Backend reachable`, so a status-only shell cannot
-  satisfy Docker cutover readiness when the Rust backend is unreachable.
+  The TanStack image and production Compose healthchecks run
+  `apps/tanstack-web/docker/healthcheck.mjs`, which requires the local
+  TanStack HTTP runner to answer below `500` and the configured
+  `BACKEND_INTERNAL_URL` to pass `/healthz`.
   Use `DOCKER_WEB_FRONTEND=next|tanstack` to select the default web frontend in
   migration-aware scripts. The default is still `next`; setting `tanstack`
   keeps nginx on the public `web-proxy:7803` listener but routes the active
