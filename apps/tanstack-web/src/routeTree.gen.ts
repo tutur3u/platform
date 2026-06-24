@@ -26,6 +26,7 @@ import { Route as LocalePricingRouteImport } from './routes/$locale/pricing';
 import { Route as LocalePartnersRouteImport } from './routes/$locale/partners';
 import { Route as LocaleModelsRouteImport } from './routes/$locale/models';
 import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together';
+import { Route as LocaleMeetRouteImport } from './routes/$locale/meet';
 import { Route as LocaleLogoutRouteImport } from './routes/$locale/logout';
 import { Route as LocaleLoginRouteImport } from './routes/$locale/login';
 import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup';
@@ -313,6 +314,11 @@ const LocaleModelsRoute = LocaleModelsRouteImport.update({
 const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
   id: '/meet-together',
   path: '/meet-together',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleMeetRoute = LocaleMeetRouteImport.update({
+  id: '/meet',
+  path: '/meet',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleLogoutRoute = LocaleLogoutRouteImport.update({
@@ -1482,6 +1488,7 @@ export interface FileRoutesByFullPath {
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute;
   '/$locale/login': typeof LocaleLoginRoute;
   '/$locale/logout': typeof LocaleLogoutRoute;
+  '/$locale/meet': typeof LocaleMeetRoute;
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute;
   '/$locale/models': typeof LocaleModelsRoute;
   '/$locale/partners': typeof LocalePartnersRoute;
@@ -1703,6 +1710,7 @@ export interface FileRoutesByTo {
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute;
   '/$locale/login': typeof LocaleLoginRoute;
   '/$locale/logout': typeof LocaleLogoutRoute;
+  '/$locale/meet': typeof LocaleMeetRoute;
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute;
   '/$locale/models': typeof LocaleModelsRoute;
   '/$locale/partners': typeof LocalePartnersRoute;
@@ -1925,6 +1933,7 @@ export interface FileRoutesById {
   '/$locale/facebook-mockup': typeof LocaleFacebookMockupRoute;
   '/$locale/login': typeof LocaleLoginRoute;
   '/$locale/logout': typeof LocaleLogoutRoute;
+  '/$locale/meet': typeof LocaleMeetRoute;
   '/$locale/meet-together': typeof LocaleMeetTogetherRoute;
   '/$locale/models': typeof LocaleModelsRoute;
   '/$locale/partners': typeof LocalePartnersRoute;
@@ -2149,6 +2158,7 @@ export interface FileRouteTypes {
     | '/$locale/facebook-mockup'
     | '/$locale/login'
     | '/$locale/logout'
+    | '/$locale/meet'
     | '/$locale/meet-together'
     | '/$locale/models'
     | '/$locale/partners'
@@ -2370,6 +2380,7 @@ export interface FileRouteTypes {
     | '/$locale/facebook-mockup'
     | '/$locale/login'
     | '/$locale/logout'
+    | '/$locale/meet'
     | '/$locale/meet-together'
     | '/$locale/models'
     | '/$locale/partners'
@@ -2591,6 +2602,7 @@ export interface FileRouteTypes {
     | '/$locale/facebook-mockup'
     | '/$locale/login'
     | '/$locale/logout'
+    | '/$locale/meet'
     | '/$locale/meet-together'
     | '/$locale/models'
     | '/$locale/partners'
@@ -2922,6 +2934,13 @@ declare module '@tanstack/react-router' {
       path: '/meet-together';
       fullPath: '/$locale/meet-together';
       preLoaderRoute: typeof LocaleMeetTogetherRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/meet': {
+      id: '/$locale/meet';
+      path: '/meet';
+      fullPath: '/$locale/meet';
+      preLoaderRoute: typeof LocaleMeetRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/logout': {
@@ -4747,6 +4766,7 @@ interface LocaleRouteRouteChildren {
   LocaleFacebookMockupRoute: typeof LocaleFacebookMockupRoute;
   LocaleLoginRoute: typeof LocaleLoginRoute;
   LocaleLogoutRoute: typeof LocaleLogoutRoute;
+  LocaleMeetRoute: typeof LocaleMeetRoute;
   LocaleMeetTogetherRoute: typeof LocaleMeetTogetherRoute;
   LocaleModelsRoute: typeof LocaleModelsRoute;
   LocalePartnersRoute: typeof LocalePartnersRoute;
@@ -4911,6 +4931,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleFacebookMockupRoute: LocaleFacebookMockupRoute,
   LocaleLoginRoute: LocaleLoginRoute,
   LocaleLogoutRoute: LocaleLogoutRoute,
+  LocaleMeetRoute: LocaleMeetRoute,
   LocaleMeetTogetherRoute: LocaleMeetTogetherRoute,
   LocaleModelsRoute: LocaleModelsRoute,
   LocalePartnersRoute: LocalePartnersRoute,
