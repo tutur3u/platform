@@ -1529,6 +1529,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId preserves the legacy 308 redirect to /:wsId/education/courses/:courseId/builder. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/content:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/content ports the legacy module content editor with fail-closed current-user auth, workspace resolution, forwarded internal-api module reads, and TanStack Query/internal-api-backed debounced content saves. This marks only the frontend page artifact migrated; the parent module layout and module API ownership remain separately tracked."
+    },
     "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/extra-content:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/extra-content/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
