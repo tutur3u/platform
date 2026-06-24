@@ -8,6 +8,7 @@ import {
   deleteWorkspaceTaskProject,
   disableWorkspaceTaskBoardPublicLink,
   enableWorkspaceTaskBoardPublicLink,
+  getPublicTaskBoard,
   getTaskDialogHydration,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
@@ -336,6 +337,34 @@ describe('workspace board internal-api helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
       expect.objectContaining({
         method: 'DELETE',
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('loads a public task board through the shared public endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        board: {
+          id: 'board-1',
+          name: 'Public roadmap',
+          created_at: '2026-06-24T00:00:00.000Z',
+        },
+        generatedAt: '2026-06-24T01:00:00.000Z',
+        lists: [],
+        tasks: [],
+        truncated: false,
+      })
+    );
+
+    await getPublicTaskBoard('Shared Code', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/shared/task-boards/Shared%20Code',
+      expect.objectContaining({
         cache: 'no-store',
       })
     );

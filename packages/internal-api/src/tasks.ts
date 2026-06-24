@@ -26,6 +26,70 @@ export interface InternalApiTaskProjectSummary {
   status: string | null;
 }
 
+export interface PublicTaskBoardBoard {
+  created_at: string | null;
+  icon: string | null;
+  id: string;
+  name: string | null;
+  ticket_prefix: string | null;
+}
+
+export interface PublicTaskBoardList {
+  color: string | null;
+  created_at: string | null;
+  id: string;
+  name: string | null;
+  position: number | null;
+  status: string | null;
+}
+
+export interface PublicTaskBoardLabel {
+  color: string;
+  id: string;
+  name: string;
+}
+
+export interface PublicTaskBoardProject {
+  id: string;
+  name: string;
+  status: string | null;
+}
+
+export interface PublicTaskBoardAssignee {
+  avatar_url: string | null;
+  display_name: string | null;
+  handle: string | null;
+  id: string;
+}
+
+export type PublicTaskBoardPriority = 'critical' | 'high' | 'low' | 'normal';
+
+export interface PublicTaskBoardTask {
+  assignees: PublicTaskBoardAssignee[];
+  closed_at: string | null;
+  completed_at: string | null;
+  created_at: string | null;
+  display_number: number | null;
+  end_date: string | null;
+  estimation_points: number | null;
+  id: string;
+  labels: PublicTaskBoardLabel[];
+  list_id: string;
+  name: string;
+  priority: PublicTaskBoardPriority | null;
+  projects: PublicTaskBoardProject[];
+  sort_key: number | null;
+  start_date: string | null;
+}
+
+export interface PublicTaskBoardPayload {
+  board: PublicTaskBoardBoard;
+  generatedAt: string;
+  lists: PublicTaskBoardList[];
+  tasks: PublicTaskBoardTask[];
+  truncated: boolean;
+}
+
 export interface TaskProjectLinkedSourceTask {
   id: string;
   name?: string | null;
@@ -1230,6 +1294,19 @@ export async function disableWorkspaceTaskBoardPublicLink(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getPublicTaskBoard(
+  code: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<PublicTaskBoardPayload>(
+    `/api/v1/shared/task-boards/${encodePathSegment(code)}`,
+    {
       cache: 'no-store',
     }
   );

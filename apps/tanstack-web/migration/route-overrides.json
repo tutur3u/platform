@@ -2589,6 +2589,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/shared/task/$shareCode ports the legacy authenticated shared-task page with fail-closed current-user resolution before task data fetch, 307 login redirect preserving nextUrl, noindex head metadata, unavailable shell for revoked or missing links, and shared TaskEditDialog rendering through SharedTaskContent. The page forwards authenticated cookies to the legacy /api/v1/shared/tasks/:shareCode endpoint, so that API artifact remains separately legacy-owned."
     },
+    "page:/:locale/shared/task-boards/:code:apps/web/src/app/[locale]/shared/task-boards/[code]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/shared/task-boards/$code ports the legacy public task-board page as a dynamic no-store shared route. It loads the sanitized public board payload through packages/internal-api, preserves noindex head metadata and the localized unavailable shell for missing or revoked links, and renders the read-only BoardViews public board shell from TanStack-local payload adapters. The backing /api/v1/shared/task-boards/:code endpoint remains separately legacy-owned pending Rust backend migration."
+    },
     "page:/:locale/shared/user-profile/:code:apps/web/src/app/[locale]/shared/user-profile/[code]/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
