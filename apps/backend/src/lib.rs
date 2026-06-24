@@ -23,6 +23,7 @@ mod auth_mfa_mobile_challenges;
 mod auth_qr_login_challenges;
 mod calendar_auth;
 mod calendar_auth_microsoft;
+mod calendar_auth_provider_calendars;
 mod changelog;
 mod cms_workspaces;
 mod contact;
@@ -136,6 +137,7 @@ mod user_identities;
 mod user_identities_test;
 mod user_profile;
 mod users_me_identity_link;
+mod users_me_tasks_taskid;
 mod workspace_education_access;
 mod workspace_external_projects_members;
 mod workspace_external_projects_members_enhanced;
@@ -163,8 +165,10 @@ mod workspace_users_me;
 mod workspaces;
 mod workspaces_2;
 mod workspaces_3;
+mod workspaces_api_keys_keyid_usage_logs;
 mod workspaces_billing;
 mod workspaces_boards;
+mod workspaces_boards_data;
 mod workspaces_boards_estimation;
 mod workspaces_boards_with_lists;
 mod workspaces_calendar_habit_events;
@@ -177,6 +181,8 @@ mod workspaces_chat_realtime;
 mod workspaces_chat_search;
 mod workspaces_course_modules_quiz_sets;
 mod workspaces_datasets_full;
+mod workspaces_deleted;
+mod workspaces_education_attempts;
 mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
 mod workspaces_external_projects_storage_analytics;
@@ -186,6 +192,7 @@ mod workspaces_finance_charts_categories;
 mod workspaces_finance_charts_daily;
 mod workspaces_finance_charts_income_expense_summary;
 mod workspaces_finance_charts_monthly;
+mod workspaces_finance_invoices_analytics;
 mod workspaces_finance_invoices_count;
 mod workspaces_finance_overview;
 mod workspaces_finance_wallets_expense_count;
@@ -195,9 +202,11 @@ mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms_export;
 mod workspaces_forms_responses_export;
 mod workspaces_forms_share_link;
+mod workspaces_habits_habitid_stats;
 mod workspaces_infrastructure_realtime_analytics;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
+mod workspaces_inventory_overview;
 mod workspaces_inventory_product_form_options;
 mod workspaces_inventory_sales;
 mod workspaces_inventory_statistics;
@@ -206,6 +215,7 @@ mod workspaces_invite_status;
 mod workspaces_list;
 mod workspaces_mail;
 mod workspaces_mail_mailboxes_messages;
+mod workspaces_meetings_meetingid_recordings;
 mod workspaces_meetings_recordings_play;
 mod workspaces_members_enhanced;
 mod workspaces_mind_boards_patches;
@@ -225,8 +235,10 @@ mod workspaces_storage_list;
 mod workspaces_storage_object;
 mod workspaces_storage_rollout_state;
 mod workspaces_tags_stats;
+mod workspaces_task_boards_boardid_viewable_members;
 mod workspaces_task_plans_digest;
 mod workspaces_tasks_snapshot;
+mod workspaces_tasks_taskid_history;
 mod workspaces_teach_users;
 mod workspaces_templates;
 mod workspaces_time_tracker_stats;
@@ -238,6 +250,7 @@ mod workspaces_time_tracking_tasks;
 mod workspaces_time_tracking_templates;
 mod workspaces_transactions_category_breakdown;
 mod workspaces_transactions_export;
+mod workspaces_transactions_infinite;
 mod workspaces_transactions_spending_trends;
 mod workspaces_transactions_stats;
 mod workspaces_transactions_transactionid_tags;
@@ -264,6 +277,7 @@ mod workspaces_users_emails;
 mod workspaces_users_referral_discounts;
 mod workspaces_users_reports_groups_bulk_export;
 mod workspaces_users_reports_logs;
+mod workspaces_users_userid_user_groups;
 mod workspaces_wallets_checkpoints_history;
 mod workspaces_wallets_infinite;
 mod workspaces_wallets_walletid_credit_summary;
@@ -2141,6 +2155,123 @@ pub(crate) async fn handle_backend_request(
         config, request, outbound,
     )
     .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_infinite::handle_workspaces_transactions_infinite_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_invoices_analytics::handle_workspaces_finance_invoices_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_userid_user_groups::handle_workspaces_users_userid_user_groups_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks_taskid_history::handle_workspaces_tasks_taskid_history_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_habits_habitid_stats::handle_workspaces_habits_habitid_stats_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_api_keys_keyid_usage_logs::handle_workspaces_api_keys_keyid_usage_logs_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        calendar_auth_provider_calendars::handle_calendar_auth_provider_calendars_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_inventory_overview::handle_workspaces_inventory_overview_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_deleted::handle_workspaces_deleted_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_education_attempts::handle_workspaces_education_attempts_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_meetings_meetingid_recordings::handle_workspaces_meetings_meetingid_recordings_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_boards_data::handle_workspaces_boards_data_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_task_boards_boardid_viewable_members::handle_workspaces_task_boards_boardid_viewable_members_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        users_me_tasks_taskid::handle_users_me_tasks_taskid_route(config, request, outbound).await
     {
         return response;
     }
