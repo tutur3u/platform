@@ -1054,6 +1054,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/verify-token preserves the legacy nextUrl normalization and /onboarding fallback through the shared auth redirect helper."
     },
+    "page:/:locale/add-account:apps/web/src/app/[locale]/(auth)/add-account/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/add-account ports the legacy account-switcher add-account handoff with localized loading/success/error states, returnUrl search handling, TanStack Query mutation state, and @tuturuuu/internal-api saveCurrentWebAccountWithInternalApi instead of a raw protected API call or Next navigation dependency."
+    },
     "page:/:locale/:wsId/workforce:apps/web/src/app/[locale]/(dashboard)/[wsId]/workforce/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

@@ -37,6 +37,7 @@ import { Route as LocaleChangelogRouteImport } from './routes/$locale/changelog'
 import { Route as LocaleCareersRouteImport } from './routes/$locale/careers';
 import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding';
 import { Route as LocaleBlogRouteImport } from './routes/$locale/blog';
+import { Route as LocaleAddAccountRouteImport } from './routes/$locale/add-account';
 import { Route as LocaleAcceptableUseRouteImport } from './routes/$locale/acceptable-use';
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about';
 import { Route as LocaleUiIndexRouteImport } from './routes/$locale/ui/index';
@@ -358,6 +359,11 @@ const LocaleBrandingRoute = LocaleBrandingRouteImport.update({
 const LocaleBlogRoute = LocaleBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleAddAccountRoute = LocaleAddAccountRouteImport.update({
+  id: '/add-account',
+  path: '/add-account',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleAcceptableUseRoute = LocaleAcceptableUseRouteImport.update({
@@ -1397,6 +1403,7 @@ export interface FileRoutesByFullPath {
   '/~offline': typeof Char126offlineRoute;
   '/$locale/about': typeof LocaleAboutRoute;
   '/$locale/acceptable-use': typeof LocaleAcceptableUseRoute;
+  '/$locale/add-account': typeof LocaleAddAccountRoute;
   '/$locale/blog': typeof LocaleBlogRoute;
   '/$locale/branding': typeof LocaleBrandingRoute;
   '/$locale/careers': typeof LocaleCareersRoute;
@@ -1607,6 +1614,7 @@ export interface FileRoutesByTo {
   '/~offline': typeof Char126offlineRoute;
   '/$locale/about': typeof LocaleAboutRoute;
   '/$locale/acceptable-use': typeof LocaleAcceptableUseRoute;
+  '/$locale/add-account': typeof LocaleAddAccountRoute;
   '/$locale/blog': typeof LocaleBlogRoute;
   '/$locale/branding': typeof LocaleBrandingRoute;
   '/$locale/careers': typeof LocaleCareersRoute;
@@ -1818,6 +1826,7 @@ export interface FileRoutesById {
   '/~offline': typeof Char126offlineRoute;
   '/$locale/about': typeof LocaleAboutRoute;
   '/$locale/acceptable-use': typeof LocaleAcceptableUseRoute;
+  '/$locale/add-account': typeof LocaleAddAccountRoute;
   '/$locale/blog': typeof LocaleBlogRoute;
   '/$locale/branding': typeof LocaleBrandingRoute;
   '/$locale/careers': typeof LocaleCareersRoute;
@@ -2031,6 +2040,7 @@ export interface FileRouteTypes {
     | '/~offline'
     | '/$locale/about'
     | '/$locale/acceptable-use'
+    | '/$locale/add-account'
     | '/$locale/blog'
     | '/$locale/branding'
     | '/$locale/careers'
@@ -2241,6 +2251,7 @@ export interface FileRouteTypes {
     | '/~offline'
     | '/$locale/about'
     | '/$locale/acceptable-use'
+    | '/$locale/add-account'
     | '/$locale/blog'
     | '/$locale/branding'
     | '/$locale/careers'
@@ -2451,6 +2462,7 @@ export interface FileRouteTypes {
     | '/~offline'
     | '/$locale/about'
     | '/$locale/acceptable-use'
+    | '/$locale/add-account'
     | '/$locale/blog'
     | '/$locale/branding'
     | '/$locale/careers'
@@ -2860,6 +2872,13 @@ declare module '@tanstack/react-router' {
       path: '/blog';
       fullPath: '/$locale/blog';
       preLoaderRoute: typeof LocaleBlogRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/add-account': {
+      id: '/$locale/add-account';
+      path: '/add-account';
+      fullPath: '/$locale/add-account';
+      preLoaderRoute: typeof LocaleAddAccountRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/acceptable-use': {
@@ -4519,6 +4538,7 @@ const LocaleWsIdUsersGroupsGroupIdRouteWithChildren =
 interface LocaleRouteRouteChildren {
   LocaleAboutRoute: typeof LocaleAboutRoute;
   LocaleAcceptableUseRoute: typeof LocaleAcceptableUseRoute;
+  LocaleAddAccountRoute: typeof LocaleAddAccountRoute;
   LocaleBlogRoute: typeof LocaleBlogRoute;
   LocaleBrandingRoute: typeof LocaleBrandingRoute;
   LocaleCareersRoute: typeof LocaleCareersRoute;
@@ -4672,6 +4692,7 @@ interface LocaleRouteRouteChildren {
 const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleAboutRoute: LocaleAboutRoute,
   LocaleAcceptableUseRoute: LocaleAcceptableUseRoute,
+  LocaleAddAccountRoute: LocaleAddAccountRoute,
   LocaleBlogRoute: LocaleBlogRoute,
   LocaleBrandingRoute: LocaleBrandingRoute,
   LocaleCareersRoute: LocaleCareersRoute,
