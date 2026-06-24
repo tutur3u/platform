@@ -234,7 +234,11 @@ const expectPublicDynamicNotFound = async (
   ).toBeVisible();
 };
 
-const landingRoutes = [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
+// TanStack migrates `/:locale`; bare `/` remains the migration dashboard.
+const landingRoutes =
+  process.env.DOCKER_WEB_FRONTEND === 'tanstack'
+    ? [{ path: `/${DEFAULT_LOCALE}` }]
+    : [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
 
 const qrAppRedirectLocation =
   /^https:\/\/(?:[a-z0-9-]+\.)?qr\.tuturuuu\.localhost(?::\d+)?\/\?utm_source=e2e&tag=a&tag=b$/u;

@@ -37,7 +37,10 @@ export function LandingHero({
             {content.badge}
           </span>
 
-          <h1 className="mx-auto max-w-4xl font-bold text-4xl tracking-normal sm:text-5xl lg:mx-0 lg:text-6xl">
+          <h1
+            aria-label={`${content.title.line1} ${content.title.line2}`}
+            className="mx-auto max-w-4xl font-bold text-4xl tracking-normal sm:text-5xl lg:mx-0 lg:text-6xl"
+          >
             <span>{content.title.line1}</span>{' '}
             <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-blue to-dynamic-cyan bg-clip-text text-transparent">
               {content.title.line2}

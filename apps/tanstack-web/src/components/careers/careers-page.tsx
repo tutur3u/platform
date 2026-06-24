@@ -207,7 +207,7 @@ export function CareersPage() {
               <h1 className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
                 Build the Future of{' '}
                 <span className="bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-pink bg-clip-text text-transparent">
-                  Focused Work
+                  Human Potential
                 </span>
               </h1>
               <p className="mb-8 max-w-2xl text-foreground/70 text-lg leading-relaxed sm:text-xl">

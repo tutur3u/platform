@@ -3,6 +3,9 @@ import { pricingRedirectHref } from '../../lib/platform/redirects';
 
 export const Route = createFileRoute('/$locale/pricing')({
   loader: () => {
-    throw redirect({ href: pricingRedirectHref(), statusCode: 307 });
+    throw redirect({
+      href: pricingRedirectHref({ localized: true }),
+      statusCode: 307,
+    });
   },
 });
