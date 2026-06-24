@@ -11,8 +11,8 @@ import { resolveMessagesLocale } from '@/lib/platform/messages';
 import { resolveWorkspace } from '@/lib/platform/workspace';
 import { requireWorkspacePermission } from '@/lib/platform/workspace-permission';
 
-export const Route = createFileRoute('/$locale/$wsId/crawlers')({
-  component: CrawlerListRoutePage,
+export const Route = createFileRoute('/$locale/$wsId/queues')({
+  component: QueueListRoutePage,
   validateSearch: validateCrawlerListSearch,
   loaderDeps: ({ search }) => ({
     domain: search.domain,
@@ -24,15 +24,15 @@ export const Route = createFileRoute('/$locale/$wsId/crawlers')({
     const locale = resolveMessagesLocale(params.locale);
 
     return createPageHead({
-      description: 'Manage crawled URLs in your Tuturuuu workspace.',
+      description: 'Manage Queues in your Tuturuuu workspace.',
       locale,
-      title: 'Crawlers',
+      title: 'Queues',
     });
   },
   loader: async ({ params, deps }): Promise<CrawlerListData> => {
     await requireCurrentUser({
       locale: params.locale,
-      nextPath: `/${params.wsId}/crawlers`,
+      nextPath: `/${params.wsId}/queues`,
     });
 
     const workspace = await resolveWorkspace({ data: { wsId: params.wsId } });
@@ -55,7 +55,7 @@ export const Route = createFileRoute('/$locale/$wsId/crawlers')({
   },
 });
 
-function CrawlerListRoutePage() {
+function QueueListRoutePage() {
   const data = Route.useLoaderData() as CrawlerListData | undefined;
 
   if (!data) {
@@ -65,6 +65,7 @@ function CrawlerListRoutePage() {
   return (
     <CrawlerListClientPage
       count={data.count}
+      crawledHref={`/${data.wsId}/queues`}
       crawledUrls={data.crawledUrls}
       domains={data.domains}
       page={data.page}
@@ -72,6 +73,7 @@ function CrawlerListRoutePage() {
       search={data.search}
       selectedDomain={data.domain}
       uncrawledCount={data.uncrawledCount}
+      uncrawledHref={`/${data.wsId}/crawlers/uncrawled`}
       wsId={data.wsId}
     />
   );

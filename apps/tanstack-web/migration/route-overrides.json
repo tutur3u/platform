@@ -1294,6 +1294,16 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/crawlers/uncrawled ports the legacy authenticated uncrawled URL view as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, grouped URL display, and uncrawled/domain data loaded through Rust-owned backend crawler facades while intentionally omitting Crawl All and per-row crawl POST actions."
     },
+    "page:/:locale/:wsId/pipelines:apps/web/src/app/[locale]/(dashboard)/[wsId]/(ai)/pipelines/(default)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/pipelines ports the legacy authenticated crawler-backed pipelines page as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, quick uncrawled/domain stats, and crawled URL data loaded through Rust-owned backend crawler facades instead of direct Supabase reads, create forms, row actions, or raw browser /api fetches."
+    },
+    "page:/:locale/:wsId/queues:apps/web/src/app/[locale]/(dashboard)/[wsId]/queues/(default)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/queues ports the legacy authenticated crawler-backed queue page as a dynamic no-store read-only dashboard page with ai_lab gating, URL-backed page/pageSize/domain/search state, quick uncrawled/domain stats, and crawled URL data loaded through Rust-owned backend crawler facades instead of direct Supabase reads, create forms, row actions, or raw browser /api fetches."
+    },
     "page:/:locale/:wsId/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

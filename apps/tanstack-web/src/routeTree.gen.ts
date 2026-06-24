@@ -76,10 +76,12 @@ import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/w
 import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce';
 import { Route as LocaleWsIdRolesRouteImport } from './routes/$locale/$wsId/roles';
 import { Route as LocaleWsIdReadingsRouteImport } from './routes/$locale/$wsId/readings';
+import { Route as LocaleWsIdQueuesRouteImport } from './routes/$locale/$wsId/queues';
 import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator';
 import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/progress';
 import { Route as LocaleWsIdPostsRouteImport } from './routes/$locale/$wsId/posts';
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls';
+import { Route as LocaleWsIdPipelinesRouteImport } from './routes/$locale/$wsId/pipelines';
 import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind';
 import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics';
 import { Route as LocaleWsIdMemoriesRouteImport } from './routes/$locale/$wsId/memories';
@@ -568,6 +570,11 @@ const LocaleWsIdReadingsRoute = LocaleWsIdReadingsRouteImport.update({
   path: '/$wsId/readings',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdQueuesRoute = LocaleWsIdQueuesRouteImport.update({
+  id: '/$wsId/queues',
+  path: '/$wsId/queues',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
 const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
   id: '/$wsId/qr-generator',
   path: '/$wsId/qr-generator',
@@ -586,6 +593,11 @@ const LocaleWsIdPostsRoute = LocaleWsIdPostsRouteImport.update({
 const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
   id: '/$wsId/polls',
   path: '/$wsId/polls',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdPipelinesRoute = LocaleWsIdPipelinesRouteImport.update({
+  id: '/$wsId/pipelines',
+  path: '/$wsId/pipelines',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdMindRoute = LocaleWsIdMindRouteImport.update({
@@ -1445,10 +1457,12 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
+  '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
   '/$locale/$wsId/posts': typeof LocaleWsIdPostsRoute;
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute;
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute;
+  '/$locale/$wsId/queues': typeof LocaleWsIdQueuesRoute;
   '/$locale/$wsId/readings': typeof LocaleWsIdReadingsRoute;
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute;
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute;
@@ -1656,10 +1670,12 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
+  '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
   '/$locale/$wsId/posts': typeof LocaleWsIdPostsRoute;
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute;
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute;
+  '/$locale/$wsId/queues': typeof LocaleWsIdQueuesRoute;
   '/$locale/$wsId/readings': typeof LocaleWsIdReadingsRoute;
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute;
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute;
@@ -1868,10 +1884,12 @@ export interface FileRoutesById {
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
+  '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
   '/$locale/$wsId/posts': typeof LocaleWsIdPostsRoute;
   '/$locale/$wsId/progress': typeof LocaleWsIdProgressRoute;
   '/$locale/$wsId/qr-generator': typeof LocaleWsIdQrGeneratorRoute;
+  '/$locale/$wsId/queues': typeof LocaleWsIdQueuesRoute;
   '/$locale/$wsId/readings': typeof LocaleWsIdReadingsRoute;
   '/$locale/$wsId/roles': typeof LocaleWsIdRolesRoute;
   '/$locale/$wsId/workforce': typeof LocaleWsIdWorkforceRoute;
@@ -2082,10 +2100,12 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/mind'
+    | '/$locale/$wsId/pipelines'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/posts'
     | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/queues'
     | '/$locale/$wsId/readings'
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
@@ -2293,10 +2313,12 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/mind'
+    | '/$locale/$wsId/pipelines'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/posts'
     | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/queues'
     | '/$locale/$wsId/readings'
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
@@ -2504,10 +2526,12 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
     | '/$locale/$wsId/mind'
+    | '/$locale/$wsId/pipelines'
     | '/$locale/$wsId/polls'
     | '/$locale/$wsId/posts'
     | '/$locale/$wsId/progress'
     | '/$locale/$wsId/qr-generator'
+    | '/$locale/$wsId/queues'
     | '/$locale/$wsId/readings'
     | '/$locale/$wsId/roles'
     | '/$locale/$wsId/workforce'
@@ -3147,6 +3171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdReadingsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/queues': {
+      id: '/$locale/$wsId/queues';
+      path: '/$wsId/queues';
+      fullPath: '/$locale/$wsId/queues';
+      preLoaderRoute: typeof LocaleWsIdQueuesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/qr-generator': {
       id: '/$locale/$wsId/qr-generator';
       path: '/$wsId/qr-generator';
@@ -3173,6 +3204,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/polls';
       fullPath: '/$locale/$wsId/polls';
       preLoaderRoute: typeof LocaleWsIdPollsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/pipelines': {
+      id: '/$locale/$wsId/pipelines';
+      path: '/$wsId/pipelines';
+      fullPath: '/$locale/$wsId/pipelines';
+      preLoaderRoute: typeof LocaleWsIdPipelinesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/mind': {
@@ -4579,10 +4617,12 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdMemoriesRoute: typeof LocaleWsIdMemoriesRoute;
   LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute;
   LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren;
+  LocaleWsIdPipelinesRoute: typeof LocaleWsIdPipelinesRoute;
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute;
   LocaleWsIdPostsRoute: typeof LocaleWsIdPostsRoute;
   LocaleWsIdProgressRoute: typeof LocaleWsIdProgressRoute;
   LocaleWsIdQrGeneratorRoute: typeof LocaleWsIdQrGeneratorRoute;
+  LocaleWsIdQueuesRoute: typeof LocaleWsIdQueuesRoute;
   LocaleWsIdReadingsRoute: typeof LocaleWsIdReadingsRoute;
   LocaleWsIdRolesRoute: typeof LocaleWsIdRolesRoute;
   LocaleWsIdWorkforceRoute: typeof LocaleWsIdWorkforceRoute;
@@ -4733,10 +4773,12 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdMemoriesRoute: LocaleWsIdMemoriesRoute,
   LocaleWsIdMetricsRoute: LocaleWsIdMetricsRoute,
   LocaleWsIdMindRoute: LocaleWsIdMindRouteWithChildren,
+  LocaleWsIdPipelinesRoute: LocaleWsIdPipelinesRoute,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
   LocaleWsIdPostsRoute: LocaleWsIdPostsRoute,
   LocaleWsIdProgressRoute: LocaleWsIdProgressRoute,
   LocaleWsIdQrGeneratorRoute: LocaleWsIdQrGeneratorRoute,
+  LocaleWsIdQueuesRoute: LocaleWsIdQueuesRoute,
   LocaleWsIdReadingsRoute: LocaleWsIdReadingsRoute,
   LocaleWsIdRolesRoute: LocaleWsIdRolesRoute,
   LocaleWsIdWorkforceRoute: LocaleWsIdWorkforceRoute,
