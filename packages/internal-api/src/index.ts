@@ -322,6 +322,18 @@ export {
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
 } from './client';
+export {
+  type CreateWorkspaceDocumentPayload,
+  type CreateWorkspaceDocumentResponse,
+  createWorkspaceDocument,
+  type DeleteWorkspaceDocumentResponse,
+  deleteWorkspaceDocument,
+  type ListWorkspaceDocumentsParams,
+  type ListWorkspaceDocumentsResponse,
+  listAllWorkspaceDocuments,
+  listWorkspaceDocuments,
+  type WorkspaceDocumentSummary,
+} from './documents';
 export type {
   CreateWorkspaceQuizPayload,
   ListAllWorkspaceCourseModulesParams,

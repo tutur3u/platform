@@ -98,6 +98,7 @@ import { Route as LocaleWsIdFinanceRouteImport } from './routes/$locale/$wsId/fi
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects';
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm';
 import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive';
+import { Route as LocaleWsIdDocumentsRouteImport } from './routes/$locale/$wsId/documents';
 import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet';
 import { Route as LocaleWsIdCronRouteImport } from './routes/$locale/$wsId/cron';
 import { Route as LocaleWsIdCrawlersRouteImport } from './routes/$locale/$wsId/crawlers';
@@ -690,6 +691,11 @@ const LocaleWsIdEpmRoute = LocaleWsIdEpmRouteImport.update({
 const LocaleWsIdDriveRoute = LocaleWsIdDriveRouteImport.update({
   id: '/$wsId/drive',
   path: '/$wsId/drive',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdDocumentsRoute = LocaleWsIdDocumentsRouteImport.update({
+  id: '/$wsId/documents',
+  path: '/$wsId/documents',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdDietRoute = LocaleWsIdDietRouteImport.update({
@@ -1519,6 +1525,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
+  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRoute;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
@@ -1743,6 +1750,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
+  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRoute;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
@@ -1968,6 +1976,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/crawlers': typeof LocaleWsIdCrawlersRouteWithChildren;
   '/$locale/$wsId/cron': typeof LocaleWsIdCronRoute;
   '/$locale/$wsId/diet': typeof LocaleWsIdDietRoute;
+  '/$locale/$wsId/documents': typeof LocaleWsIdDocumentsRoute;
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
@@ -2195,6 +2204,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/crawlers'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
+    | '/$locale/$wsId/documents'
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
@@ -2419,6 +2429,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/crawlers'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
+    | '/$locale/$wsId/documents'
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
@@ -2643,6 +2654,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/crawlers'
     | '/$locale/$wsId/cron'
     | '/$locale/$wsId/diet'
+    | '/$locale/$wsId/documents'
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
@@ -3462,6 +3474,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/drive';
       fullPath: '/$locale/$wsId/drive';
       preLoaderRoute: typeof LocaleWsIdDriveRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/documents': {
+      id: '/$locale/$wsId/documents';
+      path: '/$wsId/documents';
+      fullPath: '/$locale/$wsId/documents';
+      preLoaderRoute: typeof LocaleWsIdDocumentsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/diet': {
@@ -4822,6 +4841,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdCrawlersRoute: typeof LocaleWsIdCrawlersRouteWithChildren;
   LocaleWsIdCronRoute: typeof LocaleWsIdCronRoute;
   LocaleWsIdDietRoute: typeof LocaleWsIdDietRoute;
+  LocaleWsIdDocumentsRoute: typeof LocaleWsIdDocumentsRoute;
   LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute;
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren;
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute;
@@ -4989,6 +5009,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdCrawlersRoute: LocaleWsIdCrawlersRouteWithChildren,
   LocaleWsIdCronRoute: LocaleWsIdCronRoute,
   LocaleWsIdDietRoute: LocaleWsIdDietRoute,
+  LocaleWsIdDocumentsRoute: LocaleWsIdDocumentsRoute,
   LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
