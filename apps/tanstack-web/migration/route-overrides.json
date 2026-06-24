@@ -1594,6 +1594,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/settings/notifications:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/notifications/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/settings/notifications ports the legacy authenticated workspace notification settings page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, account notification status, workspace-wide enable/disable, browser permission controls, and editable event/channel preferences through TanStack Query server functions plus the shared notifications internal-api facade. The underlying notification preference API artifacts remain separately tracked for Rust backend ownership."
+    },
     "page:/:locale/:wsId/settings/reports:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/reports/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

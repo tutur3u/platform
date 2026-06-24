@@ -127,6 +127,7 @@ import { Route as LocaleWsIdTasksEstimatesRouteImport } from './routes/$locale/$
 import { Route as LocaleWsIdTasksCyclesRouteImport } from './routes/$locale/$wsId/tasks/cycles';
 import { Route as LocaleWsIdTasksTaskIdRouteImport } from './routes/$locale/$wsId/tasks/$taskId';
 import { Route as LocaleWsIdSettingsReportsRouteImport } from './routes/$locale/$wsId/settings/reports';
+import { Route as LocaleWsIdSettingsNotificationsRouteImport } from './routes/$locale/$wsId/settings/notifications';
 import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes/$locale/$wsId/platform/external-projects';
 import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans';
 import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings';
@@ -845,6 +846,12 @@ const LocaleWsIdSettingsReportsRoute =
   LocaleWsIdSettingsReportsRouteImport.update({
     id: '/$wsId/settings/reports',
     path: '/$wsId/settings/reports',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdSettingsNotificationsRoute =
+  LocaleWsIdSettingsNotificationsRouteImport.update({
+    id: '/$wsId/settings/notifications',
+    path: '/$wsId/settings/notifications',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
 const LocaleWsIdPlatformExternalProjectsRoute =
@@ -1587,6 +1594,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute;
+  '/$locale/$wsId/settings/notifications': typeof LocaleWsIdSettingsNotificationsRoute;
   '/$locale/$wsId/settings/reports': typeof LocaleWsIdSettingsReportsRoute;
   '/$locale/$wsId/tasks/$taskId': typeof LocaleWsIdTasksTaskIdRoute;
   '/$locale/$wsId/tasks/cycles': typeof LocaleWsIdTasksCyclesRoute;
@@ -1805,6 +1813,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute;
+  '/$locale/$wsId/settings/notifications': typeof LocaleWsIdSettingsNotificationsRoute;
   '/$locale/$wsId/settings/reports': typeof LocaleWsIdSettingsReportsRoute;
   '/$locale/$wsId/tasks/$taskId': typeof LocaleWsIdTasksTaskIdRoute;
   '/$locale/$wsId/tasks/cycles': typeof LocaleWsIdTasksCyclesRoute;
@@ -2026,6 +2035,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
   '/$locale/$wsId/platform/external-projects': typeof LocaleWsIdPlatformExternalProjectsRoute;
+  '/$locale/$wsId/settings/notifications': typeof LocaleWsIdSettingsNotificationsRoute;
   '/$locale/$wsId/settings/reports': typeof LocaleWsIdSettingsReportsRoute;
   '/$locale/$wsId/tasks/$taskId': typeof LocaleWsIdTasksTaskIdRoute;
   '/$locale/$wsId/tasks/cycles': typeof LocaleWsIdTasksCyclesRoute;
@@ -2248,6 +2258,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
+    | '/$locale/$wsId/settings/notifications'
     | '/$locale/$wsId/settings/reports'
     | '/$locale/$wsId/tasks/$taskId'
     | '/$locale/$wsId/tasks/cycles'
@@ -2466,6 +2477,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
+    | '/$locale/$wsId/settings/notifications'
     | '/$locale/$wsId/settings/reports'
     | '/$locale/$wsId/tasks/$taskId'
     | '/$locale/$wsId/tasks/cycles'
@@ -2686,6 +2698,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
     | '/$locale/$wsId/platform/external-projects'
+    | '/$locale/$wsId/settings/notifications'
     | '/$locale/$wsId/settings/reports'
     | '/$locale/$wsId/tasks/$taskId'
     | '/$locale/$wsId/tasks/cycles'
@@ -3603,6 +3616,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/settings/reports';
       fullPath: '/$locale/$wsId/settings/reports';
       preLoaderRoute: typeof LocaleWsIdSettingsReportsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/settings/notifications': {
+      id: '/$locale/$wsId/settings/notifications';
+      path: '/$wsId/settings/notifications';
+      fullPath: '/$locale/$wsId/settings/notifications';
+      preLoaderRoute: typeof LocaleWsIdSettingsNotificationsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/platform/external-projects': {
@@ -4809,6 +4829,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInventoryWarehousesRoute: typeof LocaleWsIdInventoryWarehousesRoute;
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute;
   LocaleWsIdPlatformExternalProjectsRoute: typeof LocaleWsIdPlatformExternalProjectsRoute;
+  LocaleWsIdSettingsNotificationsRoute: typeof LocaleWsIdSettingsNotificationsRoute;
   LocaleWsIdSettingsReportsRoute: typeof LocaleWsIdSettingsReportsRoute;
   LocaleWsIdTasksTaskIdRoute: typeof LocaleWsIdTasksTaskIdRoute;
   LocaleWsIdTasksCyclesRoute: typeof LocaleWsIdTasksCyclesRoute;
@@ -4987,6 +5008,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,
   LocaleWsIdPlatformExternalProjectsRoute:
     LocaleWsIdPlatformExternalProjectsRoute,
+  LocaleWsIdSettingsNotificationsRoute: LocaleWsIdSettingsNotificationsRoute,
   LocaleWsIdSettingsReportsRoute: LocaleWsIdSettingsReportsRoute,
   LocaleWsIdTasksTaskIdRoute: LocaleWsIdTasksTaskIdRoute,
   LocaleWsIdTasksCyclesRoute: LocaleWsIdTasksCyclesRoute,
