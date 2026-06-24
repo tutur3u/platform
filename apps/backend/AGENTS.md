@@ -50,6 +50,28 @@ ONE handler's path guard crashes unrelated routes/tests, not just its own.
 - After authoring a handler, run `cargo test --lib`: a green-compile handler can
   still panic at runtime and turn dozens of unrelated tests red.
 
+## Detecting which routes are already migrated (precise, not by filename)
+
+Handler files match paths by segment index / table name, NOT by extractable
+string literals, and mod naming diverges from the manifest's path-derived names.
+So you CANNOT reliably tell if a route is already migrated from filenames or text
+search — both over- and under-count. The ground truth is the runtime dispatcher:
+
+- A migrated path makes `handle_backend_request` return `Some(...)` (an auth-gate
+  401/403 when called with no auth). An unmigrated path falls through to
+  `route_request`'s `_ => json_response(404, {"error":"not found"})` sentinel.
+- To map a candidate list precisely, temporarily insert a `#[tokio::test]` into
+  the `mod tests` block (it has the private `request()` / `RecordingOutboundClient`
+  / `backend_config_with_contact_data()` helpers). For each candidate GET path
+  (substitute dynamic `:seg`/`*seg` with a concrete value like `x`), call
+  `handle_backend_request(&config, request("GET", concrete), &outbound).await` and
+  classify: `status == 404 && body["error"] == "not found"` ⇒ FRESH, else COVER.
+  Run `cargo test --lib <probe> -- --nocapture`, read the output, then REVERT the
+  insertion (`git checkout -- src/lib.rs` after confirming the diff is only your
+  probe). Feed only the FRESH routes to a migration batch so the fleet never
+  authors a duplicate handler. (Measured: of 121 filename-"unmigrated" small GETs,
+  the probe found only 16 genuinely fresh.)
+
 ## Verify
 
 - `cd apps/backend && cargo check` after each extraction (fast; sub-second when
