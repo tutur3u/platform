@@ -136,6 +136,95 @@ export interface WorkspaceEducationAttemptListQuery {
   status?: 'all' | 'completed' | 'incomplete';
 }
 
+export interface WorkspaceEducationAttemptSummary {
+  attempt_number: number | null;
+  completed_at: string | null;
+  duration_seconds: number | null;
+  id: string;
+  learner_email: string | null;
+  learner_name: string | null;
+  set_id: string;
+  set_name: string | null;
+  started_at: string | null;
+  submitted_at: string | null;
+  total_score: number | null;
+  user_id: string;
+}
+
+export interface WorkspaceEducationAttemptFilterState {
+  dateFrom: string | null;
+  dateTo: string | null;
+  learnerId: string | null;
+  setId: string | null;
+  sortBy: 'duration' | 'newest' | 'score';
+  sortDirection: 'asc' | 'desc';
+  status: 'all' | 'completed' | 'incomplete';
+}
+
+export interface ListWorkspaceEducationAttemptsResponse {
+  attempts: WorkspaceEducationAttemptSummary[];
+  count: number;
+  filters: {
+    learners: Array<{
+      email: string | null;
+      full_name: string | null;
+      user_id: string;
+    }>;
+    selected: WorkspaceEducationAttemptFilterState;
+    sets: Array<{
+      id: string;
+      name: string;
+    }>;
+  };
+  includedSetIds: string[];
+  page: number;
+  pageSize: number;
+}
+
+export interface WorkspaceEducationAttemptDetail {
+  attempt_number: number | null;
+  completed_at: string | null;
+  duration_seconds: number | null;
+  id: string;
+  set_id: string;
+  set_name: string | null;
+  started_at: string | null;
+  submitted_at: string | null;
+  total_score: number | null;
+  user_id: string;
+}
+
+export interface WorkspaceEducationAttemptLearner {
+  email: string | null;
+  full_name: string | null;
+  user_id: string;
+}
+
+export interface WorkspaceEducationAttemptAnswerOption {
+  explanation: string | null;
+  id: string;
+  is_correct: boolean;
+  value: string;
+}
+
+export interface WorkspaceEducationAttemptAnswer {
+  id: string;
+  is_correct: boolean | null;
+  options: WorkspaceEducationAttemptAnswerOption[];
+  question: string | null;
+  quiz_id: string;
+  score_awarded: number | null;
+  selected_option_id: string | null;
+  selected_option_is_correct: boolean | null;
+  selected_option_value: string | null;
+}
+
+export interface WorkspaceEducationAttemptDetailResponse {
+  answers: WorkspaceEducationAttemptAnswer[];
+  attempt: WorkspaceEducationAttemptDetail;
+  learner: WorkspaceEducationAttemptLearner | null;
+}
+
 export type ValseaClassroomOutputType =
   | 'action_items'
   | 'email_summary'
@@ -1422,12 +1511,7 @@ export async function listWorkspaceEducationAttempts(
   if (query.sortDirection) search.set('sortDirection', query.sortDirection);
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';
-  return client.json<{
-    attempts: Array<Record<string, unknown>>;
-    count: number;
-    page: number;
-    pageSize: number;
-  }>(
+  return client.json<ListWorkspaceEducationAttemptsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/attempts${suffix}`,
     { cache: 'no-store' }
   );
@@ -1439,11 +1523,7 @@ export async function getWorkspaceEducationAttemptDetail(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{
-    attempt: Record<string, unknown>;
-    learner: Record<string, unknown> | null;
-    answers: Array<Record<string, unknown>>;
-  }>(
+  return client.json<WorkspaceEducationAttemptDetailResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/attempts/${encodePathSegment(attemptId)}`,
     {
       cache: 'no-store',

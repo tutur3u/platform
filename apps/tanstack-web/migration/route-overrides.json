@@ -1464,6 +1464,16 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/library/quizzes ports the legacy workspace quiz library table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state with the legacy 10-row default, forwarded internal-api auth, shared education shell UI, TanStack Query-backed create/update/delete forms, internal-api-backed AI explanation generation, and the legacy CustomDataTable columns. This marks only the frontend page artifact migrated; quiz create/update/delete/list API ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/education/attempts:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/attempts ports the legacy attempts review table with fail-closed current-user auth, workspace resolution, view_user_groups_reports not-found gating, pass-through filter/sort/page/pageSize search state, forwarded internal-api auth, education shell KPI/header UI, and learner/quiz-set metadata from the existing education attempts API. Attempts APIs remain separately tracked."
+    },
+    "page:/:locale/:wsId/education/attempts/:attemptId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/[attemptId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/attempts/$attemptId ports the legacy attempt detail review page with fail-closed current-user auth, workspace resolution, view_user_groups_reports not-found gating, forwarded internal-api auth, education shell KPI/header UI, learner metadata, and per-question answer/option correctness cards. Attempts APIs remain separately tracked."
+    },
     "page:/:locale/:wsId/education/valsea:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

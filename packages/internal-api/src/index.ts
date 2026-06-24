@@ -319,6 +319,7 @@ export type {
   ListQuizSetQuizzesParams,
   ListWorkspaceCoursesParams,
   ListWorkspaceCoursesResponse,
+  ListWorkspaceEducationAttemptsResponse,
   ListWorkspaceFlashcardsParams,
   ListWorkspaceFlashcardsResponse,
   ListWorkspaceQuizSetsParams,
@@ -354,7 +355,14 @@ export type {
   ValseaVoiceGradeStatus,
   ValseaVoiceGradeWord,
   WorkspaceCourseListItem,
+  WorkspaceEducationAttemptAnswer,
+  WorkspaceEducationAttemptAnswerOption,
+  WorkspaceEducationAttemptDetail,
+  WorkspaceEducationAttemptDetailResponse,
+  WorkspaceEducationAttemptFilterState,
+  WorkspaceEducationAttemptLearner,
   WorkspaceEducationAttemptListQuery,
+  WorkspaceEducationAttemptSummary,
 } from './education';
 export {
   archiveWorkspaceCourse,
