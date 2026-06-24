@@ -16,6 +16,7 @@ const {
   getBuildkitPaths,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  isBuildxBuilderUsable,
   isTransientBuildkitComposeUpError,
   isBunTarballExtractionError,
   LEGACY_BUILDER_NAMES,
@@ -188,8 +189,61 @@ test('adaptive build resource profile fallback classification is specific to Bui
   );
   assert.equal(
     isBuildkitResourceProfileFallbackError(
+      new Error(
+        [
+          '#2 ERROR: context deadline exceeded',
+          '> [internal] waiting for connection:',
+          'ERROR: context deadline exceeded',
+        ].join('\n')
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error('Name: tuturuuu\nDriver: remote\nStatus: inactive\n')
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
       new Error('TypeScript error: Property "foo" does not exist')
     ),
+    false
+  );
+});
+
+test('isBuildxBuilderUsable requires a running remote builder when status is reported', () => {
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'remote',
+      exists: true,
+      status: null,
+    }),
+    true
+  );
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'remote',
+      exists: true,
+      status: 'running',
+    }),
+    true
+  );
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'remote',
+      exists: true,
+      status: 'inactive',
+    }),
+    false
+  );
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'docker-container',
+      exists: true,
+      status: 'running',
+    }),
     false
   );
 });
@@ -854,6 +908,93 @@ test('ensureBuildkitBuilder reuses an existing builder when the fingerprint matc
           call.args[1] === 'create'
       ).length,
       0
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('ensureBuildkitBuilder recreates an inactive remote builder even when the fingerprint matches', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'buildkit-builder-inactive-')
+  );
+  const calls = [];
+  const paths = getBuildkitPaths(tempDir);
+  const config = {
+    builderName: DEFAULT_BUILDER_NAME,
+    cpus: 2,
+    endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
+    maxParallelism: 1,
+    memory: '10g',
+  };
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.stateFile,
+      JSON.stringify(
+        {
+          builderName: DEFAULT_BUILDER_NAME,
+          fingerprint: getBuilderConfigFingerprint(config),
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const env = await ensureBuildkitBuilder(config, {
+      env: { PATH: 'test-path' },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({
+          args,
+          command,
+          env: options.env,
+          stdio: options.stdio ?? 'inherit',
+        });
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return {
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: [
+              `Name: ${DEFAULT_BUILDER_NAME}`,
+              'Driver: remote',
+              'Nodes:',
+              `Name: ${DEFAULT_BUILDER_NAME}0`,
+              `Endpoint: tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
+              'Status: inactive',
+              '',
+            ].join('\n'),
+          };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    });
+
+    assert.equal(env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.command === 'docker' &&
+          call.args[0] === 'buildx' &&
+          call.args[1] === 'rm' &&
+          call.args.includes(DEFAULT_BUILDER_NAME)
+      )
+    );
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.command === 'docker' &&
+          call.args[0] === 'buildx' &&
+          call.args[1] === 'create' &&
+          call.args.includes('--driver') &&
+          call.args.includes('remote') &&
+          call.args.includes(`tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`)
+      )
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

@@ -1690,7 +1690,7 @@ function summarizeDeploymentFailure(error) {
   }
 
   const relevantLines = lines.filter((line) =>
-    /bun has crashed|cannot allocate memory|command failed|crashed while loading native module|error:|exit code|exited \([0-9]+\)|failed to compile|failed to solve|illegal instruction|javascript heap out of memory|no space left|panic|resourceexhausted|segmentation fault|sig(?:ill|kill|term)|terminated by signal|timed out/iu.test(
+    /bun has crashed|cannot allocate memory|command failed|context deadline exceeded|crashed while loading native module|error:|exit code|exited \([0-9]+\)|failed to compile|failed to solve|illegal instruction|javascript heap out of memory|no space left|panic|resourceexhausted|segmentation fault|sig(?:ill|kill|term)|terminated by signal|timed out|waiting for connection/iu.test(
       line
     )
   );

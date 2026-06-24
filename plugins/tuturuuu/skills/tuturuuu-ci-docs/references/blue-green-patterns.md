@@ -95,8 +95,11 @@ infrastructure dashboard changes.
   local profile at `tmp/docker-web/buildkit/resource-profile.json`. BuildKit
   transport/resource failures such as `code = Unavailable`, `closing transport`,
   `error reading from server: EOF`, `received prior goaway`,
-  `ResourceExhausted`, or `cannot allocate memory` should retry once at the
-  next lower profile and persist that profile for future runs. Explicit build
+  `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`,
+  or `[internal] waiting for connection` should retry once at the next lower
+  profile and persist that profile for future runs. The retry should restart
+  the Compose-owned BuildKit service and recreate the remote Buildx builder when
+  `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
   cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
   `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production

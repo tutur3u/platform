@@ -4574,6 +4574,133 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   }
 });
 
+test('runDeployWatchIteration records BuildKit deadline failures for retry caps', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-buildkit-deadline-failure-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const latestCommitHash = 'bbb222222222222222222';
+  let syncCompleted = false;
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('main\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git fetch origin main') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult(syncCompleted ? `${latestCommitHash}\n` : 'aaa111\n');
+    }
+
+    if (key === 'git rev-parse origin/main') {
+      return createResult(`${latestCommitHash}\n`);
+    }
+
+    if (key === 'git reset --hard HEAD' || key === 'git clean -fd') {
+      return createResult('');
+    }
+
+    if (key === 'git reset --hard origin/main') {
+      syncCompleted = true;
+      return createResult('');
+    }
+
+    if (key === 'bun install --frozen-lockfile') {
+      return createResult('');
+    }
+
+    if (
+      key ===
+      `git diff --name-only aaa111 ${latestCommitHash} -- ${CONTAINER_REFRESH_WATCHED_FILES.join(' ')}`
+    ) {
+      return createResult('');
+    }
+
+    if (
+      key ===
+      `git diff --name-only aaa111 ${latestCommitHash} -- ${SELF_WATCHED_FILES.join(' ')}`
+    ) {
+      return createResult('');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        `${latestCommitHash}\nbbb222\nBuildKit deadline\n2026-04-18T10:58:00.000Z\n`
+      );
+    }
+
+    if (
+      key ===
+      `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+    ) {
+      return createResult('', {
+        code: 1,
+        stderr:
+          '#2 ERROR: context deadline exceeded\n> [internal] waiting for connection:\nERROR: context deadline exceeded',
+      });
+    }
+
+    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+      return createResult('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: (() => {
+          const values = [1000, 2000, 4000];
+          return () => values.shift() ?? 4000;
+        })(),
+        paths,
+        platformProjectReader: async () => ({
+          deploymentStatus: 'idle',
+          selectedBranch: 'main',
+          source: 'environment',
+        }),
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+    assert.equal(result.status, 'deploy-failed');
+    assert.equal(history[0].status, 'failed');
+    assert.equal(history[0].commitHash, latestCommitHash);
+    assert.match(history[0].failureReason, /context deadline exceeded/iu);
+    assert.match(history[0].failureReason, /waiting for connection/iu);
+    assert.equal(
+      getFailedDeploymentCountForCommit(history, latestCommitHash),
+      1
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeployWatchIteration waits instead of retrying while a deployment build is active', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-active-deploy-lock-')

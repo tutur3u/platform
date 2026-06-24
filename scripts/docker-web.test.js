@@ -2837,10 +2837,29 @@ test('buildBlueGreenServices retries BuildKit transport failures with a lower pe
                 code: 1,
                 signal: null,
                 stderr:
-                  'rpc error: code = Unavailable desc = closing transport due to: connection error: desc = "error reading from server: EOF", received prior goaway: code: NO_ERROR',
+                  '#2 ERROR: context deadline exceeded\n> [internal] waiting for connection:\nERROR: context deadline exceeded',
                 stdout: '',
               }
             : { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return args[2] === DEFAULT_BUILDER_NAME
+            ? {
+                code: 0,
+                signal: null,
+                stderr: '',
+                stdout: [
+                  `Name: ${DEFAULT_BUILDER_NAME}`,
+                  'Driver: remote',
+                  'Nodes:',
+                  `Name: ${DEFAULT_BUILDER_NAME}0`,
+                  'Endpoint: tcp://127.0.0.1:7914',
+                  'Status: inactive',
+                  '',
+                ].join('\n'),
+              }
+            : { code: 1, signal: null, stderr: '', stdout: '' };
         }
 
         if (args.includes('ps') && args.includes('buildkit')) {
@@ -2870,6 +2889,26 @@ test('buildBlueGreenServices retries BuildKit transport failures with a lower pe
     assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_MEMORY, '16g');
     assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_CPUS, '2');
     assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_MAX_PARALLELISM, '1');
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'buildx' &&
+          args[1] === 'rm' &&
+          args.includes(DEFAULT_BUILDER_NAME)
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'buildx' &&
+          args[1] === 'create' &&
+          args.includes('--driver') &&
+          args.includes('remote') &&
+          args.includes('tcp://127.0.0.1:7914')
+      )
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

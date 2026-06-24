@@ -1229,8 +1229,11 @@ machine-local adaptive profile at
 `tmp/docker-web/buildkit/resource-profile.json`. If BuildKit fails with a
 transport or resource-pressure signature such as `code = Unavailable`,
 `closing transport`, `error reading from server: EOF`, `received prior goaway`,
-`ResourceExhausted`, or `cannot allocate memory`, the deploy retries once with
-the next lower profile and persists that profile for later runs. The downgrade
+`ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`, or
+`[internal] waiting for connection`, the deploy retries once with the next lower
+profile and persists that profile for later runs. The retry also restarts the
+Compose-owned BuildKit service and recreates the remote Buildx builder if
+`docker buildx inspect tuturuuu` reports `Status: inactive`. The downgrade
 ladder is:
 
 - `default`: `auto`, 4 CPUs, max parallelism 1
@@ -1393,10 +1396,13 @@ Operational notes:
   the build is truly exhausting memory.
 - If host memory or swap is saturated, lower `--build-max-parallelism` first
   and stop unrelated containers before raising the builder memory cap.
-- If the default blue/green deploy keeps failing with BuildKit transport EOFs
-  or graceful-stop messages, leave the root-script defaults in place and let the
-  adaptive profile step down automatically. Use explicit caps only when you want
-  to bypass the remembered local profile for a one-off run.
+- If the default blue/green deploy keeps failing with BuildKit transport EOFs,
+  `context deadline exceeded`, `[internal] waiting for connection`, or
+  graceful-stop messages, leave the root-script defaults in place and let the
+  adaptive profile step down automatically. Use `docker buildx ls` or
+  `docker buildx inspect tuturuuu` to confirm whether the remote builder is
+  inactive. Use explicit caps only when you want to bypass the remembered local
+  profile for a one-off run.
 - If Bun fails during an image install with a tarball extraction error such as
   `Fail extracting tarball for "@biomejs/cli-linux-x64"`, the blue/green helper
   treats it as BuildKit exec-cache corruption once per deployment attempt. It

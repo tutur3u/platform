@@ -338,11 +338,25 @@ async function inspectBuildxBuilder(
   }
 
   const driverMatch = result.stdout.match(/^Driver:\s*(.+)$/imu);
+  const statusMatch = result.stdout.match(/^Status:\s*(.+)$/imu);
 
   return {
     driver: driverMatch?.[1]?.trim() ?? null,
     exists: true,
+    status: statusMatch?.[1]?.trim() ?? null,
   };
+}
+
+function isBuildxBuilderUsable(builder) {
+  if (!builder.exists || builder.driver !== 'remote') {
+    return false;
+  }
+
+  if (!builder.status) {
+    return true;
+  }
+
+  return /^running$/iu.test(builder.status);
 }
 
 async function removeLegacyBuildkitContainer(
@@ -570,11 +584,7 @@ async function ensureBuildkitBuilder(
     runCommand: run,
   });
 
-  if (
-    !builder.exists ||
-    builder.driver !== 'remote' ||
-    state?.fingerprint !== fingerprint
-  ) {
+  if (!isBuildxBuilderUsable(builder) || state?.fingerprint !== fingerprint) {
     if (builder.exists) {
       await runChecked('docker', ['buildx', 'rm', config.builderName], {
         env,
@@ -965,6 +975,7 @@ module.exports = {
   getAutoBuildMemory,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  isBuildxBuilderUsable,
   isTransientDockerRegistryError,
   isTransientBuildkitComposeUpError,
   isBuildStallTimeoutError,

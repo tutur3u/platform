@@ -35,6 +35,7 @@ const {
   isCachedBuildError,
   isTransientDockerRegistryError,
   cleanupBuildkitAfterBuild,
+  ensureBuildkitBuilder,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
 const {
@@ -2345,7 +2346,7 @@ async function buildBlueGreenServices({
         reason: 'buildkit-resource-fallback',
         stateFile: paths.stateFile,
       });
-      const retryEnv = {
+      let retryEnv = {
         ...applyBuildResourceProfileToEnv(env, nextProfile),
         [BUILD_RESOURCE_PROFILE_REASON_ENV]: 'buildkit-resource-fallback',
       };
@@ -2361,6 +2362,23 @@ async function buildBlueGreenServices({
         reason: 'buildkit-resource-fallback',
         runCommand: run,
       });
+      retryEnv = await ensureBuildkitBuilder(
+        {
+          builderName:
+            retryEnv.DOCKER_WEB_BUILD_BUILDER_NAME || retryEnv.BUILDX_BUILDER,
+          cpus: retryEnv.DOCKER_WEB_BUILD_CPUS,
+          maxParallelism: retryEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM,
+          memory: retryEnv.DOCKER_WEB_BUILD_MEMORY,
+        },
+        {
+          composeFile,
+          composeGlobalArgs,
+          env: retryEnv,
+          fsImpl,
+          rootDir,
+          runCommand: run,
+        }
+      );
 
       try {
         await runBuildWithCacheRecovery({ buildEnv: retryEnv });
