@@ -202,6 +202,19 @@ test('getDockerWebDownArgs stops the same production blue-green Docker stack', (
       'local',
     ]
   );
+  assert.deepEqual(
+    getDockerWebDownArgs('tmp/e2e/web.env', {}, { preserveImages: true }),
+    [
+      'down',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '--volumes',
+    ]
+  );
 });
 
 test('ensureLocalE2EEnvFile writes a local-only web env file', () => {

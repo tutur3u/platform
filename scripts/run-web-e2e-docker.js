@@ -138,7 +138,11 @@ function getE2EDockerNativeBuildValue(env = process.env) {
   );
 }
 
-function getDockerWebDownArgs(envFilePath, env = process.env) {
+function getDockerWebDownArgs(
+  envFilePath,
+  env = process.env,
+  { preserveImages = false } = {}
+) {
   const args = [
     'down',
     '--mode',
@@ -151,7 +155,7 @@ function getDockerWebDownArgs(envFilePath, env = process.env) {
     '--volumes',
   ];
 
-  if (!env.DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE) {
+  if (!preserveImages && !env.DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE) {
     args.push('--rmi', 'local');
   }
 
@@ -1775,16 +1779,20 @@ async function removeE2EProjectImages({
   return imageTags;
 }
 
-async function stopDockerizedE2E({ env, envFilePath }) {
+async function stopDockerizedE2E({ env, envFilePath, preserveImages = false }) {
   await runDockerWebWorkflow(
-    parseDockerWebArgs(getDockerWebDownArgs(envFilePath, env)),
+    parseDockerWebArgs(
+      getDockerWebDownArgs(envFilePath, env, { preserveImages })
+    ),
     {
       env,
       envFilePath,
       rootDir: ROOT_DIR,
     }
   );
-  await removeE2EProjectImages({ env });
+  if (!preserveImages) {
+    await removeE2EProjectImages({ env });
+  }
   await runCommand('bun', ['sb:stop'], { env, cwd: ROOT_DIR });
 }
 
@@ -1802,7 +1810,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       next: await runFrontendE2EForCompare(
         'next',
         frontendArgs.playwrightArgs,
-        options
+        { ...options, preserveDockerProjectImages: true }
       ),
       tanstack: await runFrontendE2EForCompare(
         'tanstack',
@@ -1939,7 +1947,11 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
 
   if (stackTouched && !shouldKeepStack(env)) {
     try {
-      await stopDockerizedE2E({ env, envFilePath });
+      await stopDockerizedE2E({
+        env,
+        envFilePath,
+        preserveImages: options.preserveDockerProjectImages === true,
+      });
     } catch (cleanupError) {
       if (!runError) {
         runError = cleanupError;
