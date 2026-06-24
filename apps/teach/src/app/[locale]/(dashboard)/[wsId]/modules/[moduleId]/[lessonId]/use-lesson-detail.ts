@@ -129,8 +129,16 @@ export function useLessonDetail(
     onError: () => {
       toast.error('Failed to save lesson. Please try again.');
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: lessonQueryKey(wsId, courseId) });
+    onSuccess: (_, variables) => {
+      qc.setQueryData<any[] | undefined>(
+        lessonQueryKey(wsId, courseId),
+        (old) => {
+          if (!old) return old;
+          return old.map((m) =>
+            m.id === lessonId ? { ...m, ...variables } : m
+          );
+        }
+      );
     },
   });
 

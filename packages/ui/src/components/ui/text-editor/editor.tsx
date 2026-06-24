@@ -562,6 +562,11 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor || allowCollaboration) return;
 
+    // Skip sync if the editor is focused to prevent cursor jumping/content flickering while typing
+    if (editor.isFocused) {
+      return;
+    }
+
     // Skip sync if we're in a programmatic update (e.g., after converting text to task)
     // This prevents the effect from reverting editor content before state update propagates
     if (isProgrammaticUpdateRef.current) {
