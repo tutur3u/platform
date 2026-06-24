@@ -34,6 +34,7 @@ mod current_user_calendar_settings;
 mod current_user_calendar_settings_test;
 mod current_user_default_workspace;
 mod devbox_cache;
+mod devboxes_agents_poll;
 mod devboxes_run_logs;
 mod devboxes_runs;
 mod education_course_module_reads;
@@ -47,6 +48,7 @@ mod email_blacklist_validation;
 mod email_blacklist_write;
 #[cfg(test)]
 mod email_blacklist_write_test;
+mod exchange_rates;
 mod finance_auth;
 mod finance_budget_status;
 #[cfg(test)]
@@ -121,6 +123,7 @@ mod outbound;
 mod shared_task_boards;
 mod storage_analytics;
 mod storage_download_path;
+mod storage_list;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
@@ -170,17 +173,21 @@ mod workspaces_categories;
 mod workspaces_chat_conversations_attachments;
 mod workspaces_chat_conversations_shared_content;
 mod workspaces_chat_directory;
+mod workspaces_chat_realtime;
 mod workspaces_chat_search;
 mod workspaces_course_modules_quiz_sets;
 mod workspaces_datasets_full;
 mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
+mod workspaces_external_projects_storage_analytics;
 mod workspaces_external_projects_sync_snapshot;
 mod workspaces_finance_charts_balance_trend;
+mod workspaces_finance_charts_categories;
 mod workspaces_finance_charts_daily;
 mod workspaces_finance_charts_income_expense_summary;
 mod workspaces_finance_charts_monthly;
 mod workspaces_finance_invoices_count;
+mod workspaces_finance_overview;
 mod workspaces_finance_wallets_expense_count;
 mod workspaces_finance_wallets_expense_sum;
 mod workspaces_finance_wallets_income_count;
@@ -217,6 +224,7 @@ mod workspaces_storage_export_assetpath;
 mod workspaces_storage_list;
 mod workspaces_storage_object;
 mod workspaces_storage_rollout_state;
+mod workspaces_tags_stats;
 mod workspaces_task_plans_digest;
 mod workspaces_tasks_snapshot;
 mod workspaces_teach_users;
@@ -229,8 +237,10 @@ mod workspaces_time_tracking_sessions_breaks_active;
 mod workspaces_time_tracking_tasks;
 mod workspaces_time_tracking_templates;
 mod workspaces_transactions_category_breakdown;
+mod workspaces_transactions_export;
 mod workspaces_transactions_spending_trends;
 mod workspaces_transactions_stats;
+mod workspaces_transactions_transactionid_tags;
 mod workspaces_tulearn_courses;
 mod workspaces_tulearn_courses_2;
 mod workspaces_tulearn_home;
@@ -241,6 +251,7 @@ mod workspaces_user_groups_count;
 mod workspaces_user_groups_linked_products;
 mod workspaces_user_groups_managers;
 mod workspaces_user_groups_members_vitals;
+mod workspaces_user_groups_module_modules;
 mod workspaces_user_groups_posts_status;
 mod workspaces_user_groups_sessions_group_summaries;
 mod workspaces_user_profile_links_users;
@@ -253,6 +264,9 @@ mod workspaces_users_emails;
 mod workspaces_users_referral_discounts;
 mod workspaces_users_reports_groups_bulk_export;
 mod workspaces_users_reports_logs;
+mod workspaces_wallets_checkpoints_history;
+mod workspaces_wallets_infinite;
+mod workspaces_wallets_walletid_credit_summary;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -2024,6 +2038,109 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_wallets_infinite::handle_workspaces_wallets_infinite_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tags_stats::handle_workspaces_tags_stats_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_transactionid_tags::handle_workspaces_transactions_transactionid_tags_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_export::handle_workspaces_transactions_export_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_wallets_walletid_credit_summary::handle_workspaces_wallets_walletid_credit_summary_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_wallets_checkpoints_history::handle_workspaces_wallets_checkpoints_history_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        devboxes_agents_poll::handle_devboxes_agents_poll_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        exchange_rates::handle_exchange_rates_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_chat_realtime::handle_workspaces_chat_realtime_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) = storage_list::handle_storage_list_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_storage_analytics::handle_workspaces_external_projects_storage_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_user_groups_module_modules::handle_workspaces_user_groups_module_modules_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_charts_categories::handle_workspaces_finance_charts_categories_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = workspaces_finance_overview::handle_workspaces_finance_overview_route(
+        config, request, outbound,
+    )
+    .await
     {
         return response;
     }
