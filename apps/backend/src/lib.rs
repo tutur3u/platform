@@ -22,6 +22,7 @@ mod auth_mfa_mobile_approvals;
 mod auth_mfa_mobile_challenges;
 mod auth_qr_login_challenges;
 mod calendar_auth;
+mod calendar_auth_list_calendars;
 mod calendar_auth_microsoft;
 mod calendar_auth_provider_calendars;
 mod changelog;
@@ -111,10 +112,12 @@ mod infrastructure_workspace_users;
 mod integrations_discord_available_members;
 mod inventory;
 mod inventory_orders;
+mod link_shortener_linkid_analytics;
 mod mira_achievements;
 mod mira_calendar;
 mod mira_focus;
 mod mira_focus_history;
+mod mira_tasks;
 mod mobile_deployment_bundle;
 mod mobile_version;
 mod notifications_unread_count;
@@ -172,6 +175,7 @@ mod workspaces_boards_data;
 mod workspaces_boards_estimation;
 mod workspaces_boards_with_lists;
 mod workspaces_calendar_habit_events;
+mod workspaces_calendar_schedulable_tasks;
 mod workspaces_calendar_sync_status;
 mod workspaces_categories;
 mod workspaces_chat_conversations_attachments;
@@ -183,6 +187,7 @@ mod workspaces_course_modules_quiz_sets;
 mod workspaces_datasets_full;
 mod workspaces_deleted;
 mod workspaces_education_attempts;
+mod workspaces_education_attempts_attemptid;
 mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
 mod workspaces_external_projects_storage_analytics;
@@ -194,6 +199,7 @@ mod workspaces_finance_charts_income_expense_summary;
 mod workspaces_finance_charts_monthly;
 mod workspaces_finance_invoices_analytics;
 mod workspaces_finance_invoices_count;
+mod workspaces_finance_invoices_pending;
 mod workspaces_finance_overview;
 mod workspaces_finance_wallets_expense_count;
 mod workspaces_finance_wallets_expense_sum;
@@ -202,10 +208,12 @@ mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms_export;
 mod workspaces_forms_responses_export;
 mod workspaces_forms_share_link;
+mod workspaces_habits_habitid_schedule_history;
 mod workspaces_habits_habitid_stats;
 mod workspaces_infrastructure_realtime_analytics;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
+mod workspaces_inventory_audit_logs;
 mod workspaces_inventory_overview;
 mod workspaces_inventory_product_form_options;
 mod workspaces_inventory_sales;
@@ -237,8 +245,10 @@ mod workspaces_storage_rollout_state;
 mod workspaces_tags_stats;
 mod workspaces_task_boards_boardid_viewable_members;
 mod workspaces_task_plans_digest;
+mod workspaces_tasks_history;
 mod workspaces_tasks_snapshot;
 mod workspaces_tasks_taskid_history;
+mod workspaces_tasks_taskid_schedule_history;
 mod workspaces_teach_users;
 mod workspaces_templates;
 mod workspaces_time_tracker_stats;
@@ -251,6 +261,7 @@ mod workspaces_time_tracking_templates;
 mod workspaces_transactions_category_breakdown;
 mod workspaces_transactions_export;
 mod workspaces_transactions_infinite;
+mod workspaces_transactions_periods;
 mod workspaces_transactions_spending_trends;
 mod workspaces_transactions_stats;
 mod workspaces_transactions_transactionid_tags;
@@ -259,6 +270,7 @@ mod workspaces_tulearn_courses_2;
 mod workspaces_tulearn_home;
 mod workspaces_tulearn_marks;
 mod workspaces_tulearn_reports;
+mod workspaces_tutoring_export;
 mod workspaces_user_groups_activity_logs;
 mod workspaces_user_groups_count;
 mod workspaces_user_groups_linked_products;
@@ -274,7 +286,9 @@ mod workspaces_users_attendance_export;
 mod workspaces_users_audit_logs;
 mod workspaces_users_count;
 mod workspaces_users_emails;
+mod workspaces_users_groups;
 mod workspaces_users_referral_discounts;
+mod workspaces_users_reports_groups;
 mod workspaces_users_reports_groups_bulk_export;
 mod workspaces_users_reports_logs;
 mod workspaces_users_userid_user_groups;
@@ -2272,6 +2286,121 @@ pub(crate) async fn handle_backend_request(
 
     if let Some(response) =
         users_me_tasks_taskid::handle_users_me_tasks_taskid_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_education_attempts_attemptid::handle_workspaces_education_attempts_attemptid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_calendar_schedulable_tasks::handle_workspaces_calendar_schedulable_tasks_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        link_shortener_linkid_analytics::handle_link_shortener_linkid_analytics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) = calendar_auth_list_calendars::handle_calendar_auth_list_calendars_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_finance_invoices_pending::handle_workspaces_finance_invoices_pending_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_reports_groups::handle_workspaces_users_reports_groups_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_inventory_audit_logs::handle_workspaces_inventory_audit_logs_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_habits_habitid_schedule_history::handle_workspaces_habits_habitid_schedule_history_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_groups::handle_workspaces_users_groups_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) = mira_tasks::handle_mira_tasks_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = workspaces_tutoring_export::handle_workspaces_tutoring_export_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks_taskid_schedule_history::handle_workspaces_tasks_taskid_schedule_history_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks_history::handle_workspaces_tasks_history_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_periods::handle_workspaces_transactions_periods_route(
+            config, request, outbound,
+        )
+        .await
     {
         return response;
     }
