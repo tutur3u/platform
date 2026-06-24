@@ -1094,7 +1094,7 @@ test('getE2EPortlessTargetPort guards TanStack against the Next proxy port', () 
   );
 });
 
-test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () => {
+test('getWebProxyHealthUrl targets the direct Docker web proxy readiness route', () => {
   assert.equal(getWebProxyHostPort({}), '7803');
   assert.equal(
     getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: '17803' }),
@@ -1115,14 +1115,14 @@ test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () 
     getWebProxyHealthUrl({
       DOCKER_WEB_FRONTEND: 'tanstack',
     }),
-    'http://127.0.0.1:7803/__platform/drain-status'
+    'http://127.0.0.1:7803/'
   );
   assert.equal(
     getWebProxyHealthUrl({
       DOCKER_WEB_FRONTEND: 'tanstack',
       DOCKER_WEB_PROXY_HOST_PORT: '17803',
     }),
-    'http://127.0.0.1:17803/__platform/drain-status'
+    'http://127.0.0.1:17803/'
   );
   assert.equal(
     getWebProxyHealthUrl({
