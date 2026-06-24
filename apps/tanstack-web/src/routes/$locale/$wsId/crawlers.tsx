@@ -11,6 +11,19 @@ import { resolveMessagesLocale } from '@/lib/platform/messages';
 import { resolveWorkspace } from '@/lib/platform/workspace';
 import { requireWorkspacePermission } from '@/lib/platform/workspace-permission';
 
+function getWorkspaceNextPath(
+  params: { locale: string; wsId: string },
+  pathname: string
+) {
+  const localePrefix = `/${params.locale}`;
+
+  if (pathname.startsWith(`${localePrefix}/`)) {
+    return pathname.slice(localePrefix.length);
+  }
+
+  return `/${params.wsId}/crawlers`;
+}
+
 export const Route = createFileRoute('/$locale/$wsId/crawlers')({
   component: CrawlerListRoutePage,
   validateSearch: validateCrawlerListSearch,
@@ -29,10 +42,10 @@ export const Route = createFileRoute('/$locale/$wsId/crawlers')({
       title: 'Crawlers',
     });
   },
-  loader: async ({ params, deps }): Promise<CrawlerListData> => {
+  loader: async ({ location, params, deps }): Promise<CrawlerListData> => {
     await requireCurrentUser({
       locale: params.locale,
-      nextPath: `/${params.wsId}/crawlers`,
+      nextPath: getWorkspaceNextPath(params, location.pathname),
     });
 
     const workspace = await resolveWorkspace({ data: { wsId: params.wsId } });
