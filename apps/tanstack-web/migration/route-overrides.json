@@ -1319,6 +1319,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/cron preserves the legacy authenticated cron shell with ai_lab permission gating and the shared FeatureSummary/Separator header. The legacy statistic cards are intentionally omitted until cron job/execution count readers move behind shared internal-api or Rust facades."
     },
+    "page:/:locale/:wsId/cron/jobs:apps/web/src/app/[locale]/(dashboard)/[wsId]/cron/jobs/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/cron/jobs ports the legacy authenticated cron jobs list as a dynamic no-store read-only page with current-user auth, workspace resolution, ai_lab gating, URL-backed q/page/pageSize state, and cron job data loaded through a typed internal-api facade instead of direct Supabase reads or raw browser /api fetches. Create, edit, delete, next-run calculation, and job detail navigation remain separately tracked until dataset readers, mutation flows, and /cron/jobs/:jobId move behind internal-api or Rust facades."
+    },
     "page:/:locale/:wsId/memories:apps/web/src/app/[locale]/(dashboard)/[wsId]/memories/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
