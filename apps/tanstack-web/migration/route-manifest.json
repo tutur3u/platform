@@ -18,11 +18,11 @@
         "acceptedRemoval": 1,
         "key": "page",
         "label": "page",
-        "legacyNext": 84,
-        "migrated": 221,
-        "percentComplete": 72.55,
-        "remaining": 84,
-        "terminal": 222,
+        "legacyNext": 83,
+        "migrated": 222,
+        "percentComplete": 72.88,
+        "remaining": 83,
+        "terminal": 223,
         "total": 306,
         "unknownStatus": 0
       },
@@ -128,11 +128,11 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 96,
-        "migrated": 280,
-        "percentComplete": 74.6,
-        "remaining": 96,
-        "terminal": 282,
+        "legacyNext": 95,
+        "migrated": 281,
+        "percentComplete": 74.87,
+        "remaining": 95,
+        "terminal": 283,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1039,
-      "migrated": 427,
-      "percentComplete": 33.01,
-      "remaining": 1039,
-      "terminal": 512,
+      "legacyNext": 1038,
+      "migrated": 428,
+      "percentComplete": 33.08,
+      "remaining": 1038,
+      "terminal": 513,
       "total": 1551,
       "unknownStatus": 0
     }
@@ -6727,7 +6727,7 @@
     {
       "id": "api:/api/v1/workspaces/:wsId/group-tags/:tagId:apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/route.ts",
       "kind": "api",
-      "methods": ["PUT", "DELETE"],
+      "methods": ["GET", "PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/group-tags/:tagId",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/route.ts",
       "status": "legacy-next",
@@ -13525,7 +13525,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/group-tags/:tagId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/[tagId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -14454,7 +14454,7 @@
     "pages": 306,
     "routeHandlers": 1173,
     "methodCounts": {
-      "GET": 657,
+      "GET": 658,
       "HEAD": 1,
       "POST": 513,
       "PUT": 173,

@@ -691,15 +691,24 @@ export {
   updateWalletRoleAccess,
 } from './finance';
 export {
+  type AddWorkspaceGroupTagUserGroupsPayload,
+  addWorkspaceGroupTagUserGroups,
   createWorkspaceGroupTag,
   type DeleteWorkspaceGroupTagResponse,
   deleteWorkspaceGroupTag,
+  type GetWorkspaceGroupTagResponse,
+  getWorkspaceGroupTag,
   type ListWorkspaceGroupTagsParams,
   type ListWorkspaceGroupTagsResponse,
+  type ListWorkspaceGroupTagUserGroupsParams,
+  type ListWorkspaceGroupTagUserGroupsResponse,
   listWorkspaceGroupTags,
+  listWorkspaceGroupTagUserGroups,
+  removeWorkspaceGroupTagUserGroup,
   type UpsertWorkspaceGroupTagPayload,
   type UpsertWorkspaceGroupTagResponse,
   updateWorkspaceGroupTag,
+  type WorkspaceGroupTagUserGroupsMutationResponse,
 } from './group-tags';
 export {
   createWorkspaceHabitTracker,

@@ -1519,6 +1519,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags ports the legacy workspace user group tags table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for group-tag reads, internal-api-backed create/update/delete forms and row actions, localized FeatureSummary content, and canonical locale-prefixed detail hrefs. This marks only the frontend page artifact migrated; group-tag detail page and API route ownership remain separately tracked."
     },
+    "page:/:locale/:wsId/users/group-tags/:tagId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/[tagId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags/$tagId ports the legacy group-tag detail page with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for tag detail and linked user-group reads, TanStack Query-backed linked-group add/remove actions, localized FeatureSummary content, and locale-prefixed group detail hrefs. This marks only the frontend page artifact migrated; group-tag API route ownership remains separately tracked for the backend Rust wave."
+    },
     "page:/:locale/:wsId/users/groups/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/calendar/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
