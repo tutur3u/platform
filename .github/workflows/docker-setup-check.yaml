@@ -140,14 +140,46 @@ jobs:
       - name: Build web dev image
         run: docker build --target dev -f apps/web/Dockerfile .
 
+      - name: Free Docker disk after web dev image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
+
       - name: Build web prod image
         run: docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .
+
+      - name: Free Docker disk after web prod image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
 
       - name: Build TanStack web prod image
         run: docker build --target runner -f apps/tanstack-web/Dockerfile .
 
+      - name: Free Docker disk after TanStack web prod image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
+
       - name: Build storage unzip proxy image
         run: docker build -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy
+
+      - name: Free Docker disk after storage unzip proxy image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
 
       - name: Build backend image
         run: docker build -f apps/backend/Dockerfile .
