@@ -1539,6 +1539,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content ports the legacy Extra Reading placeholder with localized title and disabled AI action. This marks only the page artifact migrated; parent dashboard/course/module data ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/youtube-links:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/youtube-links/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links ports the legacy module Youtube Links page with fail-closed current-user auth, workspace resolution, forwarded internal-api module reads, shared FeatureSummary/form/embed UI, and strict internal-api-backed add/delete mutations. This marks only the frontend page artifact migrated; the parent module layout and module API ownership remain separately tracked."
+    },
     "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

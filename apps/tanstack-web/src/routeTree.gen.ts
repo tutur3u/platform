@@ -231,6 +231,7 @@ import { Route as LocaleWsIdUsersGroupsGroupIdRequestsRouteImport } from './rout
 import { Route as LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport } from './routes/$locale/$wsId/infrastructure/ai/whitelist/emails';
 import { Route as LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport } from './routes/$locale/$wsId/infrastructure/ai/whitelist/domains';
 import { Route as LocaleWsIdEducationQuizSetsSetIdLinkedModulesRouteImport } from './routes/$locale/$wsId/education/quiz-sets/$setId/linked-modules';
+import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links';
 import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets';
 import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content';
 import { Route as LocaleWsIdEducationCoursesCourseIdModulesModuleIdContentRouteImport } from './routes/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content';
@@ -1470,6 +1471,14 @@ const LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute =
     path: '/$wsId/education/quiz-sets/$setId/linked-modules',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute =
+  LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRouteImport.update(
+    {
+      id: '/modules/$moduleId/youtube-links',
+      path: '/modules/$moduleId/youtube-links',
+      getParentRoute: () => LocaleWsIdEducationCoursesCourseIdRoute,
+    } as any,
+  );
 const LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute =
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRouteImport.update({
     id: '/modules/$moduleId/quiz-sets',
@@ -1733,6 +1742,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdContentRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute;
+  '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesIndexRoute;
 }
@@ -1960,6 +1970,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdContentRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute;
+  '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesIndexRoute;
 }
@@ -2190,6 +2201,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdContentRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute;
+  '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute;
   '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/': typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesIndexRoute;
 }
@@ -2421,6 +2433,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets'
+    | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/';
   fileRoutesByTo: FileRoutesByTo;
@@ -2648,6 +2661,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets'
+    | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes';
   id:
@@ -2877,6 +2891,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/content'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/extra-content'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets'
+    | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new'
     | '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/';
   fileRoutesById: FileRoutesById;
@@ -4446,6 +4461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links': {
+      id: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links';
+      path: '/modules/$moduleId/youtube-links';
+      fullPath: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/youtube-links';
+      preLoaderRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRouteImport;
+      parentRoute: typeof LocaleWsIdEducationCoursesCourseIdRoute;
+    };
     '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets': {
       id: '/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quiz-sets';
       path: '/modules/$moduleId/quiz-sets';
@@ -4830,6 +4852,7 @@ interface LocaleWsIdEducationCoursesCourseIdRouteChildren {
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdContentRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdContentRoute;
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute;
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute;
+  LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute;
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute;
   LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesIndexRoute: typeof LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesIndexRoute;
 }
@@ -4842,6 +4865,8 @@ const LocaleWsIdEducationCoursesCourseIdRouteChildren: LocaleWsIdEducationCourse
       LocaleWsIdEducationCoursesCourseIdModulesModuleIdExtraContentRoute,
     LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute:
       LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizSetsRoute,
+    LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute:
+      LocaleWsIdEducationCoursesCourseIdModulesModuleIdYoutubeLinksRoute,
     LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute:
       LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesNewRoute,
     LocaleWsIdEducationCoursesCourseIdModulesModuleIdQuizzesIndexRoute:
