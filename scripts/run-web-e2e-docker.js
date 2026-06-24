@@ -707,6 +707,10 @@ function getE2EPortlessTargetPort(env = process.env) {
     return getWebProxyHostPort(env);
   }
 
+  if (env.DOCKER_WEB_FRONTEND === 'tanstack') {
+    return getWebProxyHostPort(env);
+  }
+
   const targetPort = getTanStackDirectHostPort(env);
   const webProxyPort = getWebProxyHostPort(env);
 

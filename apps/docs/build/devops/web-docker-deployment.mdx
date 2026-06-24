@@ -148,11 +148,11 @@ parallel `apps/tanstack-web` migration runtime.
   `https://tanstack.tuturuuu.localhost:1355`.
   Production Compose defines `tanstack-web`, `tanstack-web-blue`, and
   `tanstack-web-green` so benchmark and cutover checks can run beside the
-  legacy Next.js lanes. Docker E2E aliases the TanStack Portless route to
-  `DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT` (default `7824`), not the Next
-  `web-proxy` port `7803`; setting
-  `E2E_ALLOW_TANSTACK_WEB_PROXY_PORT=1` is required for an intentional
-  proxy-routing experiment. Production TanStack services wait on the Rust
+  legacy Next.js lanes. Docker web E2E aliases the TanStack Portless route to
+  the `web-proxy` host port `7803` in `DOCKER_WEB_FRONTEND=tanstack` mode,
+  because the blue/green TanStack lanes are exposed through nginx rather than
+  the standalone `tanstack-web` host port. Production TanStack services wait on
+  the Rust
   backend `service_healthy` check before starting, because the Start runtime
   uses `BACKEND_INTERNAL_URL=http://backend:7820` for server-owned API calls.
   The TanStack image and production Compose healthchecks run
@@ -357,11 +357,11 @@ bun test:e2e:web:docker -- --frontend compare
 ```
 
 The TanStack mode reuses the existing `apps/web/e2e` suite and points Playwright
-at `https://tanstack.tuturuuu.localhost:1355`. The runner aliases that Portless
-host to the direct TanStack Docker port `7824` by default. If
-`DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT` is changed to the same value as the Next
-`DOCKER_WEB_PROXY_HOST_PORT`, the runner refuses to continue unless
-`E2E_ALLOW_TANSTACK_WEB_PROXY_PORT=1` is set for an explicit proxy-routing test.
+at `https://tanstack.tuturuuu.localhost:1355`. In Docker web E2E, that Portless
+host points at the `web-proxy` host port because the runner validates the
+production blue/green TanStack lane selected by `DOCKER_WEB_FRONTEND=tanstack`.
+Standalone TanStack checks such as `docker-compose.tanstack-dual.yml` still use
+the direct TanStack Docker port `7824`.
 
 Compare mode writes `tmp/e2e/web-migration/compare-report.json` after both
 frontend runs complete. Set `E2E_COMPARE_REPORT_PATH` to redirect that evidence
