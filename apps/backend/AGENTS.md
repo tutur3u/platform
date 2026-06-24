@@ -35,6 +35,21 @@ window, and prefer moving self-contained helper FAMILIES (cookie/body/header
 builders, security headers) into `lib/` submodules over touching the dispatcher.
 Adding your own `mod x;` + route arm for a new handler is normal and fine.
 
+## Path-guard pitfalls (handlers run in the SHARED dispatch chain)
+
+Every handler's `handle_*_route` is called on EVERY request and must return
+`None` fast for paths it doesn't own. Because of that shared dispatch, a panic in
+ONE handler's path guard crashes unrelated routes/tests, not just its own.
+
+- **Never index path segments eagerly.** `(len == 5 && ...).then_some(segments[4])`
+  evaluates `segments[4]` *before* `then_some` runs, so a shorter path panics with
+  index-out-of-bounds despite the length check. Use the lazy
+  `.then(|| segments[4])`, or `segments.get(4)`. (`.then_some(var)` on an
+  already-bound `&str` is fine — only indexing/calls in the argument are eager.)
+- Guard length before any `segments[i]`; prefer `segments.get(i)` + `?`.
+- After authoring a handler, run `cargo test --lib`: a green-compile handler can
+  still panic at runtime and turn dozens of unrelated tests red.
+
 ## Verify
 
 - `cd apps/backend && cargo check` after each extraction (fast; sub-second when
