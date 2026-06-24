@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   abortInfrastructureStressTest,
+  clearBlueGreenDeploymentPin,
   clearMobileDeploymentEnvKeyValue,
   clearMobileDeploymentScalarValue,
   clearMobileDeploymentSecret,
@@ -29,8 +30,10 @@ import {
   listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
   pauseAiAgentChannel,
+  pinBlueGreenDeployment,
   queueCronRun,
   queueInfrastructureStressTest,
+  requestBlueGreenInstantRollout,
   revokeGitHubBotWatcherClient,
   rotateAiAgentChannelSecret,
   saveAiAgent,
@@ -906,6 +909,64 @@ describe('observability internal API helpers', () => {
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('requests immediate blue-green standby sync through the apps/web API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await requestBlueGreenInstantRollout({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/instant-rollout',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('pins and clears blue-green deployments through the apps/web API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await pinBlueGreenDeployment(
+      { commitHash: 'abc123def456' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await clearBlueGreenDeploymentPin({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/deployment-pin',
+      expect.objectContaining({
+        body: JSON.stringify({ commitHash: 'abc123def456' }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/deployment-pin',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'DELETE',
       })
     );
   });

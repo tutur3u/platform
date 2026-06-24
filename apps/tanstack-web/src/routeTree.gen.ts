@@ -183,6 +183,7 @@ import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$l
 import { Route as LocaleWsIdInventoryProductsProductIdRouteImport } from './routes/$locale/$wsId/inventory/products/$productId';
 import { Route as LocaleWsIdInfrastructureMonitoringWatcherLogsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/watcher-logs';
 import { Route as LocaleWsIdInfrastructureMonitoringStressTestsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/stress-tests';
+import { Route as LocaleWsIdInfrastructureMonitoringRolloutsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/rollouts';
 import { Route as LocaleWsIdInfrastructureMonitoringRequestsRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/requests';
 import { Route as LocaleWsIdInfrastructureMonitoringCronRouteImport } from './routes/$locale/$wsId/infrastructure/monitoring/cron';
 import { Route as LocaleWsIdFinanceWalletsWalletIdRouteImport } from './routes/$locale/$wsId/finance/wallets/$walletId';
@@ -1163,6 +1164,12 @@ const LocaleWsIdInfrastructureMonitoringStressTestsRoute =
     path: '/stress-tests',
     getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
   } as any);
+const LocaleWsIdInfrastructureMonitoringRolloutsRoute =
+  LocaleWsIdInfrastructureMonitoringRolloutsRouteImport.update({
+    id: '/rollouts',
+    path: '/rollouts',
+    getParentRoute: () => LocaleWsIdInfrastructureMonitoringRoute,
+  } as any);
 const LocaleWsIdInfrastructureMonitoringRequestsRoute =
   LocaleWsIdInfrastructureMonitoringRequestsRouteImport.update({
     id: '/requests',
@@ -1498,6 +1505,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
   '/$locale/$wsId/infrastructure/monitoring/cron': typeof LocaleWsIdInfrastructureMonitoringCronRoute;
   '/$locale/$wsId/infrastructure/monitoring/requests': typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/rollouts': typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/infrastructure/monitoring/watcher-logs': typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
   '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
@@ -1699,6 +1707,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
   '/$locale/$wsId/infrastructure/monitoring/cron': typeof LocaleWsIdInfrastructureMonitoringCronRoute;
   '/$locale/$wsId/infrastructure/monitoring/requests': typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/rollouts': typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/infrastructure/monitoring/watcher-logs': typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
   '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
@@ -1902,6 +1911,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
   '/$locale/$wsId/infrastructure/monitoring/cron': typeof LocaleWsIdInfrastructureMonitoringCronRoute;
   '/$locale/$wsId/infrastructure/monitoring/requests': typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  '/$locale/$wsId/infrastructure/monitoring/rollouts': typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   '/$locale/$wsId/infrastructure/monitoring/stress-tests': typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   '/$locale/$wsId/infrastructure/monitoring/watcher-logs': typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
   '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
@@ -2106,6 +2116,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/wallets/$walletId'
     | '/$locale/$wsId/infrastructure/monitoring/cron'
     | '/$locale/$wsId/infrastructure/monitoring/requests'
+    | '/$locale/$wsId/infrastructure/monitoring/rollouts'
     | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/infrastructure/monitoring/watcher-logs'
     | '/$locale/$wsId/inventory/products/$productId'
@@ -2307,6 +2318,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/wallets/$walletId'
     | '/$locale/$wsId/infrastructure/monitoring/cron'
     | '/$locale/$wsId/infrastructure/monitoring/requests'
+    | '/$locale/$wsId/infrastructure/monitoring/rollouts'
     | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/infrastructure/monitoring/watcher-logs'
     | '/$locale/$wsId/inventory/products/$productId'
@@ -2509,6 +2521,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/wallets/$walletId'
     | '/$locale/$wsId/infrastructure/monitoring/cron'
     | '/$locale/$wsId/infrastructure/monitoring/requests'
+    | '/$locale/$wsId/infrastructure/monitoring/rollouts'
     | '/$locale/$wsId/infrastructure/monitoring/stress-tests'
     | '/$locale/$wsId/infrastructure/monitoring/watcher-logs'
     | '/$locale/$wsId/inventory/products/$productId'
@@ -3769,6 +3782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringStressTestsRouteImport;
       parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
     };
+    '/$locale/$wsId/infrastructure/monitoring/rollouts': {
+      id: '/$locale/$wsId/infrastructure/monitoring/rollouts';
+      path: '/rollouts';
+      fullPath: '/$locale/$wsId/infrastructure/monitoring/rollouts';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureMonitoringRolloutsRouteImport;
+      parentRoute: typeof LocaleWsIdInfrastructureMonitoringRoute;
+    };
     '/$locale/$wsId/infrastructure/monitoring/requests': {
       id: '/$locale/$wsId/infrastructure/monitoring/requests';
       path: '/requests';
@@ -4188,6 +4208,7 @@ const LocaleWsIdEducationLibraryRouteWithChildren =
 interface LocaleWsIdInfrastructureMonitoringRouteChildren {
   LocaleWsIdInfrastructureMonitoringCronRoute: typeof LocaleWsIdInfrastructureMonitoringCronRoute;
   LocaleWsIdInfrastructureMonitoringRequestsRoute: typeof LocaleWsIdInfrastructureMonitoringRequestsRoute;
+  LocaleWsIdInfrastructureMonitoringRolloutsRoute: typeof LocaleWsIdInfrastructureMonitoringRolloutsRoute;
   LocaleWsIdInfrastructureMonitoringStressTestsRoute: typeof LocaleWsIdInfrastructureMonitoringStressTestsRoute;
   LocaleWsIdInfrastructureMonitoringWatcherLogsRoute: typeof LocaleWsIdInfrastructureMonitoringWatcherLogsRoute;
 }
@@ -4198,6 +4219,8 @@ const LocaleWsIdInfrastructureMonitoringRouteChildren: LocaleWsIdInfrastructureM
       LocaleWsIdInfrastructureMonitoringCronRoute,
     LocaleWsIdInfrastructureMonitoringRequestsRoute:
       LocaleWsIdInfrastructureMonitoringRequestsRoute,
+    LocaleWsIdInfrastructureMonitoringRolloutsRoute:
+      LocaleWsIdInfrastructureMonitoringRolloutsRoute,
     LocaleWsIdInfrastructureMonitoringStressTestsRoute:
       LocaleWsIdInfrastructureMonitoringStressTestsRoute,
     LocaleWsIdInfrastructureMonitoringWatcherLogsRoute:
