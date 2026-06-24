@@ -1579,6 +1579,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/app-coordination ports the legacy root-workspace App Coordination page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets/manage_workspace_roles gating, forwarded-auth initial policy loading, localized header parity, and shared TanStack Query/internal-api backed session policy controls. App Coordination API ownership remains separately tracked."
     },
+    "page:/:locale/:wsId/infrastructure/blocked-ips:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/blocked-ips/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/blocked-ips ports the legacy authenticated blocked IPs table with fail-closed current-user auth, workspace resolution, root and workspace view_infrastructure gating, URL search/status/pagination filters, localized table/actions, and typed internal-api list/block/unblock facades instead of direct Supabase reads or raw client /api fetches. Blocked IP API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/infrastructure/external-apps:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/external-apps/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
