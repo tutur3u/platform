@@ -5,7 +5,10 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import TemplatesClient from '@tuturuuu/ui/tu-do/templates/client';
 import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { useTranslations } from 'use-intl';
-import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
+import {
+  getWorkspaceNextPath,
+  requireCurrentUser,
+} from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../lib/platform/messages';
 import {
@@ -16,19 +19,6 @@ import { requireWorkspacePermission } from '../../../../lib/platform/workspace-p
 
 const TEMPLATES_BASE_PATH = 'tasks/templates';
 const EMPTY_TEMPLATES: BoardTemplate[] = [];
-
-function getWorkspaceNextPath(
-  params: { locale: string; wsId: string },
-  pathname: string
-) {
-  const localePrefix = `/${params.locale}`;
-
-  if (pathname.startsWith(`${localePrefix}/`)) {
-    return pathname.slice(localePrefix.length);
-  }
-
-  return `/${params.wsId}/${TEMPLATES_BASE_PATH}`;
-}
 
 export const Route = createFileRoute('/$locale/$wsId/tasks/templates')({
   component: TemplatesRoutePage,
@@ -46,7 +36,11 @@ export const Route = createFileRoute('/$locale/$wsId/tasks/templates')({
     // Auth gate FIRST, fail closed: legacy getCurrentUser() -> redirect('/login').
     await requireCurrentUser({
       locale: params.locale,
-      nextPath: getWorkspaceNextPath(params, location.pathname),
+      nextPath: getWorkspaceNextPath(
+        params,
+        location.pathname,
+        TEMPLATES_BASE_PATH
+      ),
     });
 
     // Legacy getWorkspace() -> notFound() when missing/forbidden.

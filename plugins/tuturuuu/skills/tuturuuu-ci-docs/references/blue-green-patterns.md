@@ -56,6 +56,16 @@ infrastructure dashboard changes.
   send failures without changing deployment results.
 - Watcher restart/recreate must reconcile current `HEAD` against the latest
   successful deployment and deploy `HEAD` when runtime history lags.
+- Before any automatic deploy, recovery handoff, runtime recovery, standby
+  refresh, or reconciliation build for the latest commit, the watcher should
+  inspect the latest GitHub Actions workflow runs for that exact `head_sha`
+  whenever GitHub validation is enabled or discoverable. A latest completed
+  workflow run with `failure`, `cancelled`, `timed_out`, `startup_failure`, or
+  `action_required` suppresses local rebuilding, records watcher status
+  `validation-blocked`, clears pending recovery handoffs, and does not count as
+  a failed deployment attempt. Pending or missing workflow runs should not block
+  deploys. `DOCKER_WEB_WATCHER_GITHUB_VALIDATION=1` forces validation,
+  `DOCKER_WEB_WATCHER_GITHUB_VALIDATION_DISABLED=1` disables it.
 - GitHub-facing watcher progress must be opt-in and published as sanitized
   Check Runs only. Keep the payload allowlisted to stage/status metadata,
   commit SHA/short SHA, branch/upstream, deployment kind, aggregate stage
@@ -102,6 +112,14 @@ infrastructure dashboard changes.
   `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
   cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
   `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
+- Watcher-owned deploy failures should prune failed-build residue before the
+  next poll so dangling images and stale Buildx cache do not accumulate for a
+  commit that will remain blocked. By default, failed child deploys run
+  `docker buildx prune --builder <builder> --all --force` when
+  `BUILDX_BUILDER` or `DOCKER_WEB_BUILD_BUILDER_NAME` is known, then
+  `docker image prune --force --filter dangling=true`. Set
+  `DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE=0` to opt out for a specific
+  host/run.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production
   builds are capped.
 - Containerized watcher handoffs must run from the mirrored host checkout path

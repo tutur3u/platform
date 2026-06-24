@@ -235,6 +235,15 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
+        '  bun run --filter @tuturuuu/supabase build && \\\n  bun run --filter @tuturuuu/internal-api build && \\\n',
+        '  bun run --filter @tuturuuu/internal-api build && \\\n  bun run --filter @tuturuuu/supabase build && \\\n'
+      )
+    ).join('\n'),
+    /@tuturuuu\/supabase build before bun run --filter @tuturuuu\/internal-api build/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
         'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "docker/healthcheck.mjs"]',
         'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "true"]'
       )

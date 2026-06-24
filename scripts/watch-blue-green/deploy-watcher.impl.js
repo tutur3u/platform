@@ -75,7 +75,10 @@ const {
   createWatcherLogEntry,
   readWatcherLogEntries,
 } = require('./logs.js');
-const { createGitHubChecksPublisher } = require('./github-checks.js');
+const {
+  createGitHubChecksPublisher,
+  getGitHubWorkflowValidationForCommit,
+} = require('./github-checks.js');
 const { sendBuildFailureIncidentEmail } = require('./incident-email.js');
 const {
   DEFAULT_PROJECT_POLL_INTERVAL_MS,
@@ -1074,6 +1077,10 @@ function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
 }
 
+function isFalseyEnv(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
+}
+
 function getDockerDaemonRecoveryPollMs(env = process.env) {
   return (
     getPositiveIntegerEnv(
@@ -1881,6 +1888,92 @@ function logRetryLimitOnce(message, commitHash, { fsImpl, log, paths }) {
   log.warn?.(message);
 }
 
+function hasReportedValidationBlockForCommit(commitHash, { fsImpl, paths }) {
+  if (!commitHash) {
+    return false;
+  }
+
+  const lastResult = readWatchStatus(paths, fsImpl)?.lastResult;
+
+  return (
+    lastResult?.status === 'validation-blocked' &&
+    lastResult?.latestCommit?.hash === commitHash
+  );
+}
+
+function logValidationBlockOnce(message, commitHash, { fsImpl, log, paths }) {
+  if (hasReportedValidationBlockForCommit(commitHash, { fsImpl, paths })) {
+    return;
+  }
+
+  log.warn?.(message);
+}
+
+function isCommitValidationBlocked(validation) {
+  return Boolean(validation?.inspectable && validation?.blocked);
+}
+
+function summarizeCommitValidationBlock(validation) {
+  const failedRuns = Array.isArray(validation?.failedRuns)
+    ? validation.failedRuns
+    : [];
+  const names = failedRuns
+    .map((run) => run?.name)
+    .filter((name) => typeof name === 'string' && name.trim().length > 0);
+
+  if (names.length === 0) {
+    return 'GitHub validation failed';
+  }
+
+  return `GitHub validation failed: ${names.slice(0, 3).join(', ')}`;
+}
+
+function createValidationBlockedResult(validation, result = {}) {
+  return {
+    ...result,
+    failedValidationRuns: Array.isArray(validation?.failedRuns)
+      ? validation.failedRuns
+      : [],
+    status: 'validation-blocked',
+    validationStatus: validation?.status ?? null,
+  };
+}
+
+async function getCommitValidationBlock({
+  commit,
+  commitValidationReader,
+  env,
+  fsImpl,
+  log,
+  now,
+  paths,
+  rootDir,
+  runCommand: run,
+}) {
+  if (!commit?.hash || typeof commitValidationReader !== 'function') {
+    return null;
+  }
+
+  try {
+    const validation = await commitValidationReader({
+      commitHash: commit.hash,
+      env,
+      fsImpl,
+      now: typeof now === 'function' ? now() : Date.now(),
+      paths,
+      rootDir,
+      runCommand: run,
+    });
+
+    return isCommitValidationBlocked(validation) ? validation : null;
+  } catch (error) {
+    log.warn?.(
+      `Unable to inspect GitHub validation for ${commit.shortHash ?? commit.hash.slice(0, 12)}; continuing without validation suppression: ${getErrorMessage(error)}`
+    );
+    return null;
+  }
+}
+
 function getActiveDeploymentConflictKey(conflict) {
   const lock = conflict?.lock ?? {};
 
@@ -2129,6 +2222,7 @@ async function runDetachedCommitFullBlueGreenDeploy({
         },
         fsImpl,
         latestCommit: deployCommit,
+        log,
         now,
         paths,
         runCommand: run,
@@ -2454,12 +2548,53 @@ function formatInstantRolloutRequester(request) {
   );
 }
 
+async function pruneWatcherFailedBuildResidue({
+  env,
+  fsImpl,
+  log = console,
+  runCommand: run = runCommand,
+}) {
+  if (isFalseyEnv(env?.DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE)) {
+    return;
+  }
+
+  const builderName = env?.BUILDX_BUILDER ?? env?.DOCKER_WEB_BUILD_BUILDER_NAME;
+  const cleanupCommands = [];
+
+  if (builderName) {
+    cleanupCommands.push([
+      'docker',
+      ['buildx', 'prune', '--builder', builderName, '--all', '--force'],
+    ]);
+  }
+
+  cleanupCommands.push([
+    'docker',
+    ['image', 'prune', '--force', '--filter', 'dangling=true'],
+  ]);
+
+  for (const [command, args] of cleanupCommands) {
+    try {
+      await runChecked(command, args, {
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+    } catch (cleanupError) {
+      log.warn?.(
+        `Failed to prune watcher failed-build residue with ${command} ${args.join(' ')}: ${getErrorMessage(cleanupError)}`
+      );
+    }
+  }
+}
+
 async function runBlueGreenDeploy({
   deploymentKind,
   deployCommand = DEFAULT_DEPLOY_COMMAND,
   env,
   fsImpl = fs,
   latestCommit,
+  log = console,
   now = () => Date.now(),
   paths = getWatchPaths(),
   processImpl = process,
@@ -2498,13 +2633,23 @@ async function runBlueGreenDeploy({
       [SKIP_WATCH_HISTORY_ENV]: '1',
     };
 
-    await runChecked(command, args, {
-      env: deploymentEnv,
-      runCommand: run,
-      stdio: 'pipe',
-      teeOutput: true,
-      timeoutMs,
-    });
+    try {
+      await runChecked(command, args, {
+        env: deploymentEnv,
+        runCommand: run,
+        stdio: 'pipe',
+        teeOutput: true,
+        timeoutMs,
+      });
+    } catch (error) {
+      await pruneWatcherFailedBuildResidue({
+        env: deploymentEnv,
+        fsImpl,
+        log,
+        runCommand: run,
+      });
+      throw error;
+    }
   } finally {
     heldLock.release();
   }
@@ -3080,6 +3225,7 @@ async function runPendingDeployAfterRestart({
     env,
     fsImpl,
     latestCommit,
+    log,
     now,
     paths,
     runCommand: run,
@@ -3719,6 +3865,7 @@ async function runPinnedDeploymentIteration(
       env,
       fsImpl,
       latestCommit,
+      log,
       now,
       paths,
       runCommand: run,
@@ -3855,6 +4002,7 @@ async function runPinnedDeploymentIteration(
 async function runDeployWatchIteration(
   target,
   {
+    commitValidationReader = getGitHubWorkflowValidationForCommit,
     deployCommand = DEFAULT_DEPLOY_COMMAND,
     env,
     envFilePath = WEB_ENV_FILE,
@@ -4102,6 +4250,26 @@ async function runDeployWatchIteration(
         latestCommit.hash
       );
       const platformProject = await platformProjectReader({ env });
+      let latestCommitValidationBlock;
+      const getLatestCommitValidationBlock = async () => {
+        if (latestCommitValidationBlock !== undefined) {
+          return latestCommitValidationBlock;
+        }
+
+        latestCommitValidationBlock = await getCommitValidationBlock({
+          commit: latestCommit,
+          commitValidationReader,
+          env,
+          fsImpl,
+          log,
+          now,
+          paths,
+          rootDir,
+          runCommand: run,
+        });
+
+        return latestCommitValidationBlock;
+      };
 
       if (platformProject.deploymentStatus === 'queued') {
         if (
@@ -4346,6 +4514,7 @@ async function runDeployWatchIteration(
             env,
             fsImpl,
             latestCommit,
+            log,
             now,
             paths,
             runCommand: run,
@@ -4506,6 +4675,22 @@ async function runDeployWatchIteration(
       });
 
       if (needsActiveRuntimeRecovery(runtimeSnapshot)) {
+        const validationBlock = await getLatestCommitValidationBlock();
+
+        if (validationBlock) {
+          logValidationBlockOnce(
+            `Skipping blue/green runtime recovery for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+            latestCommit.hash,
+            { fsImpl, log, paths }
+          );
+          return attachRuntime(
+            createValidationBlockedResult(validationBlock, {
+              checkedAt,
+              latestCommit,
+            })
+          );
+        }
+
         if (
           hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
         ) {
@@ -4587,6 +4772,23 @@ async function runDeployWatchIteration(
         latestCommit.hash &&
         latestCommit.hash !== latestDeployedCommitHash
       ) {
+        const validationBlock = await getLatestCommitValidationBlock();
+
+        if (validationBlock) {
+          logValidationBlockOnce(
+            `Skipping reconciliation deploy for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+            latestCommit.hash,
+            { fsImpl, log, paths }
+          );
+          return attachRuntime(
+            createValidationBlockedResult(validationBlock, {
+              checkedAt,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+            })
+          );
+        }
+
         if (
           hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
         ) {
@@ -4732,6 +4934,7 @@ async function runDeployWatchIteration(
             env,
             fsImpl,
             latestCommit,
+            log,
             now,
             paths,
             runCommand: run,
@@ -4911,6 +5114,22 @@ async function runDeployWatchIteration(
           ...runtimeSnapshot,
           migration,
         };
+      }
+
+      const validationBlock = await getLatestCommitValidationBlock();
+
+      if (validationBlock) {
+        logValidationBlockOnce(
+          `Skipping standby refresh for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+          latestCommit.hash,
+          { fsImpl, log, paths }
+        );
+        return attachRuntime(
+          createValidationBlockedResult(validationBlock, {
+            checkedAt,
+            latestCommit,
+          })
+        );
       }
 
       if (
@@ -5273,6 +5492,36 @@ async function runDeployWatchIteration(
         )} to ${updatedHead.slice(0, 12)}.`
       );
 
+      const validationBlock = await getCommitValidationBlock({
+        commit: latestCommit,
+        commitValidationReader,
+        env,
+        fsImpl,
+        log,
+        now,
+        paths,
+        rootDir,
+        runCommand: run,
+      });
+
+      if (validationBlock) {
+        logValidationBlockOnce(
+          `Skipping deployment for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+          latestCommit.hash,
+          { fsImpl, log, paths }
+        );
+        return attachRuntime(
+          createValidationBlockedResult(validationBlock, {
+            checkedAt,
+            containerRefreshRequired,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired,
+          })
+        );
+      }
+
       log.info?.(
         `Installing dependencies from the reviewed frozen lockfile for ${updatedHead.slice(0, 12)}.`
       );
@@ -5628,6 +5877,7 @@ async function runDeployWatchIteration(
           env,
           fsImpl,
           latestCommit,
+          log,
           now,
           paths,
           runCommand: run,
@@ -5860,6 +6110,7 @@ async function runDeployWatchIteration(
 async function runDeployWatchLoop(
   target,
   {
+    commitValidationReader = getGitHubWorkflowValidationForCommit,
     deployCommand = DEFAULT_DEPLOY_COMMAND,
     env,
     envFilePath = WEB_ENV_FILE,
@@ -5953,6 +6204,7 @@ async function runDeployWatchLoop(
     }
 
     const iterationResult = await runDeployWatchIteration(target, {
+      commitValidationReader,
       deployCommand,
       env,
       envFilePath,
@@ -6502,6 +6754,19 @@ async function main(argv = process.argv.slice(2), options = {}) {
           deploymentHistory,
           latestCommit.hash
         );
+        const latestCommitValidationBlock = await getCommitValidationBlock({
+          commit: latestCommit,
+          commitValidationReader:
+            options.commitValidationReader ??
+            getGitHubWorkflowValidationForCommit,
+          env,
+          fsImpl,
+          log: ui,
+          now: options.now ?? (() => Date.now()),
+          paths,
+          rootDir,
+          runCommand: run,
+        });
 
         const runRecoveredPendingDeployForCommit = async (
           deployCommit,
@@ -6672,7 +6937,51 @@ async function main(argv = process.argv.slice(2), options = {}) {
           }
         };
 
-        if (
+        if (latestCommitValidationBlock) {
+          const checkedAt =
+            typeof options.now === 'function' ? options.now() : Date.now();
+          const runtimeSnapshot = await loadRuntimeSnapshot({
+            env,
+            envFilePath,
+            fsImpl,
+            now: checkedAt,
+            paths,
+            rootDir,
+            runCommand: run,
+          });
+          const latestDeploymentSummary = getLatestDeploymentSummary(
+            runtimeSnapshot.deployments
+          );
+
+          clearPendingDeployRequest({
+            fsImpl,
+            paths,
+          });
+          logValidationBlockOnce(
+            `Skipping recovered deploy handoff for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(latestCommitValidationBlock)}.`,
+            latestCommit.hash,
+            { fsImpl, log: ui, paths }
+          );
+          ui.update({
+            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+            dockerResources: runtimeSnapshot.dockerResources,
+            deployments: runtimeSnapshot.deployments,
+            lastDeployAt: latestDeploymentSummary.lastDeployAt,
+            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+            lastResult: createValidationBlockedResult(
+              latestCommitValidationBlock,
+              {
+                checkedAt,
+                latestCommit,
+              }
+            ),
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+
+          if (parsed.once) {
+            return;
+          }
+        } else if (
           hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
         ) {
           const parentDeploy =
@@ -6727,6 +7036,8 @@ async function main(argv = process.argv.slice(2), options = {}) {
     }
 
     const result = await runDeployWatchLoop(target, {
+      commitValidationReader:
+        options.commitValidationReader ?? getGitHubWorkflowValidationForCommit,
       deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
       env,
       envFilePath,

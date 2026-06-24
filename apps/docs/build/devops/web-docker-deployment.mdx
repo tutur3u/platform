@@ -894,6 +894,20 @@ kind, watcher status, current stage, aggregate stage counts, and safe
 timestamps/durations. It must not include raw watcher logs, raw error messages,
 environment values, local host paths, hostnames, emails, user ids, tokens, or
 secret-shaped key/value text.
+
+The watcher also uses GitHub workflow-run validation to avoid repeatedly
+building a commit whose CI has already failed. When Check Run publishing is
+enabled, `GITHUB_REPOSITORY` is present, or
+`DOCKER_WEB_WATCHER_GITHUB_VALIDATION=1` is set, the watcher reads the latest
+Actions workflow runs for the candidate commit's exact `head_sha`. If the
+latest run for any workflow completed with `failure`, `cancelled`,
+`timed_out`, `startup_failure`, or `action_required`, automatic deploy,
+recovery handoff, reconciliation, and standby-refresh builds are suppressed
+with watcher status `validation-blocked`. That state does not add a failed
+deployment row or consume the retry budget; fix CI and let the watcher see a
+new successful/latest run, or set
+`DOCKER_WEB_WATCHER_GITHUB_VALIDATION_DISABLED=1` for an operator-approved
+manual override.
 After each Hive migration pass, the deploy helper runs
 `docker compose rm --stop -f hive-db-migrate` so the completed one-shot
 migration service is stopped if necessary and removed. This keeps
@@ -2064,6 +2078,13 @@ Dashboard details:
   existing blue/green container. A failed `docker compose build` must leave the
   currently serving lane and any warm standby untouched; only after the build
   succeeds may the target lane be recreated with `--no-build`.
+- After a watcher-owned child deploy command fails, the watcher prunes
+  failed-build residue before returning to the poll loop: it prunes the
+  configured Buildx builder when `BUILDX_BUILDER` or
+  `DOCKER_WEB_BUILD_BUILDER_NAME` is available, then runs
+  `docker image prune --force --filter dangling=true`. Set
+  `DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE=0` only when an operator needs
+  to preserve failed build layers for debugging.
 - If `tmp/docker-web/prod/active-color` is missing or stale, the deployer and
   watcher recover the serving lane from the generated nginx proxy config before
   deciding what to rebuild. Treat the proxy config as the runtime source of

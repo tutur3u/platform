@@ -150,6 +150,28 @@ function countOccurrences(content, snippet) {
   return content.split(snippet).length - 1;
 }
 
+function validateSnippetOrder(content, snippets, label) {
+  const errors = [];
+  let previousIndex = -1;
+
+  for (const snippet of snippets) {
+    const index = content.indexOf(snippet);
+
+    if (index === -1) {
+      continue;
+    }
+
+    if (index < previousIndex) {
+      errors.push(`${label} must keep ${snippets.join(' before ')}.`);
+      break;
+    }
+
+    previousIndex = index;
+  }
+
+  return errors;
+}
+
 function hasComposeDependsOnService(composeContent, serviceName) {
   const lines = composeContent.split(/\r?\n/u);
 
@@ -1407,6 +1429,18 @@ function validateTanstackWebDockerfile(
       );
     }
   }
+
+  errors.push(
+    ...validateSnippetOrder(
+      dockerfileContent,
+      [
+        'bun run --filter @tuturuuu/types build',
+        'bun run --filter @tuturuuu/supabase build',
+        'bun run --filter @tuturuuu/internal-api build',
+      ],
+      'apps/tanstack-web/Dockerfile builder stage'
+    )
+  );
 
   return errors;
 }

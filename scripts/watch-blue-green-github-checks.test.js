@@ -8,6 +8,8 @@ const {
   buildGitHubCheckRunContext,
   createGitHubChecksTokenProvider,
   createGitHubChecksPublisher,
+  getGitHubWorkflowValidationForCommit,
+  normalizeWorkflowRunValidation,
   publishGitHubCheckRunForState,
   readGitHubChecksState,
 } = require('./watch-blue-green/github-checks.js');
@@ -548,6 +550,85 @@ test('buildGitHubCheckRunContext maps watcher statuses to GitHub check states', 
     ).checkState,
     { conclusion: null, status: 'queued' }
   );
+});
+
+test('normalizeWorkflowRunValidation blocks only latest failed workflow runs for a commit', () => {
+  const validation = normalizeWorkflowRunValidation(
+    [
+      {
+        conclusion: 'failure',
+        created_at: '2026-06-24T01:00:00.000Z',
+        head_sha: COMMIT_HASH,
+        name: 'Migration E2E',
+        status: 'completed',
+        workflow_id: 10,
+      },
+      {
+        conclusion: 'success',
+        created_at: '2026-06-24T02:00:00.000Z',
+        head_sha: COMMIT_HASH,
+        name: 'Migration E2E',
+        status: 'completed',
+        workflow_id: 10,
+      },
+      {
+        conclusion: 'failure',
+        created_at: '2026-06-24T02:05:00.000Z',
+        head_sha: COMMIT_HASH,
+        html_url: 'https://github.com/tutur3u/platform/actions/runs/1',
+        name: 'Production Build',
+        status: 'completed',
+        workflow_id: 11,
+      },
+      {
+        conclusion: 'failure',
+        created_at: '2026-06-24T03:00:00.000Z',
+        head_sha: 'aaa1111111111111111111111111111111111111',
+        name: 'Other commit',
+        status: 'completed',
+        workflow_id: 12,
+      },
+    ],
+    COMMIT_HASH
+  );
+
+  assert.equal(validation.blocked, true);
+  assert.equal(validation.status, 'failed');
+  assert.equal(validation.failedRuns.length, 1);
+  assert.equal(validation.failedRuns[0].name, 'Production Build');
+  assert.equal(validation.successfulRuns.length, 1);
+});
+
+test('getGitHubWorkflowValidationForCommit reads workflow runs by head SHA', async () => {
+  const requests = [];
+  const validation = await getGitHubWorkflowValidationForCommit({
+    commitHash: COMMIT_HASH,
+    env: {
+      GITHUB_REPOSITORY: 'tutur3u/platform',
+    },
+    requestJson: async (requestPath, options) => {
+      requests.push({ options, requestPath });
+      return {
+        workflow_runs: [
+          {
+            conclusion: 'failure',
+            head_sha: COMMIT_HASH,
+            name: 'Migration E2E',
+            status: 'completed',
+            workflow_id: 10,
+          },
+        ],
+      };
+    },
+  });
+
+  assert.equal(validation.blocked, true);
+  assert.equal(validation.failedRuns[0].name, 'Migration E2E');
+  assert.match(
+    requests[0].requestPath,
+    /\/repos\/tutur3u\/platform\/actions\/runs\?head_sha=bbb222/u
+  );
+  assert.equal(requests[0].options.token, null);
 });
 
 test('createGitHubChecksPublisher catches GitHub API failures and dedupes unchanged payloads', async () => {

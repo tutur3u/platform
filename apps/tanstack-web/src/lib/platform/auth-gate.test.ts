@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildLoginRedirectHref, isAuthenticatedProfile } from './auth-gate';
+import {
+  buildLoginRedirectHref,
+  getWorkspaceNextPath,
+  isAuthenticatedProfile,
+} from './auth-gate';
 
 describe('buildLoginRedirectHref', () => {
   it('prefixes the locale and encodes the nextUrl', () => {
@@ -118,5 +122,27 @@ describe('isAuthenticatedProfile', () => {
 
   it('returns false for a string primitive', () => {
     expect(isAuthenticatedProfile('string')).toBe(false);
+  });
+});
+
+describe('getWorkspaceNextPath', () => {
+  it('strips the locale prefix and preserves nested child paths', () => {
+    expect(
+      getWorkspaceNextPath(
+        { locale: 'en', wsId: 'personal' },
+        '/en/personal/crawlers/uncrawled',
+        'crawlers'
+      )
+    ).toBe('/personal/crawlers/uncrawled');
+  });
+
+  it('falls back to the workspace fallback path when pathname is not locale-prefixed', () => {
+    expect(
+      getWorkspaceNextPath(
+        { locale: 'en', wsId: 'personal' },
+        '/personal/crawlers/uncrawled',
+        '/crawlers'
+      )
+    ).toBe('/personal/crawlers');
   });
 });

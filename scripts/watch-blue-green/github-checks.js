@@ -39,6 +39,18 @@ const LOCAL_PATH_PATTERN =
 const HOSTNAME_PATTERN =
   /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:com|dev|internal|io|local|localhost|net|org|test)\b/giu;
 const COMMIT_HASH_PATTERN = /^[a-f0-9]{7,40}$/iu;
+const FAILED_WORKFLOW_CONCLUSIONS = new Set([
+  'action_required',
+  'cancelled',
+  'failure',
+  'startup_failure',
+  'timed_out',
+]);
+const SUCCESSFUL_WORKFLOW_CONCLUSIONS = new Set([
+  'neutral',
+  'skipped',
+  'success',
+]);
 
 const STAGE_LABELS = new Map([
   ['deploy', 'Deploy'],
@@ -70,6 +82,7 @@ const ACTION_REQUIRED_WATCHER_STATUSES = new Set([
   'blocked',
   'dirty',
   'diverged',
+  'validation-blocked',
   'watcher-branch-mismatch',
   'watcher-dirty',
 ]);
@@ -752,15 +765,20 @@ function githubJsonRequest(
   { body = null, method = 'GET', token } = {}
 ) {
   return new Promise((resolve, reject) => {
+    const headers = {
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'tuturuuu-blue-green-watcher',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const req = https.request(
       {
-        headers: {
-          Accept: 'application/vnd.github+json',
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'tuturuuu-blue-green-watcher',
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
+        headers,
         hostname: 'api.github.com',
         method,
         path: requestPath,
@@ -826,6 +844,182 @@ async function resolveGitHubChecksRepository({
     parseRepositoryFromEnv(env) ??
     (await getGitHubRepository({ env, rootDir, runCommand }).catch(() => null))
   );
+}
+
+function isCommitValidationLookupEnabled(
+  env = process.env,
+  tokenSource = null
+) {
+  if (
+    String(env?.DOCKER_WEB_WATCHER_GITHUB_VALIDATION_DISABLED ?? '') === '1'
+  ) {
+    return false;
+  }
+
+  return (
+    String(env?.DOCKER_WEB_WATCHER_GITHUB_VALIDATION ?? '') === '1' ||
+    isGitHubChecksEnabled(env, tokenSource) ||
+    Boolean(parseRepositoryFromEnv(env))
+  );
+}
+
+function getWorkflowRunKey(run) {
+  return String(run?.workflow_id ?? run?.name ?? run?.workflowName ?? '');
+}
+
+function getWorkflowRunTime(run) {
+  return (
+    Date.parse(run?.updated_at ?? '') ||
+    Date.parse(run?.created_at ?? '') ||
+    Number(run?.id ?? 0) ||
+    0
+  );
+}
+
+function getLatestWorkflowRunsForCommit(runs = [], commitHash) {
+  const latestByWorkflow = new Map();
+
+  for (const run of Array.isArray(runs) ? runs : []) {
+    if (run?.head_sha && run.head_sha !== commitHash) {
+      continue;
+    }
+
+    const key = getWorkflowRunKey(run);
+    if (!key) {
+      continue;
+    }
+
+    const previous = latestByWorkflow.get(key);
+
+    if (!previous || getWorkflowRunTime(run) >= getWorkflowRunTime(previous)) {
+      latestByWorkflow.set(key, run);
+    }
+  }
+
+  return [...latestByWorkflow.values()];
+}
+
+function normalizeWorkflowRunValidation(runs = [], commitHash) {
+  const latestRuns = getLatestWorkflowRunsForCommit(runs, commitHash);
+  const failedRuns = [];
+  const pendingRuns = [];
+  const successfulRuns = [];
+
+  for (const run of latestRuns) {
+    const status = String(run?.status ?? '').toLowerCase();
+    const conclusion = String(run?.conclusion ?? '').toLowerCase();
+    const normalizedRun = {
+      conclusion,
+      databaseId: run?.database_id ?? run?.id ?? null,
+      name: run?.name ?? run?.workflowName ?? 'Workflow',
+      status,
+      url: run?.html_url ?? run?.url ?? null,
+    };
+
+    if (status !== 'completed') {
+      pendingRuns.push(normalizedRun);
+      continue;
+    }
+
+    if (FAILED_WORKFLOW_CONCLUSIONS.has(conclusion)) {
+      failedRuns.push(normalizedRun);
+      continue;
+    }
+
+    if (SUCCESSFUL_WORKFLOW_CONCLUSIONS.has(conclusion)) {
+      successfulRuns.push(normalizedRun);
+      continue;
+    }
+
+    pendingRuns.push(normalizedRun);
+  }
+
+  return {
+    blocked: failedRuns.length > 0,
+    failedRuns,
+    inspectable: latestRuns.length > 0,
+    pendingRuns,
+    status:
+      failedRuns.length > 0
+        ? 'failed'
+        : pendingRuns.length > 0
+          ? 'pending'
+          : latestRuns.length > 0
+            ? 'passed'
+            : 'missing',
+    successfulRuns,
+    totalRuns: latestRuns.length,
+  };
+}
+
+async function getGitHubWorkflowValidationForCommit({
+  commitHash,
+  env = process.env,
+  fsImpl = fs,
+  now = Date.now(),
+  paths = getWatchPaths(),
+  repository,
+  requestJson = githubJsonRequest,
+  rootDir,
+  runCommand,
+  tokenProvider = createGitHubChecksTokenProvider({ env, fsImpl, paths }),
+} = {}) {
+  const normalizedCommitHash = normalizeCommitHash(commitHash);
+
+  if (!normalizedCommitHash) {
+    return {
+      inspectable: false,
+      reason: 'missing-commit',
+      status: 'missing',
+    };
+  }
+
+  const tokenSource = getGitHubChecksTokenSource(env, {
+    fsImpl,
+    now: () => now,
+    paths,
+  });
+
+  if (!isCommitValidationLookupEnabled(env, tokenSource)) {
+    return {
+      inspectable: false,
+      reason: 'disabled',
+      status: 'disabled',
+    };
+  }
+
+  const resolvedRepository =
+    repository ??
+    (await resolveGitHubChecksRepository({ env, rootDir, runCommand }));
+
+  if (!resolvedRepository?.owner || !resolvedRepository?.repo) {
+    return {
+      inspectable: false,
+      reason: 'missing-repository',
+      status: 'missing',
+    };
+  }
+
+  const token =
+    tokenSource?.type === 'static'
+      ? tokenSource.token
+      : await tokenProvider.getToken().catch(() => null);
+  const owner = encodeURIComponent(resolvedRepository.owner);
+  const repo = encodeURIComponent(resolvedRepository.repo);
+  const response = await requestJson(
+    `/repos/${owner}/${repo}/actions/runs?head_sha=${encodeURIComponent(normalizedCommitHash)}&per_page=100`,
+    { token }
+  );
+  const validation = normalizeWorkflowRunValidation(
+    response?.workflow_runs ?? [],
+    normalizedCommitHash
+  );
+
+  return {
+    ...validation,
+    commitHash: normalizedCommitHash,
+    repository: resolvedRepository,
+  };
 }
 
 async function publishGitHubCheckRunContext(
@@ -1102,12 +1296,14 @@ module.exports = {
   buildGitHubCheckRunContext,
   createGitHubChecksTokenProvider,
   createGitHubChecksPublisher,
+  getGitHubWorkflowValidationForCommit,
   getGitHubCheckDetailsUrl,
   getGitHubCheckName,
   getGitHubChecksToken,
   getGitHubChecksTokenSource,
   githubJsonRequest,
   isGitHubChecksEnabled,
+  normalizeWorkflowRunValidation,
   publishGitHubCheckRunContext,
   publishGitHubCheckRunForState,
   readGitHubChecksState,

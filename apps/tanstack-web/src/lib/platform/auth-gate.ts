@@ -76,6 +76,25 @@ export function isAuthenticatedProfile(profile: unknown): boolean {
 }
 
 /**
+ * Returns a workspace-local redirect target from TanStack's locale-prefixed
+ * pathname. Parent loaders may run for nested child routes, so auth redirects
+ * must preserve the full requested path instead of the parent route's base path.
+ */
+export function getWorkspaceNextPath(
+  params: { locale: string; wsId: string },
+  pathname: string,
+  fallbackPath: string
+): string {
+  const localePrefix = `/${params.locale}`;
+
+  if (pathname.startsWith(`${localePrefix}/`)) {
+    return pathname.slice(localePrefix.length);
+  }
+
+  return `/${params.wsId}/${fallbackPath.replace(/^\/+/u, '')}`;
+}
+
+/**
  * Resolves the current user from the forwarded request auth.
  *
  * Fail-closed: this server function never throws. Any error or empty/

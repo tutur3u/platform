@@ -5,7 +5,10 @@ import {
   loadCrawlerListData,
   validateCrawlerListSearch,
 } from '@/lib/crawlers/crawler-list-route-data';
-import { requireCurrentUser } from '@/lib/platform/auth-gate';
+import {
+  getWorkspaceNextPath,
+  requireCurrentUser,
+} from '@/lib/platform/auth-gate';
 import { createPageHead } from '@/lib/platform/head';
 import { resolveMessagesLocale } from '@/lib/platform/messages';
 import { resolveWorkspace } from '@/lib/platform/workspace';
@@ -29,10 +32,10 @@ export const Route = createFileRoute('/$locale/$wsId/crawlers')({
       title: 'Crawlers',
     });
   },
-  loader: async ({ params, deps }): Promise<CrawlerListData> => {
+  loader: async ({ location, params, deps }): Promise<CrawlerListData> => {
     await requireCurrentUser({
       locale: params.locale,
-      nextPath: `/${params.wsId}/crawlers`,
+      nextPath: getWorkspaceNextPath(params, location.pathname, 'crawlers'),
     });
 
     const workspace = await resolveWorkspace({ data: { wsId: params.wsId } });

@@ -323,6 +323,7 @@ module.exports = function createActiveRecovery({
         env,
         fsImpl,
         latestCommit,
+        log,
         now,
         paths,
         runCommand: run,

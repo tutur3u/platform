@@ -375,6 +375,61 @@ test('runBlueGreenDeploy gives child deploys a stage handoff file', async () => 
   }
 });
 
+test('runBlueGreenDeploy prunes failed build residue after child deploy failures', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-run-cleanup-'));
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const deployKey = 'bun serve:web:docker:bg';
+
+  try {
+    await assert.rejects(
+      runBlueGreenDeploy({
+        deployCommand: ['bun', 'serve:web:docker:bg'],
+        env: {
+          DOCKER_WEB_BUILD_BUILDER_NAME: 'tuturuuu-builder',
+          PATH: process.env.PATH,
+        },
+        fsImpl: fs,
+        latestCommit: {
+          hash: 'abc123',
+          shortHash: 'abc123',
+          subject: 'Cleanup failed build residue',
+        },
+        paths,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === deployKey) {
+            return createResult('', { code: 1, stderr: 'build failed' });
+          }
+
+          if (
+            key ===
+            'docker buildx prune --builder tuturuuu-builder --all --force'
+          ) {
+            return createResult('');
+          }
+
+          if (key === 'docker image prune --force --filter dangling=true') {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      })
+    );
+
+    assert.deepEqual(calls, [
+      deployKey,
+      'docker buildx prune --builder tuturuuu-builder --all --force',
+      'docker image prune --force --filter dangling=true',
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('docker daemon restart configuration defaults to host service commands', () => {
   assert.equal(
     getDockerDaemonRestartAfterMs({}),
@@ -8621,6 +8676,162 @@ test('main deploys the latest fetched revision after recovery when the last succ
       publishedStates.some((state) => state.lastResultStatus === 'deployed')
     );
     assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main blocks recovered pending deploys when GitHub validation failed for HEAD', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-pending-validation-block-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const validationRequests = [];
+  const warnings = [];
+  const uiState = {};
+  const latestCommitHash = 'bbb2222222222222222222222222222222222222';
+  const deployKey = `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'green',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Old deployed revision',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writePendingDeployRequest(
+      {
+        commitHash: latestCommitHash,
+        commitShortHash: 'bbb222',
+        reason: 'process-restart',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    await main(['--once'], {
+      commitValidationReader: async ({ commitHash }) => {
+        validationRequests.push(commitHash);
+
+        return {
+          blocked: true,
+          failedRuns: [
+            {
+              conclusion: 'failure',
+              htmlUrl: 'https://github.com/tutur3u/platform/actions/runs/123',
+              id: 123,
+              name: 'Migration E2E',
+              status: 'completed',
+            },
+          ],
+          inspectable: true,
+          status: 'failed',
+        };
+      },
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
+      },
+      envFilePath,
+      fsImpl: fs,
+      now: (() => {
+        const values = [1000, 2000, 3000, 4000];
+        return () => values.shift() ?? 4000;
+      })(),
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('proxy-123\n');
+        }
+
+        if (key === prodComposePsKey('web-green')) {
+          return createResult('green-123\n');
+        }
+
+        if (key === prodComposePsKey('web-blue')) {
+          return createResult('');
+        }
+
+        if (
+          key ===
+          `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+        ) {
+          return createResult('proxy-123\n');
+        }
+
+        if (
+          key ===
+          'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+        ) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('main\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('origin/main\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            `${latestCommitHash}\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:59:00.000Z\n`
+          );
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error() {},
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn(message) {
+          warnings.push(message);
+        },
+      },
+    });
+
+    assert.deepEqual(validationRequests, [latestCommitHash]);
+    assert.equal(readPendingDeployRequest(paths, fs), null);
+    assert.equal(uiState.lastResult.status, 'validation-blocked');
+    assert.equal(
+      uiState.lastResult.failedValidationRuns[0].name,
+      'Migration E2E'
+    );
+    assert.ok(!calls.includes(deployKey));
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /GitHub validation failed: Migration E2E/u);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
