@@ -5905,14 +5905,17 @@
   },
   "email-templates": {
     "copied": "Đã sao chép!",
+    "copy_failed": "Không thể sao chép HTML",
     "copy_html": "Sao chép HTML",
     "dark_mode": "Chế độ Tối",
     "dark_mode_warning": "Lưu ý: Đây là chế độ tối giả lập. Hiển thị thực tế có thể khác nhau tùy theo ứng dụng email.",
     "description": "Xem trước và kiểm tra tất cả mẫu email có sẵn với các đầu vào tùy chỉnh.",
     "light_mode": "Chế độ Sáng",
+    "loading_preview": "Đang render bản xem trước...",
     "live_preview": "Xem trước Trực tiếp",
     "no_templates": "Không có mẫu nào",
     "preview": "Xem trước",
+    "render_failed": "Không thể render mẫu này.",
     "select_template": "Chọn Mẫu",
     "template_props": "Thuộc tính Mẫu",
     "title": "Mẫu Email"

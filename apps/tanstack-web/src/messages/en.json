@@ -5905,14 +5905,17 @@
   },
   "email-templates": {
     "copied": "Copied to clipboard!",
+    "copy_failed": "Failed to copy HTML",
     "copy_html": "Copy HTML",
     "dark_mode": "Dark Mode",
     "dark_mode_warning": "Note: This is a simulated dark mode. Actual rendering may vary across email clients.",
     "description": "Preview and test all available email templates with customizable inputs.",
     "light_mode": "Light Mode",
+    "loading_preview": "Rendering preview...",
     "live_preview": "Live Preview",
     "no_templates": "No templates available",
     "preview": "Preview",
+    "render_failed": "Failed to render this template.",
     "select_template": "Select Template",
     "template_props": "Template Properties",
     "title": "Email Templates"

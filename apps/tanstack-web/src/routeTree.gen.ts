@@ -150,6 +150,7 @@ import { Route as LocaleWsIdInfrastructureMobileDeploymentRouteImport } from './
 import { Route as LocaleWsIdInfrastructureHolidaysRouteImport } from './routes/$locale/$wsId/infrastructure/holidays';
 import { Route as LocaleWsIdInfrastructureGithubBotRouteImport } from './routes/$locale/$wsId/infrastructure/github-bot';
 import { Route as LocaleWsIdInfrastructureExternalAppsRouteImport } from './routes/$locale/$wsId/infrastructure/external-apps';
+import { Route as LocaleWsIdInfrastructureEmailTemplatesRouteImport } from './routes/$locale/$wsId/infrastructure/email-templates';
 import { Route as LocaleWsIdInfrastructureEmailBlacklistRouteImport } from './routes/$locale/$wsId/infrastructure/email-blacklist';
 import { Route as LocaleWsIdInfrastructureChangelogRouteImport } from './routes/$locale/$wsId/infrastructure/changelog';
 import { Route as LocaleWsIdInfrastructureBlockedIpsRouteImport } from './routes/$locale/$wsId/infrastructure/blocked-ips';
@@ -983,6 +984,12 @@ const LocaleWsIdInfrastructureExternalAppsRoute =
     path: '/$wsId/infrastructure/external-apps',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
+const LocaleWsIdInfrastructureEmailTemplatesRoute =
+  LocaleWsIdInfrastructureEmailTemplatesRouteImport.update({
+    id: '/$wsId/infrastructure/email-templates',
+    path: '/$wsId/infrastructure/email-templates',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleWsIdInfrastructureEmailBlacklistRoute =
   LocaleWsIdInfrastructureEmailBlacklistRouteImport.update({
     id: '/$wsId/infrastructure/email-blacklist',
@@ -1572,6 +1579,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/infrastructure/blocked-ips': typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   '/$locale/$wsId/infrastructure/changelog': typeof LocaleWsIdInfrastructureChangelogRoute;
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  '/$locale/$wsId/infrastructure/email-templates': typeof LocaleWsIdInfrastructureEmailTemplatesRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/github-bot': typeof LocaleWsIdInfrastructureGithubBotRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -1792,6 +1800,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/infrastructure/blocked-ips': typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   '/$locale/$wsId/infrastructure/changelog': typeof LocaleWsIdInfrastructureChangelogRoute;
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  '/$locale/$wsId/infrastructure/email-templates': typeof LocaleWsIdInfrastructureEmailTemplatesRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/github-bot': typeof LocaleWsIdInfrastructureGithubBotRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -2013,6 +2022,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/infrastructure/blocked-ips': typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   '/$locale/$wsId/infrastructure/changelog': typeof LocaleWsIdInfrastructureChangelogRoute;
   '/$locale/$wsId/infrastructure/email-blacklist': typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  '/$locale/$wsId/infrastructure/email-templates': typeof LocaleWsIdInfrastructureEmailTemplatesRoute;
   '/$locale/$wsId/infrastructure/external-apps': typeof LocaleWsIdInfrastructureExternalAppsRoute;
   '/$locale/$wsId/infrastructure/github-bot': typeof LocaleWsIdInfrastructureGithubBotRoute;
   '/$locale/$wsId/infrastructure/holidays': typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -2236,6 +2246,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/blocked-ips'
     | '/$locale/$wsId/infrastructure/changelog'
     | '/$locale/$wsId/infrastructure/email-blacklist'
+    | '/$locale/$wsId/infrastructure/email-templates'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/github-bot'
     | '/$locale/$wsId/infrastructure/holidays'
@@ -2456,6 +2467,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/blocked-ips'
     | '/$locale/$wsId/infrastructure/changelog'
     | '/$locale/$wsId/infrastructure/email-blacklist'
+    | '/$locale/$wsId/infrastructure/email-templates'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/github-bot'
     | '/$locale/$wsId/infrastructure/holidays'
@@ -2676,6 +2688,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/infrastructure/blocked-ips'
     | '/$locale/$wsId/infrastructure/changelog'
     | '/$locale/$wsId/infrastructure/email-blacklist'
+    | '/$locale/$wsId/infrastructure/email-templates'
     | '/$locale/$wsId/infrastructure/external-apps'
     | '/$locale/$wsId/infrastructure/github-bot'
     | '/$locale/$wsId/infrastructure/holidays'
@@ -3779,6 +3792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdInfrastructureExternalAppsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
+    '/$locale/$wsId/infrastructure/email-templates': {
+      id: '/$locale/$wsId/infrastructure/email-templates';
+      path: '/$wsId/infrastructure/email-templates';
+      fullPath: '/$locale/$wsId/infrastructure/email-templates';
+      preLoaderRoute: typeof LocaleWsIdInfrastructureEmailTemplatesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
     '/$locale/$wsId/infrastructure/email-blacklist': {
       id: '/$locale/$wsId/infrastructure/email-blacklist';
       path: '/$wsId/infrastructure/email-blacklist';
@@ -4809,6 +4829,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdInfrastructureBlockedIpsRoute: typeof LocaleWsIdInfrastructureBlockedIpsRoute;
   LocaleWsIdInfrastructureChangelogRoute: typeof LocaleWsIdInfrastructureChangelogRoute;
   LocaleWsIdInfrastructureEmailBlacklistRoute: typeof LocaleWsIdInfrastructureEmailBlacklistRoute;
+  LocaleWsIdInfrastructureEmailTemplatesRoute: typeof LocaleWsIdInfrastructureEmailTemplatesRoute;
   LocaleWsIdInfrastructureExternalAppsRoute: typeof LocaleWsIdInfrastructureExternalAppsRoute;
   LocaleWsIdInfrastructureGithubBotRoute: typeof LocaleWsIdInfrastructureGithubBotRoute;
   LocaleWsIdInfrastructureHolidaysRoute: typeof LocaleWsIdInfrastructureHolidaysRoute;
@@ -4978,6 +4999,8 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
     LocaleWsIdInfrastructureChangelogRoute,
   LocaleWsIdInfrastructureEmailBlacklistRoute:
     LocaleWsIdInfrastructureEmailBlacklistRoute,
+  LocaleWsIdInfrastructureEmailTemplatesRoute:
+    LocaleWsIdInfrastructureEmailTemplatesRoute,
   LocaleWsIdInfrastructureExternalAppsRoute:
     LocaleWsIdInfrastructureExternalAppsRoute,
   LocaleWsIdInfrastructureGithubBotRoute:
