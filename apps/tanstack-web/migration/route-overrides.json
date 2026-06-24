@@ -1429,6 +1429,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/mail/sent preserves the legacy 307 redirect to the Mail app workspace route with folder=sent. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/education:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education ports the legacy education overview with fail-closed current-user auth, workspace resolution, localized education shell header/content, and forwarded-auth internal-api counts for courses, flashcards, and quizzes. This marks only the frontend overview page artifact migrated; underlying education list API ownership remains separately tracked."
+    },
     "page:/:locale/:wsId/education/flashcards:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/flashcards/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

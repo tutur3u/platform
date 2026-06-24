@@ -42,6 +42,7 @@ const GATED_ROUTES = [
   'cron',
   'crawlers',
   'crawlers/uncrawled',
+  'education',
   'education/attempts',
   'education/courses',
   'education/library/flashcards',

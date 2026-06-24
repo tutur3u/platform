@@ -109,6 +109,7 @@ import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui
 import { Route as LocaleWsIdTasksIndexRouteImport } from './routes/$locale/$wsId/tasks/index';
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index';
 import { Route as LocaleWsIdInventoryIndexRouteImport } from './routes/$locale/$wsId/inventory/index';
+import { Route as LocaleWsIdEducationIndexRouteImport } from './routes/$locale/$wsId/education/index';
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId';
 import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code';
 import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode';
@@ -748,6 +749,12 @@ const LocaleWsIdInventoryIndexRoute =
   LocaleWsIdInventoryIndexRouteImport.update({
     id: '/$wsId/inventory/',
     path: '/$wsId/inventory/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdEducationIndexRoute =
+  LocaleWsIdEducationIndexRouteImport.update({
+    id: '/$wsId/education/',
+    path: '/$wsId/education/',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
 const LocaleUiComponentsComponentIdRoute =
@@ -1661,6 +1668,7 @@ export interface FileRoutesByFullPath {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
+  '/$locale/$wsId/education/': typeof LocaleWsIdEducationIndexRoute;
   '/$locale/$wsId/inventory/': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks/': typeof LocaleWsIdTasksIndexRoute;
@@ -1886,6 +1894,7 @@ export interface FileRoutesByTo {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
+  '/$locale/$wsId/education': typeof LocaleWsIdEducationIndexRoute;
   '/$locale/$wsId/inventory': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks': typeof LocaleWsIdTasksIndexRoute;
@@ -2114,6 +2123,7 @@ export interface FileRoutesById {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
+  '/$locale/$wsId/education/': typeof LocaleWsIdEducationIndexRoute;
   '/$locale/$wsId/inventory/': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks/': typeof LocaleWsIdTasksIndexRoute;
@@ -2343,6 +2353,7 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
+    | '/$locale/$wsId/education/'
     | '/$locale/$wsId/inventory/'
     | '/$locale/$wsId/mail/'
     | '/$locale/$wsId/tasks/'
@@ -2568,6 +2579,7 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
+    | '/$locale/$wsId/education'
     | '/$locale/$wsId/inventory'
     | '/$locale/$wsId/mail'
     | '/$locale/$wsId/tasks'
@@ -2795,6 +2807,7 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
+    | '/$locale/$wsId/education/'
     | '/$locale/$wsId/inventory/'
     | '/$locale/$wsId/mail/'
     | '/$locale/$wsId/tasks/'
@@ -3564,6 +3577,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/inventory';
       fullPath: '/$locale/$wsId/inventory/';
       preLoaderRoute: typeof LocaleWsIdInventoryIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/education/': {
+      id: '/$locale/$wsId/education/';
+      path: '/$wsId/education';
+      fullPath: '/$locale/$wsId/education/';
+      preLoaderRoute: typeof LocaleWsIdEducationIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/ui/components/$componentId': {
@@ -4973,6 +4993,7 @@ interface LocaleRouteRouteChildren {
   LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute;
   LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute;
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute;
+  LocaleWsIdEducationIndexRoute: typeof LocaleWsIdEducationIndexRoute;
   LocaleWsIdInventoryIndexRoute: typeof LocaleWsIdInventoryIndexRoute;
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute;
   LocaleWsIdTasksIndexRoute: typeof LocaleWsIdTasksIndexRoute;
@@ -5160,6 +5181,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleSharedTaskShareCodeRoute: LocaleSharedTaskShareCodeRoute,
   LocaleSharedUserProfileCodeRoute: LocaleSharedUserProfileCodeRoute,
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
+  LocaleWsIdEducationIndexRoute: LocaleWsIdEducationIndexRoute,
   LocaleWsIdInventoryIndexRoute: LocaleWsIdInventoryIndexRoute,
   LocaleWsIdMailIndexRoute: LocaleWsIdMailIndexRoute,
   LocaleWsIdTasksIndexRoute: LocaleWsIdTasksIndexRoute,
