@@ -197,6 +197,7 @@ import { Route as LocaleWsIdEducationQuizSetsIndexRouteImport } from './routes/$
 import { Route as LocaleWsIdEducationCoursesIndexRouteImport } from './routes/$locale/$wsId/education/courses/index';
 import { Route as LocaleWsIdEducationAttemptsIndexRouteImport } from './routes/$locale/$wsId/education/attempts/index';
 import { Route as LocaleWsIdAiChatMyChatbotsIndexRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/index';
+import { Route as LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport } from './routes/$locale/$wsId/users/topic-announcements/templates';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
 import { Route as LocaleWsIdUsersGroupsCalendarRouteImport } from './routes/$locale/$wsId/users/groups/calendar';
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
@@ -1272,6 +1273,12 @@ const LocaleWsIdAiChatMyChatbotsIndexRoute =
     path: '/my-chatbots/',
     getParentRoute: () => LocaleWsIdAiChatRoute,
   } as any);
+const LocaleWsIdUsersTopicAnnouncementsTemplatesRoute =
+  LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+  } as any);
 const LocaleWsIdUsersReportsReportIdRoute =
   LocaleWsIdUsersReportsReportIdRouteImport.update({
     id: '/$wsId/users/reports/$reportId',
@@ -1749,7 +1756,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/users/approvals': typeof LocaleWsIdUsersApprovalsRoute;
   '/$locale/$wsId/users/feedbacks': typeof LocaleWsIdUsersFeedbacksRoute;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
-  '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRouteWithChildren;
   '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
   '/$locale/ai/chats/$chatId': typeof LocaleAiChatsChatIdRoute;
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute;
@@ -1800,6 +1807,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/users/topic-announcements/templates': typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/attempts/': typeof LocaleWsIdEducationAttemptsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
@@ -1987,7 +1995,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/users/approvals': typeof LocaleWsIdUsersApprovalsRoute;
   '/$locale/$wsId/users/feedbacks': typeof LocaleWsIdUsersFeedbacksRoute;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
-  '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRouteWithChildren;
   '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
   '/$locale/ai/chats/$chatId': typeof LocaleAiChatsChatIdRoute;
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute;
@@ -2038,6 +2046,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/users/topic-announcements/templates': typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
   '/$locale/$wsId/ai-chat/my-chatbots': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/attempts': typeof LocaleWsIdEducationAttemptsIndexRoute;
   '/$locale/$wsId/education/courses': typeof LocaleWsIdEducationCoursesIndexRoute;
@@ -2228,7 +2237,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/users/approvals': typeof LocaleWsIdUsersApprovalsRoute;
   '/$locale/$wsId/users/feedbacks': typeof LocaleWsIdUsersFeedbacksRoute;
   '/$locale/$wsId/users/structure': typeof LocaleWsIdUsersStructureRoute;
-  '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  '/$locale/$wsId/users/topic-announcements': typeof LocaleWsIdUsersTopicAnnouncementsRouteWithChildren;
   '/$locale/$wsId/users/tutoring': typeof LocaleWsIdUsersTutoringRoute;
   '/$locale/ai/chats/$chatId': typeof LocaleAiChatsChatIdRoute;
   '/$locale/calendar/meet-together/$': typeof LocaleCalendarMeetTogetherSplatRoute;
@@ -2279,6 +2288,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/users/topic-announcements/templates': typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
   '/$locale/$wsId/ai-chat/my-chatbots/': typeof LocaleWsIdAiChatMyChatbotsIndexRoute;
   '/$locale/$wsId/education/attempts/': typeof LocaleWsIdEducationAttemptsIndexRoute;
   '/$locale/$wsId/education/courses/': typeof LocaleWsIdEducationCoursesIndexRoute;
@@ -2521,6 +2531,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/users/topic-announcements/templates'
     | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/attempts/'
     | '/$locale/$wsId/education/courses/'
@@ -2759,6 +2770,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/users/topic-announcements/templates'
     | '/$locale/$wsId/ai-chat/my-chatbots'
     | '/$locale/$wsId/education/attempts'
     | '/$locale/$wsId/education/courses'
@@ -2999,6 +3011,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/users/topic-announcements/templates'
     | '/$locale/$wsId/ai-chat/my-chatbots/'
     | '/$locale/$wsId/education/attempts/'
     | '/$locale/$wsId/education/courses/'
@@ -4348,6 +4361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsIndexRouteImport;
       parentRoute: typeof LocaleWsIdAiChatRoute;
     };
+    '/$locale/$wsId/users/topic-announcements/templates': {
+      id: '/$locale/$wsId/users/topic-announcements/templates';
+      path: '/templates';
+      fullPath: '/$locale/$wsId/users/topic-announcements/templates';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    };
     '/$locale/$wsId/users/reports/$reportId': {
       id: '/$locale/$wsId/users/reports/$reportId';
       path: '/$wsId/users/reports/$reportId';
@@ -5155,6 +5175,21 @@ const LocaleWsIdTasksTemplatesRouteWithChildren =
     LocaleWsIdTasksTemplatesRouteChildren,
   );
 
+interface LocaleWsIdUsersTopicAnnouncementsRouteChildren {
+  LocaleWsIdUsersTopicAnnouncementsTemplatesRoute: typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
+}
+
+const LocaleWsIdUsersTopicAnnouncementsRouteChildren: LocaleWsIdUsersTopicAnnouncementsRouteChildren =
+  {
+    LocaleWsIdUsersTopicAnnouncementsTemplatesRoute:
+      LocaleWsIdUsersTopicAnnouncementsTemplatesRoute,
+  };
+
+const LocaleWsIdUsersTopicAnnouncementsRouteWithChildren =
+  LocaleWsIdUsersTopicAnnouncementsRoute._addFileChildren(
+    LocaleWsIdUsersTopicAnnouncementsRouteChildren,
+  );
+
 interface LocaleShareTypeResourceIdRouteChildren {
   LocaleShareTypeResourceIdModulesModuleIdRoute: typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
 }
@@ -5340,7 +5375,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdUsersApprovalsRoute: typeof LocaleWsIdUsersApprovalsRoute;
   LocaleWsIdUsersFeedbacksRoute: typeof LocaleWsIdUsersFeedbacksRoute;
   LocaleWsIdUsersStructureRoute: typeof LocaleWsIdUsersStructureRoute;
-  LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+  LocaleWsIdUsersTopicAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsRouteWithChildren;
   LocaleWsIdUsersTutoringRoute: typeof LocaleWsIdUsersTutoringRoute;
   LocaleAiChatsChatIdRoute: typeof LocaleAiChatsChatIdRoute;
   LocaleShareTypeResourceIdRoute: typeof LocaleShareTypeResourceIdRouteWithChildren;
@@ -5494,7 +5529,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdUsersFeedbacksRoute: LocaleWsIdUsersFeedbacksRoute,
   LocaleWsIdUsersStructureRoute: LocaleWsIdUsersStructureRoute,
   LocaleWsIdUsersTopicAnnouncementsRoute:
-    LocaleWsIdUsersTopicAnnouncementsRoute,
+    LocaleWsIdUsersTopicAnnouncementsRouteWithChildren,
   LocaleWsIdUsersTutoringRoute: LocaleWsIdUsersTutoringRoute,
   LocaleAiChatsChatIdRoute: LocaleAiChatsChatIdRoute,
   LocaleShareTypeResourceIdRoute: LocaleShareTypeResourceIdRouteWithChildren,
