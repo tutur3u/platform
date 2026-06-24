@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/storefront-v0.6.0...storefront-v0.7.0) (2026-06-24)
+
+
+### Features
+
+* **backend:** add cron monitoring readers ([84b0c13](https://github.com/tutur3u/platform/commit/84b0c1397ebf0e099a9706ccfeaf4fc1de399b65))
+* **inventory:** surface storefront checkout sales ([c8e813c](https://github.com/tutur3u/platform/commit/c8e813caa23e7e77e94aa94c9f0059b95cd5ba1c))
+* **storefront:** simplify cart and checkout ([a2d17e1](https://github.com/tutur3u/platform/commit/a2d17e1a024e11ffb76cbaa1a99e8f26a5a43aa0))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **storefront:** open hosted Polar checkout in browser tab ([d1d0629](https://github.com/tutur3u/platform/commit/d1d0629b26c13663854e315f537288d436161d00))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/storefront-v0.5.0...storefront-v0.6.0) (2026-06-17)
 
 

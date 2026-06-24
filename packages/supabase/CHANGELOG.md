@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/supabase-v0.3.4...supabase-v0.4.0) (2026-06-24)
+
+
+### Features
+
+* add supabase request client ([9393266](https://github.com/tutur3u/platform/commit/939326619cada0ed3c05e11933c1b2f7f4f773c1))
+
 ## [0.3.4](https://github.com/tutur3u/platform/compare/supabase-v0.3.3...supabase-v0.3.4) (2026-06-17)
 
 

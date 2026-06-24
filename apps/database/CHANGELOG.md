@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.10.0](https://github.com/tutur3u/platform/compare/database-v1.9.0...database-v1.10.0) (2026-06-24)
+
+
+### Features
+
+* add paragrph type ([1a45cbf](https://github.com/tutur3u/platform/commit/1a45cbfaf4d99af39236d837ecdb58f53cb80843))
+* add test apge ([2d62fc8](https://github.com/tutur3u/platform/commit/2d62fc883379ad54e800e8555e40168de5327295))
+* **calendar:** add configurable two-way sync ([76078d8](https://github.com/tutur3u/platform/commit/76078d865618b4970b430b08f0db7a1a8c30ffcb))
+* implement teach test submission review and student question feedback ([11cb373](https://github.com/tutur3u/platform/commit/11cb3736d3c35c18f0ed341f807f5df5a5775c31))
+* implement test score visibility control and add submission review functionality ([2ce0416](https://github.com/tutur3u/platform/commit/2ce0416d6f192f539a859e5b66d7b8333dbe7b63))
+* **tasks:** add public board sharing ([b5a4a07](https://github.com/tutur3u/platform/commit/b5a4a0796dab947e8dca3970d6aa136a4863dd35))
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+
+
+### Bug Fixes
+
+* **ci:** refresh migration timestamps ([c2b1f63](https://github.com/tutur3u/platform/commit/c2b1f6360b159ed8ddf25a1956eb19e3303bbd1a))
+* **database:** prevent task plan owner takeover ([e5b925b](https://github.com/tutur3u/platform/commit/e5b925b40ec88aecb789ac8302c3a5c8515c97db))
+* **database:** use signed supabase cli binary ([3f35834](https://github.com/tutur3u/platform/commit/3f35834f638f9c29c3048ab5f5c0ca0331092c77))
+* **inventory:** bind Polar webhook workspace ([0cadc2b](https://github.com/tutur3u/platform/commit/0cadc2bf2df8a6ac6add5459d8d38c92d4e24ee9))
+* **teach:** address assessment generation review ([54cf837](https://github.com/tutur3u/platform/commit/54cf83731bb540d4f6bd6b3acf0c55564ce165d0))
+* **teach:** address follow-up review comments ([8cdb9c0](https://github.com/tutur3u/platform/commit/8cdb9c0385fe0fd374cba3b6a30463ce94f4f340))
+* **teach:** address test review follow-ups ([bfc6c12](https://github.com/tutur3u/platform/commit/bfc6c12eade212bf8775b78cc2853fd8b14601e7))
+
 ## [1.9.0](https://github.com/tutur3u/platform/compare/database-v1.8.0...database-v1.9.0) (2026-06-17)
 
 

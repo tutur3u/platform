@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/ui-v0.8.0...ui-v0.9.0) (2026-06-24)
+
+
+### Features
+
+* **calendar:** add configurable two-way sync ([76078d8](https://github.com/tutur3u/platform/commit/76078d865618b4970b430b08f0db7a1a8c30ffcb))
+* **inventory:** surface storefront checkout sales ([c8e813c](https://github.com/tutur3u/platform/commit/c8e813caa23e7e77e94aa94c9f0059b95cd5ba1c))
+* **storefront:** simplify cart and checkout ([a2d17e1](https://github.com/tutur3u/platform/commit/a2d17e1a024e11ffb76cbaa1a99e8f26a5a43aa0))
+* **task-boards:** improve public board sharing UX ([930ceb4](https://github.com/tutur3u/platform/commit/930ceb49ef72fad22e3f412c2ff5648fd6b3c417))
+* **tasks:** add board creation to task picker ([da82857](https://github.com/tutur3u/platform/commit/da828579f57ac65537fc538fb20692783c2b7751))
+* **tasks:** add board-centered tasks entry ([cfb0dd6](https://github.com/tutur3u/platform/commit/cfb0dd689924f91f2b9b848e82c0feab89f62ab0))
+* **tasks:** add deadline column controls ([524c621](https://github.com/tutur3u/platform/commit/524c62117dab6984ff0116e010341694ead6f8b5))
+* **tasks:** add public board sharing ([b5a4a07](https://github.com/tutur3u/platform/commit/b5a4a0796dab947e8dca3970d6aa136a4863dd35))
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** compact kanban planner and share dialog ([381aa91](https://github.com/tutur3u/platform/commit/381aa91433aaed2936b04d34c44f13f364befe21))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+* **ui:** add theme-aware editor colors ([fde3ae9](https://github.com/tutur3u/platform/commit/fde3ae9930e1573b6a7273c95f90f41767e72c58))
+
+
+### Bug Fixes
+
+* **calendar:** improve synced event rendering ([9bc2bee](https://github.com/tutur3u/platform/commit/9bc2beea78fe21ccd3deb5040b63a1ae4ff39aa7))
+* **calendar:** preserve events across week navigation ([aa60471](https://github.com/tutur3u/platform/commit/aa604715f132f4ed4476dd4df3795f53848c360b))
+* **calendar:** stabilize optimistic event sync ([fda22e1](https://github.com/tutur3u/platform/commit/fda22e1eebec28e04af0b8a2ab22d0f148c0565d))
+* **ci:** address remaining PR check failures ([7eb56d5](https://github.com/tutur3u/platform/commit/7eb56d51d8d14f6e2dd22c2d4c3514a560847333))
+* **tanstack:** harden public shell migration ([849c133](https://github.com/tutur3u/platform/commit/849c1334da613437dc673a8396a373ffc7767583))
+* **task-boards:** align board picker icon styling ([c145770](https://github.com/tutur3u/platform/commit/c145770c0d4cf43a96db9df2fd9f14696e4b84ad))
+* **task-boards:** clean up board header icons ([16673be](https://github.com/tutur3u/platform/commit/16673be22ba40205e09134e6db8225edb7db841a))
+* **tasks:** polish board activity and history diffs ([cdc1c2c](https://github.com/tutur3u/platform/commit/cdc1c2cbdcc283ee30e959435b70f03e84b999de))
+* **tasks:** polish board filters planner and settings loading ([2396419](https://github.com/tutur3u/platform/commit/239641941a08e243d1295231c8e2d1089902897f))
+* **tasks:** polish board header settings and share ux ([fd78ac5](https://github.com/tutur3u/platform/commit/fd78ac5e5632e8897d8e124ec8c5abd26acc820b))
+* **tasks:** polish board toolbar settings and activity ([e1966bb](https://github.com/tutur3u/platform/commit/e1966bb68d4900e4d5d187153f3a8942727f2127))
+* **tasks:** polish board views and loading ([0b60957](https://github.com/tutur3u/platform/commit/0b6095726b6c1aaae4f794ba6cfecde4d46f0db9))
+* **tasks:** polish task board loading and defaults ([7c215d3](https://github.com/tutur3u/platform/commit/7c215d3ea6b0b710247069f8616d4b7b1029147f))
+* **tasks:** refine board settings and toolbar pickers ([bec77e3](https://github.com/tutur3u/platform/commit/bec77e30804bb0ff0657831e564e8dd8efeb8722))
+* **tasks:** refresh kanban special columns ([3317e1d](https://github.com/tutur3u/platform/commit/3317e1d80890afa05a4d10840131b8f2d77910ec))
+* **tasks:** update board header icons ([7f79c06](https://github.com/tutur3u/platform/commit/7f79c06e4a854c1489db30a6265b6aa24583cc86))
+* **ui:** stabilize fullscreen dialog surfaces ([138bc7b](https://github.com/tutur3u/platform/commit/138bc7b7761151007bb097aa15350d72a92dd638))
+* **web:** prevent dashboard runtime loops ([e02ae70](https://github.com/tutur3u/platform/commit/e02ae701e6905a47b7d96d51624b0a301cb1405f))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/ui-v0.7.0...ui-v0.8.0) (2026-06-17)
 
 

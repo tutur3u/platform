@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/apps-v0.2.1...apps-v0.2.2) (2026-06-24)
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/apps-v0.2.0...apps-v0.2.1) (2026-06-11)
 
 

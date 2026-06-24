@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/utils-v0.8.0...utils-v0.9.0) (2026-06-24)
+
+
+### Features
+
+* add tanstack rust migration foundation ([da7e58a](https://github.com/tutur3u/platform/commit/da7e58a2a6c7eefff5df74859e991872b5195132))
+
+
+### Bug Fixes
+
+* **tasks:** refresh kanban special columns ([3317e1d](https://github.com/tutur3u/platform/commit/3317e1d80890afa05a4d10840131b8f2d77910ec))
+* **utils:** prevent shared IP hard bans ([a898502](https://github.com/tutur3u/platform/commit/a898502468dbc9151ad8cb12a3aafae265349ec1))
+* **web:** key verified mutations by session ([caea8ea](https://github.com/tutur3u/platform/commit/caea8ea647ceff9dd63d719312cad4fcc7beee1d))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/utils-v0.7.0...utils-v0.8.0) (2026-06-17)
 
 

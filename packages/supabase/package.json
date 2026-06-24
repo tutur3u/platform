@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/supabase",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "Supabase client and utilities for Next.js applications with SSR support, cookie handling, and TypeScript type safety",
   "keywords": [
     "supabase",
@@ -27,7 +27,12 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
