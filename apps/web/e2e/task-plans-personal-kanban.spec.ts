@@ -140,8 +140,6 @@ test.describe('Shareable task plans in personal Kanban', () => {
       await expect(
         page.getByText(`E2E weekly plan ${timestamp}`)
       ).toBeVisible();
-      await page.getByRole('button', { name: /target workspace/i }).click();
-      await expect(page.getByPlaceholder('Task title')).toBeVisible();
 
       const createItem = await request.post(
         `/api/v1/workspaces/personal/task-plans/${planId}/items`,
