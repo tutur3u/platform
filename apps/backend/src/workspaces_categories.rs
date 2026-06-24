@@ -106,7 +106,7 @@ fn workspaces_category_id(path: &str) -> Option<&str> {
         && !segments[2].is_empty()
         && segments[3] == "categories"
         && !segments[4].is_empty())
-    .then_some(segments[4])
+    .then(|| segments[4])
 }
 
 fn message_response(status: u16, message: &str) -> BackendResponse {
