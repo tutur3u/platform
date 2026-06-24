@@ -8,6 +8,7 @@ import {
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -35,6 +36,7 @@ export function useLessonDetail(
   courseId: string,
   lessonId: string
 ) {
+  const t = useTranslations('teachModules.lesson');
   const qc = useQueryClient();
 
   // Fetch all modules for the course and find this one
@@ -135,7 +137,7 @@ export function useLessonDetail(
     mutationFn: async (payload: LessonUpdatePayload) =>
       updateWorkspaceCourseModule(wsId, lessonId, payload),
     onError: () => {
-      toast.error('Failed to save lesson. Please try again.');
+      toast.error(t('saveFailed'));
     },
     onSuccess: (_, variables) => {
       qc.setQueryData<WorkspaceCourseModule[] | undefined>(

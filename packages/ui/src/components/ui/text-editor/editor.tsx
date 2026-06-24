@@ -58,6 +58,10 @@ function syncEditorContent(editor: Editor, nextContent: JSONContent | null) {
   }
 }
 
+function serializeEditorContent(content: JSONContent | null) {
+  return JSON.stringify(content ?? { type: 'doc', content: [] });
+}
+
 interface RichTextEditorProps {
   content: JSONContent | null;
   onChange?: (content: JSONContent | null) => void;
@@ -145,6 +149,7 @@ export function RichTextEditor({
   const isProgrammaticUpdateRef = useRef(false);
   const hasDeferredExternalContentRef = useRef(false);
   const deferredExternalContentRef = useRef<JSONContent | null>(null);
+  const deferredEditorSnapshotRef = useRef<string | null>(null);
   const getDelegatedImageUpload = useCallback(
     () => onImageUploadRef.current,
     []
@@ -586,10 +591,16 @@ export function RichTextEditor({
       isProgrammaticUpdateRef.current = false;
       hasDeferredExternalContentRef.current = false;
       deferredExternalContentRef.current = null;
+      deferredEditorSnapshotRef.current = null;
       return;
     }
 
     if (editor.isFocused) {
+      if (!hasDeferredExternalContentRef.current) {
+        deferredEditorSnapshotRef.current = serializeEditorContent(
+          editor.getJSON()
+        );
+      }
       hasDeferredExternalContentRef.current = true;
       deferredExternalContentRef.current = content;
       return;
@@ -597,6 +608,7 @@ export function RichTextEditor({
 
     hasDeferredExternalContentRef.current = false;
     deferredExternalContentRef.current = null;
+    deferredEditorSnapshotRef.current = null;
     syncEditorContent(editor, content);
   }, [editor, content, allowCollaboration]);
 
@@ -608,7 +620,17 @@ export function RichTextEditor({
 
       hasDeferredExternalContentRef.current = false;
       const deferredContent = deferredExternalContentRef.current;
+      const deferredEditorSnapshot = deferredEditorSnapshotRef.current;
       deferredExternalContentRef.current = null;
+      deferredEditorSnapshotRef.current = null;
+
+      if (
+        deferredEditorSnapshot !== null &&
+        serializeEditorContent(editor.getJSON()) !== deferredEditorSnapshot
+      ) {
+        return;
+      }
+
       syncEditorContent(editor, deferredContent);
     };
 

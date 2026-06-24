@@ -304,6 +304,7 @@
       "loadFilesError": "Không thể tải danh sách tệp.",
       "loadingFiles": "Đang tải tệp…",
       "noFilesFound": "Không tìm thấy tệp.",
+      "saveFailed": "Không thể lưu bài học. Vui lòng thử lại.",
       "selectAtLeastOneFile": "Vui lòng chọn ít nhất một tệp"
     },
     "loadError": "Không tải được khóa học. Vui lòng thử lại.",
