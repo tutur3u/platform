@@ -36,6 +36,7 @@ type QuestionType =
   | 'true_false'
   | 'matching'
   | 'ordering'
+  | 'paragraph'
   | 'mix';
 
 export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
@@ -203,6 +204,9 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                   <SelectItem value="ordering">
                     {t('ws-quizzes.ordering')}
                   </SelectItem>
+                  <SelectItem value="paragraph">
+                    {t('ws-quizzes.paragraph') || 'Paragraph'}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -223,6 +227,9 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                 }
                 disabled={isGenerating}
               />
+              <p className="text-muted-foreground text-xs">
+                {t('ws-quizzes.generation_count_hint')}
+              </p>
             </div>
 
             {/* Custom context */}

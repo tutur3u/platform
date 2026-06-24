@@ -1,6 +1,7 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
+import { loadSmartSchedulingTasks } from '@tuturuuu/ui/calendar-app/components/load-smart-scheduling-tasks';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -36,17 +37,22 @@ export default async function CalendarPage({ params }: PageProps) {
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const [googleToken, { data: calendarConnections }] = await Promise.all([
-    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
-      wsId: workspace.id,
-      userId: user.id,
-    }),
-    sbAdmin
-      .from('calendar_connections')
-      .select('*')
-      .eq('ws_id', workspace.id)
-      .order('created_at', { ascending: true }),
-  ]);
+  const [googleToken, { data: calendarConnections }, smartSchedulingTasks] =
+    await Promise.all([
+      fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
+        wsId: workspace.id,
+        userId: user.id,
+      }),
+      sbAdmin
+        .from('calendar_connections')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .order('created_at', { ascending: true }),
+      loadSmartSchedulingTasks({
+        resolvedWsId: workspace.id,
+        userId: user.id,
+      }),
+    ]);
 
   const enableSmartScheduling = true;
   const isPersonalWorkspace = workspace.id === user?.id;
@@ -58,6 +64,7 @@ export default async function CalendarPage({ params }: PageProps) {
       experimentalGoogleToken={googleToken}
       isPersonalWorkspace={isPersonalWorkspace}
       locale={locale}
+      smartSchedulingTasks={smartSchedulingTasks}
       userId={user.id}
       workspace={workspace}
     />

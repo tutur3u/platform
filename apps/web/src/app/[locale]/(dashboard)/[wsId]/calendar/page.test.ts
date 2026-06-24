@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getPermissions: vi.fn(),
   getWorkspace: vi.fn(),
   headers: vi.fn(),
+  loadSmartSchedulingTasks: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`redirect:${url}`);
@@ -26,6 +27,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/ui/calendar-app/calendar-page-shell', () => ({
   CalendarPageShell: mocks.CalendarPageShell,
 }));
+
+vi.mock(
+  '@tuturuuu/ui/calendar-app/components/load-smart-scheduling-tasks',
+  () => ({
+    loadSmartSchedulingTasks: mocks.loadSmartSchedulingTasks,
+  })
+);
 
 vi.mock('@tuturuuu/utils/calendar-auth-token', () => ({
   fetchUserWorkspaceCalendarGoogleTokenForClient:
@@ -69,6 +77,7 @@ describe('web Calendar page parity', () => {
     mocks.fetchUserWorkspaceCalendarGoogleTokenForClient.mockResolvedValue(
       null
     );
+    mocks.loadSmartSchedulingTasks.mockResolvedValue([]);
     mocks.createAdminClient.mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
@@ -96,6 +105,7 @@ describe('web Calendar page parity', () => {
       enableSmartScheduling: true,
       isPersonalWorkspace: false,
       locale: 'en',
+      smartSchedulingTasks: [],
       userId: 'user-1',
       workspace: {
         id: 'workspace-1',

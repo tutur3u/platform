@@ -18,7 +18,10 @@ import type {
 } from '../../components/models/models-types';
 import { MODELS_PAGE_SIZE } from '../../components/models/models-types';
 import { withTanstackBackendRuntime } from '../../lib/cloudflare/backend';
-import { PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS } from '../../lib/platform/cache';
+import {
+  MODEL_DIRECTORY_FALLBACK_CACHE_HEADERS,
+  PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
+} from '../../lib/platform/cache';
 import { createPageHead } from '../../lib/platform/head';
 import {
   getMessages,
@@ -26,8 +29,26 @@ import {
 } from '../../lib/platform/messages';
 
 type ModelsDirectoryData = {
+  cacheState: 'backend-fallback' | 'public';
   filterOptions: ModelFilterOptions;
   initialPage: GatewayModelRowsPage;
+};
+
+const EMPTY_MODELS_DIRECTORY: ModelsDirectoryData = {
+  cacheState: 'backend-fallback',
+  filterOptions: {
+    providers: [],
+    tags: [],
+    types: [],
+  },
+  initialPage: {
+    data: [],
+    pagination: {
+      limit: MODELS_PAGE_SIZE,
+      page: 1,
+      total: 0,
+    },
+  },
 };
 
 const modelTypes = new Set(['all', 'embedding', 'image', 'language']);
@@ -99,23 +120,28 @@ const fetchModelsPage = createServerFn({ method: 'GET' })
 
 const loadModelsDirectory = createServerFn({ method: 'GET' }).handler(
   async (): Promise<ModelsDirectoryData> => {
-    const options = await backendApiOptions();
-    const [filterRows, initialPage] = await Promise.all([
-      listAiGatewayModelRows({ type: 'all' }, options),
-      listAiGatewayModelRowsPage(
-        {
-          limit: MODELS_PAGE_SIZE,
-          page: 1,
-          type: 'all',
-        },
-        options
-      ),
-    ]);
+    try {
+      const options = await backendApiOptions();
+      const [filterRows, initialPage] = await Promise.all([
+        listAiGatewayModelRows({ type: 'all' }, options),
+        listAiGatewayModelRowsPage(
+          {
+            limit: MODELS_PAGE_SIZE,
+            page: 1,
+            type: 'all',
+          },
+          options
+        ),
+      ]);
 
-    return {
-      filterOptions: filterOptionsFromRows(filterRows),
-      initialPage,
-    };
+      return {
+        cacheState: 'public',
+        filterOptions: filterOptionsFromRows(filterRows),
+        initialPage,
+      };
+    } catch {
+      return EMPTY_MODELS_DIRECTORY;
+    }
   }
 );
 
@@ -131,7 +157,10 @@ export const Route = createFileRoute('/$locale/models')({
       title: messages.title,
     });
   },
-  headers: () => PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
+  headers: ({ loaderData }) =>
+    loaderData?.cacheState === 'backend-fallback'
+      ? MODEL_DIRECTORY_FALLBACK_CACHE_HEADERS
+      : PUBLIC_MODEL_DIRECTORY_CACHE_HEADERS,
   loader: () => loadModelsDirectory(),
 });
 

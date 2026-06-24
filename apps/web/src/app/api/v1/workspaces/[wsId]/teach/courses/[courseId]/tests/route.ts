@@ -23,6 +23,7 @@ const CreateTestSchema = z.object({
 const UpdateTestSchema = z.object({
   id: z.guid(),
   is_published: z.boolean().optional(),
+  is_score_published: z.boolean().optional(),
   name: z.string().trim().min(1).max(255).optional(),
   startAt: z.string().datetime().nullable().optional(),
   durationInMinutes: z.number().int().min(1).max(1440).nullable().optional(),
@@ -67,7 +68,7 @@ export const GET = withSessionAuth(
     const { data, error } = await access.sbAdmin
       .from('course_tests')
       .select(
-        'id, course_id, name, created_at, start_at, duration_in_minutes, description, is_published, course_test_modules(module_id)'
+        'id, course_id, name, created_at, start_at, duration_in_minutes, description, is_published, is_score_published, course_test_modules(module_id)'
       )
       .eq('course_id', parsedParams.data.courseId)
       .order('created_at', { ascending: false });
@@ -89,6 +90,7 @@ export const GET = withSessionAuth(
       duration_in_minutes: t.duration_in_minutes,
       description: t.description,
       is_published: t.is_published,
+      is_score_published: t.is_score_published,
       module_ids:
         (t.course_test_modules as { module_id: string }[] | undefined)?.map(
           (m) => m.module_id
@@ -265,17 +267,27 @@ export const PATCH = withSessionAuth(
       );
     }
 
-    const { id, is_published, name, startAt, durationInMinutes, description } =
-      parsedBody.data;
+    const {
+      id,
+      is_published,
+      is_score_published,
+      name,
+      startAt,
+      durationInMinutes,
+      description,
+    } = parsedBody.data;
 
     const updatePayload: {
       is_published?: boolean;
+      is_score_published?: boolean;
       name?: string;
       start_at?: string | null;
       duration_in_minutes?: number | null;
       description?: string | null;
     } = {};
     if (is_published !== undefined) updatePayload.is_published = is_published;
+    if (is_score_published !== undefined)
+      updatePayload.is_score_published = is_score_published;
     if (name !== undefined) updatePayload.name = name;
     if (startAt !== undefined) updatePayload.start_at = startAt;
     if (durationInMinutes !== undefined)

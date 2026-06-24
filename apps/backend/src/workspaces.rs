@@ -245,10 +245,10 @@ async fn build_workspace_summaries(
     let normalized_email = private_details
         .as_ref()
         .and_then(|details| normalize_task_board_share_email(details.email.as_deref()));
-    if let Some(ref email) = normalized_email {
-        if let Ok(rows) = fetch_guest_shares_by_email(contact_data, outbound, email).await {
-            guest_share_rows.extend(rows);
-        }
+    if let Some(ref email) = normalized_email
+        && let Ok(rows) = fetch_guest_shares_by_email(contact_data, outbound, email).await
+    {
+        guest_share_rows.extend(rows);
     }
 
     // 4. Collect subscription product ids across member + guest workspaces.
@@ -482,12 +482,11 @@ fn resolve_workspace_tier(
     });
 
     for subscription in active {
-        if let Some(product_id) = subscription.product_id.as_deref() {
-            if let Some(tier) = product_tiers.get(product_id) {
-                if tier.is_some() {
-                    return tier.clone();
-                }
-            }
+        if let Some(product_id) = subscription.product_id.as_deref()
+            && let Some(tier) = product_tiers.get(product_id)
+            && tier.is_some()
+        {
+            return tier.clone();
         }
 
         match subscription.workspace_subscription_products.as_ref() {
@@ -589,11 +588,11 @@ fn parse_int_prefix(value: &str) -> Option<i64> {
     let mut chars = trimmed.chars().peekable();
     let mut digits = String::new();
 
-    if let Some(&sign) = chars.peek() {
-        if sign == '+' || sign == '-' {
-            digits.push(sign);
-            chars.next();
-        }
+    if let Some(&sign) = chars.peek()
+        && (sign == '+' || sign == '-')
+    {
+        digits.push(sign);
+        chars.next();
     }
 
     while let Some(&character) = chars.peek() {
@@ -1003,10 +1002,10 @@ fn score_intent_candidate(candidate: &SearchCandidate, query: &NormalizedText) -
     }
     let mut best: Option<i64> = None;
     for text in &candidate.texts {
-        if let Some(score) = score_text(text, query) {
-            if best.is_none_or(|current| score > current) {
-                best = Some(score);
-            }
+        if let Some(score) = score_text(text, query)
+            && best.is_none_or(|current| score > current)
+        {
+            best = Some(score);
         }
     }
     best
@@ -1027,10 +1026,10 @@ fn search_intent(candidates: &[SearchCandidate], query: &str, limit: usize) -> V
     let normalized_query = normalize(trimmed);
     let mut scored: Vec<(i64, usize, usize)> = Vec::new();
     for (position, candidate) in candidates.iter().enumerate() {
-        if let Some(score) = score_intent_candidate(candidate, &normalized_query) {
-            if score >= 1 {
-                scored.push((score, position, candidate.index));
-            }
+        if let Some(score) = score_intent_candidate(candidate, &normalized_query)
+            && score >= 1
+        {
+            scored.push((score, position, candidate.index));
         }
     }
 

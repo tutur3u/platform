@@ -1657,6 +1657,52 @@ export async function getWorkspaceEducationAttemptDetail(
   );
 }
 
+export interface ListWorkspaceCourseTestQuestionsParams {
+  moduleId?: string;
+}
+
+export async function getWorkspaceCourseTestQuestions(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  params?: ListWorkspaceCourseTestQuestionsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.moduleId) searchParams.set('moduleId', params.moduleId);
+
+  const query = searchParams.toString();
+  return client.json<ListWorkspaceQuizzesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/questions${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceCourseTestQuestions(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  payload: CreateWorkspaceQuizPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/questions`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function deleteWorkspaceStorageObject(
   workspaceId: string,
   path: string,

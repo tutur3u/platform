@@ -27,6 +27,7 @@ export function useQuizzes(wsId: string, lessonId: string) {
           | 'true_false'
           | 'matching'
           | 'ordering'
+          | 'paragraph'
           | 'mix';
         count?: number;
         context?: string;
@@ -40,8 +41,12 @@ export function useQuizzes(wsId: string, lessonId: string) {
         toast.error(t('ws-quizzes.generation_error'));
       }
     },
-    onError: () => {
-      toast.error(t('ws-quizzes.generation_error'));
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-quizzes.generation_error')
+      );
     },
   });
 

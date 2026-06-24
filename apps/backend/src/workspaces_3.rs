@@ -205,12 +205,11 @@ async fn validate_api_key(
 
         // Defensive expiry recheck (the REST filter already excludes expired
         // rows, but the legacy code rechecks against `now()` in JS).
-        if let Some(expires_at) = row.expires_at.as_deref() {
-            if let Some(expires_ms) = iso8601_to_millis(expires_at) {
-                if expires_ms < now_millis() {
-                    return Ok(None);
-                }
-            }
+        if let Some(expires_at) = row.expires_at.as_deref()
+            && let Some(expires_ms) = iso8601_to_millis(expires_at)
+            && expires_ms < now_millis()
+        {
+            return Ok(None);
         }
 
         return Ok(row.ws_id.filter(|id| !id.trim().is_empty()).map_or_else(
@@ -371,8 +370,7 @@ fn iso8601_to_millis(value: &str) -> Option<i64> {
     let jdn = day + (153 * m + 2) / 5 + 365 * y + y / 4 - y / 100 + y / 400 - 32045;
     let days_since_epoch = jdn - 2440588;
 
-    let millis =
-        ((days_since_epoch * 86400 + hour * 3600 + minute * 60 + second) * 1000).max(i64::MIN);
+    let millis = (days_since_epoch * 86400 + hour * 3600 + minute * 60 + second) * 1000;
     Some(millis)
 }
 
@@ -395,7 +393,7 @@ fn parse_uint(bytes: &[u8]) -> Option<u64> {
 // ---------------------------------------------------------------------------
 
 fn hex_decode(input: &str) -> Option<Vec<u8>> {
-    if input.len() % 2 != 0 {
+    if !input.len().is_multiple_of(2) {
         return None;
     }
     let bytes = input.as_bytes();

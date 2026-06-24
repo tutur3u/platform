@@ -2,6 +2,7 @@ import 'server-only';
 
 import { randomBytes } from 'node:crypto';
 import { hashApiKey, validateApiKeyHash } from '@tuturuuu/auth/api-keys';
+import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastructure/types';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -64,6 +65,44 @@ import {
 
 type AdminClient = SupabaseClient<Database>;
 type MobileDeploymentSecretKind = MobileDeploymentSecretValueRow['kind'];
+
+function toInfrastructureJsonValue(value: unknown): InfrastructureJsonValue {
+  if (value == null) {
+    return null;
+  }
+
+  if (typeof value === 'string' || typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => toInfrastructureJsonValue(entry));
+  }
+
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+        key,
+        toInfrastructureJsonValue(entry),
+      ])
+    );
+  }
+
+  return String(value);
+}
+
+function toInfrastructureMetadata(
+  metadata: Record<string, unknown> | null | undefined
+): Record<string, InfrastructureJsonValue> {
+  return toInfrastructureJsonValue(metadata ?? {}) as Record<
+    string,
+    InfrastructureJsonValue
+  >;
+}
 
 export class MobileDeploymentStoreError extends Error {
   constructor(
@@ -431,7 +470,7 @@ export async function listMobileDeploymentState(db: AdminClient) {
       createdAt: event.created_at,
       eventType: event.event_type,
       id: event.id,
-      metadata: event.metadata ?? {},
+      metadata: toInfrastructureMetadata(event.metadata),
       resourceKind: event.resource_kind,
     })),
     draftVersion: mapVersionStatus(

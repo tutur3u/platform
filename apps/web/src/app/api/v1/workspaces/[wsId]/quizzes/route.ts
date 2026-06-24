@@ -29,6 +29,7 @@ const QuizTypeSchema = z.enum([
   'multiple_choice',
   'matching',
   'ordering',
+  'paragraph',
 ]);
 
 type QuizMutationData = {

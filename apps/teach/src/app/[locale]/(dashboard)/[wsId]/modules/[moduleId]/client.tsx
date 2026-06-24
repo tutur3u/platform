@@ -311,7 +311,7 @@ export function ModuleDetailClient({
             {/* Main content: Modules list */}
             <div className="space-y-6 md:col-span-3">
               {/* Toolbar */}
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <span className="font-black text-xl">
                     {displayGroups.length} section
@@ -324,7 +324,7 @@ export function ModuleDetailClient({
                 </div>
 
                 {showAddSection ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input
                       ref={sectionInputRef}
                       className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
@@ -340,7 +340,7 @@ export function ModuleDetailClient({
                       }}
                     />
                     <button
-                      className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                      className="whitespace-nowrap border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
                       disabled={
                         !addingSectionName.trim() || createGroup.isPending
                       }
@@ -350,7 +350,7 @@ export function ModuleDetailClient({
                       Add
                     </button>
                     <button
-                      className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                      className="whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
                       onClick={() => {
                         setAddingSectionName('');
                         setShowAddSection(false);
@@ -361,9 +361,9 @@ export function ModuleDetailClient({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
-                      className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
                       onClick={() => setShowAiDialog(true)}
                       type="button"
                     >
@@ -377,12 +377,16 @@ export function ModuleDetailClient({
                     />
                     <ModuleStorageDialog courseId={courseId} wsId={wsId} />
                     <button
-                      className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
                       onClick={() => setShowAddSection(true)}
                       type="button"
+                      aria-label={t('teachModules.addSection')}
+                      title={t('teachModules.addSection')}
                     >
                       <Plus className="h-4 w-4" />
-                      {t('teachModules.addSection')}
+                      <span className="sr-only">
+                        {t('teachModules.addSection')}
+                      </span>
                     </button>
                   </div>
                 )}

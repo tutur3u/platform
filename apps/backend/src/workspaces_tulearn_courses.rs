@@ -229,18 +229,17 @@ async fn resolve_tulearn_subject(
     let student_id = student_id.filter(|value| !value.is_empty());
 
     // Self-student lookup (only relevant when no studentId is requested).
-    if student_id.is_none() {
-        if let Some(self_workspace_user_id) =
+    if student_id.is_none()
+        && let Some(self_workspace_user_id) =
             resolve_self_student(contact_data, outbound, user_id, &ws_id)
                 .await
                 .map_err(|()| AccessError::Internal)?
-        {
-            return Ok(TulearnSubject {
-                ws_id,
-                student_platform_user_id: user_id.to_owned(),
-                student_workspace_user_id: self_workspace_user_id,
-            });
-        }
+    {
+        return Ok(TulearnSubject {
+            ws_id,
+            student_platform_user_id: user_id.to_owned(),
+            student_workspace_user_id: self_workspace_user_id,
+        });
     }
 
     // Parent link lookup.
@@ -576,12 +575,11 @@ async fn normalize_workspace_id(
             return Ok(resolved_ws_id);
         }
 
-        if let Some(access_token) = access_token {
-            if let Some(workspace_id) =
+        if let Some(access_token) = access_token
+            && let Some(workspace_id) =
                 workspace_id_by_handle(contact_data, outbound, &handle, access_token).await?
-            {
-                return Ok(workspace_id);
-            }
+        {
+            return Ok(workspace_id);
         }
         if let Some(workspace_id) =
             workspace_id_by_handle_service_role(contact_data, outbound, &handle).await?

@@ -202,12 +202,13 @@ test.describe('Task board guest access', () => {
       );
       expect(updateShareResponse.ok()).toBeTruthy();
 
+      const guestTaskName = `E2E guest-created task ${Date.now()}`;
       const createTaskResponse = await guestPage.request.post(
         `${origin}/api/v1/workspaces/${board.ws_id}/tasks`,
         {
           data: {
             listId: list.id,
-            name: `E2E guest-created task ${Date.now()}`,
+            name: guestTaskName,
           },
           headers,
         }
@@ -240,7 +241,7 @@ test.describe('Task board guest access', () => {
         'Board not found'
       );
       await expect(
-        guestPage.getByRole('heading', { name: board.name ?? 'Tasks' })
+        guestPage.getByText(guestTaskName, { exact: true }).first()
       ).toBeVisible({ timeout: 30_000 });
 
       await guestPage

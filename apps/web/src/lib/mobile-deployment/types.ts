@@ -1,3 +1,4 @@
+import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastructure/types';
 import type {
   MobileDeploymentFileKind,
   MobileDeploymentPlatform,
@@ -131,7 +132,7 @@ export interface MobileDeploymentState {
     createdAt: string;
     eventType: string;
     id: string;
-    metadata: Record<string, unknown>;
+    metadata: Record<string, InfrastructureJsonValue>;
     resourceKind: string | null;
   }>;
   draftVersion: MobileDeploymentVersionStatus | null;

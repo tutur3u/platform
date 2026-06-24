@@ -94,7 +94,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: apps/web
-        run: bunx playwright install chromium
+        run: bun x playwright install chromium
 
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
@@ -136,7 +136,7 @@ jobs:
           docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
           web_proxy_login_url="http://127.0.0.1:${DOCKER_WEB_PROXY_HOST_PORT:-7803}/login"
           curl -i --max-time 10 "$web_proxy_login_url" > "$diagnostics_dir/web-proxy-login.txt" 2>&1 || true
-          bunx portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
+          bun x portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
           portless_login_url="${BASE_URL%/}/login"
           curl -k -i --max-time 10 "$portless_login_url" > "$diagnostics_dir/portless-login.txt" 2>&1 || true
           bun sb:status > "$diagnostics_dir/supabase-status.txt" 2>&1 || true
@@ -356,7 +356,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ${{ matrix.playwright_workdir }}
-        run: bunx playwright install chromium
+        run: bun x playwright install chromium
 
       - name: Run migration E2E
         run: ${{ matrix.command }}

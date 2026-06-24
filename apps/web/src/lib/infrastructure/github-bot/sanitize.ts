@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastructure/types';
 import { GitHubBotStoreError } from './shared';
 
 const REDACTED_VALUE = '[REDACTED]';
@@ -52,9 +53,21 @@ export function sanitizeGitHubBotPublicText(value: unknown, maxLength = 200) {
     : sanitized;
 }
 
-function sanitizeAuditMetadataValue(value: unknown): unknown {
+function sanitizeAuditMetadataValue(value: unknown): InfrastructureJsonValue {
+  if (value == null) {
+    return null;
+  }
+
   if (typeof value === 'string') {
     return sanitizeGitHubBotPublicText(value) ?? '';
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : String(value);
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
   }
 
   if (Array.isArray(value)) {
@@ -72,11 +85,14 @@ function sanitizeAuditMetadataValue(value: unknown): unknown {
     );
   }
 
-  return value;
+  return sanitizeGitHubBotPublicText(value) ?? '';
 }
 
 export function sanitizeAuditMetadata(metadata: Record<string, unknown>) {
-  return sanitizeAuditMetadataValue(metadata) as Record<string, unknown>;
+  return sanitizeAuditMetadataValue(metadata) as Record<
+    string,
+    InfrastructureJsonValue
+  >;
 }
 
 export function sanitizeGitHubError(error: unknown) {

@@ -92,16 +92,14 @@ services:
       - PORT=${TANSTACK_WEB_PORT:-7824}
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # Mirrors the tanstack-web healthcheck from the prod anchor: hit the app's
-    # own port and require the backend-reachable marker so the gate also proves
-    # the frontend can reach the backend service.
+    # Mirrors the tanstack-web healthcheck from the prod anchor: require the
+    # app's own port to respond and the backend /healthz probe to succeed.
     healthcheck:
       test:
         [
           "CMD",
           "node",
-          "-e",
-          "fetch('http://127.0.0.1:' + (process.env.PORT || 7824) + '/').then(async (response) => { const body = await response.text(); process.exit(response.status < 500 && body.includes('Backend reachable') ? 0 : 1); }).catch(() => process.exit(1))",
+          "docker/healthcheck.mjs",
         ]
       interval: 30s
       timeout: 5s

@@ -36,6 +36,7 @@ interface CourseTestSummary {
   start_at: string | null;
   duration_in_minutes: number | null;
   description: string | null;
+  is_score_published?: boolean;
   module_ids: string[];
 }
 
@@ -320,7 +321,7 @@ export async function getLearnerCourseDetail({
       sbAdmin
         .from('course_tests')
         .select(
-          'id, name, start_at, duration_in_minutes, description, course_test_modules(module_id)'
+          'id, name, start_at, duration_in_minutes, description, is_score_published, course_test_modules(module_id)'
         )
         .eq('course_id', courseId)
         .eq('is_published', true)
@@ -371,6 +372,7 @@ export async function getLearnerCourseDetail({
     start_at: t.start_at,
     duration_in_minutes: t.duration_in_minutes,
     description: t.description,
+    is_score_published: t.is_score_published,
     module_ids: (
       (t.course_test_modules as { module_id: string }[] | undefined) ?? []
     )

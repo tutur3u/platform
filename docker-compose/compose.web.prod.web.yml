@@ -118,8 +118,9 @@ x-tanstack-web-service: &tanstack-web-service
   healthcheck:
     test:
       [
-        "CMD-SHELL",
-        'bun -e "fetch(''http://127.0.0.1:'' + (process.env.PORT || 7824) + ''/'').then(async (response) => { const body = await response.text(); process.exit(response.status < 500 && body.includes(''Backend reachable'') ? 0 : 1); }).catch(() => process.exit(1))"',
+        "CMD",
+        "node",
+        "docker/healthcheck.mjs",
       ]
     interval: 30s
     timeout: 5s

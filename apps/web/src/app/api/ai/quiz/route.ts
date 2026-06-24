@@ -86,6 +86,7 @@ export const POST = withSessionAuth(
 
       const {
         lessonId,
+        testId,
         wsId,
         context: teacherContext,
         questionType,
@@ -136,7 +137,7 @@ export const POST = withSessionAuth(
 
       const typeInstruction =
         questionType === 'mix'
-          ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering).'
+          ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering, paragraph).'
           : `Generate ONLY questions of type "${questionType}".`;
 
       const promptText = `Analyze the following lesson content to create exactly ${count} structured quiz questions.
@@ -247,6 +248,9 @@ ${lessonInfo}`;
           } else if (quiz.type === 'ordering') {
             content = { items: quiz.ordering_items ?? [] };
             answer = { order: quiz.ordering_items ?? [] };
+          } else if (quiz.type === 'paragraph') {
+            content = {};
+            answer = {};
           }
 
           return {
@@ -285,17 +289,30 @@ ${lessonInfo}`;
           )
         );
 
-        // Link quizzes to course module
-        const { error: linkError } = await sbAdmin
-          .from('course_module_quizzes')
-          .insert(
-            createdQuizzes.map((q) => ({
-              module_id: lesson.id,
-              quiz_id: q.id,
-            }))
-          );
-
-        if (linkError) throw linkError;
+        if (testId) {
+          // Link quizzes to course test
+          const { error: linkError } = await sbAdmin
+            .from('course_test_quizzes')
+            .insert(
+              createdQuizzes.map((q) => ({
+                test_id: testId,
+                module_id: lesson.id,
+                quiz_id: q.id,
+              }))
+            );
+          if (linkError) throw linkError;
+        } else {
+          // Link quizzes to course module
+          const { error: linkError } = await sbAdmin
+            .from('course_module_quizzes')
+            .insert(
+              createdQuizzes.map((q) => ({
+                module_id: lesson.id,
+                quiz_id: q.id,
+              }))
+            );
+          if (linkError) throw linkError;
+        }
 
         await revalidateCourseModuleQuizPaths({
           db: sbAdmin,

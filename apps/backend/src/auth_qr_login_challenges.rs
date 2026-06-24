@@ -15,8 +15,6 @@ const SECRET_MAX_LENGTH: usize = 10_000;
 
 #[derive(Deserialize)]
 struct QrLoginChallengeRow {
-    approver_email: Option<String>,
-    approver_user_id: Option<String>,
     expires_at: Option<String>,
     status: Option<String>,
 }

@@ -22,7 +22,6 @@
 //! Unauthorized -> 404 here because the legacy route treats a missing session as a
 //! null permission set -> 404).
 
-use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
 use crate::{
@@ -406,12 +405,12 @@ fn changed_fields(
     after: &Map<String, Value>,
     explicit_fields: Option<&[String]>,
 ) -> Vec<String> {
-    if let Some(fields) = explicit_fields {
-        if !fields.is_empty() {
-            let mut sorted = fields.to_vec();
-            sorted.sort();
-            return sorted;
-        }
+    if let Some(fields) = explicit_fields
+        && !fields.is_empty()
+    {
+        let mut sorted = fields.to_vec();
+        sorted.sort();
+        return sorted;
     }
 
     let mut keys: Vec<String> = Vec::new();

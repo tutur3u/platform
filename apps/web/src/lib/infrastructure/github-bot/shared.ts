@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type fs from 'node:fs';
+import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastructure/types';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 
@@ -100,7 +101,7 @@ export type GitHubBotAuditEvent = {
   createdAt: string;
   eventType: string;
   id: string;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, InfrastructureJsonValue>;
 };
 
 export type GitHubBotState = {

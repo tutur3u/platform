@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 917,
+        "legacyNext": 924,
         "migrated": 142,
-        "percentComplete": 19.7,
-        "remaining": 917,
+        "percentComplete": 19.58,
+        "remaining": 924,
         "terminal": 225,
-        "total": 1142,
+        "total": 1149,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 935,
+        "legacyNext": 942,
         "migrated": 147,
-        "percentComplete": 19.74,
-        "remaining": 935,
+        "percentComplete": 19.62,
+        "remaining": 942,
         "terminal": 230,
-        "total": 1165,
+        "total": 1172,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 84,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1051,
+      "legacyNext": 1058,
       "migrated": 408,
-      "percentComplete": 31.89,
-      "remaining": 1051,
+      "percentComplete": 31.74,
+      "remaining": 1058,
       "terminal": 492,
-      "total": 1543,
+      "total": 1550,
       "unknownStatus": 0
     }
   },
@@ -8813,6 +8813,33 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/questions:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/questions/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/questions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/questions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PATCH"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/teach/users:apps/web/src/app/api/v1/workspaces/[wsId]/teach/users/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -9295,6 +9322,42 @@
       "methods": ["GET", "POST", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/modules/:moduleId",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/modules/[moduleId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/attempt:apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/attempt/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/attempt",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/attempt/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/save-answer:apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/save-answer/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/save-answer",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/save-answer/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/start:apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/start/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/start",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/start/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/submit:apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/submit/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/submit",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/submit/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -14376,20 +14439,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1142,
+    "apiRoutes": 1149,
     "cronRoutes": 19,
     "layouts": 67,
     "pages": 306,
-    "routeHandlers": 1165,
+    "routeHandlers": 1172,
     "methodCounts": {
-      "GET": 651,
+      "GET": 655,
       "HEAD": 1,
-      "POST": 509,
+      "POST": 513,
       "PUT": 173,
-      "PATCH": 126,
+      "PATCH": 127,
       "DELETE": 198,
       "OPTIONS": 16
     },
-    "total": 1543
+    "total": 1550
   }
 }

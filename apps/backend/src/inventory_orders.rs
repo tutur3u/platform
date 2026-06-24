@@ -109,7 +109,7 @@ async fn orders_get_response(
 
     let params = match parse_search_params(request.url) {
         Ok(params) => params,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
 
     match list_checkout_order_history(&config.contact_data, outbound, &customer_auth_uid, &params)
@@ -136,7 +136,6 @@ async fn list_checkout_order_history(
         None => None,
     };
 
-    let range_to = params.offset + params.limit - 1;
     let mut query_params: Vec<(&str, String)> = vec![
         ("select", CHECKOUT_HISTORY_SELECT.to_owned()),
         ("customer_auth_uid", format!("eq.{customer_auth_uid}")),
@@ -468,7 +467,7 @@ async fn send_service_role_request(
     outbound.send(request).await.map_err(|_| ())
 }
 
-fn parse_search_params(url: Option<&str>) -> Result<SearchParams, BackendResponse> {
+fn parse_search_params(url: Option<&str>) -> Result<SearchParams, Box<BackendResponse>> {
     let mut limit_raw: Option<String> = None;
     let mut offset_raw: Option<String> = None;
     let mut store_slug_raw: Option<String> = None;
@@ -513,7 +512,7 @@ fn parse_search_params(url: Option<&str>) -> Result<SearchParams, BackendRespons
     };
 
     if !issues.is_empty() {
-        return Err(invalid_query_response(issues));
+        return Err(Box::new(invalid_query_response(issues)));
     }
 
     let store_slug = store_slug_raw
@@ -537,7 +536,7 @@ fn coerce_int(raw: Option<&str>) -> CoerceResult {
     match raw {
         None => CoerceResult::Default,
         // z.coerce.number() treats an empty string as 0.
-        Some(value) if value.is_empty() => CoerceResult::Value(0),
+        Some("") => CoerceResult::Value(0),
         Some(value) => match value.trim().parse::<f64>() {
             Ok(number) if number.fract() == 0.0 && number.is_finite() => {
                 CoerceResult::Value(number as i64)

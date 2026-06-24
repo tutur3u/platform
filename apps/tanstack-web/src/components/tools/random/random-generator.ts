@@ -45,8 +45,10 @@ export interface GeneratedRandomValue {
   value: string;
 }
 
+export type RandomByteArray = Uint8Array<ArrayBuffer>;
+
 export interface RandomCryptoSource {
-  getRandomValues<T extends Uint8Array>(array: T): T;
+  getRandomValues(array: RandomByteArray): RandomByteArray;
   randomUUID?: () => string;
 }
 
@@ -351,5 +353,15 @@ function getBrowserCrypto(): RandomCryptoSource {
     throw new Error('Secure random generation requires Web Crypto.');
   }
 
-  return cryptoSource;
+  const source: RandomCryptoSource = {
+    getRandomValues(array) {
+      return cryptoSource.getRandomValues(array);
+    },
+  };
+
+  if (typeof cryptoSource.randomUUID === 'function') {
+    source.randomUUID = cryptoSource.randomUUID.bind(cryptoSource);
+  }
+
+  return source;
 }

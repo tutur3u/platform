@@ -349,7 +349,7 @@ async fn build_timeline(
 
     // hive_workflow_runs (+ workflow names). Legacy wraps this query in
     // .catch(() => []), so failures degrade to an empty list rather than erroring.
-    let workflow_runs = match fetch_workflow_runs(
+    let workflow_runs: Vec<(WorkflowRunRow, Option<String>)> = fetch_workflow_runs(
         contact_data,
         server_id,
         session_id,
@@ -358,17 +358,13 @@ async fn build_timeline(
         outbound,
     )
     .await
-    {
-        Ok(items) => items,
-        Err(()) => Vec::new(),
-    };
+    .unwrap_or_default();
 
     // hive_simulation_ticks — also .catch(() => []) in legacy.
-    let ticks =
-        match fetch_simulation_ticks(contact_data, server_id, session_id, &limit, outbound).await {
-            Ok(items) => items,
-            Err(()) => Vec::new(),
-        };
+    let ticks: Vec<SimulationTickRow> =
+        fetch_simulation_ticks(contact_data, server_id, session_id, &limit, outbound)
+            .await
+            .unwrap_or_default();
 
     // hive_research_session_events
     let session_events =

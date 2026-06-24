@@ -202,6 +202,19 @@ test('getDockerWebDownArgs stops the same production blue-green Docker stack', (
       'local',
     ]
   );
+  assert.deepEqual(
+    getDockerWebDownArgs('tmp/e2e/web.env', {}, { preserveImages: true }),
+    [
+      'down',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '--volumes',
+    ]
+  );
 });
 
 test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
@@ -1039,24 +1052,30 @@ test('getFrontendE2EEnv points TanStack runs at the TanStack route', () => {
   assert.equal(env.DOCKER_WEB_FRONTEND, 'tanstack');
   assert.equal(env.E2E_PORTLESS_HEALTH_PATH, '/');
   assert.equal(getE2EPortlessRouteName(env), 'tanstack.tuturuuu');
-  assert.equal(
-    getE2EPortlessTargetPort(env),
-    DEFAULT_TANSTACK_DIRECT_HOST_PORT
-  );
+  assert.equal(getE2EPortlessTargetPort(env), getWebProxyHostPort(env));
   assert.equal(getFrontendE2EEnv('next', {}).BASE_URL, LOCAL_E2E_BASE_URL);
   assert.equal(getFrontendE2EEnv('next', {}).DOCKER_WEB_FRONTEND, 'next');
 });
 
-test('getE2EPortlessTargetPort guards TanStack against the Next proxy port', () => {
+test('getE2EPortlessTargetPort routes Docker TanStack frontend through web proxy', () => {
   assert.equal(getE2EPortlessTargetPort({}), '7803');
   assert.equal(
     getTanStackDirectHostPort({}),
     DEFAULT_TANSTACK_DIRECT_HOST_PORT
   );
   assert.equal(
+    getE2EPortlessTargetPort(getFrontendE2EEnv('tanstack', {})),
+    '7803'
+  );
+  assert.equal(
+    getE2EPortlessTargetPort({
+      PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+    }),
+    '7824'
+  );
+  assert.equal(
     getE2EPortlessTargetPort({
       DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '17824',
-      DOCKER_WEB_FRONTEND: 'tanstack',
       PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
     }),
     '17824'
@@ -1065,7 +1084,6 @@ test('getE2EPortlessTargetPort guards TanStack against the Next proxy port', () 
     () =>
       getE2EPortlessTargetPort({
         DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '7803',
-        DOCKER_WEB_FRONTEND: 'tanstack',
         PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
       }),
     /Refusing to alias the TanStack Portless route to the Next web proxy port 7803/u
@@ -1081,7 +1099,7 @@ test('getE2EPortlessTargetPort guards TanStack against the Next proxy port', () 
   );
 });
 
-test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () => {
+test('getWebProxyHealthUrl targets the direct Docker web proxy readiness route', () => {
   assert.equal(getWebProxyHostPort({}), '7803');
   assert.equal(
     getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: '17803' }),
@@ -1097,6 +1115,19 @@ test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () 
       DOCKER_WEB_PROXY_HOST_PORT: '17803',
     }),
     'http://127.0.0.1:17803/login'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_FRONTEND: 'tanstack',
+    }),
+    'http://127.0.0.1:7803/'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+    }),
+    'http://127.0.0.1:17803/'
   );
   assert.equal(
     getWebProxyHealthUrl({
@@ -1265,14 +1296,14 @@ test('routeListHasPortlessAlias requires the expected alias and proxy port', () 
       'Active routes:\n  https://tanstack.tuturuuu.localhost -> localhost:7824 (alias)\n',
       getFrontendE2EEnv('tanstack', {})
     ),
-    true
+    false
   );
   assert.equal(
     routeListHasPortlessAlias(
       'Active routes:\n  https://tanstack.tuturuuu.localhost -> localhost:7803 (alias)\n',
       getFrontendE2EEnv('tanstack', {})
     ),
-    false
+    true
   );
 });
 
@@ -1466,7 +1497,7 @@ test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', as
   assert.match(chunks.join(''), /https:\/\/tuturuuu\.localhost/u);
 });
 
-test('ensurePortlessRoute points the TanStack host at the TanStack direct port', async () => {
+test('ensurePortlessRoute points the Docker TanStack host at the web proxy port', async () => {
   const calls = [];
 
   await ensurePortlessRoute({
@@ -1487,7 +1518,7 @@ test('ensurePortlessRoute points the TanStack host at the TanStack direct port',
       return {
         stderr: '',
         stdout:
-          'Active routes:\n  https://tanstack.tuturuuu.localhost  ->  localhost:7824  (alias)\n',
+          'Active routes:\n  https://tanstack.tuturuuu.localhost  ->  localhost:7803  (alias)\n',
       };
     },
   });
@@ -1497,7 +1528,7 @@ test('ensurePortlessRoute points the TanStack host at the TanStack direct port',
     [
       ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
       ['bunx', ['portless', 'alias', '--remove', 'tanstack.tuturuuu']],
-      ['bunx', ['portless', 'alias', 'tanstack.tuturuuu', '7824', '--force']],
+      ['bunx', ['portless', 'alias', 'tanstack.tuturuuu', '7803', '--force']],
       ['bunx', ['portless', 'list']],
     ]
   );

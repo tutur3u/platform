@@ -208,7 +208,7 @@ async fn list_pending_invitations(
         }
     }
 
-    invitations.sort_by(|a, b| compare_invitations(a, b));
+    invitations.sort_by(compare_invitations);
 
     Ok(invitations)
 }
@@ -425,10 +425,10 @@ fn normalize_email(value: Option<&str>) -> Option<String> {
 fn unique_emails(values: &[Option<&str>]) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
     for value in values {
-        if let Some(email) = normalize_email(*value) {
-            if !result.contains(&email) {
-                result.push(email);
-            }
+        if let Some(email) = normalize_email(*value)
+            && !result.contains(&email)
+        {
+            result.push(email);
         }
     }
     result

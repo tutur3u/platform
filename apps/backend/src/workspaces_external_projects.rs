@@ -1052,10 +1052,10 @@ fn merge_capabilities(base: Value, override_map: Map<String, Value>) -> Value {
     };
 
     // collectionViews: override array or base.
-    if let Some(value) = get_override("collectionViews") {
-        if value.is_array() {
-            result.insert("collectionViews".to_owned(), value.clone());
-        }
+    if let Some(value) = get_override("collectionViews")
+        && value.is_array()
+    {
+        result.insert("collectionViews".to_owned(), value.clone());
     }
 
     // contentModel: { ...base.contentModel, ...override.contentModel }.
@@ -1074,10 +1074,10 @@ fn merge_capabilities(base: Value, override_map: Map<String, Value>) -> Value {
     }
 
     // featuredEntryRules: override array or base.
-    if let Some(value) = get_override("featuredEntryRules") {
-        if value.is_array() {
-            result.insert("featuredEntryRules".to_owned(), value.clone());
-        }
+    if let Some(value) = get_override("featuredEntryRules")
+        && value.is_array()
+    {
+        result.insert("featuredEntryRules".to_owned(), value.clone());
     }
 
     // media: { ...base.media, ...override.media, assetTypes: dedupe([...base, ...override]) }.
@@ -1116,10 +1116,10 @@ fn merge_capabilities(base: Value, override_map: Map<String, Value>) -> Value {
     }
 
     // taxonomies: override array or base.
-    if let Some(value) = get_override("taxonomies") {
-        if value.is_array() {
-            result.insert("taxonomies".to_owned(), value.clone());
-        }
+    if let Some(value) = get_override("taxonomies")
+        && value.is_array()
+    {
+        result.insert("taxonomies".to_owned(), value.clone());
     }
 
     // version: always 1.
@@ -1227,16 +1227,13 @@ async fn read_binding_state(
             ("ws_id", format!("eq.{ws_id}")),
             ("limit", "1".to_owned()),
         ],
-    ) {
-        if let Ok(response) = send_service_role_request(contact_data, outbound, &url).await {
-            if is_success(response.status) {
-                if let Ok(Some(row)) = decode_first_row::<BindingRow>(&response) {
-                    return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
-                }
-            }
-        }
-        // Any binding-table failure falls through to the secrets dual-read.
+    ) && let Ok(response) = send_service_role_request(contact_data, outbound, &url).await
+        && is_success(response.status)
+        && let Ok(Some(row)) = decode_first_row::<BindingRow>(&response)
+    {
+        return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
     }
+    // Any binding-table failure falls through to the secrets dual-read.
 
     let Some(url) = contact_data.rest_url(
         "workspace_secrets",

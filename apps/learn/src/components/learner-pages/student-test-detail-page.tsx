@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BookOpenCheck,
   Calendar,
@@ -10,10 +10,21 @@ import {
   Layers,
   Play,
 } from '@tuturuuu/icons';
-import { getTulearnCourse } from '@tuturuuu/internal-api';
+import {
+  getTulearnCourse,
+  getTulearnTestAttempt,
+  saveTulearnTestAnswer,
+  startTulearnTest,
+  submitTulearnTest,
+  type TulearnQuiz,
+  type TulearnReviewQuiz,
+  type TulearnTestAttemptAnswer,
+} from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   EmptyState,
   LoadingState,
@@ -27,6 +38,135 @@ interface StudentTestDetailPageProps {
   testId: string;
 }
 
+type MatchingPair = { left: string; right: string };
+type MultipleChoiceOption = { id: string; index: number | null; value: string };
+type LocalTestAnswer = {
+  answer: TulearnTestAttemptAnswer['answer'];
+  selectedOptionId: string | null;
+};
+
+function getParsedContent(content: unknown): unknown {
+  if (typeof content === 'string') {
+    try {
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  }
+  return content;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  const parsedValue = getParsedContent(value);
+  if (
+    !parsedValue ||
+    typeof parsedValue !== 'object' ||
+    Array.isArray(parsedValue)
+  )
+    return null;
+  return parsedValue as Record<string, unknown>;
+}
+
+function displayText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
+function getArrayProperty(value: unknown, key: string): unknown[] {
+  const property = asRecord(value)?.[key];
+  return Array.isArray(property) ? property : [];
+}
+
+function getStringItems(value: unknown, key: string): string[] {
+  return getArrayProperty(value, key).map(displayText);
+}
+
+function getMatchingPairs(value: unknown): MatchingPair[] {
+  const parsedValue = getParsedContent(value);
+  const pairs = Array.isArray(parsedValue)
+    ? parsedValue
+    : getArrayProperty(parsedValue, 'pairs');
+  return pairs
+    .map((pair) => {
+      const record = asRecord(pair);
+      return {
+        left: displayText(record?.left),
+        right: displayText(record?.right),
+      };
+    })
+    .filter((pair) => Boolean(pair.left && pair.right));
+}
+
+function getAnswerOrder(answer: unknown, fallback: string[]): string[] {
+  if (Array.isArray(answer)) return answer.map(displayText).filter(Boolean);
+
+  const order = getStringItems(answer, 'order');
+  return order.length > 0 ? order : fallback;
+}
+
+function getSubmittedPairs(
+  answer: unknown,
+  fallback: MatchingPair[] = []
+): MatchingPair[] {
+  const answerPairs = Array.isArray(answer)
+    ? answer
+    : getArrayProperty(answer, 'pairs');
+  const parsedPairs = answerPairs.map((pair) => {
+    const record = asRecord(pair);
+    return {
+      left: displayText(record?.left),
+      right: displayText(record?.right),
+    };
+  });
+
+  return parsedPairs.length > 0 ? parsedPairs : fallback;
+}
+
+function getParagraphAnswerText(answer: unknown, fallback: string) {
+  const text = asRecord(answer)?.text;
+  return typeof text === 'string' ? text : fallback;
+}
+
+function getSelectedIndexAnswer(answer: unknown) {
+  const selectedIndex = asRecord(answer)?.selectedIndex;
+  return typeof selectedIndex === 'number' ? selectedIndex : null;
+}
+
+function getTrueFalseAnswer(answer: unknown) {
+  if (typeof answer === 'boolean') return answer;
+
+  const correct = asRecord(answer)?.correct;
+  return typeof correct === 'boolean' ? correct : null;
+}
+
+function getMultipleChoiceOptions(quiz: TulearnQuiz): MultipleChoiceOption[] {
+  const parsedContent = getParsedContent(quiz?.content);
+  const contentOptions = getArrayProperty(parsedContent, 'options');
+
+  const parsedContentOptions = contentOptions
+    .map((option: unknown, index: number) => ({
+      id: `content-${index}`,
+      value: displayText(option),
+      index,
+    }))
+    .filter((opt: { id: string; value: string; index: number }) =>
+      Boolean(opt.value)
+    );
+
+  if (parsedContentOptions.length > 0) {
+    return parsedContentOptions;
+  }
+
+  return (quiz?.quiz_options ?? []).map((option) => ({
+    id: option.id,
+    value: option.value,
+    index: null,
+  }));
+}
+
 export function StudentTestDetailPage({
   wsId,
   courseId,
@@ -35,6 +175,7 @@ export function StudentTestDetailPage({
   const t = useTranslations();
   const studentId = useStudentId();
   const courseHref = useStudentHref(`/${wsId}/courses/${courseId}`);
+  const queryClient = useQueryClient();
 
   // Fetch course details which includes tests
   const courseQuery = useQuery({
@@ -42,42 +183,654 @@ export function StudentTestDetailPage({
     queryFn: () => getTulearnCourse(wsId, courseId, studentId),
   });
 
-  if (courseQuery.isLoading) return <LoadingState />;
-  if (courseQuery.isError || !courseQuery.data) {
+  // Fetch active or completed test attempt
+  const attemptQuery = useQuery({
+    queryKey: ['tulearn', wsId, studentId, 'test-attempt', testId],
+    queryFn: () => getTulearnTestAttempt(wsId, courseId, testId, studentId),
+  });
+
+  const test = courseQuery.data?.tests?.find((t) => t.id === testId);
+  const testModules = (courseQuery.data?.modules ?? []).filter((m) =>
+    test?.module_ids?.includes(m.id)
+  );
+
+  const attempt = attemptQuery.data?.attempt;
+  const quizzes = attemptQuery.data?.quizzes ?? [];
+  const initialAnswers = attemptQuery.data?.answers ?? [];
+
+  // Local state for answers
+  const [localAnswers, setLocalAnswers] = useState<
+    Record<string, LocalTestAnswer>
+  >({});
+
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [hasStarted, setHasStarted] = useState<boolean>(true);
+  const pendingAnswerSavesRef = useRef(new Set<Promise<unknown>>());
+  const failedAnswerSavesRef = useRef(new Set<string>());
+  const submitInFlightRef = useRef(false);
+
+  // Check if test has started
+  useEffect(() => {
+    if (!test?.start_at) {
+      setHasStarted(true);
+      return;
+    }
+
+    const checkStarted = () => {
+      const startTime = new Date(test.start_at!).getTime();
+      const now = Date.now();
+      setHasStarted(now >= startTime);
+    };
+
+    checkStarted();
+    const interval = setInterval(checkStarted, 1000);
+    return () => clearInterval(interval);
+  }, [test?.start_at]);
+
+  // Initialize local answers when query loads
+  useEffect(() => {
+    if (initialAnswers.length > 0) {
+      const answersMap: Record<
+        string,
+        { selectedOptionId: string | null; answer: unknown }
+      > = {};
+      for (const ans of initialAnswers) {
+        answersMap[ans.quiz_id] = {
+          selectedOptionId: ans.selected_option_id,
+          answer: ans.answer,
+        };
+      }
+      setLocalAnswers(answersMap);
+    }
+  }, [initialAnswers]);
+
+  // Mutations
+  const startMutation = useMutation({
+    mutationFn: () => startTulearnTest(wsId, courseId, testId, studentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tulearn', wsId, studentId, 'test-attempt', testId],
+      });
+      toast.success(t('courses.startTestSuccess'));
+    },
+    onError: () => {
+      toast.error(t('courses.startTestError'));
+    },
+  });
+
+  const saveAnswerMutation = useMutation({
+    mutationFn: (payload: {
+      attemptId: string;
+      quizId: string;
+      selectedOptionId?: string | null;
+      answer?: unknown;
+    }) => saveTulearnTestAnswer(wsId, courseId, testId, payload, studentId),
+    onError: () => {
+      toast.error(t('courses.saveError'));
+    },
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: (payload: { attemptId: string }) =>
+      submitTulearnTest(wsId, courseId, testId, payload, studentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['tulearn', wsId, studentId, 'test-attempt', testId],
+      });
+      toast.success(t('courses.submitTestSuccess'));
+    },
+    onError: () => {
+      toast.error(t('courses.submitTestError'));
+    },
+  });
+
+  const queueAnswerSave = useCallback(
+    (payload: {
+      attemptId: string;
+      quizId: string;
+      selectedOptionId?: string | null;
+      answer?: unknown;
+    }) => {
+      const savePromise = saveAnswerMutation
+        .mutateAsync(payload)
+        .then((result) => {
+          failedAnswerSavesRef.current.delete(payload.quizId);
+          return result;
+        })
+        .catch((error) => {
+          failedAnswerSavesRef.current.add(payload.quizId);
+          throw error;
+        })
+        .finally(() => {
+          pendingAnswerSavesRef.current.delete(savePromise);
+        });
+      pendingAnswerSavesRef.current.add(savePromise);
+      return savePromise;
+    },
+    [saveAnswerMutation]
+  );
+
+  const flushPendingAnswerSaves = useCallback(async () => {
+    const pendingSaves = Array.from(pendingAnswerSavesRef.current);
+    if (pendingSaves.length > 0) {
+      await Promise.all(pendingSaves);
+    }
+    if (failedAnswerSavesRef.current.size > 0) {
+      throw new Error('Pending answer save failed');
+    }
+  }, []);
+
+  const submitAttempt = useCallback(
+    async (attemptId: string) => {
+      if (submitInFlightRef.current || submitMutation.isPending) return;
+
+      submitInFlightRef.current = true;
+      try {
+        await flushPendingAnswerSaves();
+        await submitMutation.mutateAsync({ attemptId });
+      } catch {
+        // Mutation-level handlers already show the actionable error toast.
+      } finally {
+        submitInFlightRef.current = false;
+      }
+    },
+    [flushPendingAnswerSaves, submitMutation]
+  );
+
+  const handleAutoSubmit = useCallback(async () => {
+    if (attempt && !attempt.submitted_at) {
+      await submitAttempt(attempt.id);
+    }
+  }, [attempt, submitAttempt]);
+
+  const handleManualSubmit = async () => {
+    if (
+      !attempt ||
+      attempt.submitted_at ||
+      submitMutation.isPending ||
+      submitInFlightRef.current
+    )
+      return;
+    if (confirm(t('courses.submitTestConfirm'))) {
+      await submitAttempt(attempt.id);
+    }
+  };
+
+  // Timer Effect
+  useEffect(() => {
+    if (!attempt || attempt.submitted_at || !test?.duration_in_minutes) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const durationMs = test.duration_in_minutes * 60 * 1000;
+    const startedTime = new Date(attempt.started_at).getTime();
+    const endTime = startedTime + durationMs;
+
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        void handleAutoSubmit();
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [attempt, test, handleAutoSubmit]);
+
+  // Prevent accidental navigation away during an active test
+  useEffect(() => {
+    if (!attempt || attempt.submitted_at) return;
+
+    // beforeunload: catches refresh, tab close, URL bar navigation
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    // popstate: catches browser back button and swipe-back gestures.
+    // Push a sentinel entry so pressing back fires popstate instead of leaving.
+    const sentinel = { __testGuard: true };
+    window.history.pushState(sentinel, '');
+
+    const handlePopState = () => {
+      // The user pressed back — ask for confirmation
+      const leave = window.confirm(t('courses.leaveTestConfirm'));
+      if (leave) {
+        // Actually go back
+        window.history.back();
+      } else {
+        // Stay on the page — re-push sentinel
+        window.history.pushState(sentinel, '');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [attempt, t]);
+
+  if (courseQuery.isLoading || attemptQuery.isLoading) return <LoadingState />;
+
+  if (courseQuery.isError || !courseQuery.data || !test) {
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
         <EmptyState
           action={
-            <button
-              className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-              onClick={() => courseQuery.refetch()}
-              type="button"
+            <Link
+              href={courseHref}
+              className="mt-4 inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
             >
-              {t('common.retry')}
-            </button>
+              <ChevronLeft className="h-4 w-4" />
+              {t('courses.backToCourse')}
+            </Link>
           }
-          label={t('courses.loadError')}
+          label={t('courses.testNotFound')}
         />
       </main>
     );
   }
 
-  const test = courseQuery.data.tests?.find((t) => t.id === testId);
-  const testModules = (courseQuery.data.modules ?? []).filter((m) =>
-    test?.module_ids?.includes(m.id)
-  );
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
-  if (!test) {
+  // Render Completed / Submitted View
+  if (attempt?.submitted_at) {
+    if (test.is_score_published) {
+      const maxScore = quizzes.reduce((sum, q) => sum + (q.score ?? 0), 0);
+      const studentScore = attempt.score ?? 0;
+
+      // Calculate score percentage
+      const percentage =
+        maxScore > 0 ? Math.round((studentScore / maxScore) * 100) : 0;
+
+      const renderQuizReview = (quiz: TulearnReviewQuiz) => {
+        const quizAns = initialAnswers.find((a) => a.quiz_id === quiz.id) || {
+          selected_option_id: null,
+          answer: null,
+          is_correct: false,
+          score_awarded: 0,
+        };
+
+        const isCorrect = quizAns.is_correct ?? false;
+
+        // Render choice options helper
+        if (!quiz.type || quiz.type === 'multiple_choice') {
+          const options = getMultipleChoiceOptions(quiz);
+          return (
+            <div className="mt-4 space-y-2.5">
+              {options.map((opt) => {
+                const isSelected =
+                  quizAns.selected_option_id === opt.id ||
+                  (opt.index !== null &&
+                    getSelectedIndexAnswer(quizAns.answer) === opt.index);
+
+                // Find if this option is correct
+                const rawOpt = quiz.quiz_options?.find((o) => o.id === opt.id);
+                const isOptionCorrect = rawOpt?.is_correct ?? false;
+
+                let cardStyle = 'border-border bg-background';
+                if (isSelected) {
+                  cardStyle = isCorrect
+                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                } else if (isOptionCorrect) {
+                  cardStyle =
+                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                }
+
+                return (
+                  <div
+                    key={opt.id}
+                    className={cn(
+                      'flex items-start gap-3 border-2 p-3.5 shadow-[2px_2px_0_var(--border)] transition',
+                      cardStyle
+                    )}
+                  >
+                    <span className="font-bold text-sm">{opt.value}</span>
+                    {isSelected && (
+                      <span className="ml-auto font-bold text-xs uppercase tracking-wider">
+                        {isCorrect
+                          ? t('courses.yourAnswerCorrect')
+                          : t('courses.yourAnswerIncorrect')}
+                      </span>
+                    )}
+                    {!isSelected && isOptionCorrect && (
+                      <span className="ml-auto font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                        {t('courses.correctAnswerLabel')}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {quiz.quiz_options?.some((o) => o.explanation) && (
+                <div className="mt-3 border-2 border-border border-dashed bg-muted/20 p-4 text-muted-foreground text-xs leading-relaxed">
+                  <span className="mb-1 block font-black text-[10px] uppercase tracking-wider">
+                    {t('courses.quizExplanation')}
+                  </span>
+                  {quiz.quiz_options.find((o) => o.is_correct)?.explanation ||
+                    quiz.quiz_options.find((o) => o.explanation)?.explanation}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'true_false') {
+          const studentVal = getTrueFalseAnswer(quizAns.answer);
+          const options = [
+            { label: t('courses.quizTrue'), value: true },
+            { label: t('courses.quizFalse'), value: false },
+          ];
+
+          return (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {options.map((opt) => {
+                const isSelected = studentVal === opt.value;
+
+                let cardStyle = 'border-border bg-background';
+                if (isSelected) {
+                  cardStyle = isCorrect
+                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                } else if (studentVal !== null && !isSelected && !isCorrect) {
+                  // If student was wrong, the other option is correct
+                  cardStyle =
+                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                }
+
+                return (
+                  <div
+                    key={String(opt.value)}
+                    className={cn(
+                      'flex items-center justify-center border-2 py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]',
+                      cardStyle
+                    )}
+                  >
+                    {opt.label}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'ordering') {
+          const items = getStringItems(quiz.content, 'items');
+          const submittedOrder = getAnswerOrder(quizAns.answer, items);
+
+          return (
+            <div className="mt-4 space-y-2">
+              <p className="mb-2 font-bold text-muted-foreground text-xs">
+                {t('courses.yourAnswerStatus', {
+                  status: isCorrect
+                    ? t('courses.statusCorrect')
+                    : t('courses.statusIncorrect'),
+                })}
+              </p>
+              {submittedOrder.map((item: string, index: number) => (
+                <div
+                  key={`${item}-${index}`}
+                  className={cn(
+                    'flex items-center justify-between border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)]',
+                    isCorrect
+                      ? 'border-dynamic-green bg-dynamic-green/10'
+                      : 'border-dynamic-red bg-dynamic-red/10'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                      {index + 1}
+                    </span>
+                    <span className="font-bold">{item}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'matching') {
+          const pairs = getMatchingPairs(quiz.content);
+          const submittedPairs = getSubmittedPairs(quizAns.answer);
+
+          return (
+            <div className="mt-4 space-y-3">
+              <p className="mb-2 font-bold text-muted-foreground text-xs">
+                {t('courses.yourMatchingsStatus', {
+                  status: isCorrect
+                    ? t('courses.statusCorrect')
+                    : t('courses.statusIncorrect'),
+                })}
+              </p>
+              {pairs.map((pair, index) => {
+                const currentRight =
+                  submittedPairs.find((p) => p.left === pair.left)?.right ||
+                  '—';
+                return (
+                  <div
+                    key={`${pair.left}-${index}`}
+                    className={cn(
+                      'grid gap-3 border-2 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
+                      isCorrect
+                        ? 'border-dynamic-green bg-dynamic-green/10'
+                        : 'border-dynamic-red bg-dynamic-red/10'
+                    )}
+                  >
+                    <span className="font-bold">{pair.left}</span>
+                    <div className="border-2 border-border bg-background p-2 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+                      {currentRight}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        if (quiz.type === 'paragraph') {
+          const textValue = getParagraphAnswerText(quizAns.answer, '—');
+          return (
+            <div className="mt-4 space-y-2">
+              <p className="font-bold text-muted-foreground text-xs">
+                {t('courses.yourResponse')}
+              </p>
+              <div className="w-full whitespace-pre-wrap border-2 border-border bg-muted/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+                {textValue}
+              </div>
+              <span className="mt-1 block text-[10px] text-muted-foreground italic">
+                {t('courses.paragraphManualGradingHint')}
+              </span>
+            </div>
+          );
+        }
+
+        return null;
+      };
+
+      return (
+        <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
+          <div className="mx-auto max-w-4xl space-y-6">
+            {/* Back Navigation */}
+            <div>
+              <Link
+                className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                href={courseHref}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t('courses.backToCourse')}
+              </Link>
+            </div>
+
+            {/* Header / Score Overview */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_18rem]">
+              {/* Info panel */}
+              <div className="flex flex-col justify-between border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
+                <div>
+                  <p className="mb-2 inline-flex items-center gap-1.5 border-2 border-border bg-dynamic-cyan/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
+                    <BookOpenCheck className="h-3.5 w-3.5" />
+                    {t('courses.testSubmitted')}
+                  </p>
+                  <h1 className="mt-2 break-words font-black text-[clamp(1.75rem,3.5vw,3rem)] leading-none tracking-normal">
+                    {test.name}
+                  </h1>
+                  <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
+                    {t('courses.testSubmittedDescription')}
+                  </p>
+                </div>
+
+                <div className="mt-6 border-2 border-border bg-muted/10 p-4 shadow-[4px_4px_0_var(--border)]">
+                  <span className="block font-black text-[10px] text-muted-foreground uppercase tracking-wider">
+                    {t('courses.submittedDateTime')}
+                  </span>
+                  <span className="font-bold text-sm">
+                    {new Date(attempt.submitted_at).toLocaleString([], {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Score visual card */}
+              <div className="relative flex min-h-[200px] flex-col items-center justify-center overflow-hidden border-2 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center shadow-[8px_8px_0_var(--border)]">
+                <span className="mb-2 block font-black text-muted-foreground text-xs uppercase tracking-wider">
+                  {t('courses.yourGrade')}
+                </span>
+
+                <div className="relative flex items-center justify-center">
+                  <span className="font-black text-6xl text-foreground tracking-tight md:text-7xl">
+                    {studentScore}
+                  </span>
+                  <span className="mx-1 font-bold text-2xl text-muted-foreground">
+                    /
+                  </span>
+                  <span className="font-black text-3xl text-muted-foreground">
+                    {maxScore}
+                  </span>
+                </div>
+
+                <div className="mt-4 inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1 font-black text-xs shadow-[2px_2px_0_var(--border)]">
+                  {percentage}%
+                </div>
+              </div>
+            </div>
+
+            {/* Submissions Review list */}
+            <div className="space-y-6">
+              <h2 className="border-border border-b-2 pb-2 font-black text-xl uppercase tracking-wider">
+                {t('courses.questionsReview')}
+              </h2>
+              {quizzes.length === 0 ? (
+                <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+                  <span className="text-muted-foreground text-sm italic">
+                    {t('courses.noQuestions')}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {quizzes.map((quiz, index) => {
+                    const quizAns = initialAnswers.find(
+                      (a) => a.quiz_id === quiz.id
+                    );
+                    const isQuizCorrect = quizAns?.is_correct ?? false;
+                    const quizScore = quizAns?.score_awarded ?? 0;
+
+                    return (
+                      <div
+                        key={quiz.id}
+                        className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={cn(
+                                'flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]',
+                                isQuizCorrect
+                                  ? 'bg-dynamic-green/15 text-dynamic-green-foreground'
+                                  : 'bg-dynamic-red/15 text-dynamic-red-foreground'
+                              )}
+                            >
+                              {index + 1}
+                            </span>
+                            <h3 className="font-bold text-base">
+                              {quiz.question}
+                            </h3>
+                          </div>
+                          <div
+                            className={cn(
+                              'border-2 border-border px-2 py-0.5 font-bold text-xs shadow-[2px_2px_0_var(--border)]',
+                              isQuizCorrect
+                                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
+                                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
+                            )}
+                          >
+                            {t('courses.questionScore', {
+                              score: quizScore,
+                              total: quiz.score ?? 1,
+                            })}
+                          </div>
+                        </div>
+                        {renderQuizReview(quiz)}
+                        {quizAns?.feedback && (
+                          <div className="mt-4 border-2 border-primary bg-primary/5 p-4 text-left shadow-[2px_2px_0_var(--border)]">
+                            <span className="mb-1 block font-black text-[10px] text-primary uppercase tracking-wider">
+                              {t('courses.teacherFeedback')}
+                            </span>
+                            <p className="font-bold text-foreground text-sm">
+                              {quizAns.feedback}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-        <div className="mx-auto max-w-4xl border-2 border-border border-dashed bg-background p-8 text-center shadow-[8px_8px_0_var(--border)]">
-          <h2 className="font-bold text-xl">{t('courses.testNotFound')}</h2>
-          <p className="mt-2 text-muted-foreground">
-            {t('courses.testNotFoundDescription')}
-          </p>
+        <div className="mx-auto max-w-xl space-y-6 border-2 border-border bg-background p-8 text-center shadow-[8px_8px_0_var(--border)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[4px_4px_0_var(--border)]">
+            <GraduationCap className="h-8 w-8 text-foreground" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-black text-2xl uppercase tracking-wider">
+              {t('courses.testSubmitted')}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {t('courses.testMarkingInProgress')}
+            </p>
+          </div>
+
+          {/* Marking animation */}
+          <div className="flex items-center justify-center gap-2 border-2 border-border bg-muted/20 p-4 shadow-[4px_4px_0_var(--border)]">
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:0ms]" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:150ms]" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:300ms]" />
+            <span className="ml-2 font-bold text-muted-foreground text-xs uppercase tracking-wider">
+              {t('courses.testMarking')}
+            </span>
+          </div>
+
           <Link
             href={courseHref}
-            className="mt-4 inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            className="inline-flex items-center gap-2 border-2 border-border bg-primary px-5 py-2.5 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)]"
           >
             <ChevronLeft className="h-4 w-4" />
             {t('courses.backToCourse')}
@@ -87,10 +840,377 @@ export function StudentTestDetailPage({
     );
   }
 
-  const handleStartTest = () => {
-    toast.success('Starting test session...');
-  };
+  // Render Active Test Taking View
+  if (attempt) {
+    const renderQuizInput = (quiz: TulearnQuiz) => {
+      const quizAns = localAnswers[quiz.id] || {
+        selectedOptionId: null,
+        answer: null,
+      };
 
+      if (!quiz.type || quiz.type === 'multiple_choice') {
+        const options = getMultipleChoiceOptions(quiz);
+        return (
+          <div className="mt-4 space-y-2.5">
+            {options.map((opt) => {
+              const isChecked = quizAns.selectedOptionId === opt.id;
+              return (
+                <label
+                  key={opt.id}
+                  className={cn(
+                    'flex cursor-pointer items-start gap-3 border-2 border-border bg-background p-3.5 shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                    isChecked && 'border-dynamic-cyan bg-dynamic-cyan/10'
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`quiz-${quiz.id}`}
+                    checked={isChecked}
+                    onChange={() => {
+                      const updatedAns =
+                        opt.index !== null
+                          ? { selectedIndex: opt.index }
+                          : null;
+                      const updated = {
+                        selectedOptionId: opt.id,
+                        answer: updatedAns,
+                      };
+                      setLocalAnswers((prev) => ({
+                        ...prev,
+                        [quiz.id]: updated,
+                      }));
+                      queueAnswerSave({
+                        attemptId: attempt.id,
+                        quizId: quiz.id,
+                        // Content-based options use non-UUID ids (e.g. "content-0");
+                        // the DB column has a FK to quiz_options so we must send null
+                        // and rely on answer.selectedIndex for grading.
+                        selectedOptionId: opt.index !== null ? null : opt.id,
+                        answer: updatedAns,
+                      });
+                    }}
+                    className="mt-1"
+                  />
+                  <span className="font-bold text-sm">{opt.value}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      }
+
+      if (quiz.type === 'true_false') {
+        const options = [
+          { label: t('courses.quizTrue'), value: true },
+          { label: t('courses.quizFalse'), value: false },
+        ];
+        return (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {options.map((opt) => {
+              const isChecked = quizAns.answer === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => {
+                    const updated = {
+                      selectedOptionId: null,
+                      answer: opt.value,
+                    };
+                    setLocalAnswers((prev) => ({
+                      ...prev,
+                      [quiz.id]: updated,
+                    }));
+                    queueAnswerSave({
+                      attemptId: attempt.id,
+                      quizId: quiz.id,
+                      answer: opt.value,
+                    });
+                  }}
+                  className={cn(
+                    'flex cursor-pointer items-center justify-center border-2 border-border bg-background py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                    isChecked && 'border-dynamic-cyan bg-dynamic-cyan/10'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        );
+      }
+
+      if (quiz.type === 'paragraph') {
+        const textValue = getParagraphAnswerText(quizAns.answer, '');
+        return (
+          <div className="mt-4">
+            <textarea
+              value={textValue}
+              onChange={(e) => {
+                const val = e.target.value;
+                const updated = {
+                  selectedOptionId: null,
+                  answer: { text: val },
+                };
+                setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
+              }}
+              onBlur={() => {
+                queueAnswerSave({
+                  attemptId: attempt.id,
+                  quizId: quiz.id,
+                  answer: { text: textValue },
+                });
+              }}
+              rows={4}
+              className="w-full border-2 border-border bg-background p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] focus:outline-none"
+              placeholder="..."
+            />
+            <span className="mt-1 block text-[10px] text-muted-foreground italic">
+              {t('courses.savingAnswer')}
+            </span>
+          </div>
+        );
+      }
+
+      if (quiz.type === 'ordering') {
+        const items = getStringItems(quiz.content, 'items');
+        const orderList = getAnswerOrder(quizAns.answer, items);
+
+        const moveItem = (index: number, direction: 'up' | 'down') => {
+          const targetIndex = direction === 'up' ? index - 1 : index + 1;
+          if (targetIndex < 0 || targetIndex >= orderList.length) return;
+
+          const newItems = [...orderList];
+          const currentItem = newItems[index];
+          const targetItem = newItems[targetIndex];
+          if (currentItem === undefined || targetItem === undefined) return;
+
+          newItems[index] = targetItem;
+          newItems[targetIndex] = currentItem;
+
+          const updated = { selectedOptionId: null, answer: newItems };
+          setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
+          queueAnswerSave({
+            attemptId: attempt.id,
+            quizId: quiz.id,
+            answer: newItems,
+          });
+        };
+
+        return (
+          <div className="mt-4 space-y-2">
+            {orderList.map((item: string, index: number) => (
+              <div
+                key={`${item}-${index}`}
+                className="flex items-center justify-between border-2 border-border bg-background p-3 text-sm shadow-[2px_2px_0_var(--border)]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                    {index + 1}
+                  </span>
+                  <span className="font-bold">{item}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => moveItem(index, 'up')}
+                    className="flex h-8 w-8 items-center justify-center border-2 border-border bg-background shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === orderList.length - 1}
+                    onClick={() => moveItem(index, 'down')}
+                    className="flex h-8 w-8 items-center justify-center border-2 border-border bg-background shadow-[1px_1px_0_var(--border)] hover:bg-muted/10 disabled:opacity-40"
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      if (quiz.type === 'matching') {
+        const pairs = getMatchingPairs(quiz.content);
+        let choices = getStringItems(quiz.content, 'choices');
+        if (choices.length === 0) {
+          choices = Array.from(new Set(pairs.map((p) => p.right))).filter(
+            Boolean
+          );
+        }
+        const submittedPairs = getSubmittedPairs(
+          quizAns.answer,
+          pairs.map((p) => ({ left: p.left, right: '' }))
+        );
+
+        const handleMatchingChange = (pairIndex: number, right: string) => {
+          const newPairs = submittedPairs.map((p, idx) =>
+            idx === pairIndex ? { ...p, right } : p
+          );
+
+          const updated = { selectedOptionId: null, answer: newPairs };
+          setLocalAnswers((prev) => ({ ...prev, [quiz.id]: updated }));
+          queueAnswerSave({
+            attemptId: attempt.id,
+            quizId: quiz.id,
+            answer: newPairs,
+          });
+        };
+
+        return (
+          <div className="mt-4 space-y-3">
+            {pairs.map((pair, index) => {
+              const currentRight =
+                submittedPairs.find((p) => p.left === pair.left)?.right || '';
+              return (
+                <div
+                  key={`${pair.left}-${index}`}
+                  className="grid gap-3 border-2 border-border bg-muted/10 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center"
+                >
+                  <span className="font-bold">{pair.left}</span>
+                  <select
+                    value={currentRight}
+                    onChange={(e) =>
+                      handleMatchingChange(index, e.target.value)
+                    }
+                    className="border-2 border-border bg-background p-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] focus:outline-none"
+                  >
+                    <option value="">{t('courses.quizSelectMatch')}</option>
+                    {choices.map((choice: string, choiceIndex: number) => (
+                      <option key={`${choice}-${choiceIndex}`} value={choice}>
+                        {choice}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      return null;
+    };
+
+    return (
+      <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+            {/* Sidebar with timer and navigation */}
+            <aside>
+              <div className="sticky top-5 space-y-4">
+                <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
+                  <h3 className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                    {t('courses.timeLeft')}
+                  </h3>
+                  <div className="mt-1.5 font-black text-2xl text-foreground tracking-tight">
+                    {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleManualSubmit}
+                  disabled={
+                    submitMutation.isPending || saveAnswerMutation.isPending
+                  }
+                  className="inline-flex w-full items-center justify-center gap-2 border-2 border-border bg-primary py-3 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
+                >
+                  {t('courses.submitTest')}
+                </button>
+
+                <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
+                  <h3 className="mb-3 font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                    {t('courses.testTakeQuizzes')}
+                  </h3>
+                  {quizzes.length === 0 ? (
+                    <span className="text-muted-foreground text-xs italic">
+                      {t('courses.noQuestions')}
+                    </span>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {quizzes.map((q, idx) => {
+                        const isAnswered = Boolean(
+                          localAnswers[q.id]?.selectedOptionId ||
+                            localAnswers[q.id]?.answer
+                        );
+                        return (
+                          <button
+                            key={q.id}
+                            type="button"
+                            onClick={() => {
+                              const el = document.getElementById(
+                                `question-${idx}`
+                              );
+                              el?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={cn(
+                              'flex h-9 items-center justify-center border-2 border-border font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 active:translate-y-0',
+                              isAnswered
+                                ? 'bg-dynamic-cyan/15 text-foreground'
+                                : 'bg-muted/10 text-muted-foreground'
+                            )}
+                          >
+                            {idx + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </aside>
+
+            {/* Test Sheet Quizzes */}
+            <div className="space-y-6">
+              <div className="border-2 border-border bg-background p-6 shadow-[6px_6px_0_var(--border)]">
+                <h1 className="font-black text-2xl leading-tight tracking-tight">
+                  {test.name}
+                </h1>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {test.description}
+                </p>
+              </div>
+
+              {quizzes.length === 0 ? (
+                <div className="border-2 border-border border-dashed bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+                  <span className="text-muted-foreground text-sm italic">
+                    {t('courses.noQuestions')}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {quizzes.map((quiz, index) => (
+                    <div
+                      key={quiz.id}
+                      id={`question-${index}`}
+                      className="space-y-4 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-primary-foreground text-xs shadow-[1px_1px_0_var(--border)]">
+                          {index + 1}
+                        </span>
+                        <h3 className="pt-0.5 font-bold text-base">
+                          {quiz.question}
+                        </h3>
+                      </div>
+                      {renderQuizInput(quiz)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Render Pre-Start View
   return (
     <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -125,12 +1245,15 @@ export function StudentTestDetailPage({
 
             <div className="flex shrink-0 items-center self-start md:self-center">
               <button
-                onClick={handleStartTest}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)]"
+                onClick={() => startMutation.mutate()}
+                disabled={startMutation.isPending || !hasStarted}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 border-2 border-border bg-primary px-5 py-3 font-bold text-base text-primary-foreground shadow-[4px_4px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--border)] active:translate-y-0 active:shadow-[2px_2px_0_var(--border)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >
                 <Play className="h-5 w-5" />
-                {t('courses.startTest')}
+                {hasStarted
+                  ? t('courses.startTest')
+                  : t('courses.testNotStarted')}
               </button>
             </div>
           </div>

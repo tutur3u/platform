@@ -49,6 +49,7 @@ const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const DEFAULT_DOCKER_BUILD_CPUS = '4';
 const DEFAULT_DOCKER_BUILD_MAX_PARALLELISM = '1';
 const DEFAULT_E2E_DOCKER_NATIVE_BUILD = '1';
+const TANSTACK_WEB_PROXY_HEALTH_PATH = '/';
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL = 'http://127.0.0.1:8079/';
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL =
   'http://host.docker.internal:8079';
@@ -138,7 +139,11 @@ function getE2EDockerNativeBuildValue(env = process.env) {
   );
 }
 
-function getDockerWebDownArgs(envFilePath, env = process.env) {
+function getDockerWebDownArgs(
+  envFilePath,
+  env = process.env,
+  { preserveImages = false } = {}
+) {
   const args = [
     'down',
     '--mode',
@@ -151,7 +156,7 @@ function getDockerWebDownArgs(envFilePath, env = process.env) {
     '--volumes',
   ];
 
-  if (!env.DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE) {
+  if (!preserveImages && !env.DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE) {
     args.push('--rmi', 'local');
   }
 
@@ -578,7 +583,12 @@ function getWebProxyHealthUrl(env = process.env) {
     return value;
   }
 
-  return `http://127.0.0.1:${getWebProxyHostPort(env)}/login`;
+  const healthPath =
+    env.DOCKER_WEB_FRONTEND === 'tanstack'
+      ? TANSTACK_WEB_PROXY_HEALTH_PATH
+      : '/login';
+
+  return `http://127.0.0.1:${getWebProxyHostPort(env)}${healthPath}`;
 }
 
 function getPortlessProxyStartArgs(env = process.env) {
@@ -694,6 +704,10 @@ function isTanStackPortlessRoute(env = process.env) {
 
 function getE2EPortlessTargetPort(env = process.env) {
   if (!isTanStackPortlessRoute(env)) {
+    return getWebProxyHostPort(env);
+  }
+
+  if (env.DOCKER_WEB_FRONTEND === 'tanstack') {
     return getWebProxyHostPort(env);
   }
 
@@ -974,7 +988,7 @@ async function printE2EFailureDiagnostics({
     { cwd: rootDir, env, output, runCommand: run }
   );
   await runDiagnosticCommand(
-    'Docker web proxy login probe',
+    'Docker web proxy readiness probe',
     'curl',
     ['-i', '--max-time', '10', getWebProxyHealthUrl(env)],
     { cwd: rootDir, env, output, runCommand: run }
@@ -1775,16 +1789,20 @@ async function removeE2EProjectImages({
   return imageTags;
 }
 
-async function stopDockerizedE2E({ env, envFilePath }) {
+async function stopDockerizedE2E({ env, envFilePath, preserveImages = false }) {
   await runDockerWebWorkflow(
-    parseDockerWebArgs(getDockerWebDownArgs(envFilePath, env)),
+    parseDockerWebArgs(
+      getDockerWebDownArgs(envFilePath, env, { preserveImages })
+    ),
     {
       env,
       envFilePath,
       rootDir: ROOT_DIR,
     }
   );
-  await removeE2EProjectImages({ env });
+  if (!preserveImages) {
+    await removeE2EProjectImages({ env });
+  }
   await runCommand('bun', ['sb:stop'], { env, cwd: ROOT_DIR });
 }
 
@@ -1802,7 +1820,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       next: await runFrontendE2EForCompare(
         'next',
         frontendArgs.playwrightArgs,
-        options
+        { ...options, preserveDockerProjectImages: true }
       ),
       tanstack: await runFrontendE2EForCompare(
         'tanstack',
@@ -1939,7 +1957,11 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
 
   if (stackTouched && !shouldKeepStack(env)) {
     try {
-      await stopDockerizedE2E({ env, envFilePath });
+      await stopDockerizedE2E({
+        env,
+        envFilePath,
+        preserveImages: options.preserveDockerProjectImages === true,
+      });
     } catch (cleanupError) {
       if (!runError) {
         runError = cleanupError;

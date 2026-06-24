@@ -65,33 +65,73 @@ export async function getLearnerAssignments({
   });
   if (!courseIds.length) return [];
 
-  const [postsResult, checksResult] = await Promise.all([
-    sbAdmin
-      .schema('private')
-      .from('user_group_posts')
-      .select(
-        'id, title, content, created_at, group_id, workspace_user_groups!inner(id, name, ws_id)'
-      )
-      .in('group_id', courseIds)
-      .eq('workspace_user_groups.ws_id', wsId)
-      .order('created_at', { ascending: false })
-      .limit(12),
-    sbAdmin
-      .schema('private')
-      .from('user_group_post_checks')
-      .select('post_id, is_completed, approval_status')
-      .eq('user_id', studentWorkspaceUserId),
-  ]);
+  const [postsResult, checksResult, testsResult, linkedUserResult] =
+    await Promise.all([
+      sbAdmin
+        .schema('private')
+        .from('user_group_posts')
+        .select(
+          'id, title, content, created_at, group_id, workspace_user_groups!inner(id, name, ws_id)'
+        )
+        .in('group_id', courseIds)
+        .eq('workspace_user_groups.ws_id', wsId)
+        .eq('post_approval_status', 'APPROVED')
+        .order('created_at', { ascending: false })
+        .limit(12),
+      sbAdmin
+        .schema('private')
+        .from('user_group_post_checks')
+        .select('post_id, is_completed, approval_status')
+        .eq('user_id', studentWorkspaceUserId),
+      sbAdmin
+        .from('course_tests')
+        .select(
+          'id, name, created_at, course_id, description, is_published, workspace_user_groups!course_tests_course_id_fkey!inner(id, name, ws_id)'
+        )
+        .in('course_id', courseIds)
+        .eq('workspace_user_groups.ws_id', wsId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(12),
+      sbAdmin
+        .from('workspace_user_linked_users')
+        .select('platform_user_id')
+        .eq('virtual_user_id', studentWorkspaceUserId)
+        .eq('ws_id', wsId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
   if (postsResult.error) throw postsResult.error;
   if (checksResult.error) throw checksResult.error;
+  if (testsResult.error) throw testsResult.error;
+  if (linkedUserResult.error) throw linkedUserResult.error;
 
   const checksByPost = new Map(
     (checksResult.data ?? []).map((check) => [check.post_id, check])
   );
+  const testIds = (testsResult.data ?? []).map((test) => test.id);
+  const studentPlatformUserId = linkedUserResult.data?.platform_user_id ?? null;
+  const submittedAttemptsResult =
+    studentPlatformUserId && testIds.length > 0
+      ? await sbAdmin
+          .from('course_test_attempts')
+          .select('test_id')
+          .eq('user_id', studentPlatformUserId)
+          .not('submitted_at', 'is', null)
+          .in('test_id', testIds)
+      : { data: [], error: null };
 
-  const rows = (postsResult.data ?? []) as unknown as UserGroupPostRow[];
-  return rows.map((post) => {
+  if (submittedAttemptsResult.error) throw submittedAttemptsResult.error;
+
+  const submittedTestIds = new Set(
+    (submittedAttemptsResult.data ?? []).map((attempt) => attempt.test_id)
+  );
+
+  const mappedPosts = (
+    (postsResult.data ?? []) as unknown as UserGroupPostRow[]
+  ).map((post) => {
     const course = firstOf(post.workspace_user_groups);
     const check = checksByPost.get(post.id);
     return {
@@ -105,8 +145,31 @@ export async function getLearnerAssignments({
       },
       is_completed: Boolean(check?.is_completed),
       approval_status: check?.approval_status ?? null,
+      is_test: false,
     };
   });
+
+  const mappedTests = (testsResult.data ?? []).map((test) => {
+    const course = firstOf(test.workspace_user_groups);
+    return {
+      id: test.id,
+      title: test.name,
+      content: test.description ?? null,
+      created_at: test.created_at,
+      course: {
+        id: test.course_id,
+        name: course?.name ?? null,
+      },
+      is_completed: submittedTestIds.has(test.id),
+      approval_status: null,
+      is_test: true,
+    };
+  });
+
+  return [...mappedPosts, ...mappedTests].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 }
 
 export async function getLearnerReports({

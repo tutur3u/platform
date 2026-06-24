@@ -42,6 +42,10 @@ describe('public redirect helpers', () => {
     expect(pricingRedirectHref()).toBe('/?hash-nav=1#pricing');
   });
 
+  it('preserves the legacy localized pricing canonical redirect target', () => {
+    expect(pricingRedirectHref({ localized: true })).toBe('/pricing');
+  });
+
   it('preserves the legacy docs external redirect target', () => {
     expect(docsRedirectHref()).toBe('https://docs.tuturuuu.com');
   });
@@ -172,6 +176,27 @@ describe('public redirect helpers', () => {
     expect(
       buildQrGeneratorRedirectHref('?content=hello&tag=one&tag=two&empty=')
     ).toBe('https://qr.example.com/?content=hello&tag=one&tag=two&empty=');
+  });
+
+  it('preserves parsed TanStack QR redirect arrays', () => {
+    vi.stubEnv('QR_APP_URL', 'https://qr.example.com');
+
+    expect(
+      buildQrGeneratorRedirectHref({
+        empty: '',
+        tag: ['one', 'two'],
+        unset: undefined,
+      })
+    ).toBe('https://qr.example.com/?empty=&tag=one&tag=two');
+  });
+
+  it('uses local QR app origins for local Portless production checks', () => {
+    vi.stubEnv('BASE_URL', 'https://tuturuuu.localhost:1355');
+    vi.stubEnv('NODE_ENV', 'production');
+
+    expect(buildQrGeneratorRedirectHref('?utm_source=e2e')).toBe(
+      'https://qr.tuturuuu.localhost/?utm_source=e2e'
+    );
   });
 
   it('accepts URLSearchParams input for server-side call sites', () => {

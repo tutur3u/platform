@@ -24,6 +24,19 @@ const nextLinkShim = fileURLToPath(
   new URL('./src/lib/platform/next-link-shim.tsx', import.meta.url)
 );
 
+// Runtime aliases: shared @tuturuuu/ui clients still import the browser
+// Supabase helpers through package exports whose dist files are not built in
+// the TanStack Docker image. Resolve those imports to workspace source.
+const supabaseNextClient = fileURLToPath(
+  new URL('../../packages/supabase/src/next/client.ts', import.meta.url)
+);
+const supabaseRealtimeBrowser = fileURLToPath(
+  new URL(
+    '../../packages/supabase/src/next/realtime-browser.ts',
+    import.meta.url
+  )
+);
+
 const port = Number.parseInt(process.env.PORT ?? '7824', 10);
 const prerenderLocales = ['en', 'vi'] as const;
 const staticPublicRouteSegments = [
@@ -118,6 +131,8 @@ export default defineConfig(({ mode }) => {
       alias: {
         'next/link': nextLinkShim,
         'next/navigation': nextNavigationShim,
+        '@tuturuuu/supabase/next/client': supabaseNextClient,
+        '@tuturuuu/supabase/next/realtime-browser': supabaseRealtimeBrowser,
       },
     },
     server: {

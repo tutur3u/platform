@@ -14781,6 +14781,116 @@ export type Database = {
           },
         ];
       };
+      course_test_attempt_answers: {
+        Row: {
+          answer: Json | null;
+          attempt_id: string;
+          created_at: string;
+          feedback: string | null;
+          id: string;
+          is_correct: boolean | null;
+          quiz_id: string;
+          score_awarded: number | null;
+          selected_option_id: string | null;
+        };
+        Insert: {
+          answer?: Json | null;
+          attempt_id: string;
+          created_at?: string;
+          feedback?: string | null;
+          id?: string;
+          is_correct?: boolean | null;
+          quiz_id: string;
+          score_awarded?: number | null;
+          selected_option_id?: string | null;
+        };
+        Update: {
+          answer?: Json | null;
+          attempt_id?: string;
+          created_at?: string;
+          feedback?: string | null;
+          id?: string;
+          is_correct?: boolean | null;
+          quiz_id?: string;
+          score_awarded?: number | null;
+          selected_option_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_attempt_answers_attempt_id_fkey';
+            columns: ['attempt_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_test_attempts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempt_answers_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempt_answers_selected_option_id_fkey';
+            columns: ['selected_option_id'];
+            isOneToOne: false;
+            referencedRelation: 'quiz_options';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_test_attempts: {
+        Row: {
+          created_at: string;
+          id: string;
+          score: number | null;
+          started_at: string;
+          submitted_at: string | null;
+          test_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          score?: number | null;
+          started_at?: string;
+          submitted_at?: string | null;
+          test_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          score?: number | null;
+          started_at?: string;
+          submitted_at?: string | null;
+          test_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_attempts_test_id_fkey';
+            columns: ['test_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_tests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_test_modules: {
         Row: {
           created_at: string;
@@ -14814,6 +14924,42 @@ export type Database = {
           },
         ];
       };
+      course_test_quizzes: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          quiz_id: string;
+          test_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          quiz_id: string;
+          test_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          quiz_id?: string;
+          test_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_quizzes_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_quizzes_test_id_module_id_fkey';
+            columns: ['test_id', 'module_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_test_modules';
+            referencedColumns: ['test_id', 'module_id'];
+          },
+        ];
+      };
       course_tests: {
         Row: {
           course_id: string;
@@ -14822,6 +14968,7 @@ export type Database = {
           duration_in_minutes: number | null;
           id: string;
           is_published: boolean;
+          is_score_published: boolean;
           name: string;
           start_at: string | null;
         };
@@ -14832,6 +14979,7 @@ export type Database = {
           duration_in_minutes?: number | null;
           id?: string;
           is_published?: boolean;
+          is_score_published?: boolean;
           name: string;
           start_at?: string | null;
         };
@@ -14842,6 +14990,7 @@ export type Database = {
           duration_in_minutes?: number | null;
           id?: string;
           is_published?: boolean;
+          is_score_published?: boolean;
           name?: string;
           start_at?: string | null;
         };

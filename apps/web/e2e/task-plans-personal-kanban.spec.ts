@@ -19,6 +19,8 @@ type TaskList = {
   name?: string | null;
 };
 
+const CLEANUP_TIMEOUT_MS = 10_000;
+
 async function getPersonalBoard(
   request: APIRequestContext,
   headers: Record<string, string>
@@ -77,6 +79,10 @@ async function getOrCreateBoardList(
 }
 
 test.describe('Shareable task plans in personal Kanban', () => {
+  // This full-stack flow resets auth/rate-limit state, renders the board planner UI,
+  // and exercises plan create/share/update/digest APIs with bounded cleanup in CI.
+  test.setTimeout(240_000);
+
   test('creates, shares, manages, and renders a plan', async ({
     page,
     request,
@@ -123,16 +129,17 @@ test.describe('Shareable task plans in personal Kanban', () => {
       await page.goto(`/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`, {
         waitUntil: 'domcontentloaded',
       });
-      await expect(page.getByTestId('kanban-planner-island')).toBeVisible();
+
+      const plannerTrigger = page.getByRole('button', { name: /^planner$/i });
+      await expect(plannerTrigger).toBeVisible();
+      await expect(page.getByPlaceholder('Task title')).toHaveCount(0);
+      await plannerTrigger.click();
+      await expect(
+        page.getByRole('dialog', { name: /planner/i })
+      ).toBeVisible();
       await expect(
         page.getByText(`E2E weekly plan ${timestamp}`)
       ).toBeVisible();
-      await expect(
-        page.getByRole('button', { name: /open planner/i })
-      ).toBeVisible();
-      await expect(page.getByPlaceholder('Task title')).toHaveCount(0);
-      await page.getByRole('button', { name: /open planner/i }).click();
-      await expect(page.getByPlaceholder('Task title')).toBeVisible();
 
       const createItem = await request.post(
         `/api/v1/workspaces/personal/task-plans/${planId}/items`,
@@ -187,20 +194,28 @@ test.describe('Shareable task plans in personal Kanban', () => {
       const digestBody = (await digest.json()) as { digest?: string };
       expect(digestBody.digest).toContain(`E2E plan task ${timestamp}`);
     } finally {
+      const cleanupRequests: Promise<unknown>[] = [];
+
       if (taskId) {
-        await request.delete(
-          `/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`,
-          {
+        cleanupRequests.push(
+          request.delete(`/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`, {
+            failOnStatusCode: false,
             headers,
-          }
+            timeout: CLEANUP_TIMEOUT_MS,
+          })
         );
       }
       if (planId) {
-        await request.delete(
-          `/api/v1/workspaces/personal/task-plans/${planId}`,
-          { headers }
+        cleanupRequests.push(
+          request.delete(`/api/v1/workspaces/personal/task-plans/${planId}`, {
+            failOnStatusCode: false,
+            headers,
+            timeout: CLEANUP_TIMEOUT_MS,
+          })
         );
       }
+
+      await Promise.allSettled(cleanupRequests);
     }
   });
 });

@@ -13,4 +13,17 @@ describe('app public paths', () => {
       expect.arrayContaining(['/docs', '/en/docs', '/vi/docs'])
     );
   });
+
+  it('allows unauthenticated access to public marketing tool and share routes', () => {
+    expect(APP_PUBLIC_PATHS).toEqual(
+      expect.arrayContaining([
+        '/tools',
+        '/en/tools',
+        '/vi/tools',
+        '/share',
+        '/en/share',
+        '/vi/share',
+      ])
+    );
+  });
 });

@@ -419,19 +419,15 @@ async fn read_binding_state(
             ("ws_id", format!("eq.{workspace_id}")),
             ("limit", "1".to_owned()),
         ],
-    ) {
-        if let Ok(response) = service_role_get(contact_data, outbound, &url, false).await {
-            if is_success(response.status) {
-                if let Ok(rows) = response.json::<Vec<BindingRow>>() {
-                    if let Some(binding) = rows.into_iter().next() {
-                        return Ok((
-                            binding.canonical_project_id,
-                            binding.is_enabled == Some(true),
-                        ));
-                    }
-                }
-            }
-        }
+    ) && let Ok(response) = service_role_get(contact_data, outbound, &url, false).await
+        && is_success(response.status)
+        && let Ok(rows) = response.json::<Vec<BindingRow>>()
+        && let Some(binding) = rows.into_iter().next()
+    {
+        return Ok((
+            binding.canonical_project_id,
+            binding.is_enabled == Some(true),
+        ));
     }
 
     // Fall back to legacy workspace_secrets pattern.

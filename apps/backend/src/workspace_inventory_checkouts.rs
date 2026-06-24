@@ -72,7 +72,7 @@ async fn checkouts_list_response(
 
     let query = match parse_list_query(request.url) {
         Ok(query) => query,
-        Err(response) => return response,
+        Err(response) => return *response,
     };
 
     match fetch_checkouts(&config.contact_data, outbound, &ws_id, &query).await {
@@ -112,7 +112,7 @@ async fn authorize_inventory_sales(
     )))
 }
 
-fn parse_list_query(request_url: Option<&str>) -> Result<CheckoutListQuery, BackendResponse> {
+fn parse_list_query(request_url: Option<&str>) -> Result<CheckoutListQuery, Box<BackendResponse>> {
     let mut page: Option<i64> = None;
     let mut page_size: Option<i64> = None;
     let mut search: Option<String> = None;
@@ -158,10 +158,10 @@ fn parse_list_query(request_url: Option<&str>) -> Result<CheckoutListQuery, Back
     }
 
     if !errors.is_empty() {
-        return Err(no_store_response(json_response(
+        return Err(Box::new(no_store_response(json_response(
             400,
             json!({ "message": INVALID_QUERY_MESSAGE, "errors": errors }),
-        )));
+        ))));
     }
 
     // Mirrors `normalizePagination`: limit = clamp(pageSize ?? 25, 1..=100),

@@ -1,3 +1,5 @@
+import type { Json } from '@tuturuuu/types';
+
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -319,6 +321,7 @@ export interface TeachCourseTest {
   duration_in_minutes?: number | null;
   description?: string | null;
   is_published?: boolean;
+  is_score_published?: boolean;
 }
 
 export function listWorkspaceCourseTests(
@@ -363,6 +366,7 @@ export function updateWorkspaceCourseTest(
   payload: {
     id: string;
     is_published?: boolean;
+    is_score_published?: boolean;
     name?: string;
     startAt?: string | null;
     durationInMinutes?: number | null;
@@ -373,6 +377,110 @@ export function updateWorkspaceCourseTest(
   const client = getInternalApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
+
+export interface TeachTestSubmission {
+  id: string;
+  userId: string;
+  userName: string;
+  startedAt: string;
+  submittedAt: string | null;
+  score: number | null;
+  answeredCount: number;
+  correctCount: number;
+  maxScore: number;
+  totalQuizzes: number;
+}
+
+export function listWorkspaceCourseTestSubmissions(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TeachTestSubmission[]; count: number }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions`,
+    { cache: 'no-store' }
+  );
+}
+
+export interface TeachTestSubmissionDetail {
+  attempt: {
+    id: string;
+    test_id: string;
+    user_id: string;
+    started_at: string;
+    submitted_at: string | null;
+    score: number | null;
+    created_at: string;
+  };
+  student: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+  quizzes: Array<{
+    id: string;
+    question: string;
+    type: string | null;
+    content: Json | null;
+    score: number;
+    quiz_options?: Array<{
+      id: string;
+      value: string;
+      is_correct?: boolean;
+      explanation?: string | null;
+    }>;
+  }>;
+  answers: Array<{
+    quiz_id: string;
+    selected_option_id: string | null;
+    answer: unknown;
+    is_correct: boolean | null;
+    score_awarded: number | null;
+    feedback: string | null;
+  }>;
+}
+
+export function getWorkspaceCourseTestSubmission(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  attemptId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TeachTestSubmissionDetail>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
+    { cache: 'no-store' }
+  );
+}
+
+export function updateWorkspaceCourseTestSubmissionFeedback(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  attemptId: string,
+  payload: {
+    quizId: string;
+    feedback: string | null;
+    isCorrect?: boolean | null;
+    scoreAwarded?: number | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean; answer: unknown }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
     {
       body: JSON.stringify(payload),
       cache: 'no-store',

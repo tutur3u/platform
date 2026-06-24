@@ -34,7 +34,7 @@ export function BrandingPage() {
           <div className="max-w-4xl space-y-8">
             <div className="space-y-7">
               <h1 className="max-w-5xl text-pretty font-semibold text-5xl tracking-tight sm:text-7xl lg:text-[6.75rem] lg:leading-[0.88]">
-                Brand guidelines{' '}
+                Tuturuuu Branding{' '}
                 <span className="block pl-[0.02em] text-dynamic-blue">
                   and assets
                 </span>

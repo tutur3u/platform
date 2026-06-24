@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const {
   readDockerProdComposeMergedText,
@@ -37,6 +38,7 @@ const {
   SUPERMEMORY_DOCKERFILE_PATH,
   TANSTACK_DUAL_COMPOSE_FILE_PATH,
   TANSTACK_WEB_DOCKERFILE_PATH,
+  TANSTACK_WEB_SERVER_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -64,6 +66,7 @@ const {
   validateSupermemoryDockerfile,
   validateTanstackDualCompose,
   validateTanstackWebDockerfile,
+  validateTanstackWebServer,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -222,9 +225,75 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   );
   assert.match(
     validateTanstackWebDockerfile(
-      dockerfileContent.replace("body.includes('Backend reachable')", 'true')
+      dockerfileContent.replace(
+        'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "docker/healthcheck.mjs"]',
+        'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "true"]'
+      )
     ).join('\n'),
-    /Backend reachable/u
+    /docker\/healthcheck\.mjs/u
+  );
+});
+
+test('tanstack web healthcheck probes the runner and backend health endpoint', async () => {
+  const healthcheckModule = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, 'apps', 'tanstack-web', 'docker', 'healthcheck.mjs')
+    ).href
+  );
+  const urls = [];
+
+  await healthcheckModule.runTanStackWebHealthcheck({
+    env: {
+      BACKEND_INTERNAL_URL: 'http://backend:7820',
+      PORT: '9123',
+    },
+    fetchImpl: async (url) => {
+      urls.push(String(url));
+
+      return new Response('', {
+        status: 200,
+      });
+    },
+  });
+
+  assert.deepEqual(urls, [
+    'http://127.0.0.1:9123/',
+    'http://backend:7820/healthz',
+  ]);
+});
+
+test('tanstack web healthcheck fails when the backend probe is not ok', async () => {
+  const healthcheckModule = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, 'apps', 'tanstack-web', 'docker', 'healthcheck.mjs')
+    ).href
+  );
+
+  await assert.rejects(
+    () =>
+      healthcheckModule.runTanStackWebHealthcheck({
+        env: {
+          BACKEND_INTERNAL_URL: 'backend:7820',
+          PORT: '9123',
+        },
+        fetchImpl: async (url) =>
+          new Response('', {
+            status: String(url).endsWith('/healthz') ? 503 : 200,
+          }),
+      }),
+    /Backend healthcheck returned HTTP 503/u
+  );
+});
+
+test('validateTanstackWebServer requires the internal drain-status route', () => {
+  const serverContent = fs.readFileSync(TANSTACK_WEB_SERVER_PATH, 'utf8');
+
+  assert.deepEqual(validateTanstackWebServer(serverContent), []);
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace('/__platform/drain-status', '/api/health')
+    ).join('\n'),
+    /__platform\/drain-status/u
   );
 });
 
@@ -700,6 +769,16 @@ test('validateTanstackDualCompose requires the Node runner healthcheck', () => {
   assert.match(errors, /"node"/);
 });
 
+test('validateTanstackDualCompose requires the shared TanStack healthcheck script', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('"docker/healthcheck.mjs"', '"-e"');
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /docker\/healthcheck\.mjs/);
+});
+
 test('validateDockerCompose reports public local Redis port mappings', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
@@ -842,15 +921,15 @@ test('validateDockerProdCompose reports missing TanStack backend health dependen
   assert.match(errors, /service_healthy/);
 });
 
-test('validateDockerProdCompose reports status-only TanStack healthchecks', () => {
+test('validateDockerProdCompose requires script-backed TanStack healthchecks', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
-    "body.includes(''Backend reachable'')",
-    'true'
+    '"docker/healthcheck.mjs"',
+    '"-e"'
   );
 
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
-  assert.match(errors, /Backend reachable/u);
+  assert.match(errors, /docker\/healthcheck\.mjs/u);
 });
 
 test('validateDockerProdCompose rejects public production port mappings and fallback token', () => {
@@ -1272,6 +1351,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web', 'docker'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -1339,6 +1421,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'tanstack-web', 'Dockerfile'),
       'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'tanstack-web', 'docker', 'server.mjs'),
+      ''
     );
     fs.writeFileSync(
       path.join(tempDir, 'docker-compose.web.yml'),

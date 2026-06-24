@@ -565,16 +565,13 @@ async fn read_binding_state(
             ("ws_id", format!("eq.{ws_id}")),
             ("limit", "1".to_owned()),
         ],
-    ) {
-        if let Ok(response) = send_service_role_request(contact_data, outbound, &url).await {
-            if is_success(response.status) {
-                if let Ok(Some(row)) = decode_first_row::<BindingRow>(&response) {
-                    return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
-                }
-            }
-        }
-        // Any binding-table failure falls through to the secrets dual-read.
+    ) && let Ok(response) = send_service_role_request(contact_data, outbound, &url).await
+        && is_success(response.status)
+        && let Ok(Some(row)) = decode_first_row::<BindingRow>(&response)
+    {
+        return Ok((row.canonical_project_id, row.is_enabled == Some(true)));
     }
+    // Any binding-table failure falls through to the secrets dual-read.
 
     let Some(url) = contact_data.rest_url(
         "workspace_secrets",
@@ -1139,12 +1136,12 @@ fn parse_date_millis(value: &str) -> Option<i64> {
         hour = take(11..13)?;
         minute = take(14..16)?;
         second = take(17..19)?;
-        if bytes.len() >= 23 && bytes[19] == b'.' {
-            if let Some(frac) = value.get(20..23) {
-                if let Ok(parsed) = frac.parse::<i64>() {
-                    millis = parsed;
-                }
-            }
+        if bytes.len() >= 23
+            && bytes[19] == b'.'
+            && let Some(frac) = value.get(20..23)
+            && let Ok(parsed) = frac.parse::<i64>()
+        {
+            millis = parsed;
         }
     }
 

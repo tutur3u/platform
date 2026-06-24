@@ -5,6 +5,7 @@ import type {
 } from '@tuturuuu/types';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import type { ExtendedWorkspaceTask } from '../time-tracker/types';
 import { CalendarClientPage } from './calendar-client-page';
 import TasksSidebar from './components/tasks-sidebar';
 
@@ -14,6 +15,7 @@ interface CalendarPageShellProps {
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   isPersonalWorkspace: boolean;
   locale: string;
+  smartSchedulingTasks?: ExtendedWorkspaceTask[];
   userId: string;
   workspace: Workspace;
 }
@@ -24,6 +26,7 @@ export function CalendarPageShell({
   experimentalGoogleToken,
   isPersonalWorkspace,
   locale,
+  smartSchedulingTasks = [],
   userId,
   workspace,
 }: CalendarPageShellProps) {
@@ -48,6 +51,7 @@ export function CalendarPageShell({
               resolvedWsId={workspace.id}
               locale={locale}
               userId={userId}
+              tasks={smartSchedulingTasks}
             />
           )}
         </div>

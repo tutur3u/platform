@@ -20,6 +20,13 @@ const TANSTACK_WEB_DOCKERFILE_PATH = path.join(
   'tanstack-web',
   'Dockerfile'
 );
+const TANSTACK_WEB_SERVER_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'docker',
+  'server.mjs'
+);
 const DOCKER_SETUP_WORKFLOW_PATH = path.join(
   ROOT_DIR,
   '.github',
@@ -822,7 +829,7 @@ function validateTanstackDualCompose(composeContent) {
       '}',
     '      - PORT=${' + 'TANSTACK_WEB_PORT:-7824' + '}',
     '          "node",',
-    "body.includes('Backend reachable')",
+    '          "docker/healthcheck.mjs",',
     '      - "127.0.0.1:${' +
       'TANSTACK_WEB_PORT:-7824' +
       '}:${' +
@@ -1034,7 +1041,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
     "http://127.0.0.1:'' + port + path",
-    "body.includes(''Backend reachable'')",
+    '        "docker/healthcheck.mjs",',
     '      test: ["CMD", "/app/backend", "healthcheck"]',
     '      - BACKEND_ENV=production\n      - BACKEND_INTERNAL_TOKEN\n      - PORT=7820',
     '      - PORT=8000\n      - SUPABASE_URL',
@@ -1386,8 +1393,9 @@ function validateTanstackWebDockerfile(
     'COPY --from=builder /workspace/apps/tanstack-web/node_modules ./node_modules',
     'COPY --from=builder /workspace/packages /app/packages',
     'COPY --from=builder /workspace/apps/tanstack-web/dist ./dist',
+    'COPY --from=builder /workspace/apps/tanstack-web/docker/healthcheck.mjs ./docker/healthcheck.mjs',
     'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs',
-    "body.includes('Backend reachable')",
+    'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "docker/healthcheck.mjs"]',
     'CMD ["node", "docker/server.mjs"]',
   ];
 
@@ -1395,6 +1403,27 @@ function validateTanstackWebDockerfile(
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/tanstack-web/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateTanstackWebServer(serverContent) {
+  const errors = [];
+  const requiredSnippets = [
+    "const INTERNAL_DRAIN_STATUS_PATH = '/__platform/drain-status';",
+    'function tryServeInternalDrainStatus(request, response, url)',
+    "frontend: 'tanstack'",
+    "'x-platform-drain-status'",
+    'if (tryServeInternalDrainStatus(request, response, url))',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!serverContent.includes(snippet)) {
+      errors.push(
+        `apps/tanstack-web/docker/server.mjs is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -1809,6 +1838,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'tanstack-web', 'Dockerfile'),
     'utf8'
   ),
+  tanstackWebServerContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'tanstack-web', 'docker', 'server.mjs'),
+    'utf8'
+  ),
   composeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-compose.web.yml'),
     'utf8'
@@ -1897,6 +1930,7 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
+    ...validateTanstackWebServer(tanstackWebServerContent),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateTanstackDualCompose(tanstackDualComposeContent),
     ...validateDockerProdCompose(prodComposeContent),
@@ -1957,6 +1991,7 @@ module.exports = {
   BACKEND_DOCKERFILE_PATH,
   DOCKER_SETUP_WORKFLOW_PATH,
   TANSTACK_WEB_DOCKERFILE_PATH,
+  TANSTACK_WEB_SERVER_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
@@ -1982,6 +2017,7 @@ module.exports = {
   listWorkspacePackageJsonPaths,
   validateBackendDockerfile,
   validateTanstackWebDockerfile,
+  validateTanstackWebServer,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
   validateDockerSetupWorkflow,

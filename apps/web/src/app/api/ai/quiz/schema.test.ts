@@ -8,6 +8,11 @@ describe('GeneratedQuizSchema', () => {
         question: 'Which option is correct?',
         score: 1,
         type: 'multiple_choice',
+        options: null,
+        correct_option_index: null,
+        correct_boolean: null,
+        matching_pairs: null,
+        ordering_items: null,
       }).success
     ).toBe(false);
 
@@ -16,6 +21,11 @@ describe('GeneratedQuizSchema', () => {
         question: 'Is this true?',
         score: 1,
         type: 'true_false',
+        options: null,
+        correct_option_index: null,
+        correct_boolean: null,
+        matching_pairs: null,
+        ordering_items: null,
       }).success
     ).toBe(false);
   });
@@ -28,6 +38,9 @@ describe('GeneratedQuizSchema', () => {
         type: 'multiple_choice',
         options: ['A', 'B'],
         correct_option_index: 2,
+        correct_boolean: null,
+        matching_pairs: null,
+        ordering_items: null,
       }).success
     ).toBe(false);
   });
@@ -40,6 +53,9 @@ describe('GeneratedQuizSchema', () => {
         type: 'multiple_choice',
         options: ['A', 'B'],
         correct_option_index: 1,
+        correct_boolean: null,
+        matching_pairs: null,
+        ordering_items: null,
       }).success
     ).toBe(true);
 
@@ -48,6 +64,10 @@ describe('GeneratedQuizSchema', () => {
         question: 'Put these in order.',
         score: 1,
         type: 'ordering',
+        options: null,
+        correct_option_index: null,
+        correct_boolean: null,
+        matching_pairs: null,
         ordering_items: ['First', 'Second'],
       }).success
     ).toBe(true);

@@ -28,9 +28,26 @@ export type MatchingPair = {
   right: string;
 };
 
+function getParsedContent(content: unknown): unknown {
+  if (typeof content === 'string') {
+    try {
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  }
+  return content;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
+  const parsedValue = getParsedContent(value);
+  if (
+    !parsedValue ||
+    typeof parsedValue !== 'object' ||
+    Array.isArray(parsedValue)
+  )
+    return null;
+  return parsedValue as Record<string, unknown>;
 }
 
 function getArrayProperty(value: unknown, key: string): unknown[] {
@@ -48,7 +65,11 @@ function displayText(value: unknown): string {
 }
 
 export function getMatchingPairs(content: unknown): MatchingPair[] {
-  return getArrayProperty(content, 'pairs')
+  const parsedContent = getParsedContent(content);
+  const pairs = Array.isArray(parsedContent)
+    ? parsedContent
+    : getArrayProperty(parsedContent, 'pairs');
+  return pairs
     .map((pair) => {
       const record = asRecord(pair);
       return {
@@ -60,7 +81,8 @@ export function getMatchingPairs(content: unknown): MatchingPair[] {
 }
 
 export function getStringItems(content: unknown, key: string): string[] {
-  return getArrayProperty(content, key).map(displayText).filter(Boolean);
+  const parsedContent = getParsedContent(content);
+  return getArrayProperty(parsedContent, key).map(displayText).filter(Boolean);
 }
 
 export function getMatchingChoices(content: unknown): string[] {
