@@ -1064,15 +1064,20 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/workforce preserves the legacy 307 redirect to /:wsId/users/database. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "layout:/:locale/:wsId/ai-chat:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start parent route /$locale/$wsId/ai-chat ports the legacy AI chat layout gate and section navigation for migrated child routes: it gates anonymous users through requireCurrentUser, resolves the workspace, preserves the ai_chat permission redirect, renders localized New Chat, Chatbots, and My Chatbots tabs, and deliberately not-founds the exact /ai-chat leaf until that page artifact is migrated. Parent dashboard/session ownership and the exact AI chat page remain separately tracked."
+    },
     "page:/:locale/:wsId/ai-chat/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/new/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/ai-chat/new preserves the legacy 307 redirect to /:wsId/chat. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+      "note": "TanStack Start route /$locale/$wsId/ai-chat/new preserves the legacy 307 redirect to /:wsId/chat under the migrated AI chat parent layout. This marks only the page artifact migrated; parent dashboard/session ownership remains legacy-owned."
     },
     "page:/:locale/:wsId/ai-chat/chatbots:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/chatbots/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/ai-chat/chatbots ports the legacy Chatbots summary page as a dynamic authenticated workspace route with fail-closed current-user auth, workspace resolution, ai_chat permission gating, route metadata, localized FeatureSummary content, and the create action wired to the canonical /$locale/$wsId/ai-chat/my-chatbots/new route instead of the legacy /:wsId/chat alias. This marks only the page artifact migrated; parent dashboard and AI chat session/provider ownership remains legacy-owned."
+      "note": "TanStack Start route /$locale/$wsId/ai-chat/chatbots ports the legacy Chatbots summary page as a dynamic authenticated workspace route under the migrated AI chat parent layout, with fail-closed current-user auth, workspace resolution, ai_chat permission gating, route metadata, localized FeatureSummary content, and the create action wired to the canonical /$locale/$wsId/ai-chat/my-chatbots/new route instead of the legacy /:wsId/chat alias. This marks only the page artifact migrated; parent dashboard/session ownership remains legacy-owned."
     },
     "page:/:locale/:wsId/ai-chat/my-chatbots:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/page.tsx": {
       "status": "migrated",
@@ -1082,12 +1087,12 @@
     "layout:/:locale/:wsId/ai-chat/my-chatbots/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/ai-chat/my-chatbots/new defines the legacy static New metadata through createPageHead. This marks only the metadata layout artifact migrated; parent dashboard and AI chat session/provider ownership remains legacy-owned."
+      "note": "TanStack Start route /$locale/$wsId/ai-chat/my-chatbots/new defines the legacy static New metadata through createPageHead under the migrated AI chat parent layout. This marks only the metadata layout artifact migrated; parent dashboard/session ownership remains legacy-owned."
     },
     "page:/:locale/:wsId/ai-chat/my-chatbots/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/my-chatbots/new/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/ai-chat/my-chatbots/new ports the legacy client-only chatbot form with the same local validation and submit toast behavior, without adding protected data access. Parent dashboard and AI chat session/provider ownership remains legacy-owned."
+      "note": "TanStack Start route /$locale/$wsId/ai-chat/my-chatbots/new ports the legacy client-only chatbot form with the same local validation and submit toast behavior, without adding protected data access. Parent dashboard/session ownership remains legacy-owned."
     },
     "page:/:locale/:wsId/billing/success:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx": {
       "status": "migrated",
