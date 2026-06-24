@@ -441,10 +441,13 @@ fn path_segments(path: &str) -> Vec<&str> {
 // Mirrors `z.guid()`: a canonical 8-4-4-4-12 hex UUID literal.
 fn is_uuid_literal(value: &str) -> bool {
     value.len() == 36
-        && value.chars().enumerate().all(|(index, character)| match index {
-            8 | 13 | 18 | 23 => character == '-',
-            _ => character.is_ascii_hexdigit(),
-        })
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, character)| match index {
+                8 | 13 | 18 | 23 => character == '-',
+                _ => character.is_ascii_hexdigit(),
+            })
 }
 
 fn is_success_status(status: u16) -> bool {

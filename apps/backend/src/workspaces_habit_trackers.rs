@@ -266,11 +266,7 @@ async fn build_list_response(
     }))
 }
 
-fn resolve_scope_user_id(
-    members: &[Member],
-    viewer_id: &str,
-    query: &ListQuery,
-) -> Option<String> {
+fn resolve_scope_user_id(members: &[Member], viewer_id: &str, query: &ListQuery) -> Option<String> {
     match query.scope {
         Scope::Team => None,
         Scope::Member => {
@@ -517,8 +513,16 @@ fn map_tracker_row(row: TrackerRow) -> HabitTracker {
         created_by: row.created_by.as_str().map(str::to_owned),
         is_active: row.is_active != Value::Bool(false),
         archived_at: row.archived_at.as_str().map(str::to_owned),
-        created_at: row.created_at.as_str().map(str::to_owned).unwrap_or_default(),
-        updated_at: row.updated_at.as_str().map(str::to_owned).unwrap_or_default(),
+        created_at: row
+            .created_at
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_default(),
+        updated_at: row
+            .updated_at
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_default(),
     }
 }
 
@@ -606,7 +610,10 @@ async fn list_habit_tracker_members(
             .display_name
             .as_deref()
             .filter(|value| !value.is_empty())
-            .or(workspace_user.email.as_deref().filter(|value| !value.is_empty()))
+            .or(workspace_user
+                .email
+                .as_deref()
+                .filter(|value| !value.is_empty()))
             .unwrap_or(platform_id)
             .to_owned();
 
@@ -832,7 +839,8 @@ fn normalize_field_schema(input: &Value) -> Value {
             continue;
         }
         let type_str = field.get("type").and_then(Value::as_str).unwrap_or("");
-        let type_value = if ["boolean", "number", "duration", "text", "select"].contains(&type_str) {
+        let type_value = if ["boolean", "number", "duration", "text", "select"].contains(&type_str)
+        {
             type_str
         } else {
             "number"
@@ -876,10 +884,7 @@ fn normalize_quick_add_values(input: &Value) -> Vec<f64> {
     let Some(array) = input.as_array() else {
         return Vec::new();
     };
-    array
-        .iter()
-        .filter_map(value_to_finite_number)
-        .collect()
+    array.iter().filter_map(value_to_finite_number).collect()
 }
 
 fn normalize_composer_config(input: &Value) -> Value {
@@ -1193,7 +1198,8 @@ fn current_period_window(weekly: bool) -> PeriodWindow {
 fn enumerate_period_windows(start_date: &str, end_date: &str, weekly: bool) -> Vec<PeriodWindow> {
     let mut windows = Vec::new();
     if weekly {
-        let mut cursor = parse_date_key_days(&get_period_window_for_date(start_date, true).period_start);
+        let mut cursor =
+            parse_date_key_days(&get_period_window_for_date(start_date, true).period_start);
         let end = parse_date_key_days(&get_period_window_for_date(end_date, true).period_start);
         while cursor <= end {
             windows.push(PeriodWindow {
@@ -1239,9 +1245,9 @@ fn get_entry_numeric_value(tracker: &HabitTracker, entry: &HabitEntry) -> f64 {
             .filter(|value| !value.is_null())
             .cloned()
             .or_else(|| {
-                entry
-                    .primary_value
-                    .map(|value| Value::Number(serde_json::Number::from_f64(value).unwrap_or_else(|| 0.into())))
+                entry.primary_value.map(|value| {
+                    Value::Number(serde_json::Number::from_f64(value).unwrap_or_else(|| 0.into()))
+                })
             });
         return match raw {
             Some(Value::Bool(flag)) => {
@@ -1253,11 +1259,7 @@ fn get_entry_numeric_value(tracker: &HabitTracker, entry: &HabitEntry) -> f64 {
             }
             Some(Value::Number(number)) => {
                 let value = number.as_f64().unwrap_or(0.0);
-                if value > 0.0 {
-                    1.0
-                } else {
-                    0.0
-                }
+                if value > 0.0 { 1.0 } else { 0.0 }
             }
             Some(other) => {
                 // String(rawValue).length > 0
@@ -1304,7 +1306,8 @@ fn build_metric_series(
     let windows = enumerate_period_windows(&start_date, &current_period.period_end, weekly);
 
     // period_start -> (total, entry_count) preserving the JS aggregation modes.
-    let mut totals: std::collections::HashMap<String, (f64, f64)> = std::collections::HashMap::new();
+    let mut totals: std::collections::HashMap<String, (f64, f64)> =
+        std::collections::HashMap::new();
     let mut action_by_period: std::collections::HashMap<String, (bool, bool)> =
         std::collections::HashMap::new();
 
@@ -1575,12 +1578,12 @@ fn build_member_summary(
 
 fn member_summary_json(summary: &MemberSummary, members: &[Member]) -> Value {
     let mut object = serde_json::Map::new();
-    object.insert("member".to_owned(), member_json(&members[summary.member_index]));
-    object.insert("total".to_owned(), json_number(summary.total));
     object.insert(
-        "entry_count".to_owned(),
-        json_number(summary.entry_count),
+        "member".to_owned(),
+        member_json(&members[summary.member_index]),
     );
+    object.insert("total".to_owned(), json_number(summary.total));
+    object.insert("entry_count".to_owned(), json_number(summary.entry_count));
     object.insert(
         "current_period_total".to_owned(),
         json_number(summary.current_period_total),
@@ -1698,7 +1701,10 @@ fn build_team_summary(member_summaries: &[MemberSummary]) -> Value {
         1
     } as f64;
 
-    let total_entries: f64 = member_summaries.iter().map(|summary| summary.entry_count).sum();
+    let total_entries: f64 = member_summaries
+        .iter()
+        .map(|summary| summary.entry_count)
+        .sum();
     let total_value: f64 = member_summaries.iter().map(|summary| summary.total).sum();
     let average_consistency = round_to_one(
         member_summaries
@@ -1875,7 +1881,10 @@ fn apply_latest_stats(summary: &mut MemberSummary, latest_stat: Option<&LatestSt
     summary.latest_values = Some(latest_values_value(stat));
 }
 
-fn apply_latest_stats_fallback(summary: &mut FallbackMemberSummary, latest_stat: Option<&LatestStat>) {
+fn apply_latest_stats_fallback(
+    summary: &mut FallbackMemberSummary,
+    latest_stat: Option<&LatestStat>,
+) {
     let Some(stat) = latest_stat else {
         return;
     };
@@ -1927,7 +1936,10 @@ async fn normalize_workspace_id(
         return Ok(ROOT_WORKSPACE_ID.to_owned());
     }
 
-    if raw_ws_id.trim().eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG) {
+    if raw_ws_id
+        .trim()
+        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
+    {
         return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
     }
 

@@ -150,17 +150,13 @@ async fn secrets_response(
     // permission" (which here surfaces as a 403 Permission denied, matching the
     // legacy fall-through to the denied branch).
 
-    let workspace_permissions = match effective_workspace_permissions(
-        contact_data,
-        outbound,
-        &resolved_ws_id,
-        &user_id,
-    )
-    .await
-    {
-        Ok(permissions) => permissions,
-        Err(()) => WorkspaceAccess::none(),
-    };
+    let workspace_permissions =
+        match effective_workspace_permissions(contact_data, outbound, &resolved_ws_id, &user_id)
+            .await
+        {
+            Ok(permissions) => permissions,
+            Err(()) => WorkspaceAccess::none(),
+        };
     let root_permissions =
         match effective_workspace_permissions(contact_data, outbound, ROOT_WORKSPACE_ID, &user_id)
             .await

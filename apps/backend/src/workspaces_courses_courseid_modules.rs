@@ -100,7 +100,9 @@ async fn course_modules_response(
 
     // The legacy route returns the raw row array verbatim. Forward the PostgREST
     // JSON array unchanged; default to an empty array on a parse miss.
-    let body = response.json::<Value>().unwrap_or_else(|_| Value::Array(Vec::new()));
+    let body = response
+        .json::<Value>()
+        .unwrap_or_else(|_| Value::Array(Vec::new()));
 
     no_store_response(json_response(200, body))
 }

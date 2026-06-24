@@ -206,18 +206,13 @@ async fn tasks_response(
         return Some(error_response(401, "Unauthorized"));
     };
 
-    let normalized_ws_id = match normalize_workspace_id(
-        contact_data,
-        outbound,
-        raw_ws_id,
-        &user_id,
-        &access_token,
-    )
-    .await
-    {
-        Ok(ws_id) => ws_id,
-        Err(()) => return Some(error_response(500, "Failed to verify workspace membership")),
-    };
+    let normalized_ws_id =
+        match normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
+            .await
+        {
+            Ok(ws_id) => ws_id,
+            Err(()) => return Some(error_response(500, "Failed to verify workspace membership")),
+        };
 
     let board_id = query_value(url, "boardId");
     let list_id = query_value(url, "listId");
@@ -256,7 +251,9 @@ async fn tasks_response(
     // Parse pagination + simple filters.
     let limit = parse_limit(query_value(url, "limit").as_deref());
     let offset = parse_offset(query_value(url, "offset").as_deref());
-    let search_query = query_value(url, "q").map(|v| v.trim().to_owned()).filter(|v| !v.is_empty());
+    let search_query = query_value(url, "q")
+        .map(|v| v.trim().to_owned())
+        .filter(|v| !v.is_empty());
     let include_count = query_value(url, "includeCount").as_deref() == Some("true");
     let include_relationship_summary =
         query_value(url, "includeRelationshipSummary").as_deref() != Some("false");
@@ -271,8 +268,12 @@ async fn tasks_response(
     let has_due_date = query_value(url, "hasDueDate").as_deref() == Some("true");
     let include_archived_boards =
         query_value(url, "includeArchivedBoards").as_deref() == Some("true");
-    let due_date_from = query_value(url, "dueDateFrom").map(|v| v.trim().to_owned()).filter(|v| !v.is_empty());
-    let due_date_to = query_value(url, "dueDateTo").map(|v| v.trim().to_owned()).filter(|v| !v.is_empty());
+    let due_date_from = query_value(url, "dueDateFrom")
+        .map(|v| v.trim().to_owned())
+        .filter(|v| !v.is_empty());
+    let due_date_to = query_value(url, "dueDateTo")
+        .map(|v| v.trim().to_owned())
+        .filter(|v| !v.is_empty());
     let estimation_min = parse_estimation_bound(query_value(url, "estimationMin").as_deref());
     let estimation_max = parse_estimation_bound(query_value(url, "estimationMax").as_deref());
 
@@ -283,7 +284,10 @@ async fn tasks_response(
             "task_lists.workspace_boards.ws_id",
             format!("eq.{normalized_ws_id}"),
         ),
-        ("task_lists.workspace_boards.deleted_at", "is.null".to_owned()),
+        (
+            "task_lists.workspace_boards.deleted_at",
+            "is.null".to_owned(),
+        ),
     ];
 
     match include_deleted_mode {
@@ -360,11 +364,11 @@ async fn tasks_response(
         return Some(error_response(500, "Internal server error"));
     };
 
-    let response = match send_service_role_get(contact_data, outbound, &rest_url, include_count).await
-    {
-        Ok(response) => response,
-        Err(()) => return Some(error_response(500, "Internal server error")),
-    };
+    let response =
+        match send_service_role_get(contact_data, outbound, &rest_url, include_count).await {
+            Ok(response) => response,
+            Err(()) => return Some(error_response(500, "Internal server error")),
+        };
 
     if !(200..300).contains(&response.status) {
         return Some(error_response(500, "Internal server error"));
@@ -395,7 +399,12 @@ async fn tasks_response(
     // Scheduling-settings overlay (per-user).
     match load_scheduling_settings(contact_data, outbound, &task_ids, &user_id).await {
         Ok(settings) => apply_scheduling_settings(&mut tasks, &settings),
-        Err(()) => return Some(error_response(500, "Failed to load task scheduling settings")),
+        Err(()) => {
+            return Some(error_response(
+                500,
+                "Failed to load task scheduling settings",
+            ));
+        }
     }
 
     // Relationship summary overlay.
@@ -435,7 +444,10 @@ async fn normalize_workspace_id(
         return Ok(ROOT_WORKSPACE_ID.to_owned());
     }
 
-    if raw_ws_id.trim().eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG) {
+    if raw_ws_id
+        .trim()
+        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
+    {
         return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
     }
 
@@ -636,7 +648,9 @@ async fn load_scheduling_settings(
     if !(200..300).contains(&response.status) {
         return Err(());
     }
-    response.json::<Vec<SchedulingSettingsRow>>().map_err(|_| ())
+    response
+        .json::<Vec<SchedulingSettingsRow>>()
+        .map_err(|_| ())
 }
 
 fn apply_scheduling_settings(tasks: &mut [Value], settings: &[SchedulingSettingsRow]) {
@@ -666,11 +680,15 @@ fn apply_scheduling_settings(tasks: &mut [Value], settings: &[SchedulingSettings
         );
         map.insert(
             "min_split_duration_minutes".to_owned(),
-            row.min_split_duration_minutes.clone().unwrap_or(Value::Null),
+            row.min_split_duration_minutes
+                .clone()
+                .unwrap_or(Value::Null),
         );
         map.insert(
             "max_split_duration_minutes".to_owned(),
-            row.max_split_duration_minutes.clone().unwrap_or(Value::Null),
+            row.max_split_duration_minutes
+                .clone()
+                .unwrap_or(Value::Null),
         );
         map.insert(
             "calendar_hours".to_owned(),
@@ -724,7 +742,11 @@ async fn load_relationship_edges(
         if !(200..300).contains(&response.status) {
             return Err(());
         }
-        edges.extend(response.json::<Vec<RelationshipEdgeRow>>().map_err(|_| ())?);
+        edges.extend(
+            response
+                .json::<Vec<RelationshipEdgeRow>>()
+                .map_err(|_| ())?,
+        );
     }
     Ok(edges)
 }
@@ -746,8 +768,10 @@ async fn build_relationship_summary(
         return Ok(summaries);
     }
 
-    let mut edges = load_relationship_edges(contact_data, outbound, "source_task_id", task_ids).await?;
-    edges.extend(load_relationship_edges(contact_data, outbound, "target_task_id", task_ids).await?);
+    let mut edges =
+        load_relationship_edges(contact_data, outbound, "source_task_id", task_ids).await?;
+    edges
+        .extend(load_relationship_edges(contact_data, outbound, "target_task_id", task_ids).await?);
 
     let counterpart_ids: Vec<String> = {
         let mut set = HashSet::new();

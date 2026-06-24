@@ -188,12 +188,17 @@ mod workspaces_chat_directory;
 mod workspaces_chat_realtime;
 mod workspaces_chat_search;
 mod workspaces_course_modules_quiz_sets;
+mod workspaces_courses_courseid_modules;
+mod workspaces_cron_jobs;
 mod workspaces_datasets_full;
 mod workspaces_deleted;
 mod workspaces_education_attempts;
 mod workspaces_education_attempts_attemptid;
 mod workspaces_external_projects;
 mod workspaces_external_projects_delivery;
+mod workspaces_external_projects_members_roles;
+mod workspaces_external_projects_members_roles_default;
+mod workspaces_external_projects_members_roles_roleid;
 mod workspaces_external_projects_members_roles_roleid_members;
 mod workspaces_external_projects_storage_analytics;
 mod workspaces_external_projects_sync_snapshot;
@@ -215,6 +220,7 @@ mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms_export;
 mod workspaces_forms_responses_export;
 mod workspaces_forms_share_link;
+mod workspaces_habit_trackers;
 mod workspaces_habits_habitid_schedule_history;
 mod workspaces_habits_habitid_stats;
 mod workspaces_infrastructure_realtime_analytics;
@@ -222,6 +228,7 @@ mod workspaces_infrastructure_realtime_analytics_summary;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_audit_logs;
+mod workspaces_inventory_option_templates;
 mod workspaces_inventory_overview;
 mod workspaces_inventory_product_form_options;
 mod workspaces_inventory_sales;
@@ -230,11 +237,13 @@ mod workspaces_invitations;
 mod workspaces_invite_status;
 mod workspaces_list;
 mod workspaces_mail;
+mod workspaces_mail_mailboxes_mailboxid_members;
 mod workspaces_mail_mailboxes_messages;
 mod workspaces_meetings_meetingid_recordings;
 mod workspaces_meetings_recordings_play;
 mod workspaces_members;
 mod workspaces_members_enhanced;
+mod workspaces_mind_boards;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
 mod workspaces_posts_bootstrap;
@@ -244,6 +253,7 @@ mod workspaces_products_count;
 mod workspaces_products_options;
 mod workspaces_promotions_count;
 mod workspaces_quiz_sets_quizzes;
+mod workspaces_secrets;
 mod workspaces_settings_approvals_pending_summary;
 mod workspaces_settings_permissions_setup_status;
 mod workspaces_storage_analytics;
@@ -256,8 +266,10 @@ mod workspaces_tags_stats;
 mod workspaces_tags_tagid;
 mod workspaces_task_boards_boardid_viewable_members;
 mod workspaces_task_plans_digest;
+mod workspaces_tasks;
 mod workspaces_tasks_history;
 mod workspaces_tasks_snapshot;
+mod workspaces_tasks_taskid;
 mod workspaces_tasks_taskid_history;
 mod workspaces_tasks_taskid_relationships;
 mod workspaces_tasks_taskid_schedule_history;
@@ -280,6 +292,7 @@ mod workspaces_transactions_infinite;
 mod workspaces_transactions_periods;
 mod workspaces_transactions_spending_trends;
 mod workspaces_transactions_stats;
+mod workspaces_transactions_transactionid;
 mod workspaces_transactions_transactionid_tags;
 mod workspaces_tulearn_courses;
 mod workspaces_tulearn_courses_2;
@@ -2576,6 +2589,107 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks::handle_workspaces_tasks_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_members_roles::handle_workspaces_external_projects_members_roles_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_mail_mailboxes_mailboxid_members::handle_workspaces_mail_mailboxes_mailboxid_members_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_cron_jobs::handle_workspaces_cron_jobs_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_courses_courseid_modules::handle_workspaces_courses_courseid_modules_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_transactions_transactionid::handle_workspaces_transactions_transactionid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_inventory_option_templates::handle_workspaces_inventory_option_templates_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_mind_boards::handle_workspaces_mind_boards_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tasks_taskid::handle_workspaces_tasks_taskid_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_secrets::handle_workspaces_secrets_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_members_roles_default::handle_workspaces_external_projects_members_roles_default_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_external_projects_members_roles_roleid::handle_workspaces_external_projects_members_roles_roleid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_habit_trackers::handle_workspaces_habit_trackers_route(config, request, outbound)
+            .await
     {
         return response;
     }
