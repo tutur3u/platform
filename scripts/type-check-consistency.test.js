@@ -5,7 +5,7 @@ const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const expectedTypeScriptVersion = '7.0.1-rc';
-const expectedNativePreviewVersion = '7.0.0-dev.20260614.1';
+const expectedNativePreviewVersion = '7.0.0-dev.20260622.1';
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));

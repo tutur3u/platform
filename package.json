@@ -1,7 +1,7 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.5.0",
+    "@biomejs/biome": "^2.5.1",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.1.9",
@@ -9,7 +9,7 @@
     "portless": "^0.14.0",
     "turbo": "^2.9.18",
     "typescript": "7.0.1-rc",
-    "vite": "^8.0.16",
+    "vite": "^8.1.0",
     "vitest": "4.1.9",
     "wrangler": "^4.103.0"
   },

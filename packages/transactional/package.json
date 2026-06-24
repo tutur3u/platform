@@ -21,7 +21,7 @@
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "react": "^19.2.7",
-    "react-email": "^6.6.3"
+    "react-email": "^6.6.4"
   },
   "devDependencies": {
     "@react-email/preview-server": "^5.2.10",

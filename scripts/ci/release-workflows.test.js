@@ -9,6 +9,16 @@ const {
 } = require('./workflow-config-test-helpers.js');
 
 const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
+const rootPackageJson = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
+);
+const expectedBiomeCliVersion = rootPackageJson.devDependencies[
+  '@biomejs/biome'
+].replace(/^[^\d]*/u, '');
+const expectedBiomeCliVersionPattern = expectedBiomeCliVersion.replaceAll(
+  '.',
+  '\\.'
+);
 
 test('Vercel workflows grant marker permissions and record successful runs', () => {
   for (const workflowName of vercelWorkflows) {
@@ -305,11 +315,26 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   }
 
   assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
-  assert.match(formatJob, /npx --yes @biomejs\/biome@2\.5\.0 format \. 2>&1/u);
-  assert.match(lintJob, /npx --yes @biomejs\/biome@2\.5\.0 lint \. 2>&1/u);
+  assert.match(
+    formatJob,
+    new RegExp(
+      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format \\. 2>&1`,
+      'u'
+    )
+  );
+  assert.match(
+    lintJob,
+    new RegExp(
+      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} lint \\. 2>&1`,
+      'u'
+    )
+  );
   assert.match(
     applyFormatJob,
-    /npx --yes @biomejs\/biome@2\.5\.0 format --write \./u
+    new RegExp(
+      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format --write \\.`,
+      'u'
+    )
   );
 });
 
