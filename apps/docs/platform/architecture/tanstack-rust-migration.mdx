@@ -341,7 +341,7 @@ Current inventory:
 - `1,172` route handler artifacts
 - `19` cron handlers
 - `1,550` total tracked route artifacts
-- `422` migrated artifacts, `507` terminal artifacts, and `1,043` remaining
+- `423` migrated artifacts, `508` terminal artifacts, and `1,042` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -706,6 +706,7 @@ Frontend pages now terminal:
 | `/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes/new` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, renders the legacy manual quiz creation shell, and submits through the shared TanStack Query/internal-api quiz form before returning to the locale-prefixed module quizzes route. Quiz API ownership and the module quiz list page remain separately tracked. |
 | `/:locale/logout` | `migrated` | Dynamic TanStack Start route `/$locale/logout` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, renders the legacy localized confirmation card with `from` copy, and logs out through the typed internal-api browser-session facade without raw protected app API or Supabase access in TanStack source. The underlying `POST /api/auth/logout` route remains legacy-owned until the auth backend wave. |
 | `/:locale/:wsId/infrastructure/ai-agents` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/ai-agents` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves the root-workspace and `manage_workspace_secrets` redirect gates, and renders the legacy AI Agents controls through forwarded internal-api auth plus shared TanStack Query-backed agent, channel, identity, secret, and external-thread actions. AI Agents APIs remain separately tracked for Rust backend ownership. |
+| `/:locale/:wsId/notifications` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/notifications` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, carries tab/type/scope/priority/page/pageSize search state through TanStack Router, and renders the legacy read-only notifications inbox through forwarded internal-api auth. Mark read/unread, mark all read, delete, invite actions, metadata updates, realtime subscription behavior, and entity action links remain separately tracked follow-ups. |
 
 Frontend migration candidates blocked on auth/data ownership:
 

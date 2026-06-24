@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   listAccountNotificationPreferences,
+  listNotifications,
   listWorkspaceNotificationPreferences,
   updateAccountNotificationPreferences,
   updateWorkspaceNotificationPreferences,
@@ -19,6 +20,60 @@ function getFetchInit(fetchMock: ReturnType<typeof vi.fn>) {
 }
 
 describe('notification internal-api helpers', () => {
+  it('lists notifications through the centralized API with supported filters', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        count: 1,
+        limit: 25,
+        notifications: [
+          {
+            created_at: '2026-06-24T00:00:00.000Z',
+            created_by: null,
+            data: { workspace_name: 'Workspace' },
+            entity_id: null,
+            entity_type: null,
+            expires_at: null,
+            id: 'notification-1',
+            priority: 'high',
+            read_at: null,
+            scope: 'workspace',
+            title: 'Task assigned',
+            type: 'task_assigned',
+            updated_at: '2026-06-24T00:00:00.000Z',
+            user_id: 'user-1',
+            ws_id: 'workspace 1',
+          },
+        ],
+        offset: 50,
+      })
+    );
+
+    const result = await listNotifications(
+      {
+        limit: 25,
+        offset: 50,
+        priority: 'high',
+        readOnly: false,
+        scope: 'workspace',
+        type: 'task_assigned',
+        unreadOnly: true,
+        wsId: 'workspace 1',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(result.notifications).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/notifications?limit=25&offset=50&priority=high&readOnly=false&scope=workspace&type=task_assigned&unreadOnly=true&wsId=workspace+1',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('reads workspace preferences with the workspace query parameter', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

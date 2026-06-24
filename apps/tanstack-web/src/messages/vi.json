@@ -10305,6 +10305,12 @@
     "empty_unread_description": "Bạn đã đọc tất cả thông báo. Tuyệt vời!",
     "empty_unread_title": "Không có thông báo chưa đọc",
     "empty-archive": "Chưa có thông báo đã lưu trữ.",
+    "filter_all_priorities": "Tất cả độ ưu tiên",
+    "filter_all_scopes": "Tất cả phạm vi",
+    "filter_all_types": "Tất cả loại",
+    "filter_priority": "Độ ưu tiên",
+    "filter_scope": "Phạm vi",
+    "filter_type": "Loại",
     "go": "Đi",
     "go_to_page": "Đi đến trang",
     "inbox": "Hộp thư",
@@ -10328,6 +10334,19 @@
     "old_version": "Trước",
     "page": "Trang",
     "previous": "Trước",
+    "priorities": {
+      "high": "Cao",
+      "low": "Thấp",
+      "medium": "Trung bình",
+      "normal": "Bình thường",
+      "urgent": "Khẩn cấp"
+    },
+    "scope_label": "Phạm vi",
+    "scopes": {
+      "system": "Hệ thống",
+      "user": "Tài khoản",
+      "workspace": "Không gian làm việc"
+    },
     "settings": {
       "account-status": {
         "all-disabled-description": "Bạn đã tắt tất cả thông báo cấp tài khoản. Cài đặt thông báo không gian làm việc sẽ không hoạt động cho đến khi bạn bật ít nhất một kênh thông báo tài khoản.",
@@ -10459,6 +10478,10 @@
     "types": {
       "account_update": "Cập nhật tài khoản",
       "deadline_reminder": "Nhắc nhở hạn chót",
+      "post_approved": "Bài viết được phê duyệt",
+      "post_rejected": "Bài viết bị từ chối",
+      "report_approved": "Báo cáo được phê duyệt",
+      "report_rejected": "Báo cáo bị từ chối",
       "security_alert": "Cảnh báo bảo mật",
       "system_announcement": "Thông báo hệ thống",
       "task_assigned": "Nhiệm vụ được giao",

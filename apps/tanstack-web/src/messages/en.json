@@ -10305,6 +10305,12 @@
     "empty_unread_description": "You've read all your notifications. Nice work!",
     "empty_unread_title": "No unread notifications",
     "empty-archive": "No archived notifications yet.",
+    "filter_all_priorities": "All priorities",
+    "filter_all_scopes": "All scopes",
+    "filter_all_types": "All types",
+    "filter_priority": "Priority",
+    "filter_scope": "Scope",
+    "filter_type": "Type",
     "go": "Go",
     "go_to_page": "Go to page",
     "inbox": "Inbox",
@@ -10328,6 +10334,19 @@
     "old_version": "Previous",
     "page": "Page",
     "previous": "Previous",
+    "priorities": {
+      "high": "High",
+      "low": "Low",
+      "medium": "Medium",
+      "normal": "Normal",
+      "urgent": "Urgent"
+    },
+    "scope_label": "Scope",
+    "scopes": {
+      "system": "System",
+      "user": "Account",
+      "workspace": "Workspace"
+    },
     "settings": {
       "account-status": {
         "all-disabled-description": "You have disabled all account-level notifications. Workspace notification settings will not function until you enable at least one account notification channel.",
@@ -10459,6 +10478,10 @@
     "types": {
       "account_update": "Account Update",
       "deadline_reminder": "Deadline Reminder",
+      "post_approved": "Post Approved",
+      "post_rejected": "Post Rejected",
+      "report_approved": "Report Approved",
+      "report_rejected": "Report Rejected",
       "security_alert": "Security Alert",
       "system_announcement": "System Announcement",
       "task_assigned": "Task Assigned",

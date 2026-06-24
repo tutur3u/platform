@@ -40,7 +40,49 @@ export type AccountNotificationEventType =
   | 'security_alerts'
   | 'workspace_activity';
 
+export type NotificationType =
+  | WorkspaceNotificationEventType
+  | 'account_update'
+  | 'post_approved'
+  | 'post_rejected'
+  | 'report_approved'
+  | 'report_rejected'
+  | 'security_alert'
+  | 'system_announcement';
+
+export type NotificationPriority = 'high' | 'low' | 'medium' | 'urgent';
+
 export type NotificationPreferenceScope = 'system' | 'user' | 'workspace';
+
+export type NotificationActor = {
+  avatar_url: string | null;
+  display_name: string | null;
+  id: string;
+};
+
+export type NotificationData = Record<string, unknown> & {
+  workspace_id?: string | null;
+  workspace_name?: string | null;
+};
+
+export type Notification = {
+  created_at: string;
+  created_by: string | null;
+  data: NotificationData | null;
+  entity_id: string | null;
+  entity_type: string | null;
+  expires_at: string | null;
+  id: string;
+  priority: NotificationPriority | null;
+  read_at: string | null;
+  scope: NotificationPreferenceScope;
+  title: string;
+  type: NotificationType;
+  updated_at: string;
+  user_id: string | null;
+  ws_id: string | null;
+  actor?: NotificationActor | null;
+};
 
 export type NotificationPreferenceBase<
   EventType extends string,
@@ -102,6 +144,45 @@ export type AccountNotificationPreferencesResponse = {
 export type NotificationPreferencesMutationResponse = {
   success: true;
 };
+
+export type ListNotificationsParams = {
+  limit?: number;
+  offset?: number;
+  priority?: NotificationPriority;
+  readOnly?: boolean;
+  scope?: NotificationPreferenceScope;
+  type?: NotificationType;
+  unreadOnly?: boolean;
+  wsId?: string | null;
+};
+
+export type ListNotificationsResponse = {
+  count: number;
+  limit: number;
+  notifications: Notification[];
+  offset: number;
+};
+
+export async function listNotifications(
+  params: ListNotificationsParams = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<ListNotificationsResponse>('/api/v1/notifications', {
+    cache: 'no-store',
+    query: {
+      limit: params.limit,
+      offset: params.offset,
+      priority: params.priority,
+      readOnly: params.readOnly,
+      scope: params.scope,
+      type: params.type,
+      unreadOnly: params.unreadOnly,
+      wsId: params.wsId,
+    },
+  });
+}
 
 export async function listWorkspaceNotificationPreferences(
   workspaceId: string,

@@ -1629,6 +1629,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/platform/external-projects preserves the legacy 307 redirect to the CMS internal admin route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/notifications:apps/web/src/app/[locale]/(dashboard)/[wsId]/notifications/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/notifications ports the legacy authenticated notifications inbox as a dynamic no-store read-only dashboard route with current-user auth, workspace resolution, URL-backed tab/type/scope/priority/page/pageSize filters, and notification data loaded through a typed internal-api facade instead of direct Supabase reads or raw browser /api fetches. Mark read/unread, mark all read, delete, invite accept/decline, metadata updates, realtime subscription behavior, and entity action links remain separately tracked for later TanStack/internal-api or Rust-backed migration slices."
+    },
     "page:/:locale/:wsId/settings/infrastructure/app-coordination:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/infrastructure/app-coordination/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
