@@ -1859,6 +1859,16 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy route.ts file is empty and exports no HTTP methods, so there is no runtime behavior to port."
     },
+    "layout:/:locale/ai/chats/:chatId:apps/web/src/app/[locale]/(marketing)/ai/chats/[chatId]/layout.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ai/chats/$chatId owns the public AI chat metadata through createPageHead with loader-derived title and summary. The route intentionally folds the legacy metadata layout into the page route so missing or private chats still fail closed through the same public-chat server loader."
+    },
+    "page:/:locale/ai/chats/:chatId:apps/web/src/app/[locale]/(marketing)/ai/chats/[chatId]/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/ai/chats/$chatId ports the legacy public AI conversation page as a read-only public route. It fetches only ai_chats.is_public=true rows and their ordered public messages through a Start server function backed by Supabase REST, hydrates the result with TanStack Query, preserves not-found behavior for missing/private chats, and avoids the dashboard streaming chat client plus its raw /api/ai/chat mutation paths."
+    },
     "layout:/:locale/documents/:documentId:apps/web/src/app/[locale]/(marketing)/documents/[documentId]/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

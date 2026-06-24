@@ -18,24 +18,12 @@
         "acceptedRemoval": 1,
         "key": "page",
         "label": "page",
-        "legacyNext": 90,
-        "migrated": 215,
-        "percentComplete": 70.59,
-        "remaining": 90,
-        "terminal": 216,
+        "legacyNext": 89,
+        "migrated": 216,
+        "percentComplete": 70.92,
+        "remaining": 89,
+        "terminal": 217,
         "total": 306,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 1,
-        "key": "layout",
-        "label": "layout",
-        "legacyNext": 17,
-        "migrated": 49,
-        "percentComplete": 74.63,
-        "remaining": 17,
-        "terminal": 50,
-        "total": 67,
         "unknownStatus": 0
       },
       {
@@ -48,6 +36,18 @@
         "remaining": 17,
         "terminal": 2,
         "total": 19,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 1,
+        "key": "layout",
+        "label": "layout",
+        "legacyNext": 16,
+        "migrated": 50,
+        "percentComplete": 76.12,
+        "remaining": 16,
+        "terminal": 51,
+        "total": 67,
         "unknownStatus": 0
       },
       {
@@ -128,11 +128,11 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 107,
-        "migrated": 269,
-        "percentComplete": 71.69,
-        "remaining": 107,
-        "terminal": 271,
+        "legacyNext": 105,
+        "migrated": 271,
+        "percentComplete": 72.22,
+        "remaining": 105,
+        "terminal": 273,
         "total": 378,
         "unknownStatus": 0
       }
@@ -323,11 +323,11 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1049,
-      "migrated": 416,
-      "percentComplete": 32.32,
-      "remaining": 1049,
-      "terminal": 501,
+      "legacyNext": 1047,
+      "migrated": 418,
+      "percentComplete": 32.45,
+      "remaining": 1047,
+      "terminal": 503,
       "total": 1550,
       "unknownStatus": 0
     }
@@ -11266,7 +11266,7 @@
       "methods": [],
       "routePath": "/:locale/ai/chats/:chatId",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/ai/chats/[chatId]/layout.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13795,7 +13795,7 @@
       "methods": [],
       "routePath": "/:locale/ai/chats/:chatId",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/ai/chats/[chatId]/page.tsx",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {

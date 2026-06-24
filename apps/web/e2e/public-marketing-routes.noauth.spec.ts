@@ -205,6 +205,9 @@ const staticMarketingRoutes = [
 
 const dynamicNotFoundRoutes = [
   {
+    path: `/${DEFAULT_LOCALE}/ai/chats/__e2e_missing_chat_id__`,
+  },
+  {
     path: `/${DEFAULT_LOCALE}/changelog/__e2e_missing_changelog_slug__`,
   },
   {
