@@ -28,6 +28,7 @@ mod calendar_auth_provider_calendars;
 mod changelog;
 mod cms_workspaces;
 mod contact;
+mod course;
 mod crawlers;
 #[cfg(test)]
 mod cron_monitoring_test;
@@ -140,6 +141,7 @@ mod user_identities;
 mod user_identities_test;
 mod user_profile;
 mod users_me_identity_link;
+mod users_me_tasks;
 mod users_me_tasks_taskid;
 mod workspace_education_access;
 mod workspace_external_projects_members;
@@ -168,6 +170,7 @@ mod workspace_users_me;
 mod workspaces;
 mod workspaces_2;
 mod workspaces_3;
+mod workspaces_ai_credits;
 mod workspaces_api_keys_keyid_usage_logs;
 mod workspaces_billing;
 mod workspaces_boards;
@@ -179,6 +182,7 @@ mod workspaces_calendar_schedulable_tasks;
 mod workspaces_calendar_sync_status;
 mod workspaces_categories;
 mod workspaces_chat_conversations_attachments;
+mod workspaces_chat_conversations_conversationid_ai_observability;
 mod workspaces_chat_conversations_shared_content;
 mod workspaces_chat_directory;
 mod workspaces_chat_realtime;
@@ -211,6 +215,7 @@ mod workspaces_forms_share_link;
 mod workspaces_habits_habitid_schedule_history;
 mod workspaces_habits_habitid_stats;
 mod workspaces_infrastructure_realtime_analytics;
+mod workspaces_infrastructure_realtime_analytics_summary;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_audit_logs;
@@ -256,6 +261,7 @@ mod workspaces_time_tracking_analytics;
 mod workspaces_time_tracking_requests_activity;
 mod workspaces_time_tracking_requests_users;
 mod workspaces_time_tracking_sessions_breaks_active;
+mod workspaces_time_tracking_stats_period;
 mod workspaces_time_tracking_tasks;
 mod workspaces_time_tracking_templates;
 mod workspaces_transactions_category_breakdown;
@@ -271,6 +277,7 @@ mod workspaces_tulearn_home;
 mod workspaces_tulearn_marks;
 mod workspaces_tulearn_reports;
 mod workspaces_tutoring_export;
+mod workspaces_tutoring_queue;
 mod workspaces_user_groups_activity_logs;
 mod workspaces_user_groups_count;
 mod workspaces_user_groups_linked_products;
@@ -290,6 +297,7 @@ mod workspaces_users_groups;
 mod workspaces_users_referral_discounts;
 mod workspaces_users_reports_groups;
 mod workspaces_users_reports_groups_bulk_export;
+mod workspaces_users_reports_groups_groupid_dashboard;
 mod workspaces_users_reports_logs;
 mod workspaces_users_userid_user_groups;
 mod workspaces_wallets_checkpoints_history;
@@ -2401,6 +2409,56 @@ pub(crate) async fn handle_backend_request(
             config, request, outbound,
         )
         .await
+    {
+        return response;
+    }
+
+    if let Some(response) = course::handle_course_route(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) =
+        users_me_tasks::handle_users_me_tasks_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_ai_credits::handle_workspaces_ai_credits_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_chat_conversations_conversationid_ai_observability::handle_workspaces_chat_conversations_conversationid_ai_observability_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_infrastructure_realtime_analytics_summary::handle_workspaces_infrastructure_realtime_analytics_summary_route(config, request, outbound).await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_time_tracking_stats_period::handle_workspaces_time_tracking_stats_period_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_tutoring_queue::handle_workspaces_tutoring_queue_route(config, request, outbound)
+            .await
+    {
+        return response;
+    }
+
+    if let Some(response) =
+        workspaces_users_reports_groups_groupid_dashboard::handle_workspaces_users_reports_groups_groupid_dashboard_route(config, request, outbound).await
     {
         return response;
     }
