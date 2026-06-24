@@ -16743,6 +16743,11 @@
     "send": "Gửi thư"
   },
   "workspace-migrations": {
+    "retired_badge": "Đã ngừng",
+    "retired_description": "Bảng điều khiển chuyển dữ liệu bên ngoài cũ đã được ngừng trong đợt chuyển sang TanStack và Rust. Các batch import có quyền admin giờ chỉ nằm trong migration đã review, endpoint do backend sở hữu, hoặc runbook vận hành.",
+    "retired_guard_description": "Các helper batch migration cũ đã bị tắt vĩnh viễn và trả về MIGRATION_DISABLED từ Rust backend thay vì mở các đường đọc/ghi admin.",
+    "retired_guard_title": "Helper migration đã bị tắt",
+    "retired_title": "Không còn chạy chuyển dữ liệu workspace từ dashboard này",
     "schedule_migration_legacy": "Ngày học cũ của lớp sẽ được chuyển thành phiên nhóm người dùng lúc 7:00-8:00 sáng GMT+7. Dòng lớp không còn giữ mảng sessions cũ.",
     "schedule_migration_title": "Chuyển dữ liệu lịch nhóm người dùng",
     "schedule_migration_tuturuuu": "Chuyển dữ liệu Tuturuuu sang Tuturuuu sẽ giữ nguyên giờ học chi tiết, múi giờ, lịch lặp lại, thẻ, mô tả Markdown và liên kết tệp."

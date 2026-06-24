@@ -15,14 +15,14 @@
         "unknownStatus": 0
       },
       {
-        "acceptedRemoval": 0,
+        "acceptedRemoval": 1,
         "key": "page",
         "label": "page",
-        "legacyNext": 97,
+        "legacyNext": 96,
         "migrated": 209,
-        "percentComplete": 68.3,
-        "remaining": 97,
-        "terminal": 209,
+        "percentComplete": 68.63,
+        "remaining": 96,
+        "terminal": 210,
         "total": 306,
         "unknownStatus": 0
       },
@@ -125,14 +125,14 @@
         "unknownStatus": 0
       },
       {
-        "acceptedRemoval": 1,
+        "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 114,
+        "legacyNext": 113,
         "migrated": 263,
-        "percentComplete": 69.84,
-        "remaining": 114,
-        "terminal": 264,
+        "percentComplete": 70.11,
+        "remaining": 113,
+        "terminal": 265,
         "total": 378,
         "unknownStatus": 0
       }
@@ -320,14 +320,14 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 84,
+      "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1056,
+      "legacyNext": 1055,
       "migrated": 410,
-      "percentComplete": 31.87,
-      "remaining": 1056,
-      "terminal": 494,
+      "percentComplete": 31.94,
+      "remaining": 1055,
+      "terminal": 495,
       "total": 1550,
       "unknownStatus": 0
     }
@@ -13048,7 +13048,7 @@
       "methods": [],
       "routePath": "/:locale/:wsId/migrations",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/migrations/page.tsx",
-      "status": "legacy-next",
+      "status": "accepted-removal",
       "targetOwner": "tanstack-start"
     },
     {

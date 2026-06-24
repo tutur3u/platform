@@ -1314,6 +1314,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/memories preserves the legacy authenticated memories shell with ai_lab permission gating and the shared FeatureSummary/Separator header. The interactive app-local MemoriesClient remains a Phase-2 follow-up until it is shared and backed by internal-api/Rust facades."
     },
+    "page:/:locale/:wsId/migrations:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/migrations/page.tsx": {
+      "status": "accepted-removal",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/migrations preserves the legacy non-root redirect to workspace settings and exposes a root-only retired-state page gated by forwarded auth, root workspace resolution, and view_infrastructure permission. The legacy interactive MigrationDashboard is intentionally not preserved because its backing one-off batch migration helper APIs are terminally decommissioned in Rust with MIGRATION_DISABLED; use reviewed migrations or operator runbooks instead."
+    },
     "page:/:locale/:wsId/qr-generator:apps/web/src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

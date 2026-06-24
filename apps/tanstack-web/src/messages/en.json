@@ -16743,6 +16743,11 @@
     "send": "Send email"
   },
   "workspace-migrations": {
+    "retired_badge": "Retired",
+    "retired_description": "The legacy external migration dashboard has been retired for the TanStack and Rust cutover. Broad admin batch imports now stay in reviewed migration files, backend-owned endpoints, or operator runbooks.",
+    "retired_guard_description": "The underlying legacy batch migration helpers are terminally disabled and return MIGRATION_DISABLED from the Rust backend instead of exposing admin read/write paths.",
+    "retired_guard_title": "Migration helpers are disabled",
+    "retired_title": "Workspace migrations are no longer run from this dashboard",
     "schedule_migration_legacy": "Legacy class dates are migrated as user group sessions at 7:00-8:00 AM GMT+7. Class rows no longer keep the old sessions array.",
     "schedule_migration_title": "User group schedule migration",
     "schedule_migration_tuturuuu": "Tuturuuu-to-Tuturuuu migrations preserve detailed session times, timezones, recurrence, tags, Markdown descriptions, and file links."

@@ -86,6 +86,7 @@ import { Route as LocaleWsIdPostsRouteImport } from './routes/$locale/$wsId/post
 import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls';
 import { Route as LocaleWsIdPipelinesRouteImport } from './routes/$locale/$wsId/pipelines';
 import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind';
+import { Route as LocaleWsIdMigrationsRouteImport } from './routes/$locale/$wsId/migrations';
 import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics';
 import { Route as LocaleWsIdMemoriesRouteImport } from './routes/$locale/$wsId/memories';
 import { Route as LocaleWsIdMembersRouteImport } from './routes/$locale/$wsId/members';
@@ -628,6 +629,11 @@ const LocaleWsIdPipelinesRoute = LocaleWsIdPipelinesRouteImport.update({
 const LocaleWsIdMindRoute = LocaleWsIdMindRouteImport.update({
   id: '/$wsId/mind',
   path: '/$wsId/mind',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdMigrationsRoute = LocaleWsIdMigrationsRouteImport.update({
+  id: '/$wsId/migrations',
+  path: '/$wsId/migrations',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
@@ -1524,6 +1530,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
+  '/$locale/$wsId/migrations': typeof LocaleWsIdMigrationsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
   '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
@@ -1747,6 +1754,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
+  '/$locale/$wsId/migrations': typeof LocaleWsIdMigrationsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
   '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
@@ -1971,6 +1979,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/members': typeof LocaleWsIdMembersRoute;
   '/$locale/$wsId/memories': typeof LocaleWsIdMemoriesRoute;
   '/$locale/$wsId/metrics': typeof LocaleWsIdMetricsRoute;
+  '/$locale/$wsId/migrations': typeof LocaleWsIdMigrationsRoute;
   '/$locale/$wsId/mind': typeof LocaleWsIdMindRouteWithChildren;
   '/$locale/$wsId/pipelines': typeof LocaleWsIdPipelinesRoute;
   '/$locale/$wsId/polls': typeof LocaleWsIdPollsRoute;
@@ -2197,6 +2206,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/members'
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
+    | '/$locale/$wsId/migrations'
     | '/$locale/$wsId/mind'
     | '/$locale/$wsId/pipelines'
     | '/$locale/$wsId/polls'
@@ -2420,6 +2430,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/members'
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
+    | '/$locale/$wsId/migrations'
     | '/$locale/$wsId/mind'
     | '/$locale/$wsId/pipelines'
     | '/$locale/$wsId/polls'
@@ -2643,6 +2654,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/members'
     | '/$locale/$wsId/memories'
     | '/$locale/$wsId/metrics'
+    | '/$locale/$wsId/migrations'
     | '/$locale/$wsId/mind'
     | '/$locale/$wsId/pipelines'
     | '/$locale/$wsId/polls'
@@ -3366,6 +3378,13 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/mind';
       fullPath: '/$locale/$wsId/mind';
       preLoaderRoute: typeof LocaleWsIdMindRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/migrations': {
+      id: '/$locale/$wsId/migrations';
+      path: '/$wsId/migrations';
+      fullPath: '/$locale/$wsId/migrations';
+      preLoaderRoute: typeof LocaleWsIdMigrationsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/metrics': {
@@ -4814,6 +4833,7 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdMembersRoute: typeof LocaleWsIdMembersRoute;
   LocaleWsIdMemoriesRoute: typeof LocaleWsIdMemoriesRoute;
   LocaleWsIdMetricsRoute: typeof LocaleWsIdMetricsRoute;
+  LocaleWsIdMigrationsRoute: typeof LocaleWsIdMigrationsRoute;
   LocaleWsIdMindRoute: typeof LocaleWsIdMindRouteWithChildren;
   LocaleWsIdPipelinesRoute: typeof LocaleWsIdPipelinesRoute;
   LocaleWsIdPollsRoute: typeof LocaleWsIdPollsRoute;
@@ -4980,6 +5000,7 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdMembersRoute: LocaleWsIdMembersRoute,
   LocaleWsIdMemoriesRoute: LocaleWsIdMemoriesRoute,
   LocaleWsIdMetricsRoute: LocaleWsIdMetricsRoute,
+  LocaleWsIdMigrationsRoute: LocaleWsIdMigrationsRoute,
   LocaleWsIdMindRoute: LocaleWsIdMindRouteWithChildren,
   LocaleWsIdPipelinesRoute: LocaleWsIdPipelinesRoute,
   LocaleWsIdPollsRoute: LocaleWsIdPollsRoute,
