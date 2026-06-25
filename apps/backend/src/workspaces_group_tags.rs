@@ -246,7 +246,7 @@ fn parse_query(request_url: Option<&str>) -> ParsedQuery {
         Some(value) if value != 0 => value,
         _ => DEFAULT_PAGE_SIZE,
     };
-    let page_size = parsed_page_size.max(1).min(MAX_PAGE_SIZE);
+    let page_size = parsed_page_size.clamp(1, MAX_PAGE_SIZE);
 
     ParsedQuery { q, page, page_size }
 }

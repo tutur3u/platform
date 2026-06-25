@@ -463,10 +463,10 @@ enum AnswerValue {
 }
 
 fn extract_stored_answer_value(answer: &Value) -> Option<AnswerValue> {
-    if let Some(text) = answer.get("answer_text").and_then(Value::as_str) {
-        if !text.trim().is_empty() {
-            return Some(AnswerValue::Text(text.to_owned()));
-        }
+    if let Some(text) = answer.get("answer_text").and_then(Value::as_str)
+        && !text.trim().is_empty()
+    {
+        return Some(AnswerValue::Text(text.to_owned()));
     }
 
     let answer_json = answer.get("answer_json");
@@ -611,6 +611,7 @@ fn format_matched_option_label(question: &DefQuestion, option: &DefOption) -> St
 
 struct FormattedAnswer {
     value: String,
+    #[allow(dead_code)]
     unresolved_values: Vec<String>,
 }
 
@@ -631,13 +632,13 @@ fn format_answer_for_question(
             if text.is_empty() {
                 return empty;
             }
-            if let Some(matched) = find_matching_option(question, text) {
-                if let Some(q) = question {
-                    return FormattedAnswer {
-                        value: format_matched_option_label(q, matched),
-                        unresolved_values: Vec::new(),
-                    };
-                }
+            if let Some(matched) = find_matching_option(question, text)
+                && let Some(q) = question
+            {
+                return FormattedAnswer {
+                    value: format_matched_option_label(q, matched),
+                    unresolved_values: Vec::new(),
+                };
             }
             let unresolved = match question {
                 Some(q) if is_choice_or_scale_type(&q.question_type) => vec![text.clone()],
@@ -722,10 +723,10 @@ fn restore_answer_for_question(question: Option<&DefQuestion>, answer: &AnswerVa
         return none;
     };
     // answer == null || answer === '' — an empty Text counts as ''.
-    if let AnswerValue::Text(text) = answer {
-        if text.is_empty() {
-            return none;
-        }
+    if let AnswerValue::Text(text) = answer
+        && text.is_empty()
+    {
+        return none;
     }
 
     if question.question_type == "multiple_choice" {
@@ -822,12 +823,11 @@ impl<'a> StoredAnswerQuestionResolver<'a> {
     }
 
     fn resolve(&self, answer: &Value) -> Option<&'a DefQuestion> {
-        if let Some(question_id) = answer.get("question_id").and_then(Value::as_str) {
-            if !question_id.is_empty() {
-                if let Some(matched) = self.by_id.get(question_id) {
-                    return Some(*matched);
-                }
-            }
+        if let Some(question_id) = answer.get("question_id").and_then(Value::as_str)
+            && !question_id.is_empty()
+            && let Some(matched) = self.by_id.get(question_id)
+        {
+            return Some(*matched);
         }
 
         let title_key =
@@ -877,11 +877,11 @@ fn build_response_summary(responses: &[Value]) -> Value {
         }
 
         let respondent_email = response.get("respondent_email").and_then(Value::as_str);
-        if let Some(email) = respondent_email {
-            if !email.trim().is_empty() {
-                responder_keys.insert(format!("email:{}", email.trim().to_lowercase()));
-                continue;
-            }
+        if let Some(email) = respondent_email
+            && !email.trim().is_empty()
+        {
+            responder_keys.insert(format!("email:{}", email.trim().to_lowercase()));
+            continue;
         }
 
         anonymous_submissions += 1;
@@ -1020,10 +1020,10 @@ fn build_question_analytics(definition: &FormDefinition, answer_rows: &[Value]) 
                 }
             }
             "short_text" | "long_text" => {
-                if let AnswerValue::Text(text) = &raw_value {
-                    if !text.trim().is_empty() {
-                        acc.increment_text(text.trim());
-                    }
+                if let AnswerValue::Text(text) = &raw_value
+                    && !text.trim().is_empty()
+                {
+                    acc.increment_text(text.trim());
                 }
             }
             "single_choice" | "dropdown" => {
@@ -1048,10 +1048,10 @@ fn build_question_analytics(definition: &FormDefinition, answer_rows: &[Value]) 
                     } else {
                         increment(&mut acc.unmatched_counts, scalar);
                     }
-                    if let Ok(numeric) = scalar.parse::<f64>() {
-                        if !numeric.is_nan() {
-                            acc.numeric_scores.push(numeric);
-                        }
+                    if let Ok(numeric) = scalar.parse::<f64>()
+                        && !numeric.is_nan()
+                    {
+                        acc.numeric_scores.push(numeric);
                     }
                 }
 
@@ -1276,12 +1276,14 @@ fn replace_image_links(input: &str) -> String {
     let mut out = String::new();
     let mut i = 0;
     while i < chars.len() {
-        if chars[i] == '!' && i + 1 < chars.len() && chars[i + 1] == '[' {
-            if let Some((alt, consumed)) = parse_link_at(&chars, i + 1) {
-                out.push_str(&alt);
-                i += 1 + consumed;
-                continue;
-            }
+        if chars[i] == '!'
+            && i + 1 < chars.len()
+            && chars[i + 1] == '['
+            && let Some((alt, consumed)) = parse_link_at(&chars, i + 1)
+        {
+            out.push_str(&alt);
+            i += 1 + consumed;
+            continue;
         }
         out.push(chars[i]);
         i += 1;
@@ -1295,14 +1297,13 @@ fn replace_text_links(input: &str) -> String {
     let mut out = String::new();
     let mut i = 0;
     while i < chars.len() {
-        if chars[i] == '[' {
-            if let Some((label, consumed)) = parse_link_at(&chars, i) {
-                if !label.is_empty() {
-                    out.push_str(&label);
-                    i += consumed;
-                    continue;
-                }
-            }
+        if chars[i] == '['
+            && let Some((label, consumed)) = parse_link_at(&chars, i)
+            && !label.is_empty()
+        {
+            out.push_str(&label);
+            i += consumed;
+            continue;
         }
         out.push(chars[i]);
         i += 1;

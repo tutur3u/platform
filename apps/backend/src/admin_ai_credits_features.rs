@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
     infrastructure_root_auth::ROOT_WORKSPACE_ID,
-    json_response, method_not_allowed, no_store_response,
+    json_response, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
     supabase_auth,
 };

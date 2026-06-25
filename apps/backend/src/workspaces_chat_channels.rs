@@ -171,16 +171,14 @@ fn conversation_fallback_title(conversation: &Value) -> String {
                 .find(|member| member.get("userId").and_then(Value::as_str) != created_by)
         });
 
-    if conversation_type == "direct" {
-        if let Some(member) = first_other_member {
-            if let Some(display_name) = member
-                .get("user")
-                .and_then(|user| user.get("displayName"))
-                .and_then(Value::as_str)
-            {
-                return display_name.to_owned();
-            }
-        }
+    if conversation_type == "direct"
+        && let Some(member) = first_other_member
+        && let Some(display_name) = member
+            .get("user")
+            .and_then(|user| user.get("displayName"))
+            .and_then(Value::as_str)
+    {
+        return display_name.to_owned();
     }
 
     if conversation_type == "ai" {

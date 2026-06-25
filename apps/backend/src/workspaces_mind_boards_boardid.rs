@@ -92,9 +92,7 @@ async fn handle_get(
         return None;
     }
 
-    let Some(access_token) = supabase_auth::request_access_token(request) else {
-        return None;
-    };
+    let access_token = supabase_auth::request_access_token(request)?;
 
     let Some(user_id) =
         supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)

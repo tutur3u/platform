@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
@@ -235,10 +235,11 @@ fn unique_entity_ids(entries: &[Value]) -> Vec<String> {
     let mut ids = Vec::new();
 
     for entry in entries {
-        if let Some(id) = entry.get("id").and_then(Value::as_str) {
-            if !id.is_empty() && seen.insert(id.to_owned()) {
-                ids.push(id.to_owned());
-            }
+        if let Some(id) = entry.get("id").and_then(Value::as_str)
+            && !id.is_empty()
+            && seen.insert(id.to_owned())
+        {
+            ids.push(id.to_owned());
         }
     }
 

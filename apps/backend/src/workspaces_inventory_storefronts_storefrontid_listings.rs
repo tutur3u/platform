@@ -117,6 +117,7 @@ async fn listings_response(
 /// literal `'all'`, both optional. Returns `Some(status)` for a concrete status
 /// that should be forwarded as the RPC `p_status` filter, `None` when the param
 /// is absent or `'all'` (no filter), or an `Err` 400 response otherwise.
+#[allow(clippy::result_large_err)]
 fn parse_status_param(url: Option<&str>) -> Result<Option<String>, BackendResponse> {
     let mut status_raw: Option<String> = None;
     if let Some(raw_url) = url

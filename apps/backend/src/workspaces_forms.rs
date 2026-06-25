@@ -16,8 +16,8 @@
 //!   catch-all; e.g. `Invalid workspace ID` when normalization yields a non-UUID).
 //! - 200 `{ "items": [...] }` where each item is the `FormListItem` projection
 //!   produced by `listForms`:
-//!     `{ id, title, description, status, accessMode, responseCount, viewCount,
-//!        completionRate, publishedAt, updatedAt, href }`.
+//!   `{ id, title, description, status, accessMode, responseCount, viewCount,
+//!   completionRate, publishedAt, updatedAt, href }`.
 //!
 //! `href` mirrors the legacy `/${workspaceSlug}/forms/${form.id}`, where
 //! `workspaceSlug` is the RAW `:wsId` path segment (e.g. `personal` / a handle),

@@ -29,7 +29,7 @@ use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
 };

@@ -269,15 +269,15 @@ fn tally(
 
     // Legacy: pushes an error entry only when the raw status is exactly "error"
     // and `polar_last_error` is truthy.
-    if polar_sync_status.as_deref() == Some("error") {
-        if let Some(error) = polar_last_error.filter(|value| !value.is_empty()) {
-            errors.push(PolarSyncErrorEntry {
-                kind,
-                name,
-                error,
-                synced_at: polar_synced_at,
-            });
-        }
+    if polar_sync_status.as_deref() == Some("error")
+        && let Some(error) = polar_last_error.filter(|value| !value.is_empty())
+    {
+        errors.push(PolarSyncErrorEntry {
+            kind,
+            name,
+            error,
+            synced_at: polar_synced_at,
+        });
     }
 }
 

@@ -132,6 +132,7 @@ fn parse_path(path: &str) -> Option<(&str, &str)> {
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)]
 enum Scope {
     SelfScope,
     Team,
@@ -376,10 +377,10 @@ fn resolve_scope_user_id(
     match query.scope {
         Scope::Team => None,
         Scope::Member => {
-            if let Some(requested) = query.user_id.as_deref() {
-                if members.iter().any(|member| member.user_id == requested) {
-                    return Some(requested.to_owned());
-                }
+            if let Some(requested) = query.user_id.as_deref()
+                && members.iter().any(|member| member.user_id == requested)
+            {
+                return Some(requested.to_owned());
             }
             Some(viewer_id.to_owned())
         }
@@ -730,10 +731,10 @@ async fn list_habit_tracker_members(
     // Unique virtual user ids (preserve discovery order).
     let mut virtual_user_ids: Vec<String> = Vec::new();
     for link in &links {
-        if let Some(id) = link.virtual_user_id.as_deref() {
-            if !virtual_user_ids.iter().any(|existing| existing == id) {
-                virtual_user_ids.push(id.to_owned());
-            }
+        if let Some(id) = link.virtual_user_id.as_deref()
+            && !virtual_user_ids.iter().any(|existing| existing == id)
+        {
+            virtual_user_ids.push(id.to_owned());
         }
     }
 
@@ -1174,13 +1175,13 @@ fn normalize_composer_config(input: &Value) -> Value {
             .collect();
         out.insert("suggested_increments".to_owned(), Value::Array(normalized));
     }
-    if let Some(variant) = object.get("progress_variant").and_then(Value::as_str) {
-        if ["ring", "bar", "check"].contains(&variant) {
-            out.insert(
-                "progress_variant".to_owned(),
-                Value::String(variant.to_owned()),
-            );
-        }
+    if let Some(variant) = object.get("progress_variant").and_then(Value::as_str)
+        && ["ring", "bar", "check"].contains(&variant)
+    {
+        out.insert(
+            "progress_variant".to_owned(),
+            Value::String(variant.to_owned()),
+        );
     }
     if let Some(exercises) = object.get("suggested_exercises").and_then(Value::as_array) {
         let normalized: Vec<Value> = exercises
@@ -1232,10 +1233,10 @@ fn normalize_entry_values(input: &Value) -> Value {
             }
             Value::Array(_) => {
                 let blocks = normalize_exercise_blocks(value);
-                if let Value::Array(items) = &blocks {
-                    if !items.is_empty() {
-                        out.insert(key.clone(), blocks);
-                    }
+                if let Value::Array(items) = &blocks
+                    && !items.is_empty()
+                {
+                    out.insert(key.clone(), blocks);
                 }
             }
             Value::Object(_) => {}
@@ -1261,7 +1262,10 @@ fn normalize_exercise_blocks(input: &Value) -> Value {
             .to_owned();
         let sets = block.get("sets").and_then(Value::as_f64).unwrap_or(0.0);
         let reps = block.get("reps").and_then(Value::as_f64).unwrap_or(0.0);
-        if exercise_name.is_empty() || !(sets > 0.0) || !(reps > 0.0) {
+        if exercise_name.is_empty()
+            || sets.partial_cmp(&0.0) != Some(std::cmp::Ordering::Greater)
+            || reps.partial_cmp(&0.0) != Some(std::cmp::Ordering::Greater)
+        {
             continue;
         }
         let weight = match block.get("weight").and_then(Value::as_f64) {
@@ -1531,25 +1535,14 @@ fn get_entry_numeric_value(tracker: &HabitTracker, entry: &HabitEntry) -> f64 {
                 })
             });
         return match raw {
-            Some(Value::Bool(flag)) => {
-                if flag {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
+            Some(Value::Bool(flag)) if flag => 1.0,
             Some(Value::Number(number)) => {
                 let value = number.as_f64().unwrap_or(0.0);
                 if value > 0.0 { 1.0 } else { 0.0 }
             }
-            Some(other) => {
-                if value_string_length(&other) > 0 {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
+            Some(other) if value_string_length(&other) > 0 => 1.0,
             None => 0.0,
+            _ => 0.0,
         };
     }
 
@@ -1665,10 +1658,11 @@ fn count_current_streak(metrics: &[EffectiveMetric]) -> i64 {
     if index < 0 {
         return 0;
     }
-    if let Some(last) = metrics.get(index as usize) {
-        if last.is_current_period && !last.success {
-            index -= 1;
-        }
+    if let Some(last) = metrics.get(index as usize)
+        && last.is_current_period
+        && !last.success
+    {
+        index -= 1;
     }
     let mut streak = 0;
     while index >= 0 {

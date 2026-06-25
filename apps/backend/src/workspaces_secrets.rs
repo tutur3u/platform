@@ -21,7 +21,7 @@
 //!          `manage_workspace_secrets`.
 //!        * `canManageAsPlatformAdmin` = root perms contain
 //!          `manage_workspace_roles` OR `manage_workspace_secrets`.
-//!      If neither is granted -> 403 `{ message: "Permission denied" }`.
+//!          If neither is granted -> 403 `{ message: "Permission denied" }`.
 //! 2. Reads `workspace_secrets` (`select=*`) filtered by `ws_id=resolvedWsId`,
 //!    ordered by `name asc`, and returns the raw row array as JSON. A read
 //!    failure becomes 500 `{ message: "Error fetching workspace API configs" }`.

@@ -861,45 +861,34 @@ async fn build_relationship_summary(
 
         match edge_type.as_str() {
             "parent_child" => {
-                if source_counterpart_valid {
-                    if let Some(s) = summaries.get_mut(&source) {
-                        s.child_count += 1;
-                        if completed_counterparts.contains(&target) {
-                            s.completed_child_count += 1;
-                        }
+                if source_counterpart_valid && let Some(s) = summaries.get_mut(&source) {
+                    s.child_count += 1;
+                    if completed_counterparts.contains(&target) {
+                        s.completed_child_count += 1;
                     }
                 }
-                if target_counterpart_valid {
-                    if let Some(t) = summaries.get_mut(&target) {
-                        if t.parent_task_id.is_none() {
-                            t.parent_task_id = Some(source.clone());
-                            t.parent_task = counterpart_summary.get(&source).cloned();
-                        }
-                    }
+                if target_counterpart_valid
+                    && let Some(t) = summaries.get_mut(&target)
+                    && t.parent_task_id.is_none()
+                {
+                    t.parent_task_id = Some(source.clone());
+                    t.parent_task = counterpart_summary.get(&source).cloned();
                 }
             }
             "blocks" => {
-                if source_counterpart_valid {
-                    if let Some(s) = summaries.get_mut(&source) {
-                        s.blocking_count += 1;
-                    }
+                if source_counterpart_valid && let Some(s) = summaries.get_mut(&source) {
+                    s.blocking_count += 1;
                 }
-                if target_counterpart_valid {
-                    if let Some(t) = summaries.get_mut(&target) {
-                        t.blocked_by_count += 1;
-                    }
+                if target_counterpart_valid && let Some(t) = summaries.get_mut(&target) {
+                    t.blocked_by_count += 1;
                 }
             }
             "related" => {
-                if source_counterpart_valid {
-                    if let Some(s) = summaries.get_mut(&source) {
-                        s.related_count += 1;
-                    }
+                if source_counterpart_valid && let Some(s) = summaries.get_mut(&source) {
+                    s.related_count += 1;
                 }
-                if target_counterpart_valid {
-                    if let Some(t) = summaries.get_mut(&target) {
-                        t.related_count += 1;
-                    }
+                if target_counterpart_valid && let Some(t) = summaries.get_mut(&target) {
+                    t.related_count += 1;
                 }
             }
             _ => {}

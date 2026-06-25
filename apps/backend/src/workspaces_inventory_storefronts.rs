@@ -290,11 +290,11 @@ fn parse_positive_int_param(
         issues.push(too_small_issue(key, min));
         return None;
     }
-    if let Some(max) = max {
-        if value > max {
-            issues.push(too_big_issue(key, max));
-            return None;
-        }
+    if let Some(max) = max
+        && value > max
+    {
+        issues.push(too_big_issue(key, max));
+        return None;
     }
     Some(value)
 }

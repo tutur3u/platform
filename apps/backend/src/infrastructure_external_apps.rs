@@ -356,9 +356,7 @@ fn parse_origin(value: &str) -> Option<String> {
     };
 
     // Authority ends at the first '/', '?' or '#'.
-    let authority_end = rest
-        .find(|character: char| matches!(character, '/' | '?' | '#'))
-        .unwrap_or(rest.len());
+    let authority_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
     let authority = &rest[..authority_end];
 
     // Strip userinfo.

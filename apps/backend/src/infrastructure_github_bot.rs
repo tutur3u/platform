@@ -524,8 +524,8 @@ fn redact_sensitive_query_params(value: &str) -> String {
                 let after_key = i + 1 + key_len;
                 if after_key < bytes.len() && bytes[after_key] == '=' {
                     out.push(ch);
-                    for k in (i + 1)..after_key {
-                        out.push(bytes[k]);
+                    for character in bytes.iter().take(after_key).skip(i + 1) {
+                        out.push(*character);
                     }
                     out.push('=');
                     out.push_str(REDACTED_VALUE);
@@ -570,27 +570,27 @@ fn redact_sensitive_key_values(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut i = 0;
     while i < chars.len() {
-        if is_word_boundary(&chars, i) {
-            if let Some((token, key_len)) = match_sensitive_word(&chars, i) {
-                // Skip optional whitespace, then require `:` or `=`.
-                let mut ws = i + key_len;
-                while ws < chars.len() && chars[ws].is_whitespace() {
-                    ws += 1;
+        if is_word_boundary(&chars, i)
+            && let Some((token, key_len)) = match_sensitive_word(&chars, i)
+        {
+            // Skip optional whitespace, then require `:` or `=`.
+            let mut ws = i + key_len;
+            while ws < chars.len() && chars[ws].is_whitespace() {
+                ws += 1;
+            }
+            if ws < chars.len() && (chars[ws] == ':' || chars[ws] == '=') {
+                // Skip whitespace after the separator.
+                let mut v = ws + 1;
+                while v < chars.len() && chars[v].is_whitespace() {
+                    v += 1;
                 }
-                if ws < chars.len() && (chars[ws] == ':' || chars[ws] == '=') {
-                    // Skip whitespace after the separator.
-                    let mut v = ws + 1;
-                    while v < chars.len() && chars[v].is_whitespace() {
-                        v += 1;
-                    }
-                    let value_end = consume_key_value(&chars, v);
-                    if value_end > v {
-                        out.push_str(token);
-                        out.push_str(": ");
-                        out.push_str(REDACTED_VALUE);
-                        i = value_end;
-                        continue;
-                    }
+                let value_end = consume_key_value(&chars, v);
+                if value_end > v {
+                    out.push_str(token);
+                    out.push_str(": ");
+                    out.push_str(REDACTED_VALUE);
+                    i = value_end;
+                    continue;
                 }
             }
         }
@@ -745,12 +745,13 @@ fn redact_jwts(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut i = 0;
     while i < chars.len() {
-        if is_word_boundary(&chars, i) && matches_exact(&chars, i, "eyJ") {
-            if let Some(end) = match_jwt(&chars, i) {
-                out.push_str(REDACTED_VALUE);
-                i = end;
-                continue;
-            }
+        if is_word_boundary(&chars, i)
+            && matches_exact(&chars, i, "eyJ")
+            && let Some(end) = match_jwt(&chars, i)
+        {
+            out.push_str(REDACTED_VALUE);
+            i = end;
+            continue;
         }
         out.push(chars[i]);
         i += 1;
@@ -808,12 +809,12 @@ fn redact_emails(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut i = 0;
     while i < chars.len() {
-        if is_word_boundary(&chars, i) {
-            if let Some(end) = match_email(&chars, i) {
-                out.push_str(REDACTED_EMAIL);
-                i = end;
-                continue;
-            }
+        if is_word_boundary(&chars, i)
+            && let Some(end) = match_email(&chars, i)
+        {
+            out.push_str(REDACTED_EMAIL);
+            i = end;
+            continue;
         }
         out.push(chars[i]);
         i += 1;
@@ -928,12 +929,12 @@ fn redact_hostnames(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut i = 0;
     while i < chars.len() {
-        if is_hostname_boundary(&chars, i) {
-            if let Some(end) = match_hostname(&chars, i) {
-                out.push_str(REDACTED_URL);
-                i = end;
-                continue;
-            }
+        if is_hostname_boundary(&chars, i)
+            && let Some(end) = match_hostname(&chars, i)
+        {
+            out.push_str(REDACTED_URL);
+            i = end;
+            continue;
         }
         out.push(chars[i]);
         i += 1;

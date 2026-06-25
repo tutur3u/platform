@@ -504,10 +504,10 @@ async fn list_members(
     // when empty to mirror the legacy `.in('id', [...])` query.
     let mut virtual_user_ids: Vec<String> = Vec::new();
     for link in &links {
-        if let Some(id) = link.virtual_user_id.as_deref() {
-            if !virtual_user_ids.iter().any(|existing| existing == id) {
-                virtual_user_ids.push(id.to_owned());
-            }
+        if let Some(id) = link.virtual_user_id.as_deref()
+            && !virtual_user_ids.iter().any(|existing| existing == id)
+        {
+            virtual_user_ids.push(id.to_owned());
         }
     }
     let lookup_ids = if virtual_user_ids.is_empty() {

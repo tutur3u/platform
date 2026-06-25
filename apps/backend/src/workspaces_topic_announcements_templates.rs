@@ -17,6 +17,7 @@
 //!   5. requires the `manage_users` permission (else 403 "Insufficient
 //!      permissions"),
 //!   6. requires an authenticated session user (else 401 "Unauthorized").
+//!
 //! It then reads `topic_announcement_templates` (PRIVATE schema) filtered by
 //! `ws_id`, ordered by `name` ascending, attaches `workspace_user_groups`
 //! (PUBLIC schema) data for any `group_id`, and maps each row.
@@ -31,7 +32,7 @@ use serde_json::{Map, Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
-    method_not_allowed, no_store_response,
+    no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
 };
@@ -109,6 +110,7 @@ struct WorkspaceAccess {
 }
 
 impl WorkspaceAccess {
+    #[allow(dead_code)]
     fn none() -> Self {
         Self {
             all: false,
@@ -266,10 +268,11 @@ async fn fetch_templates(
 fn distinct_group_ids(templates: &[Map<String, Value>]) -> Vec<String> {
     let mut ids: Vec<String> = Vec::new();
     for row in templates {
-        if let Some(Value::String(group_id)) = row.get("group_id") {
-            if !group_id.is_empty() && !ids.iter().any(|existing| existing == group_id) {
-                ids.push(group_id.clone());
-            }
+        if let Some(Value::String(group_id)) = row.get("group_id")
+            && !group_id.is_empty()
+            && !ids.iter().any(|existing| existing == group_id)
+        {
+            ids.push(group_id.clone());
         }
     }
     ids

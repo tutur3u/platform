@@ -186,16 +186,16 @@ fn parse_inventory_list_query(request_url: Option<&str>) -> Result<InventoryList
     let mut page_size_raw: Option<String> = None;
     let mut response_raw: Option<String> = None;
 
-    if let Some(request_url) = request_url {
-        if let Ok(parsed) = url::Url::parse(request_url) {
-            for (key, value) in parsed.query_pairs() {
-                match key.as_ref() {
-                    "q" => q = Some(value.into_owned()),
-                    "page" => page_raw = Some(value.into_owned()),
-                    "pageSize" => page_size_raw = Some(value.into_owned()),
-                    "response" => response_raw = Some(value.into_owned()),
-                    _ => {}
-                }
+    if let Some(request_url) = request_url
+        && let Ok(parsed) = url::Url::parse(request_url)
+    {
+        for (key, value) in parsed.query_pairs() {
+            match key.as_ref() {
+                "q" => q = Some(value.into_owned()),
+                "page" => page_raw = Some(value.into_owned()),
+                "pageSize" => page_size_raw = Some(value.into_owned()),
+                "response" => response_raw = Some(value.into_owned()),
+                _ => {}
             }
         }
     }
