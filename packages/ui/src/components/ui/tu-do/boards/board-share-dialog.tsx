@@ -137,7 +137,10 @@ export function BoardShareDialog({
   });
 
   const shares = sharesQuery.data?.shares ?? [];
-  const membersCount = viewableMembersQuery.data?.members.length;
+  const members = Array.isArray(viewableMembersQuery.data?.members)
+    ? viewableMembersQuery.data.members
+    : undefined;
+  const membersCount = members?.length;
   const membersStatusBadge = viewableMembersQuery.isLoading ? (
     <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
       <Loader2 className="h-3 w-3 animate-spin" />
@@ -222,13 +225,13 @@ export function BoardShareDialog({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {t('common.loading')}
               </div>
-            ) : (viewableMembersQuery.data?.members ?? []).length === 0 ? (
+            ) : (members ?? []).length === 0 ? (
               <div className="text-muted-foreground text-sm">
                 {t('ws-task-boards.share.workspace_members.empty')}
               </div>
             ) : (
               <div className="divide-y rounded-md border">
-                {viewableMembersQuery.data?.members.map((member) => (
+                {members?.map((member) => (
                   <div
                     key={member.user_id}
                     className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center"

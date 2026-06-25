@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, CheckCircle2, LayoutGrid, Trash2 } from '@tuturuuu/icons';
 import {
+  type AccessibleWorkspaceTaskBoard,
   createWorkspaceTaskBoard,
-  listWorkspaceTaskBoards,
+  listCurrentUserTaskBoards,
 } from '@tuturuuu/internal-api/tasks';
 import {
   isTaskRememberLastBoardEnabled,
@@ -50,12 +51,15 @@ interface BoardSwitcherProps {
 }
 
 type BoardWithStatus = {
+  access_type?: 'member' | 'guest';
   id: string;
   name: string | null;
   icon: string | null;
   archived_at: string | null;
   deleted_at: string | null;
   created_at: string | null;
+  workspace?: AccessibleWorkspaceTaskBoard['workspace'];
+  ws_id: string;
 };
 
 function getDaysRemaining(deletedAt: string) {
@@ -107,22 +111,27 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   );
 
   const { data: boards = [], isLoading: isFetchingBoards } = useQuery({
-    queryKey: ['other-boards', board.ws_id, board.id],
+    queryKey: ['accessible-task-boards'],
     queryFn: async () => {
-      const payload = await listWorkspaceTaskBoards(board.ws_id);
+      const payload = await listCurrentUserTaskBoards();
       return (payload.boards || []) as BoardWithStatus[];
     },
-    enabled: !!board.ws_id,
   });
   const rememberLastBoard =
     isTaskRememberLastBoardEnabled(rememberLastBoardRaw);
+  const boardsById = useMemo(() => {
+    return new Map(boards.map((item) => [item.id, item] as const));
+  }, [boards]);
 
   const selectBoard = useCallback(
     (value: string | string[]) => {
       const boardId = Array.isArray(value) ? value[0] : value;
       if (!boardId || boardId === board.id) return;
 
-      if (rememberLastBoard) {
+      const selectedBoard = boardsById.get(boardId);
+      const targetWorkspaceId = selectedBoard?.ws_id ?? board.ws_id;
+
+      if (rememberLastBoard && targetWorkspaceId === board.ws_id) {
         updateUserWorkspaceConfig.mutate({
           configId: TASK_DEFAULT_BOARD_ID_CONFIG_ID,
           value: boardId,
@@ -130,11 +139,12 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         });
       }
 
-      router.push(`/${board.ws_id}${tasksHref(`/boards/${boardId}`)}`);
+      router.push(`/${targetWorkspaceId}${tasksHref(`/boards/${boardId}`)}`);
     },
     [
       board.id,
       board.ws_id,
+      boardsById,
       rememberLastBoard,
       router,
       tasksHref,
@@ -150,7 +160,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
       try {
         const payload = await createWorkspaceTaskBoard(board.ws_id, { name });
         await queryClient.invalidateQueries({
-          queryKey: ['other-boards', board.ws_id],
+          queryKey: ['accessible-task-boards'],
         });
 
         return {
@@ -165,6 +175,9 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
     [board.ws_id, queryClient, t.createBoardError, translateBoardName]
   );
 
+  const currentBoardFromAccessible = boardsById.get(board.id);
+  const canCreateBoard = currentBoardFromAccessible?.access_type !== 'guest';
+
   const boardOptions = useMemo(() => {
     const byId = new Map<string, BoardWithStatus>();
     for (const item of boards) byId.set(item.id, item);
@@ -176,10 +189,24 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         archived_at: null,
         deleted_at: null,
         created_at: null,
+        ws_id: board.ws_id,
       });
     }
 
     const orderedBoards = [...byId.values()].sort((a, b) => {
+      const workspaceDelta =
+        (a.ws_id === board.ws_id ? 0 : 1) - (b.ws_id === board.ws_id ? 0 : 1);
+      if (workspaceDelta !== 0) return workspaceDelta;
+
+      const currentBoardDelta =
+        (a.id === board.id ? 0 : 1) - (b.id === board.id ? 0 : 1);
+      if (currentBoardDelta !== 0) return currentBoardDelta;
+
+      const workspaceNameDelta = (a.workspace?.name ?? a.ws_id).localeCompare(
+        b.workspace?.name ?? b.ws_id
+      );
+      if (workspaceNameDelta !== 0) return workspaceNameDelta;
+
       const statusWeight = (item: BoardWithStatus) =>
         item.deleted_at ? 2 : item.archived_at ? 1 : 0;
       const statusDelta = statusWeight(a) - statusWeight(b);
@@ -200,6 +227,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         : isArchived
           ? t.archived
           : t.active;
+      const workspaceLabel = item.workspace?.name ?? item.ws_id;
       const groupLabel = isDeleted
         ? t.deletedBoards
         : isArchived
@@ -213,6 +241,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         label: translateBoardName(item.name),
         searchValue: [
           translateBoardName(item.name),
+          workspaceLabel,
           statusLabel,
           groupLabel,
           daysRemaining
@@ -222,11 +251,12 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
           .filter(Boolean)
           .join(' '),
         description: daysRemaining
-          ? `${groupLabel} · ${t.daysLeft.replace(
+          ? `${workspaceLabel} · ${groupLabel} · ${t.daysLeft.replace(
               '{count}',
               String(daysRemaining)
             )}`
-          : groupLabel,
+          : `${workspaceLabel} · ${groupLabel}`,
+        group: workspaceLabel,
         icon: <BoardIcon className="h-4 w-4" />,
         muted: isArchived || isDeleted,
         badge: (
@@ -256,6 +286,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
     board.icon,
     board.id,
     board.name,
+    board.ws_id,
     boards,
     t.active,
     t.activeBoards,
@@ -270,8 +301,8 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   return (
     <Combobox
       className="w-[min(22rem,70vw)] [&_button]:h-7 [&_button]:min-h-7 [&_button]:px-2 sm:[&_button]:h-8 sm:[&_button]:min-h-8"
-      createText={t.createBoard}
-      creatingText={t.creatingBoard}
+      createText={canCreateBoard ? t.createBoard : undefined}
+      creatingText={canCreateBoard ? t.creatingBoard : undefined}
       disabled={isFetchingBoards}
       emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
       label={
@@ -280,7 +311,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         </span>
       }
       onChange={selectBoard}
-      onCreate={createBoard}
+      onCreate={canCreateBoard ? createBoard : undefined}
       options={boardOptions}
       placeholder={translateBoardName(board.name)}
       searchPlaceholder={t.searchBoards}

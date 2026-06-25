@@ -15,6 +15,7 @@ import {
   getWorkspaceTaskBoardPublicLink,
   getWorkspaceTaskProjectTasks,
   linkWorkspaceTaskProjectTask,
+  listCurrentUserTaskBoards,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
@@ -57,6 +58,33 @@ describe('workspace board internal-api helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards?q=alpha&page=2&pageSize=25&status=archived',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists current user accessible task boards', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        boards: [
+          {
+            access_type: 'guest',
+            id: 'board-1',
+            name: 'Shared Board',
+            ws_id: 'ws-1',
+          },
+        ],
+      })
+    );
+
+    await listCurrentUserTaskBoards({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/users/me/task-boards',
       expect.objectContaining({
         cache: 'no-store',
       })

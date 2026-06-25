@@ -195,6 +195,22 @@ describe('BoardShareDialog', () => {
     expect(screen.getByText('pm@example.com')).toBeInTheDocument();
   });
 
+  it('does not crash when viewable members payload is missing members', async () => {
+    listWorkspaceTaskBoardViewableMembersMock.mockResolvedValue({});
+
+    renderBoardShareDialog();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.workspace_members.title/,
+      })
+    );
+
+    expect(
+      await screen.findByText('ws-task-boards.share.workspace_members.empty')
+    ).toBeInTheDocument();
+  });
+
   it('keeps direct board guests first-class for invite, update, and remove', async () => {
     listWorkspaceTaskBoardSharesMock.mockResolvedValue({
       shares: [

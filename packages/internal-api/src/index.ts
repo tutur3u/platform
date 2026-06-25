@@ -1332,6 +1332,7 @@ export {
   updateTaskProgressMetric,
 } from './task-progress';
 export {
+  type AccessibleWorkspaceTaskBoard,
   abortWorkspaceTaskDescriptionChunks,
   addWorkspaceTaskLabel,
   appendWorkspaceTaskDescriptionChunk,
@@ -1371,9 +1372,11 @@ export {
   type InternalApiTaskDraft,
   type InternalApiTaskInitiative,
   type InternalApiTaskInitiativeProject,
+  type ListCurrentUserTaskBoardsResponse,
   type ListWorkspaceTaskDraftsOptions,
   type ListWorkspaceTaskHistoryOptions,
   linkWorkspaceTaskInitiativeProject,
+  listCurrentUserTaskBoards,
   listTaskBoardStatusTemplates,
   listWorkspaceBoards,
   listWorkspaceBoardsWithLists,

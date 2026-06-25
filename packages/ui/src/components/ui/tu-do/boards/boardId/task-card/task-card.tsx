@@ -478,8 +478,9 @@ function TaskCardInner({
         effectiveWorkspaceId,
         boardId
       );
+      const members = Array.isArray(payload?.members) ? payload.members : [];
 
-      return payload.members.map((member) => ({
+      return members.map((member) => ({
         id: member.user_id,
         user_id: member.user_id,
         workspace_id: effectiveWorkspaceId,

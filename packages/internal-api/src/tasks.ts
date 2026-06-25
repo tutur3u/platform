@@ -1,5 +1,6 @@
 import type {
   Database,
+  InternalApiWorkspaceSummary,
   TaskProjectWithRelations,
   WorkspaceTaskBoardRow,
 } from '@tuturuuu/types';
@@ -520,6 +521,26 @@ export interface ListWorkspaceTaskBoardsOptions {
 export interface ListWorkspaceTaskBoardsResponse {
   boards: WorkspaceTaskBoardListItem[];
   count: number;
+}
+
+export type AccessibleWorkspaceTaskBoard = Pick<
+  WorkspaceTaskBoardRow,
+  | 'archived_at'
+  | 'created_at'
+  | 'deleted_at'
+  | 'icon'
+  | 'id'
+  | 'name'
+  | 'ticket_prefix'
+  | 'ws_id'
+> & {
+  access_type: 'member' | 'guest';
+  guest_permission: WorkspaceTaskBoardSharePermission | null;
+  workspace: InternalApiWorkspaceSummary;
+};
+
+export interface ListCurrentUserTaskBoardsResponse {
+  boards: AccessibleWorkspaceTaskBoard[];
 }
 
 export interface WorkspaceBoardsDataResponse {
@@ -1087,6 +1108,18 @@ export async function listWorkspaceTaskBoards(
         pageSize: options?.pageSize,
         status: options?.status,
       },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listCurrentUserTaskBoards(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListCurrentUserTaskBoardsResponse>(
+    '/api/v1/users/me/task-boards',
+    {
       cache: 'no-store',
     }
   );

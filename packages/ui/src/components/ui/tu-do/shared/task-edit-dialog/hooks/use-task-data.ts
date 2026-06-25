@@ -269,8 +269,9 @@ export function useTaskData({
         realWorkspaceId,
         boardId
       );
+      const members = Array.isArray(payload?.members) ? payload.members : [];
 
-      return payload.members
+      return members
         .map((member) => ({
           id: member.user_id,
           user_id: member.user_id,

@@ -7,7 +7,7 @@ import { BoardSwitcher } from '../board-switcher';
 const {
   createWorkspaceTaskBoardMock,
   isTaskRememberLastBoardEnabledMock,
-  listWorkspaceTaskBoardsMock,
+  listCurrentUserTaskBoardsMock,
   pushMock,
   rememberLastBoardConfig,
   updateUserWorkspaceConfigMock,
@@ -17,7 +17,7 @@ const {
   isTaskRememberLastBoardEnabledMock: vi.fn(
     (value: string | null | undefined) => value !== 'false'
   ),
-  listWorkspaceTaskBoardsMock: vi.fn(),
+  listCurrentUserTaskBoardsMock: vi.fn(),
   pushMock: vi.fn(),
   rememberLastBoardConfig: {
     value: 'true' as string | null | undefined,
@@ -32,7 +32,12 @@ let comboboxProps:
       creatingText?: string;
       onChange: (value: string) => void;
       onCreate?: (value: string) => Promise<{ label: string; value: string }>;
-      options: Array<{ icon?: unknown; label: string; value: string }>;
+      options: Array<{
+        group?: string;
+        icon?: unknown;
+        label: string;
+        value: string;
+      }>;
       searchPlaceholder?: string;
       selected?: string;
       showSelectedIcon?: boolean;
@@ -43,9 +48,9 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
   createWorkspaceTaskBoard: (
     ...args: Parameters<typeof createWorkspaceTaskBoardMock>
   ) => createWorkspaceTaskBoardMock(...args),
-  listWorkspaceTaskBoards: (
-    ...args: Parameters<typeof listWorkspaceTaskBoardsMock>
-  ) => listWorkspaceTaskBoardsMock(...args),
+  listCurrentUserTaskBoards: (
+    ...args: Parameters<typeof listCurrentUserTaskBoardsMock>
+  ) => listCurrentUserTaskBoardsMock(...args),
 }));
 
 vi.mock('@tuturuuu/internal-api/users', () => ({
@@ -150,15 +155,25 @@ describe('BoardSwitcher', () => {
     vi.clearAllMocks();
     comboboxProps = undefined;
     rememberLastBoardConfig.value = 'true';
-    listWorkspaceTaskBoardsMock.mockResolvedValue({
+    listCurrentUserTaskBoardsMock.mockResolvedValue({
       boards: [
         {
+          access_type: 'member',
           archived_at: null,
           created_at: '2026-06-01T00:00:00.000Z',
           deleted_at: null,
           icon: null,
           id: 'board-2',
           name: 'Roadmap',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            id: 'ws-1',
+            logo_url: null,
+            name: 'Current Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-1',
         },
       ],
     });
@@ -205,6 +220,69 @@ describe('BoardSwitcher', () => {
     });
   });
 
+  it('orders current workspace boards first and switches across workspaces without updating defaults', async () => {
+    listCurrentUserTaskBoardsMock.mockResolvedValue({
+      boards: [
+        {
+          access_type: 'member',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          icon: null,
+          id: 'board-2',
+          name: 'External Roadmap',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            id: 'ws-2',
+            logo_url: null,
+            name: 'Other Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-2',
+        },
+        {
+          access_type: 'member',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          icon: null,
+          id: 'board-current-secondary',
+          name: 'Current Roadmap',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            id: 'ws-1',
+            logo_url: null,
+            name: 'Current Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-1',
+        },
+      ],
+    });
+
+    renderBoardSwitcher();
+
+    await waitFor(() => {
+      expect(comboboxProps?.options.map((option) => option.value)).toEqual([
+        'board-1',
+        'board-current-secondary',
+        'board-2',
+      ]);
+    });
+    expect(comboboxProps?.options[2]).toMatchObject({
+      group: 'Other Workspace',
+      label: 'External Roadmap',
+      value: 'board-2',
+    });
+
+    fireEvent.click(screen.getByTestId('board-combobox'));
+
+    expect(pushMock).toHaveBeenCalledWith('/ws-2/tasks/boards/board-2');
+    expect(updateUserWorkspaceConfigMock).not.toHaveBeenCalled();
+  });
+
   it('navigates without updating the default board when board memory is disabled', async () => {
     rememberLastBoardConfig.value = 'false';
     renderBoardSwitcher();
@@ -217,6 +295,41 @@ describe('BoardSwitcher', () => {
 
     expect(pushMock).toHaveBeenCalledWith('/ws-1/tasks/boards/board-2');
     expect(updateUserWorkspaceConfigMock).not.toHaveBeenCalled();
+  });
+
+  it('hides board creation for guest-only board access', async () => {
+    listCurrentUserTaskBoardsMock.mockResolvedValue({
+      boards: [
+        {
+          access_type: 'guest',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          guest_permission: 'edit',
+          icon: null,
+          id: 'board-1',
+          name: 'Tasks',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            guest_products: ['tasks'],
+            id: 'ws-1',
+            logo_url: null,
+            name: 'Shared Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-1',
+        },
+      ],
+    });
+
+    renderBoardSwitcher();
+
+    await waitFor(() => {
+      expect(comboboxProps?.createText).toBeUndefined();
+      expect(comboboxProps?.creatingText).toBeUndefined();
+      expect(comboboxProps?.onCreate).toBeUndefined();
+    });
   });
 
   it('creates a new board from the picker and opens it', async () => {
