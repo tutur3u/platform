@@ -1028,6 +1028,85 @@ describe('withSessionAuth', () => {
     );
   });
 
+  it('should skip browser step-up challenges for valid CLI app-session auth while keeping rate limits', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    mockEnforceAdaptiveStepUpChallenge.mockResolvedValue(
+      NextResponse.json(
+        { code: 'ABUSE_CHALLENGE_REQUIRED', error: 'Forbidden' },
+        { status: 403 }
+      )
+    );
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.access.token}`,
+      },
+      method: 'POST',
+    }) as unknown as NextRequest;
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: {
+        requiredScope: 'cli:access',
+        targetApp: 'platform',
+      },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(200);
+    expect(mockEnforceAdaptiveStepUpChallenge).not.toHaveBeenCalled();
+    expect(mockResolveWebAbuseDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authKind: 'app-session',
+        isRead: false,
+        userId: 'app-user-1',
+      })
+    );
+    expect(mockCheckRateLimit).toHaveBeenCalledWith(
+      'session:user:mutate:app-user-1',
+      expect.objectContaining({ maxRequests: 60 })
+    );
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('should still enforce browser step-up challenges for non-CLI app-session auth', async () => {
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'platform',
+      userId: 'app-user-1',
+    });
+    mockEnforceAdaptiveStepUpChallenge.mockResolvedValue(
+      NextResponse.json(
+        { code: 'ABUSE_CHALLENGE_REQUIRED', error: 'Forbidden' },
+        { status: 403 }
+      )
+    );
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      method: 'POST',
+    }) as unknown as NextRequest;
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: { targetApp: 'platform' },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(403);
+    expect(mockEnforceAdaptiveStepUpChallenge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isRead: false,
+        route: '/api/test',
+        userId: 'app-user-1',
+      })
+    );
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it('should apply configured app-session target and scope to shared auth resolution', async () => {
     const { token } = createAppSessionToken({
       email: 'agent@example.com',

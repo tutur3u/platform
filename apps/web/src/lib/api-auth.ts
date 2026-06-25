@@ -5,6 +5,10 @@ import {
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import {
+  CLI_APP_ACCESS_SCOPE,
+  CLI_APP_TARGET_APP,
+} from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
@@ -453,6 +457,18 @@ interface SessionAuthOptions {
 
 type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
 
+function isCliAppSessionClaims(claims: {
+  origin_app?: string | null;
+  scopes?: readonly string[];
+  target_app?: string | null;
+}) {
+  return (
+    claims.origin_app === 'cli' &&
+    claims.target_app === CLI_APP_TARGET_APP &&
+    claims.scopes?.includes(CLI_APP_ACCESS_SCOPE) === true
+  );
+}
+
 function getUserCreatedAt(user: SupabaseUser) {
   return (user as SupabaseUser & { created_at?: string | null }).created_at;
 }
@@ -464,6 +480,7 @@ async function applyAdaptiveSessionControls({
   isRead,
   rateLimit,
   request,
+  skipStepUpChallenge = false,
   user,
 }: {
   authKind: SessionAdaptiveAuthKind;
@@ -472,6 +489,7 @@ async function applyAdaptiveSessionControls({
   isRead: boolean;
   rateLimit: RateLimitConfig | false | undefined;
   request: NextRequest;
+  skipStepUpChallenge?: boolean;
   user: SupabaseUser;
 }): Promise<{
   decision: Awaited<ReturnType<typeof resolveWebAbuseDecision>>;
@@ -489,18 +507,20 @@ async function applyAdaptiveSessionControls({
     userId: user.id,
   });
 
-  const challengeResponse = await enforceAdaptiveStepUpChallenge({
-    decision,
-    ipAddress,
-    isRead,
-    method: request.method,
-    request,
-    route: endpoint,
-    userId: user.id,
-  });
+  if (!skipStepUpChallenge) {
+    const challengeResponse = await enforceAdaptiveStepUpChallenge({
+      decision,
+      ipAddress,
+      isRead,
+      method: request.method,
+      request,
+      route: endpoint,
+      userId: user.id,
+    });
 
-  if (challengeResponse) {
-    return { decision, headers: {}, response: challengeResponse };
+    if (challengeResponse) {
+      return { decision, headers: {}, response: challengeResponse };
+    }
   }
 
   const config = rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
@@ -778,6 +798,9 @@ export function withSessionAuth<T = unknown>(
           isRead,
           rateLimit: options?.rateLimit,
           request,
+          skipStepUpChallenge: isCliAppSessionClaims(
+            appSessionVerification.claims
+          ),
           user: appSessionUser,
         });
         if (adaptiveControls.response) {
