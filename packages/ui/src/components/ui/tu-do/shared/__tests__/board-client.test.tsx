@@ -136,8 +136,38 @@ describe('BoardClient', () => {
     );
 
     expect(screen.getByTestId('task-board-loading-state')).toBeInTheDocument();
+    expect(screen.getByTestId('task-board-loading-state')).not.toHaveClass(
+      '-m-4'
+    );
     expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
     expect(screen.queryByText('Loading board...')).not.toBeInTheDocument();
+  });
+
+  it('can render the shared task board loading state as a full-bleed route root', () => {
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+          rootLoading
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
+      '-m-4',
+      'h-[calc(100dvh+2rem)]'
+    );
   });
 
   it('can revalidate loaded board lists without invalidating visible task caches', async () => {

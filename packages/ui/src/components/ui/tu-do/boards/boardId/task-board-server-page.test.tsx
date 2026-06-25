@@ -72,16 +72,18 @@ const BOARD_ID = '11111111-1111-1111-1111-111111111111';
 
 type BoardClientElement = ReactElement<{
   currentUserId?: string;
+  rootLoading?: boolean;
   workspace: unknown;
   workspaceTier: unknown;
 }>;
 
-function renderServerPage() {
+function renderServerPage(options?: { rootLoading?: boolean }) {
   return TaskBoardServerPage({
     params: Promise.resolve({
       boardId: BOARD_ID,
       wsId: 'ws-1',
     }),
+    rootLoading: options?.rootLoading,
   }) as Promise<BoardClientElement>;
 }
 
@@ -182,5 +184,26 @@ describe('TaskBoardServerPage', () => {
     expect(element.type).toBe(mocks.BoardClient);
     expect(element.props.workspace).toBe(workspace);
     expect(element.props.workspaceTier).toBe('FREE');
+  });
+
+  it('passes full-bleed loading through to the board client when requested', async () => {
+    const workspace = {
+      id: 'ws-board',
+      joined: true,
+      personal: false,
+      tier: 'FREE',
+    };
+    mocks.getWorkspaceTaskBoard.mockResolvedValue({
+      board: {
+        access_type: 'member',
+        id: BOARD_ID,
+        ws_id: 'ws-board',
+      },
+    });
+    mocks.getWorkspace.mockResolvedValue(workspace);
+
+    const element = await renderServerPage({ rootLoading: true });
+
+    expect(element.props.rootLoading).toBe(true);
   });
 });

@@ -1,22 +1,17 @@
-import { BoardsListSkeleton } from '@tuturuuu/ui/tu-do/boards/boards-list-skeleton';
-import WorkspaceProjectsClientPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-client-page';
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
+import { TaskBoardEntryPage } from '../task-board-entry';
 
 export const metadata: Metadata = {
   title: 'Boards',
-  description: 'Manage Boards in the Tasks area of your Tuturuuu workspace.',
+  description: 'Open your default task board.',
 };
 
-export default function ProjectsPage() {
-  return (
-    <Suspense fallback={<BoardsListSkeleton />}>
-      <WorkspaceProjectsClientPage
-        config={{
-          showFeatureSummary: true,
-          showSeparator: true,
-        }}
-      />
-    </Suspense>
-  );
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+export default function Page({ params }: Props) {
+  return <TaskBoardEntryPage params={params} />;
 }

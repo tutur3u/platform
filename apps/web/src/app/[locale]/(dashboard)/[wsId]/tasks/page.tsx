@@ -1,9 +1,9 @@
-import MyTasksPage from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-page';
 import type { Metadata } from 'next';
+import { TaskBoardEntryPage } from './task-board-entry';
 
 export const metadata: Metadata = {
   title: 'Tasks',
-  description: 'View and manage your tasks.',
+  description: 'Open your default task board.',
 };
 
 interface Props {
@@ -13,5 +13,5 @@ interface Props {
 }
 
 export default function Page({ params }: Props) {
-  return <MyTasksPage params={params} />;
+  return <TaskBoardEntryPage params={params} />;
 }

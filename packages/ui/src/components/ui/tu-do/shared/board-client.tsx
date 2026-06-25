@@ -36,6 +36,7 @@ interface Props {
   currentUserId?: string;
   routePrefix?: string;
   idleBottomIsland?: ReactNode;
+  rootLoading?: boolean;
 }
 
 export function BoardClient({
@@ -45,6 +46,7 @@ export function BoardClient({
   workspaceTier,
   currentUserId,
   routePrefix = '/tasks',
+  rootLoading = false,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -238,7 +240,7 @@ export function BoardClient({
   ]);
 
   if (boardLoading && !board) {
-    return <TaskBoardLoadingState />;
+    return <TaskBoardLoadingState root={rootLoading} />;
   }
 
   if (!board?.id) {

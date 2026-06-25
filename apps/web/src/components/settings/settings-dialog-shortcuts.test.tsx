@@ -11,9 +11,14 @@ const {
   globalCommandLauncherMock,
   setSettingsQueryMock,
   settingsDialogMock,
+  navigationState,
   settingsQueryState,
 } = vi.hoisted(() => ({
   globalCommandLauncherMock: vi.fn(),
+  navigationState: {
+    params: {} as Record<string, string | string[]>,
+    pathname: '/workspace-1',
+  },
   setSettingsQueryMock: vi.fn(),
   settingsDialogMock: vi.fn(),
   settingsQueryState: {
@@ -29,7 +34,8 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useParams: () => ({}),
+  useParams: () => navigationState.params,
+  usePathname: () => navigationState.pathname,
 }));
 
 vi.mock('nuqs', () => ({
@@ -255,6 +261,8 @@ describe('settings dialog shortcut', () => {
     settingsQueryState.settingsDialog = null;
     settingsQueryState.settingsLinkedProvider = null;
     settingsQueryState.settingsTab = null;
+    navigationState.params = {};
+    navigationState.pathname = '/workspace-1';
   });
 
   it('opens Settings with Cmd/Ctrl + comma', () => {
@@ -299,6 +307,38 @@ describe('settings dialog shortcut', () => {
     fireEvent.keyDown(window, { ctrlKey: true, key: ',' });
 
     expectSettingsQueryOpened();
+  });
+
+  it('opens board settings from the task board route shortcut', () => {
+    navigationState.params = {
+      boardId: 'board-1',
+      wsId: 'workspace-1',
+    };
+    navigationState.pathname = '/workspace-1/tasks/boards/board-1';
+
+    render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={null}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent.keyDown(window, { ctrlKey: true, key: ',' });
+
+    expect(setSettingsQueryMock).toHaveBeenCalledWith(
+      {
+        settingsBoardId: 'board-1',
+        settingsDialog: 'open',
+        settingsLinkedProvider: null,
+        settingsTab: 'task_board',
+      },
+      {
+        history: 'replace',
+        scroll: false,
+        shallow: true,
+      }
+    );
   });
 
   it('does not mount the dashboard settings body while the query-backed dialog is closed', async () => {

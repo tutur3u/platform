@@ -3,6 +3,7 @@
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import { useParams, usePathname } from 'next/navigation';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { ComponentType } from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -28,6 +29,11 @@ type SettingsDialogComponent = ComponentType<{
 const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
   'tuturuuu:settings-dialog-open-intent';
 
+function getRouteParam(params: Record<string, string | string[]>, key: string) {
+  const value = params[key];
+  return Array.isArray(value) ? value[0] : value;
+}
+
 type SettingsOpenIntent = {
   settingsBoardId?: string;
   settingsLinkedProvider?: string;
@@ -52,6 +58,8 @@ export function SettingsDialogHost({
   user,
   workspace,
 }: SettingsDialogHostProps) {
+  const params = useParams<Record<string, string | string[]>>();
+  const pathname = usePathname();
   const [settingsQuery, setSettingsQuery] = useQueryStates(
     {
       settingsDialog: parseAsStringLiteral(['open']),
@@ -123,11 +131,27 @@ export function SettingsDialogHost({
   }, [requestedSettingsOpen, SettingsDialog]);
 
   const openSettingsDialog = useCallback(() => {
+    const routeBoardId = getRouteParam(params, 'boardId');
+    const shouldOpenBoardSettings = Boolean(
+      routeBoardId && pathname?.includes('/tasks/boards/')
+    );
+
+    if (shouldOpenBoardSettings) {
+      window.dispatchEvent(
+        new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+          detail: {
+            settingsBoardId: routeBoardId,
+            settingsTab: 'task_board',
+          },
+        })
+      );
+    }
+
     void setSettingsQuery(
       {
         settingsDialog: 'open',
-        settingsTab: null,
-        settingsBoardId: null,
+        settingsTab: shouldOpenBoardSettings ? 'task_board' : null,
+        settingsBoardId: shouldOpenBoardSettings ? routeBoardId : null,
         settingsLinkedProvider: null,
       },
       {
@@ -136,7 +160,7 @@ export function SettingsDialogHost({
         scroll: false,
       }
     );
-  }, [setSettingsQuery]);
+  }, [params, pathname, setSettingsQuery]);
 
   useSettingsDialogShortcut({
     enabled: Boolean(user),

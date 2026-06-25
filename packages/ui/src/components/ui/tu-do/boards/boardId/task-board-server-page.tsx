@@ -23,6 +23,7 @@ interface Props {
   /** Route prefix for tasks URLs. Defaults to '/tasks' (web app). Set to '' for satellite apps. */
   routePrefix?: string;
   idleBottomIsland?: ReactNode;
+  rootLoading?: boolean;
 }
 
 type AuthorizedWorkspace = Workspace & {
@@ -74,6 +75,7 @@ export default async function TaskBoardServerPage({
   idleBottomIsland,
   params,
   routePrefix = '/tasks',
+  rootLoading = false,
 }: Props) {
   const { wsId: id, boardId } = await params;
 
@@ -97,6 +99,7 @@ export default async function TaskBoardServerPage({
       currentUserId={user.id}
       routePrefix={routePrefix}
       idleBottomIsland={idleBottomIsland}
+      rootLoading={rootLoading}
     />
   );
 }

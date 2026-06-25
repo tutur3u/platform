@@ -44,6 +44,7 @@ export default async function Page({ params }: Props) {
   return (
     <TaskBoardServerPage
       params={Promise.resolve(resolvedParams)}
+      rootLoading
       idleBottomIsland={
         <TaskBoardAiChatBar
           assistantName={assistantName}
