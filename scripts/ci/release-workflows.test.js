@@ -1182,6 +1182,7 @@ const packageReleaseWorkflows = [
       /@tuturuuu\/internal-api releases can only run from refs\/heads\/production/,
     requiredBuildPatterns: [
       /bun run --filter @tuturuuu\/types build/,
+      /bun run --filter @tuturuuu\/supabase build/,
       /working-directory: packages\/internal-api/,
       /run: bun run build/,
       /run: bun run test/,
