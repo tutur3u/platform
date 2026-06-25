@@ -1278,6 +1278,7 @@ const packageReleaseWorkflows = [
       /Build SDK workspace dependencies/,
       /bun run --filter @tuturuuu\/devbox build/,
       /bun run --filter @tuturuuu\/types build/,
+      /bun run --filter @tuturuuu\/supabase build/,
       /bun run --filter @tuturuuu\/internal-api build/,
       /working-directory: packages\/sdk/,
       /run: bun run test/,
@@ -1521,6 +1522,30 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
 
     for (const pattern of requiredBuildPatterns) {
       assert.match(buildJob, pattern);
+    }
+
+    for (const [jobName, jobBlock] of [
+      ['build', buildJob],
+      ['prepare-publish-npm', prepareJob],
+    ]) {
+      const supabaseBuildIndex = jobBlock.indexOf(
+        'bun run --filter @tuturuuu/supabase build'
+      );
+      const internalApiBuildIndex = jobBlock.indexOf(
+        'bun run --filter @tuturuuu/internal-api build'
+      );
+
+      if (internalApiBuildIndex === -1) continue;
+
+      assert.notEqual(
+        supabaseBuildIndex,
+        -1,
+        `${workflowName} ${jobName} must build @tuturuuu/supabase before @tuturuuu/internal-api`
+      );
+      assert.ok(
+        supabaseBuildIndex < internalApiBuildIndex,
+        `${workflowName} ${jobName} must build @tuturuuu/supabase before @tuturuuu/internal-api`
+      );
     }
 
     assert.match(

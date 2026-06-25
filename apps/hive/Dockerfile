@@ -126,8 +126,8 @@ COPY packages ./packages
 RUN --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
   bun run --filter @tuturuuu/types build && \
-  bun run --filter @tuturuuu/internal-api build && \
   bun run --filter @tuturuuu/supabase build && \
+  bun run --filter @tuturuuu/internal-api build && \
   node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env
 
 FROM node:24-bookworm-slim AS runner

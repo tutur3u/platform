@@ -1310,6 +1310,22 @@ test('validateHiveDockerfile reports missing workspace package builds', () => {
   assert.match(errors.join('\n'), /@tuturuuu\/supabase build/);
 });
 
+test('validateHiveDockerfile reports Supabase builds after internal API', () => {
+  const dockerfileContent = fs
+    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
+    .replace(
+      '  bun run --filter @tuturuuu/supabase build && \\\n  bun run --filter @tuturuuu/internal-api build && \\\n',
+      '  bun run --filter @tuturuuu/internal-api build && \\\n  bun run --filter @tuturuuu/supabase build && \\\n'
+    );
+
+  const errors = validateHiveDockerfile(dockerfileContent);
+
+  assert.match(
+    errors.join('\n'),
+    /@tuturuuu\/supabase build before bun run --filter @tuturuuu\/internal-api build/u
+  );
+});
+
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {
   const dockerfileContent = fs
     .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')

@@ -1611,8 +1611,8 @@ function validateHiveDockerfile(
       'bun install --frozen-lockfile --filter @tuturuuu/hive'
     ),
     'bun run --filter @tuturuuu/types build',
-    'bun run --filter @tuturuuu/internal-api build',
     'bun run --filter @tuturuuu/supabase build',
+    'bun run --filter @tuturuuu/internal-api build',
     'node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env',
   ];
 
@@ -1623,6 +1623,18 @@ function validateHiveDockerfile(
       );
     }
   }
+
+  errors.push(
+    ...validateSnippetOrder(
+      dockerfileContent,
+      [
+        'bun run --filter @tuturuuu/types build',
+        'bun run --filter @tuturuuu/supabase build',
+        'bun run --filter @tuturuuu/internal-api build',
+      ],
+      'apps/hive/Dockerfile builder stage'
+    )
+  );
 
   return errors;
 }
