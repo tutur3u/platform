@@ -504,6 +504,11 @@ export function StructureImpl({
     (pathname: string, target?: string, hasChildren?: boolean) => {
       if (!target) return false;
 
+      if (target.endsWith('/*')) {
+        const prefix = target.slice(0, -2).replace(/\/+$/u, '') || '/';
+        return pathname === prefix || pathname.startsWith(`${prefix}/`);
+      }
+
       // For items WITH children, use startsWith to match subroutes
       if (hasChildren) {
         return pathname === target || pathname.startsWith(`${target}/`);

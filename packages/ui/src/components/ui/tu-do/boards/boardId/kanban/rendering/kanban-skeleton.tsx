@@ -71,14 +71,20 @@ function KanbanColumnSkeleton({
   );
 }
 
-export function KanbanSkeleton() {
+export function KanbanSkeleton({ root = false }: { root?: boolean }) {
   return (
     <div
       aria-hidden="true"
       className="h-full overflow-hidden bg-transparent"
       data-testid="kanban-skeleton"
     >
-      <div className="flex h-full gap-2 overflow-hidden p-2 sm:gap-3">
+      <div
+        className={cn(
+          'flex h-full min-w-0 gap-2 overflow-hidden sm:gap-3',
+          root ? 'px-0 py-2' : 'p-2'
+        )}
+        data-testid="kanban-skeleton-frame"
+      >
         <div className="hidden shrink-0 gap-2 sm:flex">
           {RAILS.map((rail) => (
             <div

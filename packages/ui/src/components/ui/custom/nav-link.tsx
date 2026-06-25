@@ -52,6 +52,23 @@ function getComparablePath(target?: string) {
   }
 }
 
+function matchesNavigationTarget(
+  pathname: string,
+  target: string,
+  matchExact = false
+) {
+  const isWildcard = target.endsWith('/*');
+  const normalizedTarget = isWildcard
+    ? target.slice(0, -2).replace(/\/+$/u, '') || '/'
+    : target;
+
+  if (isWildcard) return matchesPathPrefix(pathname, normalizedTarget);
+
+  return matchExact
+    ? pathname === normalizedTarget
+    : matchesPathPrefix(pathname, normalizedTarget);
+}
+
 interface NavLinkProps {
   wsId: string;
   link: NavLinkType;
@@ -81,7 +98,7 @@ export function NavLink({
           .map(getComparablePath)
           .filter((target): target is string => Boolean(target));
         const childMatches = childTargets.some((target) =>
-          child?.matchExact ? pathname === target : pathname.startsWith(target)
+          matchesNavigationTarget(pathname, target, child?.matchExact)
         );
 
         if (childMatches) return true;
@@ -100,7 +117,7 @@ export function NavLink({
     .filter((target): target is string => Boolean(target));
   const isActive =
     activeTargets.some((target) =>
-      link.matchExact ? pathname === target : pathname.startsWith(target)
+      matchesNavigationTarget(pathname, target, link.matchExact)
     ) ||
     (children && hasActiveChild(children));
 

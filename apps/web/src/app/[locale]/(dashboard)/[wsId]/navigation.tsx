@@ -196,6 +196,7 @@ export async function WorkspaceNavigationLinks({
         aliases: [
           `/${personalOrWsId}/tasks`,
           `/${personalOrWsId}/tasks/boards`,
+          `/${personalOrWsId}/tasks/boards/*`,
         ],
         icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
         experimental: 'beta',
@@ -326,6 +327,7 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
+      aliases: [`/${personalOrWsId}/tasks/boards/*`],
       icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
       disabled: taskNavigationDisabled,
       matchExact: true,

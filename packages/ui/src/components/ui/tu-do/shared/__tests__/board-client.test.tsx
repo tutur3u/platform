@@ -166,7 +166,8 @@ describe('BoardClient', () => {
 
     expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
       '-m-4',
-      'h-[calc(100dvh+2rem)]'
+      'h-[calc(100dvh+2rem)]',
+      'w-[calc(100%+2rem)]'
     );
   });
 
