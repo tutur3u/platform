@@ -36,7 +36,7 @@
     "@ai-sdk/hume": "^2.0.36",
     "@ai-sdk/lmnt": "^2.0.36",
     "@ai-sdk/luma": "^2.0.36",
-    "@ai-sdk/mistral": "^3.0.40",
+    "@ai-sdk/mistral": "^4.0.0",
     "@ai-sdk/openai": "^3.0.74",
     "@ai-sdk/openai-compatible": "^2.0.51",
     "@ai-sdk/perplexity": "^3.0.36",
