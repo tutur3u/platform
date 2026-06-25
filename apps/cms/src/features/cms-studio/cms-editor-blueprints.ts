@@ -17,6 +17,116 @@ export type CmsEditorBlueprint = {
 const CMS_EDITOR_BLUEPRINTS: Partial<
   Record<ExternalProjectAdapterKind, CmsEditorBlueprint>
 > = {
+  exocorpse: {
+    contentViews: [
+      {
+        collectionSlugs: ['about', 'about-content', 'about-faqs'],
+        createCollection: {
+          collectionType: 'about',
+          description:
+            'Landing profile, biography, FAQ, social links, and DNI content.',
+          emptyHint:
+            'Import Exocorpse content or create the first landing section.',
+          entryTitle: 'Landing settings',
+          slug: 'about',
+          title: 'Landing page',
+        },
+        description:
+          'Landing profile, biography, FAQ, social links, and DNI content.',
+        id: 'landing',
+        label: 'Landing page',
+        navigationLabel: 'Landing page',
+      },
+      {
+        collectionSlugs: [
+          'stories',
+          'worlds',
+          'characters',
+          'factions',
+          'locations',
+          'timelines',
+          'events',
+          'relationship-types',
+          'outfit-types',
+          'event-types',
+          'character-outfits',
+          'character-gallery',
+          'character-relationships',
+          'character-factions',
+          'character-locations',
+          'character-worlds',
+          'location-gallery',
+          'event-participants',
+          'event-factions',
+        ],
+        description:
+          'Story universes, worlds, characters, factions, locations, timelines, and lore links.',
+        id: 'wiki',
+        label: 'Wiki',
+        navigationLabel: 'Wiki',
+      },
+      {
+        collectionSlugs: [
+          'portfolio-art',
+          'portfolio-writing',
+          'portfolio-games',
+        ],
+        description: 'Portfolio artwork, writing, and playable projects.',
+        id: 'portfolio',
+        label: 'Portfolio',
+        navigationLabel: 'Portfolio',
+      },
+      {
+        collectionSlugs: ['blog-posts'],
+        description: 'Published and draft blog posts.',
+        id: 'writing',
+        label: 'Writing',
+        navigationLabel: 'Writing',
+      },
+      {
+        collectionSlugs: [
+          'commission-services',
+          'commission-addons',
+          'commission-styles',
+          'commission-pictures',
+          'commission-service-addons',
+          'commission-blacklist',
+        ],
+        description:
+          'Commission services, pricing add-ons, style examples, and public blacklist records.',
+        id: 'commissions',
+        label: 'Commissions',
+        navigationLabel: 'Commissions',
+      },
+      {
+        collectionSlugs: [
+          'heaven-space-passages',
+          'heaven-space-assets',
+          'heaven-space-scenes',
+          'heaven-space-scene-choices',
+        ],
+        description: 'Heaven Space passages, scenes, choices, and assets.',
+        id: 'heaven-space',
+        label: 'Heaven Space',
+        navigationLabel: 'Heaven Space',
+      },
+      {
+        collectionSlugs: [
+          'tags',
+          'entity-tags',
+          'moodboards',
+          'media-assets',
+          'cofi-samples',
+        ],
+        description:
+          'Tags, moodboards, media library records, and COFI samples.',
+        id: 'reference',
+        label: 'Reference',
+        navigationLabel: 'Reference',
+      },
+    ],
+    landingSlugs: ['about', 'about-content', 'about-faqs'],
+  },
   kendra: {
     contentViews: [
       {

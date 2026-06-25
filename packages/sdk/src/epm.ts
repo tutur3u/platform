@@ -18,6 +18,8 @@ import type {
   EpmEntryPayload,
   EpmEntryUpdatePayload,
   EpmPublishEventKind,
+  ExocorpseExternalProjectLoadingData,
+  ExocorpseExternalProjectLoadingEntry,
   ExternalProjectAdapterKind,
   ExternalProjectBulkUpdatePayload,
   ExternalProjectCollection,
@@ -72,46 +74,196 @@ function normalizeDeliveryPayloadUrls(
     })),
   }));
 
-  const loadingData =
-    payload.loadingData?.adapter === 'yoola'
-      ? {
-          ...payload.loadingData,
-          artworks: payload.loadingData.artworks.map((artwork) => ({
-            ...artwork,
-            assetUrl: absolutizeUrl(apiBaseUrl, artwork.assetUrl),
-          })),
-          artworksByCategory: Object.fromEntries(
-            Object.entries(payload.loadingData.artworksByCategory).map(
-              ([category, artworks]) => [
-                category,
-                artworks.map((artwork) => ({
-                  ...artwork,
-                  assetUrl: absolutizeUrl(apiBaseUrl, artwork.assetUrl),
-                })),
-              ]
-            )
-          ),
-          featuredArtwork: payload.loadingData.featuredArtwork
-            ? {
-                ...payload.loadingData.featuredArtwork,
-                assetUrl: absolutizeUrl(
-                  apiBaseUrl,
-                  payload.loadingData.featuredArtwork.assetUrl
-                ),
-              }
-            : null,
-          loreCapsules: payload.loadingData.loreCapsules.map((capsule) => ({
-            ...capsule,
-            artworkAssetUrl: absolutizeUrl(apiBaseUrl, capsule.artworkAssetUrl),
-          })),
-        }
-      : payload.loadingData;
+  let loadingData = payload.loadingData;
+
+  if (payload.loadingData?.adapter === 'yoola') {
+    loadingData = {
+      ...payload.loadingData,
+      artworks: payload.loadingData.artworks.map((artwork) => ({
+        ...artwork,
+        assetUrl: absolutizeUrl(apiBaseUrl, artwork.assetUrl),
+      })),
+      artworksByCategory: Object.fromEntries(
+        Object.entries(payload.loadingData.artworksByCategory).map(
+          ([category, artworks]) => [
+            category,
+            artworks.map((artwork) => ({
+              ...artwork,
+              assetUrl: absolutizeUrl(apiBaseUrl, artwork.assetUrl),
+            })),
+          ]
+        )
+      ),
+      featuredArtwork: payload.loadingData.featuredArtwork
+        ? {
+            ...payload.loadingData.featuredArtwork,
+            assetUrl: absolutizeUrl(
+              apiBaseUrl,
+              payload.loadingData.featuredArtwork.assetUrl
+            ),
+          }
+        : null,
+      loreCapsules: payload.loadingData.loreCapsules.map((capsule) => ({
+        ...capsule,
+        artworkAssetUrl: absolutizeUrl(apiBaseUrl, capsule.artworkAssetUrl),
+      })),
+    };
+  } else if (payload.loadingData?.adapter === 'exocorpse') {
+    loadingData = normalizeExocorpseLoadingDataUrls(
+      payload.loadingData,
+      apiBaseUrl
+    );
+  }
 
   return {
     ...payload,
     collections: normalizedCollections,
     loadingData,
   } satisfies ExternalProjectDeliveryPayload;
+}
+
+function normalizeExocorpseEntryUrls(
+  entry: ExocorpseExternalProjectLoadingEntry,
+  apiBaseUrl: string
+): ExocorpseExternalProjectLoadingEntry {
+  return {
+    ...entry,
+    assets: entry.assets.map((asset) => ({
+      ...asset,
+      assetUrl: absolutizeUrl(apiBaseUrl, asset.assetUrl),
+    })),
+  };
+}
+
+function normalizeExocorpseEntriesUrls(
+  entries: ExocorpseExternalProjectLoadingEntry[],
+  apiBaseUrl: string
+) {
+  return entries.map((entry) => normalizeExocorpseEntryUrls(entry, apiBaseUrl));
+}
+
+function normalizeExocorpseLoadingDataUrls(
+  payload: ExocorpseExternalProjectLoadingData,
+  apiBaseUrl: string
+): ExocorpseExternalProjectLoadingData {
+  return {
+    ...payload,
+    blogPosts: normalizeExocorpseEntriesUrls(payload.blogPosts, apiBaseUrl),
+    collections: Object.fromEntries(
+      Object.entries(payload.collections).map(([slug, collection]) => [
+        slug,
+        {
+          ...collection,
+          entries: normalizeExocorpseEntriesUrls(
+            collection.entries,
+            apiBaseUrl
+          ),
+        },
+      ])
+    ),
+    commissions: {
+      addons: normalizeExocorpseEntriesUrls(
+        payload.commissions.addons,
+        apiBaseUrl
+      ),
+      blacklist: normalizeExocorpseEntriesUrls(
+        payload.commissions.blacklist,
+        apiBaseUrl
+      ),
+      pictures: normalizeExocorpseEntriesUrls(
+        payload.commissions.pictures,
+        apiBaseUrl
+      ),
+      serviceAddons: normalizeExocorpseEntriesUrls(
+        payload.commissions.serviceAddons,
+        apiBaseUrl
+      ),
+      services: normalizeExocorpseEntriesUrls(
+        payload.commissions.services,
+        apiBaseUrl
+      ),
+      styles: normalizeExocorpseEntriesUrls(
+        payload.commissions.styles,
+        apiBaseUrl
+      ),
+    },
+    heavenSpace: {
+      assets: normalizeExocorpseEntriesUrls(
+        payload.heavenSpace.assets,
+        apiBaseUrl
+      ),
+      passages: normalizeExocorpseEntriesUrls(
+        payload.heavenSpace.passages,
+        apiBaseUrl
+      ),
+      sceneChoices: normalizeExocorpseEntriesUrls(
+        payload.heavenSpace.sceneChoices,
+        apiBaseUrl
+      ),
+      scenes: normalizeExocorpseEntriesUrls(
+        payload.heavenSpace.scenes,
+        apiBaseUrl
+      ),
+    },
+    landing: {
+      content: normalizeExocorpseEntriesUrls(
+        payload.landing.content,
+        apiBaseUrl
+      ),
+      faqs: normalizeExocorpseEntriesUrls(payload.landing.faqs, apiBaseUrl),
+      settings: payload.landing.settings
+        ? normalizeExocorpseEntryUrls(payload.landing.settings, apiBaseUrl)
+        : null,
+    },
+    portfolio: {
+      art: normalizeExocorpseEntriesUrls(payload.portfolio.art, apiBaseUrl),
+      games: normalizeExocorpseEntriesUrls(payload.portfolio.games, apiBaseUrl),
+      writing: normalizeExocorpseEntriesUrls(
+        payload.portfolio.writing,
+        apiBaseUrl
+      ),
+    },
+    reference: {
+      cofiSamples: normalizeExocorpseEntriesUrls(
+        payload.reference.cofiSamples,
+        apiBaseUrl
+      ),
+      entityTags: normalizeExocorpseEntriesUrls(
+        payload.reference.entityTags,
+        apiBaseUrl
+      ),
+      mediaAssets: normalizeExocorpseEntriesUrls(
+        payload.reference.mediaAssets,
+        apiBaseUrl
+      ),
+      moodboards: normalizeExocorpseEntriesUrls(
+        payload.reference.moodboards,
+        apiBaseUrl
+      ),
+      tags: normalizeExocorpseEntriesUrls(payload.reference.tags, apiBaseUrl),
+    },
+    wiki: {
+      characters: normalizeExocorpseEntriesUrls(
+        payload.wiki.characters,
+        apiBaseUrl
+      ),
+      events: normalizeExocorpseEntriesUrls(payload.wiki.events, apiBaseUrl),
+      factions: normalizeExocorpseEntriesUrls(
+        payload.wiki.factions,
+        apiBaseUrl
+      ),
+      locations: normalizeExocorpseEntriesUrls(
+        payload.wiki.locations,
+        apiBaseUrl
+      ),
+      stories: normalizeExocorpseEntriesUrls(payload.wiki.stories, apiBaseUrl),
+      timelines: normalizeExocorpseEntriesUrls(
+        payload.wiki.timelines,
+        apiBaseUrl
+      ),
+      worlds: normalizeExocorpseEntriesUrls(payload.wiki.worlds, apiBaseUrl),
+    },
+  };
 }
 
 function normalizeStudioPayloadUrls(
@@ -180,6 +332,12 @@ export function isYoolaExternalProjectLoadingData(
   value: ExternalProjectLoadingData | null | undefined
 ): value is YoolaExternalProjectLoadingData {
   return value?.adapter === 'yoola';
+}
+
+export function isExocorpseExternalProjectLoadingData(
+  value: ExternalProjectLoadingData | null | undefined
+): value is ExocorpseExternalProjectLoadingData {
+  return value?.adapter === 'exocorpse';
 }
 
 export function getYoolaSingletonSection(

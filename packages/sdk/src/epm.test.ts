@@ -3,6 +3,7 @@ import {
   buildEpmNavigationItems,
   EpmClient,
   getEpmCollectionNavigationTitle,
+  isExocorpseExternalProjectLoadingData,
 } from './epm';
 import { ValidationError } from './errors';
 import {
@@ -659,5 +660,118 @@ describe('EpmClient', () => {
       true,
     ]);
     expect(payload.workspaceId).toBe('ws_123');
+  });
+
+  it('normalizes Exocorpse loading-data asset URLs in delivery payloads', async () => {
+    const client = new EpmClient({
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+    const entry = {
+      assets: [
+        {
+          alt_text: 'Story cover',
+          asset_type: 'image',
+          assetUrl: '/api/v1/workspaces/ws_123/external-projects/assets/a1',
+          block_id: null,
+          entry_id: 'entry_1',
+          id: 'a1',
+          metadata: {},
+          sort_order: 0,
+          source_url: null,
+          storage_path: 'external-projects/exocorpse/stories/cover.png',
+        },
+      ],
+      bodyMarkdown: 'Body',
+      entryId: 'entry_1',
+      metadata: {},
+      profileData: {},
+      slug: 'story',
+      status: 'published',
+      subtitle: null,
+      summary: null,
+      title: 'Story',
+    };
+
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        adapter: 'exocorpse',
+        canonicalProjectId: 'project-1',
+        collections: [],
+        generatedAt: '2026-04-20T09:00:00.000Z',
+        loadingData: {
+          adapter: 'exocorpse',
+          blogPosts: [],
+          collections: {
+            stories: {
+              collectionId: 'collection_1',
+              collectionType: 'stories',
+              description: null,
+              entries: [entry],
+              slug: 'stories',
+              title: 'Stories',
+            },
+          },
+          commissions: {
+            addons: [],
+            blacklist: [],
+            pictures: [],
+            serviceAddons: [],
+            services: [],
+            styles: [],
+          },
+          heavenSpace: {
+            assets: [],
+            passages: [],
+            sceneChoices: [],
+            scenes: [],
+          },
+          landing: {
+            content: [],
+            faqs: [],
+            settings: null,
+          },
+          portfolio: {
+            art: [],
+            games: [],
+            writing: [],
+          },
+          reference: {
+            cofiSamples: [],
+            entityTags: [],
+            mediaAssets: [],
+            moodboards: [],
+            tags: [],
+          },
+          wiki: {
+            characters: [],
+            events: [],
+            factions: [],
+            locations: [],
+            stories: [entry],
+            timelines: [],
+            worlds: [],
+          },
+        },
+        profileData: {},
+        workspaceId: 'ws_123',
+      })
+    );
+
+    const payload = await client.getDelivery('ws_123');
+
+    expect(isExocorpseExternalProjectLoadingData(payload.loadingData)).toBe(
+      true
+    );
+    if (isExocorpseExternalProjectLoadingData(payload.loadingData)) {
+      expect(payload.loadingData.wiki.stories[0]?.assets[0]?.assetUrl).toBe(
+        'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/a1'
+      );
+      expect(
+        payload.loadingData.collections.stories?.entries[0]?.assets[0]?.assetUrl
+      ).toBe(
+        'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/a1'
+      );
+    }
   });
 });

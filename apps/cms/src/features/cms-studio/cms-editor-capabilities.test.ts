@@ -134,6 +134,67 @@ describe('CMS editor capabilities', () => {
     ).toBe(true);
   });
 
+  it('groups Exocorpse content into task-based CMS surfaces', () => {
+    const capabilities = resolveCmsEditorCapabilities({
+      binding: {
+        ...binding,
+        adapter: 'exocorpse',
+      },
+      collections: [
+        collection('about'),
+        collection('about-faqs'),
+        collection('stories'),
+        collection('characters'),
+        collection('portfolio-art'),
+        collection('commission-services'),
+        collection('heaven-space-scenes'),
+        collection('cofi-samples'),
+      ],
+      fieldDefinitions: [],
+      studio: null,
+    });
+
+    expect(capabilities.collectionViews.map((view) => view.id)).toEqual([
+      'all',
+      'landing',
+      'library',
+      'wiki',
+      'portfolio',
+      'writing',
+      'commissions',
+      'heaven-space',
+      'reference',
+      'collection:about',
+      'collection:about-faqs',
+      'collection:stories',
+      'collection:characters',
+      'collection:portfolio-art',
+      'collection:commission-services',
+      'collection:heaven-space-scenes',
+      'collection:cofi-samples',
+    ]);
+
+    const landingView = getCmsEditorCollectionView(capabilities, 'landing');
+    const wikiView = getCmsEditorCollectionView(capabilities, 'wiki');
+    const commissionView = getCmsEditorCollectionView(
+      capabilities,
+      'commissions'
+    );
+
+    expect(
+      collectionMatchesCmsEditorView(collection('about'), landingView)
+    ).toBe(true);
+    expect(
+      collectionMatchesCmsEditorView(collection('characters'), wikiView)
+    ).toBe(true);
+    expect(
+      collectionMatchesCmsEditorView(
+        collection('commission-services'),
+        commissionView
+      )
+    ).toBe(true);
+  });
+
   it('adds route-specific views when the platform payload does not provide them yet', () => {
     const capabilities = resolveCmsEditorCapabilities({
       binding,

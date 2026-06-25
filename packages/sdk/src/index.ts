@@ -13,6 +13,7 @@ export {
   EpmClient,
   getEpmCollectionNavigationConfig,
   getEpmCollectionNavigationTitle,
+  isExocorpseExternalProjectLoadingData,
   isYoolaExternalProjectLoadingData,
 } from './epm';
 // Errors
@@ -155,6 +156,9 @@ export type {
   EpmEntryPayload,
   EpmEntryUpdatePayload,
   EpmPublishEventKind,
+  ExocorpseExternalProjectLoadingCollection,
+  ExocorpseExternalProjectLoadingData,
+  ExocorpseExternalProjectLoadingEntry,
   ExternalProjectAdapterKind,
   ExternalProjectAttentionItem,
   ExternalProjectBulkUpdateAction,
