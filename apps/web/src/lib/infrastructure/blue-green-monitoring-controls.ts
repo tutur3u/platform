@@ -22,6 +22,7 @@ const DEFAULT_DOCKER_RECOVERY_TIMEOUT_MS: number | null = null;
 const DEFAULT_DOCKER_RESTART_AFTER_MS: number | null = 30_000;
 const DEFAULT_DOCKER_RESTART_COOLDOWN_MS = 5 * 60_000;
 const DEFAULT_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS = 10 * 60_000;
+const DEFAULT_DOCKER_PROBE_TIMEOUT_MS = 10_000;
 const DEFAULT_DOCKER_EMAIL_ALERT_COOLDOWN_MS = 30 * 60_000;
 
 export interface BlueGreenInstantRolloutRequest {
@@ -65,6 +66,7 @@ export interface BlueGreenDockerRecoveryCommand {
 export interface BlueGreenDockerRecoverySettings {
   dockerRecoveryPollMs: number;
   dockerRecoveryTimeoutMs: number | null;
+  dockerProbeTimeoutMs: number;
   dockerRestartAfterMs: number | null;
   dockerRestartCommand: string[] | null;
   dockerRestartCooldownMs: number;
@@ -182,6 +184,7 @@ function getDefaultDockerRecoverySettings(): BlueGreenDockerRecoverySettings {
   return {
     dockerRecoveryPollMs: DEFAULT_DOCKER_RECOVERY_POLL_MS,
     dockerRecoveryTimeoutMs: DEFAULT_DOCKER_RECOVERY_TIMEOUT_MS,
+    dockerProbeTimeoutMs: DEFAULT_DOCKER_PROBE_TIMEOUT_MS,
     dockerRestartAfterMs: DEFAULT_DOCKER_RESTART_AFTER_MS,
     dockerRestartCommand: null,
     dockerRestartCooldownMs: DEFAULT_DOCKER_RESTART_COOLDOWN_MS,
@@ -217,6 +220,10 @@ export function normalizeBlueGreenDockerRecoverySettings(
     dockerRecoveryTimeoutMs: toNullablePositiveInteger(
       record.dockerRecoveryTimeoutMs,
       defaults.dockerRecoveryTimeoutMs
+    ),
+    dockerProbeTimeoutMs: toPositiveInteger(
+      record.dockerProbeTimeoutMs,
+      defaults.dockerProbeTimeoutMs
     ),
     dockerRestartAfterMs: toNullablePositiveInteger(
       record.dockerRestartAfterMs,

@@ -307,6 +307,7 @@ describe('readBlueGreenMonitoringSnapshot', () => {
         JSON.stringify({
           dockerRecoveryPollMs: 1000,
           dockerRecoveryTimeoutMs: null,
+          dockerProbeTimeoutMs: 2500,
           dockerRestartAfterMs: 5000,
           dockerRestartCommand: ['service', 'docker', 'restart'],
           dockerRestartCooldownMs: 60_000,
@@ -334,6 +335,7 @@ describe('readBlueGreenMonitoringSnapshot', () => {
 
       expect(snapshot.control.dockerRecoverySettings).toMatchObject({
         dockerRestartAfterMs: 5000,
+        dockerProbeTimeoutMs: 2500,
         dockerRestartCommand: null,
         postRestartCommands: [],
       });

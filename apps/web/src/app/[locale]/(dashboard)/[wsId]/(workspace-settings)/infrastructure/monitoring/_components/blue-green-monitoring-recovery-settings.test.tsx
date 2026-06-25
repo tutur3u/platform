@@ -46,6 +46,7 @@ const messages: Record<string, string> = {
     'ops@example.com, founder@example.com',
   'recovery_settings.no_timeout': 'No timeout',
   'recovery_settings.poll': 'Docker poll interval (ms)',
+  'recovery_settings.probe_timeout': 'Docker probe timeout (ms)',
   'recovery_settings.restart_after': 'Restart after unavailable (ms)',
   'recovery_settings.restart_cooldown': 'Restart cooldown (ms)',
   'recovery_settings.restart_disabled': 'Disable Docker restart attempts',
@@ -76,6 +77,7 @@ function createSnapshot() {
       dockerRecoverySettings: {
         dockerRecoveryPollMs: 5000,
         dockerRecoveryTimeoutMs: null,
+        dockerProbeTimeoutMs: 10_000,
         dockerRestartAfterMs: 30_000,
         dockerRestartCommand: null,
         dockerRestartCooldownMs: 300_000,
@@ -133,6 +135,9 @@ describe('BlueGreenMonitoringRecoverySettings', () => {
       'Restart after unavailable (ms)'
     );
     expect(restartAfterInput).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Docker probe timeout (ms)')
+    ).toBeInTheDocument();
 
     fireEvent.change(restartAfterInput, { target: { value: '45000' } });
 

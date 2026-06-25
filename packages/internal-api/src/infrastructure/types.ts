@@ -1027,6 +1027,7 @@ export interface BlueGreenDockerRecoveryCommand {
 export interface BlueGreenDockerRecoverySettings {
   dockerRecoveryPollMs: number;
   dockerRecoveryTimeoutMs: number | null;
+  dockerProbeTimeoutMs: number;
   dockerRestartAfterMs: number | null;
   dockerRestartCommand: string[] | null;
   dockerRestartCooldownMs: number;

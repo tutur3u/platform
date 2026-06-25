@@ -60,6 +60,7 @@ describe('blue-green recovery-settings route', () => {
     const normalizedSettings = {
       dockerRecoveryPollMs: 1000,
       dockerRecoveryTimeoutMs: null,
+      dockerProbeTimeoutMs: 2500,
       dockerRestartAfterMs: 5000,
       dockerRestartCommand: null,
       dockerRestartCooldownMs: 60_000,

@@ -54,6 +54,12 @@ infrastructure dashboard changes.
   recipients from `emailAlertRecipients`, then
   `PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS`, then `updatedByEmail`; log email
   send failures without changing deployment results.
+- Host-side Docker daemon recovery must treat timed-out Docker CLI probes as
+  daemon unresponsive, not only explicit connection failures. Keep the probe
+  timeout operator-tunable, restart Docker through host-configured commands
+  only, recreate the watcher stack after recovery, and send a deduplicated
+  force-restart recovery email through the configured Docker recovery
+  recipients when a Docker restart was required for services to recover.
 - Watcher restart/recreate must reconcile current `HEAD` against the latest
   successful deployment and deploy `HEAD` when runtime history lags.
 - Before any automatic deploy, recovery handoff, runtime recovery, standby

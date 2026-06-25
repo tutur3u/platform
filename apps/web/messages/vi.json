@@ -2567,6 +2567,7 @@
       "email_recipients_placeholder": "ops@example.com, founder@example.com",
       "no_timeout": "Không giới hạn thời gian",
       "poll": "Chu kỳ kiểm tra Docker (ms)",
+      "probe_timeout": "Timeout kiểm tra Docker (ms)",
       "restart_after": "Restart sau khi mất Docker (ms)",
       "restart_cooldown": "Thời gian chờ giữa các lần restart (ms)",
       "restart_disabled": "Tắt tự động restart Docker",

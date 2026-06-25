@@ -79,6 +79,9 @@ export function BlueGreenMonitoringRecoverySettings({
   const [dockerRecoveryTimeoutMs, setDockerRecoveryTimeoutMs] = useState(
     numberInput(settings.dockerRecoveryTimeoutMs)
   );
+  const [dockerProbeTimeoutMs, setDockerProbeTimeoutMs] = useState(
+    numberInput(settings.dockerProbeTimeoutMs)
+  );
   const [postRestartCommandTimeoutMs, setPostRestartCommandTimeoutMs] =
     useState(numberInput(settings.postRestartCommandTimeoutMs));
   const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(
@@ -98,6 +101,10 @@ export function BlueGreenMonitoringRecoverySettings({
       ),
       dockerRecoveryTimeoutMs: parseOptionalPositiveInteger(
         dockerRecoveryTimeoutMs
+      ),
+      dockerProbeTimeoutMs: parseRequiredPositiveInteger(
+        dockerProbeTimeoutMs,
+        settings.dockerProbeTimeoutMs
       ),
       dockerRestartAfterMs: parseOptionalPositiveInteger(dockerRestartAfterMs),
       dockerRestartCooldownMs: parseRequiredPositiveInteger(
@@ -119,6 +126,7 @@ export function BlueGreenMonitoringRecoverySettings({
     [
       dockerRecoveryPollMs,
       dockerRecoveryTimeoutMs,
+      dockerProbeTimeoutMs,
       dockerRestartAfterMs,
       dockerRestartCooldownMs,
       dockerRestartDisabled,
@@ -127,6 +135,7 @@ export function BlueGreenMonitoringRecoverySettings({
       emailAlertsEnabled,
       postRestartCommandTimeoutMs,
       settings.dockerRecoveryPollMs,
+      settings.dockerProbeTimeoutMs,
       settings.dockerRestartCooldownMs,
       settings.emailAlertCooldownMs,
       settings.postRestartCommandTimeoutMs,
@@ -136,6 +145,7 @@ export function BlueGreenMonitoringRecoverySettings({
     draftSettings.dockerRecoveryPollMs !== settings.dockerRecoveryPollMs ||
     draftSettings.dockerRecoveryTimeoutMs !==
       settings.dockerRecoveryTimeoutMs ||
+    draftSettings.dockerProbeTimeoutMs !== settings.dockerProbeTimeoutMs ||
     draftSettings.dockerRestartAfterMs !== settings.dockerRestartAfterMs ||
     draftSettings.dockerRestartCooldownMs !==
       settings.dockerRestartCooldownMs ||
@@ -155,6 +165,7 @@ export function BlueGreenMonitoringRecoverySettings({
     setDockerRestartCooldownMs(numberInput(settings.dockerRestartCooldownMs));
     setDockerRecoveryPollMs(numberInput(settings.dockerRecoveryPollMs));
     setDockerRecoveryTimeoutMs(numberInput(settings.dockerRecoveryTimeoutMs));
+    setDockerProbeTimeoutMs(numberInput(settings.dockerProbeTimeoutMs));
     setPostRestartCommandTimeoutMs(
       numberInput(settings.postRestartCommandTimeoutMs)
     );
@@ -271,6 +282,12 @@ export function BlueGreenMonitoringRecoverySettings({
                 onChange={setDockerRecoveryTimeoutMs}
                 placeholder={t('recovery_settings.no_timeout')}
                 value={dockerRecoveryTimeoutMs}
+              />
+              <SettingInput
+                id="docker-probe-timeout-ms"
+                label={t('recovery_settings.probe_timeout')}
+                onChange={setDockerProbeTimeoutMs}
+                value={dockerProbeTimeoutMs}
               />
               <SettingInput
                 id="docker-post-restart-timeout-ms"

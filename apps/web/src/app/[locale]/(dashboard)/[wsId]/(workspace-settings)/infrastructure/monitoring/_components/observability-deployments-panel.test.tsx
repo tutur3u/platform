@@ -246,6 +246,7 @@ function createSnapshot(): BlueGreenMonitoringSnapshot {
       dockerRecoverySettings: {
         dockerRecoveryPollMs: 5000,
         dockerRecoveryTimeoutMs: null,
+        dockerProbeTimeoutMs: 10_000,
         dockerRestartAfterMs: 30_000,
         dockerRestartCommand: null,
         dockerRestartCooldownMs: 300_000,

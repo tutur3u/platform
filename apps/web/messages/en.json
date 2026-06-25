@@ -2567,6 +2567,7 @@
       "email_recipients_placeholder": "ops@example.com, founder@example.com",
       "no_timeout": "No timeout",
       "poll": "Docker poll interval (ms)",
+      "probe_timeout": "Docker probe timeout (ms)",
       "restart_after": "Restart after unavailable (ms)",
       "restart_cooldown": "Restart cooldown (ms)",
       "restart_disabled": "Disable Docker restart attempts",

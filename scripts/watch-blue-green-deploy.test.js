@@ -25,6 +25,8 @@ const {
   DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS,
   DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS,
   DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS,
+  DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS,
+  DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
@@ -32,6 +34,8 @@ const {
   DOCKER_DAEMON_RESTART_COMMAND_ENV,
   DOCKER_DAEMON_RESTART_DISABLED_ENV,
   DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV,
+  DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV,
+  DOCKER_LOG_STREAM_RECONNECT_MS_ENV,
   DOCKER_DAEMON_RECOVERY_SETTINGS_FILE,
   HOST_WORKSPACE_DIR_ENV,
   MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
@@ -64,7 +68,9 @@ const {
   getDockerDaemonRestartCooldownMs,
   getDockerDaemonPostRestartCommands,
   getDockerDaemonPostRestartCommandTimeoutMs,
+  getDockerDaemonProbeTimeoutMs,
   getDockerDaemonRecoverySettingsEnv,
+  getDockerLogStreamReconnectMs,
   getWatcherComposeEnv,
   getWatchPaths,
   isGitIndexLockError,
@@ -128,6 +134,7 @@ const {
   DOCKER_RECOVERY_SETTINGS_FILE: BUILD_FAILURE_ALERT_SETTINGS_FILE,
   createBuildFailureIncidentEmail,
   sendBuildFailureIncidentEmail,
+  sendDockerDaemonRecoveryIncidentEmail,
 } = require('./watch-blue-green/incident-email.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -443,6 +450,26 @@ test('docker daemon restart configuration defaults to host service commands', ()
     getDockerDaemonPostRestartCommandTimeoutMs({}),
     DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS
   );
+  assert.equal(
+    getDockerDaemonProbeTimeoutMs({}),
+    DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS
+  );
+  assert.equal(
+    getDockerLogStreamReconnectMs({}),
+    DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS
+  );
+  assert.equal(
+    getDockerDaemonProbeTimeoutMs({
+      [DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV]: '2500',
+    }),
+    2500
+  );
+  assert.equal(
+    getDockerLogStreamReconnectMs({
+      [DOCKER_LOG_STREAM_RECONNECT_MS_ENV]: '15000',
+    }),
+    15000
+  );
   assert.deepEqual(
     getDockerDaemonRestartCommand({ env: {}, platform: 'linux' }),
     ['systemctl', 'restart', 'docker']
@@ -493,6 +520,7 @@ test('dashboard Docker recovery settings preserve host-configured command env', 
     fs.writeFileSync(
       path.join(paths.controlDir, DOCKER_DAEMON_RECOVERY_SETTINGS_FILE),
       JSON.stringify({
+        dockerProbeTimeoutMs: 4321,
         dockerRestartCommand: ['dashboard', 'docker', 'restart'],
         postRestartCommands: [
           {
@@ -523,6 +551,7 @@ test('dashboard Docker recovery settings preserve host-configured command env', 
       effectiveEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV],
       '[["docker","compose","up","-d"]]'
     );
+    assert.equal(effectiveEnv[DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV], '4321');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -673,6 +702,72 @@ test('build failure incident email skips when disabled and no env recipients exi
   }
 });
 
+test('Docker recovery incident email uses configured recipients and deduplicates incident ids', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-docker-recovery-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const sends = [];
+
+  try {
+    writeBuildFailureAlertSettings(paths, {
+      emailAlertRecipients: ['Admin@Platform.Test'],
+      emailAlertsEnabled: true,
+    });
+
+    const incident = {
+      attempts: 3,
+      durationMs: 45_000,
+      incidentId: 'docker-daemon-2026-06-25T16:00:00.000Z',
+      lastErrorMessage: 'Command timed out after 25ms: docker info',
+      postRestartResult: {
+        failed: 0,
+        ran: 1,
+        status: 'completed',
+      },
+      probeTimeoutMs: 25,
+      recoveredAt: Date.parse('2026-06-25T16:00:45.000Z'),
+      restartCommand: 'service docker restart',
+      startedAt: Date.parse('2026-06-25T16:00:00.000Z'),
+    };
+    const firstResult = await sendDockerDaemonRecoveryIncidentEmail({
+      env: {},
+      fsImpl: fs,
+      incident,
+      paths,
+      sendSystemEmail: async (payload) => {
+        sends.push(payload);
+        return { success: true };
+      },
+    });
+    const secondResult = await sendDockerDaemonRecoveryIncidentEmail({
+      env: {},
+      fsImpl: fs,
+      incident,
+      paths,
+      sendSystemEmail: async (payload) => {
+        sends.push(payload);
+        return { success: true };
+      },
+    });
+
+    assert.equal(firstResult.sent, true);
+    assert.deepEqual(firstResult.recipients, ['admin@platform.test']);
+    assert.deepEqual(sends[0].recipients, { to: ['admin@platform.test'] });
+    assert.match(sends[0].content.subject, /Docker force restart recovered/);
+    assert.match(sends[0].content.text, /service docker restart/);
+    assert.match(sends[0].content.text, /Command timed out/);
+    assert.deepEqual(secondResult, {
+      recipients: ['admin@platform.test'],
+      sent: false,
+      skipped: 'duplicate',
+    });
+    assert.equal(sends.length, 1);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('build failure incident email content includes commit and debugging details', () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-build-failure-email-')
@@ -798,6 +893,7 @@ test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host
   );
   const paths = getWatchPaths(tempDir);
   const calls = [];
+  const emailIncidents = [];
   let now = 0;
   let restarted = false;
 
@@ -808,6 +904,7 @@ test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host
       JSON.stringify({
         dockerRecoveryPollMs: 10,
         dockerRecoveryTimeoutMs: null,
+        dockerProbeTimeoutMs: 25,
         dockerRestartAfterMs: 1,
         dockerRestartCommand: ['malicious', 'docker', 'restart'],
         dockerRestartCooldownMs: 1,
@@ -826,6 +923,13 @@ test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host
     );
 
     const recovered = await waitForDockerDaemonRecovery({
+      dockerRecoveryIncidentEmailSender: async ({ incident }) => {
+        emailIncidents.push(incident);
+        return {
+          recipients: ['admin@platform.test'],
+          sent: true,
+        };
+      },
       env: {
         PATH: process.env.PATH,
         [DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV]:
@@ -841,6 +945,7 @@ test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host
         calls.push(options.cwd ? `${key} cwd=${options.cwd}` : `${key}`);
 
         if (key === 'docker info') {
+          assert.equal(options.timeoutMs, 25);
           return restarted
             ? createResult('')
             : createResult('', {
@@ -881,6 +986,7 @@ test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host
     assert.deepEqual(
       recoveryLogs.map((entry) => entry.eventType),
       [
+        'docker-force-restart-email-result',
         'docker-post-restart-commands-completed',
         'docker-daemon-recovered',
         'docker-daemon-restart-result',
@@ -892,7 +998,106 @@ test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host
       new Set(recoveryLogs.map((entry) => entry.incidentId)).size,
       1
     );
-    assert.equal(recoveryLogs[0].metadata.ran, 1);
+    assert.equal(recoveryLogs[1].metadata.ran, 1);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('waitForDockerDaemonRecovery restarts Docker after timed-out probes', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-command-docker-timeout-recovery-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const emailIncidents = [];
+  let now = 0;
+  let restarted = false;
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(paths.controlDir, DOCKER_DAEMON_RECOVERY_SETTINGS_FILE),
+      JSON.stringify({
+        dockerRecoveryPollMs: 10,
+        dockerProbeTimeoutMs: 25,
+        dockerRestartAfterMs: 1,
+        dockerRestartCooldownMs: 100,
+        dockerRestartDisabled: false,
+        kind: 'docker-recovery-settings',
+      }),
+      'utf8'
+    );
+
+    const recovered = await waitForDockerDaemonRecovery({
+      dockerRecoveryIncidentEmailSender: async ({ incident }) => {
+        emailIncidents.push(incident);
+        return {
+          recipients: ['admin@platform.test'],
+          sent: true,
+        };
+      },
+      env: {
+        PATH: process.env.PATH,
+        [DOCKER_DAEMON_RESTART_COMMAND_ENV]: '["service","docker","restart"]',
+      },
+      fsImpl: fs,
+      log: { warn() {} },
+      now: () => now,
+      paths,
+      runCommand: async (command, args, options = {}) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'docker info') {
+          assert.equal(options.timeoutMs, 25);
+          return restarted
+            ? createResult('')
+            : {
+                code: 1,
+                signal: 'SIGTERM',
+                stderr: '',
+                stdout: '',
+                timedOut: true,
+              };
+        }
+
+        if (key === 'service docker restart') {
+          restarted = true;
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      sleepImpl: async (ms) => {
+        now += ms;
+      },
+    });
+
+    assert.equal(recovered, true);
+    assert.deepEqual(calls, [
+      'docker info',
+      'docker info',
+      'service docker restart',
+      'docker info',
+    ]);
+    assert.equal(emailIncidents.length, 1);
+    assert.equal(emailIncidents[0].restartCommand, 'service docker restart');
+    const recoveryLogs = readWatcherLogEntries(paths, fs).filter((entry) =>
+      String(entry.eventType ?? '').startsWith('docker-')
+    );
+    assert.equal(
+      recoveryLogs.some(
+        (entry) => entry.eventType === 'docker-daemon-unresponsive'
+      ),
+      true
+    );
+    assert.equal(
+      recoveryLogs.some(
+        (entry) => entry.eventType === 'docker-daemon-restart-attempt'
+      ),
+      true
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -7388,6 +7593,43 @@ test('streamBlueGreenWatcherLogs treats non-zero docker exits as reconnectable s
   });
 });
 
+test('streamBlueGreenWatcherLogs treats timed-out log streams as reconnectable', async () => {
+  let timeoutMs = null;
+  const result = await streamBlueGreenWatcherLogs({
+    env: {
+      PATH: process.env.PATH,
+      [DOCKER_LOG_STREAM_RECONNECT_MS_ENV]: '2500',
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+      UPSTASH_REDIS_REST_TOKEN: 'token',
+      UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+    },
+    fsImpl: {
+      existsSync() {
+        return true;
+      },
+      mkdirSync() {},
+      readFileSync() {
+        return '';
+      },
+      writeFileSync() {},
+    },
+    runCommand: async (_command, _args, options = {}) => {
+      timeoutMs = options.timeoutMs;
+      return {
+        code: 1,
+        signal: 'SIGTERM',
+        stderr: '',
+        stdout: '',
+        timedOut: true,
+      };
+    },
+  });
+
+  assert.deepEqual(result, { status: 'stream-timeout' });
+  assert.equal(timeoutMs, 2500);
+});
+
 test('runWatcherCommand boots the watcher container before tailing logs', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-command-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
@@ -7607,15 +7849,7 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
         calls.push(key);
 
         if (key === 'docker compose version') {
-          const versionCalls = calls.filter(
-            (call) => call === 'docker compose version'
-          ).length;
-          return versionCalls === 2
-            ? createResult('', {
-                code: 1,
-                stderr: 'Cannot connect to the Docker daemon',
-              })
-            : createResult('');
+          return createResult('');
         }
 
         if (key === 'docker info') {
@@ -7675,7 +7909,6 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
       prodComposeWatcherUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
-      'docker compose version',
       'docker info',
       'docker info',
       'docker compose version',

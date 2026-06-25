@@ -57,13 +57,18 @@ function resolveAlertRecipients(settings: BlueGreenDockerRecoverySettings) {
 function isDockerRecoveryLog(log: BlueGreenMonitoringWatcherLog) {
   if (
     log.eventType === 'docker-daemon-unavailable' ||
+    log.eventType === 'docker-daemon-unresponsive' ||
+    log.eventType === 'docker-daemon-restart-attempt' ||
+    log.eventType === 'docker-daemon-restart-result' ||
     log.eventType === 'docker-daemon-recovered' ||
+    log.eventType === 'docker-post-restart-commands-completed' ||
+    log.eventType === 'docker-force-restart-email-result' ||
     log.eventType === 'docker-daemon-recovery-timeout'
   ) {
     return true;
   }
 
-  return /Docker daemon (became unavailable|recovered|did not recover)/iu.test(
+  return /Docker daemon (became unavailable|probe timed out|is still unavailable|recovered|restart command|did not recover)|Docker force-restart recovery email/iu.test(
     log.message
   );
 }

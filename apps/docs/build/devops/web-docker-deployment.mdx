@@ -1000,9 +1000,10 @@ blue/green deploy flow automatically.
 Run this command from a host-level process manager, not only from inside Docker.
 The command starts and tails the `web-blue-green-watcher` container, but the
 host process is the part that can recover after the Docker engine itself dies.
-When Docker is unavailable, the host supervisor polls `docker info`; after
+When Docker is unavailable or Docker CLI probes stop returning, the host
+supervisor polls Docker with bounded probes; after
 `DOCKER_WEB_WATCHER_DOCKER_RESTART_AFTER_MS` milliseconds of continuous failure
-(default 30000), it attempts to restart Docker, waits for `docker info` to pass,
+(default 30000), it attempts to restart Docker, waits for Docker probes to pass,
 runs any configured host-level post-restart commands, then recreates the watcher
 container. The recreated watcher reuses the existing cached blue/green recovery
 path to bring `web-proxy` and the active/standby web lanes back to health.
@@ -1042,6 +1043,12 @@ Useful host-supervisor knobs:
   attempts while still waiting for Docker to recover externally.
 - `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_TIMEOUT_MS`: optional maximum wait time
   for Docker recovery; unset or `0` means wait indefinitely.
+- `DOCKER_WEB_WATCHER_DOCKER_PROBE_TIMEOUT_MS`: timeout for quick Docker CLI
+  probes such as `docker info`, `docker compose version`, and watcher container
+  state checks; default 10000.
+- `DOCKER_WEB_WATCHER_LOG_STREAM_RECONNECT_MS`: maximum time to let the host
+  wrapper follow watcher logs before reconnecting and checking watcher health;
+  default 60000.
 - `DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS`: timeout for each
   additional host-level recovery command; default 600000.
 - `DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMANDS`: JSON array of host-level
@@ -1074,10 +1081,13 @@ That settings file also owns Docker crash email alerts:
 - `emailAlertCooldownMs`: minimum time between alert emails; default 1800000.
 
 The host supervisor persists Docker crash/recovery events to the watcher log
-archive as soon as it detects `docker info` failures. Because the web app itself
-usually runs inside Docker, SES email delivery happens after Docker is reachable
-again and the web cron job `/api/cron/infrastructure/docker-recovery-alerts`
-can run. The cron deduplicates by Docker recovery incident id using
+archive as soon as it detects failed or timed-out Docker probes. If Docker had
+to be restarted before services recovered, the watcher sends an immediate
+force-restart recovery email to the configured recovery recipients and records
+that incident as notified. If the watcher-side email is disabled or fails, the
+web cron job `/api/cron/infrastructure/docker-recovery-alerts` can still send a
+fallback SES email after Docker and the web app are reachable again. Both paths
+deduplicate by Docker recovery incident id using
 `tmp/docker-web/watch/control/blue-green-docker-recovery-alert-state.json`.
 
 The blue/green watcher sends its own build/deploy incident email when an
@@ -1715,9 +1725,10 @@ Operational notes for the containerized watcher:
   then resumes tailing logs. Every hosted project with its own Docker watcher
   needs its own host-side watch process; container `restart:` policies only help
   after Docker is already healthy again.
-- The host Docker recovery loop polls `docker info` every 5 seconds by default.
-  Override with `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS`. By default it
-  waits indefinitely because a host process manager is expected to own the
+- The host Docker recovery loop polls bounded Docker CLI probes every 5 seconds
+  by default. Override with `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS`; tune
+  each quick probe with `DOCKER_WEB_WATCHER_DOCKER_PROBE_TIMEOUT_MS`. By default
+  it waits indefinitely because a host process manager is expected to own the
   terminal process; set `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_TIMEOUT_MS` to a
   positive value to fail after a bounded recovery window.
 - The watcher image lives at `apps/web/docker/blue-green-watcher.Dockerfile`.

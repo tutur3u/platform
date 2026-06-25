@@ -42,6 +42,7 @@ function createSnapshot() {
       dockerRecoverySettings: {
         dockerRecoveryPollMs: 5000,
         dockerRecoveryTimeoutMs: null,
+        dockerProbeTimeoutMs: 10_000,
         dockerRestartAfterMs: 30_000,
         dockerRestartCommand: null,
         dockerRestartCooldownMs: 300_000,
@@ -82,11 +83,26 @@ function createSnapshot() {
           deploymentKind: 'docker-daemon-recovery',
           deploymentStamp: null,
           deploymentStatus: null,
-          eventId: 'incident-1:docker-daemon-unavailable:1000',
-          eventType: 'docker-daemon-unavailable',
+          eventId: 'incident-1:docker-daemon-restart-result:1500',
+          eventType: 'docker-daemon-restart-result',
+          incidentId: 'incident-1',
+          level: 'info',
+          message: 'Docker daemon restart command completed.',
+          time: now - 1500,
+        },
+        {
+          activeColor: null,
+          commitHash: null,
+          commitShortHash: null,
+          deploymentKey: null,
+          deploymentKind: 'docker-daemon-recovery',
+          deploymentStamp: null,
+          deploymentStatus: null,
+          eventId: 'incident-1:docker-daemon-unresponsive:1000',
+          eventType: 'docker-daemon-unresponsive',
           incidentId: 'incident-1',
           level: 'error',
-          message: 'Docker daemon became unavailable.',
+          message: 'Docker daemon probe timed out.',
           time: now - 2000,
         },
       ],
@@ -136,6 +152,9 @@ describe('Docker recovery alert cron route', () => {
       expect.objectContaining({
         content: expect.objectContaining({
           subject: expect.stringContaining('Docker recovered'),
+          text: expect.stringContaining(
+            'Docker daemon restart command completed.'
+          ),
         }),
         recipients: { to: ['ops@platform.test'] },
       })

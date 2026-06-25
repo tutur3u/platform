@@ -6,6 +6,8 @@ const BUILD_FAILURE_ALERT_RECIPIENTS_ENV =
   'PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS';
 const DOCKER_RECOVERY_SETTINGS_FILE =
   'blue-green-docker-recovery-settings.json';
+const DOCKER_RECOVERY_ALERT_STATE_FILE =
+  'blue-green-docker-recovery-alert-state.json';
 const SYSTEM_EMAIL_SOURCE = {
   email: 'notifications@tuturuuu.com',
   name: 'Tuturuuu',
@@ -59,6 +61,72 @@ function readBuildFailureAlertSettings({ fsImpl = fs, paths } = {}) {
   } catch {
     return null;
   }
+}
+
+function normalizeDockerRecoveryAlertState(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      kind: 'docker-recovery-alert-state',
+      lastCheckedAt: null,
+      lastSentAt: null,
+      notifiedIncidentIds: [],
+      updatedAt: null,
+    };
+  }
+
+  const notifiedIncidentIds = Array.isArray(value.notifiedIncidentIds)
+    ? value.notifiedIncidentIds.filter(
+        (entry) => typeof entry === 'string' && entry.trim().length > 0
+      )
+    : [];
+
+  return {
+    kind: 'docker-recovery-alert-state',
+    lastCheckedAt:
+      typeof value.lastCheckedAt === 'string' ? value.lastCheckedAt : null,
+    lastSentAt: typeof value.lastSentAt === 'string' ? value.lastSentAt : null,
+    notifiedIncidentIds: [...new Set(notifiedIncidentIds)].slice(0, 500),
+    updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : null,
+  };
+}
+
+function readDockerRecoveryAlertState({ fsImpl = fs, paths } = {}) {
+  const filePath = paths?.controlDir
+    ? path.join(paths.controlDir, DOCKER_RECOVERY_ALERT_STATE_FILE)
+    : null;
+
+  if (!filePath || !fsImpl?.existsSync(filePath)) {
+    return normalizeDockerRecoveryAlertState(null);
+  }
+
+  try {
+    return normalizeDockerRecoveryAlertState(
+      JSON.parse(fsImpl.readFileSync(filePath, 'utf8'))
+    );
+  } catch {
+    return normalizeDockerRecoveryAlertState(null);
+  }
+}
+
+function writeDockerRecoveryAlertState(state, { fsImpl = fs, paths } = {}) {
+  if (!paths?.controlDir) {
+    return normalizeDockerRecoveryAlertState(state);
+  }
+
+  const nextState = normalizeDockerRecoveryAlertState({
+    ...state,
+    kind: 'docker-recovery-alert-state',
+    updatedAt: state?.updatedAt ?? new Date().toISOString(),
+  });
+
+  fsImpl.mkdirSync(paths.controlDir, { recursive: true });
+  fsImpl.writeFileSync(
+    path.join(paths.controlDir, DOCKER_RECOVERY_ALERT_STATE_FILE),
+    JSON.stringify(nextState, null, 2),
+    'utf8'
+  );
+
+  return nextState;
 }
 
 function resolveBuildFailureAlertRecipients({ env = process.env, settings }) {
@@ -244,6 +312,59 @@ function createBuildFailureIncidentEmail({
   };
 }
 
+function createDockerDaemonRecoveryIncidentEmail({
+  incident,
+  hostname = os.hostname(),
+} = {}) {
+  const startedAt = formatTimestamp(incident?.startedAt);
+  const recoveredAt = formatTimestamp(incident?.recoveredAt);
+  const duration = formatDurationMs(incident?.durationMs);
+  const restartCommand = incident?.restartCommand || 'unknown';
+  const postRestartStatus = incident?.postRestartResult?.status ?? 'unknown';
+  const details = [
+    ['Host', hostname],
+    ['Incident', incident?.incidentId ?? 'unknown'],
+    ['Started at', startedAt],
+    ['Recovered at', recoveredAt],
+    ['Duration', duration],
+    ['Probe attempts', incident?.attempts ?? null],
+    ['Probe timeout', formatDurationMs(incident?.probeTimeoutMs)],
+    ['Restart command', restartCommand],
+    ['Post-restart recovery commands', postRestartStatus],
+    ['Post-restart commands ran', incident?.postRestartResult?.ran ?? null],
+    [
+      'Post-restart commands failed',
+      incident?.postRestartResult?.failed ?? null,
+    ],
+    ['Last probe error', incident?.lastErrorMessage ?? null],
+  ].filter(([, value]) => value != null && value !== '');
+  const subject = `[Tuturuuu] Docker force restart recovered on ${hostname}`;
+  const text = [
+    `Docker had to be restarted before Tuturuuu services could recover on ${hostname}.`,
+    '',
+    ...details.map(([label, value]) => `${label}: ${value}`),
+    '',
+    'Open Infrastructure Monitoring for current container health, watcher logs, and recovery settings.',
+  ].join('\n');
+  const detailsHtml = details
+    .map(
+      ([label, value]) =>
+        `<tr><th align="left">${escapeHtml(label)}</th><td><code>${escapeHtml(
+          value
+        )}</code></td></tr>`
+    )
+    .join('');
+  const html = [
+    `<p>Docker had to be restarted before Tuturuuu services could recover on <strong>${escapeHtml(
+      hostname
+    )}</strong>.</p>`,
+    `<table>${detailsHtml}</table>`,
+    '<p>Open Infrastructure Monitoring for current container health, watcher logs, and recovery settings.</p>',
+  ].join('');
+
+  return { html, subject, text };
+}
+
 async function resolveSendSystemEmail({ importEmailService, sendSystemEmail }) {
   if (typeof sendSystemEmail === 'function') {
     return sendSystemEmail;
@@ -314,13 +435,90 @@ async function sendBuildFailureIncidentEmail({
   return { recipients, sent: true };
 }
 
+async function sendDockerDaemonRecoveryIncidentEmail({
+  env = process.env,
+  fsImpl = fs,
+  hostname = os.hostname(),
+  importEmailService,
+  incident,
+  paths,
+  sendSystemEmail,
+} = {}) {
+  if (!incident?.incidentId) {
+    return { sent: false, skipped: 'missing-incident' };
+  }
+
+  const settings = readBuildFailureAlertSettings({ fsImpl, paths });
+  const enabled = areBuildFailureAlertsEnabled({ env, settings });
+
+  if (!enabled) {
+    return { sent: false, skipped: 'disabled' };
+  }
+
+  const recipients = resolveBuildFailureAlertRecipients({ env, settings });
+  if (recipients.length === 0) {
+    return { sent: false, skipped: 'no-recipients' };
+  }
+
+  const state = readDockerRecoveryAlertState({ fsImpl, paths });
+  if (state.notifiedIncidentIds.includes(incident.incidentId)) {
+    return { recipients, sent: false, skipped: 'duplicate' };
+  }
+
+  const sender = await resolveSendSystemEmail({
+    importEmailService,
+    sendSystemEmail,
+  });
+  const content = createDockerDaemonRecoveryIncidentEmail({
+    incident,
+    hostname,
+  });
+  const result = await sender({
+    content,
+    metadata: {
+      entityId: incident.incidentId,
+      entityType: 'docker-recovery-incident',
+      templateType: 'infrastructure-docker-force-restart-recovered',
+    },
+    recipients: { to: recipients },
+    source: SYSTEM_EMAIL_SOURCE,
+  });
+
+  if (!result?.success) {
+    return {
+      error: result?.error ?? 'Failed to send Docker recovery incident email',
+      recipients,
+      sent: false,
+      skipped: 'send-failed',
+    };
+  }
+
+  const now = new Date().toISOString();
+  writeDockerRecoveryAlertState(
+    {
+      ...state,
+      lastCheckedAt: now,
+      lastSentAt: now,
+      notifiedIncidentIds: [incident.incidentId, ...state.notifiedIncidentIds],
+    },
+    { fsImpl, paths }
+  );
+
+  return { recipients, sent: true };
+}
+
 module.exports = {
   BUILD_FAILURE_ALERT_RECIPIENTS_ENV,
+  DOCKER_RECOVERY_ALERT_STATE_FILE,
   DOCKER_RECOVERY_SETTINGS_FILE,
   areBuildFailureAlertsEnabled,
   createBuildFailureIncidentEmail,
+  createDockerDaemonRecoveryIncidentEmail,
   parseEmailList,
   readBuildFailureAlertSettings,
+  readDockerRecoveryAlertState,
   resolveBuildFailureAlertRecipients,
   sendBuildFailureIncidentEmail,
+  sendDockerDaemonRecoveryIncidentEmail,
+  writeDockerRecoveryAlertState,
 };

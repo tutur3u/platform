@@ -381,6 +381,7 @@ async function getComposeServiceContainerId(
     env,
     includeStopped = false,
     runCommand: run,
+    timeoutMs,
   }
 ) {
   const result = await runChecked(
@@ -397,6 +398,7 @@ async function getComposeServiceContainerId(
       env,
       runCommand: run,
       stdio: 'pipe',
+      timeoutMs,
     }
   );
 
@@ -576,7 +578,10 @@ async function removeComposeServicesIfPresent(
   }
 }
 
-async function getContainerHealthStatus(containerId, { env, runCommand: run }) {
+async function getContainerHealthStatus(
+  containerId,
+  { env, runCommand: run, timeoutMs }
+) {
   const result = await runChecked(
     'docker',
     [
@@ -589,6 +594,7 @@ async function getContainerHealthStatus(containerId, { env, runCommand: run }) {
       env,
       runCommand: run,
       stdio: 'pipe',
+      timeoutMs,
     }
   );
 

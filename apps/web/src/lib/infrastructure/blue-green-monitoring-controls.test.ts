@@ -106,6 +106,7 @@ describe('blue-green monitoring controls', () => {
       const settings = writeBlueGreenDockerRecoverySettings({
         dockerRecoveryPollMs: 1000,
         dockerRecoveryTimeoutMs: null,
+        dockerProbeTimeoutMs: 2500,
         dockerRestartAfterMs: 5000,
         dockerRestartCommand: ['service', 'docker', 'restart'],
         dockerRestartCooldownMs: 60_000,
@@ -136,6 +137,7 @@ describe('blue-green monitoring controls', () => {
       expect(readBlueGreenDockerRecoverySettings()).toMatchObject({
         dockerRestartAfterMs: 5000,
         dockerRestartCommand: null,
+        dockerProbeTimeoutMs: 2500,
         emailAlertCooldownMs: 900_000,
         postRestartCommands: [],
         postRestartCommandTimeoutMs: 120_000,
