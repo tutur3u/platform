@@ -305,6 +305,7 @@
     "./tu-do/initiatives/*": "./src/components/ui/tu-do/initiatives/*.tsx",
     "./tu-do/cycles/*": "./src/components/ui/tu-do/cycles/*.tsx",
     "./tu-do/logs/*": "./src/components/ui/tu-do/logs/*.tsx",
+    "./tu-do/progress/*": "./src/components/ui/tu-do/progress/*.tsx",
     "./tu-do/templates/types": {
       "types": "./src/components/ui/tu-do/templates/types.ts",
       "import": "./src/components/ui/tu-do/templates/types.ts"
