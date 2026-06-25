@@ -457,6 +457,7 @@ export function BoardViews({
     const result = await listWorkspaceTasks(effectiveWorkspaceId, {
       ...taskQueryOptions,
       boardId: board.id,
+      includeRelationshipSummary: false,
       listStatuses: listStatusesForQuery,
       limit: 200,
     });

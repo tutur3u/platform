@@ -83,6 +83,7 @@ export function BoardClient({
     queryFn: async () => {
       const result = await listWorkspaceTasks(boardWorkspaceId, {
         boardId,
+        includeRelationshipSummary: false,
       });
       return result.tasks;
     },

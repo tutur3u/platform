@@ -2083,10 +2083,6 @@ export async function handleTaskRouteGET(
           'Failed to load task relationship summaries:',
           relationshipError
         );
-        return NextResponse.json(
-          { error: 'Failed to load task relationships' },
-          { status: 500 }
-        );
       }
     }
 

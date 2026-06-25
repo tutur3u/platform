@@ -456,6 +456,90 @@ describe('workspace task route personal external loading', () => {
     expect(taskQuery?.calls).toContainEqual(['ilike', ['name', '%cms%']]);
   });
 
+  it('keeps board task reads available when relationship summaries fail', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [boardTask(PLACED_TASK_ID)],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'task_relationships', {
+      data: null,
+      error: { message: 'relationship query failed' },
+    });
+    queueResult(mocks.adminQueues, 'task_relationships', {
+      data: [],
+      error: null,
+    });
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      tasks: [
+        expect.objectContaining({
+          id: PLACED_TASK_ID,
+          relationship_summary: {
+            blocked_by_count: 0,
+            blocking_count: 0,
+            child_count: 0,
+            completed_child_count: 0,
+            parent_task: null,
+            parent_task_id: null,
+            related_count: 0,
+          },
+        }),
+      ],
+    });
+    expect(
+      mocks.adminQueries.some((query) => query.table === 'task_relationships')
+    ).toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to load task relationship summaries:',
+      expect.any(Error)
+    );
+  });
+
+  it('skips relationship summary queries when the client opts out', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [boardTask(PLACED_TASK_ID)],
+      error: null,
+      count: 1,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      tasks: [expect.objectContaining({ id: PLACED_TASK_ID })],
+    });
+    expect(
+      mocks.adminQueries.some((query) => query.table === 'task_relationships')
+    ).toBe(false);
+  });
+
   it('hydrates per-user scheduling settings for returned board tasks', async () => {
     queueResult(mocks.adminQueues, 'workspaces', {
       data: { personal: false },

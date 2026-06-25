@@ -115,6 +115,42 @@ describe('BoardClient', () => {
     );
   });
 
+  it('refreshes board task cache without relationship summaries', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getActiveBoardRefresh()).toBeInstanceOf(Function);
+    });
+
+    await act(async () => {
+      getActiveBoardRefresh()?.();
+    });
+
+    await waitFor(() => {
+      expect(listWorkspaceTasksMock).toHaveBeenCalledWith('board-ws-uuid', {
+        boardId: 'board-1',
+        includeRelationshipSummary: false,
+      });
+    });
+  });
+
   it('uses the shared task board loading state while the board query resolves', () => {
     getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
     const queryClient = new QueryClient({
