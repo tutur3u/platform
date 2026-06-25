@@ -52,6 +52,18 @@
       },
       {
         "acceptedRemoval": 0,
+        "key": "loading",
+        "label": "loading",
+        "legacyNext": 2,
+        "migrated": 3,
+        "percentComplete": 60,
+        "remaining": 2,
+        "terminal": 3,
+        "total": 5,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
         "key": "trpc",
         "label": "trpc",
         "legacyNext": 1,
@@ -60,18 +72,6 @@
         "remaining": 1,
         "terminal": 0,
         "total": 1,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "loading",
-        "label": "loading",
-        "legacyNext": 0,
-        "migrated": 3,
-        "percentComplete": 100,
-        "remaining": 0,
-        "terminal": 3,
-        "total": 3,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 94,
+        "legacyNext": 96,
         "migrated": 287,
-        "percentComplete": 75.46,
-        "remaining": 94,
+        "percentComplete": 75.06,
+        "remaining": 96,
         "terminal": 289,
-        "total": 383,
+        "total": 385,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1051,
+      "legacyNext": 1053,
       "migrated": 434,
-      "percentComplete": 33.06,
-      "remaining": 1051,
+      "percentComplete": 33.02,
+      "remaining": 1053,
       "terminal": 519,
-      "total": 1570,
+      "total": 1572,
       "unknownStatus": 0
     }
   },
@@ -11747,6 +11747,24 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "loading:/:locale/:wsId/tasks:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/loading.tsx",
+      "kind": "loading",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/loading.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "loading:/:locale/:wsId/tasks/boards:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/loading.tsx",
+      "kind": "loading",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks/boards",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/loading.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "loading:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/loading.tsx",
       "kind": "loading",
       "methods": [],
@@ -14633,6 +14651,6 @@
       "DELETE": 202,
       "OPTIONS": 16
     },
-    "total": 1570
+    "total": 1572
   }
 }

@@ -64,6 +64,7 @@ interface KanbanColumnsProps {
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   deadlineLabels?: KanbanDeadlineLabels;
   deadlineSections?: KanbanDeadlineSections;
+  deadlineSectionsLoading?: boolean;
   deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
   deadlineNow?: number;
   onDeadlineSectionCollapsedChange?: (
@@ -108,6 +109,7 @@ export function KanbanColumns({
   onTaskListCollapsedChange,
   deadlineLabels,
   deadlineSections,
+  deadlineSectionsLoading,
   deadlineSectionsCollapsed,
   deadlineNow,
   onDeadlineSectionCollapsedChange,
@@ -118,26 +120,28 @@ export function KanbanColumns({
   const initialScrollAnchoredBoardRef = useRef<string | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const deadlineSectionOrder: KanbanDeadlineSection[] = ['overdue', 'upcoming'];
-  const visibleDeadlineSections =
-    !readOnly && deadlineSections
-      ? deadlineSectionOrder.filter(
-          (section) => deadlineSections[section].length > 0
-        )
-      : [];
-  const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
+  const deadlinePanelsEnabled =
+    !readOnly && Boolean(boardId && deadlineSections && deadlineLabels);
+  const reservedDeadlineSections = deadlinePanelsEnabled
+    ? deadlineSectionOrder
+    : [];
+  const snapEdgePadding =
+    columns.length > 0 || reservedDeadlineSections.length > 0
+      ? '0.5rem'
+      : '0px';
   const collapsedColumnCount =
     columns.filter(isKanbanColumnCollapsed).length +
-    visibleDeadlineSections.filter(
+    reservedDeadlineSections.filter(
       (section) => deadlineSectionsCollapsed?.[section] === true
     ).length;
   const dynamicColumnWidth = getKanbanColumnWidth({
-    columnCount: columns.length + visibleDeadlineSections.length,
+    columnCount: columns.length + reservedDeadlineSections.length,
     collapsedColumnCount,
     snapEdgePadding,
     fillAvailableWidth: listStatusFilter === 'all',
   });
   const hasLeftSpecialColumns =
-    visibleDeadlineSections.length > 0 ||
+    reservedDeadlineSections.length > 0 ||
     columns.some((column) => column.is_external_staging);
 
   useLayoutEffect(() => {
@@ -158,8 +162,9 @@ export function KanbanColumns({
       container.scrollLeft = Math.max(0, target.offsetLeft - 8);
     };
 
+    anchor();
+
     if (typeof window.requestAnimationFrame !== 'function') {
-      anchor();
       return;
     }
 
@@ -192,7 +197,7 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
-          {!readOnly && deadlineSections && deadlineLabels && (
+          {deadlinePanelsEnabled && deadlineSections && deadlineLabels && (
             <KanbanDeadlinePanels
               availableLists={realColumns}
               boardId={boardId}
@@ -208,6 +213,7 @@ export function KanbanColumns({
               onUpdate={onUpdate}
               optimisticUpdateInProgress={optimisticUpdateInProgress}
               sections={deadlineSections}
+              loading={deadlineSectionsLoading}
               collapsedSections={deadlineSectionsCollapsed}
               deadlineNow={deadlineNow}
               pinnedSections={{

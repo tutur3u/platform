@@ -1,3 +1,4 @@
+import { TaskBoardLoadingState } from '@tuturuuu/ui/tu-do/shared/task-board-loading-state';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -74,6 +75,8 @@ vi.mock('./tasks-no-board-client', () => ({
   TasksNoBoardClient: mocks.TasksNoBoardClient,
 }));
 
+import TaskBoardsLoading from './boards/loading';
+import TasksLoading from './loading';
 import { TaskBoardEntryPage } from './task-board-entry';
 
 type CreateBoardElement = ReactElement<{
@@ -178,5 +181,17 @@ describe('TaskBoardEntryPage', () => {
     await expect(renderEntry()).rejects.toThrow('NEXT_NOT_FOUND');
 
     expect(mocks.getWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('uses the root task board skeleton for entry loading routes', () => {
+    const tasksLoading = TasksLoading() as ReactElement<{ root?: boolean }>;
+    const boardsLoading = TaskBoardsLoading() as ReactElement<{
+      root?: boolean;
+    }>;
+
+    expect(tasksLoading.type).toBe(TaskBoardLoadingState);
+    expect(tasksLoading.props.root).toBe(true);
+    expect(boardsLoading.type).toBe(TaskBoardLoadingState);
+    expect(boardsLoading.props.root).toBe(true);
   });
 });

@@ -80,6 +80,7 @@ interface KanbanDeadlinePanelsProps {
   onUpdate: () => void;
   optimisticUpdateInProgress: Set<string>;
   sections: KanbanDeadlineSections;
+  loading?: boolean;
   collapsedSections?: KanbanDeadlineCollapsedState;
   pinnedSections?: KanbanDeadlineCollapsedState;
   deadlineNow?: number;
@@ -218,6 +219,34 @@ function getTaskListForDeadlineTask(task: Task, lists: TaskList[]) {
   );
 }
 
+function DeadlineSectionSkeleton({
+  section,
+}: {
+  section: KanbanDeadlineSection;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className="space-y-2"
+      data-testid={`kanban-deadline-section-${section}-loading`}
+    >
+      {Array.from({ length: 3 }, (_, index) => (
+        <div
+          className="rounded-lg border border-border/60 bg-background/60 p-3"
+          key={index}
+        >
+          <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+          <div className="mt-3 h-2 w-1/2 animate-pulse rounded bg-muted" />
+          <div className="mt-2 flex gap-2">
+            <div className="h-2 w-14 animate-pulse rounded bg-muted" />
+            <div className="h-2 w-10 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DeadlineSection({
   availableLists,
   boardId,
@@ -225,6 +254,7 @@ function DeadlineSection({
   collapsed,
   config,
   deadlineNow,
+  loading,
   labels,
   isMultiSelectMode,
   isPersonalWorkspace,
@@ -248,6 +278,7 @@ function DeadlineSection({
   collapsed: boolean;
   config: DeadlineSectionConfig;
   deadlineNow?: number;
+  loading?: boolean;
   labels: KanbanDeadlineLabels;
   isMultiSelectMode: boolean;
   isPersonalWorkspace: boolean;
@@ -303,8 +334,6 @@ function DeadlineSection({
     return sortDeadlineTasks(filteredTasks, sortBy);
   }, [includeDocuments, includeExternal, sortBy, taskListById, tasks]);
   const filterCount = (includeDocuments ? 0 : 1) + (includeExternal ? 0 : 1);
-
-  if (tasks.length === 0) return null;
 
   if (collapsed) {
     return (
@@ -536,40 +565,44 @@ function DeadlineSection({
       </div>
 
       <div className="scrollbar-thin min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
-        {visibleTasks.map((task) => {
-          const taskList = getTaskListForDeadlineTask(task, taskLists);
+        {loading && visibleTasks.length === 0 ? (
+          <DeadlineSectionSkeleton section={config.section} />
+        ) : (
+          visibleTasks.map((task) => {
+            const taskList = getTaskListForDeadlineTask(task, taskLists);
 
-          return (
-            <div
-              key={task.id}
-              className="shrink-0"
-              data-testid={`kanban-deadline-task-card-${task.id}`}
-            >
-              <TaskCard
-                availableLists={availableLists}
-                boardId={boardId}
-                bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-                dragDisabled
-                isMultiSelectMode={isMultiSelectMode}
-                isPersonalWorkspace={isPersonalWorkspace}
-                canUseBoardAssignees={canUseBoardAssignees}
-                assigneeMemberSource={assigneeMemberSource}
-                isSelected={selectedTasks.has(task.id)}
-                onClearSelection={onClearSelection}
-                onSelect={onTaskSelect}
-                onUpdate={onUpdate}
-                optimisticUpdateInProgress={optimisticUpdateInProgress}
-                selectedTasks={selectedTasks}
-                deadlineContext={config.section}
-                deadlineNow={deadlineNow}
-                sortableId={`deadline-${config.section}-${task.id}`}
-                task={task}
-                taskList={taskList}
-                workspaceId={workspaceId}
-              />
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={task.id}
+                className="shrink-0"
+                data-testid={`kanban-deadline-task-card-${task.id}`}
+              >
+                <TaskCard
+                  availableLists={availableLists}
+                  boardId={boardId}
+                  bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                  dragDisabled
+                  isMultiSelectMode={isMultiSelectMode}
+                  isPersonalWorkspace={isPersonalWorkspace}
+                  canUseBoardAssignees={canUseBoardAssignees}
+                  assigneeMemberSource={assigneeMemberSource}
+                  isSelected={selectedTasks.has(task.id)}
+                  onClearSelection={onClearSelection}
+                  onSelect={onTaskSelect}
+                  onUpdate={onUpdate}
+                  optimisticUpdateInProgress={optimisticUpdateInProgress}
+                  selectedTasks={selectedTasks}
+                  deadlineContext={config.section}
+                  deadlineNow={deadlineNow}
+                  sortableId={`deadline-${config.section}-${task.id}`}
+                  task={task}
+                  taskList={taskList}
+                  workspaceId={workspaceId}
+                />
+              </div>
+            );
+          })
+        )}
       </div>
     </Card>
   );
@@ -591,6 +624,7 @@ export function KanbanDeadlinePanels({
   onUpdate,
   optimisticUpdateInProgress,
   sections,
+  loading,
   collapsedSections,
   pinnedSections,
   deadlineNow,
@@ -598,10 +632,6 @@ export function KanbanDeadlinePanels({
   taskLists,
   workspaceId,
 }: KanbanDeadlinePanelsProps) {
-  if (sections.overdue.length === 0 && sections.upcoming.length === 0) {
-    return null;
-  }
-
   const configs: DeadlineSectionConfig[] = [
     {
       icon: AlertTriangle,
@@ -635,6 +665,7 @@ export function KanbanDeadlinePanels({
           config={config}
           deadlineNow={deadlineNow}
           labels={labels}
+          loading={loading === true && sections[config.section].length === 0}
           isMultiSelectMode={isMultiSelectMode}
           isPersonalWorkspace={isPersonalWorkspace}
           canUseBoardAssignees={canUseBoardAssignees}

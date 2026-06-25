@@ -172,21 +172,22 @@ export function KanbanBoard({
     readOnly ? null : boardId,
     readOnly ? null : workspaceId
   );
-  const { data: deadlineTasks = [] } = useQuery({
-    enabled: Boolean(boardId) && !readOnly,
-    queryFn: () =>
-      listKanbanDeadlineTasks({
-        boardId: boardId ?? '',
-        taskQueryOptions: deadlineTaskQueryOptions,
+  const { data: deadlineTasks = [], isPending: deadlineTasksPending } =
+    useQuery({
+      enabled: Boolean(boardId) && !readOnly,
+      queryFn: () =>
+        listKanbanDeadlineTasks({
+          boardId: boardId ?? '',
+          taskQueryOptions: deadlineTaskQueryOptions,
+          workspaceId,
+        }),
+      queryKey: getKanbanDeadlineTasksQueryKey(
         workspaceId,
-      }),
-    queryKey: getKanbanDeadlineTasksQueryKey(
-      workspaceId,
-      boardId,
-      deadlineTaskQueryOptions
-    ),
-    staleTime: 30_000,
-  });
+        boardId,
+        deadlineTaskQueryOptions
+      ),
+      staleTime: 30_000,
+    });
   const persistListPositions = useCallback(
     async (updates: Array<{ listId: string; newPosition: number }>) => {
       if (!boardId || updates.length === 0) return;
@@ -556,6 +557,7 @@ export function KanbanBoard({
             columnsId={columnsId}
             deadlineLabels={deadlineLabels}
             deadlineSections={deadlineSections}
+            deadlineSectionsLoading={deadlineTasksPending}
             deadlineSectionsCollapsed={deadlineSectionsCollapsed}
             deadlineNow={deadlineNow}
             onDeadlineSectionCollapsedChange={onDeadlineSectionCollapsedChange}

@@ -525,7 +525,7 @@ describe('KanbanColumns', () => {
     ).toEqual(['Alpha task', 'Zulu task']);
   });
 
-  it('anchors the first load on the first real task list when special columns render to the left', () => {
+  it('anchors the first load on the first real task list when empty special columns render to the left', () => {
     const frameCallbacks: FrameRequestCallback[] = [];
     const originalRequestAnimationFrame = window.requestAnimationFrame;
     const originalCancelAnimationFrame = window.cancelAnimationFrame;
@@ -563,15 +563,9 @@ describe('KanbanColumns', () => {
           }}
           deadlineSections={{
             overdue: [],
-            upcoming: [
-              task({
-                end_date: '2026-06-02T00:00:00.000Z',
-                id: 'upcoming-task',
-                list_id: 'list-1',
-                name: 'Upcoming task',
-              }),
-            ],
+            upcoming: [],
           }}
+          deadlineSectionsLoading
         />
       );
       const scrollContainer = container.firstElementChild as HTMLElement;
@@ -614,15 +608,9 @@ describe('KanbanColumns', () => {
           }}
           deadlineSections={{
             overdue: [],
-            upcoming: [
-              task({
-                end_date: '2026-06-02T00:00:00.000Z',
-                id: 'upcoming-task',
-                list_id: 'list-1',
-                name: 'Upcoming task',
-              }),
-            ],
+            upcoming: [],
           }}
+          deadlineSectionsLoading
         />
       );
 
@@ -800,8 +788,8 @@ describe('KanbanColumns', () => {
     );
   });
 
-  it('omits deadline panels when both deadline sections are empty', () => {
-    render(
+  it('reserves empty deadline panels before deadline tasks load', () => {
+    const { container, rerender } = render(
       <KanbanColumns
         columns={lists}
         tasks={[]}
@@ -821,6 +809,63 @@ describe('KanbanColumns', () => {
         bulkUpdateCustomDueDate={vi.fn()}
         boardRef={{ current: null }}
         columnsId={lists.map((list) => list.id)}
+        listStatusFilter="all"
+        deadlineLabels={{
+          overdue: 'Overdue',
+          upcoming: 'Upcoming',
+        }}
+        deadlineSections={{ overdue: [], upcoming: [] }}
+        deadlineSectionsLoading
+      />
+    );
+
+    expect(screen.getByTestId('kanban-deadline-panels')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('kanban-deadline-section-overdue')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('kanban-deadline-section-upcoming')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('kanban-deadline-section-overdue-count')
+    ).toHaveTextContent('0');
+    expect(
+      screen.getByTestId('kanban-deadline-section-upcoming-count')
+    ).toHaveTextContent('0');
+    expect(
+      screen.getByTestId('kanban-deadline-section-overdue-loading')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('kanban-deadline-section-upcoming-loading')
+    ).toBeInTheDocument();
+    expect(
+      (container.firstElementChild as HTMLElement).style.getPropertyValue(
+        '--kanban-column-width'
+      )
+    ).toContain('/ 4');
+    expect(screen.getByTestId('column-list-1')).toBeInTheDocument();
+
+    rerender(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+        listStatusFilter="all"
         deadlineLabels={{
           overdue: 'Overdue',
           upcoming: 'Upcoming',
@@ -829,7 +874,12 @@ describe('KanbanColumns', () => {
       />
     );
 
-    expect(screen.queryByTestId('kanban-deadline-panels')).toBeNull();
-    expect(screen.getByTestId('column-list-1')).toBeInTheDocument();
+    expect(screen.getByTestId('kanban-deadline-panels')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('kanban-deadline-section-overdue-loading')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('kanban-deadline-section-upcoming-loading')
+    ).not.toBeInTheDocument();
   });
 });
