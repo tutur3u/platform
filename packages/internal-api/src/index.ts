@@ -1537,6 +1537,17 @@ export {
   type UserGroupActivityLogsResponse,
 } from './user-group-activity';
 export {
+  getWorkspaceUserGroupAttendanceShowManagers,
+  type ListWorkspaceUserGroupAttendanceParams,
+  listWorkspaceUserGroupAttendance,
+  listWorkspaceUserGroupAttendanceMembers,
+  type SaveWorkspaceUserGroupAttendanceEntry,
+  type SaveWorkspaceUserGroupAttendanceResponse,
+  saveWorkspaceUserGroupAttendance,
+  type WorkspaceUserGroupAttendanceRecord,
+  type WorkspaceUserGroupAttendanceStatus,
+} from './user-group-attendance';
+export {
   type CreateWorkspaceUserGroupSessionPayload,
   createWorkspaceUserGroupSession,
   type ListWorkspaceUserGroupMembersParams,

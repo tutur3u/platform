@@ -243,6 +243,7 @@ import { Route as LocaleWsIdEducationQuizSetsSetIdIndexRouteImport } from './rou
 import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
 import { Route as LocaleWsIdUsersGroupsGroupIdScheduleRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/schedule';
 import { Route as LocaleWsIdUsersGroupsGroupIdRequestsRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/requests';
+import { Route as LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/attendance';
 import { Route as LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport } from './routes/$locale/$wsId/infrastructure/ai/whitelist/emails';
 import { Route as LocaleWsIdInfrastructureAiWhitelistDomainsRouteImport } from './routes/$locale/$wsId/infrastructure/ai/whitelist/domains';
 import { Route as LocaleWsIdEducationQuizSetsSetIdLinkedModulesRouteImport } from './routes/$locale/$wsId/education/quiz-sets/$setId/linked-modules';
@@ -1553,6 +1554,12 @@ const LocaleWsIdUsersGroupsGroupIdRequestsRoute =
     path: '/requests',
     getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
   } as any);
+const LocaleWsIdUsersGroupsGroupIdAttendanceRoute =
+  LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
+  } as any);
 const LocaleWsIdInfrastructureAiWhitelistEmailsRoute =
   LocaleWsIdInfrastructureAiWhitelistEmailsRouteImport.update({
     id: '/ai/whitelist/emails',
@@ -1850,6 +1857,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
   '/$locale/$wsId/infrastructure/ai/whitelist/domains': typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
   '/$locale/$wsId/infrastructure/ai/whitelist/emails': typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
+  '/$locale/$wsId/users/groups/$groupId/attendance': typeof LocaleWsIdUsersGroupsGroupIdAttendanceRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -2093,6 +2101,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
   '/$locale/$wsId/infrastructure/ai/whitelist/domains': typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
   '/$locale/$wsId/infrastructure/ai/whitelist/emails': typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
+  '/$locale/$wsId/users/groups/$groupId/attendance': typeof LocaleWsIdUsersGroupsGroupIdAttendanceRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -2339,6 +2348,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/education/quiz-sets/$setId/linked-modules': typeof LocaleWsIdEducationQuizSetsSetIdLinkedModulesRoute;
   '/$locale/$wsId/infrastructure/ai/whitelist/domains': typeof LocaleWsIdInfrastructureAiWhitelistDomainsRoute;
   '/$locale/$wsId/infrastructure/ai/whitelist/emails': typeof LocaleWsIdInfrastructureAiWhitelistEmailsRoute;
+  '/$locale/$wsId/users/groups/$groupId/attendance': typeof LocaleWsIdUsersGroupsGroupIdAttendanceRoute;
   '/$locale/$wsId/users/groups/$groupId/requests': typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   '/$locale/$wsId/users/groups/$groupId/schedule': typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
   '/$locale/share/$type/$resourceId/modules/$moduleId': typeof LocaleShareTypeResourceIdModulesModuleIdRoute;
@@ -2586,6 +2596,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
     | '/$locale/$wsId/infrastructure/ai/whitelist/domains'
     | '/$locale/$wsId/infrastructure/ai/whitelist/emails'
+    | '/$locale/$wsId/users/groups/$groupId/attendance'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -2829,6 +2840,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
     | '/$locale/$wsId/infrastructure/ai/whitelist/domains'
     | '/$locale/$wsId/infrastructure/ai/whitelist/emails'
+    | '/$locale/$wsId/users/groups/$groupId/attendance'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -3074,6 +3086,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/education/quiz-sets/$setId/linked-modules'
     | '/$locale/$wsId/infrastructure/ai/whitelist/domains'
     | '/$locale/$wsId/infrastructure/ai/whitelist/emails'
+    | '/$locale/$wsId/users/groups/$groupId/attendance'
     | '/$locale/$wsId/users/groups/$groupId/requests'
     | '/$locale/$wsId/users/groups/$groupId/schedule'
     | '/$locale/share/$type/$resourceId/modules/$moduleId'
@@ -4735,6 +4748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRequestsRouteImport;
       parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
     };
+    '/$locale/$wsId/users/groups/$groupId/attendance': {
+      id: '/$locale/$wsId/users/groups/$groupId/attendance';
+      path: '/attendance';
+      fullPath: '/$locale/$wsId/users/groups/$groupId/attendance';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport;
+      parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
+    };
     '/$locale/$wsId/infrastructure/ai/whitelist/emails': {
       id: '/$locale/$wsId/infrastructure/ai/whitelist/emails';
       path: '/ai/whitelist/emails';
@@ -5328,12 +5348,15 @@ const LocaleWsIdEducationCoursesCourseIdRouteWithChildren =
   );
 
 interface LocaleWsIdUsersGroupsGroupIdRouteChildren {
+  LocaleWsIdUsersGroupsGroupIdAttendanceRoute: typeof LocaleWsIdUsersGroupsGroupIdAttendanceRoute;
   LocaleWsIdUsersGroupsGroupIdRequestsRoute: typeof LocaleWsIdUsersGroupsGroupIdRequestsRoute;
   LocaleWsIdUsersGroupsGroupIdScheduleRoute: typeof LocaleWsIdUsersGroupsGroupIdScheduleRoute;
 }
 
 const LocaleWsIdUsersGroupsGroupIdRouteChildren: LocaleWsIdUsersGroupsGroupIdRouteChildren =
   {
+    LocaleWsIdUsersGroupsGroupIdAttendanceRoute:
+      LocaleWsIdUsersGroupsGroupIdAttendanceRoute,
     LocaleWsIdUsersGroupsGroupIdRequestsRoute:
       LocaleWsIdUsersGroupsGroupIdRequestsRoute,
     LocaleWsIdUsersGroupsGroupIdScheduleRoute:

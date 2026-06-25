@@ -1529,6 +1529,11 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/calendar ports the legacy group calendar page with fail-closed current-user auth, workspace resolution, manage_users/view_user_groups not-found gating, update_user_groups schedule permission state, and the shared UserGroupSessionCalendar using internal-api-backed session reads and mutations. This marks only the frontend page artifact migrated; user-group session APIs remain separately tracked."
     },
+    "page:/:locale/:wsId/users/groups/:groupId/attendance:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/attendance/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/$groupId/attendance ports the legacy group attendance page with fail-closed current-user auth, workspace resolution, check_user_attendance not-found gating, forwarded internal-api group/session/member/config/attendance hydration, session/date URL state, update_user_attendance save gating, and TanStack Query-backed attendance reads/saves through the typed user-group attendance facade. This marks only the frontend page artifact migrated; user-group attendance/member/config/session API ownership remains separately tracked for the backend Rust wave."
+    },
     "page:/:locale/:wsId/users/groups/:groupId/requests:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/requests/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
