@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod admin_ai_credits_entity_detail;
+mod admin_ai_credits_features;
 mod admin_ai_credits_overview;
 mod admin_ai_credits_transactions;
 mod admin_external_project_audits;
@@ -127,6 +128,7 @@ mod mira_soul;
 mod mira_tasks;
 mod mobile_deployment_bundle;
 mod mobile_version;
+mod notifications_account_preferences;
 mod notifications_unread_count;
 mod nova;
 mod onboarding_progress;
@@ -150,6 +152,7 @@ mod users_me_identity_link;
 mod users_me_tasks;
 mod users_me_tasks_taskid;
 mod users_sessions;
+mod users_task_settings;
 mod workspace_education_access;
 mod workspace_external_projects_members;
 mod workspace_external_projects_members_enhanced;
@@ -241,8 +244,10 @@ mod workspaces_finance_wallets_income_sum;
 mod workspaces_forms;
 mod workspaces_forms_export;
 mod workspaces_forms_formid_analytics;
+mod workspaces_forms_formid_responses;
 mod workspaces_forms_responses_export;
 mod workspaces_forms_share_link;
+mod workspaces_group_tags;
 mod workspaces_group_tags_tagid_user_groups;
 mod workspaces_habit_trackers;
 mod workspaces_habit_trackers_trackerid;
@@ -251,6 +256,7 @@ mod workspaces_habits_habitid_schedule_history;
 mod workspaces_habits_habitid_stats;
 mod workspaces_infrastructure_realtime_analytics;
 mod workspaces_infrastructure_realtime_analytics_summary;
+mod workspaces_integrations_sepay_endpoints;
 mod workspaces_inventory_access;
 mod workspaces_inventory_analytics;
 mod workspaces_inventory_audit_logs;
@@ -258,6 +264,7 @@ mod workspaces_inventory_bundles;
 mod workspaces_inventory_costing;
 mod workspaces_inventory_option_templates;
 mod workspaces_inventory_overview;
+mod workspaces_inventory_owners;
 mod workspaces_inventory_polar_product_sync;
 mod workspaces_inventory_polar_settings;
 mod workspaces_inventory_product_form_options;
@@ -277,13 +284,16 @@ mod workspaces_meetings_recordings_play;
 mod workspaces_members;
 mod workspaces_members_enhanced;
 mod workspaces_mind_boards;
+mod workspaces_mind_boards_boardid;
 mod workspaces_mind_boards_boardid_graph;
 mod workspaces_mind_boards_patches;
 mod workspaces_posts;
 mod workspaces_posts_bootstrap;
 mod workspaces_posts_filter_options;
 mod workspaces_posts_status;
+mod workspaces_product_categories;
 mod workspaces_product_suppliers;
+mod workspaces_product_warehouses;
 mod workspaces_products_count;
 mod workspaces_products_options;
 mod workspaces_promotions_count;
@@ -319,6 +329,7 @@ mod workspaces_time_tracking_sessions_breaks_active;
 mod workspaces_time_tracking_stats_period;
 mod workspaces_time_tracking_tasks;
 mod workspaces_time_tracking_templates;
+mod workspaces_topic_announcements_templates;
 mod workspaces_transactions;
 mod workspaces_transactions_categories;
 mod workspaces_transactions_categories_categoryid;
@@ -747,6 +758,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_09(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_10(config, request, outbound).await {
         return response;
     }
 
@@ -3127,6 +3142,94 @@ async fn dispatch_chunk_09(
         )
         .await
     {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_10(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        admin_ai_credits_features::handle_admin_ai_credits_features_route(config, request, outbound)
+            .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        notifications_account_preferences::handle_notifications_account_preferences_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        users_task_settings::handle_users_task_settings_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_forms_formid_responses::handle_workspaces_forms_formid_responses_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_group_tags::handle_workspaces_group_tags_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_integrations_sepay_endpoints::handle_workspaces_integrations_sepay_endpoints_route(config, request, outbound).await {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_inventory_owners::handle_workspaces_inventory_owners_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_mind_boards_boardid::handle_workspaces_mind_boards_boardid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_product_categories::handle_workspaces_product_categories_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_product_warehouses::handle_workspaces_product_warehouses_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_topic_announcements_templates::handle_workspaces_topic_announcements_templates_route(config, request, outbound).await {
         return Some(response);
     }
 
