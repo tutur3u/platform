@@ -27,7 +27,7 @@
     "@ai-sdk/deepseek": "^2.0.39",
     "@ai-sdk/elevenlabs": "^2.0.36",
     "@ai-sdk/fal": "^2.0.37",
-    "@ai-sdk/fireworks": "^2.0.57",
+    "@ai-sdk/fireworks": "^3.0.0",
     "@ai-sdk/gateway": "^3.0.133",
     "@ai-sdk/gladia": "^2.0.36",
     "@ai-sdk/google": "^3.0.83",
