@@ -143,6 +143,11 @@ const LazyTaskProjectsSettings = lazy(() =>
     default: module.TaskProjectsSettings,
   }))
 );
+const LazyTaskShareSettings = lazy(() =>
+  import('./tasks/task-share-settings').then((module) => ({
+    default: module.TaskShareSettings,
+  }))
+);
 const LazyTaskTemplatesSettings = lazy(() =>
   import('./tasks/task-templates-settings').then((module) => ({
     default: module.TaskTemplatesSettings,
@@ -324,6 +329,7 @@ export const TaskInitiativesSettings = withPanelSuspense(
 );
 export const TaskLabelsSettings = withPanelSuspense(LazyTaskLabelsSettings);
 export const TaskProjectsSettings = withPanelSuspense(LazyTaskProjectsSettings);
+export const TaskShareSettings = withPanelSuspense(LazyTaskShareSettings);
 export const TaskTemplatesSettings = withPanelSuspense(
   LazyTaskTemplatesSettings
 );

@@ -1,4 +1,12 @@
 import {
+  TASK_NAVIGATION_GOALS_CONFIG_ID,
+  TASK_NAVIGATION_IMPORT_CONFIG_ID,
+  TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID,
+  TASK_NAVIGATION_PROGRESS_CONFIG_ID,
+  TASK_NAVIGATION_STATS_CONFIG_ID,
+  TASK_SECONDARY_NAVIGATION_CONFIG_IDS,
+} from '@tuturuuu/internal-api/users';
+import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
@@ -108,6 +116,7 @@ export async function WorkspaceNavigationLinks({
     workspacePermissions,
     platformUserRole,
     userInvoiceVisibilityConfig,
+    userTaskNavigationConfigs,
     workspaceInvoiceVisibilityConfig,
     hiveAccessResult,
   ] = await Promise.all([
@@ -135,6 +144,13 @@ export async function WorkspaceNavigationLinks({
           .eq('id', 'FINANCE_SHOW_INVOICES')
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    user
+      ? supabase
+          .from('user_configs')
+          .select('id,value')
+          .eq('user_id', user.id)
+          .in('id', [...TASK_SECONDARY_NAVIGATION_CONFIG_IDS])
+      : Promise.resolve({ data: [] }),
     // Get workspace's invoice visibility setting
     supabase
       .from('workspace_configs')
@@ -227,6 +243,13 @@ export async function WorkspaceNavigationLinks({
     userInvoiceValue === '__workspace_default__'
       ? workspaceShowInvoices
       : String(userInvoiceValue) === 'true';
+  const enabledTaskNavigationConfigIds = new Set(
+    (userTaskNavigationConfigs.data ?? [])
+      .filter((config) => String(config.value) === 'true')
+      .map((config) => config.id)
+  );
+  const isTaskNavigationEnabled = (configId: string) =>
+    enabledTaskNavigationConfigIds.has(configId);
   const sidebarSections = {
     ai: t('sidebar_sections.ai'),
     core: t('sidebar_sections.core'),
@@ -245,6 +268,72 @@ export async function WorkspaceNavigationLinks({
     withoutPermission('view_user_groups_reports') &&
     withoutPermission('view_user_groups_scores') &&
     withoutPermission('view_user_groups_posts');
+  const taskNavigationDisabled =
+    ENABLE_AI_ONLY || withoutPermission('manage_projects');
+  const secondaryTaskNavigationChildren: DashboardNavigationLink[] = [
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_PROGRESS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.progress'),
+            href: `/${personalOrWsId}/tasks/progress`,
+            icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_GOALS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.goals'),
+            href: `/${personalOrWsId}/tasks/goals`,
+            icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_STATS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.stats'),
+            href: `/${personalOrWsId}/tasks/stats`,
+            icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.leaderboards'),
+            href: `/${personalOrWsId}/tasks/leaderboards`,
+            icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_IMPORT_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.import'),
+            href: `/${personalOrWsId}/tasks/import`,
+            icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+  ];
+  const taskNavigationChildren: (DashboardNavigationLink | null)[] = [
+    {
+      title: t('sidebar_tabs.tasks'),
+      href: `/${personalOrWsId}/tasks`,
+      icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
+      disabled: taskNavigationDisabled,
+      matchExact: true,
+    },
+    ...(secondaryTaskNavigationChildren.length
+      ? [null, ...secondaryTaskNavigationChildren]
+      : []),
+  ];
 
   const navLinks: (DashboardNavigationLink | null)[] = [
     {
@@ -272,42 +361,11 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/tasks/import`,
       ],
       icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
-      disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
+      disabled: taskNavigationDisabled,
       experimental: 'beta',
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
-      children: [
-        {
-          title: t('task-progress.tabs.progress'),
-          href: `/${personalOrWsId}/tasks/progress`,
-          icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-        },
-        {
-          title: t('task-progress.tabs.goals'),
-          href: `/${personalOrWsId}/tasks/goals`,
-          icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-        },
-        {
-          title: t('task-progress.tabs.stats'),
-          href: `/${personalOrWsId}/tasks/stats`,
-          icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-        },
-        {
-          title: t('task-progress.tabs.leaderboards'),
-          href: `/${personalOrWsId}/tasks/leaderboards`,
-          icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-        },
-        {
-          title: t('task-progress.tabs.import'),
-          href: `/${personalOrWsId}/tasks/import`,
-          icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-        },
-      ],
+      children: taskNavigationChildren,
     },
     {
       id: 'habits',

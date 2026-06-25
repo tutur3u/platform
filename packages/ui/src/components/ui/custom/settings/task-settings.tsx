@@ -1,6 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  TASK_NAVIGATION_GOALS_CONFIG_ID,
+  TASK_NAVIGATION_IMPORT_CONFIG_ID,
+  TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID,
+  TASK_NAVIGATION_PROGRESS_CONFIG_ID,
+  TASK_NAVIGATION_STATS_CONFIG_ID,
+} from '@tuturuuu/internal-api/users';
 import type { Workspace } from '@tuturuuu/types';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
@@ -85,6 +92,36 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     isLoading: showReviewDueDatesLoading,
     isPending: showReviewDueDatesPending,
   } = useUserBooleanConfig(TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID, false);
+  const {
+    value: showTaskProgressNavigation,
+    setValue: setShowTaskProgressNavigation,
+    isLoading: showTaskProgressNavigationLoading,
+    isPending: showTaskProgressNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_PROGRESS_CONFIG_ID, false);
+  const {
+    value: showTaskGoalsNavigation,
+    setValue: setShowTaskGoalsNavigation,
+    isLoading: showTaskGoalsNavigationLoading,
+    isPending: showTaskGoalsNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_GOALS_CONFIG_ID, false);
+  const {
+    value: showTaskStatsNavigation,
+    setValue: setShowTaskStatsNavigation,
+    isLoading: showTaskStatsNavigationLoading,
+    isPending: showTaskStatsNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_STATS_CONFIG_ID, false);
+  const {
+    value: showTaskLeaderboardsNavigation,
+    setValue: setShowTaskLeaderboardsNavigation,
+    isLoading: showTaskLeaderboardsNavigationLoading,
+    isPending: showTaskLeaderboardsNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID, false);
+  const {
+    value: showTaskImportNavigation,
+    setValue: setShowTaskImportNavigation,
+    isLoading: showTaskImportNavigationLoading,
+    isPending: showTaskImportNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_IMPORT_CONFIG_ID, false);
   const {
     value: soundEffectsEnabled,
     setValue: setSoundEffectsEnabled,
@@ -343,6 +380,73 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             checked={showReviewDueDates}
             onCheckedChange={setShowReviewDueDates}
             disabled={showReviewDueDatesLoading || showReviewDueDatesPending}
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_progress')}
+          description={t('navigation_progress_description')}
+        >
+          <Switch
+            checked={showTaskProgressNavigation}
+            onCheckedChange={setShowTaskProgressNavigation}
+            disabled={
+              showTaskProgressNavigationLoading ||
+              showTaskProgressNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_goals')}
+          description={t('navigation_goals_description')}
+        >
+          <Switch
+            checked={showTaskGoalsNavigation}
+            onCheckedChange={setShowTaskGoalsNavigation}
+            disabled={
+              showTaskGoalsNavigationLoading || showTaskGoalsNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_stats')}
+          description={t('navigation_stats_description')}
+        >
+          <Switch
+            checked={showTaskStatsNavigation}
+            onCheckedChange={setShowTaskStatsNavigation}
+            disabled={
+              showTaskStatsNavigationLoading || showTaskStatsNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_leaderboards')}
+          description={t('navigation_leaderboards_description')}
+        >
+          <Switch
+            checked={showTaskLeaderboardsNavigation}
+            onCheckedChange={setShowTaskLeaderboardsNavigation}
+            disabled={
+              showTaskLeaderboardsNavigationLoading ||
+              showTaskLeaderboardsNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_import')}
+          description={t('navigation_import_description')}
+        >
+          <Switch
+            checked={showTaskImportNavigation}
+            onCheckedChange={setShowTaskImportNavigation}
+            disabled={
+              showTaskImportNavigationLoading || showTaskImportNavigationPending
+            }
           />
         </SettingItemTab>
         <Separator />

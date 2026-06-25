@@ -24,6 +24,7 @@ import {
   Laptop,
   LayoutGrid,
   Paintbrush,
+  Share2,
   Shield,
   Sparkles,
   Star,
@@ -87,6 +88,7 @@ import {
   TaskInitiativesSettings,
   TaskLabelsSettings,
   TaskProjectsSettings,
+  TaskShareSettings,
   TaskTemplatesSettings,
   TimeTrackerCategoriesSettings,
   TimeTrackerGeneralSettings,
@@ -381,6 +383,13 @@ export function SettingsDialog({
           icon: CheckSquare,
           description: t('settings.tasks.general_description'),
           keywords: ['Tasks', 'General', 'Review', 'Due date'],
+        },
+        {
+          name: 'task_share',
+          label: t('settings.tasks.share'),
+          icon: Share2,
+          description: t('settings.tasks.share_description'),
+          keywords: ['Tasks', 'Share', 'Guests', 'Access'],
         },
         ...(wsId
           ? [
@@ -821,6 +830,12 @@ export function SettingsDialog({
       {activeTab === 'task_board' && wsId && boardId && (
         <div className="h-full">
           <BoardSettingsPanel boardId={boardId} wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'task_share' && (
+        <div className="h-full">
+          <TaskShareSettings boardId={boardId} wsId={wsId} />
         </div>
       )}
 

@@ -33,6 +33,8 @@ let comboboxProps:
       onChange: (value: string) => void;
       onCreate?: (value: string) => Promise<{ label: string; value: string }>;
       options: Array<{
+        badge?: unknown;
+        description?: string;
         group?: string;
         icon?: unknown;
         label: string;
@@ -203,6 +205,12 @@ describe('BoardSwitcher', () => {
     });
     expect(comboboxProps?.showSelectedIcon).toBeUndefined();
     expect(comboboxProps?.options.some((option) => option.icon)).toBe(true);
+    const activeBoardOption = comboboxProps?.options.find(
+      (option) => option.value === 'board-2'
+    );
+    expect(activeBoardOption?.badge).toBeUndefined();
+    expect(activeBoardOption?.description).toBeUndefined();
+    expect(activeBoardOption?.group).toBe('Current Workspace');
 
     fireEvent.click(screen.getByTestId('board-combobox'));
 

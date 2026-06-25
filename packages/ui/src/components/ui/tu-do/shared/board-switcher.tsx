@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, CheckCircle2, LayoutGrid, Trash2 } from '@tuturuuu/icons';
+import { Archive, LayoutGrid, Trash2 } from '@tuturuuu/icons';
 import {
   type AccessibleWorkspaceTaskBoard,
   createWorkspaceTaskBoard,
@@ -235,6 +235,32 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
           : t.activeBoards;
       const daysRemaining =
         item.deleted_at && getDaysRemaining(item.deleted_at);
+      const description = daysRemaining
+        ? `${groupLabel} · ${t.daysLeft.replace(
+            '{count}',
+            String(daysRemaining)
+          )}`
+        : isArchived || isDeleted
+          ? groupLabel
+          : undefined;
+      const badge =
+        isArchived || isDeleted ? (
+          <Badge
+            key={`${item.id}-status`}
+            className={cn(
+              'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
+              isDeleted && 'bg-dynamic-red/10 text-dynamic-red',
+              isArchived && 'bg-muted text-foreground'
+            )}
+          >
+            {isDeleted ? (
+              <Trash2 className="h-3 w-3 text-dynamic-red/50" />
+            ) : (
+              <Archive className="h-3 w-3 text-foreground/50" />
+            )}
+            {statusLabel}
+          </Badge>
+        ) : undefined;
 
       return {
         value: item.id,
@@ -250,36 +276,11 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         ]
           .filter(Boolean)
           .join(' '),
-        description: daysRemaining
-          ? `${workspaceLabel} · ${groupLabel} · ${t.daysLeft.replace(
-              '{count}',
-              String(daysRemaining)
-            )}`
-          : `${workspaceLabel} · ${groupLabel}`,
+        description,
         group: workspaceLabel,
         icon: <BoardIcon className="h-4 w-4" />,
         muted: isArchived || isDeleted,
-        badge: (
-          <Badge
-            className={cn(
-              'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
-              isDeleted && 'bg-dynamic-red/10 text-dynamic-red',
-              isArchived && 'bg-muted text-foreground',
-              !isDeleted &&
-                !isArchived &&
-                'bg-dynamic-green/10 text-dynamic-green'
-            )}
-          >
-            {isDeleted ? (
-              <Trash2 className="h-3 w-3 text-dynamic-red/50" />
-            ) : isArchived ? (
-              <Archive className="h-3 w-3 text-foreground/50" />
-            ) : (
-              <CheckCircle2 className="h-3 w-3 text-dynamic-green/50" />
-            )}
-            {statusLabel}
-          </Badge>
-        ),
+        badge,
       };
     });
   }, [
