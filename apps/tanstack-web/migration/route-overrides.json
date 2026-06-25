@@ -1839,6 +1839,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/topic-announcements preserves the legacy exact-parent 307 redirect to /:wsId/users/topic-announcements/announcements while allowing migrated child tabs such as /templates to render. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/users/topic-announcements/announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/announcements/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/announcements ports the legacy announcements composer and table as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, send_user_group_post_emails-aware create/send/schedule flows, TanStack Query hydration, attachment upload, live email preview, save-as-template, and typed internal-api topic-announcement contracts. The import leaf remains separately tracked because bulk CSV/XLSX parsing, contact creation by email, batch/source metadata, row-level errors, /import, and create-and-send bulk behavior are import-owned backend/API work."
+    },
     "page:/:locale/:wsId/users/topic-announcements/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/templates/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

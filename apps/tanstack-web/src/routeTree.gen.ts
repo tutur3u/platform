@@ -200,6 +200,7 @@ import { Route as LocaleWsIdAiChatMyChatbotsIndexRouteImport } from './routes/$l
 import { Route as LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport } from './routes/$locale/$wsId/users/topic-announcements/templates';
 import { Route as LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport } from './routes/$locale/$wsId/users/topic-announcements/delivery';
 import { Route as LocaleWsIdUsersTopicAnnouncementsContactsRouteImport } from './routes/$locale/$wsId/users/topic-announcements/contacts';
+import { Route as LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements/announcements';
 import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
 import { Route as LocaleWsIdUsersGroupsCalendarRouteImport } from './routes/$locale/$wsId/users/groups/calendar';
 import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
@@ -1293,6 +1294,12 @@ const LocaleWsIdUsersTopicAnnouncementsContactsRoute =
     path: '/contacts',
     getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
   } as any);
+const LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute =
+  LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+  } as any);
 const LocaleWsIdUsersReportsReportIdRoute =
   LocaleWsIdUsersReportsReportIdRouteImport.update({
     id: '/$wsId/users/reports/$reportId',
@@ -1821,6 +1828,7 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/users/topic-announcements/announcements': typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute;
   '/$locale/$wsId/users/topic-announcements/contacts': typeof LocaleWsIdUsersTopicAnnouncementsContactsRoute;
   '/$locale/$wsId/users/topic-announcements/delivery': typeof LocaleWsIdUsersTopicAnnouncementsDeliveryRoute;
   '/$locale/$wsId/users/topic-announcements/templates': typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
@@ -2062,6 +2070,7 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/users/topic-announcements/announcements': typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute;
   '/$locale/$wsId/users/topic-announcements/contacts': typeof LocaleWsIdUsersTopicAnnouncementsContactsRoute;
   '/$locale/$wsId/users/topic-announcements/delivery': typeof LocaleWsIdUsersTopicAnnouncementsDeliveryRoute;
   '/$locale/$wsId/users/topic-announcements/templates': typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
@@ -2306,6 +2315,7 @@ export interface FileRoutesById {
   '/$locale/$wsId/users/groups/$groupId': typeof LocaleWsIdUsersGroupsGroupIdRouteWithChildren;
   '/$locale/$wsId/users/groups/calendar': typeof LocaleWsIdUsersGroupsCalendarRoute;
   '/$locale/$wsId/users/reports/$reportId': typeof LocaleWsIdUsersReportsReportIdRoute;
+  '/$locale/$wsId/users/topic-announcements/announcements': typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute;
   '/$locale/$wsId/users/topic-announcements/contacts': typeof LocaleWsIdUsersTopicAnnouncementsContactsRoute;
   '/$locale/$wsId/users/topic-announcements/delivery': typeof LocaleWsIdUsersTopicAnnouncementsDeliveryRoute;
   '/$locale/$wsId/users/topic-announcements/templates': typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
@@ -2551,6 +2561,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/users/topic-announcements/announcements'
     | '/$locale/$wsId/users/topic-announcements/contacts'
     | '/$locale/$wsId/users/topic-announcements/delivery'
     | '/$locale/$wsId/users/topic-announcements/templates'
@@ -2792,6 +2803,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/users/topic-announcements/announcements'
     | '/$locale/$wsId/users/topic-announcements/contacts'
     | '/$locale/$wsId/users/topic-announcements/delivery'
     | '/$locale/$wsId/users/topic-announcements/templates'
@@ -3035,6 +3047,7 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/users/groups/$groupId'
     | '/$locale/$wsId/users/groups/calendar'
     | '/$locale/$wsId/users/reports/$reportId'
+    | '/$locale/$wsId/users/topic-announcements/announcements'
     | '/$locale/$wsId/users/topic-announcements/contacts'
     | '/$locale/$wsId/users/topic-announcements/delivery'
     | '/$locale/$wsId/users/topic-announcements/templates'
@@ -4408,6 +4421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsContactsRouteImport;
       parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
     };
+    '/$locale/$wsId/users/topic-announcements/announcements': {
+      id: '/$locale/$wsId/users/topic-announcements/announcements';
+      path: '/announcements';
+      fullPath: '/$locale/$wsId/users/topic-announcements/announcements';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    };
     '/$locale/$wsId/users/reports/$reportId': {
       id: '/$locale/$wsId/users/reports/$reportId';
       path: '/$wsId/users/reports/$reportId';
@@ -5216,6 +5236,7 @@ const LocaleWsIdTasksTemplatesRouteWithChildren =
   );
 
 interface LocaleWsIdUsersTopicAnnouncementsRouteChildren {
+  LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute: typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute;
   LocaleWsIdUsersTopicAnnouncementsContactsRoute: typeof LocaleWsIdUsersTopicAnnouncementsContactsRoute;
   LocaleWsIdUsersTopicAnnouncementsDeliveryRoute: typeof LocaleWsIdUsersTopicAnnouncementsDeliveryRoute;
   LocaleWsIdUsersTopicAnnouncementsTemplatesRoute: typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRoute;
@@ -5223,6 +5244,8 @@ interface LocaleWsIdUsersTopicAnnouncementsRouteChildren {
 
 const LocaleWsIdUsersTopicAnnouncementsRouteChildren: LocaleWsIdUsersTopicAnnouncementsRouteChildren =
   {
+    LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute:
+      LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute,
     LocaleWsIdUsersTopicAnnouncementsContactsRoute:
       LocaleWsIdUsersTopicAnnouncementsContactsRoute,
     LocaleWsIdUsersTopicAnnouncementsDeliveryRoute:
