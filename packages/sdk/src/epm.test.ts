@@ -180,6 +180,37 @@ describe('EpmClient', () => {
     );
   });
 
+  it('posts entry batch mutation payloads', async () => {
+    mockFetch.mockResolvedValueOnce(createMockResponse({ results: [] }));
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+    const payload = {
+      operations: [
+        {
+          action: 'update' as const,
+          clientOperationId: 'profile',
+          entryId: 'entry_1',
+          payload: {
+            title: 'Updated profile',
+          },
+        },
+      ],
+    };
+
+    await client.batchEntries('ws_123', payload);
+
+    const requestOptions = mockFetch.mock.calls[0]?.[1];
+    expect(mockFetch.mock.calls[0]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/entries/batch'
+    );
+    expect(requestOptions?.method).toBe('POST');
+    expect(requestOptions?.body).toBe(JSON.stringify(payload));
+  });
+
   it('supports delete management calls for collections, entries, and assets', async () => {
     mockFetch
       .mockResolvedValueOnce(createMockResponse({ ok: true }))

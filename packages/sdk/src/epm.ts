@@ -23,6 +23,8 @@ import type {
   ExternalProjectCollection,
   ExternalProjectDeliveryOptions,
   ExternalProjectDeliveryPayload,
+  ExternalProjectEntryBatchPayload,
+  ExternalProjectEntryBatchResult,
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
   ExternalProjectSummary,
@@ -646,6 +648,21 @@ export class EpmClient {
   ) {
     return this.request(
       `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/entries/bulk`,
+      {
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async batchEntries(
+    workspaceId: string,
+    payload: ExternalProjectEntryBatchPayload
+  ): Promise<ExternalProjectEntryBatchResult> {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/entries/batch`,
       {
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
