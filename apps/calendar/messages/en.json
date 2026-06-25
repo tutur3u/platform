@@ -7462,6 +7462,103 @@
     },
     "unnamed_board": "Untitled Board"
   },
+  "task-progress": {
+    "actions": {
+      "add_entry": "Add entry",
+      "add_goal": "Add goal",
+      "add_leaderboard": "Add leaderboard",
+      "add_metric": "Add metric",
+      "add_team": "Add team",
+      "commit_import": "Commit import",
+      "preview": "Preview"
+    },
+    "empty": {
+      "entries": "No progress entries yet.",
+      "goals": "No active goals yet.",
+      "leaderboards": "No active leaderboards yet.",
+      "stats": "No progress stats yet."
+    },
+    "fields": {
+      "color": "Color",
+      "goal_name": "Goal name",
+      "leaderboard_name": "Leaderboard name",
+      "metric_name": "Metric name",
+      "note": "Note",
+      "tags": "Tags",
+      "target": "Target",
+      "team_name": "Team name",
+      "unit": "Unit",
+      "value": "Value"
+    },
+    "goal_types": {
+      "habit": "Habit",
+      "target": "Target"
+    },
+    "goals": {
+      "create_goal": "Create goal"
+    },
+    "import": {
+      "placeholder": "2026-06-25,500,Words,writing|draft,Chapter draft",
+      "preview_count": "Previewed {count} entries",
+      "title": "Import progress"
+    },
+    "leaderboards": {
+      "create_leaderboard": "Create leaderboard"
+    },
+    "progress": {
+      "log_entry": "Log progress",
+      "recent_entries": "Recent entries"
+    },
+    "schema_unavailable": "Task progress needs the latest database migration before it can load.",
+    "stats": {
+      "daily_progress": "Daily progress"
+    },
+    "summary": {
+      "entries": "Entries",
+      "goals": "Goals",
+      "streak": "Streak",
+      "total": "Total"
+    },
+    "tabs": {
+      "goals": "Goals",
+      "import": "Import",
+      "leaderboards": "Leaderboards",
+      "progress": "Progress",
+      "stats": "Stats"
+    },
+    "toast": {
+      "entry_created": "Progress entry created",
+      "goal_created": "Goal created",
+      "import_committed": "Import committed",
+      "import_failed": "Import failed",
+      "import_previewed": "Import preview ready",
+      "leaderboard_created": "Leaderboard created",
+      "metric_created": "Metric created",
+      "team_created": "Team created"
+    },
+    "views": {
+      "goals": {
+        "description": "Track target and habit-style goals against task progress metrics.",
+        "title": "Task Goals"
+      },
+      "import": {
+        "description": "Preview and commit batches of progress entries.",
+        "title": "Progress Import"
+      },
+      "leaderboards": {
+        "description": "Run private workspace leaderboards and teams for progress metrics.",
+        "title": "Task Leaderboards"
+      },
+      "progress": {
+        "description": "Log flexible progress entries across tasks, projects, and boards.",
+        "title": "Task Progress"
+      },
+      "stats": {
+        "description": "Review totals, active days, streaks, and daily progress.",
+        "title": "Task Stats"
+      }
+    }
+  },
   "task-projects": {
     "badges": {
       "at_risk": "At Risk",

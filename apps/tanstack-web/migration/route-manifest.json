@@ -6,24 +6,24 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 925,
+        "legacyNext": 938,
         "migrated": 142,
-        "percentComplete": 19.57,
-        "remaining": 925,
+        "percentComplete": 19.35,
+        "remaining": 938,
         "terminal": 225,
-        "total": 1150,
+        "total": 1163,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 1,
         "key": "page",
         "label": "page",
-        "legacyNext": 77,
+        "legacyNext": 82,
         "migrated": 228,
-        "percentComplete": 74.84,
-        "remaining": 77,
+        "percentComplete": 73.63,
+        "remaining": 82,
         "terminal": 229,
-        "total": 306,
+        "total": 311,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 943,
+        "legacyNext": 956,
         "migrated": 147,
-        "percentComplete": 19.61,
-        "remaining": 943,
+        "percentComplete": 19.39,
+        "remaining": 956,
         "terminal": 230,
-        "total": 1173,
+        "total": 1186,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 89,
+        "legacyNext": 94,
         "migrated": 287,
-        "percentComplete": 76.46,
-        "remaining": 89,
+        "percentComplete": 75.46,
+        "remaining": 94,
         "terminal": 289,
-        "total": 378,
+        "total": 383,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1032,
+      "legacyNext": 1050,
       "migrated": 434,
-      "percentComplete": 33.46,
-      "remaining": 1032,
+      "percentComplete": 33.08,
+      "remaining": 1050,
       "terminal": 519,
-      "total": 1551,
+      "total": 1569,
       "unknownStatus": 0
     }
   },
@@ -6190,6 +6190,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/entries/batch:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/batch/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/entries/batch",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/batch/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/external-projects/entries/bulk:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/bulk/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -8449,6 +8458,114 @@
       "methods": ["GET", "POST", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/task-plans/:planId/workspaces",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/workspaces/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/entries:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/entries/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/entries",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/entries/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/entries/:entryId:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/entries/[entryId]/route.ts",
+      "kind": "api",
+      "methods": ["PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/entries/:entryId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/entries/[entryId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/goals:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/goals/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/goals",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/goals/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/goals/:goalId:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/goals/[goalId]/route.ts",
+      "kind": "api",
+      "methods": ["PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/goals/:goalId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/goals/[goalId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/import:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/import/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/import",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/import/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/leaderboards:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/leaderboards",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/leaderboards/:leaderboardId:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/[leaderboardId]/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/leaderboards/:leaderboardId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/[leaderboardId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/leaderboards/:leaderboardId/members:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/[leaderboardId]/members/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/leaderboards/:leaderboardId/members",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/[leaderboardId]/members/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/leaderboards/:leaderboardId/teams:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/[leaderboardId]/teams/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/leaderboards/:leaderboardId/teams",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/leaderboards/[leaderboardId]/teams/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/metrics:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/metrics/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/metrics",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/metrics/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/metrics/:metricId:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/metrics/[metricId]/route.ts",
+      "kind": "api",
+      "methods": ["PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/metrics/:metricId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/metrics/[metricId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/task-progress/stats:apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/stats/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/task-progress/stats",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/task-progress/stats/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -13304,12 +13421,30 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/tasks/goals:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/goals/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks/goals",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/goals/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/tasks/habits:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/habits/page.tsx",
       "kind": "page",
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/habits",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/habits/page.tsx",
       "status": "migrated",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/tasks/import:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/import/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks/import",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/import/page.tsx",
+      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -13331,6 +13466,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/tasks/leaderboards:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/leaderboards/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks/leaderboards",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/leaderboards/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/tasks/logs:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/logs/page.tsx",
       "kind": "page",
       "methods": [],
@@ -13349,6 +13493,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/tasks/progress:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/progress/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks/progress",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/progress/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/tasks/projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/page.tsx",
       "kind": "page",
       "methods": [],
@@ -13364,6 +13517,15 @@
       "routePath": "/:locale/:wsId/tasks/projects/:projectId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/[projectId]/page.tsx",
       "status": "migrated",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/tasks/stats:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/stats/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/tasks/stats",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/stats/page.tsx",
+      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -14448,20 +14610,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1150,
+    "apiRoutes": 1163,
     "cronRoutes": 19,
     "layouts": 67,
-    "pages": 306,
-    "routeHandlers": 1173,
+    "pages": 311,
+    "routeHandlers": 1186,
     "methodCounts": {
-      "GET": 658,
+      "GET": 666,
       "HEAD": 1,
-      "POST": 513,
+      "POST": 521,
       "PUT": 173,
-      "PATCH": 127,
-      "DELETE": 198,
+      "PATCH": 131,
+      "DELETE": 202,
       "OPTIONS": 16
     },
-    "total": 1551
+    "total": 1569
   }
 }

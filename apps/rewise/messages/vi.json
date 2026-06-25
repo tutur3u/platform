@@ -7442,6 +7442,103 @@
     },
     "unnamed_board": "Bảng chưa đặt tên"
   },
+  "task-progress": {
+    "actions": {
+      "add_entry": "Thêm ghi nhận",
+      "add_goal": "Thêm mục tiêu",
+      "add_leaderboard": "Thêm bảng xếp hạng",
+      "add_metric": "Thêm chỉ số",
+      "add_team": "Thêm đội",
+      "commit_import": "Ghi nhận nhập liệu",
+      "preview": "Xem trước"
+    },
+    "empty": {
+      "entries": "Chưa có ghi nhận tiến độ.",
+      "goals": "Chưa có mục tiêu đang hoạt động.",
+      "leaderboards": "Chưa có bảng xếp hạng đang hoạt động.",
+      "stats": "Chưa có thống kê tiến độ."
+    },
+    "fields": {
+      "color": "Màu",
+      "goal_name": "Tên mục tiêu",
+      "leaderboard_name": "Tên bảng xếp hạng",
+      "metric_name": "Tên chỉ số",
+      "note": "Ghi chú",
+      "tags": "Thẻ",
+      "target": "Mục tiêu",
+      "team_name": "Tên đội",
+      "unit": "Đơn vị",
+      "value": "Giá trị"
+    },
+    "goal_types": {
+      "habit": "Thói quen",
+      "target": "Mục tiêu"
+    },
+    "goals": {
+      "create_goal": "Tạo mục tiêu"
+    },
+    "import": {
+      "placeholder": "2026-06-25,500,Words,writing|draft,Bản nháp chương",
+      "preview_count": "Đã xem trước {count} dòng",
+      "title": "Nhập tiến độ"
+    },
+    "leaderboards": {
+      "create_leaderboard": "Tạo bảng xếp hạng"
+    },
+    "progress": {
+      "log_entry": "Ghi tiến độ",
+      "recent_entries": "Ghi nhận gần đây"
+    },
+    "schema_unavailable": "Tiến độ công việc cần migration cơ sở dữ liệu mới nhất trước khi tải.",
+    "stats": {
+      "daily_progress": "Tiến độ hằng ngày"
+    },
+    "summary": {
+      "entries": "Lượt ghi",
+      "goals": "Mục tiêu",
+      "streak": "Chuỗi ngày",
+      "total": "Tổng"
+    },
+    "tabs": {
+      "goals": "Mục tiêu",
+      "import": "Nhập",
+      "leaderboards": "Bảng xếp hạng",
+      "progress": "Tiến độ",
+      "stats": "Thống kê"
+    },
+    "toast": {
+      "entry_created": "Đã ghi nhận tiến độ",
+      "goal_created": "Đã tạo mục tiêu",
+      "import_committed": "Đã ghi nhận nhập liệu",
+      "import_failed": "Nhập liệu thất bại",
+      "import_previewed": "Đã chuẩn bị bản xem trước",
+      "leaderboard_created": "Đã tạo bảng xếp hạng",
+      "metric_created": "Đã tạo chỉ số",
+      "team_created": "Đã tạo đội"
+    },
+    "views": {
+      "goals": {
+        "description": "Theo dõi mục tiêu và thói quen bằng các chỉ số tiến độ công việc.",
+        "title": "Mục tiêu công việc"
+      },
+      "import": {
+        "description": "Xem trước và ghi nhận nhiều dòng tiến độ.",
+        "title": "Nhập tiến độ"
+      },
+      "leaderboards": {
+        "description": "Tạo bảng xếp hạng và đội nội bộ cho các chỉ số tiến độ.",
+        "title": "Bảng xếp hạng công việc"
+      },
+      "progress": {
+        "description": "Ghi nhận tiến độ linh hoạt theo công việc, dự án và bảng.",
+        "title": "Tiến độ công việc"
+      },
+      "stats": {
+        "description": "Xem tổng tiến độ, ngày hoạt động, chuỗi ngày và tiến độ hằng ngày.",
+        "title": "Thống kê công việc"
+      }
+    }
+  },
   "task-projects": {
     "badges": {
       "at_risk": "Có Rủi Ro",
