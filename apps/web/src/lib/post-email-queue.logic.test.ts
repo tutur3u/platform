@@ -118,6 +118,22 @@ describe('getEligibleReenqueuePairIds', () => {
         is_completed: true,
         email: 'not-an-email',
       },
+      {
+        post_id: 'p1',
+        user_id: 'u5',
+        approval_status: 'APPROVED',
+        is_completed: true,
+        email: 'good5@example.com',
+        archived: true,
+      },
+      {
+        post_id: 'p1',
+        user_id: 'u6',
+        approval_status: 'APPROVED',
+        is_completed: true,
+        email: 'good6@example.com',
+        archived_until: '2999-01-01T00:00:00.000Z',
+      },
     ];
 
     const result = getEligibleReenqueuePairIds(checks);

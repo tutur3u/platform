@@ -37,7 +37,10 @@ export type EligibleRecipientCheckRow = Pick<
   GroupPostCheck,
   'user_id' | 'is_completed' | 'approval_status' | 'approved_by'
 > & {
-  user: Pick<WorkspaceUser, 'id' | 'email' | 'ws_id'> | null;
+  user: Pick<
+    WorkspaceUser,
+    'id' | 'email' | 'ws_id' | 'archived' | 'archived_until'
+  > | null;
 };
 
 export type OldApprovedCheckRow = Pick<
@@ -56,7 +59,10 @@ export type OrphanedApprovedCheckRow = Pick<
   GroupPostCheck,
   'post_id' | 'user_id' | 'approved_by' | 'is_completed'
 > & {
-  user: Pick<WorkspaceUser, 'id' | 'email'> | null;
+  user: Pick<
+    WorkspaceUser,
+    'id' | 'email' | 'archived' | 'archived_until'
+  > | null;
   user_group_posts: Pick<UserGroupPost, 'id' | 'group_id' | 'created_at'> & {
     workspace_user_groups:
       | Pick<WorkspaceUserGroupRow, 'ws_id'>
@@ -78,7 +84,12 @@ export type PrefetchedPostCheck = Pick<
 > & {
   user: Pick<
     WorkspaceUser,
-    'id' | 'email' | 'full_name' | 'display_name'
+    | 'id'
+    | 'email'
+    | 'full_name'
+    | 'display_name'
+    | 'archived'
+    | 'archived_until'
   > | null;
 };
 
@@ -206,7 +217,12 @@ export type PrefetchCheckRow = Pick<
 > & {
   user: Pick<
     WorkspaceUser,
-    'id' | 'email' | 'full_name' | 'display_name'
+    | 'id'
+    | 'email'
+    | 'full_name'
+    | 'display_name'
+    | 'archived'
+    | 'archived_until'
   > | null;
 };
 

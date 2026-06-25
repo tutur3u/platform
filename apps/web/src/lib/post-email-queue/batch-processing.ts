@@ -5,11 +5,13 @@ import type { Database } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
+import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
 } from './constants';
+import { isWorkspaceUserInactiveForPostEmail } from './eligibility';
 import { getQueueTable } from './queue-core';
 import type {
   BatchPrefetch,
@@ -74,12 +76,69 @@ function getWorkspaceGroupName(
 async function markQueueRow(
   sbAdmin: TypedSupabaseClient,
   queueId: PostEmailQueueRow['id'],
-  patch: QueuePatch
-): Promise<void> {
-  const { error } = await getQueueTable(sbAdmin)
-    .update(patch)
-    .eq('id', queueId);
+  patch: QueuePatch,
+  expectedClaim?: Pick<PostEmailQueueRow, 'batch_id' | 'claimed_at'>
+): Promise<boolean> {
+  let query = getQueueTable(sbAdmin).update(patch).eq('id', queueId);
+
+  if (expectedClaim) {
+    query = query.eq('status', 'processing');
+    query = expectedClaim.batch_id
+      ? query.eq('batch_id', expectedClaim.batch_id)
+      : query.is('batch_id', null);
+    query = expectedClaim.claimed_at
+      ? query.eq('claimed_at', expectedClaim.claimed_at)
+      : query.is('claimed_at', null);
+  }
+
+  const { data, error } = await query.select('id');
   if (error) throw error;
+
+  return (data?.length ?? 0) > 0;
+}
+
+async function markClaimedQueueRow(
+  sbAdmin: TypedSupabaseClient,
+  row: PostEmailQueueRow,
+  patch: QueuePatch
+): Promise<boolean> {
+  return markQueueRow(sbAdmin, row.id, patch, {
+    batch_id: row.batch_id,
+    claimed_at: row.claimed_at,
+  });
+}
+
+function queueUpdateResult(
+  row: PostEmailQueueRow,
+  status: BatchProcessResult['status'],
+  updated: boolean
+): BatchProcessResult {
+  return {
+    id: row.id,
+    status: updated ? status : 'cancelled',
+  };
+}
+
+async function isQueueRowStillClaimedForProcessing(
+  sbAdmin: TypedSupabaseClient,
+  row: PostEmailQueueRow
+): Promise<boolean> {
+  let query = getQueueTable(sbAdmin)
+    .select('id')
+    .eq('id', row.id)
+    .eq('status', 'processing');
+
+  query = row.batch_id
+    ? query.eq('batch_id', row.batch_id)
+    : query.is('batch_id', null);
+  query = row.claimed_at
+    ? query.eq('claimed_at', row.claimed_at)
+    : query.is('claimed_at', null);
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+
+  return Boolean(data?.id);
 }
 
 async function getExistingSentEmailRecord(
@@ -254,7 +313,7 @@ async function prefetchBatchData(
         .schema('private')
         .from('user_group_post_checks')
         .select(
-          'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
+          'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name, archived, archived_until)'
         )
         .in('post_id', postChunk)
         .in('user_id', userChunk);
@@ -425,6 +484,10 @@ function buildPostSendContextFromPrefetch(
     return null;
   }
 
+  if (isWorkspaceUserInactiveForPostEmail(check.user)) {
+    return null;
+  }
+
   return {
     post,
     recipient: {
@@ -449,7 +512,8 @@ async function processEmailWithContext(
     const post = prefetch.posts.get(row.post_id);
     const isOld = Boolean(post && post.created_at < getPostEmailMaxAgeCutoff());
 
-    await markQueueRow(sbAdmin, row.id, {
+    const nextStatus = isOld ? 'skipped' : 'cancelled';
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: isOld ? 'skipped' : 'cancelled',
       batch_id: null,
       cancelled_at: new Date().toISOString(),
@@ -458,7 +522,7 @@ async function processEmailWithContext(
         : 'Post is no longer approved or recipient is no longer eligible.',
     });
 
-    return { id: row.id, status: isOld ? 'skipped' : 'cancelled' };
+    return queueUpdateResult(row, nextStatus, updated);
   }
 
   const existingSentEmail = prefetch.existingSentEmails.get(
@@ -466,7 +530,7 @@ async function processEmailWithContext(
   );
 
   if (existingSentEmail) {
-    await markQueueRow(sbAdmin, row.id, {
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'sent',
       batch_id: null,
       sent_at: existingSentEmail.created_at,
@@ -475,7 +539,7 @@ async function processEmailWithContext(
       blocked_reason: null,
     });
 
-    return { id: row.id, status: 'sent' };
+    return queueUpdateResult(row, 'sent', updated);
   }
 
   const existingSentAudit = prefetch.existingSentEmailAudits.get(
@@ -519,7 +583,7 @@ async function processEmailWithContext(
         'Delivery was recovered from email audit, but the sent email history row could not be rebuilt automatically.';
     }
 
-    await markQueueRow(sbAdmin, row.id, {
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'sent',
       batch_id: null,
       sent_at: existingSentAudit.sent_at ?? existingSentAudit.created_at,
@@ -528,47 +592,48 @@ async function processEmailWithContext(
       blocked_reason: null,
     });
 
-    return { id: row.id, status: 'sent' };
+    return queueUpdateResult(row, 'sent', updated);
   }
 
   if (
     prefetch.blockedRecipientEmails.has(context.recipient.email.toLowerCase())
   ) {
-    await markQueueRow(sbAdmin, row.id, {
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'skipped',
       batch_id: null,
       blocked_reason: 'blacklist',
       last_error: 'Blocked: blacklist',
     });
-    return { id: row.id, status: 'skipped' };
+    return queueUpdateResult(row, 'skipped', updated);
   }
 
   const emailService = prefetch.emailServices.get(row.ws_id);
   if (!emailService) {
-    await markQueueRow(sbAdmin, row.id, {
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
       batch_id: null,
       blocked_reason: null,
       last_error: `Email service unavailable for workspace ${row.ws_id}`,
     });
-    return { id: row.id, status: 'failed' };
+    return queueUpdateResult(row, 'failed', updated);
   }
 
   const sourceInfo = prefetch.sourceInfos.get(row.ws_id);
   if (!sourceInfo) {
-    await markQueueRow(sbAdmin, row.id, {
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
       batch_id: null,
       blocked_reason: null,
       last_error: `Email source unavailable for workspace ${row.ws_id}`,
     });
-    return { id: row.id, status: 'failed' };
+    return queueUpdateResult(row, 'failed', updated);
   }
 
   const subject = buildPostEmailSubject(
     context.post.created_at,
     context.recipient.username
   );
+  const unsubscribeUrl = createEmailUnsubscribeUrl(context.recipient.email);
 
   const htmlContent = await render(
     PostEmailTemplate({
@@ -577,12 +642,24 @@ async function processEmailWithContext(
       username: context.recipient.username,
       isHomeworkDone: context.recipient.is_completed ?? undefined,
       notes: context.recipient.notes ?? undefined,
+      unsubscribeUrl,
     })
   );
 
+  if (!(await isQueueRowStillClaimedForProcessing(sbAdmin, row))) {
+    return { id: row.id, status: 'cancelled' };
+  }
+
   const sendResult = await emailService.send({
     recipients: { to: [context.recipient.email] },
-    content: { subject, html: htmlContent },
+    content: {
+      subject,
+      html: htmlContent,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    },
     metadata: {
       wsId: row.ws_id,
       userId: row.sender_platform_user_id,
@@ -600,32 +677,32 @@ async function processEmailWithContext(
     );
 
     if (blockedRecipient) {
-      await markQueueRow(sbAdmin, row.id, {
+      const updated = await markClaimedQueueRow(sbAdmin, row, {
         status: 'skipped',
         batch_id: null,
         blocked_reason: blockedRecipient.reason ?? null,
         last_error: `Blocked: ${blockedRecipient.reason ?? 'recipient blocked'}`,
       });
-      return { id: row.id, status: 'skipped' };
+      return queueUpdateResult(row, 'skipped', updated);
     }
 
     if (isRateLimited) {
-      await markQueueRow(sbAdmin, row.id, {
+      const updated = await markClaimedQueueRow(sbAdmin, row, {
         status: 'failed',
         batch_id: null,
         blocked_reason: null,
         last_error: sendResult.rateLimitInfo?.reason ?? 'Rate limited',
       });
-      return { id: row.id, status: 'failed' };
+      return queueUpdateResult(row, 'failed', updated);
     }
 
-    await markQueueRow(sbAdmin, row.id, {
+    const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
       batch_id: null,
       blocked_reason: null,
       last_error: sendResult.error ?? 'Unknown send failure',
     });
-    return { id: row.id, status: 'failed' };
+    return queueUpdateResult(row, 'failed', updated);
   }
 
   const deliveredAt = new Date().toISOString();
@@ -656,7 +733,7 @@ async function processEmailWithContext(
     });
   }
 
-  await markQueueRow(sbAdmin, row.id, {
+  const updated = await markClaimedQueueRow(sbAdmin, row, {
     status: 'sent',
     batch_id: null,
     sent_at: deliveredAt,
@@ -665,7 +742,7 @@ async function processEmailWithContext(
     blocked_reason: null,
   });
 
-  return { id: row.id, status: 'sent' };
+  return queueUpdateResult(row, 'sent', updated);
 }
 
 export async function sendPostEmailImmediately(
@@ -753,7 +830,7 @@ async function normalizeQueueError(
   });
 
   try {
-    await markQueueRow(sbAdmin, row.id, {
+    await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
       batch_id: null,
       blocked_reason: null,

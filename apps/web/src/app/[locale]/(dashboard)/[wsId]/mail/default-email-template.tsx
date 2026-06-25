@@ -8,6 +8,7 @@ interface Props {
   isHomeworkDone?: boolean;
   username: string | undefined;
   notes: string | undefined;
+  unsubscribeUrl?: string;
 }
 
 const PostEmailTemplate = ({
@@ -16,6 +17,7 @@ const PostEmailTemplate = ({
   isHomeworkDone,
   username,
   notes,
+  unsubscribeUrl,
 }: Props) => {
   return (
     <Html>
@@ -165,6 +167,35 @@ const PostEmailTemplate = ({
                 </p>
               )}
             </div>
+            {unsubscribeUrl && (
+              <>
+                <hr />
+                <div className="px-6 py-4 text-center">
+                  <p className="text-gray-500 text-xs">
+                    Nếu bạn không muốn nhận email hệ thống từ Tuturuuu, bạn có
+                    thể{' '}
+                    <a
+                      className="text-gray-700 underline"
+                      href={unsubscribeUrl}
+                    >
+                      hủy đăng ký
+                    </a>
+                    .
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    If you do not want to receive Tuturuuu system emails, you
+                    can{' '}
+                    <a
+                      className="text-gray-700 underline"
+                      href={unsubscribeUrl}
+                    >
+                      unsubscribe
+                    </a>
+                    .
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </Tailwind>

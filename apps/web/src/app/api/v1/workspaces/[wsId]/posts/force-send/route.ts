@@ -12,7 +12,10 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  cancelPendingPostEmailsForWorkspaceUser,
   hasPostEmailBeenSent,
+  isWorkspaceUserInactiveForPostEmail,
+  POST_EMAIL_INACTIVE_RECIPIENT_REASON,
   sendPostEmailImmediately,
 } from '@/lib/post-email-queue';
 import { isValidEmailAddress } from '@/lib/post-email-queue/utils';
@@ -31,6 +34,8 @@ type ForceSendCheckRow = {
     id: string;
     email: string | null;
     ws_id: string;
+    archived: boolean;
+    archived_until: string | null;
   } | null;
   user_group_posts: {
     group_id: string;
@@ -87,7 +92,7 @@ export async function POST(request: Request, { params }: Params) {
           .schema('private')
           .from('user_group_post_checks')
           .select(
-            'post_id, user_id, is_completed, user:workspace_users!user_id(id, email, ws_id), user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
+            'post_id, user_id, is_completed, user:workspace_users!user_id(id, email, ws_id, archived, archived_until), user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
           )
           .eq('post_id', postId)
           .eq('user_id', userId)
@@ -110,6 +115,22 @@ export async function POST(request: Request, { params }: Params) {
         {
           message:
             'This recipient does not have a completion check recorded yet',
+        },
+        { status: 409 }
+      );
+    }
+
+    if (isWorkspaceUserInactiveForPostEmail(check.user)) {
+      await cancelPendingPostEmailsForWorkspaceUser(sbAdmin, {
+        userId,
+        wsId,
+        reason: POST_EMAIL_INACTIVE_RECIPIENT_REASON,
+      });
+
+      return NextResponse.json(
+        {
+          message:
+            'This recipient is archived or temporarily archived and cannot receive post email.',
         },
         { status: 409 }
       );

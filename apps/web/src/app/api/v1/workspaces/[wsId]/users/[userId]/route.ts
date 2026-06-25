@@ -19,6 +19,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  cancelPendingPostEmailsForWorkspaceUser,
+  isWorkspaceUserInactiveForPostEmail,
+  POST_EMAIL_INACTIVE_RECIPIENT_REASON,
+} from '@/lib/post-email-queue';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 const userUpdateSchema = z.object({
@@ -166,6 +171,7 @@ export async function PUT(req: Request, { params }: Params) {
   const shouldLogStatusChange =
     nextArchived !== currentUser.archived ||
     nextArchivedUntil !== currentUser.archived_until;
+  let warning: string | undefined;
 
   if (shouldLogStatusChange) {
     const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
@@ -187,8 +193,29 @@ export async function PUT(req: Request, { params }: Params) {
     }
   }
 
+  if (
+    isWorkspaceUserInactiveForPostEmail({
+      archived: nextArchived,
+      archived_until: nextArchivedUntil,
+    })
+  ) {
+    try {
+      await cancelPendingPostEmailsForWorkspaceUser(sbAdmin, {
+        userId,
+        wsId,
+        reason: POST_EMAIL_INACTIVE_RECIPIENT_REASON,
+      });
+    } catch (cancelError) {
+      serverLogger.error(
+        'Failed to cancel pending post emails for inactive workspace user:',
+        cancelError
+      );
+      warning =
+        'User was updated, but pending post emails could not be cancelled automatically.';
+    }
+  }
+
   // Sync guest membership based on is_guest flag when provided
-  let warning: string | undefined;
   if (typeof is_guest === 'boolean') {
     const { data: guestGroup, error: groupError } = await sbAdmin
       .from('workspace_user_groups')

@@ -4,6 +4,7 @@ import type {
   GroupPostCheck,
   WorkspaceUser,
 } from '@tuturuuu/types/db';
+import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildPostEmailAgeSkipReason,
@@ -11,6 +12,11 @@ import {
   isPostEmailAgeSkipReason,
   POST_EMAIL_QUEUE_TABLE,
 } from './constants';
+import {
+  isWorkspaceUserInactiveForPostEmail,
+  POST_EMAIL_INACTIVE_RECIPIENT_REASON,
+  POST_EMAIL_UNSUBSCRIBED_RECIPIENT_REASON,
+} from './eligibility';
 import {
   buildEligibleRecipientsDiagnostics,
   buildEnqueueApprovedPostEmailsDiagnostics,
@@ -73,8 +79,18 @@ type CheckEligibilityRow = Pick<
   GroupPostCheck,
   'post_id' | 'user_id' | 'is_completed' | 'approval_status'
 > & {
-  user: Pick<WorkspaceUser, 'id' | 'email' | 'ws_id'> | null;
+  user: Pick<
+    WorkspaceUser,
+    'id' | 'email' | 'ws_id' | 'archived' | 'archived_until'
+  > | null;
 };
+
+const CANCELLABLE_POST_EMAIL_STATUSES: PostEmailQueueRow['status'][] = [
+  'queued',
+  'processing',
+  'failed',
+  'blocked',
+];
 
 export async function fetchAllPaginatedRows<T>(
   fetchPage: (
@@ -504,7 +520,7 @@ async function getEligibleRecipients(
       .schema('private')
       .from('user_group_post_checks')
       .select(
-        'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
+        'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id, archived, archived_until)'
       )
       .eq('post_id', postId)
       .eq('user.ws_id', wsId);
@@ -563,6 +579,7 @@ async function getEligibleRecipients(
       const isApproved = row.approval_status === 'APPROVED';
       const hasUser = row.user != null;
       const hasEmail = row.user?.email != null && row.user?.email !== '';
+      const isInactive = isWorkspaceUserInactiveForPostEmail(row.user);
 
       if (!hasCompletion) diagnostics.missingIsCompleted.push(row.user_id);
       if (hasCompletion && !isApproved)
@@ -570,7 +587,7 @@ async function getEligibleRecipients(
           userId: row.user_id,
           status: row.approval_status,
         });
-      if (hasCompletion && isApproved && !hasUser)
+      if (hasCompletion && isApproved && (!hasUser || isInactive))
         diagnostics.missingUserObject.push(row.user_id);
       if (hasCompletion && isApproved && hasUser && !hasEmail)
         diagnostics.missingEmail.push({
@@ -578,7 +595,8 @@ async function getEligibleRecipients(
           email: row.user?.email,
         });
 
-      const keep = hasCompletion && isApproved && hasUser && hasEmail;
+      const keep =
+        hasCompletion && isApproved && hasUser && !isInactive && hasEmail;
       if (keep) diagnostics.kept.push(row.user_id);
       return keep;
     })
@@ -588,13 +606,23 @@ async function getEligibleRecipients(
       approved_by: row.approved_by,
     }));
 
-  const withValidEmail = filtered.filter((row) =>
-    isValidEmailAddress(row.email)
+  const withValidEmail = filtered.filter(
+    (row): row is EligibleRecipient & { email: string } =>
+      isValidEmailAddress(row.email)
   );
   const invalidEmailCount = filtered.length - withValidEmail.length;
+  const blockedEmailCache = await preloadBlockedEmailCache(
+    sbAdmin,
+    withValidEmail.map((row) => row.email)
+  );
+  const deliverableRecipients = withValidEmail.filter(
+    (row) => !blockedEmailCache.get(row.email.trim().toLowerCase())
+  );
+  const blockedEmailCount =
+    withValidEmail.length - deliverableRecipients.length;
   const diagnosticsSummary = buildEligibleRecipientsDiagnostics({
-    eligibleRecipients: withValidEmail.length,
-    invalidEmail: invalidEmailCount,
+    eligibleRecipients: deliverableRecipients.length,
+    invalidEmail: invalidEmailCount + blockedEmailCount,
     missingEmail: diagnostics.missingEmail.length,
     missingFromUserTable: diagnostics.missingFromUserTable,
     missingIsCompleted: diagnostics.missingIsCompleted.length,
@@ -633,7 +661,7 @@ async function getEligibleRecipients(
 
   return {
     diagnostics: diagnosticsSummary,
-    recipients: withValidEmail,
+    recipients: deliverableRecipients,
   };
 }
 
@@ -888,7 +916,7 @@ export async function cancelQueuedPostEmails(
       cancelled_at: now,
     })
     .eq('post_id', postId)
-    .in('status', ['queued', 'failed', 'blocked', 'processing']);
+    .in('status', CANCELLABLE_POST_EMAIL_STATUSES);
 
   if (userIds && userIds.length > 0) {
     query = query.in('user_id', userIds);
@@ -896,6 +924,134 @@ export async function cancelQueuedPostEmails(
 
   const { error } = await query;
   if (error) throw error;
+}
+
+export async function cancelPendingPostEmailsForWorkspaceUser(
+  sbAdmin: TypedSupabaseClient,
+  {
+    reason = POST_EMAIL_INACTIVE_RECIPIENT_REASON,
+    userId,
+    wsId,
+  }: {
+    reason?: string;
+    userId: string;
+    wsId?: string;
+  }
+): Promise<number> {
+  const now = new Date().toISOString();
+  let query = getQueueTable(sbAdmin)
+    .update({
+      status: 'cancelled',
+      batch_id: null,
+      claimed_at: null,
+      cancelled_at: now,
+      blocked_reason: null,
+      last_error: reason,
+    })
+    .eq('user_id', userId)
+    .in('status', CANCELLABLE_POST_EMAIL_STATUSES);
+
+  if (wsId) {
+    query = query.eq('ws_id', wsId);
+  }
+
+  const { data, error } = await query.select('id');
+  if (error) throw error;
+
+  return data?.length ?? 0;
+}
+
+type CancelPendingPostEmailQueueForRecipientEmailRpcResponse = {
+  data: number | null;
+  error: unknown | null;
+};
+
+async function callCancelRecipientEmailRpc(
+  client: RpcCapableSupabaseClient,
+  {
+    email,
+    reason,
+  }: {
+    email: string;
+    reason: string;
+  }
+): Promise<CancelPendingPostEmailQueueForRecipientEmailRpcResponse> {
+  return (
+    client.schema('private').rpc as unknown as (
+      fn: string,
+      rpcArgs: { p_email: string; p_reason: string }
+    ) => Promise<CancelPendingPostEmailQueueForRecipientEmailRpcResponse>
+  )('cancel_pending_post_email_queue_for_recipient_email', {
+    p_email: email,
+    p_reason: reason,
+  });
+}
+
+export async function cancelPendingPostEmailsForRecipientEmail(
+  sbAdmin: TypedSupabaseClient,
+  {
+    email,
+    reason = POST_EMAIL_UNSUBSCRIBED_RECIPIENT_REASON,
+  }: {
+    email: string;
+    reason?: string;
+  }
+): Promise<number> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return 0;
+
+  const rpcClient = getRpcClient(sbAdmin);
+  if (rpcClient?.rpc) {
+    const { data, error } = await callCancelRecipientEmailRpc(rpcClient, {
+      email: normalizedEmail,
+      reason,
+    });
+
+    if (!error) {
+      return data ?? 0;
+    }
+
+    if (
+      !shouldFallbackToAppRpc(
+        error,
+        'cancel_pending_post_email_queue_for_recipient_email'
+      )
+    ) {
+      throw error;
+    }
+  }
+
+  const { data: users, error: usersError } = await sbAdmin
+    .from('workspace_users')
+    .select('id')
+    .ilike('email', normalizedEmail);
+
+  if (usersError) throw usersError;
+
+  const userIds = [...new Set((users ?? []).map((user) => user.id))];
+  if (userIds.length === 0) return 0;
+
+  let totalUpdated = 0;
+  for (const userIdChunk of chunkArray(userIds)) {
+    const now = new Date().toISOString();
+    const { data, error } = await getQueueTable(sbAdmin)
+      .update({
+        status: 'cancelled',
+        batch_id: null,
+        claimed_at: null,
+        cancelled_at: now,
+        blocked_reason: null,
+        last_error: reason,
+      })
+      .in('user_id', userIdChunk)
+      .in('status', CANCELLABLE_POST_EMAIL_STATUSES)
+      .select('id');
+
+    if (error) throw error;
+    totalUpdated += data?.length ?? 0;
+  }
+
+  return totalUpdated;
 }
 
 export async function autoSkipOldPostEmails(
@@ -1181,7 +1337,7 @@ async function reconcileOrphanedApprovedPostsInApp(
         .schema('private')
         .from('user_group_post_checks')
         .select(
-          'post_id, user_id, approved_by, is_completed, user:workspace_users!user_id(id, email), user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
+          'post_id, user_id, approved_by, is_completed, user:workspace_users!user_id(id, email, archived, archived_until), user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
         )
         .eq('approval_status', 'APPROVED')
         .not('is_completed', 'is', null)
@@ -1478,7 +1634,7 @@ async function getEligibleReenqueuePairs(
       .schema('private')
       .from('user_group_post_checks')
       .select(
-        'post_id, user_id, is_completed, approval_status, user:workspace_users!user_id(id, email, ws_id)'
+        'post_id, user_id, is_completed, approval_status, user:workspace_users!user_id(id, email, ws_id, archived, archived_until)'
       )
       .in('post_id', postChunk)
       .eq('approval_status', 'APPROVED')
@@ -1500,6 +1656,8 @@ async function getEligibleReenqueuePairs(
           approval_status: check.approval_status,
           is_completed: check.is_completed,
           email: check.user?.email ?? null,
+          archived: check.user?.archived ?? null,
+          archived_until: check.user?.archived_until ?? null,
         });
       }
     }

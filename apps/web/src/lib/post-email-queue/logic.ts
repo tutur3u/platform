@@ -1,3 +1,4 @@
+import { isWorkspaceUserInactiveForPostEmail } from './eligibility';
 import type {
   EligibleRecipientsDiagnostics,
   EnqueueApprovedPostEmailsDiagnostics,
@@ -19,6 +20,8 @@ export type ReenqueueCheckRow = {
   approval_status: string | null;
   is_completed: boolean | null;
   email: string | null;
+  archived?: boolean | null;
+  archived_until?: string | null;
 };
 
 export type SentPairRow = {
@@ -154,6 +157,7 @@ export function getEligibleReenqueuePairIds(
     if (check.approval_status !== 'APPROVED') continue;
     if (check.is_completed === null) continue;
     if (!isValidEmailAddress(check.email)) continue;
+    if (isWorkspaceUserInactiveForPostEmail(check)) continue;
     pairIds.add(`${check.post_id}:${check.user_id}`);
   }
 

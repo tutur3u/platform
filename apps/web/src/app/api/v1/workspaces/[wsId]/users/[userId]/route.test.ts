@@ -8,6 +8,7 @@ const getPermissionsMock = vi.fn();
 const workspaceUsersSelectSingleMock = vi.fn();
 const adminRpcMock = vi.fn();
 const statusChangesInsertMock = vi.fn();
+const cancelPendingPostEmailsForWorkspaceUserMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -31,6 +32,22 @@ vi.mock('@/lib/workspace-api-key', () => ({
   validateWorkspaceApiKey: vi.fn(),
 }));
 
+vi.mock('@/lib/post-email-queue', () => ({
+  POST_EMAIL_INACTIVE_RECIPIENT_REASON:
+    'Recipient is archived or temporarily archived.',
+  cancelPendingPostEmailsForWorkspaceUser: (
+    ...args: Parameters<typeof cancelPendingPostEmailsForWorkspaceUserMock>
+  ) => cancelPendingPostEmailsForWorkspaceUserMock(...args),
+  isWorkspaceUserInactiveForPostEmail: (
+    user: { archived?: boolean | null; archived_until?: string | null } | null
+  ) => {
+    if (!user) return true;
+    if (user.archived === true) return true;
+    if (!user.archived_until) return false;
+    return Date.parse(user.archived_until) > Date.now();
+  },
+}));
+
 import { DELETE, PUT } from './route';
 
 describe('workspace user write routes preserve audit actor context', () => {
@@ -52,6 +69,7 @@ describe('workspace user write routes preserve audit actor context', () => {
       error: null,
     });
     statusChangesInsertMock.mockResolvedValue({ error: null });
+    cancelPendingPostEmailsForWorkspaceUserMock.mockResolvedValue(2);
 
     createAdminClientMock.mockResolvedValue({
       from: (table: string) => {
@@ -139,6 +157,14 @@ describe('workspace user write routes preserve audit actor context', () => {
       actor_auth_uid: 'actor-auth-1',
       source: 'live',
     });
+    expect(cancelPendingPostEmailsForWorkspaceUserMock).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        userId: 'user-1',
+        wsId: 'ws-1',
+        reason: 'Recipient is archived or temporarily archived.',
+      }
+    );
   });
 
   it('deletes users through an admin RPC that forwards actor_auth_uid', async () => {

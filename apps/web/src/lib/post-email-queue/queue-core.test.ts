@@ -26,7 +26,11 @@ type MockState = {
 function createMockQueryBuilder(
   table: string,
   state: MockState,
-  userIds: string[]
+  userIds: string[],
+  userStatuses: Map<
+    string,
+    { archived?: boolean | null; archived_until?: string | null }
+  >
 ) {
   const eqFilters = new Map<string, unknown>();
   const inFilters = new Map<string, string[]>();
@@ -43,6 +47,9 @@ function createMockQueryBuilder(
               approval_status: 'APPROVED',
               is_completed: true,
               user: {
+                archived: userStatuses.get(userId)?.archived ?? false,
+                archived_until:
+                  userStatuses.get(userId)?.archived_until ?? null,
                 email: `${userId}@example.com`,
                 id: userId,
                 ws_id: WS_ID,
@@ -176,7 +183,20 @@ function createMockQueryBuilder(
   return builder;
 }
 
-function createMockAdminClient(userIds: string[]) {
+function createMockAdminClient(
+  userIds: string[],
+  {
+    userStatuses = new Map<
+      string,
+      { archived?: boolean | null; archived_until?: string | null }
+    >(),
+  }: {
+    userStatuses?: Map<
+      string,
+      { archived?: boolean | null; archived_until?: string | null }
+    >;
+  } = {}
+) {
   const state: MockState = {
     allCheckChunks: [],
     existingQueueRows: [],
@@ -188,9 +208,11 @@ function createMockAdminClient(userIds: string[]) {
 
   return {
     sbAdmin: {
-      from: (table: string) => createMockQueryBuilder(table, state, userIds),
+      from: (table: string) =>
+        createMockQueryBuilder(table, state, userIds, userStatuses),
       schema: () => ({
-        from: (table: string) => createMockQueryBuilder(table, state, userIds),
+        from: (table: string) =>
+          createMockQueryBuilder(table, state, userIds, userStatuses),
       }),
     },
     state,
@@ -288,6 +310,44 @@ describe('enqueueApprovedPostEmails', () => {
     ]);
   });
 
+  it('does not enqueue permanently archived or temporarily archived recipients', async () => {
+    const activeUserId = 'user-active';
+    const permanentlyArchivedUserId = 'user-permanent-archive';
+    const temporarilyArchivedUserId = 'user-temporary-archive';
+    const { sbAdmin, state } = createMockAdminClient(
+      [activeUserId, permanentlyArchivedUserId, temporarilyArchivedUserId],
+      {
+        userStatuses: new Map([
+          [permanentlyArchivedUserId, { archived: true }],
+          [
+            temporarilyArchivedUserId,
+            { archived_until: '2999-01-01T00:00:00.000Z' },
+          ],
+        ]),
+      }
+    );
+
+    const result = await enqueueApprovedPostEmails(sbAdmin as never, {
+      groupId: GROUP_ID,
+      postId: POST_ID,
+      userIds: [
+        activeUserId,
+        permanentlyArchivedUserId,
+        temporarilyArchivedUserId,
+      ],
+      wsId: WS_ID,
+    });
+
+    expect(result.queued).toBe(1);
+    expect(state.upsertRows).toEqual([
+      expect.objectContaining({
+        post_id: POST_ID,
+        status: 'queued',
+        user_id: activeUserId,
+      }),
+    ]);
+  });
+
   it('maps the reconciliation rpc result without falling back to row scans', async () => {
     const rpc = async (name: string, args: Record<string, unknown>) => {
       expect(name).toBe('reconcile_orphaned_approved_post_email_queue');
@@ -327,7 +387,8 @@ describe('enqueueApprovedPostEmails', () => {
 
     const result = await reconcileOrphanedApprovedPosts(
       {
-        from: () => createMockQueryBuilder('unexpected', {} as never, []),
+        from: () =>
+          createMockQueryBuilder('unexpected', {} as never, [], new Map()),
         rpc,
         schema: () => ({ rpc }),
       } as never,

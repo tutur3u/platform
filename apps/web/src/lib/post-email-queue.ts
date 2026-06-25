@@ -11,9 +11,16 @@ export {
   POST_EMAIL_QUEUE_TABLE,
 } from './post-email-queue/constants';
 export {
+  isWorkspaceUserInactiveForPostEmail,
+  POST_EMAIL_INACTIVE_RECIPIENT_REASON,
+  POST_EMAIL_UNSUBSCRIBED_RECIPIENT_REASON,
+} from './post-email-queue/eligibility';
+export {
   autoSkipOldApprovedPostChecks,
   autoSkipOldPostEmails,
   autoSkipRejectedPosts,
+  cancelPendingPostEmailsForRecipientEmail,
+  cancelPendingPostEmailsForWorkspaceUser,
   cancelQueuedPostEmails,
   cleanupStaleProcessingRows,
   enqueueApprovedPostEmails,
