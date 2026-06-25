@@ -42,7 +42,7 @@
     "@ai-sdk/perplexity": "^3.0.36",
     "@ai-sdk/react": "^3.0.210",
     "@ai-sdk/replicate": "^2.0.36",
-    "@ai-sdk/revai": "^2.0.36",
+    "@ai-sdk/revai": "^3.0.0",
     "@ai-sdk/togetherai": "^2.0.56",
     "@ai-sdk/xai": "^3.0.96",
     "@beeper/chat-adapter-matrix": "^0.2.0",
