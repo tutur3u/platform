@@ -590,7 +590,7 @@ describe('BoardViews', () => {
     );
   });
 
-  it('expands the virtual external task list by default when assigned external tasks exist', () => {
+  it('collapses the virtual external task list by default even when assigned external tasks exist', () => {
     renderBoardViews({
       workspace: {
         ...mockWorkspace,
@@ -613,7 +613,7 @@ describe('BoardViews', () => {
     expect(kanbanBoardProps?.lists[0]).toEqual(
       expect.objectContaining({
         id: 'personal-external-staging:board-1',
-        is_external_collapsed: false,
+        is_external_collapsed: true,
         is_external_staging: true,
       })
     );
@@ -712,10 +712,10 @@ describe('BoardViews', () => {
     });
   });
 
-  it('persists deadline section collapse state per board and section', async () => {
+  it('collapses deadline sections by default and persists per board and section', async () => {
     window.localStorage.setItem(
       'task-board-deadline-section-collapsed:board-1:overdue',
-      'true'
+      'false'
     );
 
     renderBoardViews();
@@ -723,14 +723,14 @@ describe('BoardViews', () => {
     await waitFor(() => {
       expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
         expect.objectContaining({
-          overdue: true,
-          upcoming: false,
+          overdue: false,
+          upcoming: true,
         })
       );
     });
 
     act(() => {
-      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('upcoming', true);
+      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('upcoming', false);
     });
 
     await waitFor(() => {
@@ -738,10 +738,93 @@ describe('BoardViews', () => {
         window.localStorage.getItem(
           'task-board-deadline-section-collapsed:board-1:upcoming'
         )
-      ).toBe('true');
+      ).toBe('false');
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: false,
+          upcoming: false,
+        })
+      );
+    });
+  });
+
+  it('does not force pinned special task lists to stay expanded', async () => {
+    getUserWorkspaceConfigMock.mockImplementation(
+      (_workspaceId: string, configId: string) =>
+        Promise.resolve({
+          value:
+            configId === 'TASK_BOARD_PINNED_SPECIAL_LISTS'
+              ? JSON.stringify([
+                  'external_tasks',
+                  'closed_tasks',
+                  'overdue',
+                  'upcoming',
+                ])
+              : null,
+        })
+    );
+
+    renderBoardViews({
+      lists: [...mockLists, closedList],
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.specialTaskListPins).toEqual(
+        expect.objectContaining({
+          closed_tasks: true,
+          external_tasks: true,
+          overdue: true,
+          upcoming: true,
+        })
+      );
+      expect(kanbanBoardProps?.lists[0]).toEqual(
+        expect.objectContaining({
+          is_external_collapsed: true,
+          is_external_staging: true,
+        })
+      );
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+      ).toEqual(
+        expect.objectContaining({
+          is_collapsed: true,
+          status: 'closed',
+        })
+      );
       expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
         expect.objectContaining({
           overdue: true,
+          upcoming: true,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onExternalTasksCollapsedChange?.(false);
+      kanbanBoardProps?.onTaskListCollapsedChange?.('list-closed', false);
+      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('overdue', false);
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists[0]).toEqual(
+        expect.objectContaining({
+          is_external_collapsed: false,
+        })
+      );
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+      ).toEqual(
+        expect.objectContaining({
+          is_collapsed: false,
+        })
+      );
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: false,
           upcoming: true,
         })
       );

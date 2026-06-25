@@ -20,9 +20,20 @@ vi.mock('@dnd-kit/sortable', () => ({
 }));
 
 vi.mock('../../board-column', () => ({
-  BoardColumn: ({ column }: { column: TaskList }) => (
+  BoardColumn: ({
+    column,
+    specialPinned,
+    specialStickyOffset,
+  }: {
+    column: TaskList;
+    specialPinned?: boolean;
+    specialStickyOffset?: string;
+  }) => (
     <section
+      data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
       data-kanban-real-column={column.is_external_staging ? undefined : 'true'}
+      data-special-pinned={String(specialPinned === true)}
+      data-special-sticky-offset={specialStickyOffset}
       data-testid={`column-${column.id}`}
     />
   ),
@@ -115,6 +126,20 @@ function task(overrides: Partial<Task>): Task {
     name: 'Task',
     ...overrides,
   };
+}
+
+function getMockRect(left: number, right: number) {
+  return {
+    bottom: 0,
+    height: 0,
+    left,
+    right,
+    toJSON: () => ({}),
+    top: 0,
+    width: right - left,
+    x: left,
+    y: 0,
+  } as DOMRect;
 }
 
 describe('KanbanColumns', () => {
@@ -621,6 +646,69 @@ describe('KanbanColumns', () => {
     }
   });
 
+  it('keeps the first real task list visible when pinned special lists are sticky', () => {
+    const frameCallbacks: FrameRequestCallback[] = [];
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const collapsedExternalList = {
+      ...externalList,
+      is_external_collapsed: true,
+    };
+
+    window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    });
+    window.cancelAnimationFrame = vi.fn();
+
+    try {
+      const { container } = render(
+        <KanbanColumns
+          columns={[collapsedExternalList, ...lists]}
+          tasks={[]}
+          boardId="board-1"
+          workspaceId="ws-1"
+          isPersonalWorkspace
+          disableSort={false}
+          selectedTasks={new Set()}
+          isMultiSelectMode={false}
+          setIsMultiSelectMode={vi.fn()}
+          onTaskSelect={vi.fn()}
+          onClearSelection={vi.fn()}
+          onUpdate={vi.fn()}
+          createTask={vi.fn()}
+          taskHeightsRef={{ current: new Map() }}
+          optimisticUpdateInProgress={new Set()}
+          bulkUpdateCustomDueDate={vi.fn()}
+          boardRef={{ current: null }}
+          columnsId={[collapsedExternalList, ...lists].map((list) => list.id)}
+          specialTaskListPins={{ external_tasks: true }}
+        />
+      );
+      const scrollContainer = container.firstElementChild as HTMLElement;
+      const firstRealColumn = screen.getByTestId('column-list-1');
+      const pinnedExternalColumn = screen.getByTestId('column-external-list');
+
+      Object.defineProperty(firstRealColumn, 'offsetLeft', {
+        configurable: true,
+        value: 320,
+      });
+      Object.defineProperty(pinnedExternalColumn, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => getMockRect(8, 64),
+      });
+
+      act(() => {
+        for (const callback of frameCallbacks) callback(0);
+      });
+
+      expect(scrollContainer.scrollLeft).toBe(256);
+    } finally {
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
+  });
+
   it('renders external deadline cards with their staging list context without exposing the staging list as a move target', () => {
     render(
       <KanbanColumns
@@ -734,6 +822,110 @@ describe('KanbanColumns', () => {
     expect(
       screen.getByRole('button', { name: 'Expand Overdue' })
     ).toBeInTheDocument();
+  });
+
+  it('keeps pinned deadline sections sticky without forcing them expanded', () => {
+    render(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+        deadlineLabels={{
+          overdue: 'Overdue',
+          upcoming: 'Upcoming',
+        }}
+        deadlineSections={{
+          overdue: [],
+          upcoming: [],
+        }}
+        deadlineSectionsCollapsed={{ overdue: true }}
+        specialTaskListPins={{ overdue: true, upcoming: true }}
+      />
+    );
+
+    const collapsedOverdue = screen.getByTestId(
+      'kanban-deadline-section-overdue-collapsed'
+    );
+    const upcoming = screen.getByTestId('kanban-deadline-section-upcoming');
+
+    expect(collapsedOverdue).toHaveAttribute(
+      'data-kanban-pinned-special',
+      'true'
+    );
+    expect(collapsedOverdue).toHaveClass('sticky');
+    expect(collapsedOverdue.style.left).toBe(
+      'calc(var(--kanban-snap-left-padding) + 0px)'
+    );
+    expect(upcoming).toHaveAttribute('data-kanban-pinned-special', 'true');
+    expect(upcoming).toHaveClass('sticky');
+    expect(upcoming.style.left).toBe(
+      'calc(var(--kanban-snap-left-padding) + calc(3.5rem + 0.75rem))'
+    );
+  });
+
+  it('assigns sticky offsets to pinned external and closed task lists', () => {
+    const collapsedExternalList = {
+      ...externalList,
+      is_external_collapsed: true,
+    };
+
+    render(
+      <KanbanColumns
+        columns={[collapsedExternalList, ...lists, collapsedClosedList]}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={[collapsedExternalList, ...lists, collapsedClosedList].map(
+          (list) => list.id
+        )}
+        specialTaskListPins={{ closed_tasks: true, external_tasks: true }}
+      />
+    );
+
+    expect(screen.getByTestId('column-external-list')).toHaveAttribute(
+      'data-special-pinned',
+      'true'
+    );
+    expect(screen.getByTestId('column-external-list')).toHaveAttribute(
+      'data-special-sticky-offset',
+      '0px'
+    );
+    expect(screen.getByTestId('column-closed-list')).toHaveAttribute(
+      'data-special-pinned',
+      'true'
+    );
+    expect(screen.getByTestId('column-closed-list')).toHaveAttribute(
+      'data-special-sticky-offset',
+      'calc(3.5rem + 0.75rem)'
+    );
   });
 
   it('passes deadline tick props to upcoming deadline cards', () => {

@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
+import type React from 'react';
 import { useMemo, useState } from 'react';
 import { TaskCard } from '../../task';
 import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
@@ -83,6 +84,7 @@ interface KanbanDeadlinePanelsProps {
   loading?: boolean;
   collapsedSections?: KanbanDeadlineCollapsedState;
   pinnedSections?: KanbanDeadlineCollapsedState;
+  stickyOffsets?: Partial<Record<KanbanDeadlineSection, string>>;
   deadlineNow?: number;
   selectedTasks: Set<string>;
   taskLists: TaskList[];
@@ -268,6 +270,7 @@ function DeadlineSection({
   optimisticUpdateInProgress,
   pinned,
   selectedTasks,
+  stickyOffset,
   taskLists,
   tasks,
   workspaceId,
@@ -295,6 +298,7 @@ function DeadlineSection({
   optimisticUpdateInProgress: Set<string>;
   pinned?: boolean;
   selectedTasks: Set<string>;
+  stickyOffset?: string;
   taskLists: TaskList[];
   tasks: Task[];
   workspaceId: string;
@@ -334,15 +338,23 @@ function DeadlineSection({
     return sortDeadlineTasks(filteredTasks, sortBy);
   }, [includeDocuments, includeExternal, sortBy, taskListById, tasks]);
   const filterCount = (includeDocuments ? 0 : 1) + (includeExternal ? 0 : 1);
+  const stickyStyle: React.CSSProperties | undefined = stickyOffset
+    ? {
+        left: `calc(var(--kanban-snap-left-padding) + ${stickyOffset})`,
+      }
+    : undefined;
 
   if (collapsed) {
     return (
       <Card
         className={cn(
           'group flex h-full w-14 shrink-0 snap-start flex-col items-center overflow-hidden rounded-xl border border-dashed transition-all duration-200 hover:shadow-md',
+          stickyOffset && 'sticky z-30',
           config.collapsedClassName
         )}
+        data-kanban-pinned-special={stickyOffset ? 'true' : undefined}
         data-testid={`kanban-deadline-section-${config.section}-collapsed`}
+        style={stickyStyle}
       >
         <button
           type="button"
@@ -376,9 +388,12 @@ function DeadlineSection({
     <Card
       className={cn(
         'flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-dashed shadow-xs',
+        stickyOffset && 'sticky z-30',
         config.panelClassName
       )}
+      data-kanban-pinned-special={stickyOffset ? 'true' : undefined}
       data-testid={`kanban-deadline-section-${config.section}`}
+      style={stickyStyle}
     >
       <div className="flex items-center justify-between gap-3 border-border/70 border-b p-3">
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -545,22 +560,20 @@ function DeadlineSection({
               )}
             </Button>
           ) : null}
-          {!pinned && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              className={cn(
-                'h-7 w-7 p-0 hover:bg-muted/40',
-                config.titleClassName
-              )}
-              title={collapseLabel}
-              aria-label={collapseLabel}
-              onClick={() => onCollapsedChange?.(config.section, true)}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className={cn(
+              'h-7 w-7 p-0 hover:bg-muted/40',
+              config.titleClassName
+            )}
+            title={collapseLabel}
+            aria-label={collapseLabel}
+            onClick={() => onCollapsedChange?.(config.section, true)}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
 
@@ -627,6 +640,7 @@ export function KanbanDeadlinePanels({
   loading,
   collapsedSections,
   pinnedSections,
+  stickyOffsets,
   deadlineNow,
   selectedTasks,
   taskLists,
@@ -678,6 +692,7 @@ export function KanbanDeadlinePanels({
           optimisticUpdateInProgress={optimisticUpdateInProgress}
           pinned={pinnedSections?.[config.section] === true}
           selectedTasks={selectedTasks}
+          stickyOffset={stickyOffsets?.[config.section]}
           taskLists={taskLists}
           tasks={sections[config.section]}
           workspaceId={workspaceId}

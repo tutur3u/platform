@@ -94,17 +94,6 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   sourceBoardIds: [],
 };
 
-function hasAssignedExternalTasks(tasks: Task[], boardId: string) {
-  const externalStagingListId = getPersonalExternalStagingListId(boardId);
-
-  return tasks.some(
-    (task) =>
-      task.is_personal_external === true ||
-      task.list_id === externalStagingListId ||
-      Boolean(task.source_workspace_id)
-  );
-}
-
 function getClosedTaskListCollapsedStorageKey(boardId: string, listId: string) {
   return `${CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
 }
@@ -597,15 +586,11 @@ export function BoardViews({
     const storedPreference =
       storedValue === null ? null : storedValue === 'true';
 
-    setExternalTasksCollapsed(
-      storedPreference ?? !hasAssignedExternalTasks(tasks, board.id)
-    );
-  }, [board.id, tasks, workspace.personal]);
+    setExternalTasksCollapsed(storedPreference ?? true);
+  }, [board.id, workspace.personal]);
 
   const handleExternalTasksCollapsedChange = useCallback(
     (collapsed: boolean) => {
-      if (collapsed && specialTaskListPins.external_tasks) return;
-
       setExternalTasksCollapsed(collapsed);
 
       if (!workspace.personal || typeof window === 'undefined') return;
@@ -615,7 +600,7 @@ export function BoardViews({
         String(collapsed)
       );
     },
-    [board.id, specialTaskListPins.external_tasks, workspace.personal]
+    [board.id, workspace.personal]
   );
 
   useEffect(() => {
@@ -651,16 +636,6 @@ export function BoardViews({
 
   const handleTaskListCollapsedChange = useCallback(
     (listId: string, collapsed: boolean) => {
-      if (
-        collapsed &&
-        specialTaskListPins.closed_tasks &&
-        boardLists.some(
-          (list) => list.id === listId && list.status === 'closed'
-        )
-      ) {
-        return;
-      }
-
       setClosedTaskListsCollapsed((previous) => ({
         ...previous,
         [listId]: collapsed,
@@ -673,7 +648,7 @@ export function BoardViews({
         String(collapsed)
       );
     },
-    [board.id, boardLists, specialTaskListPins.closed_tasks]
+    [board.id]
   );
 
   useEffect(() => {
@@ -690,7 +665,7 @@ export function BoardViews({
 
         next[section] =
           storedValue === null
-            ? (previous[section] ?? false)
+            ? (previous[section] ?? true)
             : storedValue === 'true';
       }
 
@@ -700,14 +675,6 @@ export function BoardViews({
 
   const handleDeadlineSectionCollapsedChange = useCallback(
     (section: KanbanDeadlineSection, collapsed: boolean) => {
-      if (
-        collapsed &&
-        ((section === 'overdue' && specialTaskListPins.overdue) ||
-          (section === 'upcoming' && specialTaskListPins.upcoming))
-      ) {
-        return;
-      }
-
       setDeadlineSectionsCollapsed((previous) => ({
         ...previous,
         [section]: collapsed,
@@ -720,7 +687,7 @@ export function BoardViews({
         String(collapsed)
       );
     },
-    [board.id, specialTaskListPins.overdue, specialTaskListPins.upcoming]
+    [board.id]
   );
 
   const externalStagingList = useMemo<TaskList | null>(() => {
@@ -738,15 +705,12 @@ export function BoardViews({
       color: 'CYAN',
       position: Number.MIN_SAFE_INTEGER,
       is_external_staging: true,
-      is_external_collapsed: specialTaskListPins.external_tasks
-        ? false
-        : externalTasksCollapsed,
+      is_external_collapsed: externalTasksCollapsed,
     };
   }, [
     board.created_at,
     board.id,
     externalTasksCollapsed,
-    specialTaskListPins.external_tasks,
     tTasks,
     workspace.personal,
   ]);
@@ -758,38 +722,22 @@ export function BoardViews({
         list.status === 'closed'
           ? {
               ...list,
-              is_collapsed: specialTaskListPins.closed_tasks
-                ? false
-                : (closedTaskListsCollapsed[list.id] ?? true),
+              is_collapsed: closedTaskListsCollapsed[list.id] ?? true,
             }
           : list
       );
     return externalStagingList
       ? [externalStagingList, ...realLists]
       : realLists;
-  }, [
-    boardLists,
-    closedTaskListsCollapsed,
-    externalStagingList,
-    specialTaskListPins.closed_tasks,
-  ]);
+  }, [boardLists, closedTaskListsCollapsed, externalStagingList]);
 
   const effectiveDeadlineSectionsCollapsed =
     useMemo<KanbanDeadlineCollapsedState>(
       () => ({
-        overdue: specialTaskListPins.overdue
-          ? false
-          : deadlineSectionsCollapsed.overdue,
-        upcoming: specialTaskListPins.upcoming
-          ? false
-          : deadlineSectionsCollapsed.upcoming,
+        overdue: deadlineSectionsCollapsed.overdue,
+        upcoming: deadlineSectionsCollapsed.upcoming,
       }),
-      [
-        deadlineSectionsCollapsed.overdue,
-        deadlineSectionsCollapsed.upcoming,
-        specialTaskListPins.overdue,
-        specialTaskListPins.upcoming,
-      ]
+      [deadlineSectionsCollapsed.overdue, deadlineSectionsCollapsed.upcoming]
     );
 
   const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =

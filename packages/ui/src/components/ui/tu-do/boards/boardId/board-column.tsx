@@ -180,6 +180,7 @@ interface BoardColumnProps {
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   specialPinned?: boolean;
+  specialStickyOffset?: string;
   onSpecialPinnedChange?: (pinned: boolean) => void;
   readOnly?: boolean;
 }
@@ -211,6 +212,7 @@ export function BoardColumn({
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
   specialPinned = false,
+  specialStickyOffset,
   onSpecialPinnedChange,
   readOnly = false,
 }: BoardColumnProps) {
@@ -415,6 +417,12 @@ export function BoardColumn({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const columnStyle: React.CSSProperties = specialStickyOffset
+    ? {
+        ...style,
+        left: `calc(var(--kanban-snap-left-padding) + ${specialStickyOffset})`,
+      }
+    : style;
 
   const handleUpdate = () => {
     onUpdate?.();
@@ -518,12 +526,14 @@ export function BoardColumn({
     return (
       <Card
         ref={composedRef}
-        style={style}
+        style={columnStyle}
+        data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
         data-kanban-column-id={column.id}
         data-kanban-real-column={isExternalStaging ? undefined : 'true'}
         className={cn(
           'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dashed transition-all duration-200',
           'touch-none select-none overflow-hidden hover:shadow-md',
+          specialStickyOffset && 'sticky z-30',
           isExternalCollapsed
             ? 'border-dynamic-cyan/45 bg-dynamic-cyan/[0.035]'
             : colorClass
@@ -569,12 +579,14 @@ export function BoardColumn({
   return (
     <Card
       ref={composedRef}
-      style={style}
+      style={columnStyle}
+      data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
       data-kanban-column-id={column.id}
       data-kanban-real-column={isExternalStaging ? undefined : 'true'}
       className={cn(
         'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200 last:snap-end',
         'touch-none select-none',
+        specialStickyOffset && 'sticky z-30',
         colorClass,
         isDragging &&
           'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
@@ -747,19 +759,17 @@ export function BoardColumn({
                   )}
                 </Button>
               ) : null}
-              {!specialPinned && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
-                  title={tTasks('collapse_external_tasks')}
-                  aria-label={tTasks('collapse_external_tasks')}
-                  onClick={() => onExternalTasksCollapsedChange?.(true)}
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className="h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10"
+                title={tTasks('collapse_external_tasks')}
+                aria-label={tTasks('collapse_external_tasks')}
+                onClick={() => onExternalTasksCollapsedChange?.(true)}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
             </>
           ) : (
             <>
@@ -786,28 +796,24 @@ export function BoardColumn({
                       )}
                     </Button>
                   ) : null}
-                  {!specialPinned && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      className={cn(
-                        'h-7 w-7 p-0 hover:bg-muted/40',
-                        getListTextColorClass(column.color as SupportedColor)
-                      )}
-                      title={tTasks('collapse_task_list', {
-                        name: translateListName(column.name),
-                      })}
-                      aria-label={tTasks('collapse_task_list', {
-                        name: translateListName(column.name),
-                      })}
-                      onClick={() =>
-                        onTaskListCollapsedChange?.(column.id, true)
-                      }
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className={cn(
+                      'h-7 w-7 p-0 hover:bg-muted/40',
+                      getListTextColorClass(column.color as SupportedColor)
+                    )}
+                    title={tTasks('collapse_task_list', {
+                      name: translateListName(column.name),
+                    })}
+                    aria-label={tTasks('collapse_task_list', {
+                      name: translateListName(column.name),
+                    })}
+                    onClick={() => onTaskListCollapsedChange?.(column.id, true)}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
                 </>
               ) : null}
               {!readOnly && (
