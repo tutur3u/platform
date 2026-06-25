@@ -55,6 +55,13 @@ import {
   selectListId,
   selectTaskId,
 } from './selection';
+import {
+  getTaskDescriptionPayloadFromFlags,
+  runTaskDescriptionCommand,
+  shouldUseChunkedTaskDescriptionUpdate,
+  updateTaskDescriptionWithBestTransport,
+} from './task-description';
+import { runTiptapCommand } from './tiptap';
 import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
@@ -947,6 +954,11 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (group === 'tiptap') {
+    await runTiptapCommand({ action: rawAction, flags, json });
+    return;
+  }
+
   let config = await readCliConfig();
   if (flags['no-update-check'] !== true && !isCliUpdateCheckDisabled()) {
     const nextConfig = await checkForCliUpdate({
@@ -1240,6 +1252,22 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   if (group === 'tasks') {
+    if (
+      action === 'description' ||
+      action === 'descriptions' ||
+      action === 'desc'
+    ) {
+      config = await runTaskDescriptionCommand({
+        client,
+        config,
+        flags,
+        json,
+        positionals,
+        workspaceId,
+      });
+      return;
+    }
+
     if (action === 'list') {
       const { response: taskResponse, workspaceName } = await listTasksForCli(
         client,
@@ -1300,19 +1328,35 @@ export async function runCli(argv = process.argv.slice(2)) {
         json
       );
       config = listSelection.config;
-      render(
-        await client.tasks.create(workspaceId, {
-          assignee_ids: parseCsv(getFlag(flags, 'assignees')),
-          end_date: getFlag(flags, 'end-date') || null,
-          label_ids: parseCsv(getFlag(flags, 'labels')),
-          listId: listSelection.listId,
-          name: getFlag(flags, 'name') || positionalValue || 'Untitled Task',
-          priority: (getFlag(flags, 'priority') as never) || null,
-          project_ids: parseCsv(getFlag(flags, 'projects')),
-          start_date: getFlag(flags, 'start-date') || null,
-        }),
-        { group, json }
-      );
+      const descriptionPayload =
+        await getTaskDescriptionPayloadFromFlags(flags);
+      const chunkDescriptionAfterCreate =
+        shouldUseChunkedTaskDescriptionUpdate(descriptionPayload);
+      const createPayload = {
+        assignee_ids: parseCsv(getFlag(flags, 'assignees')),
+        end_date: getFlag(flags, 'end-date') || null,
+        label_ids: parseCsv(getFlag(flags, 'labels')),
+        listId: listSelection.listId,
+        name: getFlag(flags, 'name') || positionalValue || 'Untitled Task',
+        priority: (getFlag(flags, 'priority') as never) || null,
+        project_ids: parseCsv(getFlag(flags, 'projects')),
+        start_date: getFlag(flags, 'start-date') || null,
+        ...(descriptionPayload && !chunkDescriptionAfterCreate
+          ? descriptionPayload
+          : {}),
+      };
+      const response = await client.tasks.create(workspaceId, createPayload);
+
+      if (descriptionPayload && chunkDescriptionAfterCreate) {
+        await updateTaskDescriptionWithBestTransport({
+          client,
+          payload: descriptionPayload,
+          taskId: response.task.id,
+          workspaceId,
+        });
+      }
+
+      render(response, { group, json });
       return;
     }
     if (action === 'update') {
@@ -1325,11 +1369,29 @@ export async function runCli(argv = process.argv.slice(2)) {
         firstId
       );
       config = selection.config;
-      const response = await client.tasks.update(
-        workspaceId,
-        selection.taskId,
-        getTaskUpdatePayload(flags)
-      );
+      const descriptionPayload =
+        await getTaskDescriptionPayloadFromFlags(flags);
+      const taskUpdatePayload = getTaskUpdatePayload(flags);
+      const hasTaskUpdatePayload = Object.keys(taskUpdatePayload).length > 0;
+      let response: unknown;
+
+      if (hasTaskUpdatePayload || !descriptionPayload) {
+        response = await client.tasks.update(
+          workspaceId,
+          selection.taskId,
+          taskUpdatePayload
+        );
+      }
+
+      if (descriptionPayload) {
+        response = await updateTaskDescriptionWithBestTransport({
+          client,
+          payload: descriptionPayload,
+          taskId: selection.taskId,
+          workspaceId,
+        });
+      }
+
       await renderTaskMutationResult({
         client,
         displayKey: getIdentifierDisplayKey(firstId),

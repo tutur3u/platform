@@ -286,6 +286,24 @@ fresh user edits. Persistence should serialize the description projection from
 the Yjs update being saved, keeping `description` and `description_yjs_state`
 from diverging under multi-user edit churn.
 
+The `ttr` CLI uses the same description endpoint and TipTap/Yjs codec as the web
+editor. Prefer first-class description commands over raw task update payloads:
+
+```bash
+ttr tasks description get <task-id>
+ttr tasks description set <task-id> --file notes.md --format markdown
+ttr tasks description append <task-id> --text "Follow-up note"
+ttr tasks description edit <task-id>
+```
+
+For local conversion or debugging, use the login-free codec commands:
+
+```bash
+ttr tiptap parse --input notes.md --format markdown --output json
+ttr tiptap encode --input description.json --format json --output yjs-base64
+ttr tiptap decode --input state.txt --format yjs-base64 --output text
+```
+
 #### Mobile board caching
 
 The mobile task-board flow restores workspace boards, board metadata, and per-list

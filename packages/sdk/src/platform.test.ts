@@ -263,6 +263,130 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('passes task description reads and direct updates through the authenticated internal API client', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ description: null, description_yjs_state: null })
+      )
+      .mockResolvedValueOnce(
+        Response.json({ description: null, description_yjs_state: null })
+      );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.getDescription('ws-1', 'task-1');
+    await client.tasks.updateDescription('ws-1', 'task-1', {
+      description: '{"type":"doc","content":[{"type":"paragraph"}]}',
+      description_yjs_state: [1, 2, 3],
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
+      expect.objectContaining({
+        body: JSON.stringify({
+          description: '{"type":"doc","content":[{"type":"paragraph"}]}',
+          description_yjs_state: [1, 2, 3],
+        }),
+        method: 'PATCH',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
+
+  it('uploads task descriptions through the chunked description API', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ session_id: 'session-1' }))
+      .mockResolvedValueOnce(Response.json({ success: true }))
+      .mockResolvedValueOnce(Response.json({ success: true }))
+      .mockResolvedValueOnce(
+        Response.json({
+          description: 'Hello',
+          description_yjs_state: [1, 2, 3],
+        })
+      );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.updateDescriptionChunked('ws-1', 'task-1', {
+      description: 'Hello',
+      description_yjs_state: [1, 2, 3],
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
+      action: 'begin',
+      fields: {
+        description: { chunk_count: 1, total_length: 5 },
+        description_yjs_state: { chunk_count: 1, total_length: 4 },
+      },
+    });
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+      action: 'append',
+      chunk: 'Hello',
+      chunk_index: 0,
+      field: 'description',
+      session_id: 'session-1',
+    });
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      action: 'append',
+      chunk: 'AQID',
+      chunk_index: 0,
+      field: 'description_yjs_state',
+      session_id: 'session-1',
+    });
+    expect(JSON.parse(fetchMock.mock.calls[3]?.[1]?.body as string)).toEqual({
+      action: 'commit',
+      session_id: 'session-1',
+    });
+  });
+
+  it('aborts chunked task description uploads when appending fails', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ session_id: 'session-1' }))
+      .mockResolvedValueOnce(
+        Response.json({ error: 'append failed' }, { status: 500 })
+      )
+      .mockResolvedValueOnce(Response.json({ success: true }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await expect(
+      client.tasks.updateDescriptionChunked('ws-1', 'task-1', {
+        description: 'Hello',
+      })
+    ).rejects.toThrow();
+
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      action: 'abort',
+      session_id: 'session-1',
+    });
+  });
+
   it('passes finance requests through the authenticated internal API client', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

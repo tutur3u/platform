@@ -4,13 +4,17 @@ import {
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
 import {
+  abortWorkspaceTaskDescriptionChunks,
   addWorkspaceTaskLabel,
+  appendWorkspaceTaskDescriptionChunk,
   type BulkWorkspaceTaskOperation,
+  beginWorkspaceTaskDescriptionChunks,
   bulkWorkspaceTasks,
   type CreateWorkspaceTaskBoardPayload,
   type CreateWorkspaceTaskListPayload,
   type CreateWorkspaceTaskPayload,
   type CreateWorkspaceTaskWithRelationshipPayload,
+  commitWorkspaceTaskDescriptionChunks,
   createWorkspaceLabel,
   createWorkspaceTask,
   createWorkspaceTaskBoard,
@@ -24,6 +28,7 @@ import {
   getWorkspaceBoardsData,
   getWorkspaceTask,
   getWorkspaceTaskBoard,
+  getWorkspaceTaskDescription,
   getWorkspaceTaskProject,
   getWorkspaceTaskProjectTasks,
   getWorkspaceTaskRelationships,
@@ -43,7 +48,10 @@ import {
   type UpdateWorkspaceTaskListPayload,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
+  updateWorkspaceTaskDescription,
   updateWorkspaceTaskList,
+  type WorkspaceTaskDescriptionChunkFields,
+  type WorkspaceTaskDescriptionUpdatePayload,
   type WorkspaceTasksResponse,
   type WorkspaceTaskUpdatePayload,
 } from '@tuturuuu/internal-api/tasks';
@@ -52,6 +60,7 @@ import {
   getCurrentUserProfile,
 } from '@tuturuuu/internal-api/users';
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
+import { taskDescriptionYjsStateToBase64 } from '@tuturuuu/utils/task-description-codec';
 import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
 import { CalendarClient } from './platform-calendar';
@@ -69,11 +78,22 @@ export interface TuturuuuUserClientConfig {
 
 const SESSION_REFRESH_SKEW_MS = 60_000;
 const PROTOCOL_RELATIVE_URL_PATTERN = /^\/\//u;
+const TASK_DESCRIPTION_CHUNK_SIZE = 180_000;
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
   includeArchivedBoards?: boolean;
   listStatuses?: string[];
 };
+
+type TaskDescriptionChunkPayloadField =
+  | {
+      field: 'description';
+      value: string | null;
+    }
+  | {
+      field: 'description_yjs_state';
+      value: string | null;
+    };
 
 function getAuthorizationHeader(accessToken: string) {
   return `Bearer ${accessToken}`;
@@ -114,6 +134,63 @@ function shouldAttachSdkAuth(input: RequestInfo | URL, baseUrl: string) {
   } catch {
     return true;
   }
+}
+
+function chunkText(value: string, chunkSize = TASK_DESCRIPTION_CHUNK_SIZE) {
+  const chunks: string[] = [];
+  for (let index = 0; index < value.length; index += chunkSize) {
+    chunks.push(value.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+function buildTaskDescriptionChunkFields(
+  payload: WorkspaceTaskDescriptionUpdatePayload
+) {
+  const fields: WorkspaceTaskDescriptionChunkFields = {};
+  const payloadFields: TaskDescriptionChunkPayloadField[] = [];
+
+  if ('description' in payload) {
+    payloadFields.push({
+      field: 'description',
+      value: payload.description ?? null,
+    });
+  }
+
+  if ('description_yjs_state' in payload) {
+    payloadFields.push({
+      field: 'description_yjs_state',
+      value: taskDescriptionYjsStateToBase64(payload.description_yjs_state),
+    });
+  }
+
+  const chunksByField = new Map<
+    TaskDescriptionChunkPayloadField['field'],
+    string[]
+  >();
+
+  for (const { field, value } of payloadFields) {
+    const normalizedValue = value === '' ? null : value;
+
+    if (normalizedValue === null) {
+      fields[field] = {
+        chunk_count: 0,
+        is_null: true,
+        total_length: 0,
+      };
+      chunksByField.set(field, []);
+      continue;
+    }
+
+    const chunks = chunkText(normalizedValue);
+    fields[field] = {
+      chunk_count: chunks.length,
+      total_length: normalizedValue.length,
+    };
+    chunksByField.set(field, chunks);
+  }
+
+  return { chunksByField, fields };
 }
 
 export class WorkspacesClient {
@@ -165,6 +242,78 @@ export class TasksClient {
       payload,
       this.client.getClientOptions()
     );
+  }
+
+  getDescription(workspaceId: string, taskId: string) {
+    return getWorkspaceTaskDescription(
+      workspaceId,
+      taskId,
+      this.client.getClientOptions()
+    );
+  }
+
+  updateDescription(
+    workspaceId: string,
+    taskId: string,
+    payload: WorkspaceTaskDescriptionUpdatePayload
+  ) {
+    return updateWorkspaceTaskDescription(
+      workspaceId,
+      taskId,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
+  async updateDescriptionChunked(
+    workspaceId: string,
+    taskId: string,
+    payload: WorkspaceTaskDescriptionUpdatePayload
+  ) {
+    const { chunksByField, fields } = buildTaskDescriptionChunkFields(payload);
+    if (Object.keys(fields).length === 0) {
+      throw new Error('Task description chunked update payload is empty');
+    }
+
+    const { session_id: sessionId } = await beginWorkspaceTaskDescriptionChunks(
+      workspaceId,
+      taskId,
+      fields,
+      this.client.getClientOptions()
+    );
+
+    try {
+      for (const [field, chunks] of chunksByField.entries()) {
+        for (const [chunkIndex, chunk] of chunks.entries()) {
+          await appendWorkspaceTaskDescriptionChunk(
+            workspaceId,
+            taskId,
+            {
+              chunk,
+              chunk_index: chunkIndex,
+              field,
+              session_id: sessionId,
+            },
+            this.client.getClientOptions()
+          );
+        }
+      }
+
+      return await commitWorkspaceTaskDescriptionChunks(
+        workspaceId,
+        taskId,
+        sessionId,
+        this.client.getClientOptions()
+      );
+    } catch (error) {
+      await abortWorkspaceTaskDescriptionChunks(
+        workspaceId,
+        taskId,
+        sessionId,
+        this.client.getClientOptions()
+      ).catch(() => undefined);
+      throw error;
+    }
   }
 
   createBoard(workspaceId: string, payload: CreateWorkspaceTaskBoardPayload) {

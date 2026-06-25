@@ -120,3 +120,35 @@ ttr tasks move
 ttr tasks move <task-id> --list <list-id>
 ttr tasks move <task-id> --target-board <board-id> --list <list-id>
 ```
+
+## Descriptions
+
+Use first-class description commands instead of raw JSON payloads when reading
+or changing task descriptions. They update both the TipTap JSON projection and
+the Yjs state used by the web editor.
+
+```bash
+ttr tasks description get <task-id>
+ttr tasks description get <task-id> --format yjs-base64
+ttr tasks description set <task-id> --text "Acceptance criteria"
+ttr tasks description set <task-id> --file notes.md --format markdown
+ttr tasks description append <task-id> --file - --format markdown
+ttr tasks description edit <task-id>
+ttr tasks description clear <task-id>
+```
+
+Create or update tasks with descriptions directly:
+
+```bash
+ttr tasks create "Write release notes" --description-file notes.md --description-format markdown
+ttr tasks update <task-id> --description "Clarified acceptance criteria"
+```
+
+Use local codec utilities for debugging or preparing payloads without login:
+
+```bash
+ttr tiptap parse --text "Hello" --output json
+ttr tiptap parse --input notes.md --format markdown --output yjs-base64
+ttr tiptap encode --input description.json --format json --output bytes-json
+ttr tiptap decode --input state.txt --format yjs-base64 --output text
+```

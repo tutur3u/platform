@@ -98,6 +98,7 @@
     "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

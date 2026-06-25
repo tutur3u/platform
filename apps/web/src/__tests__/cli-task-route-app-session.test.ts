@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   handleTaskDetailRouteGET: vi.fn(),
   handleTaskDetailRoutePATCH: vi.fn(),
   handleTaskDetailRoutePUT: vi.fn(),
+  handleTaskDescriptionRouteGET: vi.fn(),
+  handleTaskDescriptionRoutePATCH: vi.fn(),
   handleTaskRouteGET: vi.fn(),
   handleTaskRoutePOST: vi.fn(),
   supabase: { from: vi.fn() },
@@ -63,6 +65,11 @@ vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/route', () => ({
   handleTaskDetailRoutePUT: mocks.handleTaskDetailRoutePUT,
 }));
 
+vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/description/route', () => ({
+  handleTaskDescriptionRouteGET: mocks.handleTaskDescriptionRouteGET,
+  handleTaskDescriptionRoutePATCH: mocks.handleTaskDescriptionRoutePATCH,
+}));
+
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
@@ -81,6 +88,12 @@ describe('workspace task API route app-session bridge', () => {
       Response.json({ ok: true })
     );
     mocks.handleTaskDetailRoutePUT.mockResolvedValue(
+      Response.json({ ok: true })
+    );
+    mocks.handleTaskDescriptionRouteGET.mockResolvedValue(
+      Response.json({ ok: true })
+    );
+    mocks.handleTaskDescriptionRoutePATCH.mockResolvedValue(
       Response.json({ ok: true })
     );
     mocks.handleTaskRouteGET.mockResolvedValue(Response.json({ ok: true }));
@@ -302,6 +315,72 @@ describe('workspace task API route app-session bridge', () => {
     expect(response.status).toBe(200);
     expect(mocks.handleTaskDetailRouteGET).toHaveBeenCalledTimes(1);
     const call = mocks.handleTaskDetailRouteGET.mock.calls[0];
+    expect(call).toBeDefined();
+    const [, context, auth] = call as [
+      NextRequest,
+      { params: Promise<{ taskId: string; wsId: string }> },
+      {
+        appSession: boolean;
+        supabase: typeof mocks.supabase;
+        user: typeof mocks.user;
+      },
+    ];
+    await expect(context.params).resolves.toEqual({
+      taskId: 'task-1',
+      wsId: 'personal',
+    });
+    expect(auth).toMatchObject({
+      appSession: true,
+      supabase: mocks.supabase,
+      user: mocks.user,
+    });
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task description routes', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('passes app-session auth context into the shared task description PATCH handler', async () => {
+    mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
+
+    const route = await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route'
+    );
+    const response = await route.PATCH(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/tasks/task-1/description',
+        {
+          headers: { Authorization: 'Bearer ttr_app_access' },
+          method: 'PATCH',
+        }
+      ),
+      { params: Promise.resolve({ taskId: 'task-1', wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.handleTaskDescriptionRoutePATCH).toHaveBeenCalledTimes(1);
+    const call = mocks.handleTaskDescriptionRoutePATCH.mock.calls[0];
     expect(call).toBeDefined();
     const [, context, auth] = call as [
       NextRequest,

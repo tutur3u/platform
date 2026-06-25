@@ -321,6 +321,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'get [id]                     show task details',
       'create [name]                create a task',
       'update [id] --json-payload   update task fields',
+      'description [action] [id]    read or edit a task description',
       'done [id]                    mark a task as done',
       'close [id]                   mark a task as closed',
       'delete [id]                  delete a task',
@@ -335,6 +336,8 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr tasks --page 2 --page-size 50',
       'ttr tasks --include-review --include-done',
       'ttr tasks create "Add Tuturuuu CLI"',
+      'ttr tasks description get VHP-12',
+      'ttr tasks description set VHP-12 --file notes.md --format markdown',
       'ttr tasks done VHP-12',
       'ttr tasks close <task-id>',
       'ttr tasks update VHP-12 --json-payload \'{"completed":true}\'',
@@ -360,7 +363,33 @@ const helpTopics: Record<string, HelpTopic> = {
       '--json                       print machine-readable JSON',
     ],
     usage:
-      'ttr tasks [list|use|get|create|update|delete|move|bulk] [id] [options]',
+      'ttr tasks [list|use|get|create|update|description|delete|move|bulk] [id] [options]',
+  },
+  tiptap: {
+    commands: [
+      'parse                        parse text, markdown, or TipTap JSON',
+      'encode                       encode content as Yjs state',
+      'decode                       decode Yjs state to TipTap JSON or text',
+      'validate                     validate TipTap JSON or Yjs state',
+    ],
+    description:
+      'Local task-description TipTap/Yjs codec utilities. These commands do not require login or read saved CLI config.',
+    examples: [
+      'ttr tiptap parse --text "Hello" --output json',
+      'ttr tiptap parse --input notes.md --format markdown --output yjs-base64',
+      'ttr tiptap encode --input description.json --format json --output bytes-json',
+      'ttr tiptap decode --input state.txt --format yjs-base64 --output text',
+      'ttr tiptap validate --input description.json --format json',
+    ],
+    options: [
+      '--input <path|->             input file or stdin',
+      '--file <path|->              alias for --input',
+      '--text <text>                inline input',
+      '--format <format>            text|markdown|json or yjs-base64|bytes-json for decode',
+      '--output <format>            json|text|yjs-base64|bytes-json',
+      '--json                       wrap output in a JSON envelope',
+    ],
+    usage: 'ttr tiptap [parse|encode|decode|validate] [options]',
   },
   whoami: {
     description:
@@ -734,9 +763,13 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         'ttr tasks create "Add Tuturuuu CLI"',
         'ttr tasks create --list <list-id> --name "Write release notes"',
         'ttr tasks create "Fix login" --priority critical --labels bug,cli',
+        'ttr tasks create "Ship CLI docs" --description-file notes.md --description-format markdown',
       ],
       options: [
         '--name <name>               task title; positional text is also accepted',
+        '--description <text>        task description text',
+        '--description-file <path|-> task description file or stdin',
+        '--description-format <fmt>  text, markdown, or json',
         '--list <id>                 destination list; omitted means selected list or picker',
         '--board <id>                board used when choosing a list',
         '--priority <priority>       task priority',
@@ -747,6 +780,30 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         '--assignees <ids>           comma-separated assignee ids',
       ],
       usage: 'ttr tasks create [name] [options]',
+    },
+    description: {
+      description:
+        'Reads or mutates a task description through the dedicated TipTap/Yjs description API.',
+      examples: [
+        'ttr tasks description get VHP-12',
+        'ttr tasks description get VHP-12 --format yjs-base64',
+        'ttr tasks description set VHP-12 --text "Follow up with QA"',
+        'ttr tasks description set VHP-12 --file notes.md --format markdown',
+        'ttr tasks description append VHP-12 --file - --format markdown',
+        'ttr tasks description edit VHP-12',
+        'ttr tasks description clear VHP-12',
+      ],
+      options: [
+        '--task <id>                 task id when omitted positionally',
+        '--text <text>               description input',
+        '--file <path|->             description input file or stdin',
+        '--description <text>        alias for --text',
+        '--description-file <path|-> alias for --file',
+        '--format <format>           input: text|markdown|json; get output: text|json|yjs-base64|raw',
+        '--json                      print machine-readable JSON',
+      ],
+      usage:
+        'ttr tasks description [get|set|append|prepend|edit|clear] [task-id] [options]',
     },
     close: {
       description:
@@ -808,11 +865,16 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       examples: [
         'ttr tasks update',
         'ttr tasks update VHP-12 --json-payload \'{"name":"New title"}\'',
+        'ttr tasks update VHP-12 --description "Clarified acceptance criteria"',
+        'ttr tasks update VHP-12 --description-file notes.md --description-format markdown',
         'ttr tasks update <task-id> --json-payload \'{"completed":true}\'',
         'ttr tasks update <task-id> --list <done-list-id> --json-payload \'{"completed":true}\'',
       ],
       options: [
         '--json-payload <json>       task update payload',
+        '--description <text>        update task description text',
+        '--description-file <path|-> update task description file or stdin',
+        '--description-format <fmt>  text, markdown, or json',
         '--list <id>, --list-id <id> also set list_id in the update payload',
         '--json                      print machine-readable JSON',
       ],
@@ -864,6 +926,7 @@ export function getGlobalHelp() {
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',
     '  tasks [list]|use|get|create|update|done|close|delete|move|bulk',
+    '  tiptap [parse|encode|decode|validate]',
     '  labels [list]|use|create',
     '  projects [list]|use|create|get|tasks',
     '  relationships [list]|create|delete <task-id>',
@@ -887,8 +950,10 @@ export function getGlobalHelp() {
     '  ttr finance transactions --help',
     '  ttr host --help',
     '  ttr tasks --help',
+    '  ttr tiptap --help',
     '  ttr box --help',
     '  ttr tasks create --help',
+    '  ttr tasks description --help',
     '  ttr help workspaces',
     '',
     'Global options:',
@@ -908,6 +973,10 @@ function normalizeHelpAction(group: string, action?: string) {
 
   if (['archive', 'closed', 'mark-closed'].includes(action || '')) {
     return 'close';
+  }
+
+  if (['desc', 'descriptions'].includes(action || '')) {
+    return 'description';
   }
 
   return action;
