@@ -22,8 +22,8 @@ source of truth. The latest local snapshot on 2026-06-25 is:
 
 | Status | Count |
 | --- | ---: |
-| `legacy-next` | 1036 |
-| `migrated` | 430 |
+| `legacy-next` | 1035 |
+| `migrated` | 431 |
 | `accepted-removal` | 85 |
 | Total tracked artifacts | 1551 |
 
@@ -34,7 +34,7 @@ Remaining legacy artifacts are concentrated in API/backend ownership:
 | API | 925 |
 | Cron | 17 |
 | tRPC | 1 |
-| Page | 81 |
+| Page | 80 |
 | Layout | 12 |
 
 The production target is:
@@ -114,7 +114,7 @@ handoffs visible so parallel workers do not repeat the same audit:
 | Candidate lane | Current finding | Next unblock |
 | --- | --- | --- |
 | `/:locale/meet` and `/:locale/meet-together` | TanStack public preview shells exist, but legacy also shows authenticated meeting plans and creates plans through Supabase/server-action paths. | Add typed plan list/create APIs through Rust or TanStack server functions, then prove unauthenticated and authenticated parity with focused E2E. |
-| `/:locale/:wsId/users/topic-announcements/{announcements,delivery,import}` | The parent redirect plus templates and contacts leaves are migrated, but the remaining shared shell still depends on send permissions, calendar timezone/E2EE setup, announcement APIs, scheduling, delivery history, and import mutations. | Continue with the read-only `delivery` tab next using typed announcement facades, then port announcements/import only after the calendar setup dialog and mutation lanes use typed internal-api or backend facades end to end. |
+| `/:locale/:wsId/users/topic-announcements/{announcements,import}` | The parent redirect plus templates, contacts, and delivery leaves are migrated, but the remaining shared shell still depends on send permissions, calendar timezone/E2EE setup, announcement APIs, scheduling, and import mutations. | Continue with `announcements` next so create/send/schedule/preview contracts can be reused by the import lane; port import only after those mutation lanes use typed internal-api or backend facades end to end. |
 | `/:locale/:wsId/billing` | Rust owns the initial billing read and AI-credit status, now exposed through `getBackendWorkspaceBilling` and `getBackendWorkspaceAiCredits`, but the client still needs payment cancellation, continuation, checkout, seat, credit purchase, invoice, and billing-details actions. | Add typed payment/billing facades for all client mutations, or explicitly split a read-only page from separately tracked disabled actions before marking terminal. |
 | `/:locale/:wsId/usage` | The page wrapper is small, but the content is a broad Supabase/RPC workspace usage dashboard. | Create a usage-summary backend contract or server-function bundle that returns permission-masked stats without direct Supabase reads in TanStack. |
 | `/:locale/:wsId/ai/spark`, `/:locale/:wsId/mira`, `/:locale/:wsId/assistant` | Page files are compact, but the behavior is coupled to AI object APIs, Mira API routes, voice/live API helpers, or assistant providers. | Treat these as dedicated product lanes with typed AI/Mira/assistant facades and focused browser evidence. |

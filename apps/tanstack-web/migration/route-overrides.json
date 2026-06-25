@@ -1842,12 +1842,17 @@
     "page:/:locale/:wsId/users/topic-announcements/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/templates/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/templates ports the legacy templates tab as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, TanStack Query hydration, and create/update/delete template actions through typed internal-api facades. This marks only the templates page artifact migrated; announcements, delivery, import, and the shared shell remain separately tracked."
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/templates ports the legacy templates tab as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, TanStack Query hydration, and create/update/delete template actions through typed internal-api facades. This marks only the templates page artifact migrated; announcements, import, and the shared shell remain separately tracked."
     },
     "page:/:locale/:wsId/users/topic-announcements/contacts:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/contacts/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/contacts ports the legacy contacts tab as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, TanStack Query hydration, and list/create/delete/verify contact actions through typed internal-api facades. Verification controls are hidden unless the caller has send_user_group_post_emails. This marks only the contacts page artifact migrated; announcements, delivery, import, and the shared shell remain separately tracked."
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/contacts ports the legacy contacts tab as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, TanStack Query hydration, and list/create/delete/verify contact actions through typed internal-api facades. Verification controls are hidden unless the caller has send_user_group_post_emails. This marks only the contacts page artifact migrated; announcements, import, and the shared shell remain separately tracked."
+    },
+    "page:/:locale/:wsId/users/topic-announcements/delivery:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/delivery/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/delivery ports the legacy read-only delivery history tab with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, forwarded-auth listTopicAnnouncements status=sent hydration, calendar timezone normalization, TanStack Query refreshes, sent-only defensive filtering, recipient summary chips, and empty-state compose handoff. This marks only the delivery page artifact migrated; announcements, import, and the shared shell remain separately tracked."
     },
     "page:/:locale/:wsId/users/structure:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/structure/page.tsx": {
       "status": "migrated",
