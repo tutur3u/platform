@@ -304,6 +304,7 @@
       "loadFilesError": "Failed to load files.",
       "loadingFiles": "Loading files…",
       "noFilesFound": "No files found.",
+      "saveFailed": "Failed to save lesson. Please try again.",
       "selectAtLeastOneFile": "Select at least one file"
     },
     "loadError": "Failed to load courses. Please try again.",

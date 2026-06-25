@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
-const CONTENT_SAVE_DEBOUNCE_MS = 500;
+const CONTENT_SAVE_DEBOUNCE_MS = 2000;
 
 interface Props {
   wsId: string;
