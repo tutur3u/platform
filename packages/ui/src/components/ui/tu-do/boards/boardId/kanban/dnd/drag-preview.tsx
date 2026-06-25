@@ -13,6 +13,8 @@ interface DragPreviewProps {
   columns: TaskList[];
   boardId: string;
   isPersonalWorkspace: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   isMultiSelectMode: boolean;
   selectedTasks: Set<string>;
   onUpdate: () => void;
@@ -26,6 +28,8 @@ export function DragPreview({
   columns,
   boardId,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   isMultiSelectMode,
   selectedTasks,
   onUpdate,
@@ -52,6 +56,8 @@ export function DragPreview({
           isOverlay
           onUpdate={onUpdate}
           isPersonalWorkspace={isPersonalWorkspace}
+          canUseBoardAssignees={canUseBoardAssignees}
+          assigneeMemberSource={assigneeMemberSource}
         />
         {isMultiCardDrag && (
           <>
@@ -74,6 +80,8 @@ export function DragPreview({
     boardId,
     onUpdate,
     isPersonalWorkspace,
+    canUseBoardAssignees,
+    assigneeMemberSource,
     isMultiSelectMode,
     selectedTasks,
   ]);
@@ -87,11 +95,22 @@ export function DragPreview({
           tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
           isOverlay
           isPersonalWorkspace={isPersonalWorkspace}
+          canUseBoardAssignees={canUseBoardAssignees}
+          assigneeMemberSource={assigneeMemberSource}
           onUpdate={onUpdate}
           wsId={wsId}
         />
       ) : null,
-    [activeColumn, tasks, boardId, isPersonalWorkspace, onUpdate, wsId]
+    [
+      activeColumn,
+      tasks,
+      boardId,
+      isPersonalWorkspace,
+      canUseBoardAssignees,
+      assigneeMemberSource,
+      onUpdate,
+      wsId,
+    ]
   );
 
   return <>{MemoizedTaskOverlay || MemoizedColumnOverlay}</>;

@@ -51,6 +51,7 @@ import {
 } from './kanban/kanban-column-collapse';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
+import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
 import type { TaskFilters } from './task-filter';
 import { VirtualizedTaskList } from './task-list';
 
@@ -163,6 +164,8 @@ interface BoardColumnProps {
   isMultiSelectMode?: boolean;
   setIsMultiSelectMode?: (value: boolean) => void;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   onAddTask?: (list: TaskList) => void;
@@ -194,6 +197,8 @@ export function BoardColumn({
   isMultiSelectMode,
   setIsMultiSelectMode,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onAddTask,
   dragPreviewPosition,
   suppressTaskTransforms,
@@ -841,6 +846,8 @@ export function BoardColumn({
           isMultiSelectMode={isMultiSelectMode}
           selectedTasks={selectedTasks}
           isPersonalWorkspace={isPersonalWorkspace}
+          canUseBoardAssignees={canUseBoardAssignees}
+          assigneeMemberSource={assigneeMemberSource}
           onTaskSelect={onTaskSelect}
           onClearSelection={onClearSelection}
           dragPreviewPosition={dragPreviewPosition}

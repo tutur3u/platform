@@ -61,6 +61,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
+import type { TaskCardAssigneeMemberSource } from '../boards/boardId/task-card/task-card';
 import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
@@ -85,6 +86,8 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   preserveTaskOrder?: boolean;
   searchQuery?: string;
   weekStartsOn?: 0 | 1 | 6;
@@ -118,6 +121,7 @@ function ReadOnlyListView({
   tasks,
   lists,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
   preserveTaskOrder = false,
   searchQuery,
 }: Props) {
@@ -127,6 +131,7 @@ function ReadOnlyListView({
   const dateLocale = locale === 'vi' ? vi : enUS;
   const [sortField, setSortField] = useState<ListViewSortField>('created_at');
   const [sortOrder, setSortOrder] = useState<ListViewSortOrder>('desc');
+  const showAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
   const listsById = useMemo(
     () => new Map(lists.map((list) => [list.id, list])),
     [lists]
@@ -227,7 +232,7 @@ function ReadOnlyListView({
                     {getSortIcon('end_date')}
                   </Button>
                 </TableHead>
-                {!isPersonalWorkspace && (
+                {showAssignees && (
                   <TableHead className="h-9 w-32 px-2">
                     <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
                       {tc('assignee')}
@@ -300,7 +305,7 @@ function ReadOnlyListView({
                         </span>
                       )}
                     </TableCell>
-                    {!isPersonalWorkspace && (
+                    {showAssignees && (
                       <TableCell className="px-2 py-2">
                         {task.assignees && task.assignees.length > 0 && (
                           <div className="flex flex-wrap gap-1">
@@ -337,6 +342,8 @@ function InteractiveListView({
   tasks,
   lists,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   preserveTaskOrder = false,
   searchQuery,
   weekStartsOn = 0,
@@ -360,6 +367,9 @@ function InteractiveListView({
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
   const { openTask, openTaskById } = useTaskDialog();
+  const showAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const effectiveAssigneeMemberSource =
+    assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
 
   // Infinite scroll
   const [displayCount, setDisplayCount] = useState(50);
@@ -372,7 +382,7 @@ function InteractiveListView({
     priority: true,
     start_date: false,
     end_date: true,
-    assignees: !isPersonalWorkspace,
+    assignees: showAssignees,
     actions: true,
   });
 
@@ -516,6 +526,10 @@ function InteractiveListView({
           availableLists: lists,
           effectiveWorkspaceId: workspaceId,
           isPersonalWorkspace,
+          canUseBoardAssignees: task.source_workspace_id ? true : showAssignees,
+          assigneeMemberSource: task.source_workspace_id
+            ? 'workspace'
+            : effectiveAssigneeMemberSource,
         })
       );
       return;
@@ -524,6 +538,8 @@ function InteractiveListView({
     openTask(task, boardId, lists, false, {
       taskWsId: workspaceId,
       taskWorkspacePersonal: isPersonalWorkspace,
+      canUseBoardAssignees: showAssignees,
+      assigneeMemberSource: effectiveAssigneeMemberSource,
     });
   }
 
@@ -972,6 +988,8 @@ function InteractiveListView({
                             workspaceId={workspaceId}
                             lists={lists}
                             isPersonalWorkspace={isPersonalWorkspace}
+                            canUseBoardAssignees={showAssignees}
+                            assigneeMemberSource={effectiveAssigneeMemberSource}
                             onUpdate={() => {
                               void queryClient.invalidateQueries({
                                 queryKey: ['tasks', boardId],

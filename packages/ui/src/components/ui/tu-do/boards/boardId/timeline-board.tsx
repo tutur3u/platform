@@ -65,6 +65,9 @@ export interface TimelineProps {
   lists: TaskList[];
   boardId?: string;
   wsId?: string;
+  isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   className?: string;
   onTaskPartialUpdate?: (taskId: string, updates: Partial<Task>) => void;
 }
@@ -110,6 +113,9 @@ export function TimelineBoard({
   lists,
   boardId,
   wsId,
+  isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   className,
   onTaskPartialUpdate,
 }: TimelineProps) {
@@ -227,6 +233,9 @@ export function TimelineBoard({
     (task: Task) => task.source_workspace_id ?? wsId ?? null,
     [wsId]
   );
+  const showAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const effectiveAssigneeMemberSource =
+    assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
 
   const openTimelineTask = useCallback(
     (task: Task) => {
@@ -240,7 +249,13 @@ export function TimelineBoard({
             boardId,
             availableLists: lists,
             effectiveWorkspaceId: wsId,
-            isPersonalWorkspace: Boolean(wsId),
+            isPersonalWorkspace,
+            canUseBoardAssignees: task.source_workspace_id
+              ? true
+              : showAssignees,
+            assigneeMemberSource: task.source_workspace_id
+              ? 'workspace'
+              : effectiveAssigneeMemberSource,
           })
         );
         return;
@@ -248,10 +263,21 @@ export function TimelineBoard({
 
       openTask(task, boardId, lists, false, {
         taskWsId: wsId,
-        taskWorkspacePersonal: Boolean(wsId),
+        taskWorkspacePersonal: isPersonalWorkspace,
+        canUseBoardAssignees: showAssignees,
+        assigneeMemberSource: effectiveAssigneeMemberSource,
       });
     },
-    [boardId, lists, openTask, openTaskById, wsId]
+    [
+      boardId,
+      effectiveAssigneeMemberSource,
+      isPersonalWorkspace,
+      lists,
+      openTask,
+      openTaskById,
+      showAssignees,
+      wsId,
+    ]
   );
 
   const clearDraft = useCallback((taskId: string) => {
@@ -674,6 +700,9 @@ export function TimelineBoard({
       <TimelineToolbar
         boardId={boardId}
         wsId={wsId}
+        isPersonalWorkspace={isPersonalWorkspace}
+        canUseBoardAssignees={showAssignees}
+        assigneeMemberSource={effectiveAssigneeMemberSource}
         dayWidth={dayWidth}
         density={density}
         formatLongDate={formatLongDate}
@@ -703,6 +732,9 @@ export function TimelineBoard({
           barHeight={densityConfig.barHeight}
           boardId={boardId}
           wsId={wsId}
+          isPersonalWorkspace={isPersonalWorkspace}
+          canUseBoardAssignees={showAssignees}
+          assigneeMemberSource={effectiveAssigneeMemberSource}
           dayWidth={dayWidth}
           draggedUnscheduledTaskId={draggedUnscheduledTaskId}
           dropPreview={dropPreview}

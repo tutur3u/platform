@@ -102,6 +102,7 @@ interface TaskPropertiesSectionProps {
   selectedAssignees: any[];
   isLoading: boolean;
   isPersonalWorkspace: boolean;
+  canUseBoardAssignees?: boolean;
   isCreateMode: boolean;
   // Scheduling state
   totalDuration: number | null;
@@ -320,6 +321,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     selectedAssignees,
     isLoading,
     isPersonalWorkspace,
+    canUseBoardAssignees = !isPersonalWorkspace,
     isCreateMode,
     // Scheduling state
     totalDuration,
@@ -813,7 +815,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         })}
                   </Badge>
                 )}
-                {selectedAssignees.length > 0 && !isPersonalWorkspace && (
+                {selectedAssignees.length > 0 && canUseBoardAssignees && (
                   <Badge
                     variant="secondary"
                     className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/15 px-2 font-medium text-[10px] text-dynamic-cyan"
@@ -1510,7 +1512,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             )}
 
             {/* Assignees Badge */}
-            {!isPersonalWorkspace && (
+            {canUseBoardAssignees && (
               <Popover
                 open={isAssigneesPopoverOpen}
                 onOpenChange={(open) => {

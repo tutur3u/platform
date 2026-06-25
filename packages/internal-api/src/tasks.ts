@@ -497,6 +497,9 @@ export interface WorkspaceTaskListSummary {
 }
 
 export type WorkspaceTaskBoardDetail = WorkspaceTaskBoardRow & {
+  access_type?: 'member' | 'guest';
+  guest_permission?: WorkspaceTaskBoardSharePermission | null;
+  has_guest_access?: boolean;
   task_lists?: WorkspaceTaskListSummary[];
 };
 

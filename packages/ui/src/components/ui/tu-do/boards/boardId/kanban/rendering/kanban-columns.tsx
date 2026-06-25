@@ -35,6 +35,8 @@ interface KanbanColumnsProps {
   boardId: string;
   workspaceId: string;
   isPersonalWorkspace: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   cursorsEnabled?: boolean;
   disableSort: boolean;
   selectedTasks: Set<string>;
@@ -82,6 +84,8 @@ export function KanbanColumns({
   boardId,
   workspaceId,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   cursorsEnabled = true,
   disableSort,
   selectedTasks,
@@ -195,6 +199,8 @@ export function KanbanColumns({
               bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
               isMultiSelectMode={isMultiSelectMode}
               isPersonalWorkspace={isPersonalWorkspace}
+              canUseBoardAssignees={canUseBoardAssignees}
+              assigneeMemberSource={assigneeMemberSource}
               labels={deadlineLabels}
               onClearSelection={onClearSelection}
               onSectionCollapsedChange={onDeadlineSectionCollapsedChange}
@@ -261,6 +267,8 @@ export function KanbanColumns({
                 tasks={listTasks}
                 availableLists={realColumns}
                 isPersonalWorkspace={isPersonalWorkspace}
+                canUseBoardAssignees={canUseBoardAssignees}
+                assigneeMemberSource={assigneeMemberSource}
                 onUpdate={onUpdate}
                 onAddTask={() =>
                   boardId && createTask(boardId, list.id, realColumns, filters)

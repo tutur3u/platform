@@ -246,7 +246,11 @@ function sortLocalTasks(tasks: Task[], sortBy: TaskFilters['sortBy']) {
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
-  board: WorkspaceTaskBoard;
+  board: WorkspaceTaskBoard & {
+    access_type?: 'member' | 'guest';
+    guest_permission?: 'view' | 'edit' | null;
+    has_guest_access?: boolean;
+  };
   tasks: Task[];
   lists: TaskList[];
   workspaceLabels: WorkspaceLabel[];
@@ -297,6 +301,18 @@ export function BoardViews({
     useState(false);
   const { createTask } = useTaskDialog();
   const localTaskState = readOnly || publicView;
+  const boardAssigneesEnabled =
+    !workspace.personal ||
+    board.access_type === 'guest' ||
+    board.has_guest_access === true;
+  const assigneeMemberSource: 'workspace' | 'board' | 'workspace-and-board' =
+    board.access_type === 'guest'
+      ? 'board'
+      : board.has_guest_access === true
+        ? workspace.personal
+          ? 'board'
+          : 'workspace-and-board'
+        : 'workspace';
   const { data: pinnedSpecialListsRaw } = useUserWorkspaceConfig(
     effectiveWorkspaceId,
     TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
@@ -1049,6 +1065,8 @@ export function BoardViews({
             specialTaskListPins={specialTaskListPins}
             onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
+            canUseBoardAssignees={boardAssigneesEnabled}
+            assigneeMemberSource={assigneeMemberSource}
             readOnly={readOnly}
           />
         );
@@ -1082,6 +1100,8 @@ export function BoardViews({
             tasks={effectiveTasks}
             lists={filteredLists}
             isPersonalWorkspace={workspace.personal}
+            canUseBoardAssignees={boardAssigneesEnabled}
+            assigneeMemberSource={assigneeMemberSource}
             preserveTaskOrder={!!filters.sortBy}
             searchQuery={filters.searchQuery}
             readOnly={readOnly}
@@ -1094,6 +1114,9 @@ export function BoardViews({
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
+            isPersonalWorkspace={workspace.personal}
+            canUseBoardAssignees={boardAssigneesEnabled}
+            assigneeMemberSource={assigneeMemberSource}
             onTaskPartialUpdate={handleTaskPartialUpdate}
           />
         );
@@ -1182,6 +1205,8 @@ export function BoardViews({
             specialTaskListPins={specialTaskListPins}
             onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
+            canUseBoardAssignees={boardAssigneesEnabled}
+            assigneeMemberSource={assigneeMemberSource}
             readOnly={readOnly}
           />
         );

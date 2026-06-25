@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { MeasuredTaskCard } from './task';
+import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
 
 const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
 const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
@@ -33,6 +34,8 @@ interface VirtualizedTaskListProps {
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   dragPreviewPosition?: DragPreviewPosition | null;
@@ -56,6 +59,8 @@ interface TaskListContentProps {
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   dragPreviewPosition?: DragPreviewPosition | null;
@@ -125,6 +130,8 @@ function TaskListContent({
   isMultiSelectMode,
   selectedTasks,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onTaskSelect,
   onClearSelection,
   dragPreviewPosition,
@@ -165,6 +172,8 @@ function TaskListContent({
               )}
               isMultiSelectMode={isMultiSelectMode}
               isPersonalWorkspace={isPersonalWorkspace}
+              canUseBoardAssignees={canUseBoardAssignees}
+              assigneeMemberSource={assigneeMemberSource}
               onSelect={onTaskSelect}
               onClearSelection={onClearSelection}
               suppressSortableTransform={suppressSortableTransform}
@@ -232,6 +241,8 @@ function VirtualizedTaskListInner({
   isMultiSelectMode,
   selectedTasks,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onTaskSelect,
   onClearSelection,
   dragPreviewPosition,
@@ -470,6 +481,8 @@ function VirtualizedTaskListInner({
                 isMultiSelectMode={isMultiSelectMode}
                 selectedTasks={selectedTasks}
                 isPersonalWorkspace={isPersonalWorkspace}
+                canUseBoardAssignees={canUseBoardAssignees}
+                assigneeMemberSource={assigneeMemberSource}
                 onTaskSelect={onTaskSelect}
                 onClearSelection={onClearSelection}
                 dragPreviewPosition={dragPreviewPosition}
@@ -500,6 +513,8 @@ function VirtualizedTaskListInner({
             isMultiSelectMode={isMultiSelectMode}
             selectedTasks={selectedTasks}
             isPersonalWorkspace={isPersonalWorkspace}
+            canUseBoardAssignees={canUseBoardAssignees}
+            assigneeMemberSource={assigneeMemberSource}
             onTaskSelect={onTaskSelect}
             onClearSelection={onClearSelection}
             dragPreviewPosition={dragPreviewPosition}

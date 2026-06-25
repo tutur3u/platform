@@ -66,7 +66,10 @@ import {
 import { Input } from '../input';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
-import { mergeWorkspaceSelectWorkspaces } from './workspace-select-helpers';
+import {
+  mergeWorkspaceSelectWorkspaces,
+  normalizeWorkspaceSwitchPath,
+} from './workspace-select-helpers';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -438,22 +441,20 @@ export function WorkspaceSelect({
     const selectedTeam = groups
       .flatMap((group) => group.teams)
       .find((team) => team.value === nextSlug);
-    let newPathname =
-      selectedTeam?.accessType === 'guest' && selectedTeam.guestLandingPath
-        ? `/${nextSlug}${selectedTeam.guestLandingPath}`
-        : pathname
-          ? (resolveNextPathname?.({
-              currentPathname: pathname,
-              nextSlug,
-            }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
-          : undefined;
+    const usesGuestLandingPath =
+      selectedTeam?.accessType === 'guest' && selectedTeam.guestLandingPath;
+    let newPathname = usesGuestLandingPath
+      ? `/${nextSlug}${selectedTeam.guestLandingPath}`
+      : pathname
+        ? (resolveNextPathname?.({
+            currentPathname: pathname,
+            nextSlug,
+          }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
+        : undefined;
+    if (newPathname && !usesGuestLandingPath) {
+      newPathname = normalizeWorkspaceSwitchPath(newPathname, nextSlug);
+    }
     if (newPathname) {
-      // Regex to match a UUID at the end of the string, with or without dashes
-      const uuidRegex =
-        /\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})$/;
-      // Remove the UUID if present, and the current path is not /:wsId
-      if (uuidRegex.test(newPathname) && newPathname !== `/${nextSlug}`)
-        newPathname = newPathname.replace(uuidRegex, '');
       router.push(newPathname);
     }
   };

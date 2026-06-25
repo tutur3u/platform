@@ -102,6 +102,8 @@ interface Props {
     pinned: boolean
   ) => void;
   onBulkSelectionActiveChange?: (active: boolean) => void;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   readOnly?: boolean;
 }
 
@@ -125,6 +127,8 @@ export function KanbanBoard({
   specialTaskListPins,
   onSpecialTaskListPinnedChange,
   onBulkSelectionActiveChange,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   readOnly = false,
 }: Props) {
   const tCommon = useTranslations('common');
@@ -162,6 +166,7 @@ export function KanbanBoard({
   const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
+  const boardAssigneesEnabled = canUseBoardAssignees ?? !workspace.personal;
 
   const { data: boardConfig } = useBoardConfig(
     readOnly ? null : boardId,
@@ -297,6 +302,9 @@ export function KanbanBoard({
   // Resources Hooks
   const { workspaceLabels, workspaceProjects, workspaceMembers } =
     useBulkResources({
+      boardId,
+      canUseBoardAssignees: boardAssigneesEnabled,
+      assigneeMemberSource,
       workspace,
       isMultiSelectMode,
       selectedCount: selectedTasks.size,
@@ -325,6 +333,7 @@ export function KanbanBoard({
     columns: orderedRealColumns,
     workspaceLabels,
     workspaceProjects,
+    workspaceMembers,
     weekStartsOn,
     setBulkWorking,
     clearSelection,
@@ -523,6 +532,8 @@ export function KanbanBoard({
             boardId={boardId ?? ''}
             workspaceId={workspaceId}
             isPersonalWorkspace={workspace.personal}
+            canUseBoardAssignees={boardAssigneesEnabled}
+            assigneeMemberSource={assigneeMemberSource}
             cursorsEnabled={cursorsEnabled}
             disableSort={disableSort}
             selectedTasks={readOnly ? new Set<string>() : selectedTasks}
@@ -564,6 +575,8 @@ export function KanbanBoard({
                 columns={orderedColumns}
                 boardId={boardId ?? ''}
                 isPersonalWorkspace={workspace.personal}
+                canUseBoardAssignees={boardAssigneesEnabled}
+                assigneeMemberSource={assigneeMemberSource}
                 isMultiSelectMode={isMultiSelectMode}
                 selectedTasks={selectedTasks}
                 onUpdate={() => {}}

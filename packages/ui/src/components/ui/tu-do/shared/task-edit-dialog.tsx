@@ -123,6 +123,8 @@ import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
 
+type AssigneeMemberSource = 'workspace' | 'board' | 'workspace-and-board';
+
 export {
   type DialogHeaderInfo,
   getTaskDialogHeaderInfo,
@@ -149,6 +151,8 @@ export interface TaskEditDialogProps {
   taskLoadError?: boolean;
   taskHydrationVersion?: number;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: AssigneeMemberSource;
   parentTaskId?: string;
   parentTaskName?: string;
   pendingRelationship?: PendingRelationship;
@@ -189,6 +193,8 @@ export function TaskEditDialog({
   taskLoadError = false,
   taskHydrationVersion = 0,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   parentTaskId,
   parentTaskName,
   pendingRelationship,
@@ -494,6 +500,8 @@ export function TaskEditDialog({
     isOpen,
     propAvailableLists,
     taskSearchQuery,
+    canUseBoardAssignees: canUseBoardAssignees ?? !isPersonalWorkspace,
+    assigneeMemberSource,
     sharedContext,
   });
   const currentList = availableLists?.find(
@@ -2166,6 +2174,7 @@ export function TaskEditDialog({
       selectedAssignees={formState.selectedAssignees}
       isLoading={isLoading}
       isPersonalWorkspace={isPersonalWorkspace}
+      canUseBoardAssignees={canUseBoardAssignees ?? !isPersonalWorkspace}
       totalDuration={formState.totalDuration}
       isSplittable={formState.isSplittable}
       minSplitDurationMinutes={formState.minSplitDurationMinutes}

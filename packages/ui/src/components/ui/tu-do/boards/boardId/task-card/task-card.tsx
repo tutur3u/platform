@@ -30,6 +30,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   getWorkspaceTask,
+  listWorkspaceTaskBoardViewableMembers,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
   removeCurrentUserTaskPersonalPlacement,
@@ -50,7 +51,10 @@ import {
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
-import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
+import {
+  useWorkspaceMembers,
+  type WorkspaceMember,
+} from '@tuturuuu/ui/hooks/use-workspace-members';
 import {
   HoverCard,
   HoverCardContent,
@@ -152,6 +156,11 @@ import {
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
 
+export type TaskCardAssigneeMemberSource =
+  | 'workspace'
+  | 'board'
+  | 'workspace-and-board';
+
 export interface TaskCardProps {
   task: Task;
   boardId: string;
@@ -163,6 +172,8 @@ export interface TaskCardProps {
   isSelected?: boolean;
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   dragDisabled?: boolean;
@@ -307,6 +318,8 @@ function TaskCardInner({
   isSelected = false,
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onSelect,
   onClearSelection,
   dragDisabled: dragDisabledProp = false,
@@ -444,12 +457,58 @@ function TaskCardInner({
     isMultiSelectMode,
     onClearSelection,
   });
+  const shouldUseBoardAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const effectiveAssigneeMemberSource =
+    assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
+  const shouldLoadWorkspaceMembers =
+    shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'board';
+  const shouldLoadBoardViewableMembers =
+    shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'workspace';
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } =
-    useWorkspaceMembers(effectiveWorkspaceId, {
-      enabled: !!effectiveWorkspaceId && !isPersonalWorkspace,
-    });
+  const normalMembersQuery = useWorkspaceMembers(effectiveWorkspaceId, {
+    enabled: !!effectiveWorkspaceId && shouldLoadWorkspaceMembers,
+  });
+  const boardViewableMembersQuery = useQuery({
+    queryKey: ['task-board-viewable-members', effectiveWorkspaceId, boardId],
+    queryFn: async (): Promise<WorkspaceMember[]> => {
+      if (!effectiveWorkspaceId || !boardId) return [];
+
+      const payload = await listWorkspaceTaskBoardViewableMembers(
+        effectiveWorkspaceId,
+        boardId
+      );
+
+      return payload.members.map((member) => ({
+        id: member.user_id,
+        user_id: member.user_id,
+        workspace_id: effectiveWorkspaceId,
+        display_name: member.display_name ?? member.email ?? member.user_id,
+        email: member.email ?? undefined,
+        avatar_url: member.avatar_url ?? undefined,
+      }));
+    },
+    enabled:
+      !!effectiveWorkspaceId && !!boardId && shouldLoadBoardViewableMembers,
+    staleTime: 5 * 60 * 1000,
+  });
+  const normalWorkspaceMembers = normalMembersQuery.data ?? [];
+  const boardViewableMembers = boardViewableMembersQuery.data ?? [];
+  const workspaceMembers = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: WorkspaceMember[] = [];
+
+    for (const member of [...normalWorkspaceMembers, ...boardViewableMembers]) {
+      const memberId = member.user_id ?? member.id;
+      if (!memberId || seen.has(memberId)) continue;
+      seen.add(memberId);
+      merged.push(member);
+    }
+
+    return merged;
+  }, [boardViewableMembers, normalWorkspaceMembers]);
+  const membersLoading =
+    normalMembersQuery.isLoading || boardViewableMembersQuery.isLoading;
 
   const relationshipSummary =
     task.relationship_summary ??
@@ -1034,6 +1093,12 @@ function TaskCardInner({
         task,
         boardId,
         availableLists,
+        canUseBoardAssignees: task.source_workspace_id
+          ? true
+          : shouldUseBoardAssignees,
+        assigneeMemberSource: task.source_workspace_id
+          ? 'workspace'
+          : effectiveAssigneeMemberSource,
         effectiveWorkspaceId,
         isPersonalWorkspace,
       })
@@ -1042,6 +1107,8 @@ function TaskCardInner({
     task,
     boardId,
     availableLists,
+    shouldUseBoardAssignees,
+    effectiveAssigneeMemberSource,
     effectiveWorkspaceId,
     isPersonalWorkspace,
     openTaskById,
@@ -1075,6 +1142,8 @@ function TaskCardInner({
         openTask(task, boardId, availableLists, false, {
           taskWsId: effectiveWorkspaceId,
           taskWorkspacePersonal: isPersonalWorkspace,
+          canUseBoardAssignees: shouldUseBoardAssignees,
+          assigneeMemberSource: effectiveAssigneeMemberSource,
         });
       }
     },
@@ -1082,7 +1151,9 @@ function TaskCardInner({
       task,
       boardId,
       effectiveWorkspaceId,
+      effectiveAssigneeMemberSource,
       isPersonalWorkspace,
+      shouldUseBoardAssignees,
       isPersonalExternalTask,
       isMultiSelectMode,
       availableLists,
@@ -2274,8 +2345,8 @@ function TaskCardInner({
                     </>
                   )}
 
-                  {/* Assignee Actions - Show if not personal workspace */}
-                  {!isPersonalWorkspace && (
+                  {/* Assignee Actions */}
+                  {shouldUseBoardAssignees && (
                     <TaskAssigneesMenu
                       taskAssignees={displayAssignees}
                       availableMembers={workspaceMembers}
@@ -2345,7 +2416,7 @@ function TaskCardInner({
             )}
           </div>
           {/* Assignee: left, not cut off */}
-          {!isPersonalWorkspace && (
+          {shouldUseBoardAssignees && (
             <div className="flex flex-none items-start justify-start">
               <AssigneeSelect
                 taskId={task.id}

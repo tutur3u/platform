@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
+import {
+  listWorkspaceTaskBoardViewableMembers,
+  listWorkspaceTaskProjects,
+} from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -89,9 +92,18 @@ interface UseTaskDataProps {
   isOpen: boolean;
   propAvailableLists?: TaskList[];
   taskSearchQuery?: string;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
   sharedContext?: SharedTaskContext;
 }
+
+type TaskDialogWorkspaceMember = {
+  id: string;
+  user_id: string;
+  display_name: string;
+  avatar_url?: string | null;
+};
 
 // UUID validation regex
 const UUID_REGEX =
@@ -107,6 +119,8 @@ export function useTaskData({
   isOpen,
   propAvailableLists,
   taskSearchQuery = '',
+  canUseBoardAssignees,
+  assigneeMemberSource,
   sharedContext,
 }: UseTaskDataProps) {
   // If sharedContext is provided, use pre-loaded data and skip fetches
@@ -174,17 +188,19 @@ export function useTaskData({
   );
   const workspaceLabels =
     sharedContext?.workspaceLabels || fetchedWorkspaceLabels;
+  const effectiveAssigneeMemberSource = assigneeMemberSource ?? 'workspace';
+  const shouldLoadWorkspaceMembers =
+    canUseBoardAssignees !== false && effectiveAssigneeMemberSource !== 'board';
+  const shouldLoadBoardViewableMembers =
+    canUseBoardAssignees !== false &&
+    effectiveAssigneeMemberSource !== 'workspace' &&
+    !!boardId;
 
   // Workspace members
   const { data: fetchedWorkspaceMembers = [] } = useQuery<
-    Array<{
-      id: string;
-      user_id: string;
-      display_name: string;
-      avatar_url?: string | null;
-    }>
+    TaskDialogWorkspaceMember[]
   >({
-    queryKey: ['workspace-members', realWorkspaceId],
+    queryKey: ['workspace-members', realWorkspaceId, 'workspace'],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
 
@@ -234,11 +250,63 @@ export function useTaskData({
         (a.display_name || '').localeCompare(b.display_name || '')
       );
     },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
+    enabled:
+      !!realWorkspaceId &&
+      isOpen &&
+      isValidWsId &&
+      !hasSharedContext &&
+      shouldLoadWorkspaceMembers,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  const { data: fetchedBoardViewableMembers = [] } = useQuery<
+    TaskDialogWorkspaceMember[]
+  >({
+    queryKey: ['task-board-viewable-members', realWorkspaceId, boardId],
+    queryFn: async () => {
+      if (!realWorkspaceId || !isValidWsId || !boardId) return [];
+
+      const payload = await listWorkspaceTaskBoardViewableMembers(
+        realWorkspaceId,
+        boardId
+      );
+
+      return payload.members
+        .map((member) => ({
+          id: member.user_id,
+          user_id: member.user_id,
+          display_name: member.display_name || member.email || member.user_id,
+          avatar_url: member.avatar_url,
+        }))
+        .sort((a, b) =>
+          (a.display_name || '').localeCompare(b.display_name || '')
+        );
+    },
+    enabled:
+      !!realWorkspaceId &&
+      isOpen &&
+      isValidWsId &&
+      !hasSharedContext &&
+      shouldLoadBoardViewableMembers,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  const mergedFetchedWorkspaceMembers = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: TaskDialogWorkspaceMember[] = [];
+
+    for (const member of [
+      ...fetchedWorkspaceMembers,
+      ...fetchedBoardViewableMembers,
+    ]) {
+      const memberId = member.user_id || member.id;
+      if (!memberId || seen.has(memberId)) continue;
+      seen.add(memberId);
+      merged.push(member);
+    }
+
+    return merged;
+  }, [fetchedBoardViewableMembers, fetchedWorkspaceMembers]);
   const workspaceMembers =
-    sharedContext?.workspaceMembers || fetchedWorkspaceMembers;
+    sharedContext?.workspaceMembers || mergedFetchedWorkspaceMembers;
 
   // Task projects
   const { data: fetchedTaskProjects = [] } = useQuery({

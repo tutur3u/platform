@@ -4,6 +4,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
 import {
   type PendingRelationshipType,
+  type TaskAssigneeMemberSource,
   useTaskDialogContext,
 } from '../providers/task-dialog-provider';
 import type { SharedTaskContext } from '../shared/task-edit-dialog/hooks/use-task-data';
@@ -50,6 +51,10 @@ export function useTaskDialog(): {
       taskWsId?: string;
       /** Whether the task's workspace is personal (affects realtime features) */
       taskWorkspacePersonal?: boolean;
+      /** Whether the board context should expose assignee controls */
+      canUseBoardAssignees?: boolean;
+      /** Where assignee candidates should be loaded from */
+      assigneeMemberSource?: TaskAssigneeMemberSource;
     }
   ) => void;
   openTaskById: (
@@ -62,6 +67,8 @@ export function useTaskDialog(): {
       taskWsId?: string;
       taskWorkspacePersonal?: boolean;
       taskWorkspaceTier?: WorkspaceProductTier;
+      canUseBoardAssignees?: boolean;
+      assigneeMemberSource?: TaskAssigneeMemberSource;
       initialSharedContext?: SharedTaskContext;
     }
   ) => Promise<boolean>;

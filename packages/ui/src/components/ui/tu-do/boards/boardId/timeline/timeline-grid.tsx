@@ -28,6 +28,9 @@ interface TimelineGridProps {
   localTasks: Task[];
   boardId?: string;
   wsId?: string;
+  isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   dayWidth: number;
   sidebarWidth: number;
   timelineWidth: number;
@@ -71,6 +74,9 @@ export function TimelineGrid({
   localTasks,
   boardId,
   wsId,
+  isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   dayWidth,
   sidebarWidth,
   timelineWidth,
@@ -223,6 +229,9 @@ export function TimelineGrid({
                   )}
                   boardId={boardId}
                   wsId={wsId}
+                  isPersonalWorkspace={isPersonalWorkspace}
+                  canUseBoardAssignees={canUseBoardAssignees}
+                  assigneeMemberSource={assigneeMemberSource}
                   dayWidth={dayWidth}
                   timelineWidth={timelineWidth}
                   sidebarWidth={sidebarWidth}

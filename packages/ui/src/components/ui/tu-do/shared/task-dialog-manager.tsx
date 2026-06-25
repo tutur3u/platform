@@ -189,6 +189,8 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
             taskWsId: state.taskWsId,
             taskWorkspacePersonal: state.taskWorkspacePersonal,
             taskWorkspaceTier: state.taskWorkspaceTier,
+            canUseBoardAssignees: state.canUseBoardAssignees,
+            assigneeMemberSource: state.assigneeMemberSource,
           });
           return;
         }
@@ -210,6 +212,8 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
             taskWsId: currentTaskWsId,
             taskWorkspacePersonal: state.taskWorkspacePersonal,
             taskWorkspaceTier: state.taskWorkspaceTier,
+            canUseBoardAssignees: state.canUseBoardAssignees,
+            assigneeMemberSource: state.assigneeMemberSource,
           });
           return;
         }
@@ -223,8 +227,10 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       openTask,
       openTaskById,
       queryClient,
+      state.assigneeMemberSource,
       state.availableLists,
       state.boardId,
+      state.canUseBoardAssignees,
       state.task?.id,
       state.taskWorkspacePersonal,
       state.taskWorkspaceTier,
@@ -238,9 +244,17 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       return openTaskById(taskId, {
         taskWsId: wsId,
         taskWorkspacePersonal: isPersonalWorkspace,
+        canUseBoardAssignees: state.canUseBoardAssignees,
+        assigneeMemberSource: state.assigneeMemberSource,
       });
     },
-    [isPersonalWorkspace, openTaskById, wsId]
+    [
+      isPersonalWorkspace,
+      openTaskById,
+      state.assigneeMemberSource,
+      state.canUseBoardAssignees,
+      wsId,
+    ]
   );
 
   useEffect(() => {
@@ -388,10 +402,14 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       taskWsId: state.taskWsId,
       taskWorkspacePersonal: state.taskWorkspacePersonal,
       taskWorkspaceTier: state.taskWorkspaceTier,
+      canUseBoardAssignees: state.canUseBoardAssignees,
+      assigneeMemberSource: state.assigneeMemberSource,
       initialSharedContext: state.initialSharedContext,
     });
   }, [
     openTaskById,
+    state.assigneeMemberSource,
+    state.canUseBoardAssignees,
     state.initialSharedContext,
     state.availableLists,
     state.boardId,
@@ -539,6 +557,8 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       taskLoadError={state.taskLoadError}
       taskHydrationVersion={state.taskHydrationVersion}
       isPersonalWorkspace={isPersonalWorkspace}
+      canUseBoardAssignees={state.canUseBoardAssignees}
+      assigneeMemberSource={state.assigneeMemberSource}
       parentTaskId={state.parentTaskId}
       parentTaskName={state.parentTaskName}
       pendingRelationship={state.pendingRelationship}

@@ -98,6 +98,29 @@ type BoardQueryResult = {
   error: BoardQueryError | null;
 };
 
+async function boardHasGuestAccess({
+  boardId,
+  sbAdmin,
+}: {
+  boardId: string;
+  sbAdmin: TypedSupabaseClient;
+}) {
+  const { count, error } = await sbAdmin
+    .from('task_board_shares')
+    .select('id', { count: 'exact', head: true })
+    .eq('board_id', boardId);
+
+  if (error) {
+    serverLogger.warn('Failed to load task board guest share count', {
+      boardId,
+      error,
+    });
+    return false;
+  }
+
+  return (count ?? 0) > 0;
+}
+
 function buildBoardSelect(columns: Iterable<BoardOptionalColumn>) {
   return [...BOARD_BASE_COLUMNS, ...columns, BOARD_TASK_LISTS_SELECT].join(
     ', '
@@ -198,12 +221,17 @@ export const GET = withSessionAuth<Params>(
         return NextResponse.json({ error: 'Board not found' }, { status: 404 });
       }
 
+      const hasGuestAccess =
+        access.access.mode === 'guest' ||
+        (await boardHasGuestAccess({ boardId, sbAdmin }));
+
       const normalizedBoard = {
         ...board,
         default_list_id: board.default_list_id ?? null,
         access_type: access.access.mode,
         guest_permission:
           access.access.mode === 'guest' ? access.access.permission : null,
+        has_guest_access: hasGuestAccess,
         task_lists: (board.task_lists ?? []).sort((a, b) => {
           const positionDelta = (a.position ?? 0) - (b.position ?? 0);
           if (positionDelta !== 0) return positionDelta;

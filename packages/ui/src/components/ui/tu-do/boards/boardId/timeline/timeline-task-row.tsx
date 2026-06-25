@@ -39,6 +39,9 @@ interface TimelineTaskRowProps {
   lists: TaskList[];
   boardId?: string;
   wsId?: string;
+  isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   dayWidth: number;
   timelineWidth: number;
   sidebarWidth: number;
@@ -75,6 +78,9 @@ export function TimelineTaskRow({
   lists,
   boardId,
   wsId,
+  isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   dayWidth,
   timelineWidth,
   sidebarWidth,
@@ -235,6 +241,9 @@ export function TimelineTaskRow({
               boardId={boardId}
               workspaceId={wsId}
               lists={lists}
+              isPersonalWorkspace={isPersonalWorkspace}
+              canUseBoardAssignees={canUseBoardAssignees}
+              assigneeMemberSource={assigneeMemberSource}
               onUpdate={onActionsUpdate ?? (() => undefined)}
               open={actionsMenu.open}
               onOpenChange={(open) =>

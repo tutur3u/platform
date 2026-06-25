@@ -12,9 +12,9 @@ export interface WorkspaceProject {
 export interface WorkspaceMember {
   id: string;
   user_id?: string;
-  display_name: string;
-  email: string;
-  avatar_url: string | null;
+  display_name?: string;
+  email?: string;
+  avatar_url?: string | null;
 }
 
 export interface BulkOperationsConfig {

@@ -33,6 +33,11 @@ let kanbanBoardProps:
 let listViewProps:
   | React.ComponentProps<typeof import('../list-view')['ListView']>
   | undefined;
+let timelineBoardProps:
+  | React.ComponentProps<
+      typeof import('../../boards/boardId/timeline-board')['TimelineBoard']
+    >
+  | undefined;
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -129,7 +134,10 @@ vi.mock('../list-view', () => ({
 }));
 
 vi.mock('../../boards/boardId/timeline-board', () => ({
-  TimelineBoard: () => <div data-testid="timeline-view">Timeline</div>,
+  TimelineBoard: (props: any) => {
+    timelineBoardProps = props;
+    return <div data-testid="timeline-view">Timeline</div>;
+  },
 }));
 
 const mockBoard = {
@@ -246,6 +254,7 @@ describe('BoardViews', () => {
     boardHeaderProps = undefined;
     kanbanBoardProps = undefined;
     listViewProps = undefined;
+    timelineBoardProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
     progressivePagination = {};
@@ -303,6 +312,61 @@ describe('BoardViews', () => {
     expect(boardHeaderProps?.titlePrefix).toBeDefined();
     expect(kanbanBoardProps?.readOnly).toBe(true);
     expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+  });
+
+  it('enables assignees for personal boards that have guest access', async () => {
+    renderBoardViews({
+      board: {
+        ...mockBoard,
+        has_guest_access: true,
+      },
+      workspace: { id: 'ws-1', personal: true },
+    });
+
+    expect(kanbanBoardProps?.canUseBoardAssignees).toBe(true);
+    expect(kanbanBoardProps?.assigneeMemberSource).toBe('board');
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toBeInTheDocument();
+    });
+    expect(listViewProps?.canUseBoardAssignees).toBe(true);
+    expect(listViewProps?.assigneeMemberSource).toBe('board');
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('timeline');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('timeline-view')).toBeInTheDocument();
+    });
+    expect(timelineBoardProps?.canUseBoardAssignees).toBe(true);
+    expect(timelineBoardProps?.assigneeMemberSource).toBe('board');
+  });
+
+  it('keeps assignees hidden for unshared personal boards', () => {
+    renderBoardViews({
+      workspace: { id: 'ws-1', personal: true },
+    });
+
+    expect(kanbanBoardProps?.canUseBoardAssignees).toBe(false);
+    expect(kanbanBoardProps?.assigneeMemberSource).toBe('workspace');
+  });
+
+  it('merges workspace and board assignee sources for team boards that have guest access', () => {
+    renderBoardViews({
+      board: {
+        ...mockBoard,
+        has_guest_access: true,
+      },
+      workspace: { id: 'ws-1', personal: false },
+    });
+
+    expect(kanbanBoardProps?.canUseBoardAssignees).toBe(true);
+    expect(kanbanBoardProps?.assigneeMemberSource).toBe('workspace-and-board');
   });
 
   it('renders board-scoped drafts and recycle bin views from the header mode switcher', async () => {

@@ -41,6 +41,7 @@ import {
   TaskSchedulingMenu,
 } from '../boards/boardId/menus';
 import { useTaskDialog } from '../hooks/useTaskDialog';
+import type { TaskAssigneeMemberSource } from '../providers/task-dialog-provider';
 import { useTasksHref } from '../tasks-route-context';
 
 interface TaskRowActionsMenuProps {
@@ -49,6 +50,8 @@ interface TaskRowActionsMenuProps {
   workspaceId: string;
   lists: TaskList[];
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskAssigneeMemberSource;
   onUpdate: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -78,6 +81,8 @@ export function TaskRowActionsMenu({
   workspaceId,
   lists,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onUpdate,
   open,
   onOpenChange,
@@ -171,6 +176,12 @@ export function TaskRowActionsMenu({
         taskWorkspacePersonal: task.source_workspace_id
           ? false
           : isPersonalWorkspace,
+        canUseBoardAssignees:
+          canUseBoardAssignees ??
+          (task.source_workspace_id ? true : !isPersonalWorkspace),
+        assigneeMemberSource: task.source_workspace_id
+          ? 'workspace'
+          : assigneeMemberSource,
       }
     );
     setMenuOpen(false);

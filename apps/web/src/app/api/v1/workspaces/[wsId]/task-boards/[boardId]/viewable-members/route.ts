@@ -1,13 +1,10 @@
+import { resolveTaskBoardAccess } from '@tuturuuu/apis/tu-do/board-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
+import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   type EnhancedWorkspaceMember,
@@ -32,6 +29,7 @@ type ViewableMembersManagerResult =
     };
 
 function memberHasManageProjects(member: EnhancedWorkspaceMember) {
+  if (member.direct_board_guest) return true;
   if (member.is_creator) return true;
 
   const permissions = [
@@ -77,69 +75,24 @@ async function requireViewableMembersManager({
   boardId: string;
   rawWsId: string;
   supabase: TypedSupabaseClient;
-  user: { id: string };
+  user: SessionAuthContext['user'];
 }): Promise<ViewableMembersManagerResult> {
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  const memberCheck = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (memberCheck.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    } as const;
-  }
-
-  if (!memberCheck.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
-  const permissions = await getPermissions({ wsId, user });
-  if (!permissions?.containsPermission(MANAGE_PROJECTS_PERMISSION)) {
-    return {
-      error: NextResponse.json(
-        { error: "You don't have permission to perform this operation" },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
   const sbAdmin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
-  const { data: board, error: boardError } = await sbAdmin
-    .from('workspace_boards')
-    .select('id, ws_id')
-    .eq('id', boardId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
+  const access = await resolveTaskBoardAccess({
+    boardId,
+    requiredPermission: 'view',
+    sbAdmin,
+    supabase,
+    user,
+    wsId,
+  });
 
-  if (boardError) {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to load task board' },
-        { status: 500 }
-      ),
-    } as const;
-  }
+  if ('error' in access) return access;
 
-  if (!board) {
-    return {
-      error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
-    } as const;
-  }
-
-  return { boardId, sbAdmin, wsId } as const;
+  return { boardId: access.boardId, sbAdmin, wsId: access.wsId } as const;
 }
 
 export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
@@ -158,12 +111,18 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
         supabase: manager.sbAdmin,
         sbAdmin: manager.sbAdmin,
         wsId: manager.wsId,
-        status: 'joined',
+        status: 'all',
       });
 
       return NextResponse.json({
         members: members
-          .filter((member) => member.id && memberHasManageProjects(member))
+          .filter(
+            (member) =>
+              member.id &&
+              !member.pending &&
+              !member.id.startsWith('board-guest:') &&
+              memberHasManageProjects(member)
+          )
           .map(serializeMember),
       });
     } catch (error) {

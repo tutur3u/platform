@@ -64,6 +64,8 @@ interface KanbanDeadlinePanelsProps {
   boardId: string;
   bulkUpdateCustomDueDate: (date: Date | null) => Promise<void>;
   isPersonalWorkspace: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   labels: KanbanDeadlineLabels;
   onClearSelection: () => void;
   onSectionCollapsedChange?: (
@@ -226,6 +228,8 @@ function DeadlineSection({
   labels,
   isMultiSelectMode,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onClearSelection,
   onCollapsedChange,
   onPinnedChange,
@@ -247,6 +251,8 @@ function DeadlineSection({
   labels: KanbanDeadlineLabels;
   isMultiSelectMode: boolean;
   isPersonalWorkspace: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   onClearSelection: () => void;
   onCollapsedChange?: (
     section: KanbanDeadlineSection,
@@ -546,6 +552,8 @@ function DeadlineSection({
                 dragDisabled
                 isMultiSelectMode={isMultiSelectMode}
                 isPersonalWorkspace={isPersonalWorkspace}
+                canUseBoardAssignees={canUseBoardAssignees}
+                assigneeMemberSource={assigneeMemberSource}
                 isSelected={selectedTasks.has(task.id)}
                 onClearSelection={onClearSelection}
                 onSelect={onTaskSelect}
@@ -573,6 +581,8 @@ export function KanbanDeadlinePanels({
   bulkUpdateCustomDueDate,
   isMultiSelectMode,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   labels,
   onClearSelection,
   onSectionCollapsedChange,
@@ -627,6 +637,8 @@ export function KanbanDeadlinePanels({
           labels={labels}
           isMultiSelectMode={isMultiSelectMode}
           isPersonalWorkspace={isPersonalWorkspace}
+          canUseBoardAssignees={canUseBoardAssignees}
+          assigneeMemberSource={assigneeMemberSource}
           onClearSelection={onClearSelection}
           onCollapsedChange={onSectionCollapsedChange}
           onPinnedChange={onSectionPinnedChange}

@@ -2,11 +2,10 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createAdminClientMock = vi.fn();
-const getPermissionsMock = vi.fn();
 const getWorkspaceMembersMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
+const resolveTaskBoardAccessMock = vi.fn();
 const serverLoggerErrorMock = vi.fn();
-const verifyWorkspaceMembershipTypeMock = vi.fn();
 
 const sessionSupabase = { from: vi.fn() };
 const sessionUser = {
@@ -18,15 +17,16 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     createAdminClientMock(...args),
 }));
 
+vi.mock('@tuturuuu/apis/tu-do/board-access', () => ({
+  resolveTaskBoardAccess: (
+    ...args: Parameters<typeof resolveTaskBoardAccessMock>
+  ) => resolveTaskBoardAccessMock(...args),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
-    getPermissionsMock(...args),
   normalizeWorkspaceId: (
     ...args: Parameters<typeof normalizeWorkspaceIdMock>
   ) => normalizeWorkspaceIdMock(...args),
-  verifyWorkspaceMembershipType: (
-    ...args: Parameters<typeof verifyWorkspaceMembershipTypeMock>
-  ) => verifyWorkspaceMembershipTypeMock(...args),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -85,47 +85,25 @@ function routeContext() {
   };
 }
 
-function createBoardQuery() {
-  const boardQuery = {
-    eq: vi.fn(() => boardQuery),
-    maybeSingle: vi.fn().mockResolvedValue({
-      data: {
-        id: BOARD_ID,
-        ws_id: WS_ID,
-      },
-      error: null,
-    }),
-    select: vi.fn(() => boardQuery),
-  };
-
-  return boardQuery;
-}
-
 describe('task board viewable members route GET', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     normalizeWorkspaceIdMock.mockResolvedValue(WS_ID);
-    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
-    getPermissionsMock.mockResolvedValue({
-      containsPermission: vi.fn().mockReturnValue(true),
-    });
-
-    const boardQuery = createBoardQuery();
-    const fromMock = vi.fn((table: string) => {
-      if (table === 'workspace_boards') {
-        return { select: boardQuery.select };
-      }
-
-      throw new Error(`Unexpected table: ${table}`);
-    });
-
-    createAdminClientMock.mockResolvedValue({
-      from: fromMock,
+    const sbAdmin = { from: vi.fn() };
+    createAdminClientMock.mockResolvedValue(sbAdmin);
+    resolveTaskBoardAccessMock.mockResolvedValue({
+      access: { mode: 'member', permission: 'edit' },
+      board: { id: BOARD_ID, ws_id: WS_ID },
+      boardId: BOARD_ID,
+      sbAdmin,
+      supabase: sessionSupabase,
+      user: sessionUser,
+      wsId: WS_ID,
     });
   });
 
-  it('returns joined workspace members whose effective permissions can manage projects', async () => {
+  it('returns real users who can view the board as managers or direct board guests', async () => {
     getWorkspaceMembersMock.mockResolvedValue([
       {
         avatar_url: 'https://example.com/creator.png',
@@ -166,6 +144,32 @@ describe('task board viewable members route GET', () => {
         roles: [],
         workspace_member_type: 'MEMBER',
       },
+      {
+        avatar_url: 'https://example.com/guest.png',
+        default_permissions: [],
+        direct_board_guest: true,
+        display_name: 'Board Guest',
+        email: 'guest@example.com',
+        handle: 'guest',
+        id: 'user-guest',
+        is_creator: false,
+        pending: false,
+        roles: [],
+        workspace_member_type: 'GUEST',
+      },
+      {
+        avatar_url: null,
+        default_permissions: [],
+        direct_board_guest: true,
+        display_name: 'Pending Guest',
+        email: 'pending@example.com',
+        handle: null,
+        id: 'board-guest:pending@example.com',
+        is_creator: false,
+        pending: true,
+        roles: [],
+        workspace_member_type: 'GUEST',
+      },
     ]);
 
     const response = await GET(buildRequest(), routeContext());
@@ -187,18 +191,35 @@ describe('task board viewable members route GET', () => {
         roles: [{ id: 'role-1', name: 'Project manager' }],
         user_id: 'user-manager',
       }),
+      expect.objectContaining({
+        display_name: 'Board Guest',
+        email: 'guest@example.com',
+        roles: [],
+        user_id: 'user-guest',
+        workspace_member_type: 'GUEST',
+      }),
     ]);
+    expect(resolveTaskBoardAccessMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boardId: BOARD_ID,
+        requiredPermission: 'view',
+        wsId: WS_ID,
+      })
+    );
     expect(getWorkspaceMembersMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'joined',
+        status: 'all',
         wsId: WS_ID,
       })
     );
   });
 
-  it('rejects non-managers before fetching viewable members', async () => {
-    getPermissionsMock.mockResolvedValue({
-      containsPermission: vi.fn().mockReturnValue(false),
+  it('rejects callers without board access before fetching viewable members', async () => {
+    resolveTaskBoardAccessMock.mockResolvedValue({
+      error: Response.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      ),
     });
 
     const response = await GET(buildRequest(), routeContext());

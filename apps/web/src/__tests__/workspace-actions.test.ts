@@ -244,6 +244,53 @@ describe('fetchWorkspaceSummaries', () => {
     ]);
   });
 
+  it('keeps shared personal guest workspaces distinct from the current user profile', async () => {
+    mocks.workspacesEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.taskBoardShareResults.push(
+      {
+        data: [
+          {
+            board_id: 'board-1',
+            permission: 'view',
+            workspace_boards: {
+              id: 'board-1',
+              ws_id: 'owner-personal-ws',
+              workspaces: {
+                id: 'owner-personal-ws',
+                name: 'Minh Personal',
+                personal: true,
+                avatar_url: 'https://example.com/minh.png',
+                logo_url: null,
+                creator_id: 'owner-1',
+                workspace_subscriptions: [],
+              },
+            },
+          },
+        ],
+        error: null,
+      },
+      { data: [], error: null }
+    );
+
+    const { fetchWorkspaceSummaries } = await import(
+      '@tuturuuu/ui/lib/workspace-actions'
+    );
+
+    await expect(fetchWorkspaceSummaries()).resolves.toEqual([
+      expect.objectContaining({
+        access_type: 'guest',
+        avatar_url: 'https://example.com/minh.png',
+        guest_products: ['tasks'],
+        id: 'owner-personal-ws',
+        name: 'Minh Personal',
+        personal: true,
+      }),
+    ]);
+  });
+
   it('forwards request headers to createClient when provided', async () => {
     mocks.workspacesEq.mockResolvedValue({
       data: [],
