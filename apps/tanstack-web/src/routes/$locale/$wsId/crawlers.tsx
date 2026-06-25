@@ -5,24 +5,14 @@ import {
   loadCrawlerListData,
   validateCrawlerListSearch,
 } from '@/lib/crawlers/crawler-list-route-data';
-import { requireCurrentUser } from '@/lib/platform/auth-gate';
+import {
+  getWorkspaceNextPath,
+  requireCurrentUser,
+} from '@/lib/platform/auth-gate';
 import { createPageHead } from '@/lib/platform/head';
 import { resolveMessagesLocale } from '@/lib/platform/messages';
 import { resolveWorkspace } from '@/lib/platform/workspace';
 import { requireWorkspacePermission } from '@/lib/platform/workspace-permission';
-
-function getWorkspaceNextPath(
-  params: { locale: string; wsId: string },
-  pathname: string
-) {
-  const localePrefix = `/${params.locale}`;
-
-  if (pathname.startsWith(`${localePrefix}/`)) {
-    return pathname.slice(localePrefix.length);
-  }
-
-  return `/${params.wsId}/crawlers`;
-}
 
 export const Route = createFileRoute('/$locale/$wsId/crawlers')({
   component: CrawlerListRoutePage,
@@ -45,7 +35,7 @@ export const Route = createFileRoute('/$locale/$wsId/crawlers')({
   loader: async ({ location, params, deps }): Promise<CrawlerListData> => {
     await requireCurrentUser({
       locale: params.locale,
-      nextPath: getWorkspaceNextPath(params, location.pathname),
+      nextPath: getWorkspaceNextPath(params, location.pathname, 'crawlers'),
     });
 
     const workspace = await resolveWorkspace({ data: { wsId: params.wsId } });
