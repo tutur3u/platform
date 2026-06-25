@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NavLink } from './nav-link';
@@ -21,7 +21,12 @@ vi.mock('@tuturuuu/internal-api', () => ({
   getWorkspaceConfigIdList: vi.fn(),
 }));
 
-function renderNavLink(link: ComponentProps<typeof NavLink>['link']) {
+function renderNavLink(
+  link: ComponentProps<typeof NavLink>['link'],
+  props: Partial<
+    Pick<ComponentProps<typeof NavLink>, 'onClick' | 'onSubMenuClick'>
+  > = {}
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -36,8 +41,8 @@ function renderNavLink(link: ComponentProps<typeof NavLink>['link']) {
         wsId="personal"
         link={link}
         isCollapsed={false}
-        onClick={vi.fn()}
-        onSubMenuClick={vi.fn()}
+        onClick={props.onClick ?? vi.fn()}
+        onSubMenuClick={props.onSubMenuClick ?? vi.fn()}
       />
     </QueryClientProvider>
   );
@@ -77,5 +82,39 @@ describe('NavLink', () => {
     expect(screen.getByRole('link', { name: 'Tasks' })).not.toHaveClass(
       'bg-accent'
     );
+  });
+
+  it('does not mark cross-origin links active just because the path matches', () => {
+    navigationState.pathname = '/personal';
+
+    renderNavLink({
+      href: 'https://mail.tuturuuu.com/personal',
+      title: 'Mail',
+    });
+
+    expect(screen.getByRole('link', { name: 'Mail' })).not.toHaveClass(
+      'bg-accent'
+    );
+  });
+
+  it('navigates through the parent link instead of opening a single-child submenu', () => {
+    const onClick = vi.fn();
+    const onSubMenuClick = vi.fn();
+
+    renderNavLink(
+      {
+        children: [{ href: '/personal/tasks/boards', title: 'Boards' }],
+        href: '/personal/tasks',
+        title: 'Tasks',
+      },
+      { onClick, onSubMenuClick }
+    );
+
+    const link = screen.getByRole('link', { name: 'Tasks' });
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onSubMenuClick).not.toHaveBeenCalled();
   });
 });

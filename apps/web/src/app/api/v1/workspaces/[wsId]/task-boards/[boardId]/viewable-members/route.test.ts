@@ -11,6 +11,13 @@ const sessionSupabase = { from: vi.fn() };
 const sessionUser = {
   id: '00000000-0000-4000-8000-000000000999',
 };
+let taskBoardShareRows: unknown[] = [];
+let taskBoardSharesQuery: {
+  eq: ReturnType<typeof vi.fn>;
+  not: ReturnType<typeof vi.fn>;
+  select: ReturnType<typeof vi.fn>;
+};
+let fromMock: ReturnType<typeof vi.fn>;
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -90,7 +97,20 @@ describe('task board viewable members route GET', () => {
     vi.clearAllMocks();
 
     normalizeWorkspaceIdMock.mockResolvedValue(WS_ID);
-    const sbAdmin = { from: vi.fn() };
+    taskBoardShareRows = [];
+    taskBoardSharesQuery = {
+      eq: vi.fn(() => taskBoardSharesQuery),
+      not: vi.fn(() =>
+        Promise.resolve({ data: taskBoardShareRows, error: null })
+      ),
+      select: vi.fn(() => taskBoardSharesQuery),
+    };
+    fromMock = vi.fn((table: string) => {
+      if (table === 'task_board_shares') return taskBoardSharesQuery;
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const sbAdmin = { from: fromMock };
     createAdminClientMock.mockResolvedValue(sbAdmin);
     resolveTaskBoardAccessMock.mockResolvedValue({
       access: { mode: 'member', permission: 'edit' },
@@ -144,33 +164,19 @@ describe('task board viewable members route GET', () => {
         roles: [],
         workspace_member_type: 'MEMBER',
       },
-      {
-        avatar_url: 'https://example.com/guest.png',
-        default_permissions: [],
-        direct_board_guest: true,
-        display_name: 'Board Guest',
-        email: 'guest@example.com',
-        handle: 'guest',
-        id: 'user-guest',
-        is_creator: false,
-        pending: false,
-        roles: [],
-        workspace_member_type: 'GUEST',
-      },
-      {
-        avatar_url: null,
-        default_permissions: [],
-        direct_board_guest: true,
-        display_name: 'Pending Guest',
-        email: 'pending@example.com',
-        handle: null,
-        id: 'board-guest:pending@example.com',
-        is_creator: false,
-        pending: true,
-        roles: [],
-        workspace_member_type: 'GUEST',
-      },
     ]);
+    taskBoardShareRows = [
+      {
+        shared_with_email: 'guest@example.com',
+        shared_with_user_id: 'user-guest',
+        users: {
+          avatar_url: 'https://example.com/guest.png',
+          display_name: 'Board Guest',
+          handle: 'guest',
+          id: 'user-guest',
+        },
+      },
+    ];
 
     const response = await GET(buildRequest(), routeContext());
     const body = await response.json();
@@ -208,9 +214,16 @@ describe('task board viewable members route GET', () => {
     );
     expect(getWorkspaceMembersMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: 'all',
+        status: 'joined',
         wsId: WS_ID,
       })
+    );
+    expect(fromMock).toHaveBeenCalledWith('task_board_shares');
+    expect(taskBoardSharesQuery.eq).toHaveBeenCalledWith('board_id', BOARD_ID);
+    expect(taskBoardSharesQuery.not).toHaveBeenCalledWith(
+      'shared_with_user_id',
+      'is',
+      null
     );
   });
 

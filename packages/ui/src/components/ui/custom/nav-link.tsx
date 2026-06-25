@@ -38,15 +38,29 @@ function matchesPathPrefix(targetPath: string, pathPrefix: string) {
   return targetPath === pathPrefix || targetPath.startsWith(`${pathPrefix}/`);
 }
 
-function getComparablePath(target?: string) {
+function isAbsoluteHttpUrl(target: string) {
+  return /^https?:\/\//iu.test(target);
+}
+
+function getComparablePath(
+  target?: string,
+  options: { external?: boolean } = {}
+) {
   if (!target) return null;
+  if (options.external) return null;
 
   try {
     const base =
       typeof window === 'undefined'
         ? 'https://tuturuuu.local'
         : window.location.origin;
-    return new URL(target, base).pathname;
+    const url = isAbsoluteHttpUrl(target)
+      ? new URL(target)
+      : new URL(target, base);
+
+    if (isAbsoluteHttpUrl(target) && url.origin !== base) return null;
+
+    return url.pathname;
   } catch {
     return target.split(/[?#]/u)[0] || target;
   }
@@ -87,7 +101,10 @@ export function NavLink({
   const t = useTranslations();
   const pathname = usePathname();
   const { title, icon, href, children, newTab, onClick: onLinkClick } = link;
-  const hasChildren = children && children.length > 0;
+  const childLinks = children?.filter((child): child is NavLinkType =>
+    Boolean(child)
+  );
+  const hasSubMenu = (childLinks?.length ?? 0) > 1;
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   // Recursive function to check if any nested child matches the pathname
@@ -95,7 +112,9 @@ export function NavLink({
     return (
       navLinks?.some((child) => {
         const childTargets = [child?.href, ...(child?.aliases ?? [])]
-          .map(getComparablePath)
+          .map((target) =>
+            getComparablePath(target, { external: child?.external })
+          )
           .filter((target): target is string => Boolean(target));
         const childMatches = childTargets.some((target) =>
           matchesNavigationTarget(pathname, target, child?.matchExact)
@@ -113,7 +132,7 @@ export function NavLink({
   };
 
   const activeTargets = [href, ...(link.aliases ?? [])]
-    .map(getComparablePath)
+    .map((target) => getComparablePath(target, { external: link.external }))
     .filter((target): target is string => Boolean(target));
   const isActive =
     activeTargets.some((target) =>
@@ -207,7 +226,7 @@ export function NavLink({
             </Tooltip>
           )}
 
-          {(hasChildren || archivedItems.length > 0) &&
+          {(hasSubMenu || archivedItems.length > 0) &&
             !preferenceArchiveAction &&
             !preferenceQuickAction &&
             !isDisabled && (
@@ -333,9 +352,9 @@ export function NavLink({
       }
       if (onLinkClick) {
         onLinkClick();
-      } else if (hasChildren) {
+      } else if (hasSubMenu) {
         event.preventDefault();
-        onSubMenuClick(children, title);
+        onSubMenuClick(children ?? [], title);
       } else if (href) {
         if (shouldResolveQueryParamsFromConfig && !effectiveHref) {
           event.preventDefault();
