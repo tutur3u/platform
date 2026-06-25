@@ -1,11 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getWorkspaceSecretsAccessMock } = vi.hoisted(() => ({
-  getWorkspaceSecretsAccessMock: vi.fn(),
-}));
+const { canMutateManagedCronEnableSecretMock, getWorkspaceSecretsAccessMock } =
+  vi.hoisted(() => ({
+    canMutateManagedCronEnableSecretMock: vi.fn(),
+    getWorkspaceSecretsAccessMock: vi.fn(),
+  }));
 
 vi.mock('./access', () => ({
   getWorkspaceSecretsAccess: getWorkspaceSecretsAccessMock,
+}));
+
+vi.mock('@/lib/workspace-secrets/managed-cron', () => ({
+  canMutateManagedCronEnableSecret: canMutateManagedCronEnableSecretMock,
+  isManagedCronEnableSecretName: (name?: string | null) =>
+    name?.trim().toUpperCase() === 'MANAGED_CRON_ENABLED',
+  MANAGED_CRON_ENABLED_SECRET: 'MANAGED_CRON_ENABLED',
 }));
 
 import { GET, POST } from './route';
@@ -13,6 +22,7 @@ import { GET, POST } from './route';
 describe('workspace secrets collection route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    canMutateManagedCronEnableSecretMock.mockResolvedValue(false);
   });
 
   it('uses the resolved workspace id for GET queries', async () => {
@@ -79,6 +89,39 @@ describe('workspace secrets collection route', () => {
       ws_id: 'resolved-ws',
     });
     expect(response.status).toBe(200);
+  });
+
+  it('rejects managed cron enablement from non-employee users', async () => {
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    const fromMock = vi.fn(() => ({
+      insert: insertMock,
+    }));
+
+    getWorkspaceSecretsAccessMock.mockResolvedValue({
+      allowed: true,
+      db: { from: fromMock },
+      resolvedWsId: 'resolved-ws',
+    });
+
+    const response = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'MANAGED_CRON_ENABLED',
+          value: 'true',
+        }),
+      }),
+      {
+        params: Promise.resolve({ wsId: 'friendly-ws' }),
+      }
+    );
+
+    expect(canMutateManagedCronEnableSecretMock).toHaveBeenCalledOnce();
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
   });
 
   it('returns the access helper status when authorization fails', async () => {

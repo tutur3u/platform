@@ -941,6 +941,21 @@ Docker environment generator creates a persisted internal secret at
 `web-cron-runner` service as `CRON_SECRET`. This keeps native Docker cron auth
 self-contained while preserving explicit host-provided secrets when present.
 
+The managed workspace cron worker runs at
+`/api/cron/workspaces/managed-jobs` through the `managed-workspace-cron-jobs`
+entry. It claims due `workspace_cron_jobs` rows with endpoint URLs, but only for
+workspaces that have the `MANAGED_CRON_ENABLED` workspace secret set to `true`.
+That secret is intentionally special: create, update, and delete operations are
+allowed only from an exact `@tuturuuu.com` employee session.
+
+Endpoint egress is separately constrained by the private
+`private.managed_cron_whitelisted_domains` allowlist. Manage that allowlist from
+Infrastructure -> Managed Cron Domains; it is not shared with the AI whitelist.
+Job endpoint URLs must use HTTPS, cannot include credentials, and must resolve
+to an exact or subdomain match of an enabled allowlist domain. Per-job request
+headers can be static values or references to `workspace_secrets` names; secret
+values are read server-side at execution time and are not exposed in the job UI.
+
 Runtime cron telemetry is intentionally file-based and local to the host:
 
 - `tmp/docker-web/cron/status.json` for runner health, the current cycle, and

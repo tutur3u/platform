@@ -71,6 +71,13 @@
       "schedule": "* * * * *"
     },
     {
+      "description": "Run due Tuturuuu-managed workspace endpoint cron jobs.",
+      "enabled": true,
+      "id": "managed-workspace-cron-jobs",
+      "path": "/api/cron/workspaces/managed-jobs",
+      "schedule": "* * * * *"
+    },
+    {
       "description": "Advance enabled Hive farming, NPC needs, ledgers, and autonomous simulation ticks.",
       "enabled": false,
       "id": "hive-simulate",

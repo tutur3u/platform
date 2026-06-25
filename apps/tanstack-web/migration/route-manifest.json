@@ -6,36 +6,36 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 940,
+        "legacyNext": 942,
         "migrated": 142,
-        "percentComplete": 19.31,
-        "remaining": 940,
+        "percentComplete": 19.28,
+        "remaining": 942,
         "terminal": 225,
-        "total": 1165,
+        "total": 1167,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 1,
         "key": "page",
         "label": "page",
-        "legacyNext": 82,
+        "legacyNext": 83,
         "migrated": 228,
-        "percentComplete": 73.63,
-        "remaining": 82,
+        "percentComplete": 73.4,
+        "remaining": 83,
         "terminal": 229,
-        "total": 311,
+        "total": 312,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 17,
+        "legacyNext": 18,
         "migrated": 2,
-        "percentComplete": 10.53,
-        "remaining": 17,
+        "percentComplete": 10,
+        "remaining": 18,
         "terminal": 2,
-        "total": 19,
+        "total": 20,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 958,
+        "legacyNext": 961,
         "migrated": 147,
-        "percentComplete": 19.36,
-        "remaining": 958,
+        "percentComplete": 19.31,
+        "remaining": 961,
         "terminal": 230,
-        "total": 1188,
+        "total": 1191,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 96,
+        "legacyNext": 97,
         "migrated": 287,
-        "percentComplete": 75.06,
-        "remaining": 96,
+        "percentComplete": 74.87,
+        "remaining": 97,
         "terminal": 289,
-        "total": 385,
+        "total": 386,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1054,
+      "legacyNext": 1058,
       "migrated": 434,
-      "percentComplete": 32.99,
-      "remaining": 1054,
+      "percentComplete": 32.91,
+      "remaining": 1058,
       "terminal": 519,
-      "total": 1573,
+      "total": 1577,
       "unknownStatus": 0
     }
   },
@@ -2833,6 +2833,24 @@
       "routePath": "/api/v1/infrastructure/coupons",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/coupons/route.ts",
       "status": "migrated",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/infrastructure/cron/whitelist/domain/:domain:apps/web/src/app/api/v1/infrastructure/cron/whitelist/domain/[domain]/route.ts",
+      "kind": "api",
+      "methods": ["PUT", "DELETE"],
+      "routePath": "/api/v1/infrastructure/cron/whitelist/domain/:domain",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/cron/whitelist/domain/[domain]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/infrastructure/cron/whitelist/domains:apps/web/src/app/api/v1/infrastructure/cron/whitelist/domains/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/infrastructure/cron/whitelist/domains",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/cron/whitelist/domains/route.ts",
+      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -11144,6 +11162,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "cron:/api/cron/workspaces/managed-jobs:apps/web/src/app/api/cron/workspaces/managed-jobs/route.ts",
+      "kind": "cron",
+      "methods": ["GET"],
+      "routePath": "/api/cron/workspaces/managed-jobs",
+      "sourceFile": "apps/web/src/app/api/cron/workspaces/managed-jobs/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "error:/:locale:apps/web/src/app/[locale]/error.tsx",
       "kind": "error",
       "methods": [],
@@ -12697,6 +12724,15 @@
       "methods": [],
       "routePath": "/:locale/:wsId/infrastructure/changelog/new",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/changelog/new/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/:wsId/infrastructure/cron/whitelist/domains:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/cron/whitelist/domains/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/infrastructure/cron/whitelist/domains",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/cron/whitelist/domains/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
@@ -14646,20 +14682,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1165,
-    "cronRoutes": 19,
+    "apiRoutes": 1167,
+    "cronRoutes": 20,
     "layouts": 67,
-    "pages": 311,
-    "routeHandlers": 1188,
+    "pages": 312,
+    "routeHandlers": 1191,
     "methodCounts": {
-      "GET": 668,
+      "GET": 670,
       "HEAD": 1,
-      "POST": 522,
-      "PUT": 173,
+      "POST": 523,
+      "PUT": 174,
       "PATCH": 131,
-      "DELETE": 202,
+      "DELETE": 203,
       "OPTIONS": 16
     },
-    "total": 1573
+    "total": 1577
   }
 }

@@ -17,6 +17,31 @@ export type WorkspaceCronJobSummary = Pick<
   | 'ws_id'
 >;
 
+export type WorkspaceCronHttpMethod =
+  | 'DELETE'
+  | 'GET'
+  | 'PATCH'
+  | 'POST'
+  | 'PUT';
+
+export interface WorkspaceCronHeaderConfig {
+  name: string;
+  secretName?: string | null;
+  value?: string | null;
+}
+
+export interface SaveWorkspaceCronJobPayload {
+  active: boolean;
+  dataset_id?: string | null;
+  endpoint_url?: string | null;
+  headers_config?: WorkspaceCronHeaderConfig[];
+  http_method?: WorkspaceCronHttpMethod;
+  name: string;
+  retry_count?: number;
+  schedule: string;
+  timeout_ms?: number;
+}
+
 export type ListWorkspaceCronJobsParams = {
   page?: number;
   pageSize?: number;
@@ -32,6 +57,10 @@ export type ListWorkspaceCronJobsResponse = {
 
 function workspaceCronJobsPath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/cron/jobs`;
+}
+
+function workspaceCronJobPath(workspaceId: string, jobId: string) {
+  return `${workspaceCronJobsPath(workspaceId)}/${encodePathSegment(jobId)}`;
 }
 
 function normalizePage(
@@ -91,4 +120,58 @@ export async function listWorkspaceCronJobs(
     page,
     pageSize,
   };
+}
+
+export async function createWorkspaceCronJob(
+  workspaceId: string,
+  payload: SaveWorkspaceCronJobPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: 'success' }>(
+    workspaceCronJobsPath(workspaceId),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateWorkspaceCronJob(
+  workspaceId: string,
+  jobId: string,
+  payload: SaveWorkspaceCronJobPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: 'success' }>(
+    workspaceCronJobPath(workspaceId, jobId),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function deleteWorkspaceCronJob(
+  workspaceId: string,
+  jobId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: 'success' }>(
+    workspaceCronJobPath(workspaceId, jobId),
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
 }

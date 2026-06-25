@@ -8,8 +8,10 @@ import {
   createAIWhitelistDomain,
   createAIWhitelistEmail,
   createChatIntegration,
+  createManagedCronWhitelistedDomain,
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
+  deleteManagedCronWhitelistedDomain,
   deployAiAgentChannel,
   enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
@@ -31,6 +33,7 @@ import {
   listAiGatewayModelRows,
   listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
+  listManagedCronWhitelistedDomains,
   pauseAiAgentChannel,
   pinBlueGreenDeployment,
   queueCronRun,
@@ -49,6 +52,7 @@ import {
   updateAIWhitelistDomain,
   updateAIWhitelistEmail,
   updateCronMonitoringControl,
+  updateManagedCronWhitelistedDomain,
 } from './infrastructure';
 
 function createJsonResponse(data: unknown) {
@@ -154,6 +158,101 @@ describe('AI whitelist domain internal API helpers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       'https://internal.example.com/api/v1/infrastructure/ai/whitelist/domain/example.com',
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+});
+
+describe('managed cron whitelist domain internal API helpers', () => {
+  it('lists domains through the apps/web API with pagination filters', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ count: 0, data: [] }));
+
+    await listManagedCronWhitelistedDomains(
+      { page: 2, pageSize: 20, q: 'example.com' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domains?page=2&pageSize=20&q=example.com',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('creates domains through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: {
+          created_at: '2026-06-25T00:00:00Z',
+          description: null,
+          domain: 'hooks.example.com',
+          enabled: true,
+        },
+      })
+    );
+
+    await createManagedCronWhitelistedDomain(
+      {
+        description: null,
+        domain: 'hooks.example.com',
+        enabled: true,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domains',
+      expect.objectContaining({
+        body: JSON.stringify({
+          description: null,
+          domain: 'hooks.example.com',
+          enabled: true,
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('updates and deletes domains through encoded apps/web API routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await updateManagedCronWhitelistedDomain(
+      'hooks.example.com',
+      { enabled: false },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await deleteManagedCronWhitelistedDomain('hooks.example.com', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domain/hooks.example.com',
+      expect.objectContaining({
+        body: JSON.stringify({ enabled: false }),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domain/hooks.example.com',
       expect.objectContaining({
         method: 'DELETE',
       })

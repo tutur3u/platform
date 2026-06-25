@@ -1547,6 +1547,11 @@ export async function WorkspaceNavigationLinks({
               icon: createDashboardNavigationIcon('Database', 'h-5 w-5'),
             },
             {
+              title: t('infrastructure-tabs.managed_cron_whitelisted_domains'),
+              href: `/${personalOrWsId}/infrastructure/cron/whitelist/domains`,
+              icon: createDashboardNavigationIcon('Timer', 'h-5 w-5'),
+            },
+            {
               title: t('infrastructure-tabs.translations'),
               href: `/${personalOrWsId}/infrastructure/translations`,
               icon: createDashboardNavigationIcon('Languages', 'h-5 w-5'),

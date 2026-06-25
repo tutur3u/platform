@@ -4890,7 +4890,9 @@
   },
   "cron-execution-data-table": {
     "created_at": "Tạo lúc",
+    "duration_ms": "Thời lượng",
     "finished_at": "Kết thúc lúc",
+    "http_status": "Trạng thái HTTP",
     "id": "Mã số",
     "job": "Công việc",
     "started_at": "Bắt đầu lúc",
@@ -4900,15 +4902,54 @@
     "active": "Đang hoạt động",
     "created_at": "Tạo lúc",
     "description": "Mô tả",
+    "endpoint_url": "URL endpoint",
     "failed": "Thất bại",
     "id": "Mã số",
     "inactive": "Không hoạt động",
     "last_run": "Lần chạy cuối",
+    "last_status": "Trạng thái cuối",
     "name": "Tên",
     "next_run": "Lần Chạy tới",
     "running": "Đang chạy",
     "schedule": "Lịch trình",
     "status": "Trạng thái"
+  },
+  "cron-job-form": {
+    "active": "Đang hoạt động",
+    "add_header": "Thêm header",
+    "common_examples": "Ví dụ thường dùng:",
+    "create_failed": "Không thể tạo công việc định kỳ",
+    "dataset": "Bộ dữ liệu",
+    "dataset_description": "Tùy chọn bộ dữ liệu mà công việc này sử dụng",
+    "dataset_preselected": "Bộ dữ liệu đã được chọn sẵn theo ngữ cảnh hiện tại",
+    "delete_failed": "Không thể xóa công việc định kỳ",
+    "endpoint_url": "URL endpoint",
+    "example_every_15_minutes": "\"*/15 * * * *\" - Mỗi 15 phút",
+    "example_midnight": "\"0 0 * * *\" - Vào nửa đêm hằng ngày",
+    "example_weekdays": "\"0 9 * * 1-5\" - Lúc 9 giờ sáng từ thứ Hai đến thứ Sáu",
+    "header": "Header",
+    "invalid_cron_expression": "Biểu thức cron không hợp lệ",
+    "job_id": "Mã công việc",
+    "job_id_description": "Mã này được tự động tạo và không thể thay đổi.",
+    "managed_endpoint": "Endpoint được quản lý",
+    "managed_endpoint_description": "Endpoint HTTPS tùy chọn mà Tuturuuu sẽ gọi khi công việc chạy. Tên máy chủ phải nằm trong danh sách trắng tên miền cron.",
+    "method": "Phương thức",
+    "name": "Tên",
+    "name_placeholder": "Công việc cập nhật hằng ngày",
+    "no_custom_headers": "Chưa cấu hình header tùy chỉnh.",
+    "no_dataset": "Không có bộ dữ liệu",
+    "remove_header": "Xóa header",
+    "request_headers": "Header yêu cầu",
+    "request_headers_description": "Dùng giá trị tĩnh hoặc tên workspace secret cho từng header.",
+    "retries": "Số lần thử lại",
+    "retries_description": "Thử lại các yêu cầu lỗi tối đa 3 lần.",
+    "schedule_label": "Lịch trình (biểu thức cron)",
+    "secret_name": "Tên secret",
+    "select_dataset": "Chọn bộ dữ liệu",
+    "static_value": "Giá trị tĩnh",
+    "timeout_description": "Từ 1.000 đến 60.000 mili giây.",
+    "timeout_ms": "Timeout (ms)",
+    "update_failed": "Không thể cập nhật công việc định kỳ"
   },
   "crud-ops": {
     "delete": "Xóa",
@@ -7854,6 +7895,7 @@
     "github_bot": "Bot GitHub",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",
+    "managed_cron_whitelisted_domains": "Tên miền Cron được quản lý",
     "mobile_deployment": "Triển khai di động",
     "mobile_versions": "Phiên bản di động",
     "monitoring": "Giám sát",
@@ -9270,6 +9312,15 @@
     "tone_friendly": "Thân thiện",
     "tone_professional": "Chuyên nghiệp",
     "trash": "Rác"
+  },
+  "managed-cron-whitelist": {
+    "add_domain": "Thêm tên miền",
+    "description_label": "Mô tả",
+    "description_placeholder": "Mô tả tùy chọn cho tên miền này",
+    "domain_added": "Đã thêm tên miền",
+    "domain_label": "Tên miền",
+    "error_adding_domain": "Không thể thêm tên miền",
+    "open_menu": "Mở menu"
   },
   "marketing": {
     "models": {
@@ -17584,8 +17635,11 @@
   },
   "ws-cron-executions": {
     "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ.",
+    "history": "Lịch sử thực thi",
+    "history_description": "Danh sách tất cả các lần thực thi của công việc định kỳ này.",
     "plural": "Lịch sử chạy",
-    "singular": "Lịch sử chạy"
+    "singular": "Lịch sử chạy",
+    "total_executions": "Tổng số lần thực thi"
   },
   "ws-cron-jobs": {
     "create": "Tạo công việc",
@@ -18429,6 +18483,13 @@
     "user_in_blocked_group_description": "Việc tạo hóa đơn bị chặn vì người dùng thuộc nhóm bị hạn chế.",
     "valid_until": "Có hiệu lực đến",
     "view_bill": "Xem Hóa Đơn"
+  },
+  "ws-managed-cron-whitelist-domains": {
+    "create": "Tạo tên miền cron được quản lý",
+    "create_description": "Cho phép một tên miền nhận các cuộc gọi endpoint cron workspace do Tuturuuu quản lý.",
+    "description": "Chỉ nhân viên Tuturuuu mới có thể quản lý các tên miền mà cron được quản lý được phép gọi.",
+    "plural": "Tên miền Cron được quản lý",
+    "singular": "Tên miền Cron được quản lý"
   },
   "ws-members": {
     "active_members": "Đang hoạt động",

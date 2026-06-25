@@ -4890,7 +4890,9 @@
   },
   "cron-execution-data-table": {
     "created_at": "Created at",
+    "duration_ms": "Duration",
     "finished_at": "Finished at",
+    "http_status": "HTTP status",
     "id": "ID",
     "job": "Job",
     "started_at": "Started at",
@@ -4900,15 +4902,54 @@
     "active": "Active",
     "created_at": "Created at",
     "description": "Description",
+    "endpoint_url": "Endpoint URL",
     "failed": "Failed",
     "id": "ID",
     "inactive": "Inactive",
     "last_run": "Last run",
+    "last_status": "Last status",
     "name": "Name",
     "next_run": "Next run",
     "running": "Running",
     "schedule": "Schedule",
     "status": "Status"
+  },
+  "cron-job-form": {
+    "active": "Active",
+    "add_header": "Add header",
+    "common_examples": "Common examples:",
+    "create_failed": "Failed to create cron job",
+    "dataset": "Dataset",
+    "dataset_description": "Optionally select the dataset this job works with",
+    "dataset_preselected": "Dataset is pre-selected based on the current context",
+    "delete_failed": "Failed to delete cron job",
+    "endpoint_url": "Endpoint URL",
+    "example_every_15_minutes": "\"*/15 * * * *\" - Every 15 minutes",
+    "example_midnight": "\"0 0 * * *\" - At midnight, every day",
+    "example_weekdays": "\"0 9 * * 1-5\" - At 9 AM, Monday through Friday",
+    "header": "Header",
+    "invalid_cron_expression": "Invalid cron expression",
+    "job_id": "Job ID",
+    "job_id_description": "This ID is automatically assigned and cannot be changed.",
+    "managed_endpoint": "Managed endpoint",
+    "managed_endpoint_description": "Optional HTTPS endpoint that Tuturuuu will call when the job runs. The hostname must be allowed by a cron domain whitelist.",
+    "method": "Method",
+    "name": "Name",
+    "name_placeholder": "Daily update job",
+    "no_custom_headers": "No custom headers configured.",
+    "no_dataset": "No dataset",
+    "remove_header": "Remove header",
+    "request_headers": "Request headers",
+    "request_headers_description": "Use either a static value or a workspace secret name for each header.",
+    "retries": "Retries",
+    "retries_description": "Retry failed requests up to 3 times.",
+    "schedule_label": "Schedule (cron expression)",
+    "secret_name": "Secret name",
+    "select_dataset": "Select a dataset",
+    "static_value": "Static value",
+    "timeout_description": "Between 1,000 and 60,000 milliseconds.",
+    "timeout_ms": "Timeout (ms)",
+    "update_failed": "Failed to update cron job"
   },
   "crud-ops": {
     "delete": "Delete",
@@ -7854,6 +7895,7 @@
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
+    "managed_cron_whitelisted_domains": "Managed Cron Domains",
     "mobile_deployment": "Mobile Deployment",
     "mobile_versions": "Mobile Versions",
     "monitoring": "Monitoring",
@@ -9270,6 +9312,15 @@
     "tone_friendly": "Friendly",
     "tone_professional": "Professional",
     "trash": "Trash"
+  },
+  "managed-cron-whitelist": {
+    "add_domain": "Add domain",
+    "description_label": "Description",
+    "description_placeholder": "Optional description for this domain",
+    "domain_added": "Domain added",
+    "domain_label": "Domain",
+    "error_adding_domain": "Failed to add domain",
+    "open_menu": "Open menu"
   },
   "marketing": {
     "models": {
@@ -17584,8 +17635,11 @@
   },
   "ws-cron-executions": {
     "description": "Cron executions are used to view the history of cron jobs.",
+    "history": "Execution history",
+    "history_description": "List of all executions for this cron job.",
     "plural": "Cron Executions",
-    "singular": "Cron Execution"
+    "singular": "Cron Execution",
+    "total_executions": "Total executions"
   },
   "ws-cron-jobs": {
     "create": "Create job",
@@ -18429,6 +18483,13 @@
     "user_in_blocked_group_description": "Invoice creation is blocked because the user belongs to a restricted group.",
     "valid_until": "Valid until",
     "view_bill": "View Bill"
+  },
+  "ws-managed-cron-whitelist-domains": {
+    "create": "Create managed cron domain",
+    "create_description": "Allow a domain for Tuturuuu-managed workspace cron endpoint calls.",
+    "description": "Only Tuturuuu employees can manage the domains that managed cron jobs are allowed to call.",
+    "plural": "Managed Cron Domains",
+    "singular": "Managed Cron Domain"
   },
   "ws-members": {
     "active_members": "Active",

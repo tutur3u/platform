@@ -355,9 +355,15 @@ export {
   withForwardedInternalApiAuth,
 } from './client';
 export {
+  createWorkspaceCronJob,
+  deleteWorkspaceCronJob,
   type ListWorkspaceCronJobsParams,
   type ListWorkspaceCronJobsResponse,
   listWorkspaceCronJobs,
+  type SaveWorkspaceCronJobPayload,
+  updateWorkspaceCronJob,
+  type WorkspaceCronHeaderConfig,
+  type WorkspaceCronHttpMethod,
   type WorkspaceCronJobSummary,
 } from './cron';
 export {

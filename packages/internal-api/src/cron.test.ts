@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { listWorkspaceCronJobs } from './cron';
+import {
+  createWorkspaceCronJob,
+  deleteWorkspaceCronJob,
+  listWorkspaceCronJobs,
+  updateWorkspaceCronJob,
+} from './cron';
 
 function createJsonResponse(payload: unknown) {
   return {
@@ -114,5 +119,55 @@ describe('cron internal API helpers', () => {
     expect(result.page).toBe(1);
     expect(result.pageSize).toBe(100);
     expect(result.data).toHaveLength(1);
+  });
+
+  it('creates, updates, and deletes workspace cron jobs through encoded API routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ message: 'success' }));
+    const payload = {
+      active: true,
+      dataset_id: null,
+      endpoint_url: 'https://hooks.example.com/run',
+      headers_config: [{ name: 'Authorization', secretName: 'WEBHOOK_TOKEN' }],
+      http_method: 'POST' as const,
+      name: 'Webhook sync',
+      retry_count: 1,
+      schedule: '*/15 * * * *',
+      timeout_ms: 15000,
+    };
+
+    await createWorkspaceCronJob('workspace 1', payload, options(fetchMock));
+    await updateWorkspaceCronJob(
+      'workspace 1',
+      'job/1',
+      payload,
+      options(fetchMock)
+    );
+    await deleteWorkspaceCronJob('workspace 1', 'job/1', options(fetchMock));
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/cron/jobs',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/cron/jobs/job%2F1',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/cron/jobs/job%2F1',
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
   });
 });
