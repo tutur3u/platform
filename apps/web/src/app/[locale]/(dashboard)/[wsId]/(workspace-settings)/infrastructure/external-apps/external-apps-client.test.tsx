@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExternalAppApprovalClient } from './external-app-approval-client';
 import { ExternalAppsClient } from './external-apps-client';
 
 const mocks = vi.hoisted(() => ({
@@ -61,6 +62,7 @@ vi.mock('next-intl', () => ({
     () => (key: string, values?: Record<string, string | number>) => {
       const messages: Record<string, string> = {
         'actions.collapse': 'Collapse {app}',
+        'actions.approve_scopes': 'Approve scopes',
         'actions.create': 'Create app',
         'actions.expand': 'Expand {app}',
         'actions.rotate_secret': 'Rotate secret',
@@ -78,6 +80,17 @@ vi.mock('next-intl', () => ({
         'fields.workspace_ids': 'Allowed workspace IDs',
         'messages.save_success': 'External app saved',
         'new_app.title': 'New external app',
+        'approval.already_allowed': 'Already allowed',
+        'approval.approved': 'Approved',
+        'approval.description': 'Review requested scopes for {app}.',
+        'approval.invalid_scopes': 'Invalid scopes',
+        'approval.missing_app': 'External app not found.',
+        'approval.missing_scopes': 'Missing scopes',
+        'approval.no_missing_scopes': 'No missing scopes',
+        'approval.requested_scopes': 'Requested scopes',
+        'approval.return': 'Return to app',
+        'approval.success': 'Scopes approved',
+        'approval.title': 'Approve external app scopes',
         'registered.empty': 'No external apps registered yet.',
         'registered.title': 'Registered apps',
         'secret.copy': 'Copy',
@@ -117,6 +130,10 @@ const workspaceApp = {
 };
 
 function renderClient() {
+  return renderWithQuery(<ExternalAppsClient initialApps={[workspaceApp]} />);
+}
+
+function renderWithQuery(node: ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -129,7 +146,7 @@ function renderClient() {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  return render(<ExternalAppsClient initialApps={[workspaceApp]} />, {
+  return render(node, {
     wrapper,
   });
 }
@@ -208,6 +225,39 @@ describe('ExternalAppsClient', () => {
           id: 'workspace-app',
         })
       );
+    });
+  });
+
+  it('approves missing external app scopes through the existing save API', async () => {
+    renderWithQuery(
+      <ExternalAppApprovalClient
+        app={workspaceApp}
+        invalidScopes={[]}
+        requestedScopes={[
+          'workspace:session',
+          'users:profile:read',
+          'users:profile:write',
+        ]}
+        returnUrl={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve scopes' }));
+
+    await waitFor(() => {
+      expect(mocks.saveExternalApp).toHaveBeenCalledWith({
+        allowedScopes: [
+          'users:profile:read',
+          'users:profile:write',
+          'workspace:session',
+        ],
+        allowedWorkspaceIds: ['449cdd3b-121b-40f7-9cee-28f5b582e204'],
+        displayName: 'Workspace App',
+        enabled: true,
+        id: 'workspace-app',
+        issueSecret: false,
+        origins: ['https://workspace.example.com'],
+      });
     });
   });
 });

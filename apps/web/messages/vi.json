@@ -6047,11 +6047,26 @@
   },
   "external-apps-settings": {
     "actions": {
+      "approve_scopes": "Duyệt phạm vi",
       "collapse": "Thu gọn {app}",
       "create": "Tạo ứng dụng",
       "expand": "Mở {app}",
       "rotate_secret": "Xoay vòng secret",
       "save": "Lưu"
+    },
+    "approval": {
+      "already_allowed": "Đã được duyệt",
+      "approved": "Đã duyệt phạm vi",
+      "description": "Kiểm tra các phạm vi mà {app} yêu cầu trước khi cập nhật đăng ký ứng dụng bên ngoài.",
+      "invalid_scopes": "Phạm vi không hợp lệ",
+      "missing_app": "Không tìm thấy đăng ký ứng dụng bên ngoài.",
+      "missing_scopes": "Phạm vi còn thiếu",
+      "no_missing_scopes": "Tất cả phạm vi yêu cầu đã được duyệt.",
+      "page_description": "Xác nhận phạm vi mới của ứng dụng bên ngoài trước khi operator thử đăng nhập lại từ ứng dụng vệ tinh.",
+      "requested_scopes": "Phạm vi được yêu cầu",
+      "return": "Quay lại ứng dụng",
+      "success": "Đã duyệt phạm vi ứng dụng bên ngoài",
+      "title": "Duyệt phạm vi ứng dụng bên ngoài"
     },
     "description": "Đăng ký origin của ứng dụng bên ngoài và cấp app secret dùng một lần cho đăng nhập tập trung và điều phối API qua Tuturuuu.",
     "fields": {

@@ -18,12 +18,12 @@
         "acceptedRemoval": 1,
         "key": "page",
         "label": "page",
-        "legacyNext": 83,
+        "legacyNext": 84,
         "migrated": 228,
-        "percentComplete": 73.4,
-        "remaining": 83,
+        "percentComplete": 73.16,
+        "remaining": 84,
         "terminal": 229,
-        "total": 312,
+        "total": 313,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 97,
+        "legacyNext": 98,
         "migrated": 287,
-        "percentComplete": 74.87,
-        "remaining": 97,
+        "percentComplete": 74.68,
+        "remaining": 98,
         "terminal": 289,
-        "total": 386,
+        "total": 387,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1060,
+      "legacyNext": 1061,
       "migrated": 439,
-      "percentComplete": 33.08,
-      "remaining": 1060,
+      "percentComplete": 33.06,
+      "remaining": 1061,
       "terminal": 524,
-      "total": 1584,
+      "total": 1585,
       "unknownStatus": 0
     }
   },
@@ -12858,6 +12858,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/infrastructure/external-apps/approve:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/external-apps/approve/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/infrastructure/external-apps/approve",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/external-apps/approve/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/:wsId/infrastructure/github-bot:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/github-bot/page.tsx",
       "kind": "page",
       "methods": [],
@@ -14752,7 +14761,7 @@
     "apiRoutes": 1174,
     "cronRoutes": 20,
     "layouts": 67,
-    "pages": 312,
+    "pages": 313,
     "routeHandlers": 1198,
     "methodCounts": {
       "GET": 677,
@@ -14763,6 +14772,6 @@
       "DELETE": 203,
       "OPTIONS": 16
     },
-    "total": 1584
+    "total": 1585
   }
 }

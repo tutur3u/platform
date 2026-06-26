@@ -6047,11 +6047,26 @@
   },
   "external-apps-settings": {
     "actions": {
+      "approve_scopes": "Approve scopes",
       "collapse": "Collapse {app}",
       "create": "Create app",
       "expand": "Expand {app}",
       "rotate_secret": "Rotate secret",
       "save": "Save"
+    },
+    "approval": {
+      "already_allowed": "Already allowed",
+      "approved": "Scopes approved",
+      "description": "Review the scopes requested for {app} before updating its external app registration.",
+      "invalid_scopes": "Invalid scopes",
+      "missing_app": "External app registration not found.",
+      "missing_scopes": "Missing scopes",
+      "no_missing_scopes": "All requested scopes are already approved.",
+      "page_description": "Confirm new external app scopes before operators retry login from the satellite app.",
+      "requested_scopes": "Requested scopes",
+      "return": "Return to app",
+      "success": "External app scopes approved",
+      "title": "Approve external app scopes"
     },
     "description": "Register external app origins and issue one-time app secrets for centralized Tuturuuu login and API coordination.",
     "fields": {
