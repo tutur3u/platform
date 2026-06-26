@@ -27,6 +27,19 @@ type TaskList = {
   name?: string | null;
 };
 
+const PERSONAL_WORKSPACE_COLLABORATION_NOTICE_STORAGE_KEY =
+  'personal-workspace-collaboration-banner-dismissed';
+const PERSONAL_WORKSPACE_COLLABORATION_NOTICE_TEXT =
+  /personal workspace is designed for individual use only/i;
+
+async function expectPersonalWorkspaceCollaborationNoticeHidden(page: Page) {
+  await expect(
+    page.locator('[aria-label="Notifications alt+T"]').filter({
+      hasText: PERSONAL_WORKSPACE_COLLABORATION_NOTICE_TEXT,
+    })
+  ).toHaveCount(0);
+}
+
 async function getPersonalBoard(request: APIRequestContext) {
   const response = await request.get(
     '/api/v1/workspaces/personal/task-boards',
@@ -314,6 +327,10 @@ test.describe('Task board realtime and task mutations', () => {
       board.id,
       headers
     );
+    await context.addInitScript((storageKey) => {
+      window.localStorage.setItem(storageKey, 'true');
+    }, PERSONAL_WORKSPACE_COLLABORATION_NOTICE_STORAGE_KEY);
+
     const boardPath = `/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`;
     const secondPage = await context.newPage();
     const taskName = `E2E realtime task ${Date.now()}`;
@@ -357,6 +374,7 @@ test.describe('Task board realtime and task mutations', () => {
         name: /create task/i,
       });
       await expect(createButton).toBeEnabled();
+      await expectPersonalWorkspaceCollaborationNoticeHidden(page);
 
       const createResponsePromise = page.waitForResponse((response) => {
         const request = response.request();
