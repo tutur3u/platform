@@ -19,6 +19,7 @@ import {
   verifyExternalAppSecret,
 } from '@/lib/app-coordination/external-apps';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
+import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import {
   serverLogger,
@@ -27,6 +28,7 @@ import {
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
+const WORKSPACE_SESSION_SCOPE_PREFIX = 'workspace:';
 
 const exchangeSchema = z.object({
   appId: z
@@ -71,6 +73,12 @@ function getValidationRow(value: unknown): CrossAppValidationRow | null {
 
 function isConfiguredApp(targetApp: string) {
   return getAppDomainMap().some((domain) => domain.name === targetApp);
+}
+
+function requiresWorkspaceSessionAuthorization(scopes: string[]) {
+  return scopes.some((scope) =>
+    scope.startsWith(WORKSPACE_SESSION_SCOPE_PREFIX)
+  );
 }
 
 async function resolveExchangeTarget({
@@ -118,6 +126,7 @@ async function resolveExchangeTarget({
     }
 
     return {
+      allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
       scopes: getAllowedAppTokenScopes({
         allowedScopes: verification.app.allowedScopes,
         requestedScopes,
@@ -448,6 +457,42 @@ async function exchangeAppToken(request: NextRequest) {
     });
   }
 
+  const workspaceSessionAuthorization = requiresWorkspaceSessionAuthorization(
+    resolvedTarget.scopes
+  )
+    ? await authorizeWorkspaceSessionAppTokenExchange({
+        admin: sbAdmin,
+        allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
+        authEmail: email,
+        userId,
+        workspaceId,
+      })
+    : null;
+
+  if (workspaceSessionAuthorization && !workspaceSessionAuthorization.ok) {
+    if (workspaceSessionAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
+      const normalizedWorkspaceId =
+        workspaceSessionAuthorization.normalizedWorkspaceId;
+      return NextResponse.json(
+        {
+          code: 'PENDING_WORKSPACE_INVITE',
+          error: workspaceSessionAuthorization.error,
+          invitationUrl: buildInvitationUrl(
+            request,
+            normalizedWorkspaceId ?? workspaceId ?? ''
+          ),
+          workspaceId: normalizedWorkspaceId ?? workspaceId ?? null,
+        },
+        { status: workspaceSessionAuthorization.status }
+      );
+    }
+
+    return NextResponse.json(
+      { error: workspaceSessionAuthorization.error },
+      { status: workspaceSessionAuthorization.status }
+    );
+  }
+
   const exchangeAuthorization = await authorizeExternalProjectAppTokenExchange({
     admin: sbAdmin,
     appId: resolvedTarget.targetApp,
@@ -482,7 +527,9 @@ async function exchangeAppToken(request: NextRequest) {
 
   return createExchangeTokenResponse({
     email,
-    normalizedWorkspaceId: exchangeAuthorization.normalizedWorkspaceId,
+    normalizedWorkspaceId:
+      exchangeAuthorization.normalizedWorkspaceId ??
+      workspaceSessionAuthorization?.normalizedWorkspaceId,
     policy,
     scopes: resolvedTarget.scopes,
     targetApp: resolvedTarget.targetApp,

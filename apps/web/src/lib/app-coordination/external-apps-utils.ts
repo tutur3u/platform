@@ -7,6 +7,7 @@ const APP_SECRET_PREFIX = 'ttr_app_secret_';
 
 export const FIELD_NAMES = [
   'allowedScopes',
+  'allowedWorkspaceIds',
   'createdAt',
   'createdBy',
   'displayName',
@@ -91,6 +92,14 @@ export function normalizeScopes(
     .filter((scope) => /^[a-z0-9:*._-]{1,80}$/u.test(scope));
 
   return [...new Set(scopes)].sort();
+}
+
+export function normalizeWorkspaceIds(values?: string[]) {
+  const workspaceIds = (values ?? [])
+    .map((workspaceId) => workspaceId.trim().toLowerCase())
+    .filter((workspaceId) => /^[a-z0-9][a-z0-9_-]{0,127}$/u.test(workspaceId));
+
+  return [...new Set(workspaceIds)].sort();
 }
 
 export function parseJsonStringArray(value: string | null | undefined) {

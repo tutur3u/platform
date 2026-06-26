@@ -12,6 +12,10 @@ import { requireExternalAppRegistryAdmin } from './access';
 
 const externalAppSchema = z.object({
   allowedScopes: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
+  allowedWorkspaceIds: z
+    .array(z.string().trim().min(1).max(128))
+    .max(50)
+    .optional(),
   displayName: z.string().trim().min(1).max(120),
   enabled: z.boolean().default(true),
   id: z

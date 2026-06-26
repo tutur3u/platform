@@ -6058,7 +6058,8 @@
       "enabled": "Enabled",
       "issue_secret": "Issue secret now",
       "origins": "Allowed origins",
-      "scopes": "Allowed API scopes"
+      "scopes": "Allowed API scopes",
+      "workspace_ids": "Allowed workspace IDs"
     },
     "messages": {
       "rotate_error": "Secret rotation failed",
@@ -6090,7 +6091,8 @@
       "no_secret": "Not issued",
       "origins": "Origins",
       "scopes": "Scopes",
-      "secret_suffix": "Ends in {suffix}"
+      "secret_suffix": "Ends in {suffix}",
+      "workspaces": "Workspaces"
     },
     "title": "External Apps"
   },

@@ -273,11 +273,13 @@ function createAdminClientMock(state: AdminState = {}) {
 
 function mockRegisteredApp(
   allowedScopes = ['external-projects:read'],
-  appId = 'yoola'
+  appId = 'yoola',
+  allowedWorkspaceIds: string[] = []
 ) {
   mocks.verifyExternalAppSecret.mockResolvedValue({
     app: {
       allowedScopes,
+      allowedWorkspaceIds,
       createdAt: null,
       createdBy: null,
       displayName: appId,
@@ -404,6 +406,169 @@ describe('app token exchange route', () => {
       expect(refreshVerification.claims.sub).toBe(victimUserId);
       expect(refreshVerification.claims.target_app).toBe('yoola');
       expect(refreshVerification.claims.scopes).toEqual(['app-token:refresh']);
+    }
+  });
+
+  it('exchanges workspace session app credentials for a workspace-bound app token', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['workspace:session'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      accessToken: string;
+      workspaceId?: string;
+    };
+    const verification = verifyAppCoordinationToken(body.accessToken, {
+      secret: 'test-secret',
+    });
+
+    expect(body.workspaceId).toBe(workspaceId);
+    expect(verification.ok).toBe(true);
+    if (verification.ok) {
+      expect(verification.claims.target_app).toBe('workspace-app');
+      expect(verification.claims.scopes).toEqual(['workspace:session']);
+    }
+  });
+
+  it('rejects workspace session exchanges without a workspace id', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['workspace:session'],
+        token: 'valid-cross-app-token',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Missing workspace ID for workspace session scope',
+    });
+  });
+
+  it('rejects workspace session exchanges for unlinked workspaces', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [
+      '33333333-3333-4333-8333-333333333333',
+    ]);
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['workspace:session'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'App is not linked to this workspace',
+    });
+  });
+
+  it('rejects non-members for workspace session exchanges', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ workspaceMember: false })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['workspace:session'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+  });
+
+  it('returns pending invite details for workspace session exchanges', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({
+        pendingDirectInvite: true,
+        workspaceMember: false,
+      })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['workspace:session'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as {
+      code?: string;
+      invitationUrl?: string;
+      workspaceId?: string;
+    };
+    expect(body).toMatchObject({
+      code: 'PENDING_WORKSPACE_INVITE',
+      workspaceId,
+    });
+    expect(body.invitationUrl).toContain(encodeURIComponent(workspaceId));
+  });
+
+  it('refreshes workspace session app tokens without a fresh cross-app token', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'workspace-app',
+        userId: victimUserId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['workspace:session'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    const body = (await response.json()) as {
+      accessToken: string;
+      workspaceId?: string;
+    };
+    const accessVerification = verifyAppCoordinationToken(body.accessToken, {
+      secret: 'test-secret',
+    });
+
+    expect(body.workspaceId).toBe(workspaceId);
+    expect(accessVerification.ok).toBe(true);
+    if (accessVerification.ok) {
+      expect(accessVerification.claims.target_app).toBe('workspace-app');
+      expect(accessVerification.claims.scopes).toEqual(['workspace:session']);
     }
   });
 

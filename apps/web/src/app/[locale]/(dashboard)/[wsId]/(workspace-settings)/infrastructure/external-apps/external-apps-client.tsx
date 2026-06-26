@@ -40,6 +40,7 @@ function joinLines(values: string[]) {
 function readFormPayload(formData: FormData, appId?: string) {
   return {
     allowedScopes: splitLines(formData.get('allowedScopes')),
+    allowedWorkspaceIds: splitLines(formData.get('allowedWorkspaceIds')),
     displayName: String(formData.get('displayName') ?? '').trim(),
     enabled: formData.get('enabled') === 'on',
     id:
@@ -175,6 +176,17 @@ function ExternalAppForm({
             required
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor={app ? `${app.id}-workspaces` : 'new-workspaces'}>
+            {t('fields.workspace_ids')}
+          </Label>
+          <Textarea
+            defaultValue={app ? joinLines(app.allowedWorkspaceIds) : ''}
+            id={app ? `${app.id}-workspaces` : 'new-workspaces'}
+            name="allowedWorkspaceIds"
+            placeholder="workspace-id"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -247,7 +259,7 @@ function ExternalAppCard({
         </Button>
       </div>
 
-      <div className="grid gap-3 text-sm md:grid-cols-3">
+      <div className="grid gap-3 text-sm md:grid-cols-4">
         <div>
           <div className="text-muted-foreground">{t('summary.origins')}</div>
           <div className="font-medium">{app.origins.length}</div>
@@ -255,6 +267,10 @@ function ExternalAppCard({
         <div>
           <div className="text-muted-foreground">{t('summary.scopes')}</div>
           <div className="font-medium">{app.allowedScopes.length}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">{t('summary.workspaces')}</div>
+          <div className="font-medium">{app.allowedWorkspaceIds.length}</div>
         </div>
         <div>
           <div className="text-muted-foreground">

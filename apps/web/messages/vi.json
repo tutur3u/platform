@@ -6058,7 +6058,8 @@
       "enabled": "Bật",
       "issue_secret": "Cấp secret ngay",
       "origins": "Origin được phép",
-      "scopes": "Phạm vi API được phép"
+      "scopes": "Phạm vi API được phép",
+      "workspace_ids": "Workspace ID được phép"
     },
     "messages": {
       "rotate_error": "Xoay vòng secret thất bại",
@@ -6090,7 +6091,8 @@
       "no_secret": "Chưa cấp",
       "origins": "Origin",
       "scopes": "Phạm vi",
-      "secret_suffix": "Kết thúc bằng {suffix}"
+      "secret_suffix": "Kết thúc bằng {suffix}",
+      "workspaces": "Workspace"
     },
     "title": "Ứng dụng bên ngoài"
   },

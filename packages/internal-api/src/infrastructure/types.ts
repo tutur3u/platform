@@ -211,6 +211,7 @@ export interface EnableGitHubBotWatcherAutoPickupResponse {
 
 export interface ExternalAppRegistration {
   allowedScopes: string[];
+  allowedWorkspaceIds: string[];
   createdAt: string | null;
   createdBy: string | null;
   displayName: string;
@@ -453,6 +454,7 @@ export type UpdateAIWhitelistEmailPayload = Pick<AIWhitelistEmail, 'enabled'>;
 
 export interface SaveExternalAppPayload {
   allowedScopes?: string[];
+  allowedWorkspaceIds?: string[];
   displayName: string;
   enabled: boolean;
   id: string;

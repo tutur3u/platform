@@ -11,6 +11,7 @@ import {
   normalizeOrigin,
   normalizeOrigins,
   normalizeScopes,
+  normalizeWorkspaceIds,
   parseAppFieldKey,
   parseJsonStringArray,
   type SecretRow,
@@ -19,6 +20,7 @@ import {
 
 export type ExternalAppRegistration = {
   allowedScopes: string[];
+  allowedWorkspaceIds: string[];
   createdAt: string | null;
   createdBy: string | null;
   displayName: string;
@@ -33,6 +35,7 @@ export type ExternalAppRegistration = {
 
 export type UpsertExternalAppPayload = {
   allowedScopes?: string[];
+  allowedWorkspaceIds?: string[];
   displayName: string;
   enabled: boolean;
   id: string;
@@ -80,9 +83,13 @@ function buildExternalAppRegistrations(rows: SecretRow[]) {
       const allowedScopes = normalizeScopes(
         parseJsonStringArray(values.allowedScopes)
       );
+      const allowedWorkspaceIds = normalizeWorkspaceIds(
+        parseJsonStringArray(values.allowedWorkspaceIds)
+      );
 
       return {
         allowedScopes,
+        allowedWorkspaceIds,
         createdAt: values.createdAt || null,
         createdBy: values.createdBy || null,
         displayName,
@@ -254,12 +261,16 @@ export async function upsertExternalApp({
 
   const displayName = payload.displayName.trim() || appId;
   const allowedScopes = normalizeScopes(payload.allowedScopes);
+  const allowedWorkspaceIds = normalizeWorkspaceIds(
+    payload.allowedWorkspaceIds
+  );
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
   const existingApp = await getExternalAppById(appId, sbAdmin);
   const now = new Date().toISOString();
   const nextSecret = payload.issueSecret ? generateAppSecret() : null;
   const fields: Partial<Record<ExternalAppSecretField, string>> = {
     allowedScopes: JSON.stringify(allowedScopes),
+    allowedWorkspaceIds: JSON.stringify(allowedWorkspaceIds),
     createdAt: existingApp?.createdAt ?? now,
     createdBy: existingApp?.createdBy ?? actorUserId,
     displayName,
