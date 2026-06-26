@@ -181,14 +181,15 @@ export interface SessionAuthContext {
   supabase: TypedSupabaseClient;
 }
 
+type StrictAppSessionAuthOptions = {
+  requiredScope?: string | false;
+  targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
+};
+
 type AppSessionAuthOptions =
   | boolean
-  | {
-      requiredScope?: string | false;
-      targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
-    };
-
-type StrictAppSessionAuthOptions = Exclude<AppSessionAuthOptions, boolean>;
+  | StrictAppSessionAuthOptions
+  | readonly StrictAppSessionAuthOptions[];
 
 const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
 const ALL_SATELLITE_APP_SESSION_TARGETS = [
@@ -311,11 +312,45 @@ export function getDefaultAppSessionVerificationOptions(
 
 function getAppSessionVerificationOptions(
   request: Pick<NextRequest, 'url'>,
-  allowAppSessionAuth: true | StrictAppSessionAuthOptions
-) {
-  return allowAppSessionAuth === true
-    ? getDefaultAppSessionVerificationOptions(request.url)
-    : allowAppSessionAuth;
+  allowAppSessionAuth:
+    | true
+    | StrictAppSessionAuthOptions
+    | readonly StrictAppSessionAuthOptions[]
+): readonly StrictAppSessionAuthOptions[] {
+  if (allowAppSessionAuth === true) {
+    return [getDefaultAppSessionVerificationOptions(request.url)];
+  }
+
+  return isAppSessionAuthOptionsList(allowAppSessionAuth)
+    ? allowAppSessionAuth
+    : [allowAppSessionAuth];
+}
+
+function isAppSessionAuthOptionsList(
+  value: StrictAppSessionAuthOptions | readonly StrictAppSessionAuthOptions[]
+): value is readonly StrictAppSessionAuthOptions[] {
+  return Array.isArray(value);
+}
+
+function verifyConfiguredAppSessionRequest(
+  request: Pick<NextRequest, 'headers' | 'url'>,
+  allowAppSessionAuth:
+    | true
+    | StrictAppSessionAuthOptions
+    | readonly StrictAppSessionAuthOptions[]
+): Extract<ReturnType<typeof verifyAppSessionRequest>, { ok: true }> | null {
+  for (const verificationOptions of getAppSessionVerificationOptions(
+    request,
+    allowAppSessionAuth
+  )) {
+    const verification = verifyAppSessionRequest(request, verificationOptions);
+
+    if (verification.ok) {
+      return verification;
+    }
+  }
+
+  return null;
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
@@ -346,12 +381,12 @@ export async function resolveSessionAuthContext(
     const appSessionToken = getAppSessionTokenFromRequest(request);
 
     if (appSessionToken) {
-      const appSessionVerification = verifyAppSessionRequest(
+      const appSessionVerification = verifyConfiguredAppSessionRequest(
         request,
-        getAppSessionVerificationOptions(request, options.allowAppSessionAuth)
+        options.allowAppSessionAuth
       );
 
-      if (!appSessionVerification.ok) {
+      if (!appSessionVerification) {
         return {
           ok: false,
           response: NextResponse.json(
@@ -746,12 +781,12 @@ export function withSessionAuth<T = unknown>(
       const appSessionToken = getAppSessionTokenFromRequest(request);
 
       if (appSessionToken) {
-        const appSessionVerification = verifyAppSessionRequest(
+        const appSessionVerification = verifyConfiguredAppSessionRequest(
           request,
-          getAppSessionVerificationOptions(request, options.allowAppSessionAuth)
+          options.allowAppSessionAuth
         );
 
-        if (!appSessionVerification.ok) {
+        if (!appSessionVerification) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

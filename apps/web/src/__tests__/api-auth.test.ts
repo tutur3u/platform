@@ -1,3 +1,4 @@
+import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import {
   APP_SESSION_COOKIE_NAME,
   createAppSessionToken,
@@ -1125,6 +1126,75 @@ describe('withSessionAuth', () => {
         requiredScope: 'cli:access',
         targetApp: 'platform',
       },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(401);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('should accept scoped external app bearer auth when any configured app-token policy matches', async () => {
+    const { token } = createAppCoordinationToken({
+      email: 'operator@example.com',
+      originApp: 'web',
+      scopes: ['users:profile:write'],
+      targetApp: 'cybershield35',
+      userId: 'external-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/profile',
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        method: 'PATCH',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: [
+        CURRENT_USER_APP_SESSION_AUTH,
+        { requiredScope: 'users:profile:write' },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.user.id).toBe('external-user-1');
+      expect(result.user.email).toBe('operator@example.com');
+      expect(result.supabase).toBe(mockAdminClient);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateClient).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
+  it('should reject external app bearer auth when none of the configured app-token policies match', async () => {
+    const { token } = createAppCoordinationToken({
+      email: 'operator@example.com',
+      originApp: 'web',
+      scopes: ['users:profile:read'],
+      targetApp: 'cybershield35',
+      userId: 'external-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/profile',
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        method: 'PATCH',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: [
+        CURRENT_USER_APP_SESSION_AUTH,
+        { requiredScope: 'users:profile:write' },
+      ],
     });
 
     expect(result.ok).toBe(false);

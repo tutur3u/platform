@@ -1,8 +1,13 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { withSessionAuthMock } = vi.hoisted(() => ({
+  withSessionAuthMock: vi.fn((handler: unknown, _options?: unknown) => handler),
+}));
+
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth: (handler: unknown) => handler,
+  withSessionAuth: (handler: unknown, options?: unknown) =>
+    withSessionAuthMock(handler, options),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -50,6 +55,66 @@ describe('current user profile route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+  });
+
+  it('wires GET and PATCH with scoped internal-or-external profile auth policies', async () => {
+    await import('@/app/api/v1/users/me/profile/route');
+
+    expect(withSessionAuthMock).toHaveBeenCalledTimes(2);
+    expect(withSessionAuthMock.mock.calls[0]?.[1]).toEqual({
+      allowAppSessionAuth: [
+        {
+          targetApp: [
+            'calendar',
+            'chat',
+            'cms',
+            'drive',
+            'finance',
+            'hive',
+            'inventory',
+            'learn',
+            'mail',
+            'mind',
+            'mira',
+            'nova',
+            'rewise',
+            'tasks',
+            'teach',
+            'track',
+            'platform',
+          ],
+        },
+        { requiredScope: 'users:profile:read' },
+        { requiredScope: 'users:profile:write' },
+      ],
+      cache: { maxAge: 60, swr: 30 },
+    });
+    expect(withSessionAuthMock.mock.calls[1]?.[1]).toEqual({
+      allowAppSessionAuth: [
+        {
+          targetApp: [
+            'calendar',
+            'chat',
+            'cms',
+            'drive',
+            'finance',
+            'hive',
+            'inventory',
+            'learn',
+            'mail',
+            'mind',
+            'mira',
+            'nova',
+            'rewise',
+            'tasks',
+            'teach',
+            'track',
+            'platform',
+          ],
+        },
+        { requiredScope: 'users:profile:write' },
+      ],
+    });
   });
 
   it('returns public profile fields with email from private user details', async () => {

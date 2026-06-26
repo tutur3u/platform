@@ -22,6 +22,8 @@ import { useMemo, useState } from 'react';
 
 const SCOPE_PRESETS = [
   'workspace:session',
+  'users:profile:read',
+  'users:profile:write',
   'external-projects:read',
   'external-projects:publish',
   'external-projects:manage',

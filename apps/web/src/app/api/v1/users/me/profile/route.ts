@@ -6,7 +6,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { CURRENT_USER_APP_SESSION_AUTH } from '../session-auth';
+import {
+  CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH,
+  CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
+} from '../session-auth';
 
 const PatchProfileSchema = z.object({
   display_name: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH).optional(),
@@ -69,7 +72,7 @@ export const GET = withSessionAuth(
     }
   },
   {
-    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    allowAppSessionAuth: CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH,
     cache: { maxAge: 60, swr: 30 },
   }
 );
@@ -120,5 +123,5 @@ export const PATCH = withSessionAuth(
       );
     }
   },
-  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+  { allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH }
 );

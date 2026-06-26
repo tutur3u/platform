@@ -25,8 +25,19 @@ vi.mock('@tuturuuu/internal-api/infrastructure/apps', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/custom/combobox', () => ({
-  Combobox: ({ selected }: { selected?: string[] }) => (
-    <div data-testid="scope-combobox">{selected?.join(', ')}</div>
+  Combobox: ({
+    options,
+    selected,
+  }: {
+    options?: Array<{ label: string; value: string }>;
+    selected?: string[];
+  }) => (
+    <div
+      data-options={options?.map((option) => option.value).join(', ')}
+      data-testid="scope-combobox"
+    >
+      {selected?.join(', ')}
+    </div>
   ),
 }));
 
@@ -147,6 +158,29 @@ describe('ExternalAppsClient', () => {
     );
 
     expect(within(card).getByDisplayValue('Workspace App')).toBeInTheDocument();
+  });
+
+  it('offers workspace and profile scopes as registration presets', () => {
+    renderClient();
+
+    const card = screen.getByTestId('external-app-card-workspace-app');
+    fireEvent.click(
+      within(card).getByRole('button', { name: 'Expand Workspace App' })
+    );
+
+    const scopeOptions = screen
+      .getAllByTestId('scope-combobox')
+      .map((node) => node.getAttribute('data-options'));
+
+    expect(
+      scopeOptions.some((value) => value?.includes('workspace:session'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('users:profile:read'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('users:profile:write'))
+    ).toBe(true);
   });
 
   it('disables save for clean registered apps and enables it when dirty', async () => {
