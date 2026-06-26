@@ -16,6 +16,7 @@ const {
   getBuildkitPaths,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  getResolvedBuildkitComposeEnv,
   isBuildxBuilderUsable,
   isTransientBuildkitComposeUpError,
   isBunTarballExtractionError,
@@ -340,6 +341,36 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 1,
       memory: '21504m',
+    }
+  );
+});
+
+test('getResolvedBuildkitComposeEnv resolves helper-only auto values for Compose', () => {
+  assert.deepEqual(
+    {
+      DOCKER_WEB_BUILD_CPUS: getResolvedBuildkitComposeEnv({
+        DOCKER_WEB_BUILD_CPUS: 'auto',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+        DOCKER_WEB_BUILD_MEMORY: 'auto',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      }).DOCKER_WEB_BUILD_CPUS,
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: getResolvedBuildkitComposeEnv({
+        DOCKER_WEB_BUILD_CPUS: 'auto',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+        DOCKER_WEB_BUILD_MEMORY: 'auto',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      }).DOCKER_WEB_BUILD_MAX_PARALLELISM,
+      DOCKER_WEB_BUILD_MEMORY: getResolvedBuildkitComposeEnv({
+        DOCKER_WEB_BUILD_CPUS: 'auto',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+        DOCKER_WEB_BUILD_MEMORY: 'auto',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      }).DOCKER_WEB_BUILD_MEMORY,
+    },
+    {
+      DOCKER_WEB_BUILD_CPUS: '4',
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: '2',
+      DOCKER_WEB_BUILD_MEMORY: '21504m',
     }
   );
 });
@@ -728,6 +759,56 @@ test('recoverBuildkitBunInstallCache recreates BuildKit when exec cache prune lo
       'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} buildkit-id',
     ]
   );
+});
+
+test('recoverBuildkitBunInstallCache resolves auto memory before Compose recreate', async () => {
+  const calls = [];
+
+  await recoverBuildkitBunInstallCache({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      DOCKER_WEB_BUILD_CPUS: 'auto',
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+      DOCKER_WEB_BUILD_MEMORY: 'auto',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      PATH: 'test-path',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+
+      if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return {
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: 'buildkit-id\n',
+        };
+      }
+
+      if (args[0] === 'inspect' && args.at(-1) === 'buildkit-id') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  const composeBuildkitCalls = calls.filter(
+    (call) =>
+      call.command === 'docker' &&
+      call.args[0] === 'compose' &&
+      call.args.includes(BUILDKIT_SERVICE_NAME)
+  );
+
+  assert.ok(composeBuildkitCalls.length > 0);
+
+  for (const call of composeBuildkitCalls) {
+    assert.equal(call.env.DOCKER_WEB_BUILD_MEMORY, '21504m');
+    assert.equal(call.env.DOCKER_WEB_BUILD_CPUS, '4');
+    assert.equal(call.env.DOCKER_WEB_BUILD_MAX_PARALLELISM, '2');
+  }
 });
 
 test('getBuilderConfigFingerprint is stable for the same config', () => {

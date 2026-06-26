@@ -107,7 +107,9 @@ infrastructure dashboard changes.
   allocation with a real reserve for the Docker VM and sibling containers. Keep
   blue/green max parallelism conservative by default, and keep direct Compose
   fallbacks concrete because Compose cannot resolve helper-only `auto` values by
-  itself.
+  itself. Resolve helper-only `auto` values to concrete Compose env values
+  before any BuildKit `up`, `restart`, `stop`, `rm`, `ps`, or health-check path;
+  Compose should never see `services[buildkit].mem_limit` as `auto`.
 - Blue/green runs that use the root-script default caps may use the adaptive
   local profile at `tmp/docker-web/buildkit/resource-profile.json`. BuildKit
   transport/resource failures such as `code = Unavailable`, `closing transport`,

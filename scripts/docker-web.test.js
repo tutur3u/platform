@@ -3169,6 +3169,21 @@ test('buildBlueGreenServices resets a failed floor profile to the budget-derived
       ['floor', 'default']
     );
     assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_MEMORY, '21504m');
+    const buildkitComposeEnvs = calls
+      .filter(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('buildkit')
+      )
+      .map(([, , callEnv]) => callEnv);
+
+    assert.ok(buildkitComposeEnvs.length > 0);
+
+    for (const callEnv of buildkitComposeEnvs) {
+      assert.notEqual(callEnv.DOCKER_WEB_BUILD_MEMORY, 'auto');
+      assert.notEqual(callEnv.DOCKER_WEB_BUILD_CPUS, 'auto');
+    }
     assert.ok(
       stderrWrites.some((entry) =>
         entry.includes('BuildKit build attempt using profile floor')

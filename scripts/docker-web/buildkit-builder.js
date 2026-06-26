@@ -416,15 +416,39 @@ async function removeLegacyBuildxBuilders(
 }
 
 function getBuildkitComposeEnv(config, env) {
+  const baseEnv = getResolvedBuildkitComposeEnv(env);
+
+  return {
+    ...baseEnv,
+    DOCKER_WEB_BUILD_CPUS:
+      config.cpus == null ? baseEnv.DOCKER_WEB_BUILD_CPUS : String(config.cpus),
+    DOCKER_WEB_BUILD_MAX_PARALLELISM:
+      config.maxParallelism == null
+        ? baseEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM
+        : String(config.maxParallelism),
+    DOCKER_WEB_BUILD_MEMORY: config.memory ?? baseEnv.DOCKER_WEB_BUILD_MEMORY,
+    DOCKER_WEB_BUILDKIT_PORT:
+      env.DOCKER_WEB_BUILDKIT_PORT ?? String(DEFAULT_BUILDKIT_HOST_PORT),
+  };
+}
+
+function getResolvedBuildkitComposeEnv(env = process.env) {
+  const memory = normalizeBuildMemory(env.DOCKER_WEB_BUILD_MEMORY, env);
+  const cpus = normalizeBuildCpus(env.DOCKER_WEB_BUILD_CPUS, env);
+  const maxParallelism = normalizeBuildMaxParallelism(
+    env.DOCKER_WEB_BUILD_MAX_PARALLELISM,
+    env
+  );
+
   return {
     ...env,
     DOCKER_WEB_BUILD_CPUS:
-      config.cpus == null ? env.DOCKER_WEB_BUILD_CPUS : String(config.cpus),
+      cpus == null ? env.DOCKER_WEB_BUILD_CPUS : String(cpus),
     DOCKER_WEB_BUILD_MAX_PARALLELISM:
-      config.maxParallelism == null
+      maxParallelism == null
         ? env.DOCKER_WEB_BUILD_MAX_PARALLELISM
-        : String(config.maxParallelism),
-    DOCKER_WEB_BUILD_MEMORY: config.memory ?? env.DOCKER_WEB_BUILD_MEMORY,
+        : String(maxParallelism),
+    DOCKER_WEB_BUILD_MEMORY: memory ?? env.DOCKER_WEB_BUILD_MEMORY,
     DOCKER_WEB_BUILDKIT_PORT:
       env.DOCKER_WEB_BUILDKIT_PORT ?? String(DEFAULT_BUILDKIT_HOST_PORT),
   };
@@ -693,6 +717,8 @@ async function recreateBuildkitComposeService({
     };
   }
 
+  const composeEnv = getResolvedBuildkitComposeEnv(env);
+
   try {
     await runChecked(
       'docker',
@@ -705,7 +731,7 @@ async function recreateBuildkitComposeService({
         BUILDKIT_SERVICE_NAME
       ),
       {
-        env,
+        env: composeEnv,
         fsImpl,
         runCommand: run,
       }
@@ -730,7 +756,7 @@ async function recreateBuildkitComposeService({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }
@@ -747,7 +773,7 @@ async function recreateBuildkitComposeService({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }
@@ -755,7 +781,7 @@ async function recreateBuildkitComposeService({
   await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
-    env,
+    env: composeEnv,
     runCommand: run,
   });
 
@@ -846,19 +872,20 @@ async function removeBuildkitComposeServiceAfterBuild({
   fsImpl = fs,
   runCommand: run = runCommand,
 } = {}) {
+  const composeEnv = getResolvedBuildkitComposeEnv(env);
   const hasRunningContainer = await hasComposeServiceContainer(
     BUILDKIT_SERVICE_NAME,
     {
       composeFile,
       composeGlobalArgs,
-      env,
+      env: composeEnv,
       runCommand: run,
     }
   );
   const hasContainer = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
-    env,
+    env: composeEnv,
     includeStopped: true,
     runCommand: run,
   });
@@ -883,7 +910,7 @@ async function removeBuildkitComposeServiceAfterBuild({
         BUILDKIT_SERVICE_NAME
       ),
       {
-        env,
+        env: composeEnv,
         fsImpl,
         runCommand: run,
       }
@@ -900,7 +927,7 @@ async function removeBuildkitComposeServiceAfterBuild({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }
@@ -1093,6 +1120,7 @@ module.exports = {
   getAutoBuildMemory,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  getResolvedBuildkitComposeEnv,
   isBuildxBuilderUsable,
   isRecoverableBuildkitCleanupError,
   isTransientDockerRegistryError,

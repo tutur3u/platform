@@ -31,6 +31,7 @@ const {
   BUILDKIT_SERVICE_NAME,
   CACHED_BUILD_ERROR_RECOVERY_REASON,
   getAutoBuildMemory,
+  getResolvedBuildkitComposeEnv,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
@@ -2129,6 +2130,8 @@ async function restartBuildkitBeforeBlueGreenBuild({
     return;
   }
 
+  const composeEnv = getResolvedBuildkitComposeEnv(env);
+
   await runChecked(
     'docker',
     getComposeCommandArgs(
@@ -2138,14 +2141,14 @@ async function restartBuildkitBeforeBlueGreenBuild({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       runCommand: run,
     }
   );
   await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
-    env,
+    env: composeEnv,
     runCommand: run,
   });
 }
