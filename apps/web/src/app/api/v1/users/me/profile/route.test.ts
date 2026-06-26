@@ -114,6 +114,7 @@ describe('current user profile route', () => {
         },
         { requiredScope: 'users:profile:write' },
       ],
+      skipAppSessionStepUpChallenge: true,
     });
   });
 

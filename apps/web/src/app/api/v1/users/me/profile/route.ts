@@ -123,5 +123,8 @@ export const PATCH = withSessionAuth(
       );
     }
   },
-  { allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH }
+  {
+    allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
+    skipAppSessionStepUpChallenge: true,
+  }
 );

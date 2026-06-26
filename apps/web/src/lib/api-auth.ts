@@ -488,6 +488,11 @@ interface SessionAuthOptions {
    * explicit because the Supabase client is admin-backed.
    */
   allowAppSessionAuth?: AppSessionAuthOptions;
+  /**
+   * Allows verified app-session requests to skip browser step-up challenges.
+   * Use only for server-to-server routes that are protected by explicit scopes.
+   */
+  skipAppSessionStepUpChallenge?: boolean;
 }
 
 type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
@@ -833,9 +838,9 @@ export function withSessionAuth<T = unknown>(
           isRead,
           rateLimit: options?.rateLimit,
           request,
-          skipStepUpChallenge: isCliAppSessionClaims(
-            appSessionVerification.claims
-          ),
+          skipStepUpChallenge:
+            options?.skipAppSessionStepUpChallenge === true ||
+            isCliAppSessionClaims(appSessionVerification.claims),
           user: appSessionUser,
         });
         if (adaptiveControls.response) {
