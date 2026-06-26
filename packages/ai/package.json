@@ -40,7 +40,7 @@
     "@ai-sdk/openai": "^3.0.74",
     "@ai-sdk/openai-compatible": "^2.0.51",
     "@ai-sdk/perplexity": "^3.0.36",
-    "@ai-sdk/react": "^3.0.210",
+    "@ai-sdk/react": "^4.0.2",
     "@ai-sdk/replicate": "^2.0.36",
     "@ai-sdk/revai": "^2.0.36",
     "@ai-sdk/togetherai": "^2.0.56",
