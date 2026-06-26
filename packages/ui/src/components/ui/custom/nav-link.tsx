@@ -91,6 +91,9 @@ interface NavLinkProps {
   onClick: () => void;
 }
 
+const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
+  'tuturuuu:settings-dialog-open-intent';
+
 export function NavLink({
   wsId,
   link,
@@ -100,7 +103,15 @@ export function NavLink({
 }: NavLinkProps) {
   const t = useTranslations();
   const pathname = usePathname();
-  const { title, icon, href, children, newTab, onClick: onLinkClick } = link;
+  const {
+    title,
+    icon,
+    href,
+    children,
+    newTab,
+    onClick: onLinkClick,
+    openSettingsDialog,
+  } = link;
   const childLinks = children?.filter((child): child is NavLinkType =>
     Boolean(child)
   );
@@ -352,6 +363,17 @@ export function NavLink({
       }
       if (onLinkClick) {
         onLinkClick();
+      } else if (openSettingsDialog) {
+        event.preventDefault();
+        const detail =
+          typeof openSettingsDialog === 'object'
+            ? { settingsTab: openSettingsDialog.tab }
+            : undefined;
+
+        window.dispatchEvent(
+          new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, { detail })
+        );
+        onClick();
       } else if (hasSubMenu) {
         event.preventDefault();
         onSubMenuClick(children ?? [], title);

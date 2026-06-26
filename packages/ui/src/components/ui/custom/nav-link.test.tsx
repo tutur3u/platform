@@ -51,6 +51,7 @@ function renderNavLink(
 describe('NavLink', () => {
   beforeEach(() => {
     navigationState.pathname = '/personal/tasks';
+    vi.restoreAllMocks();
   });
 
   it('matches wildcard aliases even when the primary route is exact', () => {
@@ -116,5 +117,49 @@ describe('NavLink', () => {
 
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onSubMenuClick).not.toHaveBeenCalled();
+  });
+
+  it('dispatches the settings dialog open intent without navigating', () => {
+    const onClick = vi.fn();
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent');
+
+    renderNavLink(
+      {
+        openSettingsDialog: true,
+        title: 'Settings',
+      },
+      { onClick }
+    );
+
+    fireEvent.click(screen.getByText('Settings'));
+
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'tuturuuu:settings-dialog-open-intent',
+      })
+    );
+  });
+
+  it('passes the requested tab when opening settings from navigation', () => {
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent');
+
+    renderNavLink({
+      openSettingsDialog: { tab: 'workspace_billing' },
+      title: 'Billing',
+    });
+
+    fireEvent.click(screen.getByText('Billing'));
+
+    const event = dispatchEvent.mock.calls.find(
+      ([candidate]) =>
+        candidate instanceof CustomEvent &&
+        candidate.type === 'tuturuuu:settings-dialog-open-intent'
+    )?.[0];
+
+    expect(event).toBeInstanceOf(CustomEvent);
+    expect((event as CustomEvent).detail).toEqual({
+      settingsTab: 'workspace_billing',
+    });
   });
 });

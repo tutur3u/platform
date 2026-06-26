@@ -21,6 +21,15 @@ function staticImportPattern(modulePath: string) {
   );
 }
 
+function asyncImportPattern(modulePath: string) {
+  const escapedModulePath = modulePath.replace(
+    /[.*+?^${}()|[\]\\]/gu,
+    String.raw`\$&`
+  );
+
+  return new RegExp(String.raw`import\(\s*['"]${escapedModulePath}['"]\s*\)`);
+}
+
 describe('[wsId] navigation compile graph', () => {
   it('keeps broad server helpers behind async split points', () => {
     for (const modulePath of [
@@ -33,12 +42,12 @@ describe('[wsId] navigation compile graph', () => {
     }
 
     expect(navigationSource).toMatch(
-      /import\(["']@tuturuuu\/supabase\/next\/server["']\)/u
+      asyncImportPattern('@tuturuuu/supabase/next/server')
     );
     expect(navigationSource).toMatch(
-      /import\(["']@tuturuuu\/utils\/workspace-helper["']\)/u
+      asyncImportPattern('@tuturuuu/utils/workspace-helper')
     );
-    expect(navigationSource).toMatch(/import\(["']next-intl\/server["']\)/u);
+    expect(navigationSource).toMatch(asyncImportPattern('next-intl/server'));
   });
 
   it('does not serialize users database default group filters into sidebar URLs', () => {
