@@ -6,6 +6,7 @@ export * from './infrastructure/cron';
 export * from './infrastructure/github-bot';
 export * from './infrastructure/mobile';
 export * from './infrastructure/monitoring';
+export * from './infrastructure/native-settings';
 export * from './infrastructure/realtime';
 export * from './infrastructure/types';
 export * from './infrastructure/workspace';

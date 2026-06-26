@@ -58,6 +58,7 @@ export type SettingsDialogAvailability = {
   canAccessSecrets: boolean;
   canAccessUsage: boolean;
   canManageWorkspaceMembers: boolean;
+  canManageWorkspaceRoles: boolean;
   canManageWorkspaceSettings: boolean;
   hasBillingPermission: boolean;
   isRootWorkspace: boolean;
@@ -87,6 +88,11 @@ export function getSettingsDialogAvailability({
     workspacePermissions?.manage_workspace_settings ?? false;
   const canManageWorkspaceMembers =
     workspacePermissions?.manage_workspace_members ?? false;
+  const canManageWorkspaceRoles = isSettingsEntryAvailable(
+    workspacePermissions,
+    'workspace_roles',
+    workspacePermissions?.manage_workspace_roles ?? false
+  );
   const canAccessReports = isSettingsEntryAvailable(
     workspacePermissions,
     'reports',
@@ -169,6 +175,7 @@ export function getSettingsDialogAvailability({
     canAccessSecrets,
     canAccessUsage,
     canManageWorkspaceMembers,
+    canManageWorkspaceRoles,
     canManageWorkspaceSettings,
     hasBillingPermission,
     isRootWorkspace,

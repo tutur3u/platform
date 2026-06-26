@@ -117,9 +117,9 @@ const LazyReportDefaultTitleSettings = lazy(() =>
     default: module.ReportDefaultTitleSettings,
   }))
 );
-const LazySettingsRouteEntryPanel = lazy(() =>
-  import('./settings-route-entry-panel').then((module) => ({
-    default: module.SettingsRouteEntryPanel,
+const LazySettingsDialogNativeRoutePanels = lazy(() =>
+  import('./settings-dialog-native-route-panels').then((module) => ({
+    default: module.SettingsDialogNativeRoutePanels,
   }))
 );
 const LazyTimeTrackerCategoriesSettings = lazy(() =>
@@ -235,8 +235,8 @@ export const ReferralSettings = withPanelSuspense(LazyReferralSettings);
 export const ReportDefaultTitleSettings = withPanelSuspense(
   LazyReportDefaultTitleSettings
 );
-export const SettingsRouteEntryPanel = withPanelSuspense(
-  LazySettingsRouteEntryPanel
+export const SettingsDialogNativeRoutePanels = withPanelSuspense(
+  LazySettingsDialogNativeRoutePanels
 );
 export const RequireAttentionColorSettings = withPanelSuspense(
   LazyRequireAttentionColorSettings

@@ -24,7 +24,6 @@ import {
   getSettingsDialogAvailability,
   type WorkspaceSettingsPermissions,
 } from './settings-dialog-permissions';
-import { getSettingsRoutePanelHrefs } from './settings-dialog-route-entries';
 
 interface SettingsDialogProps {
   boardId?: string;
@@ -126,7 +125,6 @@ export function SettingsDialog({
     workspacePermissions,
   });
   const canManageVersionBadge = isExactTuturuuuDotComEmail(user?.email);
-  const routePanelHrefs = getSettingsRoutePanelHrefs(wsId);
   const autoAddNewGroupsToDefaultIncludedGroups =
     workspaceCustomConfigs[
       DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
@@ -197,10 +195,6 @@ export function SettingsDialog({
   const fallbackTab = navItems
     .flatMap((group) => group.items)
     .find((item) => !item.disabled)?.name;
-  const activeRoutePanelHref = activeTabIsVisible
-    ? routePanelHrefs[activeTab]
-    : undefined;
-
   useEffect(() => {
     if (isBillingPermissionLoading || activeTabIsVisible) return;
 
@@ -218,7 +212,6 @@ export function SettingsDialog({
       keyboardNavigation
     >
       <SettingsDialogContent
-        activeRoutePanelHref={activeRoutePanelHref}
         activeTab={activeTab}
         allowWorkspaceBasicsEdit={availability.allowWorkspaceBasicsEdit}
         autoAddNewGroupsToDefaultIncludedGroups={
@@ -228,6 +221,7 @@ export function SettingsDialog({
         calendarConnections={calendarConnections}
         canManageVersionBadge={canManageVersionBadge}
         canManageWorkspaceMembers={availability.canManageWorkspaceMembers}
+        canManageWorkspaceRoles={availability.canManageWorkspaceRoles}
         canManageWorkspaceSettings={availability.canManageWorkspaceSettings}
         defaultExcludedGroupIds={defaultExcludedGroupIds}
         defaultIncludedGroupIds={defaultIncludedGroupIds}

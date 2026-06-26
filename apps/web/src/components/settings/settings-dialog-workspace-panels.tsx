@@ -1,12 +1,14 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceMemberSettings } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { useTranslations } from 'next-intl';
 import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
-import MembersSettings from './workspace/members-settings';
 
 interface WorkspacePanelStateProps {
   isLoadingWorkspace: boolean;
@@ -102,14 +104,26 @@ export function WorkspaceGeneralSettingsPanel({
 
 interface WorkspaceMembersSettingsPanelProps extends WorkspacePanelStateProps {
   canManageWorkspaceMembers: boolean;
+  canManageWorkspaceRoles: boolean;
+  currentUserEmail: string | null;
 }
 
 export function WorkspaceMembersSettingsPanel({
   canManageWorkspaceMembers,
+  canManageWorkspaceRoles,
+  currentUserEmail,
   isLoadingWorkspace,
   workspace,
   workspaceError,
 }: WorkspaceMembersSettingsPanelProps) {
+  const memberSettingsQuery = useQuery({
+    enabled:
+      Boolean(workspace?.id) &&
+      (canManageWorkspaceMembers || canManageWorkspaceRoles),
+    queryFn: () => getWorkspaceMemberSettings(workspace?.id ?? ''),
+    queryKey: ['workspace-member-settings', workspace?.id],
+    staleTime: 30_000,
+  });
   const state = (
     <WorkspacePanelState
       isLoadingWorkspace={isLoadingWorkspace}
@@ -130,7 +144,16 @@ export function WorkspaceMembersSettingsPanel({
           disabled={!canManageWorkspaceMembers}
           embedded
         />
-        <MembersSettings workspace={workspace} />
+        <StandardWorkspaceAccessPage
+          disableInvite={memberSettingsQuery.data?.disableInvite ?? false}
+          initialContext={{
+            canManageMembers: canManageWorkspaceMembers,
+            canManageRoles: canManageWorkspaceRoles,
+            currentUserEmail,
+            workspaceId: workspace.id,
+          }}
+          initialTab="people"
+        />
       </div>
     </div>
   );

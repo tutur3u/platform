@@ -42,12 +42,20 @@ const lazyCalendarPanelsSource = readFileSync(
   ),
   { encoding: 'utf8' }
 );
+const nativeRoutePanelsSource = [
+  'src/components/settings/settings-dialog-native-route-panels.tsx',
+  'src/components/settings/settings-dialog-native-admin-panels.tsx',
+  'src/components/settings/settings-dialog-native-infrastructure-panels.tsx',
+]
+  .map((relativePath) =>
+    readFileSync(resolveSourcePath(relativePath), { encoding: 'utf8' })
+  )
+  .join('\n');
 const registrySource = [
   'src/components/settings/settings-dialog-nav-core.ts',
   'src/components/settings/settings-dialog-nav-domain.ts',
   'src/components/settings/settings-dialog-nav-infrastructure.ts',
   'src/components/settings/settings-dialog-nav-workspace.ts',
-  'src/components/settings/settings-dialog-route-entries.ts',
 ]
   .map((relativePath) =>
     readFileSync(resolveSourcePath(relativePath), { encoding: 'utf8' })
@@ -82,9 +90,58 @@ function navNamePattern(entryName: string) {
   return new RegExp(String.raw`name:\s*['"]${entryName}['"]`, 'u');
 }
 
-function routeHrefPattern(entryName: string) {
-  return new RegExp(String.raw`['"]?${entryName}['"]?:\s*`, 'u');
-}
+const formerRouteOnlyEntries = [
+  'api_keys',
+  'infrastructure_abuse_events',
+  'infrastructure_abuse_intelligence',
+  'infrastructure_ai_agents',
+  'infrastructure_ai_credits',
+  'infrastructure_ai_whitelisted_domains',
+  'infrastructure_ai_whitelisted_emails',
+  'infrastructure_app_coordination',
+  'infrastructure_blocked_ips',
+  'infrastructure_calendar_sync',
+  'infrastructure_changelog',
+  'infrastructure_cron_whitelisted_domains',
+  'infrastructure_devboxes',
+  'infrastructure_email_audit',
+  'infrastructure_email_blacklist',
+  'infrastructure_email_templates',
+  'infrastructure_entity_creation_limits',
+  'infrastructure_external_apps',
+  'infrastructure_github_bot',
+  'infrastructure_mobile_deployment',
+  'infrastructure_mobile_versions',
+  'infrastructure_monitoring',
+  'infrastructure_monitoring_analytics',
+  'infrastructure_monitoring_cron',
+  'infrastructure_monitoring_logs',
+  'infrastructure_monitoring_observability',
+  'infrastructure_monitoring_projects',
+  'infrastructure_monitoring_requests',
+  'infrastructure_monitoring_resources',
+  'infrastructure_monitoring_rollouts',
+  'infrastructure_monitoring_stress_tests',
+  'infrastructure_monitoring_watcher_logs',
+  'infrastructure_otp_limits',
+  'infrastructure_overview',
+  'infrastructure_post_email_queue',
+  'infrastructure_push_notifications',
+  'infrastructure_rate_limits',
+  'infrastructure_realtime',
+  'infrastructure_timezones',
+  'infrastructure_translations',
+  'infrastructure_users',
+  'infrastructure_workspaces',
+  'inquiries',
+  'integrations',
+  'migrations',
+  'platform_billing',
+  'platform_roles',
+  'secrets',
+  'usage',
+  'workspace_reports',
+] as const;
 
 describe('settings dialog compile graph', () => {
   it('keeps settings entry panels behind lazy imports', () => {
@@ -115,7 +172,7 @@ describe('settings dialog compile graph', () => {
       './settings-dialog-profile-panel',
       './settings-dialog-task-general-panel',
       './settings-dialog-workspace-panels',
-      './settings-route-entry-panel',
+      './settings-dialog-native-route-panels',
     ]) {
       expect(settingsDialogRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
@@ -146,33 +203,36 @@ describe('settings dialog compile graph', () => {
     }
   });
 
-  it('keeps settings-level route entries in the dialog registry', () => {
-    for (const entryName of [
-      'workspace_reports',
-      'usage',
-      'integrations',
-      'api_keys',
-      'secrets',
-      'migrations',
-      'platform_roles',
-      'platform_billing',
-      'inquiries',
-      'infrastructure_overview',
-      'infrastructure_external_apps',
-      'infrastructure_timezones',
-      'infrastructure_monitoring_cron',
-      'infrastructure_monitoring_rollouts',
-      'infrastructure_monitoring_logs',
-      'infrastructure_monitoring_analytics',
-      'infrastructure_monitoring_observability',
-      'infrastructure_monitoring_projects',
-      'infrastructure_monitoring_requests',
-      'infrastructure_monitoring_resources',
-      'infrastructure_monitoring_stress_tests',
-      'infrastructure_monitoring_watcher_logs',
-    ]) {
+  it('keeps former route-only entries wired to native dialog panels', () => {
+    for (const entryName of formerRouteOnlyEntries) {
       expect(registrySource).toMatch(navNamePattern(entryName));
-      expect(registrySource).toMatch(routeHrefPattern(entryName));
+      expect(nativeRoutePanelsSource).toContain(`'${entryName}'`);
     }
+  });
+
+  it('does not compile the route-entry fallback panel', () => {
+    expect(
+      existsSync(
+        resolveSourcePath(
+          'src/components/settings/settings-dialog.tsx'
+        ).replace('settings-dialog.tsx', 'settings-route-entry-panel.tsx')
+      )
+    ).toBe(false);
+    expect(
+      existsSync(
+        resolveSourcePath(
+          'src/components/settings/settings-dialog.tsx'
+        ).replace('settings-dialog.tsx', 'settings-dialog-route-entries.ts')
+      )
+    ).toBe(false);
+    expect(settingsDialogRuntimeSource).not.toContain(
+      'getSettingsRoutePanelHrefs'
+    );
+    expect(settingsDialogContentRuntimeSource).not.toContain(
+      'SettingsRouteEntryPanel'
+    );
+    expect(lazyPanelsSource).not.toContain('settings-route-entry-panel');
+    expect(nativeRoutePanelsSource).not.toContain('StaticInfrastructurePanel');
+    expect(nativeRoutePanelsSource).not.toContain("status: 'native'");
   });
 });

@@ -32,7 +32,7 @@ import {
   RequireAttentionColorSettings,
   SecuritySettings,
   SessionSettings,
-  SettingsRouteEntryPanel,
+  SettingsDialogNativeRoutePanels,
   TaskGeneralSettingsPanel,
   TaskInitiativesSettings,
   TaskLabelsSettings,
@@ -54,7 +54,6 @@ import {
 import type { SettingsTranslator } from './settings-dialog-nav-types';
 
 interface SettingsDialogContentProps {
-  activeRoutePanelHref?: string;
   activeTab: string;
   allowWorkspaceBasicsEdit: boolean;
   autoAddNewGroupsToDefaultIncludedGroups: boolean;
@@ -62,6 +61,7 @@ interface SettingsDialogContentProps {
   calendarConnections?: CalendarConnection[];
   canManageVersionBadge: boolean;
   canManageWorkspaceMembers: boolean;
+  canManageWorkspaceRoles: boolean;
   canManageWorkspaceSettings: boolean;
   defaultExcludedGroupIds: string[];
   defaultIncludedGroupIds: string[];
@@ -79,7 +79,6 @@ interface SettingsDialogContentProps {
 }
 
 export function SettingsDialogContent({
-  activeRoutePanelHref,
   activeTab,
   allowWorkspaceBasicsEdit,
   autoAddNewGroupsToDefaultIncludedGroups,
@@ -87,6 +86,7 @@ export function SettingsDialogContent({
   calendarConnections,
   canManageVersionBadge,
   canManageWorkspaceMembers,
+  canManageWorkspaceRoles,
   canManageWorkspaceSettings,
   defaultExcludedGroupIds,
   defaultIncludedGroupIds,
@@ -204,6 +204,8 @@ export function SettingsDialogContent({
       {activeTab === 'workspace_members' && (
         <WorkspaceMembersSettingsPanel
           canManageWorkspaceMembers={canManageWorkspaceMembers}
+          canManageWorkspaceRoles={canManageWorkspaceRoles}
+          currentUserEmail={user?.email ?? null}
           isLoadingWorkspace={isLoadingWorkspace}
           workspace={workspace}
           workspaceError={workspaceError}
@@ -331,8 +333,13 @@ export function SettingsDialogContent({
       {activeTab === 'attendance_display' && wsId && (
         <AttendanceDisplaySettings wsId={wsId} />
       )}
-      {activeRoutePanelHref && (
-        <SettingsRouteEntryPanel href={activeRoutePanelHref} />
+      {wsId && (
+        <SettingsDialogNativeRoutePanels
+          activeTab={activeTab}
+          currentUserEmail={user?.email ?? null}
+          setActiveTab={setActiveTab}
+          wsId={wsId}
+        />
       )}
     </>
   );

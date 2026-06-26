@@ -6,6 +6,7 @@ export * from './cron';
 export * from './github-bot';
 export * from './mobile';
 export * from './monitoring';
+export * from './native-settings';
 export * from './realtime';
 export * from './types';
 export * from './workspace';

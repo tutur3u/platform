@@ -27,6 +27,7 @@ const baseAvailability: SettingsDialogAvailability = {
   canAccessSecrets: false,
   canAccessUsage: false,
   canManageWorkspaceMembers: false,
+  canManageWorkspaceRoles: false,
   canManageWorkspaceSettings: false,
   hasBillingPermission: false,
   isRootWorkspace: false,
