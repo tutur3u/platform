@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/teach-v0.3.0...teach-v0.3.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **teach:** harden lesson save recovery ([d56a010](https://github.com/tutur3u/platform/commit/d56a010db5d22dcfde10fc51fbcf73c7abc62268))
+* **teach:** reconcile lesson editor saves ([6f2cb4f](https://github.com/tutur3u/platform/commit/6f2cb4f38c1f3b68aeadec11215066be4f7fbd78))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/teach-v0.2.0...teach-v0.3.0) (2026-06-24)
 
 

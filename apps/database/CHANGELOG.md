@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.11.0](https://github.com/tutur3u/platform/compare/database-v1.10.0...database-v1.11.0) (2026-06-26)
+
+
+### Features
+
+* **settings:** manage internal project bindings ([5347be6](https://github.com/tutur3u/platform/commit/5347be62b3913d29cc1048f76678ba40eacd02da))
+* **tasks:** add task progress tracking ([4cffb0f](https://github.com/tutur3u/platform/commit/4cffb0f041d41e3868481068d64b9e3b85a0011a))
+* **tasks:** stabilize shared board realtime collaboration ([6028caf](https://github.com/tutur3u/platform/commit/6028caf50432fd4dcebdaa5a59284e50972b1aa3))
+* **web:** add managed workspace cron service ([453763e](https://github.com/tutur3u/platform/commit/453763ebce1028e4189f4f1cdf70d8db5a9331c0))
+
+
+### Bug Fixes
+
+* **web:** stop inactive post emails ([3d62e99](https://github.com/tutur3u/platform/commit/3d62e9952c4397b05f0a271386049f17e0045f7d))
+
 ## [1.10.0](https://github.com/tutur3u/platform/compare/database-v1.9.0...database-v1.10.0) (2026-06-24)
 
 

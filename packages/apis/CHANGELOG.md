@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/apis-v0.6.0...apis-v0.7.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** support task description editing ([c72390b](https://github.com/tutur3u/platform/commit/c72390b909054af596ccbed8af6ded9f266dfdd4))
+
+
+### Bug Fixes
+
+* **tasks:** harden board task loading ([459fecf](https://github.com/tutur3u/platform/commit/459fecf66414b83bcb18f98eda9677ec3e220855))
+* **tasks:** support board guest assignees ([4e479aa](https://github.com/tutur3u/platform/commit/4e479aac13746a2e7c432be4f36ea87407849472))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/apis-v0.5.0...apis-v0.6.0) (2026-06-24)
 
 

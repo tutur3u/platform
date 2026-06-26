@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tasks",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",

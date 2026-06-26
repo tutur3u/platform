@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.2.0...tanstack-web-v0.3.0) (2026-06-26)
+
+
+### Features
+
+* **backend:** migrate additional api routes to rust ([932e1ef](https://github.com/tutur3u/platform/commit/932e1efc2011cb80ffff009e3abc855aacbfa31d))
+* **internal-api:** add api key migration bridge ([4e7c84a](https://github.com/tutur3u/platform/commit/4e7c84ab1a2ef2a22d454a79e2f8cacb9e399bb2))
+* **tanstack:** add meet shell route ([5671626](https://github.com/tutur3u/platform/commit/5671626e7730d4b129486f4b84b8b22bff27a69b))
+* **tanstack:** migrate account deletion route ([bf9f17f](https://github.com/tutur3u/platform/commit/bf9f17f5f1a38768bab8409e8f7943915ef8a2f7))
+* **tanstack:** migrate ai agents route ([0a67343](https://github.com/tutur3u/platform/commit/0a6734335839a3151c21a57926ac1a9060c97d0a))
+* **tanstack:** migrate ai chat layout ([182da0e](https://github.com/tutur3u/platform/commit/182da0e958067f39e6b7bc100f8d1b6492769a76))
+* **tanstack:** migrate cron jobs page ([088d0f9](https://github.com/tutur3u/platform/commit/088d0f9ae87b9b8248383a3ba6e902a7ccceeeaa))
+* **tanstack:** migrate cron layout ([6f69e0d](https://github.com/tutur3u/platform/commit/6f69e0da9411aba73037d7bd0b70a85ee302145b))
+* **tanstack:** migrate document detail preview ([a26aa54](https://github.com/tutur3u/platform/commit/a26aa54df9d69f627a8b5710d52f57a6303653b4))
+* **tanstack:** migrate documents list route ([3f7ea4c](https://github.com/tutur3u/platform/commit/3f7ea4c1f5d4106d0080dfadd55d3ea75c806391))
+* **tanstack:** migrate education module content ([bf6e0ab](https://github.com/tutur3u/platform/commit/bf6e0ab43c9feeb181226b958465e5b990a2ca1d))
+* **tanstack:** migrate education overview ([824bf52](https://github.com/tutur3u/platform/commit/824bf52ff5a7095185e72f83911ca056358d4467))
+* **tanstack:** migrate email templates ([d107acd](https://github.com/tutur3u/platform/commit/d107acd155f264ef9f1b31b929c9d5522a8b6d44))
+* **tanstack:** migrate group tag detail ([a66aa7c](https://github.com/tutur3u/platform/commit/a66aa7cf0c8b5d52905a1f4c4abe660b1f826452))
+* **tanstack:** migrate infrastructure translations ([780bca2](https://github.com/tutur3u/platform/commit/780bca217347f82ef642a2788b506f0fcdda845d))
+* **tanstack:** migrate module quizzes page ([c699070](https://github.com/tutur3u/platform/commit/c699070f3fea3d22502bf5b779916f03d6955fcb))
+* **tanstack:** migrate module youtube links ([bcbf192](https://github.com/tutur3u/platform/commit/bcbf1927802283b3447a8851b3208362e0dff822))
+* **tanstack:** migrate notifications inbox ([7868432](https://github.com/tutur3u/platform/commit/78684322eac9c405d7c37c674513c7275ad8be98))
+* **tanstack:** migrate public ai chat route ([72b4d5c](https://github.com/tutur3u/platform/commit/72b4d5c9afd32e3add8f01026521fcce6b0cee68))
+* **tanstack:** migrate realtime analytics page ([d3cb3f0](https://github.com/tutur3u/platform/commit/d3cb3f051e591646d9b3665290f133fdef6699f9))
+* **tanstack:** migrate settings parent layouts ([ec6e86f](https://github.com/tutur3u/platform/commit/ec6e86f383fdbad74de946b4834799d739150ff2))
+* **tanstack:** migrate topic announcement contacts ([bdfc3fd](https://github.com/tutur3u/platform/commit/bdfc3fd9309e4100746e067a05a447ee7868e6b9))
+* **tanstack:** migrate topic announcement delivery ([ebf9c89](https://github.com/tutur3u/platform/commit/ebf9c8980788ee8da304ef61805030c678f2249c))
+* **tanstack:** migrate topic announcement import ([cb2a263](https://github.com/tutur3u/platform/commit/cb2a2636c0c2daced9358acd650e9f3af280dc5e))
+* **tanstack:** migrate topic announcement templates ([f298789](https://github.com/tutur3u/platform/commit/f298789f20fc2c43c0fadc392377319db770c119))
+* **tanstack:** migrate topic announcements ([acc0b0c](https://github.com/tutur3u/platform/commit/acc0b0c14a8f69e8f50d7bfebb15485c5c0b8071))
+* **tanstack:** migrate user group attendance ([085e752](https://github.com/tutur3u/platform/commit/085e752c04508975b34ddb95904c7593608b53a3))
+* **tanstack:** retire migrations dashboard route ([a190b12](https://github.com/tutur3u/platform/commit/a190b12ad1385efef32785e132d153f421fd617b))
+* **web:** add external app scope approval ([ae465ae](https://github.com/tutur3u/platform/commit/ae465ae65518e55eb05f48c5bf897a0a501d00be))
+* **web:** add managed workspace cron service ([453763e](https://github.com/tutur3u/platform/commit/453763ebce1028e4189f4f1cdf70d8db5a9331c0))
+
+
+### Bug Fixes
+
+* **tanstack:** build supabase before internal api in docker ([4f3d4f6](https://github.com/tutur3u/platform/commit/4f3d4f664c426ea322237770d9a182db0a595d6f))
+* **tanstack:** preserve crawler auth return path ([de8ccaf](https://github.com/tutur3u/platform/commit/de8ccafd91e9d113eae5357cf49f8bb8aff3f950))
+* **tanstack:** reuse workspace redirect helper ([c3fede9](https://github.com/tutur3u/platform/commit/c3fede9d12fb0bda114540d2c510ee8be2aa43f4))
+* **tasks:** show accessible guest task boards ([3153c48](https://github.com/tutur3u/platform/commit/3153c4814e599905ea3de36b3f63e941d6bc86d9))
+* **tasks:** stabilize task board loading states ([b7f4212](https://github.com/tutur3u/platform/commit/b7f4212981514fdb1f38b83be5baf7a8d2686571))
+* **web:** stop inactive post emails ([3d62e99](https://github.com/tutur3u/platform/commit/3d62e9952c4397b05f0a271386049f17e0045f7d))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.1.0...tanstack-web-v0.2.0) (2026-06-24)
 
 

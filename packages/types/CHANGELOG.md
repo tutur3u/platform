@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/types-v0.11.0...types-v0.12.0) (2026-06-26)
+
+
+### Features
+
+* **cms:** integrate exocorpse external project ([c07081b](https://github.com/tutur3u/platform/commit/c07081b0bd98379eac97c3258b483ad8e39c9b39))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/types-v0.10.0...types-v0.11.0) (2026-06-24)
 
 

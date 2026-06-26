@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
   "license": "MIT",
   "author": "Tuturuuu",
@@ -13,7 +13,11 @@
   "bugs": {
     "url": "https://github.com/tutur3u/platform/issues"
   },
-  "keywords": ["tuturuuu", "sdk", "api"],
+  "keywords": [
+    "tuturuuu",
+    "sdk",
+    "api"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -79,7 +83,11 @@
       "default": "./dist/platform.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },

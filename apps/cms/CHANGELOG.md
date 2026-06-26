@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/cms-v0.10.0...cms-v0.11.0) (2026-06-26)
+
+
+### Features
+
+* **cms:** integrate exocorpse external project ([c07081b](https://github.com/tutur3u/platform/commit/c07081b0bd98379eac97c3258b483ad8e39c9b39))
+
+
+### Bug Fixes
+
+* **tasks:** improve shared board collaboration ([fa4ca4d](https://github.com/tutur3u/platform/commit/fa4ca4d412c8f8f533ab87639b314fefc70f9107))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/cms-v0.9.0...cms-v0.10.0) (2026-06-24)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/hive-v0.3.0...hive-v0.3.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **ci:** build supabase before internal api ([810a63d](https://github.com/tutur3u/platform/commit/810a63dfdf8c1b173b8ea7e52b96b9d1779377fc))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/hive-v0.2.4...hive-v0.3.0) (2026-06-24)
 
 
