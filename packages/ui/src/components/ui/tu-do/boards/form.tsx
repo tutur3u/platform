@@ -209,7 +209,7 @@ export function TaskBoardForm({
                         autoComplete="off"
                         autoFocus
                         {...field}
-                        className="h-10"
+                        className="h-10 bg-background"
                       />
                     </FormControl>
                     <FormMessage />
