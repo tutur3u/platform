@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 944,
+        "legacyNext": 949,
         "migrated": 147,
-        "percentComplete": 19.59,
-        "remaining": 944,
+        "percentComplete": 19.51,
+        "remaining": 949,
         "terminal": 230,
-        "total": 1174,
+        "total": 1179,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 963,
+        "legacyNext": 968,
         "migrated": 152,
-        "percentComplete": 19.62,
-        "remaining": 963,
+        "percentComplete": 19.53,
+        "remaining": 968,
         "terminal": 235,
-        "total": 1198,
+        "total": 1203,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1061,
+      "legacyNext": 1066,
       "migrated": 439,
-      "percentComplete": 33.06,
-      "remaining": 1061,
+      "percentComplete": 32.96,
+      "remaining": 1066,
       "terminal": 524,
-      "total": 1585,
+      "total": 1590,
       "unknownStatus": 0
     }
   },
@@ -6137,6 +6137,51 @@
       "routePath": "/api/v1/workspaces/:wsId/encryption/migrate",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts",
       "status": "accepted-removal",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/members:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/members",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/members/:userId/role:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/[userId]/role/route.ts",
+      "kind": "api",
+      "methods": ["PATCH"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/members/:userId/role",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/[userId]/role/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/members/access:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/access/route.ts",
+      "kind": "api",
+      "methods": ["DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/members/access",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/access/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/members/default-admin:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/default-admin/route.ts",
+      "kind": "api",
+      "methods": ["PATCH"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/members/default-admin",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/default-admin/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/members/invitations:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/invitations/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/members/invitations",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/invitations/route.ts",
+      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -14758,20 +14803,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1174,
+    "apiRoutes": 1179,
     "cronRoutes": 20,
     "layouts": 67,
     "pages": 313,
-    "routeHandlers": 1198,
+    "routeHandlers": 1203,
     "methodCounts": {
-      "GET": 677,
+      "GET": 678,
       "HEAD": 1,
-      "POST": 523,
+      "POST": 524,
       "PUT": 174,
-      "PATCH": 131,
-      "DELETE": 203,
+      "PATCH": 133,
+      "DELETE": 204,
       "OPTIONS": 16
     },
-    "total": 1585
+    "total": 1590
   }
 }

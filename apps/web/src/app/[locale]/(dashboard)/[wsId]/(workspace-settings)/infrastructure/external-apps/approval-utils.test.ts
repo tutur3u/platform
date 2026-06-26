@@ -28,6 +28,10 @@ describe('external app approval utilities', () => {
       returnUrl: 'https://tuturuuu.com/login',
       scope: [
         'WORKSPACE:SESSION',
+        'workspace:members:read',
+        'workspace:members:write',
+        'workspace:roles:read',
+        'workspace:roles:write',
         'users:profile:read',
         'users:profile:write',
         'bad scope',
@@ -41,6 +45,10 @@ describe('external app approval utilities', () => {
       requestedScopes: [
         'users:profile:read',
         'users:profile:write',
+        'workspace:members:read',
+        'workspace:members:write',
+        'workspace:roles:read',
+        'workspace:roles:write',
         'workspace:session',
       ],
       returnUrl: 'https://tuturuuu.com/login',
@@ -50,6 +58,10 @@ describe('external app approval utilities', () => {
   it('builds a save payload that preserves app fields and merges missing scopes', () => {
     const result = buildExternalAppApprovalPayload(app, [
       'workspace:session',
+      'workspace:members:read',
+      'workspace:members:write',
+      'workspace:roles:read',
+      'workspace:roles:write',
       'users:profile:read',
       'users:profile:write',
     ]);
@@ -57,11 +69,19 @@ describe('external app approval utilities', () => {
     expect(result.missingScopes).toEqual([
       'users:profile:read',
       'users:profile:write',
+      'workspace:members:read',
+      'workspace:members:write',
+      'workspace:roles:read',
+      'workspace:roles:write',
     ]);
     expect(result.payload).toEqual({
       allowedScopes: [
         'users:profile:read',
         'users:profile:write',
+        'workspace:members:read',
+        'workspace:members:write',
+        'workspace:roles:read',
+        'workspace:roles:write',
         'workspace:session',
       ],
       allowedWorkspaceIds: ['workspace-1'],

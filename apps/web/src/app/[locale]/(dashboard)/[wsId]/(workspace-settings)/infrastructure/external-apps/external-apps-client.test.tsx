@@ -177,7 +177,7 @@ describe('ExternalAppsClient', () => {
     expect(within(card).getByDisplayValue('Workspace App')).toBeInTheDocument();
   });
 
-  it('offers workspace and profile scopes as registration presets', () => {
+  it('offers workspace, member, role, and profile scopes as registration presets', () => {
     renderClient();
 
     const card = screen.getByTestId('external-app-card-workspace-app');
@@ -191,6 +191,18 @@ describe('ExternalAppsClient', () => {
 
     expect(
       scopeOptions.some((value) => value?.includes('workspace:session'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('workspace:members:read'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('workspace:members:write'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('workspace:roles:read'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('workspace:roles:write'))
     ).toBe(true);
     expect(
       scopeOptions.some((value) => value?.includes('users:profile:read'))
@@ -235,6 +247,10 @@ describe('ExternalAppsClient', () => {
         invalidScopes={[]}
         requestedScopes={[
           'workspace:session',
+          'workspace:members:read',
+          'workspace:members:write',
+          'workspace:roles:read',
+          'workspace:roles:write',
           'users:profile:read',
           'users:profile:write',
         ]}
@@ -249,6 +265,10 @@ describe('ExternalAppsClient', () => {
         allowedScopes: [
           'users:profile:read',
           'users:profile:write',
+          'workspace:members:read',
+          'workspace:members:write',
+          'workspace:roles:read',
+          'workspace:roles:write',
           'workspace:session',
         ],
         allowedWorkspaceIds: ['449cdd3b-121b-40f7-9cee-28f5b582e204'],
