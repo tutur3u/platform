@@ -43,29 +43,16 @@ import {
 import type { CalendarConnection, Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { apiFetch } from '@/lib/api-fetch';
-import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
-import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
-import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
-import AccountManagementSettings from './account/account-management-settings';
-import AccountStatusSection from './account/account-status-section';
-import NotificationSettings from './account/notification-settings';
-import SecuritySettings from './account/security-settings';
-import SessionSettings from './account/session-settings';
-import AppearanceSettings from './appearance-settings';
-import { FormsAutosaveSettings } from './forms/forms-autosave-settings';
-import ReferralSettings from './inventory/referral-settings';
-import { KeyboardShortcutsSettings } from './keyboard-shortcuts-settings';
-import UserAvatar from './settings-avatar';
 import {
+  AccountManagementSettings,
+  AppearanceSettings,
   ApprovalsSettings,
   AttendanceDisplaySettings,
   BoardSettingsPanel,
@@ -78,13 +65,23 @@ import {
   ExperimentalFinanceSettings,
   FeaturedGroupsSettings,
   FinanceNavigationSettings,
+  FormsAutosaveSettings,
   InvoiceSettings,
   InvoiceVisibilitySettings,
+  KeyboardShortcutsSettings,
   MiraMemorySettings,
   MiraPersonalitySettings,
+  NavigationSidebarSettings,
+  NotificationSettings,
+  ProfileSettingsPanel,
   preloadBoardSettingsPanel,
+  ReferralSettings,
   ReportDefaultTitleSettings,
   RequireAttentionColorSettings,
+  SecuritySettings,
+  SessionSettings,
+  SettingsRouteEntryPanel,
+  TaskGeneralSettingsPanel,
   TaskInitiativesSettings,
   TaskLabelsSettings,
   TaskProjectsSettings,
@@ -95,20 +92,13 @@ import {
   TimeTrackerGoalsSettings,
   TimeTrackerRequestsSettings,
   TransactionDefaultsSettings,
+  UserStatusSettings,
   UsersManagementSettings,
+  WorkspaceBillingSettings,
   WorkspaceBreakTypesSettings,
+  WorkspaceGeneralSettingsPanel,
+  WorkspaceMembersSettingsPanel,
 } from './settings-dialog-lazy-panels';
-import DisplayNameInput from './settings-display-name-input';
-import EmailInput from './settings-email-input';
-import FullNameInput from './settings-full-name-input';
-import UserIdInput from './settings-user-id-input';
-import NavigationSidebarSettings from './sidebar-settings';
-import { BoardDefaultListSettings } from './tasks/board-default-list-settings';
-import { DefaultTaskBoardSettings } from './tasks/default-task-board-settings';
-import { TaskSettings } from './tasks/task-settings';
-import BillingSettings from './workspace/billing-settings';
-import MembersSettings from './workspace/members-settings';
-import UserStatusSettings from './workspace/user-status-settings';
 
 interface SettingsDialogProps {
   boardId?: string;
@@ -120,6 +110,44 @@ interface SettingsDialogProps {
 }
 
 const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
+
+type SettingsAvailabilityKey =
+  | 'api_keys'
+  | 'billing'
+  | 'infrastructure'
+  | 'infrastructure_changelog'
+  | 'infrastructure_external_apps'
+  | 'infrastructure_mobile_deployment'
+  | 'inquiries'
+  | 'integrations'
+  | 'migrations'
+  | 'platform_billing'
+  | 'platform_roles'
+  | 'reports'
+  | 'secrets'
+  | 'usage'
+  | 'workspace_members'
+  | 'workspace_roles'
+  | 'workspace_settings';
+
+type WorkspaceSettingsPermissions = {
+  allow_discord_integrations?: boolean;
+  available?: Partial<Record<SettingsAvailabilityKey, boolean>>;
+  can_access_billing?: boolean;
+  enable_api_keys?: boolean;
+  is_root_workspace?: boolean;
+  manage_api_keys?: boolean;
+  manage_subscription: boolean;
+  manage_user_report_templates?: boolean;
+  manage_workspace_billing?: boolean;
+  manage_workspace_integrations?: boolean;
+  manage_workspace_members: boolean;
+  manage_workspace_roles?: boolean;
+  manage_workspace_secrets?: boolean;
+  manage_workspace_settings: boolean;
+  view_infrastructure?: boolean;
+  view_usage?: boolean;
+};
 
 function normalizeSettingsTab(tab: string) {
   return tab === 'sidebar' ? 'navigation' : tab;
@@ -197,25 +225,116 @@ export function SettingsDialog({
     useQuery({
       queryKey: ['workspace-settings-permissions', wsId],
       queryFn: () =>
-        apiFetch<{
-          manage_subscription: boolean;
-          manage_workspace_settings: boolean;
-          manage_workspace_members: boolean;
-        }>(`/api/v1/workspaces/${wsId}/settings/permissions`, {
-          cache: 'no-store',
-        }),
+        apiFetch<WorkspaceSettingsPermissions>(
+          `/api/v1/workspaces/${wsId}/settings/permissions`,
+          {
+            cache: 'no-store',
+          }
+        ),
       enabled: !!wsId,
       staleTime: 5 * 60 * 1000,
     });
 
   const hasBillingPermission =
-    workspacePermissions?.manage_subscription ?? false;
+    workspacePermissions?.available?.billing ??
+    workspacePermissions?.can_access_billing ??
+    workspacePermissions?.manage_subscription ??
+    false;
   const canManageWorkspaceSettings =
     workspacePermissions?.manage_workspace_settings ?? false;
   const canManageWorkspaceMembers =
     workspacePermissions?.manage_workspace_members ?? false;
+  const isSettingsEntryAvailable = (
+    key: SettingsAvailabilityKey,
+    fallback = false
+  ) => workspacePermissions?.available?.[key] ?? fallback;
+  const canAccessReports = isSettingsEntryAvailable(
+    'reports',
+    workspacePermissions?.manage_user_report_templates ?? false
+  );
+  const canAccessUsage = isSettingsEntryAvailable(
+    'usage',
+    workspacePermissions?.view_usage ?? false
+  );
+  const canAccessIntegrations = isSettingsEntryAvailable(
+    'integrations',
+    workspacePermissions?.manage_workspace_integrations ??
+      workspacePermissions?.allow_discord_integrations ??
+      false
+  );
+  const canAccessApiKeys = isSettingsEntryAvailable(
+    'api_keys',
+    Boolean(
+      workspacePermissions?.enable_api_keys &&
+        workspacePermissions?.manage_api_keys
+    )
+  );
+  const canAccessSecrets = isSettingsEntryAvailable(
+    'secrets',
+    workspacePermissions?.manage_workspace_secrets ?? false
+  );
+  const canAccessMigrations = isSettingsEntryAvailable('migrations');
+  const canAccessInfrastructure = isSettingsEntryAvailable(
+    'infrastructure',
+    workspacePermissions?.view_infrastructure ?? false
+  );
+  const canAccessPlatformRoles = isSettingsEntryAvailable('platform_roles');
+  const canAccessPlatformBilling = isSettingsEntryAvailable('platform_billing');
+  const canAccessInquiries = isSettingsEntryAvailable('inquiries');
+  const canAccessInfrastructureExternalApps = isSettingsEntryAvailable(
+    'infrastructure_external_apps'
+  );
+  const canAccessInfrastructureMobileDeployment = isSettingsEntryAvailable(
+    'infrastructure_mobile_deployment'
+  );
+  const canAccessInfrastructureChangelog = isSettingsEntryAvailable(
+    'infrastructure_changelog'
+  );
   const canManageVersionBadge = isExactTuturuuuDotComEmail(user?.email);
   const isRootWorkspace = workspace?.id === ROOT_WORKSPACE_ID;
+  const routePanelHrefs: Record<string, string> = wsId
+    ? {
+        api_keys: `/${wsId}/api-keys`,
+        infrastructure_abuse_events: `/${wsId}/infrastructure/abuse-events`,
+        infrastructure_abuse_intelligence: `/${wsId}/infrastructure/abuse-intelligence`,
+        infrastructure_ai_agents: `/${wsId}/infrastructure/ai-agents`,
+        infrastructure_ai_credits: `/${wsId}/infrastructure/ai-credits`,
+        infrastructure_ai_whitelisted_domains: `/${wsId}/infrastructure/ai/whitelist/domains`,
+        infrastructure_ai_whitelisted_emails: `/${wsId}/infrastructure/ai/whitelist/emails`,
+        infrastructure_app_coordination: `/${wsId}/infrastructure/app-coordination`,
+        infrastructure_blocked_ips: `/${wsId}/infrastructure/blocked-ips`,
+        infrastructure_calendar_sync: `/${wsId}/infrastructure/calendar-sync`,
+        infrastructure_changelog: `/${wsId}/infrastructure/changelog`,
+        infrastructure_cron_whitelisted_domains: `/${wsId}/infrastructure/cron/whitelist/domains`,
+        infrastructure_devboxes: `/${wsId}/infrastructure/devboxes`,
+        infrastructure_email_audit: `/${wsId}/infrastructure/email-audit`,
+        infrastructure_email_blacklist: `/${wsId}/infrastructure/email-blacklist`,
+        infrastructure_email_templates: `/${wsId}/infrastructure/email-templates`,
+        infrastructure_entity_creation_limits: `/${wsId}/infrastructure/entity-creation-limits`,
+        infrastructure_external_apps: `/${wsId}/infrastructure/external-apps`,
+        infrastructure_github_bot: `/${wsId}/infrastructure/github-bot`,
+        infrastructure_mobile_deployment: `/${wsId}/infrastructure/mobile-deployment`,
+        infrastructure_mobile_versions: `/${wsId}/infrastructure/mobile-versions`,
+        infrastructure_monitoring: `/${wsId}/infrastructure/monitoring`,
+        infrastructure_otp_limits: `/${wsId}/infrastructure/otp-limits`,
+        infrastructure_overview: `/${wsId}/infrastructure`,
+        infrastructure_post_email_queue: `/${wsId}/infrastructure/post-email-queue`,
+        infrastructure_push_notifications: `/${wsId}/infrastructure/push-notifications`,
+        infrastructure_rate_limits: `/${wsId}/infrastructure/rate-limits`,
+        infrastructure_realtime: `/${wsId}/infrastructure/realtime`,
+        infrastructure_translations: `/${wsId}/infrastructure/translations`,
+        infrastructure_users: `/${wsId}/infrastructure/users`,
+        infrastructure_workspaces: `/${wsId}/infrastructure/workspaces`,
+        inquiries: `/${wsId}/inquiries`,
+        integrations: `/${wsId}/integrations`,
+        migrations: `/${wsId}/migrations`,
+        platform_billing: `/${wsId}/platform/billing`,
+        platform_roles: `/${wsId}/platform/roles`,
+        secrets: `/${wsId}/secrets`,
+        usage: `/${wsId}/usage`,
+        workspace_reports: `/${wsId}/settings/reports`,
+      }
+    : {};
   const allowWorkspaceBasicsEdit =
     !isRootWorkspace &&
     (Boolean(workspace?.personal) || canManageWorkspaceSettings);
@@ -491,18 +610,35 @@ export function SettingsDialog({
               },
             ],
           },
-          {
-            label: t('settings.reports.title'),
-            items: [
-              {
-                name: 'report_default_title',
-                label: t('settings.reports.default_title'),
-                icon: FileText,
-                description: t('settings.reports.default_title_description'),
-                keywords: ['Reports', 'Templates', 'Title', 'Default'],
-              },
-            ],
-          },
+          ...(canAccessReports
+            ? [
+                {
+                  label: t('settings.reports.title'),
+                  items: [
+                    {
+                      name: 'workspace_reports',
+                      label: t('workspace-settings-layout.reports'),
+                      icon: FileText,
+                      keywords: [
+                        'Reports',
+                        'Templates',
+                        'Report settings',
+                        'Lead generation',
+                      ],
+                    },
+                    {
+                      name: 'report_default_title',
+                      label: t('settings.reports.default_title'),
+                      icon: FileText,
+                      description: t(
+                        'settings.reports.default_title_description'
+                      ),
+                      keywords: ['Reports', 'Templates', 'Title', 'Default'],
+                    },
+                  ],
+                },
+              ]
+            : []),
         ]
       : []),
     {
@@ -516,13 +652,17 @@ export function SettingsDialog({
               description: t('ws-settings.general-description'),
               keywords: ['Workspace', 'General'],
             },
-            {
-              name: 'workspace_members',
-              label: t('settings.workspaces.members'),
-              icon: Users,
-              description: t('ws-settings.members-description'),
-              keywords: ['Members', 'Team'],
-            },
+            ...(canManageWorkspaceMembers
+              ? [
+                  {
+                    name: 'workspace_members',
+                    label: t('settings.workspaces.members'),
+                    icon: Users,
+                    description: t('ws-settings.members-description'),
+                    keywords: ['Members', 'Team', 'Roles'],
+                  },
+                ]
+              : []),
             ...(hasBillingPermission
               ? [
                   {
@@ -532,6 +672,16 @@ export function SettingsDialog({
                     description: t('settings-account.billing-description'),
                     keywords: ['Billing', 'Plan', 'Subscription'],
                     disabled: isBillingPermissionLoading,
+                  },
+                ]
+              : []),
+            ...(canAccessUsage
+              ? [
+                  {
+                    name: 'usage',
+                    label: t('sidebar_tabs.usage'),
+                    icon: LayoutGrid,
+                    keywords: ['Usage', 'Activity', 'Metrics', 'Quota'],
                   },
                 ]
               : []),
@@ -545,6 +695,306 @@ export function SettingsDialog({
           ]
         : [],
     },
+    ...(wsId &&
+    (canAccessIntegrations ||
+      canAccessApiKeys ||
+      canAccessSecrets ||
+      canAccessMigrations ||
+      canAccessInfrastructure ||
+      canAccessPlatformRoles ||
+      canAccessPlatformBilling ||
+      canAccessInquiries)
+      ? [
+          {
+            label: t('workspace-settings-layout.infrastructure'),
+            items: [
+              ...(canAccessIntegrations
+                ? [
+                    {
+                      name: 'integrations',
+                      label: t('sidebar_tabs.integrations'),
+                      icon: Compass,
+                      keywords: ['Integrations', 'Discord', 'Connections'],
+                    },
+                  ]
+                : []),
+              ...(canAccessApiKeys
+                ? [
+                    {
+                      name: 'api_keys',
+                      label: t('workspace-settings-layout.api_keys'),
+                      icon: Keyboard,
+                      keywords: ['API Keys', 'SDK', 'Tokens', 'Developer'],
+                    },
+                  ]
+                : []),
+              ...(canAccessSecrets
+                ? [
+                    {
+                      name: 'secrets',
+                      label: t('workspace-settings-layout.secrets'),
+                      icon: Shield,
+                      keywords: ['Secrets', 'Environment', 'Credentials'],
+                    },
+                  ]
+                : []),
+              ...(canAccessPlatformRoles
+                ? [
+                    {
+                      name: 'platform_roles',
+                      label: t('workspace-settings-layout.platform_roles'),
+                      icon: Shield,
+                      keywords: ['Platform', 'Roles', 'Access'],
+                    },
+                  ]
+                : []),
+              ...(canAccessPlatformBilling
+                ? [
+                    {
+                      name: 'platform_billing',
+                      label: 'Platform Billing',
+                      icon: CreditCard,
+                      keywords: ['Platform', 'Billing', 'Subscription'],
+                    },
+                  ]
+                : []),
+              ...(canAccessMigrations
+                ? [
+                    {
+                      name: 'migrations',
+                      label: t('workspace-settings-layout.migrations'),
+                      icon: Share2,
+                      keywords: ['Migrations', 'Import', 'External data'],
+                    },
+                  ]
+                : []),
+              ...(canAccessInquiries
+                ? [
+                    {
+                      name: 'inquiries',
+                      label: t('sidebar_tabs.inquiries'),
+                      icon: ClipboardList,
+                      keywords: ['Inquiries', 'Support', 'Reports'],
+                    },
+                  ]
+                : []),
+              ...(canAccessInfrastructure
+                ? [
+                    {
+                      name: 'infrastructure_overview',
+                      label: t('infrastructure-tabs.overview'),
+                      icon: Building,
+                      keywords: ['Infrastructure', 'Overview'],
+                    },
+                    {
+                      name: 'infrastructure_users',
+                      label: t('infrastructure-tabs.users'),
+                      icon: Users,
+                      keywords: ['Infrastructure', 'Users'],
+                    },
+                    {
+                      name: 'infrastructure_workspaces',
+                      label: t('infrastructure-tabs.workspaces'),
+                      icon: Building,
+                      keywords: ['Infrastructure', 'Workspaces'],
+                    },
+                    ...(canAccessPlatformRoles
+                      ? [
+                          {
+                            name: 'infrastructure_entity_creation_limits',
+                            label: t(
+                              'infrastructure-tabs.entity_creation_limits'
+                            ),
+                            icon: LayoutGrid,
+                            keywords: ['Infrastructure', 'Limits'],
+                          },
+                          {
+                            name: 'infrastructure_mobile_versions',
+                            label: t('infrastructure-tabs.mobile_versions'),
+                            icon: Laptop,
+                            keywords: ['Infrastructure', 'Mobile', 'Versions'],
+                          },
+                        ]
+                      : []),
+                    ...(canAccessInfrastructureMobileDeployment
+                      ? [
+                          {
+                            name: 'infrastructure_mobile_deployment',
+                            label: t('infrastructure-tabs.mobile_deployment'),
+                            icon: Laptop,
+                            keywords: [
+                              'Infrastructure',
+                              'Mobile',
+                              'Deployment',
+                              'Vault',
+                            ],
+                          },
+                        ]
+                      : []),
+                    ...(canAccessSecrets
+                      ? [
+                          {
+                            name: 'infrastructure_github_bot',
+                            label: t('infrastructure-tabs.github_bot'),
+                            icon: Compass,
+                            keywords: ['Infrastructure', 'GitHub', 'Bot'],
+                          },
+                          {
+                            name: 'infrastructure_ai_agents',
+                            label: t('infrastructure-tabs.ai_agents'),
+                            icon: Brain,
+                            keywords: ['Infrastructure', 'AI', 'Agents'],
+                          },
+                        ]
+                      : []),
+                    ...(canAccessInfrastructureExternalApps
+                      ? [
+                          {
+                            name: 'infrastructure_external_apps',
+                            label: t('infrastructure-tabs.external_apps'),
+                            icon: Keyboard,
+                            keywords: ['Infrastructure', 'External Apps'],
+                          },
+                          {
+                            name: 'infrastructure_app_coordination',
+                            label: t('infrastructure-tabs.app_coordination'),
+                            icon: Share2,
+                            keywords: ['Infrastructure', 'App Coordination'],
+                          },
+                        ]
+                      : []),
+                    {
+                      name: 'infrastructure_email_blacklist',
+                      label: t('infrastructure-tabs.email_blacklist'),
+                      icon: Bell,
+                      keywords: ['Infrastructure', 'Email', 'Blacklist'],
+                    },
+                    {
+                      name: 'infrastructure_email_audit',
+                      label: t('infrastructure-tabs.email_audit'),
+                      icon: FileText,
+                      keywords: ['Infrastructure', 'Email', 'Audit'],
+                    },
+                    {
+                      name: 'infrastructure_email_templates',
+                      label: t('infrastructure-tabs.email_templates'),
+                      icon: FileText,
+                      keywords: ['Infrastructure', 'Email', 'Templates'],
+                    },
+                    {
+                      name: 'infrastructure_post_email_queue',
+                      label: t('infrastructure-tabs.post_email_queue'),
+                      icon: Bell,
+                      keywords: ['Infrastructure', 'Email', 'Queue'],
+                    },
+                    {
+                      name: 'infrastructure_push_notifications',
+                      label: t('infrastructure-tabs.push_notifications'),
+                      icon: Bell,
+                      keywords: ['Infrastructure', 'Push Notifications'],
+                    },
+                    {
+                      name: 'infrastructure_blocked_ips',
+                      label: t('infrastructure-tabs.blocked_ips'),
+                      icon: Shield,
+                      keywords: ['Infrastructure', 'Blocked IPs', 'Security'],
+                    },
+                    {
+                      name: 'infrastructure_abuse_events',
+                      label: t('infrastructure-tabs.abuse_events'),
+                      icon: Shield,
+                      keywords: ['Infrastructure', 'Abuse Events'],
+                    },
+                    {
+                      name: 'infrastructure_abuse_intelligence',
+                      label: t('infrastructure-tabs.abuse_intelligence'),
+                      icon: Shield,
+                      keywords: ['Infrastructure', 'Abuse Intelligence'],
+                    },
+                    {
+                      name: 'infrastructure_rate_limits',
+                      label: t('infrastructure-tabs.rate_limits'),
+                      icon: LayoutGrid,
+                      keywords: ['Infrastructure', 'Rate Limits'],
+                    },
+                    {
+                      name: 'infrastructure_otp_limits',
+                      label: t('infrastructure-tabs.otp_limits'),
+                      icon: Keyboard,
+                      keywords: ['Infrastructure', 'OTP Limits'],
+                    },
+                    {
+                      name: 'infrastructure_ai_whitelisted_emails',
+                      label: t('infrastructure-tabs.ai_whitelisted_emails'),
+                      icon: Bell,
+                      keywords: ['Infrastructure', 'AI', 'Whitelist', 'Email'],
+                    },
+                    {
+                      name: 'infrastructure_ai_whitelisted_domains',
+                      label: t('ws-ai-whitelist-domains.plural'),
+                      icon: Building,
+                      keywords: ['Infrastructure', 'AI', 'Whitelist', 'Domain'],
+                    },
+                    {
+                      name: 'infrastructure_cron_whitelisted_domains',
+                      label: t(
+                        'infrastructure-tabs.managed_cron_whitelisted_domains'
+                      ),
+                      icon: Clock,
+                      keywords: ['Infrastructure', 'Cron', 'Domains'],
+                    },
+                    {
+                      name: 'infrastructure_translations',
+                      label: t('infrastructure-tabs.translations'),
+                      icon: FileText,
+                      keywords: ['Infrastructure', 'Translations'],
+                    },
+                    {
+                      name: 'infrastructure_calendar_sync',
+                      label: 'Calendar Sync',
+                      icon: CalendarDays,
+                      keywords: ['Infrastructure', 'Calendar', 'Sync'],
+                    },
+                    {
+                      name: 'infrastructure_realtime',
+                      label: t('infrastructure-tabs.realtime'),
+                      icon: Clock,
+                      keywords: ['Infrastructure', 'Realtime'],
+                    },
+                    {
+                      name: 'infrastructure_devboxes',
+                      label: t('infrastructure-tabs.devboxes'),
+                      icon: Box,
+                      keywords: ['Infrastructure', 'Devboxes'],
+                    },
+                    {
+                      name: 'infrastructure_monitoring',
+                      label: t('infrastructure-tabs.monitoring'),
+                      icon: LayoutGrid,
+                      keywords: ['Infrastructure', 'Monitoring'],
+                    },
+                    {
+                      name: 'infrastructure_ai_credits',
+                      label: t('infrastructure-tabs.ai_credits'),
+                      icon: CreditCard,
+                      keywords: ['Infrastructure', 'AI Credits'],
+                    },
+                    ...(canAccessInfrastructureChangelog
+                      ? [
+                          {
+                            name: 'infrastructure_changelog',
+                            label: t('infrastructure-tabs.changelog'),
+                            icon: FileText,
+                            keywords: ['Infrastructure', 'Changelog'],
+                          },
+                        ]
+                      : []),
+                  ]
+                : []),
+            ],
+          },
+        ]
+      : []),
     ...(wsId
       ? [
           {
@@ -720,6 +1170,24 @@ export function SettingsDialog({
       : []),
   ];
 
+  const activeTabIsVisible = navItems.some((group) =>
+    group.items.some((item) => item.name === activeTab && !item.disabled)
+  );
+  const fallbackTab = navItems
+    .flatMap((group) => group.items)
+    .find((item) => !item.disabled)?.name;
+  const activeRoutePanelHref = activeTabIsVisible
+    ? routePanelHrefs[activeTab]
+    : undefined;
+
+  useEffect(() => {
+    if (isBillingPermissionLoading || activeTabIsVisible) return;
+
+    if (fallbackTab && fallbackTab !== activeTab) {
+      setActiveTab(fallbackTab);
+    }
+  }, [activeTab, activeTabIsVisible, fallbackTab, isBillingPermissionLoading]);
+
   return (
     <SettingsDialogShell
       navItems={navItems}
@@ -728,44 +1196,7 @@ export function SettingsDialog({
       expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
-      {activeTab === 'profile' && user && (
-        <div className="space-y-8">
-          <div className="grid gap-6">
-            <SettingItemTab
-              title={t('settings-account.avatar')}
-              description={t('settings-account.avatar-description')}
-            >
-              <UserAvatar user={user} />
-            </SettingItemTab>
-            <AccountStatusSection user={user} />
-            <Separator />
-            <SettingItemTab
-              title={t('settings-account.user-id')}
-              description={t('settings-account.user-id-description')}
-            >
-              <UserIdInput userId={user.id} />
-            </SettingItemTab>
-            <SettingItemTab
-              title={t('settings-account.display-name')}
-              description={t('settings-account.display-name-description')}
-            >
-              <DisplayNameInput defaultValue={user?.display_name} />
-            </SettingItemTab>
-            <SettingItemTab
-              title={t('settings-account.full-name')}
-              description={t('settings-account.full-name-description')}
-            >
-              <FullNameInput defaultValue={user?.full_name} />
-            </SettingItemTab>
-            <SettingItemTab
-              title="Email"
-              description={t('settings-account.email-description')}
-            >
-              <EmailInput oldEmail={user.email} newEmail={user.new_email} />
-            </SettingItemTab>
-          </div>
-        </div>
-      )}
+      {activeTab === 'profile' && user && <ProfileSettingsPanel user={user} />}
 
       {activeTab === 'security' && user && (
         <div className="h-full">
@@ -820,11 +1251,7 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'tasks_general' && (
-        <div className="h-full space-y-8">
-          <TaskSettings workspace={workspace} />
-          {wsId && <DefaultTaskBoardSettings wsId={wsId} />}
-          {wsId && <BoardDefaultListSettings wsId={wsId} />}
-        </div>
+        <TaskGeneralSettingsPanel workspace={workspace} wsId={wsId} />
       )}
 
       {activeTab === 'task_board' && wsId && boardId && (
@@ -876,92 +1303,27 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'workspace_general' && (
-        <div className="space-y-8">
-          {isLoadingWorkspace ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="mt-4 text-muted-foreground text-sm">
-                  {t('settings.loading_workspace')}
-                </p>
-              </div>
-            </div>
-          ) : workspaceError ? (
-            <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-              <p className="font-medium text-destructive">
-                {t('settings.failed_to_load_workspace')}
-              </p>
-              <p className="mt-1 text-muted-foreground text-sm">
-                {workspaceError.message ||
-                  t('settings.error_loading_workspace')}
-              </p>
-            </div>
-          ) : workspace ? (
-            <>
-              <BasicInfo
-                workspace={workspace}
-                allowEdit={allowWorkspaceBasicsEdit}
-                isPersonal={workspace.personal}
-              />
-              <WorkspaceAvatarSettings
-                user={user}
-                workspace={workspace}
-                allowEdit={allowWorkspaceBasicsEdit}
-              />
-            </>
-          ) : (
-            <div className="rounded-lg border p-4">
-              <p className="text-muted-foreground text-sm">
-                {t('settings.workspace_not_found')}
-              </p>
-            </div>
-          )}
-        </div>
+        <WorkspaceGeneralSettingsPanel
+          allowWorkspaceBasicsEdit={allowWorkspaceBasicsEdit}
+          isLoadingWorkspace={isLoadingWorkspace}
+          user={user}
+          workspace={workspace}
+          workspaceError={workspaceError}
+        />
       )}
 
       {activeTab === 'workspace_members' && (
-        <div className="h-full">
-          {isLoadingWorkspace ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="mt-4 text-muted-foreground text-sm">
-                  {t('settings.loading_workspace')}
-                </p>
-              </div>
-            </div>
-          ) : workspaceError ? (
-            <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-              <p className="font-medium text-destructive">
-                {t('settings.failed_to_load_workspace')}
-              </p>
-              <p className="mt-1 text-muted-foreground text-sm">
-                {workspaceError.message ||
-                  t('settings.error_loading_workspace')}
-              </p>
-            </div>
-          ) : workspace ? (
-            <div className="space-y-6">
-              <GuestSelfJoinSetting
-                wsId={workspace.id}
-                disabled={!canManageWorkspaceMembers}
-                embedded
-              />
-              <MembersSettings workspace={workspace} />
-            </div>
-          ) : (
-            <div className="rounded-lg border p-4">
-              <p className="text-muted-foreground text-sm">
-                {t('settings.workspace_not_found')}
-              </p>
-            </div>
-          )}
-        </div>
+        <WorkspaceMembersSettingsPanel
+          canManageWorkspaceMembers={canManageWorkspaceMembers}
+          isLoadingWorkspace={isLoadingWorkspace}
+          workspace={workspace}
+          workspaceError={workspaceError}
+        />
       )}
 
       {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
         <div className="h-full">
-          <BillingSettings wsId={wsId} />
+          <WorkspaceBillingSettings wsId={wsId} />
         </div>
       )}
 
@@ -1098,6 +1460,10 @@ export function SettingsDialog({
 
       {activeTab === 'attendance_display' && wsId && (
         <AttendanceDisplaySettings wsId={wsId} />
+      )}
+
+      {activeRoutePanelHref && (
+        <SettingsRouteEntryPanel href={activeRoutePanelHref} />
       )}
     </SettingsDialogShell>
   );

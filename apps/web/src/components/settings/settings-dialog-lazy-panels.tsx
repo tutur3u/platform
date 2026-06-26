@@ -39,6 +39,39 @@ const LazyApprovalsSettings = lazy(() =>
     default: module.ApprovalsSettings,
   }))
 );
+const LazyAccountManagementSettings = lazy(
+  () => import('./account/account-management-settings')
+);
+const LazyAppearanceSettings = lazy(() => import('./appearance-settings'));
+const LazyFormsAutosaveSettings = lazy(() =>
+  import('./forms/forms-autosave-settings').then((module) => ({
+    default: module.FormsAutosaveSettings,
+  }))
+);
+const LazyKeyboardShortcutsSettings = lazy(() =>
+  import('./keyboard-shortcuts-settings').then((module) => ({
+    default: module.KeyboardShortcutsSettings,
+  }))
+);
+const LazyNavigationSidebarSettings = lazy(() => import('./sidebar-settings'));
+const LazyNotificationSettings = lazy(
+  () => import('./account/notification-settings')
+);
+const LazyProfileSettingsPanel = lazy(() =>
+  import('./settings-dialog-profile-panel').then((module) => ({
+    default: module.ProfileSettingsPanel,
+  }))
+);
+const LazyReferralSettings = lazy(
+  () => import('./inventory/referral-settings')
+);
+const LazySecuritySettings = lazy(() => import('./account/security-settings'));
+const LazySessionSettings = lazy(() => import('./account/session-settings'));
+const LazyTaskGeneralSettingsPanel = lazy(() =>
+  import('./settings-dialog-task-general-panel').then((module) => ({
+    default: module.TaskGeneralSettingsPanel,
+  }))
+);
 const LazyAttendanceDisplaySettings = lazy(
   () => import('./attendance/attendance-display-settings')
 );
@@ -57,6 +90,22 @@ const LazyRequireAttentionColorSettings = lazy(() =>
 );
 const LazyUsersManagementSettings = lazy(
   () => import('./users/users-management-settings')
+);
+const LazyUserStatusSettings = lazy(
+  () => import('./workspace/user-status-settings')
+);
+const LazyWorkspaceBillingSettings = lazy(
+  () => import('./workspace/billing-settings')
+);
+const LazyWorkspaceGeneralSettingsPanel = lazy(() =>
+  import('./settings-dialog-workspace-panels').then((module) => ({
+    default: module.WorkspaceGeneralSettingsPanel,
+  }))
+);
+const LazyWorkspaceMembersSettingsPanel = lazy(() =>
+  import('./settings-dialog-workspace-panels').then((module) => ({
+    default: module.WorkspaceMembersSettingsPanel,
+  }))
 );
 
 const LazyDebtLoanSettings = lazy(() => import('./finance/debt-loan-settings'));
@@ -91,6 +140,11 @@ const LazyMiraPersonalitySettings = lazy(() =>
 const LazyReportDefaultTitleSettings = lazy(() =>
   import('./reports/report-default-title-settings').then((module) => ({
     default: module.ReportDefaultTitleSettings,
+  }))
+);
+const LazySettingsRouteEntryPanel = lazy(() =>
+  import('./settings-route-entry-panel').then((module) => ({
+    default: module.SettingsRouteEntryPanel,
   }))
 );
 
@@ -289,6 +343,10 @@ export function CalendarContentSettingsPanel({
   );
 }
 
+export const AccountManagementSettings = withPanelSuspense(
+  LazyAccountManagementSettings
+);
+export const AppearanceSettings = withPanelSuspense(LazyAppearanceSettings);
 export const ApprovalsSettings = withPanelSuspense(LazyApprovalsSettings);
 export const AttendanceDisplaySettings = withPanelSuspense(
   LazyAttendanceDisplaySettings
@@ -307,6 +365,9 @@ export const ExperimentalFinanceSettings = withPanelSuspense(
 export const FeaturedGroupsSettings = withPanelSuspense(
   LazyFeaturedGroupsSettings
 );
+export const FormsAutosaveSettings = withPanelSuspense(
+  LazyFormsAutosaveSettings
+);
 export const FinanceNavigationSettings = withPanelSuspense(
   LazyFinanceNavigationSettings
 );
@@ -314,15 +375,32 @@ export const InvoiceSettings = withPanelSuspense(LazyInvoiceSettings);
 export const InvoiceVisibilitySettings = withPanelSuspense(
   LazyInvoiceVisibilitySettings
 );
+export const KeyboardShortcutsSettings = withPanelSuspense(
+  LazyKeyboardShortcutsSettings
+);
 export const MiraMemorySettings = withPanelSuspense(LazyMiraMemorySettings);
 export const MiraPersonalitySettings = withPanelSuspense(
   LazyMiraPersonalitySettings
 );
+export const NavigationSidebarSettings = withPanelSuspense(
+  LazyNavigationSidebarSettings
+);
+export const NotificationSettings = withPanelSuspense(LazyNotificationSettings);
+export const ProfileSettingsPanel = withPanelSuspense(LazyProfileSettingsPanel);
+export const ReferralSettings = withPanelSuspense(LazyReferralSettings);
 export const ReportDefaultTitleSettings = withPanelSuspense(
   LazyReportDefaultTitleSettings
 );
+export const SettingsRouteEntryPanel = withPanelSuspense(
+  LazySettingsRouteEntryPanel
+);
 export const RequireAttentionColorSettings = withPanelSuspense(
   LazyRequireAttentionColorSettings
+);
+export const SecuritySettings = withPanelSuspense(LazySecuritySettings);
+export const SessionSettings = withPanelSuspense(LazySessionSettings);
+export const TaskGeneralSettingsPanel = withPanelSuspense(
+  LazyTaskGeneralSettingsPanel
 );
 export const TaskInitiativesSettings = withPanelSuspense(
   LazyTaskInitiativesSettings
@@ -351,6 +429,16 @@ export const TransactionDefaultsSettings = withPanelSuspense(
 export const UsersManagementSettings = withPanelSuspense(
   LazyUsersManagementSettings
 );
+export const UserStatusSettings = withPanelSuspense(LazyUserStatusSettings);
+export const WorkspaceBillingSettings = withPanelSuspense(
+  LazyWorkspaceBillingSettings
+);
 export const WorkspaceBreakTypesSettings = withPanelSuspense(
   LazyWorkspaceBreakTypesSettings
+);
+export const WorkspaceGeneralSettingsPanel = withPanelSuspense(
+  LazyWorkspaceGeneralSettingsPanel
+);
+export const WorkspaceMembersSettingsPanel = withPanelSuspense(
+  LazyWorkspaceMembersSettingsPanel
 );
