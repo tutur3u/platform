@@ -6,7 +6,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.1.9",
     "lucide-static": "^1.21.0",
-    "portless": "^0.14.0",
+    "portless": "^0.15.0",
     "turbo": "^2.9.18",
     "typescript": "7.0.1-rc",
     "vite": "^8.1.0",
