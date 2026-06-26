@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/sdk-v0.10.1...sdk-v0.11.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** support task description editing ([c72390b](https://github.com/tutur3u/platform/commit/c72390b909054af596ccbed8af6ded9f266dfdd4))
+* **cms:** integrate exocorpse external project ([c07081b](https://github.com/tutur3u/platform/commit/c07081b0bd98379eac97c3258b483ad8e39c9b39))
+* **epm:** batch external project entry mutations ([59dc436](https://github.com/tutur3u/platform/commit/59dc436c5b7485a5aaf9b82a445dc0bacd2cb1bc))
+
 ## [0.10.1](https://github.com/tutur3u/platform/compare/sdk-v0.10.0...sdk-v0.10.1) (2026-06-17)
 
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/internal-api-v0.10.0...internal-api-v0.11.0) (2026-06-26)
+
+
+### Features
+
+* **auth:** support workspace session external apps ([0ca4909](https://github.com/tutur3u/platform/commit/0ca4909ce86c3645288696f8e6f7919e05a61a2b))
+* **internal-api:** add api key migration bridge ([4e7c84a](https://github.com/tutur3u/platform/commit/4e7c84ab1a2ef2a22d454a79e2f8cacb9e399bb2))
+* **internal-api:** add workspace billing backend facades ([16a3ac7](https://github.com/tutur3u/platform/commit/16a3ac72241186f092f5246b66810afa367bec94))
+* **tanstack:** migrate account deletion route ([bf9f17f](https://github.com/tutur3u/platform/commit/bf9f17f5f1a38768bab8409e8f7943915ef8a2f7))
+* **tanstack:** migrate cron jobs page ([088d0f9](https://github.com/tutur3u/platform/commit/088d0f9ae87b9b8248383a3ba6e902a7ccceeeaa))
+* **tanstack:** migrate document detail preview ([a26aa54](https://github.com/tutur3u/platform/commit/a26aa54df9d69f627a8b5710d52f57a6303653b4))
+* **tanstack:** migrate documents list route ([3f7ea4c](https://github.com/tutur3u/platform/commit/3f7ea4c1f5d4106d0080dfadd55d3ea75c806391))
+* **tanstack:** migrate group tag detail ([a66aa7c](https://github.com/tutur3u/platform/commit/a66aa7cf0c8b5d52905a1f4c4abe660b1f826452))
+* **tanstack:** migrate notifications inbox ([7868432](https://github.com/tutur3u/platform/commit/78684322eac9c405d7c37c674513c7275ad8be98))
+* **tanstack:** migrate realtime analytics page ([d3cb3f0](https://github.com/tutur3u/platform/commit/d3cb3f051e591646d9b3665290f133fdef6699f9))
+* **tanstack:** migrate user group attendance ([085e752](https://github.com/tutur3u/platform/commit/085e752c04508975b34ddb95904c7593608b53a3))
+* **tasks:** add task progress tracking ([4cffb0f](https://github.com/tutur3u/platform/commit/4cffb0f041d41e3868481068d64b9e3b85a0011a))
+* **web:** add managed workspace cron service ([453763e](https://github.com/tutur3u/platform/commit/453763ebce1028e4189f4f1cdf70d8db5a9331c0))
+* **web:** migrate settings dialog panels ([e2c0726](https://github.com/tutur3u/platform/commit/e2c0726be944659c749cb618321883277c9e1824))
+
+
+### Bug Fixes
+
+* **ci:** recover unresponsive Docker watcher ([28b39e2](https://github.com/tutur3u/platform/commit/28b39e274ea19f173a219c774f213c831fa7dea6))
+* **tasks:** improve shared board collaboration ([fa4ca4d](https://github.com/tutur3u/platform/commit/fa4ca4d412c8f8f533ab87639b314fefc70f9107))
+* **tasks:** show accessible guest task boards ([3153c48](https://github.com/tutur3u/platform/commit/3153c4814e599905ea3de36b3f63e941d6bc86d9))
+* **tasks:** support assignees on shared personal boards ([112a561](https://github.com/tutur3u/platform/commit/112a561f38cd73bf4c928117cb4d2f0b178dc7e4))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/internal-api-v0.9.0...internal-api-v0.10.0) (2026-06-24)
 
 

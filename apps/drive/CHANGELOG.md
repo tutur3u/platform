@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/tutur3u/platform/compare/drive-v0.8.0...drive-v0.8.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **tasks:** improve shared board collaboration ([fa4ca4d](https://github.com/tutur3u/platform/commit/fa4ca4d412c8f8f533ab87639b314fefc70f9107))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/drive-v0.7.0...drive-v0.8.0) (2026-06-24)
 
 

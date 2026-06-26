@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/utils-v0.9.0...utils-v0.10.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** support task description editing ([c72390b](https://github.com/tutur3u/platform/commit/c72390b909054af596ccbed8af6ded9f266dfdd4))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/utils-v0.8.0...utils-v0.9.0) (2026-06-24)
 
 

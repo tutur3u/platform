@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/ui-v0.9.0...ui-v0.10.0) (2026-06-26)
+
+
+### Features
+
+* **settings:** lazy load searchable settings availability ([78091c0](https://github.com/tutur3u/platform/commit/78091c0acd16609c695be80b7c47f7840a34d74a))
+* **settings:** open settings dialog from sidebar ([f3d223f](https://github.com/tutur3u/platform/commit/f3d223fbe3b4ecc7c37b6f19645f6122ddfdf5b9))
+* **tanstack:** migrate module youtube links ([bcbf192](https://github.com/tutur3u/platform/commit/bcbf1927802283b3447a8851b3208362e0dff822))
+* **tasks:** add task progress tracking ([4cffb0f](https://github.com/tutur3u/platform/commit/4cffb0f041d41e3868481068d64b9e3b85a0011a))
+* **tasks:** stabilize shared board realtime collaboration ([6028caf](https://github.com/tutur3u/platform/commit/6028caf50432fd4dcebdaa5a59284e50972b1aa3))
+
+
+### Bug Fixes
+
+* **settings:** resolve lazy search import for docker build ([8a6dc1b](https://github.com/tutur3u/platform/commit/8a6dc1b39fd675daaa9f9b24c60b975b044db724))
+* **tasks:** align board skeleton and nav highlight ([1f20ad4](https://github.com/tutur3u/platform/commit/1f20ad4c21c607a085de6eb7dff772a077fc0fd1))
+* **tasks:** canonicalize task board entry routes ([6d83864](https://github.com/tutur3u/platform/commit/6d838648e7d817cdfac6ae40f06ce3418a899bf9))
+* **tasks:** default task boards to kanban ([477c12a](https://github.com/tutur3u/platform/commit/477c12aeee7644a28e6266f9c339e7ef5c3228bf))
+* **tasks:** harden board task loading ([459fecf](https://github.com/tutur3u/platform/commit/459fecf66414b83bcb18f98eda9677ec3e220855))
+* **tasks:** improve shared board collaboration ([fa4ca4d](https://github.com/tutur3u/platform/commit/fa4ca4d412c8f8f533ab87639b314fefc70f9107))
+* **tasks:** keep pinned special lists sticky ([83ff72c](https://github.com/tutur3u/platform/commit/83ff72ce9b3fd737db666a6caef96ed2ca026fc2))
+* **tasks:** match board name input surface ([2552733](https://github.com/tutur3u/platform/commit/2552733942f720bb1df0566f27753eb226115f3e))
+* **tasks:** show accessible guest task boards ([3153c48](https://github.com/tutur3u/platform/commit/3153c4814e599905ea3de36b3f63e941d6bc86d9))
+* **tasks:** stabilize task board loading states ([b7f4212](https://github.com/tutur3u/platform/commit/b7f4212981514fdb1f38b83be5baf7a8d2686571))
+* **tasks:** support assignees on shared personal boards ([112a561](https://github.com/tutur3u/platform/commit/112a561f38cd73bf4c928117cb4d2f0b178dc7e4))
+* **tasks:** support board guest assignees ([4e479aa](https://github.com/tutur3u/platform/commit/4e479aac13746a2e7c432be4f36ea87407849472))
+* **teach:** harden lesson save recovery ([d56a010](https://github.com/tutur3u/platform/commit/d56a010db5d22dcfde10fc51fbcf73c7abc62268))
+* **teach:** reconcile lesson editor saves ([6f2cb4f](https://github.com/tutur3u/platform/commit/6f2cb4f38c1f3b68aeadec11215066be4f7fbd78))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/ui-v0.8.0...ui-v0.9.0) (2026-06-24)
 
 
