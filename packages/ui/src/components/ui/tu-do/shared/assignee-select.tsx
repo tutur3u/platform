@@ -29,7 +29,15 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { useBoardBroadcast } from './board-broadcast-context';
+import {
+  getActiveBoardRefresh,
+  useBoardBroadcast,
+} from './board-broadcast-context';
+import {
+  patchTaskInVisibleCaches,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from './task-cache-patches';
 
 interface Member {
   id: string;
@@ -39,7 +47,7 @@ interface Member {
   avatar_url?: string;
 }
 
-interface Task {
+interface TaskWithAssignees {
   id: string;
   assignees?: Member[];
 }
@@ -182,7 +190,10 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           throw new Error(t('please_try_again_later'));
         }
 
-        const boardTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+        const boardTasks = queryClient.getQueryData<TaskWithAssignees[]>([
+          'tasks',
+          boardId,
+        ]);
         const currentTask = boardTasks?.find((task) => task.id === taskId);
         const existingIds =
           currentTask?.assignees
@@ -205,19 +216,24 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       onMutate: async ({ memberId, action }) => {
         // Cancel any outgoing refetches
         await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+        if (boardId) {
+          await queryClient.cancelQueries({
+            queryKey: ['tasks-full', boardId],
+          });
+        }
 
         // Snapshot the previous value
-        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+        const cacheSnapshot = boardId
+          ? snapshotVisibleTaskCaches(queryClient, boardId, [taskId])
+          : undefined;
 
         // Optimistically update the cache
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-
-            return old.map((task: Task) => {
-              if (task.id !== taskId) return task;
-
+        if (boardId) {
+          patchTaskInVisibleCaches({
+            queryClient,
+            boardId,
+            taskId,
+            updater: (task) => {
               const currentAssignees = task.assignees || [];
               let newAssignees: Member[];
 
@@ -238,9 +254,9 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
               }
 
               return { ...task, assignees: newAssignees };
-            });
-          }
-        );
+            },
+          });
+        }
 
         const previousLocalAssignees = localAssigneesState;
 
@@ -257,12 +273,12 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           return old.filter((assignee) => assignee.id !== memberId);
         });
 
-        return { previousTasks, previousLocalAssignees };
+        return { cacheSnapshot, previousLocalAssignees };
       },
       onError: (err, _, context) => {
         // Rollback optimistic update on error
-        if (context?.previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+        if (context?.cacheSnapshot) {
+          restoreVisibleTaskCaches(queryClient, context.cacheSnapshot);
         }
 
         if (context?.previousLocalAssignees) {
@@ -276,6 +292,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       },
       onSuccess: () => {
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
       },
       // Note: Removed onSettled invalidation to prevent flicker
       // Optimistic updates handle immediate UI feedback

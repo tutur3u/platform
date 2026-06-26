@@ -148,8 +148,6 @@ export function BoardClient({
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
 
-  const { broadcast } = useBoardRealtime(boardId);
-
   const refreshActiveBoard = useCallback(
     (options?: BoardRefreshOptions) => {
       const invalidateTasks = options?.invalidateTasks ?? true;
@@ -185,6 +183,12 @@ export function BoardClient({
       workspace.id,
     ]
   );
+
+  const { broadcast } = useBoardRealtime(boardId, {
+    onTaskRelationsChange: () => {
+      refreshActiveBoard({ invalidateTasks: false });
+    },
+  });
 
   // Register broadcast at module level so components outside the
   // BoardBroadcastProvider tree (e.g. task dialog) can access it.

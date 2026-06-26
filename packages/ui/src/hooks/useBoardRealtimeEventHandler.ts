@@ -196,8 +196,6 @@ function invalidateTaskRelationQueries(
   boardId: string,
   taskIds: string[]
 ) {
-  void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-  void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
   void queryClient.invalidateQueries({
     predicate: (query) =>
       Array.isArray(query.queryKey) &&
@@ -217,7 +215,8 @@ export function useBoardRealtimeEventHandler({
   onTaskRelationsChangeRef,
 }: UseBoardRealtimeEventHandlerOptions) {
   // Collects task IDs from task:relations-changed events over 150ms
-  // and invalidates relation-bearing queries together.
+  // and reconciles relation-bearing queries together. Visible board task arrays
+  // stay patched in place by the sender and by board background revalidation.
   const pendingRelationIdsRef = useRef<Set<string>>(new Set());
   const relationInvalidationTimerRef = useRef<ReturnType<
     typeof setTimeout
@@ -231,7 +230,7 @@ export function useBoardRealtimeEventHandler({
 
     if (DEV_MODE) {
       console.log(
-        `[useBoardRealtime] Invalidating relations for ${taskIds.length} task(s):`,
+        `[useBoardRealtime] Reconciling relations for ${taskIds.length} task(s):`,
         taskIds
       );
     }

@@ -10,6 +10,7 @@ Tasks is Tuturuuu's intelligent task management system featuring a 6-level hiera
 ## Overview
 
 Tasks provides:
+
 - **Hierarchical organization** - 6 levels from workspaces to individual tasks
 - **Bucket dump** - Capture notes and convert to tasks/projects
 - **Cross-board projects** - Coordinate tasks across multiple boards
@@ -78,6 +79,14 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 - The filter sheet must disclose that default exclusion and indicate when a selected list/status filter overrides it, because those filters intentionally reveal otherwise hidden list categories.
 - Moving a task between lists, including marking it done or closed, should refresh the affected source and destination lists instead of relying on a full board reload.
 
+## Task Board Realtime And Cache Notes
+
+- Successful task mutations must update visible TanStack Query caches in place before broadcasting. Patch all visible task shapes that can render the same card: `['tasks', boardId]`, every `['tasks-full', boardId, ...]` query, `['task', taskId]`, matching `['workspaceTask', wsId, taskId]`, and personal task buckets when present.
+- Relation-only updates for labels, projects, and assignees should broadcast `task:relations-changed` and call the active board refresh with `{ invalidateTasks: false }`. Do not invalidate `['tasks', boardId]` or `['tasks-full', boardId]` after successful relation-only changes; refetching those visible arrays causes card flicker while the optimistic cache already has the relation data.
+- Scalar task changes such as priority, dates, estimate, name, and list should patch visible task caches and broadcast `task:upsert` with the changed fields. Rollbacks should restore snapshots of the touched task ids instead of invalidating the whole board task cache.
+- Realtime receivers may reconcile task detail, history, counts, and personal task queries in the background. The board page should revalidate loaded progressive-list data without invalidating visible task arrays so shared boards stay current without remounting cards.
+- Task edit dialogs should keep dropdowns and popovers controlled from a single active overlay id within each dialog section. Opening another menu must close the previous one, and outside-click/Escape close behavior should flow through the same `onOpenChange` path.
+
 ## AI Journal Capture Notes
 
 - The quick-journal endpoint at `/api/v1/workspaces/{wsId}/tasks/journal` is a two-step flow: preview requests may invoke AI, but save requests that already include reviewed `tasks` plus a `listId` must persist directly.
@@ -108,9 +117,9 @@ Container for all workspace resources.
 ```typescript
 // Get workspace
 const { data: workspace } = await supabase
-  .from('workspaces')
-  .select('*')
-  .eq('id', wsId)
+  .from("workspaces")
+  .select("*")
+  .eq("id", wsId)
   .single();
 ```
 
@@ -131,10 +140,11 @@ CREATE TABLE task_initiatives (
 ```
 
 **Usage:**
-```typescript
-'use server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+```typescript
+"use server";
+
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function createInitiative(data: {
   wsId: string;
@@ -146,13 +156,13 @@ export async function createInitiative(data: {
   const supabase = await createClient();
 
   const { data: initiative, error } = await supabase
-    .from('task_initiatives')
+    .from("task_initiatives")
     .insert({
       ws_id: data.wsId,
       name: data.name,
       description: data.description,
-      start_date: data.startDate?.toISOString().split('T')[0],
-      end_date: data.endDate?.toISOString().split('T')[0],
+      start_date: data.startDate?.toISOString().split("T")[0],
+      end_date: data.endDate?.toISOString().split("T")[0],
     })
     .select()
     .single();
@@ -191,10 +201,11 @@ CREATE TABLE task_project_tasks (
 ```
 
 **Usage:**
-```typescript
-'use server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+```typescript
+"use server";
+
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function createProject(data: {
   wsId: string;
@@ -206,7 +217,7 @@ export async function createProject(data: {
 
   // Create project
   const { data: project, error } = await supabase
-    .from('task_projects')
+    .from("task_projects")
     .insert({
       ws_id: data.wsId,
       name: data.name,
@@ -219,11 +230,11 @@ export async function createProject(data: {
 
   // Link to initiatives
   if (data.initiativeIds && data.initiativeIds.length > 0) {
-    await supabase.from('task_project_initiatives').insert(
+    await supabase.from("task_project_initiatives").insert(
       data.initiativeIds.map((initiativeId) => ({
         project_id: project.id,
         initiative_id: initiativeId,
-      }))
+      })),
     );
   }
 
@@ -233,12 +244,10 @@ export async function createProject(data: {
 export async function addTaskToProject(projectId: string, taskId: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from('task_project_tasks')
-    .insert({
-      project_id: projectId,
-      task_id: taskId,
-    });
+  const { error } = await supabase.from("task_project_tasks").insert({
+    project_id: projectId,
+    task_id: taskId,
+  });
 
   if (error) throw error;
 }
@@ -465,16 +474,17 @@ CREATE TABLE workspace_boards (
 ```
 
 **Usage:**
-```typescript
-'use server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+```typescript
+"use server";
+
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function createBoard(wsId: string, name: string) {
   const supabase = await createClient();
 
   const { data: board, error } = await supabase
-    .from('workspace_boards')
+    .from("workspace_boards")
     .insert({
       ws_id: wsId,
       name,
@@ -485,14 +495,14 @@ export async function createBoard(wsId: string, name: string) {
   if (error) throw error;
 
   // Create default lists
-  const defaultLists = ['To Do', 'In Progress', 'Done'];
+  const defaultLists = ["To Do", "In Progress", "Done"];
 
-  await supabase.from('task_lists').insert(
+  await supabase.from("task_lists").insert(
     defaultLists.map((listName, index) => ({
       board_id: board.id,
       name: listName,
       position: index,
-    }))
+    })),
   );
 
   return board;
@@ -516,15 +526,13 @@ CREATE TABLE task_lists (
 ```
 
 **Usage:**
+
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
-export async function reorderLists(
-  boardId: string,
-  listIds: string[]
-) {
+export async function reorderLists(boardId: string, listIds: string[]) {
   const supabase = await createClient();
 
   // Update positions based on array order
@@ -535,9 +543,9 @@ export async function reorderLists(
 
   for (const update of updates) {
     await supabase
-      .from('task_lists')
+      .from("task_lists")
       .update({ position: update.position })
-      .eq('id', update.id);
+      .eq("id", update.id);
   }
 }
 ```
@@ -585,9 +593,9 @@ CREATE TABLE notes (
 ### Convert Note to Task
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function convertNoteToTask(data: {
   noteId: string;
@@ -598,16 +606,16 @@ export async function convertNoteToTask(data: {
 
   // Get note
   const { data: note } = await supabase
-    .from('notes')
-    .select('*')
-    .eq('id', data.noteId)
+    .from("notes")
+    .select("*")
+    .eq("id", data.noteId)
     .single();
 
-  if (!note) throw new Error('Note not found');
+  if (!note) throw new Error("Note not found");
 
   // Create task from note
   const { data: task, error } = await supabase
-    .from('workspace_tasks')
+    .from("workspace_tasks")
     .insert({
       ws_id: note.ws_id,
       list_id: data.listId,
@@ -622,7 +630,7 @@ export async function convertNoteToTask(data: {
   if (error) throw error;
 
   // Optionally delete note
-  await supabase.from('notes').delete().eq('id', data.noteId);
+  await supabase.from("notes").delete().eq("id", data.noteId);
 
   return task;
 }
@@ -631,9 +639,9 @@ export async function convertNoteToTask(data: {
 ### Convert Note to Project
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function convertNoteToProject(data: {
   noteId: string;
@@ -642,16 +650,16 @@ export async function convertNoteToProject(data: {
   const supabase = await createClient();
 
   const { data: note } = await supabase
-    .from('notes')
-    .select('*')
-    .eq('id', data.noteId)
+    .from("notes")
+    .select("*")
+    .eq("id", data.noteId)
     .single();
 
-  if (!note) throw new Error('Note not found');
+  if (!note) throw new Error("Note not found");
 
   // Create project from note
   const { data: project, error } = await supabase
-    .from('task_projects')
+    .from("task_projects")
     .insert({
       ws_id: note.ws_id,
       name: note.title,
@@ -664,14 +672,14 @@ export async function convertNoteToProject(data: {
 
   // Link to initiative if provided
   if (data.initiativeId) {
-    await supabase.from('task_project_initiatives').insert({
+    await supabase.from("task_project_initiatives").insert({
       project_id: project.id,
       initiative_id: data.initiativeId,
     });
   }
 
   // Delete note
-  await supabase.from('notes').delete().eq('id', data.noteId);
+  await supabase.from("notes").delete().eq("id", data.noteId);
 
   return project;
 }
@@ -695,10 +703,11 @@ ADD COLUMN cycle_id text REFERENCES task_cycles(id) ON DELETE SET NULL;
 ```
 
 **Usage:**
-```typescript
-'use server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+```typescript
+"use server";
+
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function createCycle(data: {
   wsId: string;
@@ -709,12 +718,12 @@ export async function createCycle(data: {
   const supabase = await createClient();
 
   const { data: cycle, error } = await supabase
-    .from('task_cycles')
+    .from("task_cycles")
     .insert({
       ws_id: data.wsId,
       name: data.name,
-      start_date: data.startDate.toISOString().split('T')[0],
-      end_date: data.endDate.toISOString().split('T')[0],
+      start_date: data.startDate.toISOString().split("T")[0],
+      end_date: data.endDate.toISOString().split("T")[0],
     })
     .select()
     .single();
@@ -725,14 +734,14 @@ export async function createCycle(data: {
 
 export async function getActiveCycle(wsId: string) {
   const supabase = await createClient();
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const { data: cycle } = await supabase
-    .from('task_cycles')
-    .select('*')
-    .eq('ws_id', wsId)
-    .lte('start_date', today)
-    .gte('end_date', today)
+    .from("task_cycles")
+    .select("*")
+    .eq("ws_id", wsId)
+    .lte("start_date", today)
+    .gte("end_date", today)
     .single();
 
   return cycle;
@@ -751,24 +760,25 @@ CREATE TABLE task_estimates (
 ```
 
 **Estimation Types:**
+
 - **Fibonacci**: 1, 2, 3, 5, 8, 13, 21
 - **Exponential**: 1, 2, 4, 8, 16, 32
 - **Linear**: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 - **T-Shirt**: XS (1), S (2), M (3), L (5), XL (8), XXL (13)
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function estimateTask(
   taskId: string,
-  estimationType: 'fibonacci' | 'exponential' | 'linear' | 'tshirt',
-  value: number
+  estimationType: "fibonacci" | "exponential" | "linear" | "tshirt",
+  value: number,
 ) {
   const supabase = await createClient();
 
-  const { error } = await supabase.from('task_estimates').upsert({
+  const { error } = await supabase.from("task_estimates").upsert({
     task_id: taskId,
     type: estimationType,
     value,
@@ -798,16 +808,17 @@ CREATE TABLE task_label_assignments (
 ```
 
 **Usage:**
-```typescript
-'use server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+```typescript
+"use server";
+
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function createLabel(wsId: string, name: string, color: string) {
   const supabase = await createClient();
 
   const { data: label, error } = await supabase
-    .from('task_labels')
+    .from("task_labels")
     .insert({ ws_id: wsId, name, color })
     .select()
     .single();
@@ -820,7 +831,7 @@ export async function assignLabel(taskId: string, labelId: string) {
   const supabase = await createClient();
 
   const { error } = await supabase
-    .from('task_label_assignments')
+    .from("task_label_assignments")
     .insert({ task_id: taskId, label_id: labelId });
 
   if (error) throw error;
@@ -846,40 +857,38 @@ ADD COLUMN status_id text REFERENCES task_statuses(id) ON DELETE SET NULL;
 ```
 
 **Usage:**
+
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
-export async function createBoardWithStatuses(
-  wsId: string,
-  boardName: string
-) {
+export async function createBoardWithStatuses(wsId: string, boardName: string) {
   const supabase = await createClient();
 
   // Create board
   const { data: board } = await supabase
-    .from('workspace_boards')
+    .from("workspace_boards")
     .insert({ ws_id: wsId, name: boardName })
     .select()
     .single();
 
-  if (!board) throw new Error('Failed to create board');
+  if (!board) throw new Error("Failed to create board");
 
   // Create default statuses
   const statuses = [
-    { name: 'Backlog', color: '#gray', position: 0, is_completed: false },
-    { name: 'To Do', color: '#blue', position: 1, is_completed: false },
-    { name: 'In Progress', color: '#yellow', position: 2, is_completed: false },
-    { name: 'Review', color: '#purple', position: 3, is_completed: false },
-    { name: 'Done', color: '#green', position: 4, is_completed: true },
+    { name: "Backlog", color: "#gray", position: 0, is_completed: false },
+    { name: "To Do", color: "#blue", position: 1, is_completed: false },
+    { name: "In Progress", color: "#yellow", position: 2, is_completed: false },
+    { name: "Review", color: "#purple", position: 3, is_completed: false },
+    { name: "Done", color: "#green", position: 4, is_completed: true },
   ];
 
-  await supabase.from('task_statuses').insert(
+  await supabase.from("task_statuses").insert(
     statuses.map((status) => ({
       board_id: board.id,
       ...status,
-    }))
+    })),
   );
 
   return board;
@@ -900,15 +909,16 @@ CREATE TABLE task_dependencies (
 ```
 
 **Usage:**
-```typescript
-'use server';
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+```typescript
+"use server";
+
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function addDependency(taskId: string, dependsOnTaskId: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase.from('task_dependencies').insert({
+  const { error } = await supabase.from("task_dependencies").insert({
     task_id: taskId,
     depends_on_task_id: dependsOnTaskId,
   });
@@ -920,7 +930,7 @@ export async function getBlockedTasks(wsId: string) {
   const supabase = await createClient();
 
   const { data: tasks } = await supabase
-    .from('workspace_tasks')
+    .from("workspace_tasks")
     .select(
       `
       *,
@@ -931,14 +941,14 @@ export async function getBlockedTasks(wsId: string) {
           completed
         )
       )
-    `
+    `,
     )
-    .eq('ws_id', wsId)
-    .eq('completed', false);
+    .eq("ws_id", wsId)
+    .eq("completed", false);
 
   // Filter tasks with incomplete dependencies
   return tasks?.filter((task) =>
-    task.task_dependencies.some((dep: any) => !dep.depends_on.completed)
+    task.task_dependencies.some((dep: any) => !dep.depends_on.completed),
   );
 }
 ```
@@ -948,12 +958,18 @@ export async function getBlockedTasks(wsId: string) {
 ### Board View
 
 ```tsx
-'use client';
+"use client";
 
-import { trpc } from '@/trpc/client';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { trpc } from "@/trpc/client";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-export function BoardView({ wsId, boardId }: { wsId: string; boardId: string }) {
+export function BoardView({
+  wsId,
+  boardId,
+}: {
+  wsId: string;
+  boardId: string;
+}) {
   const { data: lists } = trpc.boards.lists.useQuery({ boardId });
   const moveTask = trpc.tasks.move.useMutation();
 
@@ -996,6 +1012,7 @@ export function BoardView({ wsId, boardId }: { wsId: string; boardId: string }) 
 ### ✅ DO
 
 1. **Use hierarchy appropriately**
+
    ```typescript
    // Strategic: Initiative
    // Tactical: Project
@@ -1003,20 +1020,23 @@ export function BoardView({ wsId, boardId }: { wsId: string; boardId: string }) 
    ```
 
 2. **Leverage bucket dump**
+
    ```typescript
    // Capture quickly, organize later
    await createNote({ title, content });
    ```
 
 3. **Set task estimates**
+
    ```typescript
-   await estimateTask(taskId, 'fibonacci', 8);
+   await estimateTask(taskId, "fibonacci", 8);
    ```
 
 4. **Use labels for categorization**
+
    ```typescript
-   await assignLabel(taskId, 'bug');
-   await assignLabel(taskId, 'high-priority');
+   await assignLabel(taskId, "bug");
+   await assignLabel(taskId, "high-priority");
    ```
 
 5. **Track dependencies**
@@ -1027,11 +1047,13 @@ export function BoardView({ wsId, boardId }: { wsId: string; boardId: string }) 
 ### ❌ DON'T
 
 1. **Don't create deep hierarchies**
+
    ```typescript
    // ❌ Bad: Too many nested levels
    ```
 
 2. **Don't skip workspace isolation**
+
    ```typescript
    // ❌ Bad
    .eq('id', taskId)

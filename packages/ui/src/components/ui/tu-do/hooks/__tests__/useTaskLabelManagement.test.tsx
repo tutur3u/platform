@@ -190,6 +190,46 @@ describe('useTaskLabelManagement', () => {
       );
     });
 
+    it('updates full-board and task detail caches without invalidating visible board queries', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      queryClient.setQueryData(['tasks-full', 'board-1', 'all'], [mockTask]);
+      queryClient.setQueryData(['task', 'task-1'], mockTask);
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      const { result } = renderHook(
+        () =>
+          useTaskLabelManagement({
+            task: mockTask,
+            boardId: 'board-1',
+            workspaceLabels: mockWorkspaceLabels,
+            workspaceId: 'ws-1',
+            taskId: 'task-1',
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.toggleTaskLabel('label-3');
+      });
+
+      expect(
+        queryClient
+          .getQueryData<Task[]>(['tasks-full', 'board-1', 'all'])?.[0]
+          ?.labels?.some((label) => label.id === 'label-3')
+      ).toBe(true);
+      expect(
+        queryClient
+          .getQueryData<Task>(['task', 'task-1'])
+          ?.labels?.some((label) => label.id === 'label-3')
+      ).toBe(true);
+      expect(invalidateSpy).not.toHaveBeenCalledWith({
+        queryKey: ['tasks', 'board-1'],
+      });
+      expect(invalidateSpy).not.toHaveBeenCalledWith({
+        queryKey: ['tasks-full', 'board-1'],
+      });
+    });
+
     it('should rollback on error and show toast', async () => {
       mockRemoveWorkspaceTaskLabel.mockRejectedValueOnce(
         new Error('Database error')
@@ -197,6 +237,8 @@ describe('useTaskLabelManagement', () => {
 
       const originalTasks = [mockTask];
       queryClient.setQueryData(['tasks', 'board-1'], originalTasks);
+      queryClient.setQueryData(['tasks-full', 'board-1', 'all'], originalTasks);
+      queryClient.setQueryData(['task', 'task-1'], mockTask);
 
       const { result } = renderHook(
         () =>
@@ -219,6 +261,12 @@ describe('useTaskLabelManagement', () => {
         'board-1',
       ]);
       expect(cachedTasks).toEqual(originalTasks);
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks-full', 'board-1', 'all'])
+      ).toEqual(originalTasks);
+      expect(queryClient.getQueryData<Task>(['task', 'task-1'])).toEqual(
+        mockTask
+      );
 
       // Verify error toast was shown with the correct format
       expect(mockToast.error).toHaveBeenCalledWith('Error', {

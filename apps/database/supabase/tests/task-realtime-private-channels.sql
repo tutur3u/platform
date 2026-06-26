@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(14);
+select plan(16);
 
 select has_function(
   'private',
@@ -136,6 +136,14 @@ values
     true,
     'probe',
     '{}'::jsonb
+  ),
+  (
+    '00000000-0000-4000-8000-00000000d003',
+    'board-realtime-00000000-0000-4000-8000-00000000c001',
+    'presence',
+    true,
+    'presence_state',
+    '{}'::jsonb
   );
 
 set local session_replication_role = origin;
@@ -223,11 +231,54 @@ select is(
     from realtime.messages
     where id in (
       '00000000-0000-4000-8000-00000000d001',
-      '00000000-0000-4000-8000-00000000d002'
+      '00000000-0000-4000-8000-00000000d002',
+      '00000000-0000-4000-8000-00000000d003'
     )
   ),
-  2,
-  'member JWT can pass realtime.messages RLS for authorized board topic'
+  3,
+  'member JWT can pass realtime.messages RLS for authorized board broadcast and presence topic'
+);
+
+select set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-00000000a002',
+  true
+);
+select set_config(
+  'realtime.topic',
+  'board-realtime-00000000-0000-4000-8000-00000000c001',
+  true
+);
+
+select is(
+  (
+    select count(*)::integer
+    from realtime.messages
+    where id = '00000000-0000-4000-8000-00000000d003'
+  ),
+  1,
+  'direct board share recipient JWT can pass realtime.messages RLS for board presence topic'
+);
+
+select set_config(
+  'request.jwt.claim.sub',
+  '00000000-0000-4000-8000-00000000a003',
+  true
+);
+select set_config(
+  'realtime.topic',
+  'board-realtime-00000000-0000-4000-8000-00000000c001',
+  true
+);
+
+select is(
+  (
+    select count(*)::integer
+    from realtime.messages
+    where id = '00000000-0000-4000-8000-00000000d003'
+  ),
+  1,
+  'email board share recipient JWT can pass realtime.messages RLS for board presence topic'
 );
 
 select set_config(
@@ -247,11 +298,12 @@ select is(
     from realtime.messages
     where id in (
       '00000000-0000-4000-8000-00000000d001',
-      '00000000-0000-4000-8000-00000000d002'
+      '00000000-0000-4000-8000-00000000d002',
+      '00000000-0000-4000-8000-00000000d003'
     )
   ),
   0,
-  'unshared non-member JWT cannot pass realtime.messages RLS for board topic'
+  'unshared non-member JWT cannot pass realtime.messages RLS for board broadcast or presence topic'
 );
 
 reset role;

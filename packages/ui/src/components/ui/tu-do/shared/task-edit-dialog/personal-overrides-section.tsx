@@ -38,6 +38,8 @@ interface PersonalOverridesSectionProps {
   onUpdate?: () => void;
 }
 
+type PersonalOverridePopoverId = 'priority' | 'estimation';
+
 export function PersonalOverridesSection({
   taskId,
   isCreateMode,
@@ -51,9 +53,21 @@ export function PersonalOverridesSection({
     onUpdate
   );
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isPriorityOpen, setIsPriorityOpen] = useState(false);
-  const [isEstimationOpen, setIsEstimationOpen] = useState(false);
+  const [activePopover, setActivePopover] =
+    useState<PersonalOverridePopoverId | null>(null);
   const [notes, setNotes] = useState('');
+
+  const isPopoverOpen = (popoverId: PersonalOverridePopoverId) =>
+    activePopover === popoverId;
+  const setPopoverOpen = (
+    popoverId: PersonalOverridePopoverId,
+    open: boolean
+  ) => {
+    setActivePopover((currentPopover) => {
+      if (open) return popoverId;
+      return currentPopover === popoverId ? null : currentPopover;
+    });
+  };
 
   // Don't render for new tasks
   if (isCreateMode || !taskId) return null;
@@ -75,7 +89,7 @@ export function PersonalOverridesSection({
 
   const handlePriorityChange = (priority: TaskPriority | null) => {
     upsert({ priority_override: priority });
-    setIsPriorityOpen(false);
+    setPopoverOpen('priority', false);
   };
 
   const handleDueDateChange = (date: Date | undefined) => {
@@ -86,7 +100,7 @@ export function PersonalOverridesSection({
 
   const handleEstimationChange = (points: number | null) => {
     upsert({ estimation_override: points });
-    setIsEstimationOpen(false);
+    setPopoverOpen('estimation', false);
   };
 
   const handleNotesBlur = () => {
@@ -112,7 +126,10 @@ export function PersonalOverridesSection({
     <div className="border-t bg-muted/20">
       <button
         type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => {
+          setIsExpanded(!isExpanded);
+          setActivePopover(null);
+        }}
         className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-muted/40 md:px-8"
       >
         <div className="flex items-center gap-2">
@@ -167,7 +184,10 @@ export function PersonalOverridesSection({
                   <Flag className="h-4 w-4 text-dynamic-orange" />
                   {t('ws-tasks.my_priority')}
                 </Label>
-                <Popover open={isPriorityOpen} onOpenChange={setIsPriorityOpen}>
+                <Popover
+                  open={isPopoverOpen('priority')}
+                  onOpenChange={(open) => setPopoverOpen('priority', open)}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -255,8 +275,8 @@ export function PersonalOverridesSection({
                     {t('ws-tasks.my_estimate')}
                   </Label>
                   <Popover
-                    open={isEstimationOpen}
-                    onOpenChange={setIsEstimationOpen}
+                    open={isPopoverOpen('estimation')}
+                    onOpenChange={(open) => setPopoverOpen('estimation', open)}
                   >
                     <PopoverTrigger asChild>
                       <Button

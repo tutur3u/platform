@@ -382,6 +382,44 @@ describe('BoardHeader', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('shows presence avatars for workspace boards', () => {
+    renderBoardHeader();
+
+    expect(screen.getByTestId('board-user-presence')).toBeInTheDocument();
+  });
+
+  it('hides presence avatars for unshared personal boards', () => {
+    renderBoardHeader({
+      isPersonalWorkspace: true,
+    });
+
+    expect(screen.queryByTestId('board-user-presence')).not.toBeInTheDocument();
+  });
+
+  it('shows presence avatars for personal boards shared with guests', () => {
+    renderBoardHeader({
+      board: {
+        ...mockBoard,
+        has_guest_access: true,
+      },
+      isPersonalWorkspace: true,
+    });
+
+    expect(screen.getByTestId('board-user-presence')).toBeInTheDocument();
+  });
+
+  it('shows presence avatars for direct board guest access', () => {
+    renderBoardHeader({
+      board: {
+        ...mockBoard,
+        access_type: 'guest',
+      },
+      isPersonalWorkspace: true,
+    });
+
+    expect(screen.getByTestId('board-user-presence')).toBeInTheDocument();
+  });
+
   it('updates status, view, and sort through combobox controls', () => {
     const onFiltersChange = vi.fn();
     const onListStatusFilterChange = vi.fn();

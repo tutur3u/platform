@@ -152,6 +152,16 @@ interface TaskPropertiesSectionProps {
   variant?: 'default' | 'compact';
 }
 
+type TaskPropertyPopoverId =
+  | 'priority'
+  | 'list'
+  | 'dates'
+  | 'estimation'
+  | 'labels'
+  | 'projects'
+  | 'assignees'
+  | 'scheduling';
+
 function TaskPropertyPopoverTrigger({
   children,
   compact,
@@ -401,16 +411,26 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
-  const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
-  const [isDueDatePopoverOpen, setIsDueDatePopoverOpen] = useState(false);
-  const [isEstimationPopoverOpen, setIsEstimationPopoverOpen] = useState(false);
-  const [isLabelsPopoverOpen, setIsLabelsPopoverOpen] = useState(false);
-  const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
-  const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
-  const [isSchedulingPopoverOpen, setIsSchedulingPopoverOpen] = useState(false);
+  const [activePopover, setActivePopover] =
+    useState<TaskPropertyPopoverId | null>(null);
   const [labelSearchQuery, setLabelSearchQuery] = useState('');
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+
+  const isPopoverOpen = useCallback(
+    (popoverId: TaskPropertyPopoverId) => activePopover === popoverId,
+    [activePopover]
+  );
+
+  const setPopoverOpen = useCallback(
+    (popoverId: TaskPropertyPopoverId, open: boolean) => {
+      setActivePopover((currentPopover) => {
+        if (open) return popoverId;
+        return currentPopover === popoverId ? null : currentPopover;
+      });
+    },
+    []
+  );
 
   const unselectedAvailableLabels = useMemo(
     () =>
@@ -553,7 +573,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     if (success) {
       // Update local saved state to reflect the successful save
       setLastSavedSettings(settings);
-      setIsSchedulingPopoverOpen(false);
+      setPopoverOpen('scheduling', false);
     }
   }, [
     totalDuration,
@@ -563,6 +583,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     calendarHours,
     autoSchedule,
     onSaveSchedulingSettings,
+    setPopoverOpen,
   ]);
 
   // Handle clear and save scheduling settings
@@ -587,7 +608,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     const success = await onSaveSchedulingSettings(clearedSettings);
     if (success) {
       setLastSavedSettings(clearedSettings);
-      setIsSchedulingPopoverOpen(false);
+      setPopoverOpen('scheduling', false);
     }
   }, [
     onTotalDurationChange,
@@ -597,6 +618,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onCalendarHoursChange,
     onAutoScheduleChange,
     onSaveSchedulingSettings,
+    setPopoverOpen,
   ]);
 
   // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
@@ -871,8 +893,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
           >
             {/* Priority Badge */}
             <Popover
-              open={isPriorityPopoverOpen}
-              onOpenChange={setIsPriorityPopoverOpen}
+              open={isPopoverOpen('priority')}
+              onOpenChange={(open) => setPopoverOpen('priority', open)}
             >
               <TaskPropertyPopoverTrigger
                 compact={isCompact}
@@ -939,7 +961,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       type="button"
                       onClick={() => {
                         onPriorityChange(opt.value as TaskPriority);
-                        setIsPriorityPopoverOpen(false);
+                        setPopoverOpen('priority', false);
                       }}
                       className={cn(
                         'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
@@ -961,7 +983,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       label={t('ws-task-boards.dialog.clear_priority')}
                       onClick={() => {
                         onPriorityChange(null);
-                        setIsPriorityPopoverOpen(false);
+                        setPopoverOpen('priority', false);
                       }}
                     />
                   )}
@@ -976,13 +998,15 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               availableLists={availableLists}
               disabled={disabled}
               compact={isCompact}
+              open={isPopoverOpen('list')}
+              onOpenChange={(open) => setPopoverOpen('list', open)}
               onListChange={onListChange}
             />
 
             {/* Dates Badge */}
             <Popover
-              open={isDueDatePopoverOpen}
-              onOpenChange={setIsDueDatePopoverOpen}
+              open={isPopoverOpen('dates')}
+              onOpenChange={(open) => setPopoverOpen('dates', open)}
             >
               <TaskPropertyPopoverTrigger
                 compact={isCompact}
@@ -1128,8 +1152,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
 
             {/* Estimation Points Badge */}
             <Popover
-              open={isEstimationPopoverOpen}
-              onOpenChange={setIsEstimationPopoverOpen}
+              open={isPopoverOpen('estimation')}
+              onOpenChange={(open) => setPopoverOpen('estimation', open)}
             >
               <TaskPropertyPopoverTrigger
                 compact={isCompact}
@@ -1177,7 +1201,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     actionLabel={t('common.configure')}
                     ActionIcon={Pen}
                     onAction={() => {
-                      setIsEstimationPopoverOpen(false);
+                      setPopoverOpen('estimation', false);
                       onShowEstimationConfigDialog();
                     }}
                   />
@@ -1189,7 +1213,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         type="button"
                         onClick={() => {
                           onEstimationChange(idx);
-                          setIsEstimationPopoverOpen(false);
+                          setPopoverOpen('estimation', false);
                         }}
                         className={cn(
                           'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
@@ -1213,7 +1237,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         label={t('ws-task-boards.dialog.clear_estimate')}
                         onClick={() => {
                           onEstimationChange(null);
-                          setIsEstimationPopoverOpen(false);
+                          setPopoverOpen('estimation', false);
                         }}
                       />
                     )}
@@ -1224,9 +1248,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
 
             {/* Labels Badge */}
             <Popover
-              open={isLabelsPopoverOpen}
+              open={isPopoverOpen('labels')}
               onOpenChange={(open) => {
-                setIsLabelsPopoverOpen(open);
+                setPopoverOpen('labels', open);
                 if (!open) setLabelSearchQuery('');
               }}
             >
@@ -1276,7 +1300,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     actionLabel={t('ws-task-boards.dialog.create_label')}
                     ActionIcon={Plus}
                     onAction={() => {
-                      setIsLabelsPopoverOpen(false);
+                      setPopoverOpen('labels', false);
                       onShowNewLabelDialog();
                     }}
                   />
@@ -1357,7 +1381,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         size="sm"
                         variant="ghost"
                         onClick={() => {
-                          setIsLabelsPopoverOpen(false);
+                          setPopoverOpen('labels', false);
                           onShowNewLabelDialog();
                         }}
                         className="h-8 w-full justify-start"
@@ -1374,9 +1398,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {/* Projects Badge — not available for drafts */}
             {!isDraftMode && (
               <Popover
-                open={isProjectsPopoverOpen}
+                open={isPopoverOpen('projects')}
                 onOpenChange={(open) => {
-                  setIsProjectsPopoverOpen(open);
+                  setPopoverOpen('projects', open);
                   if (!open) setProjectSearchQuery('');
                 }}
               >
@@ -1426,7 +1450,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       actionLabel={t('ws-task-boards.dialog.create_project')}
                       ActionIcon={Plus}
                       onAction={() => {
-                        setIsProjectsPopoverOpen(false);
+                        setPopoverOpen('projects', false);
                         onShowNewProjectDialog();
                       }}
                     />
@@ -1496,7 +1520,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            setIsProjectsPopoverOpen(false);
+                            setPopoverOpen('projects', false);
                             onShowNewProjectDialog();
                           }}
                           className="h-8 w-full justify-start"
@@ -1514,9 +1538,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {/* Assignees Badge */}
             {canUseBoardAssignees && (
               <Popover
-                open={isAssigneesPopoverOpen}
+                open={isPopoverOpen('assignees')}
                 onOpenChange={(open) => {
-                  setIsAssigneesPopoverOpen(open);
+                  setPopoverOpen('assignees', open);
                   if (!open) setAssigneeSearchQuery('');
                 }}
               >
@@ -1645,8 +1669,8 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
             {/* Scheduling Badge — not available for drafts */}
             {!isDraftMode && (
               <Popover
-                open={isSchedulingPopoverOpen}
-                onOpenChange={setIsSchedulingPopoverOpen}
+                open={isPopoverOpen('scheduling')}
+                onOpenChange={(open) => setPopoverOpen('scheduling', open)}
               >
                 <TaskPropertyPopoverTrigger
                   compact={isCompact}
@@ -2008,7 +2032,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             label={t('ws-task-boards.dialog.clear_duration')}
                             onClick={() => {
                               onTotalDurationChange(null);
-                              setIsSchedulingPopoverOpen(false);
+                              setPopoverOpen('scheduling', false);
                             }}
                           />
                         )}

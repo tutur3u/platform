@@ -28,6 +28,8 @@ function updateBodyFadeAttribute(enabled: boolean) {
 interface QuickSettingsPopoverProps {
   /** Whether the workspace is personal (forces auto-assign to true) */
   isPersonalWorkspace?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -36,6 +38,8 @@ interface QuickSettingsPopoverProps {
  */
 export function QuickSettingsPopover({
   isPersonalWorkspace = false,
+  open,
+  onOpenChange,
 }: QuickSettingsPopoverProps) {
   const t = useTranslations('settings.tasks');
   const tCommon = useTranslations('common');
@@ -96,7 +100,7 @@ export function QuickSettingsPopover({
     : (settings?.task_auto_assign_to_self ?? false);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>

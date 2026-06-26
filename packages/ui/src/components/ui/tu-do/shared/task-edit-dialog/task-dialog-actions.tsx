@@ -48,6 +48,8 @@ interface TaskDialogActionsProps {
   onOpenShareDialog?: () => void;
   disabled?: boolean;
   controlsDisabled?: boolean;
+  moreMenuOpen?: boolean;
+  onMoreMenuOpenChange?: (open: boolean) => void;
 }
 
 export function TaskDialogActions({
@@ -66,10 +68,15 @@ export function TaskDialogActions({
   onOpenShareDialog,
   disabled = false,
   controlsDisabled = false,
+  moreMenuOpen,
+  onMoreMenuOpenChange,
 }: TaskDialogActionsProps) {
   const t = useTranslations();
   const tasksHref = useTasksHref();
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [uncontrolledMoreMenuOpen, setUncontrolledMoreMenuOpen] =
+    useState(false);
+  const isMoreMenuOpen = moreMenuOpen ?? uncontrolledMoreMenuOpen;
+  const setIsMoreMenuOpen = onMoreMenuOpenChange ?? setUncontrolledMoreMenuOpen;
 
   // Determine if we should show the back button (create mode with a pending relationship)
   const showBackButton = isCreateMode && onNavigateBack && navigateBackTaskName;

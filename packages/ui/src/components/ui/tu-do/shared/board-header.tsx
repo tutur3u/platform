@@ -53,9 +53,11 @@ interface Props {
     WorkspaceTaskBoard,
     'id' | 'name' | 'ticket_prefix' | 'archived_at'
   > & {
+    access_type?: 'member' | 'guest';
     ws_id?: WorkspaceTaskBoard['ws_id'] | null;
     icon?: WorkspaceTaskBoard['icon'];
     default_list_id?: WorkspaceTaskBoard['default_list_id'] | null;
+    has_guest_access?: boolean;
   };
   currentUserId?: string;
   currentView: ViewType;
@@ -155,6 +157,11 @@ export function BoardHeader({
     !publicView &&
     isPersonalWorkspace &&
     currentView === 'kanban';
+  const hasSharedBoardGuests =
+    board.access_type === 'guest' || board.has_guest_access === true;
+  const presenceVisible =
+    interactiveControlsVisible &&
+    (!isPersonalWorkspace || hasSharedBoardGuests);
 
   // Stable refs for callbacks and values to avoid effect re-runs
   const onFiltersChangeRef = useRef(onFiltersChange);
@@ -552,7 +559,7 @@ export function BoardHeader({
         {/* Controls - Compact Row */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Online Users */}
-          {interactiveControlsVisible && !isPersonalWorkspace && (
+          {presenceVisible && (
             <BoardUserPresenceAvatarsComponent
               boardId={board.id}
               currentMetadata={presenceMetadata}

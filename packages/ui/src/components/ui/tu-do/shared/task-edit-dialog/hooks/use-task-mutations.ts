@@ -6,13 +6,17 @@ import {
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import {
   type BoardBroadcastFn,
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
+import {
+  patchTaskInVisibleCaches,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from '../../task-cache-patches';
 import { updateWorkspaceTask } from './task-api';
 
 export interface SchedulingSettings {
@@ -109,17 +113,17 @@ export function useTaskMutations({
         return;
       }
       setEstimationSaving(true);
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
 
       // Optimistic update - prevents flicker by updating cache immediately
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId ? { ...task, estimation_points: points } : task
-          );
-        }
-      );
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, estimation_points: points }),
+      });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
@@ -135,7 +139,7 @@ export function useTaskMutations({
       } catch (e: any) {
         console.error('Failed updating estimation', e);
         // Revert optimistic update on error
-        await invalidateTaskCaches(queryClient, boardId);
+        restoreVisibleTaskCaches(queryClient, cacheSnapshot);
         toast({
           title: 'Failed to update estimation',
           description: e.message || 'Please try again',
@@ -166,17 +170,17 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
 
       // Optimistic update - prevents flicker
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId ? { ...task, priority: newPriority } : task
-          );
-        }
-      );
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, priority: newPriority }),
+      });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
@@ -192,7 +196,7 @@ export function useTaskMutations({
       } catch (e: any) {
         console.error('Failed updating priority', e);
         // Revert optimistic update on error
-        await invalidateTaskCaches(queryClient, boardId);
+        restoreVisibleTaskCaches(queryClient, cacheSnapshot);
         toast({
           title: 'Failed to update priority',
           description: e.message || 'Please try again',
@@ -222,17 +226,17 @@ export function useTaskMutations({
       }
 
       const dateString = newDate ? newDate.toISOString() : null;
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
 
       // Optimistic update - prevents flicker
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId ? { ...task, start_date: dateString } : task
-          );
-        }
-      );
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, start_date: dateString ?? undefined }),
+      });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
@@ -248,7 +252,7 @@ export function useTaskMutations({
       } catch (e: any) {
         console.error('Failed updating start date', e);
         // Revert optimistic update on error
-        await invalidateTaskCaches(queryClient, boardId);
+        restoreVisibleTaskCaches(queryClient, cacheSnapshot);
         toast({
           title: 'Failed to update start date',
           description: e.message || 'Please try again',
@@ -277,17 +281,17 @@ export function useTaskMutations({
       }
 
       const dateString = newDate ? newDate.toISOString() : null;
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
 
       // Optimistic update - prevents flicker
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId ? { ...task, end_date: dateString } : task
-          );
-        }
-      );
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, end_date: dateString }),
+      });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
@@ -303,7 +307,7 @@ export function useTaskMutations({
       } catch (e: any) {
         console.error('Failed updating end date', e);
         // Revert optimistic update on error
-        await invalidateTaskCaches(queryClient, boardId);
+        restoreVisibleTaskCaches(queryClient, cacheSnapshot);
         toast({
           title: 'Failed to update end date',
           description: e.message || 'Please try again',
@@ -331,38 +335,33 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
 
       // Optimistic update - prevents flicker
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId ? { ...task, list_id: newListId } : task
-          );
-        }
-      );
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, list_id: newListId }),
+      });
 
       try {
         const { task: updatedTask } = await updateWorkspaceTask(wsId, taskId, {
           list_id: newListId,
         });
         // Update sender's own cache with DB-computed timestamps
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (oldTasks: any[] | undefined) => {
-            if (!oldTasks) return oldTasks;
-            return oldTasks.map((task: any) =>
-              task.id === taskId
-                ? {
-                    ...task,
-                    completed_at: updatedTask.completed_at,
-                    closed_at: updatedTask.closed_at,
-                  }
-                : task
-            );
-          }
-        );
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({
+            ...task,
+            completed_at: updatedTask.completed_at,
+            closed_at: updatedTask.closed_at,
+          }),
+        });
         broadcast?.('task:upsert', {
           task: {
             id: taskId,
@@ -379,7 +378,7 @@ export function useTaskMutations({
       } catch (e: any) {
         console.error('Failed updating list', e);
         // Revert optimistic update on error
-        await invalidateTaskCaches(queryClient, boardId);
+        restoreVisibleTaskCaches(queryClient, cacheSnapshot);
         toast({
           title: 'Failed to update list',
           description: e.message || 'Please try again',
@@ -412,15 +411,15 @@ export function useTaskMutations({
 
       // Optimistically update the cache instead of invalidating
       // This prevents conflicts with realtime sync
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldTasks: any[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === taskId ? { ...task, name: trimmedName } : task
-          );
-        }
-      );
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, name: trimmedName }),
+      });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
@@ -432,8 +431,8 @@ export function useTaskMutations({
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating task name', e);
-        // Revert optimistic update on error by invalidating to refetch
-        await invalidateTaskCaches(queryClient, boardId);
+        // Revert optimistic update without refetching visible board caches.
+        restoreVisibleTaskCaches(queryClient, cacheSnapshot);
         toast({
           title: 'Failed to update task name',
           description: e.message || 'Please try again',

@@ -122,6 +122,8 @@ export interface ParentSectionProps {
   onRemoveParent: () => void;
   onNavigateToTask: (taskId: string) => void;
   onAddParentTask?: () => void; // Opens dialog to create new parent task
+  searchOpen?: boolean;
+  onSearchOpenChange?: (open: boolean) => void;
   disabled?: boolean;
 }
 
@@ -137,6 +139,8 @@ export interface SubtasksSectionProps {
   onAddSubtask?: () => void;
   onAddExistingAsSubtask?: (task: RelatedTaskInfo) => Promise<void>;
   isSaving: boolean;
+  searchOpen?: boolean;
+  onSearchOpenChange?: (open: boolean) => void;
   disabled?: boolean;
 }
 
@@ -168,6 +172,8 @@ export interface DependenciesSectionProps {
   onNavigateToTask: (taskId: string) => void;
   onAddBlockingTaskDialog?: () => void; // Opens dialog to create new blocking task
   onAddBlockedByTaskDialog?: () => void; // Opens dialog to create new blocked-by task
+  searchOpen?: boolean;
+  onSearchOpenChange?: (open: boolean) => void;
   disabled?: boolean;
 }
 
@@ -182,5 +188,7 @@ export interface RelatedSectionProps {
   onRemoveRelated: (taskId: string) => void;
   onNavigateToTask: (taskId: string) => void;
   onAddRelatedTaskDialog?: () => void; // Opens dialog to create new related task;
+  searchOpen?: boolean;
+  onSearchOpenChange?: (open: boolean) => void;
   disabled?: boolean;
 }

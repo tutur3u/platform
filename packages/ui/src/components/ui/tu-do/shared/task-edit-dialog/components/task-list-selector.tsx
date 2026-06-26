@@ -21,6 +21,8 @@ interface TaskListSelectorProps {
   availableLists: TaskList[];
   disabled?: boolean;
   compact?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onListChange: (listId: string) => void;
 }
 
@@ -31,11 +33,15 @@ export function TaskListSelector({
   availableLists,
   disabled = false,
   compact = false,
+  open,
+  onOpenChange,
   onListChange,
 }: TaskListSelectorProps) {
   const t = useTranslations();
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [uncontrolledPopoverOpen, setUncontrolledPopoverOpen] = useState(false);
   const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
+  const isPopoverOpen = open ?? uncontrolledPopoverOpen;
+  const setIsPopoverOpen = onOpenChange ?? setUncontrolledPopoverOpen;
 
   const statusLabels = useMemo(
     () => ({

@@ -6,7 +6,17 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
-import { useBoardBroadcast } from '../shared/board-broadcast-context';
+import {
+  getActiveBoardRefresh,
+  useBoardBroadcast,
+} from '../shared/board-broadcast-context';
+import {
+  getTaskFromVisibleCaches,
+  patchTaskInVisibleCaches,
+  restoreTasksFromVisibleCacheSnapshot,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from '../shared/task-cache-patches';
 
 function getInternalApiOptions() {
   if (typeof window === 'undefined') {
@@ -89,10 +99,14 @@ export function useTaskProjectManagement({
 
     // CRITICAL: Get current task state from cache instead of stale prop
     // This ensures we read the most up-to-date state after optimistic updates
-    const currentTask = taskId
-      ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
-        task)
-      : task;
+    const canonicalTaskId = taskId ?? task.id;
+    const currentTask =
+      getTaskFromVisibleCaches({
+        queryClient,
+        boardId,
+        taskId: canonicalTaskId,
+        fallback: task,
+      }) ?? task;
 
     // Check if we're in multi-select mode with multiple tasks selected
     const shouldBulkUpdate =
@@ -107,11 +121,17 @@ export function useTaskProjectManagement({
 
     // Cancel any outgoing refetches
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+    await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
 
     // Snapshot the previous value BEFORE optimistic update
     const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
       | Task[]
       | undefined;
+    const cacheSnapshot = snapshotVisibleTaskCaches(
+      queryClient,
+      boardId,
+      tasksToUpdate
+    );
 
     // Determine action: remove if ALL selected tasks have the project, add otherwise
     // Use currentTask from cache, not stale task prop
@@ -132,6 +152,13 @@ export function useTaskProjectManagement({
       // First try board cache
       const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
       if (fromBoardCache) return fromBoardCache;
+
+      const fromVisibleCaches = getTaskFromVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+      });
+      if (fromVisibleCaches) return fromVisibleCaches;
 
       // Fallback to individual task cache (for tasks not in board view)
       if (taskId === currentTask.id) return currentTask;
@@ -156,54 +183,44 @@ export function useTaskProjectManagement({
 
     // Get project details from workspace projects for optimistic update
     const project = workspaceProjects.find((p) => p.id === projectId);
+    const fallbackProject = project
+      ? {
+          id: project.id,
+          name: project.name,
+          status: project.status ?? 'unknown',
+        }
+      : {
+          id: projectId,
+          name: 'Unknown',
+          status: 'unknown',
+        };
 
     // Optimistically update the cache - only update tasks that actually change
-    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (active && tasksToRemoveFrom.includes(t.id)) {
-          // Remove the project
-          return {
-            ...t,
-            projects: t.projects?.filter((p: any) => p.id !== projectId) || [],
-          };
-        } else if (!active && tasksNeedingProject.includes(t.id)) {
-          // Add the project
-          return {
-            ...t,
-            projects: [
-              ...(t.projects || []),
-              project || { id: projectId, name: 'Unknown', status: 'unknown' },
-            ],
-          };
-        }
-        return t;
-      });
-    });
+    for (const tid of active ? tasksToRemoveFrom : tasksNeedingProject) {
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId: tid,
+        updater: (cachedTask) => {
+          if (active) {
+            return {
+              ...cachedTask,
+              projects:
+                cachedTask.projects?.filter(
+                  (entry) => entry.id !== projectId
+                ) || [],
+            };
+          }
 
-    // CRITICAL: Also update the individual task cache if taskId is provided
-    // This ensures the chip menu's task cache stays in sync with the board cache
-    if (taskId) {
-      queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
-        if (!old) return old;
-        if (active && tasksToRemoveFrom.includes(taskId)) {
-          // Remove the project
+          if (cachedTask.projects?.some((entry) => entry.id === projectId)) {
+            return cachedTask;
+          }
+
           return {
-            ...old,
-            projects:
-              old.projects?.filter((p: any) => p.id !== projectId) || [],
+            ...cachedTask,
+            projects: [...(cachedTask.projects || []), fallbackProject],
           };
-        } else if (!active && tasksNeedingProject.includes(taskId)) {
-          // Add the project
-          return {
-            ...old,
-            projects: [
-              ...(old.projects || []),
-              project || { id: projectId, name: 'Unknown', status: 'unknown' },
-            ],
-          };
-        }
-        return old;
+        },
       });
     }
 
@@ -281,33 +298,18 @@ export function useTaskProjectManagement({
         (taskId) => !succeededTaskIds.includes(taskId)
       );
 
-      if (failedTaskIds.length > 0 && previousTasks) {
-        const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (current: Task[] | undefined) => {
-            if (!current) return current;
-            return current.map((task) => {
-              if (!failedTaskIds.includes(task.id)) {
-                return task;
-              }
-
-              return previousTaskMap.get(task.id) || task;
-            });
-          }
-        );
-
-        if (taskId && failedTaskIds.includes(taskId)) {
-          const previousTask = previousTaskMap.get(taskId);
-          if (previousTask) {
-            queryClient.setQueryData(['task', taskId], previousTask);
-          }
-        }
-      }
+      restoreTasksFromVisibleCacheSnapshot({
+        queryClient,
+        snapshot: cacheSnapshot,
+        taskIds: failedTaskIds,
+      });
 
       // Broadcast relation changes for all affected tasks
       for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
+      }
+      if (succeededTaskIds.length > 0) {
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
       }
 
       if (failedTaskIds.length > 0) {
@@ -329,17 +331,7 @@ export function useTaskProjectManagement({
       // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
       // Rollback on error
-      if (previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
-        if (taskId) {
-          const previousTask = previousTasks.find(
-            (entry) => entry.id === taskId
-          );
-          if (previousTask) {
-            queryClient.setQueryData(['task', taskId], previousTask);
-          }
-        }
-      }
+      restoreVisibleTaskCaches(queryClient, cacheSnapshot);
       console.error('Failed to toggle project:', e);
       toast.error('Error', {
         description: 'Failed to update project. Please try again.',
@@ -355,52 +347,55 @@ export function useTaskProjectManagement({
       const newProject =
         await createProjectMutation.mutateAsync(newProjectName);
       const canonicalTaskId = taskId ?? task.id;
+      const projectForCache = {
+        id: newProject.id,
+        name: newProject.name,
+        status: newProject.status ?? 'unknown',
+      };
 
       // Auto-apply the newly created project to this task
       let linkSucceeded = false;
-      let previousTasks: Task[] | undefined;
+      let cacheSnapshot:
+        | ReturnType<typeof snapshotVisibleTaskCaches>
+        | undefined;
       try {
         // Cancel any outgoing refetches
         await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+        await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
 
         // Snapshot the previous value
-        previousTasks = queryClient.getQueryData(['tasks', boardId]);
+        cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+          canonicalTaskId,
+        ]);
 
         // Optimistically update the cache
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) => {
-              if (t.id === canonicalTaskId) {
-                return {
-                  ...t,
-                  projects: [...(t.projects || []), newProject],
-                };
-              }
-              return t;
-            });
-          }
-        );
-
-        // CRITICAL: Also update individual task cache if taskId is provided
-        if (canonicalTaskId) {
-          queryClient.setQueryData(
-            ['task', canonicalTaskId],
-            (old: Task | undefined) => {
-              if (!old) return old;
-              return {
-                ...old,
-                projects: [...(old.projects || []), newProject],
-              };
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId: canonicalTaskId,
+          updater: (cachedTask) => {
+            if (
+              cachedTask.projects?.some(
+                (project) => project.id === newProject.id
+              )
+            ) {
+              return cachedTask;
             }
-          );
-        }
+
+            return {
+              ...cachedTask,
+              projects: [...(cachedTask.projects || []), projectForCache],
+            };
+          },
+        });
 
         const taskState =
-          (queryClient.getQueryData(['task', canonicalTaskId]) as
-            | Task
-            | undefined) ?? task;
+          getTaskFromVisibleCaches({
+            queryClient,
+            boardId,
+            taskId: canonicalTaskId,
+            fallback: task,
+          }) ?? task;
         const nextProjectIds = [
           ...new Set([
             ...(taskState.projects ?? []).map((entry) => entry.id),
@@ -418,21 +413,19 @@ export function useTaskProjectManagement({
         );
         linkSucceeded = true;
       } catch (applyErr: any) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
+        if (cacheSnapshot) {
+          restoreVisibleTaskCaches(queryClient, cacheSnapshot);
+        }
         toast.error(
           'The project was created but could not be attached to the task. Refresh and try manually.'
         );
-        if (canonicalTaskId) {
-          queryClient.invalidateQueries({
-            queryKey: ['task', canonicalTaskId],
-          });
-        }
         console.error('Failed to auto-apply new project', applyErr);
       }
 
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
         broadcast?.('task:relations-changed', { taskId: canonicalTaskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
 
         // Reset form and close dialog
         setNewProjectName('');

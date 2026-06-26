@@ -5,6 +5,7 @@ import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { useBoardPresence } from '@tuturuuu/ui/hooks/useBoardPresence';
 import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -105,12 +106,17 @@ export function BoardUserPresenceAvatarsComponent({
   onListStatusFilterChange: (filter: ListStatusFilter) => void;
 }) {
   const wsPresence = useOptionalWorkspacePresenceContext();
+  const useWorkspacePresence = wsPresence?.realtimeEnabled === true;
+  const boardPresence = useBoardPresence(boardId, {
+    enabled: !useWorkspacePresence,
+  });
+  const activePresence = useWorkspacePresence ? wsPresence : boardPresence;
   const { openTaskById } = useTaskDialog();
   const { state: dialogState } = useTaskDialogContext();
 
   // Extract stable function refs to avoid re-running effects on every context change
-  const wsUpdateLocation = wsPresence?.updateLocation;
-  const wsUpdateMetadata = wsPresence?.updateMetadata;
+  const updateLocation = activePresence?.updateLocation;
+  const updateMetadata = activePresence?.updateMetadata;
 
   // Derive dialog props — only track task presence when editing a real task
   const dialogOpen = dialogState.isOpen;
@@ -124,26 +130,26 @@ export function BoardUserPresenceAvatarsComponent({
   // When the dialog is open with a real task → track { board, boardId, taskId }
   // Otherwise → track { board, boardId } (board-level only)
   useEffect(() => {
-    if (!wsUpdateLocation || !boardId) return;
+    if (!updateLocation || !boardId) return;
     if (dialogOpen && dialogTaskId) {
-      wsUpdateLocation({ type: 'board', boardId, taskId: dialogTaskId });
+      updateLocation({ type: 'board', boardId, taskId: dialogTaskId });
     } else {
-      wsUpdateLocation({ type: 'board', boardId });
+      updateLocation({ type: 'board', boardId });
     }
 
     return () => {
-      wsUpdateLocation({ type: 'other' });
+      updateLocation({ type: 'other' });
     };
-  }, [wsUpdateLocation, boardId, dialogOpen, dialogTaskId]);
+  }, [updateLocation, boardId, dialogOpen, dialogTaskId]);
 
   // Update metadata (filters) separately so it doesn't overwrite task-level location
   useEffect(() => {
-    if (!wsUpdateMetadata || !currentMetadata) return;
-    wsUpdateMetadata(currentMetadata as Record<string, any>);
-  }, [wsUpdateMetadata, currentMetadata]);
+    if (!updateMetadata || !currentMetadata) return;
+    updateMetadata(currentMetadata as Record<string, any>);
+  }, [updateMetadata, currentMetadata]);
 
-  const boardViewers = wsPresence?.getBoardViewers(boardId) ?? [];
-  const currentUserId = wsPresence?.currentUserId;
+  const boardViewers = activePresence?.getBoardViewers(boardId) ?? [];
+  const currentUserId = activePresence?.currentUserId;
 
   const presenceState: RealtimePresenceState<UserPresenceState> =
     useMemo(() => {

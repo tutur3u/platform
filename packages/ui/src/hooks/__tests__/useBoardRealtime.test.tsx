@@ -758,7 +758,7 @@ describe('useBoardRealtime', () => {
   });
 
   describe('task:relations-changed event', () => {
-    it('invalidates relation-bearing queries instead of fetching protected rows directly', async () => {
+    it('reconciles relation-bearing queries without refetching visible board caches', async () => {
       queryClient.setQueryData(
         ['tasks', 'board-1'],
         [{ ...mockTaskWithRelations, id: 'task-1' }]
@@ -782,15 +782,18 @@ describe('useBoardRealtime', () => {
       });
 
       expect(mockFrom).not.toHaveBeenCalled();
-      expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
         queryKey: ['tasks', 'board-1'],
       });
-      expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
         queryKey: ['tasks-full', 'board-1'],
+      });
+      expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+        queryKey: ['task-list-counts', 'board-1'],
       });
     });
 
-    it('invalidates the full task cache when relations change', async () => {
+    it('keeps the full task cache warm when relations change', async () => {
       queryClient.setQueryData(
         ['tasks', 'board-1'],
         [{ ...mockTaskWithRelations, id: 'task-1' }]
@@ -815,9 +818,12 @@ describe('useBoardRealtime', () => {
         vi.advanceTimersByTime(200);
       });
 
-      expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
         queryKey: ['tasks-full', 'board-1'],
       });
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks-full', 'board-1'])?.[0]?.id
+      ).toBe('task-1');
     });
 
     it('calls onTaskRelationsChange for Supabase relation broadcasts', async () => {
