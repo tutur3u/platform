@@ -20,6 +20,31 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/health with the legacy response body."
     },
+    "api:/api/time-tracking/export:apps/web/src/app/api/time-tracking/export/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/time-tracking/export by revalidating the browser Supabase session or non-app-session Bearer token, requiring a @tuturuuu.com root user and root workspace, verifying workspace membership, preserving legacy query parsing and the 1000-row limit cap, forwarding get_grouped_sessions_paginated through the caller Supabase token, and returning the legacy data/pagination envelope with an empty-result fallback when RPC and JS-style recovery cannot produce rows."
+    },
+    "api:/api/v1/notifications/unread-count:apps/web/src/app/api/v1/notifications/unread-count/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/notifications/unread-count by preserving app-session and browser Supabase auth, validating the optional wsId query parameter, verifying workspace membership before scoped counts, building the legacy notification access filter, and reading the exact unread count through the service-role Supabase REST adapter with no-store JSON responses."
+    },
+    "api:/api/v1/cms/workspaces:apps/web/src/app/api/v1/cms/workspaces/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/cms/workspaces by preserving the legacy app-session and browser Supabase auth boundary, loading the caller's admin-visible workspaces through service-role Supabase REST, applying root-admin and per-workspace external-project permission checks, resolving active external-project bindings, and returning the raw legacy workspace array with subscription tier metadata."
+    },
+    "api:/api/v1/mira/achievements:apps/web/src/app/api/v1/mira/achievements/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/mira/achievements by revalidating the browser Supabase session or non-app-session Bearer token, reading the private Mira achievement catalog through the service-role private-schema Supabase REST adapter, reading the caller's unlocked achievements through the caller-token Supabase REST adapter, preserving the legacy unlocked-status merge, category grouping, XP/stat calculation, no-store responses, and empty-unlocked fallback when the user-achievement read fails."
+    },
+    "api:/api/v1/storage/list:apps/web/src/app/api/v1/storage/list/route.ts": {
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend handle_backend_request handles GET /api/v1/storage/list by validating workspace API keys with the legacy ttr_ prefix and workspace permission union, requiring manage_drive or admin, preserving legacy query coercion and storage path sanitization, blocking reserved mobile-deployment vault paths, listing Supabase Storage objects through the server-owned storage REST adapter, filtering placeholder and reserved entries, recursively counting matching files for pagination totals, and returning no-store legacy data/pagination and error envelopes."
+    },
     "api:/api/v1/internal/holidays:apps/web/src/app/api/v1/internal/holidays/route.ts": {
       "methods": {
         "GET": {
@@ -426,9 +451,13 @@
       "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/ai/models through the server-owned Supabase REST adapter, preserving private.ai_gateway_models reads with Accept-Profile/Content-Profile private headers, the fixed public column list, default language type filtering, provider/tag/enabled/search/ids filters, exact-count pagination, capped ID filters, no-store JSON responses, and the legacy 500 error body."
     },
     "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request verifies app-session auth, enforces same-origin mutation confirmation for cookie auth, validates the legacy support inquiry payload, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. Adjacent inquiry media-url route remains legacy-owned."
+      "methods": {
+        "POST": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "Rust backend handle_backend_request verifies app-session auth for POST /api/v1/inquiries, enforces same-origin mutation confirmation for cookie auth, validates the legacy support inquiry payload, and inserts support_inquiries through the server-owned Supabase REST adapter with creator_id from the resolved app-session user. The active GET export in the dirty apps/web route remains legacy-owned until it has separate Rust backend evidence."
+        }
+      }
     },
     "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts": {
       "status": "migrated",

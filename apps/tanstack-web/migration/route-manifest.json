@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 942,
-        "migrated": 142,
-        "percentComplete": 19.28,
-        "remaining": 942,
-        "terminal": 225,
-        "total": 1167,
+        "legacyNext": 944,
+        "migrated": 147,
+        "percentComplete": 19.59,
+        "remaining": 944,
+        "terminal": 230,
+        "total": 1174,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 961,
-        "migrated": 147,
-        "percentComplete": 19.31,
-        "remaining": 961,
-        "terminal": 230,
-        "total": 1191,
+        "legacyNext": 963,
+        "migrated": 152,
+        "percentComplete": 19.62,
+        "remaining": 963,
+        "terminal": 235,
+        "total": 1198,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1058,
-      "migrated": 434,
-      "percentComplete": 32.91,
-      "remaining": 1058,
-      "terminal": 519,
-      "total": 1577,
+      "legacyNext": 1060,
+      "migrated": 439,
+      "percentComplete": 33.08,
+      "remaining": 1060,
+      "terminal": 524,
+      "total": 1584,
       "unknownStatus": 0
     }
   },
@@ -1023,7 +1023,7 @@
       "methods": ["GET"],
       "routePath": "/api/time-tracking/export",
       "sourceFile": "apps/web/src/app/api/time-tracking/export/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -1856,7 +1856,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/cms/workspaces",
       "sourceFile": "apps/web/src/app/api/v1/cms/workspaces/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -2854,6 +2854,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/infrastructure/devboxes:apps/web/src/app/api/v1/infrastructure/devboxes/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/devboxes",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/devboxes/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:GET:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -2907,6 +2916,15 @@
       "targetOwner": "rust-backend",
       "method": "DELETE",
       "parentId": "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts"
+    },
+    {
+      "id": "api:/api/v1/infrastructure/entity-creation-limits:apps/web/src/app/api/v1/infrastructure/entity-creation-limits/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/entity-creation-limits",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/entity-creation-limits/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
     },
     {
       "id": "api:/api/v1/infrastructure/external-apps:apps/web/src/app/api/v1/infrastructure/external-apps/route.ts",
@@ -3932,6 +3950,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/infrastructure/push-notifications:apps/web/src/app/api/v1/infrastructure/push-notifications/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/infrastructure/push-notifications",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/push-notifications/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/infrastructure/push-notifications/test:apps/web/src/app/api/v1/infrastructure/push-notifications/test/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -4193,13 +4220,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
+      "id": "api:GET:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/inquiries",
+      "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/inquiries",
       "sourceFile": "apps/web/src/app/api/v1/inquiries/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts"
     },
     {
       "id": "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts",
@@ -4400,7 +4440,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/mira/achievements",
       "sourceFile": "apps/web/src/app/api/v1/mira/achievements/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -4683,7 +4723,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/notifications/unread-count",
       "sourceFile": "apps/web/src/app/api/v1/notifications/unread-count/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -4809,7 +4849,7 @@
       "methods": ["GET"],
       "routePath": "/api/v1/storage/list",
       "sourceFile": "apps/web/src/app/api/v1/storage/list/route.ts",
-      "status": "legacy-next",
+      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -8093,11 +8133,38 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/settings/calendar-sync:apps/web/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/settings/calendar-sync",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/settings/configs:apps/web/src/app/api/v1/workspaces/[wsId]/settings/configs/route.ts",
       "kind": "api",
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/workspaces/:wsId/settings/configs",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/configs/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/settings/email-audit:apps/web/src/app/api/v1/workspaces/[wsId]/settings/email-audit/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/settings/email-audit",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/email-audit/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/settings/members:apps/web/src/app/api/v1/workspaces/[wsId]/settings/members/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/settings/members",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/members/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -14682,13 +14749,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1167,
+    "apiRoutes": 1174,
     "cronRoutes": 20,
     "layouts": 67,
     "pages": 312,
-    "routeHandlers": 1191,
+    "routeHandlers": 1198,
     "methodCounts": {
-      "GET": 670,
+      "GET": 677,
       "HEAD": 1,
       "POST": 523,
       "PUT": 174,
@@ -14696,6 +14763,6 @@
       "DELETE": 203,
       "OPTIONS": 16
     },
-    "total": 1577
+    "total": 1584
   }
 }

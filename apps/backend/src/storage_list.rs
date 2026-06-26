@@ -839,6 +839,11 @@ async fn default_permissions(
 /// Verifies a raw key against a stored `salt:hex` hash using scrypt with Node's
 /// default parameters (N=16384, r=8, p=1, dkLen=64), constant-time comparison.
 fn verify_api_key_hash(key: &str, stored_hash: &str) -> bool {
+    #[cfg(test)]
+    if let Some(expected) = stored_hash.strip_prefix("test-plain:") {
+        return constant_time_eq(key.as_bytes(), expected.as_bytes());
+    }
+
     let mut parts = stored_hash.splitn(2, ':');
     let (Some(salt), Some(expected_hex)) = (parts.next(), parts.next()) else {
         return false;

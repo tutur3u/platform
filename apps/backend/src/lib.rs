@@ -30,6 +30,8 @@ mod calendar_auth_microsoft;
 mod calendar_auth_provider_calendars;
 mod changelog;
 mod cms_workspaces;
+#[cfg(test)]
+mod cms_workspaces_test;
 mod contact;
 mod course;
 mod crawlers;
@@ -121,6 +123,8 @@ mod inventory;
 mod inventory_orders;
 mod link_shortener_linkid_analytics;
 mod mira_achievements;
+#[cfg(test)]
+mod mira_achievements_test;
 mod mira_calendar;
 mod mira_focus;
 mod mira_focus_history;
@@ -130,6 +134,8 @@ mod mobile_deployment_bundle;
 mod mobile_version;
 mod notifications_account_preferences;
 mod notifications_unread_count;
+#[cfg(test)]
+mod notifications_unread_count_test;
 mod nova;
 mod onboarding_progress;
 mod outbound;
@@ -137,10 +143,14 @@ mod shared_task_boards;
 mod storage_analytics;
 mod storage_download_path;
 mod storage_list;
+#[cfg(test)]
+mod storage_list_test;
 mod supabase_auth;
 mod task_board_status_templates;
 mod task_embeddings;
 mod time_tracking_export;
+#[cfg(test)]
+mod time_tracking_export_test;
 mod timezones;
 mod topic_announcements;
 mod tulearn_bootstrap;

@@ -1343,6 +1343,274 @@ paths:
                 type: string
                 examples:
                   - GET
+  /api/v1/cms/workspaces:
+    get:
+      summary: CMS-accessible workspace list
+      description: Migrated replacement for apps/web/src/app/api/v1/cms/workspaces/route.ts GET. The Rust backend preserves the legacy app-session and browser Supabase auth boundary, reads the caller's admin-visible workspaces through the server-owned Supabase REST adapter, applies root-admin and per-workspace external-project permission checks, resolves active external-project bindings, and returns the legacy workspace array with subscription tier metadata.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Workspaces visible to the authenticated CMS caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CmsWorkspacesResponse"
+        "401":
+          description: Caller is missing a valid app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CmsWorkspacesUnauthorized"
+        "500":
+          description: Workspace, permission, external-project binding, or subscription tier data could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CmsWorkspacesError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/notifications/unread-count:
+    get:
+      summary: Current user unread notification count
+      description: Migrated replacement for apps/web/src/app/api/v1/notifications/unread-count/route.ts GET. The Rust backend preserves the legacy app-session and browser Supabase auth behavior, validates the optional workspace query filter, verifies workspace membership before scoped counts, builds the legacy notification access filter, and reads the exact unread count through the service-role Supabase REST adapter.
+      security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Optional workspace UUID used to scope the unread count.
+      responses:
+        "200":
+          description: Unread notification count for the authenticated caller.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCountResponse"
+        "400":
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCountError"
+        "401":
+          description: Caller is missing a valid app-session or browser Supabase session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCountError"
+        "403":
+          description: Caller is authenticated but cannot access the requested workspace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCountError"
+        "500":
+          description: Workspace access or unread-count lookup failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCountError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/mira/achievements:
+    get:
+      summary: Mira achievement catalog with caller unlock status
+      description: Migrated replacement for apps/web/src/app/api/v1/mira/achievements/route.ts GET. The Rust backend revalidates the browser Supabase session or non-app-session Bearer token, reads the private Mira achievement catalog through the service-role private-schema Supabase REST adapter, reads the caller's unlocked achievements through the caller-token Supabase REST adapter, and preserves the legacy unlocked-status merge, category grouping, XP/stat calculation, and empty-unlocked fallback when the user-achievement read fails.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      responses:
+        "200":
+          description: Mira achievements merged with current-user unlock status and derived stats.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MiraAchievementsResponse"
+        "401":
+          description: Caller is missing a valid browser Supabase session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MiraAchievementsError"
+        "500":
+          description: The private achievement catalog could not be loaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MiraAchievementsError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
+  /api/v1/storage/list:
+    get:
+      summary: Workspace Drive storage list
+      description: Migrated replacement for apps/web/src/app/api/v1/storage/list/route.ts GET. The Rust backend validates legacy `ttr_` workspace API keys, resolves the union of role and default workspace permissions, requires `manage_drive` or `admin`, preserves query coercion and storage path sanitization, blocks the reserved mobile-deployment vault path, lists Supabase Storage objects through the server-owned storage REST adapter, filters placeholder and reserved entries, recursively counts matching files for pagination totals, and returns the legacy `{ data, pagination }` envelope.
+      security:
+        - WorkspaceApiKeyBearer: []
+      parameters:
+        - name: path
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 1000
+            default: ""
+          description: Workspace-relative storage path. Backslashes, repeated separators, and leading/trailing slashes are normalized; traversal segments are rejected.
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 500
+          description: Optional case-insensitive file-name search term used for the legacy recursive total count.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Page size parsed with legacy Zod number coercion.
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Zero-based storage list offset parsed with legacy Zod number coercion.
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            default: name
+            enum:
+              - name
+              - created_at
+              - updated_at
+              - size
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            default: asc
+            enum:
+              - asc
+              - desc
+      responses:
+        "200":
+          description: Supabase Storage objects for the requested page plus recursive file count pagination.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageListResponse"
+        "400":
+          description: Query parameters or storage path are invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageListError"
+        "401":
+          description: Workspace API key is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageListError"
+        "403":
+          description: Workspace API key does not grant manage_drive/admin, or path is reserved for mobile deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageListError"
+        "500":
+          description: Storage listing or unexpected backend processing failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageListError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/v1/hive/ai/models:
     get:
       summary: Hive AI model catalog
@@ -3168,6 +3436,110 @@ paths:
                 $ref: "#/components/schemas/LegacyHealth"
         "405":
           description: Unsupported HTTP method.
+  /api/time-tracking/export:
+    get:
+      summary: Root time tracking grouped-session export
+      description: Migrated replacement for apps/web/src/app/api/time-tracking/export/route.ts GET. The Rust backend revalidates the browser Supabase session cookie or non-app-session Bearer token, requires a Tuturuuu root email and the root workspace, verifies workspace membership through the service-role Supabase REST adapter, preserves legacy query parsing and the 1000-row limit cap, forwards get_grouped_sessions_paginated through the caller Supabase token, and returns the legacy `{ data, pagination }` envelope. If the RPC path and JS-style recovery cannot produce rows, the backend returns the legacy empty-result shape.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+            default: 00000000-0000-0000-0000-000000000000
+          description: Workspace UUID. The migrated route preserves the legacy root-workspace-only gate.
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            default: day
+            examples:
+              - day
+              - week
+              - month
+          description: Grouping period forwarded to get_grouped_sessions_paginated.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Page number parsed with legacy parseInt-style coercion.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+          description: Page size parsed with legacy parseInt-style coercion and capped at 1000.
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional search term forwarded to the grouped sessions RPC when non-empty.
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional start date filter forwarded to the grouped sessions RPC when non-empty.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional end date filter forwarded to the grouped sessions RPC when non-empty.
+      responses:
+        "200":
+          description: Grouped time tracking sessions and pagination metadata.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store, no-cache, must-revalidate
+            CDN-Cache-Control:
+              schema:
+                type: string
+                examples:
+                  - no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeTrackingExportResponse"
+        "401":
+          description: Caller is missing a valid browser Supabase session or Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeTrackingExportError"
+        "403":
+          description: Caller is not a Tuturuuu root user, did not request the root workspace, or cannot access it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeTrackingExportError"
+        "500":
+          description: Workspace membership could not be verified.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeTrackingExportError"
+        "405":
+          description: Unsupported HTTP method.
+          headers:
+            Allow:
+              schema:
+                type: string
+                examples:
+                  - GET
   /api/cron/discord/daily-report:
     get:
       summary: Discord daily report cron proxy
@@ -9730,6 +10102,10 @@ components:
       type: http
       scheme: bearer
       description: Server-only BACKEND_INTERNAL_TOKEN configured through Cloudflare secrets or local environment variables.
+    WorkspaceApiKeyBearer:
+      type: http
+      scheme: bearer
+      description: Workspace API key with the legacy `ttr_` prefix. Routes validate the key hash server-side and resolve workspace permissions from role and default permission rows.
     CronBearer:
       type: http
       scheme: bearer
@@ -11253,6 +11629,295 @@ components:
           type: string
           examples:
             - Failed to load current team
+    CmsWorkspacesResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/CmsWorkspace"
+    CmsWorkspace:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        name:
+          type:
+            - string
+            - "null"
+        avatar_url:
+          type:
+            - string
+            - "null"
+        logo_url:
+          type:
+            - string
+            - "null"
+        personal:
+          type:
+            - boolean
+            - "null"
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        workspace_members:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              user_id:
+                type:
+                  - string
+                  - "null"
+        tier:
+          type:
+            - string
+            - "null"
+    CmsWorkspacesUnauthorized:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          examples:
+            - Unauthorized
+    CmsWorkspacesError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Failed to load CMS workspaces
+    NotificationUnreadCountResponse:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          minimum: 0
+          examples:
+            - 7
+    NotificationUnreadCountError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Invalid query parameters
+            - Unauthorized
+            - Access denied to workspace
+            - Failed to fetch unread count
+        details:
+          type: object
+          additionalProperties: true
+    TimeTrackingExportResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            description: Legacy grouped session object returned by get_grouped_sessions_paginated.
+        pagination:
+          $ref: "#/components/schemas/TimeTrackingExportPagination"
+    TimeTrackingExportPagination:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - pages
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+          minimum: 0
+        pages:
+          type: integer
+          minimum: 0
+    TimeTrackingExportError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Forbidden
+            - Workspace access denied
+            - Failed to verify workspace membership
+    MiraAchievementsResponse:
+      type: object
+      required:
+        - achievements
+        - grouped
+        - stats
+      properties:
+        achievements:
+          type: array
+          items:
+            $ref: "#/components/schemas/MiraAchievement"
+        grouped:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/MiraAchievement"
+        stats:
+          $ref: "#/components/schemas/MiraAchievementStats"
+    MiraAchievement:
+      type: object
+      additionalProperties: true
+      required:
+        - is_unlocked
+        - unlocked_at
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+        sort_order:
+          type: integer
+        xp_reward:
+          type: integer
+        is_unlocked:
+          type: boolean
+        unlocked_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    MiraAchievementStats:
+      type: object
+      required:
+        - total
+        - unlocked
+        - total_xp_earned
+        - completion_percentage
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        unlocked:
+          type: integer
+          minimum: 0
+        total_xp_earned:
+          type: integer
+        completion_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+    MiraAchievementsError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Failed to get achievements
+    StorageListResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StorageObject"
+        pagination:
+          $ref: "#/components/schemas/StorageListPagination"
+    StorageObject:
+      type: object
+      additionalProperties: true
+      properties:
+        name:
+          type: string
+        id:
+          type:
+            - string
+            - "null"
+        created_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        updated_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+    StorageListPagination:
+      type: object
+      required:
+        - limit
+        - offset
+        - total
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+        offset:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 0
+    StorageListError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          examples:
+            - Unauthorized
+            - Forbidden
+            - Bad Request
+            - Internal Server Error
+        message:
+          type: string
+          examples:
+            - Missing or invalid Authorization header. Expected: "Authorization: Bearer <api_key>"
+            - Insufficient permissions. Required: manage_drive
+            - Invalid query parameters
+            - Invalid path
+            - Failed to list files
+        code:
+          type: string
+          enum:
+            - MISSING_API_KEY
+            - INVALID_API_KEY
+            - INSUFFICIENT_PERMISSIONS
+            - STORAGE_RESERVED_PATH
+            - INVALID_QUERY_PARAMS
+            - INVALID_PATH
+            - STORAGE_LIST_ERROR
+            - UNEXPECTED_ERROR
     TaskBoardStatusTemplatesResponse:
       type: object
       required:
