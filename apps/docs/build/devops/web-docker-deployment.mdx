@@ -1402,7 +1402,13 @@ How it works:
   4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0` or
   `DOCKER_WEB_REACT_COMPILER=1` only when the host has enough memory headroom.
   Keep `DOCKER_WEB_NEXT_BUILD_ENGINE` on its default Turbopack value for
-  production watcher hosts and local E2E runs.
+  production watcher hosts and local E2E runs. The wrapper also passes
+  Turbo's `--concurrency` flag inside the Dockerfile build. It uses
+  `DOCKER_WEB_TURBO_CONCURRENCY` when explicitly set, otherwise it follows the
+  current `DOCKER_WEB_BUILD_MAX_PARALLELISM` profile value and defaults to `1`.
+  BuildKit max parallelism limits Docker build graph execution; this inner
+  Turbo cap limits concurrent workspace package builds such as
+  `@tuturuuu/types`, `@tuturuuu/devbox`, and `@tuturuuu/masonry`.
 - Docker standalone Next builds default static page generation to a 180 second
   timeout, and auto-scale the inner Next build CPU count plus static generation
   concurrency from Docker memory. Docker allocations below 10 GB use 1 Next
@@ -1461,6 +1467,11 @@ Operational notes:
   `restart`, `stop`, `rm`, or health-check call reads the BuildKit service.
 - If host memory or swap is saturated, lower `--build-max-parallelism` first
   and stop unrelated containers before raising the builder memory cap.
+- If the build loops on exit code 137 or `SIGSEGV (Address boundary error)`
+  inside `@tuturuuu/*:build` package tasks, treat it as inner Turbo concurrency
+  pressure in addition to BuildKit pressure. Keep the default Docker web helper
+  profile so `DOCKER_WEB_BUILD_MAX_PARALLELISM=1` reaches the Dockerfile build,
+  or set `DOCKER_WEB_TURBO_CONCURRENCY=1` explicitly for a one-off recovery.
 - If the default blue/green deploy keeps failing with BuildKit transport EOFs,
   `context deadline exceeded`, `[internal] waiting for connection`, or
   graceful-stop messages, leave the root-script defaults in place and let the

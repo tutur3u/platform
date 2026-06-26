@@ -129,6 +129,13 @@ infrastructure dashboard changes.
   `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
   cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
   `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
+- BuildKit max parallelism only limits Docker's build graph. The web image
+  still runs Turbo inside the Dockerfile, so pass an inner Turbo concurrency cap
+  through the builder stage as well. Docker web builds should default Turbo
+  concurrency to the current `DOCKER_WEB_BUILD_MAX_PARALLELISM` value and allow
+  `DOCKER_WEB_TURBO_CONCURRENCY` only as an explicit override. When logs show
+  exit code 137 or `SIGSEGV (Address boundary error)` in `@tuturuuu/*:build`
+  tasks, lower the inner Turbo cap before raising memory.
 - Watcher-owned deploy failures should prune failed-build residue before the
   next poll so dangling images and stale Buildx cache do not accumulate for a
   commit that will remain blocked. By default, failed child deploys run

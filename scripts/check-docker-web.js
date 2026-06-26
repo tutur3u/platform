@@ -506,8 +506,12 @@ function validateDockerfile({
 
     if (
       !builderStage.includes('ARG DOCKER_WEB_BUILD_MEMORY=12g') ||
+      !builderStage.includes('ARG DOCKER_WEB_BUILD_MAX_PARALLELISM=1') ||
       !builderStage.includes('ARG DOCKER_WEB_DOCKER_MEMORY_LIMIT=') ||
       !/ENV DOCKER_WEB_BUILD_MEMORY=\$\{DOCKER_WEB_BUILD_MEMORY\}/u.test(
+        builderStage
+      ) ||
+      !/ENV DOCKER_WEB_BUILD_MAX_PARALLELISM=\$\{DOCKER_WEB_BUILD_MAX_PARALLELISM\}/u.test(
         builderStage
       ) ||
       !/ENV DOCKER_WEB_DOCKER_MEMORY_LIMIT=\$\{DOCKER_WEB_DOCKER_MEMORY_LIMIT\}/u.test(
@@ -527,10 +531,14 @@ function validateDockerfile({
       !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=0') ||
       !/ENV DOCKER_WEB_REACT_COMPILER=\$\{DOCKER_WEB_REACT_COMPILER\}/u.test(
         builderStage
+      ) ||
+      !builderStage.includes('ARG DOCKER_WEB_TURBO_CONCURRENCY=') ||
+      !/ENV DOCKER_WEB_TURBO_CONCURRENCY=\$\{DOCKER_WEB_TURBO_CONCURRENCY\}/u.test(
+        builderStage
       )
     ) {
       errors.push(
-        'apps/web/Dockerfile builder stage must expose Docker build memory, app-only, next build engine, heap, and React Compiler build args.'
+        'apps/web/Dockerfile builder stage must expose Docker build memory, max parallelism, app-only, next build engine, heap, React Compiler, and Turbo concurrency build args.'
       );
     }
 
@@ -896,6 +904,10 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'DOCKER_WEB_BUILD_MEMORY:-12g' +
       '}',
+    '      DOCKER_WEB_BUILD_MAX_PARALLELISM: ' +
+      '${' +
+      'DOCKER_WEB_BUILD_MAX_PARALLELISM:-1' +
+      '}',
     '      DOCKER_WEB_DOCKER_MEMORY_LIMIT: ' +
       '${' +
       'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
@@ -915,6 +927,10 @@ function validateDockerProdCompose(composeContent) {
     '      DOCKER_WEB_REACT_COMPILER: ' +
       '${' +
       'DOCKER_WEB_REACT_COMPILER:-0' +
+      '}',
+    '      DOCKER_WEB_TURBO_CONCURRENCY: ' +
+      '${' +
+      'DOCKER_WEB_TURBO_CONCURRENCY:-' +
       '}',
     ...platformBuildMetadataBuildArgSnippets,
     '  web:',
@@ -999,6 +1015,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DOCKER_WEB_REACT_COMPILER',
     '      - DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY',
     '      - DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT',
+    '      - DOCKER_WEB_TURBO_CONCURRENCY',
     '      - DOCKER_WEB_WITH_CLOUDFLARED',
     '      - GITHUB_TOKEN',
     '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain',

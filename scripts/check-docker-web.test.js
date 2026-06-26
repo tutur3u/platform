@@ -873,6 +873,10 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '{' +
         'DOCKER_WEB_BUILD_MEMORY:-12g' +
         '}',
+      '      DOCKER_WEB_BUILD_MAX_PARALLELISM: $' +
+        '{' +
+        'DOCKER_WEB_BUILD_MAX_PARALLELISM:-1' +
+        '}',
       '      DOCKER_WEB_DOCKER_MEMORY_LIMIT: $' +
         '{' +
         'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
@@ -893,6 +897,10 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '{' +
         'DOCKER_WEB_REACT_COMPILER:-0' +
         '}',
+      '      DOCKER_WEB_TURBO_CONCURRENCY: $' +
+        '{' +
+        'DOCKER_WEB_TURBO_CONCURRENCY:-' +
+        '}',
       '',
     ].join('\n'),
     ''
@@ -901,11 +909,13 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
   assert.match(errors, /DOCKER_WEB_BUILD_MEMORY/);
+  assert.match(errors, /DOCKER_WEB_BUILD_MAX_PARALLELISM/);
   assert.match(errors, /DOCKER_WEB_DOCKER_MEMORY_LIMIT/);
   assert.match(errors, /DOCKER_WEB_NEXT_APP_ONLY/);
   assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
   assert.match(errors, /DOCKER_WEB_REACT_COMPILER/);
+  assert.match(errors, /DOCKER_WEB_TURBO_CONCURRENCY/);
 });
 
 test('validateDockerProdCompose reports missing version badge metadata env wiring', () => {

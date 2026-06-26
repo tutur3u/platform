@@ -95,6 +95,10 @@ const {
   writeDeploymentBuildLock,
 } = require('./watch-blue-green/build-lock.js');
 const {
+  getBuildWebDockerArgs,
+  resolveDockerWebTurboConcurrency,
+} = require('./build-web-docker.js');
+const {
   CONTAINER_REFRESH_EXIT_CODE,
   getStatusSnapshotHealth,
   shouldRestartWatcherExit,
@@ -110,6 +114,27 @@ const LOCAL_SUPABASE_TEST_ENV = {
   [DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]: '1',
   PATH: 'test-path',
 };
+
+test('build-web-docker caps inner Turbo concurrency from Docker build profile env', () => {
+  assert.equal(resolveDockerWebTurboConcurrency({}), 1);
+  assert.equal(
+    resolveDockerWebTurboConcurrency({
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: '2',
+    }),
+    2
+  );
+  assert.equal(
+    resolveDockerWebTurboConcurrency({
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: '2',
+      DOCKER_WEB_TURBO_CONCURRENCY: '3',
+    }),
+    3
+  );
+  assert.deepEqual(
+    getBuildWebDockerArgs({ DOCKER_WEB_BUILD_MAX_PARALLELISM: '1' }),
+    ['run', 'build:web:docker', '--', '--concurrency=1']
+  );
+});
 
 function isHiveDbMigrateRun(command, args) {
   return (
