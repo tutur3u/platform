@@ -292,6 +292,45 @@ describe('RateLimitDetailsDialog', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders the server-observed IP for auth rate-limit diagnostics', async () => {
+    render(<RateLimitDetailsDialog />);
+
+    await act(async () => {});
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tuturuuu:rate-limit-details', {
+          detail: {
+            ...details,
+            clientIp: '198.51.100.25',
+            debugBypass: undefined,
+            headers: {
+              'Retry-After': '12',
+              'X-RateLimit-Caller-Class': 'anonymous',
+              'X-RateLimit-Client-IP': '198.51.100.25',
+              'X-RateLimit-Policy': 'otp-send',
+            },
+            method: 'POST',
+            rateLimitStatus: undefined,
+            requestPath: '/api/v1/auth/otp/send',
+            retryAfterSeconds: 12,
+            status: 429,
+            userEmail: undefined,
+            userId: undefined,
+            warning: undefined,
+            willRetry: false,
+          },
+        })
+      );
+    });
+
+    await expect(screen.findByRole('dialog')).resolves.toBeVisible();
+    expect(screen.getByText('Current IP')).toBeVisible();
+    expect(screen.getAllByText('198.51.100.25')[0]).toBeVisible();
+    expect(screen.getByText('/api/v1/auth/otp/send')).toBeVisible();
+    expect(screen.getAllByText('otp-send')[0]).toBeVisible();
+    expect(screen.getAllByText('anonymous')[0]).toBeVisible();
+  });
+
   it('copies the sanitized details payload without secrets, cookies, or request bodies', async () => {
     render(<RateLimitDetailsDialog />);
 

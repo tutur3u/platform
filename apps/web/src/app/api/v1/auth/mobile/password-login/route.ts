@@ -6,7 +6,11 @@ import {
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { passwordLogin, toPasswordLoginErrorResult } from '@/lib/auth/password';
-import { jsonWithCors, optionsWithCors } from '../shared';
+import {
+  jsonWithAuthRateLimitDiagnostics,
+  jsonWithCors,
+  optionsWithCors,
+} from '../shared';
 
 const LegacyPasswordLoginSchema = z.object({
   captchaToken: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
@@ -42,9 +46,17 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'password-login',
+      request,
+      status: result.status,
+    });
   } catch (error) {
     const result = toPasswordLoginErrorResult(error);
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'password-login',
+      request,
+      status: result.status,
+    });
   }
 }

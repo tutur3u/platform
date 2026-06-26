@@ -115,4 +115,67 @@ describe('OTP route diagnostics', () => {
       })
     );
   });
+
+  it('returns retry and public IP diagnostics for OTP send rate limits', async () => {
+    mocks.sendOtp.mockResolvedValue({
+      body: {
+        error: 'Too many OTP requests. Please try again later.',
+        retryAfter: 42,
+      },
+      status: 429,
+    });
+
+    const { POST } = await import('@/app/api/v1/auth/otp/send/route');
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/auth/otp/send', {
+        body: JSON.stringify({
+          client: 'web',
+          email: 'person@example.com',
+          locale: 'en',
+        }),
+        headers: {
+          'cf-connecting-ip': '203.0.113.42',
+        },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('42');
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.42');
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('otp-send');
+    expect(response.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+  });
+
+  it('returns retry and public IP diagnostics for OTP verify rate limits', async () => {
+    mocks.verifyOtp.mockResolvedValue({
+      body: {
+        error: 'Too many failed verification attempts for this email',
+        retryAfter: 60,
+      },
+      status: 429,
+    });
+
+    const { POST } = await import('@/app/api/v1/auth/otp/verify/route');
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/auth/otp/verify', {
+        body: JSON.stringify({
+          client: 'web',
+          email: 'person@example.com',
+          locale: 'en',
+          otp: '123456',
+        }),
+        headers: {
+          'cf-connecting-ip': '198.51.100.10',
+        },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('60');
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('198.51.100.10');
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('otp-verify');
+    expect(response.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+  });
 });

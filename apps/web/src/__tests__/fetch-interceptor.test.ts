@@ -317,6 +317,52 @@ describe('fetch-interceptor', () => {
     );
   });
 
+  it('should capture auth rate-limit IP and policy diagnostics', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response(JSON.stringify({ error: 'Rate limited' }), {
+      status: 429,
+      headers: {
+        'Retry-After': '12',
+        'X-RateLimit-Caller-Class': 'anonymous',
+        'X-RateLimit-Client-IP': '203.0.113.42',
+        'X-RateLimit-Policy': 'otp-send',
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    await globalThis.fetch('/api/v1/auth/otp/send', {
+      body: JSON.stringify({
+        email: 'person@example.com',
+      }),
+      method: 'POST',
+    });
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientIp: '203.0.113.42',
+        headers: expect.objectContaining({
+          'Retry-After': '12',
+          'X-RateLimit-Caller-Class': 'anonymous',
+          'X-RateLimit-Client-IP': '203.0.113.42',
+          'X-RateLimit-Policy': 'otp-send',
+        }),
+        method: 'POST',
+        requestPath: '/api/v1/auth/otp/send',
+        retryAfterSeconds: 12,
+        status: 429,
+        willRetry: false,
+      })
+    );
+  });
+
   it('should stop after MAX_RETRIES (3) and return the 429 response', async () => {
     const make429 = () =>
       new Response('', {

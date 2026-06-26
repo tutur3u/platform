@@ -8,7 +8,11 @@ import {
   sendOtp,
   toOtpErrorResult,
 } from '@/lib/auth/otp';
-import { jsonWithCors, optionsWithCors } from '../../mobile/shared';
+import {
+  jsonWithAuthRateLimitDiagnostics,
+  jsonWithCors,
+  optionsWithCors,
+} from '../../mobile/shared';
 
 export async function OPTIONS() {
   return optionsWithCors();
@@ -46,13 +50,17 @@ export async function POST(request: NextRequest) {
         status: result.status,
       });
 
-      return jsonWithCors(
+      return jsonWithAuthRateLimitDiagnostics(
         { ...result.body, diagnosticCode },
-        { status: result.status }
+        { policy: 'otp-send', request, status: result.status }
       );
     }
 
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'otp-send',
+      request,
+      status: result.status,
+    });
   } catch (error) {
     const diagnosticCode = createAuthDiagnosticCode('otp_send');
     logAuthDiagnostic({
@@ -65,9 +73,9 @@ export async function POST(request: NextRequest) {
       stage: 'otp_send',
     });
     const result = toOtpErrorResult(error, 'send');
-    return jsonWithCors(
+    return jsonWithAuthRateLimitDiagnostics(
       { ...result.body, diagnosticCode },
-      { status: result.status }
+      { policy: 'otp-send', request, status: result.status }
     );
   }
 }

@@ -8,7 +8,11 @@ import {
   toOtpErrorResult,
   verifyOtp,
 } from '@/lib/auth/otp';
-import { jsonWithCors, optionsWithCors } from '../../mobile/shared';
+import {
+  jsonWithAuthRateLimitDiagnostics,
+  jsonWithCors,
+  optionsWithCors,
+} from '../../mobile/shared';
 
 export async function OPTIONS() {
   return optionsWithCors();
@@ -46,17 +50,21 @@ export async function POST(request: NextRequest) {
         status: result.status,
       });
 
-      return jsonWithCors(
+      return jsonWithAuthRateLimitDiagnostics(
         {
           ...result.body,
           diagnosticCode,
           error: 'Verification failed. Please try again.',
         },
-        { status: result.status }
+        { policy: 'otp-verify', request, status: result.status }
       );
     }
 
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'otp-verify',
+      request,
+      status: result.status,
+    });
   } catch (error) {
     const diagnosticCode = createAuthDiagnosticCode('otp_verify');
     logAuthDiagnostic({
@@ -69,9 +77,9 @@ export async function POST(request: NextRequest) {
       stage: 'otp_verify',
     });
     const result = toOtpErrorResult(error, 'verify');
-    return jsonWithCors(
+    return jsonWithAuthRateLimitDiagnostics(
       { ...result.body, diagnosticCode },
-      { status: result.status }
+      { policy: 'otp-verify', request, status: result.status }
     );
   }
 }

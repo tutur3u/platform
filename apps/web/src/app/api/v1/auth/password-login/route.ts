@@ -8,7 +8,11 @@ import {
   passwordLogin,
   toPasswordLoginErrorResult,
 } from '@/lib/auth/password';
-import { jsonWithCors, optionsWithCors } from '../mobile/shared';
+import {
+  jsonWithAuthRateLimitDiagnostics,
+  jsonWithCors,
+  optionsWithCors,
+} from '../mobile/shared';
 
 export async function OPTIONS() {
   return optionsWithCors();
@@ -44,17 +48,21 @@ export async function POST(request: NextRequest) {
         status: result.status,
       });
 
-      return jsonWithCors(
+      return jsonWithAuthRateLimitDiagnostics(
         {
           ...result.body,
           diagnosticCode,
           error: 'Failed to login',
         },
-        { status: result.status }
+        { policy: 'password-login', request, status: result.status }
       );
     }
 
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'password-login',
+      request,
+      status: result.status,
+    });
   } catch (error) {
     const diagnosticCode = createAuthDiagnosticCode('password_login');
     logAuthDiagnostic({
@@ -67,9 +75,9 @@ export async function POST(request: NextRequest) {
       stage: 'password_login',
     });
     const result = toPasswordLoginErrorResult(error);
-    return jsonWithCors(
+    return jsonWithAuthRateLimitDiagnostics(
       { ...result.body, diagnosticCode },
-      { status: result.status }
+      { policy: 'password-login', request, status: result.status }
     );
   }
 }

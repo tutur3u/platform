@@ -7,7 +7,11 @@ import {
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { toOtpErrorResult, verifyOtp } from '@/lib/auth/otp';
-import { jsonWithCors, optionsWithCors } from '../shared';
+import {
+  jsonWithAuthRateLimitDiagnostics,
+  jsonWithCors,
+  optionsWithCors,
+} from '../shared';
 
 const LegacyVerifyOtpSchema = z.object({
   email: z.string().email().max(MAX_EMAIL_LENGTH),
@@ -44,9 +48,17 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'otp-verify',
+      request,
+      status: result.status,
+    });
   } catch (error) {
     const result = toOtpErrorResult(error, 'verify');
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithAuthRateLimitDiagnostics(result.body, {
+      policy: 'otp-verify',
+      request,
+      status: result.status,
+    });
   }
 }
