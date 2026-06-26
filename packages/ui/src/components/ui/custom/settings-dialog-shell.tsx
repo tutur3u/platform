@@ -56,7 +56,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { createSettingsSearchEngine } from './settings-dialog-search.js';
+import type { createSettingsSearchEngine } from './settings-dialog-search';
+import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
 
 export interface SettingsNavItem {
   name: string;
@@ -160,7 +161,7 @@ export function SettingsDialogShell({
   const ensureSearchEngine = useCallback(() => {
     if (searchEngineFactory || searchEngineLoadRef.current) return;
 
-    searchEngineLoadRef.current = import('./settings-dialog-search.js')
+    searchEngineLoadRef.current = loadSettingsSearchEngine()
       .then((module) => {
         setSearchEngineFactory(() => module.createSettingsSearchEngine);
       })

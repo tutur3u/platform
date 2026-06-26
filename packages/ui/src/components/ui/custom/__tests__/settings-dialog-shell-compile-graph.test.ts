@@ -17,6 +17,27 @@ if (!settingsDialogShellPath) {
 const settingsDialogShellSource = readFileSync(settingsDialogShellPath, {
   encoding: 'utf8',
 });
+const settingsDialogSearchLoaderPath = [
+  join(
+    process.cwd(),
+    'packages/ui/src/components/ui/custom/settings-dialog-search-loader.js'
+  ),
+  join(
+    process.cwd(),
+    'src/components/ui/custom/settings-dialog-search-loader.js'
+  ),
+].find((path) => existsSync(path));
+
+if (!settingsDialogSearchLoaderPath) {
+  throw new Error('Unable to locate settings-dialog-search-loader.js');
+}
+
+const settingsDialogSearchLoaderSource = readFileSync(
+  settingsDialogSearchLoaderPath,
+  {
+    encoding: 'utf8',
+  }
+);
 const runtimeSource = settingsDialogShellSource.replace(
   /^\s*import\s+type\b[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gmu,
   ''
@@ -42,8 +63,14 @@ describe('settings dialog shell compile graph', () => {
     expect(runtimeSource).not.toMatch(
       staticImportPattern('@tuturuuu/utils/text-helper')
     );
-    expect(settingsDialogShellSource).toMatch(
-      /import\(['"]\.\/settings-dialog-search\.js['"]\)/u
+    expect(settingsDialogSearchLoaderSource).toMatch(
+      /import\(['"]\.\/settings-dialog-search['"]\)/u
+    );
+    expect(settingsDialogShellSource).not.toContain(
+      'settings-dialog-search.js'
+    );
+    expect(settingsDialogSearchLoaderSource).not.toContain(
+      'settings-dialog-search.js'
     );
   });
 });
