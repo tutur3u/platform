@@ -31,7 +31,7 @@
     "@ai-sdk/gateway": "^3.0.133",
     "@ai-sdk/gladia": "^2.0.36",
     "@ai-sdk/google": "^3.0.83",
-    "@ai-sdk/google-vertex": "^4.0.148",
+    "@ai-sdk/google-vertex": "^5.0.0",
     "@ai-sdk/groq": "^3.0.42",
     "@ai-sdk/hume": "^2.0.36",
     "@ai-sdk/lmnt": "^2.0.36",
