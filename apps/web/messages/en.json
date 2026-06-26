@@ -6059,6 +6059,10 @@
       "issue_secret": "Issue secret now",
       "origins": "Allowed origins",
       "scopes": "Allowed API scopes",
+      "scopes_create": "Add custom scope",
+      "scopes_empty": "No scopes found.",
+      "scopes_placeholder": "Select scopes",
+      "scopes_search": "Search scopes",
       "workspace_ids": "Allowed workspace IDs"
     },
     "messages": {

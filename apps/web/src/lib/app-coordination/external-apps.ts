@@ -81,7 +81,8 @@ function buildExternalAppRegistrations(rows: SecretRow[]) {
       const displayName = values.displayName?.trim() || id;
       const origins = normalizeOrigins(parseJsonStringArray(values.origins));
       const allowedScopes = normalizeScopes(
-        parseJsonStringArray(values.allowedScopes)
+        parseJsonStringArray(values.allowedScopes),
+        values.allowedScopes === undefined ? undefined : []
       );
       const allowedWorkspaceIds = normalizeWorkspaceIds(
         parseJsonStringArray(values.allowedWorkspaceIds)
@@ -217,7 +218,7 @@ export function getAllowedAppTokenScopes({
   allowedScopes: string[];
   requestedScopes: string[];
 }) {
-  const allowed = normalizeScopes(allowedScopes);
+  const allowed = normalizeScopes(allowedScopes, []);
   const requested = normalizeScopes(requestedScopes, []);
 
   if (requested.length === 0) {
@@ -260,7 +261,7 @@ export async function upsertExternalApp({
   }
 
   const displayName = payload.displayName.trim() || appId;
-  const allowedScopes = normalizeScopes(payload.allowedScopes);
+  const allowedScopes = normalizeScopes(payload.allowedScopes, []);
   const allowedWorkspaceIds = normalizeWorkspaceIds(
     payload.allowedWorkspaceIds
   );

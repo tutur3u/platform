@@ -28,7 +28,7 @@ import {
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
-const WORKSPACE_SESSION_SCOPE_PREFIX = 'workspace:';
+const WORKSPACE_SESSION_SCOPE = 'workspace:session';
 
 const exchangeSchema = z.object({
   appId: z
@@ -76,9 +76,61 @@ function isConfiguredApp(targetApp: string) {
 }
 
 function requiresWorkspaceSessionAuthorization(scopes: string[]) {
-  return scopes.some((scope) =>
-    scope.startsWith(WORKSPACE_SESSION_SCOPE_PREFIX)
+  return scopes.includes(WORKSPACE_SESSION_SCOPE);
+}
+
+function shouldInferWorkspaceSessionScope({
+  allowedWorkspaceIds,
+  requestedScopes,
+  workspaceId,
+}: {
+  allowedWorkspaceIds: string[];
+  requestedScopes: string[];
+  workspaceId?: string;
+}) {
+  const requestedWorkspaceSession = requestedScopes.includes(
+    WORKSPACE_SESSION_SCOPE
   );
+
+  return (
+    allowedWorkspaceIds.length > 0 &&
+    (requestedWorkspaceSession ||
+      (requestedScopes.length === 0 && Boolean(workspaceId?.trim())))
+  );
+}
+
+function getAllowedAppTokenScopesWithWorkspaceSession({
+  allowedScopes,
+  allowedWorkspaceIds,
+  requestedScopes,
+  workspaceId,
+}: {
+  allowedScopes: string[];
+  allowedWorkspaceIds: string[];
+  requestedScopes: string[];
+  workspaceId?: string;
+}) {
+  const inferWorkspaceSession = shouldInferWorkspaceSessionScope({
+    allowedWorkspaceIds,
+    requestedScopes,
+    workspaceId,
+  });
+  const scopes = getAllowedAppTokenScopes({
+    allowedScopes,
+    requestedScopes: inferWorkspaceSession
+      ? requestedScopes.filter((scope) => scope !== WORKSPACE_SESSION_SCOPE)
+      : requestedScopes,
+  });
+
+  if (
+    inferWorkspaceSession &&
+    !scopes.includes(WORKSPACE_SESSION_SCOPE) &&
+    (requestedScopes.includes(WORKSPACE_SESSION_SCOPE) || scopes.length === 0)
+  ) {
+    return [...scopes, WORKSPACE_SESSION_SCOPE].sort();
+  }
+
+  return scopes;
 }
 
 async function resolveExchangeTarget({
@@ -86,11 +138,13 @@ async function resolveExchangeTarget({
   appSecret,
   requestedScopes,
   targetApp,
+  workspaceId,
 }: {
   appId?: string;
   appSecret?: string;
   requestedScopes: string[];
   targetApp?: string;
+  workspaceId?: string;
 }) {
   const resolvedTargetApp = targetApp ?? appId;
 
@@ -127,9 +181,11 @@ async function resolveExchangeTarget({
 
     return {
       allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
-      scopes: getAllowedAppTokenScopes({
+      scopes: getAllowedAppTokenScopesWithWorkspaceSession({
         allowedScopes: verification.app.allowedScopes,
+        allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
         requestedScopes,
+        workspaceId,
       }),
       targetApp: verification.app.id,
     } as const;
@@ -366,6 +422,7 @@ async function exchangeAppToken(request: NextRequest) {
       appSecret,
       requestedScopes,
       targetApp,
+      workspaceId,
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'app_scope_not_allowed') {

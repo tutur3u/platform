@@ -6059,6 +6059,10 @@
       "issue_secret": "Cấp secret ngay",
       "origins": "Origin được phép",
       "scopes": "Phạm vi API được phép",
+      "scopes_create": "Thêm phạm vi tùy chỉnh",
+      "scopes_empty": "Không tìm thấy phạm vi.",
+      "scopes_placeholder": "Chọn phạm vi",
+      "scopes_search": "Tìm phạm vi",
       "workspace_ids": "Workspace ID được phép"
     },
     "messages": {

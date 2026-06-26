@@ -409,8 +409,8 @@ describe('app token exchange route', () => {
     }
   });
 
-  it('exchanges workspace session app credentials for a workspace-bound app token', async () => {
-    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+  it('allows requested workspace session when the app is linked to the workspace', async () => {
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
 
     const response = await POST(
       createExchangeRequest({
@@ -439,8 +439,37 @@ describe('app token exchange route', () => {
     }
   });
 
+  it('infers workspace session when a workspace-linked app requests no scopes', async () => {
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      accessToken: string;
+      workspaceId?: string;
+    };
+    const verification = verifyAppCoordinationToken(body.accessToken, {
+      secret: 'test-secret',
+    });
+
+    expect(body.workspaceId).toBe(workspaceId);
+    expect(verification.ok).toBe(true);
+    if (verification.ok) {
+      expect(verification.claims.target_app).toBe('workspace-app');
+      expect(verification.claims.scopes).toEqual(['workspace:session']);
+    }
+  });
+
   it('rejects workspace session exchanges without a workspace id', async () => {
-    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
 
     const response = await POST(
       createExchangeRequest({
@@ -458,7 +487,7 @@ describe('app token exchange route', () => {
   });
 
   it('rejects workspace session exchanges for unlinked workspaces', async () => {
-    mockRegisteredApp(['workspace:session'], 'workspace-app', [
+    mockRegisteredApp([], 'workspace-app', [
       '33333333-3333-4333-8333-333333333333',
     ]);
 
@@ -479,7 +508,7 @@ describe('app token exchange route', () => {
   });
 
   it('rejects non-members for workspace session exchanges', async () => {
-    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
     mocks.createAdminClient.mockResolvedValue(
       createAdminClientMock({ workspaceMember: false })
     );
@@ -499,7 +528,7 @@ describe('app token exchange route', () => {
   });
 
   it('returns pending invite details for workspace session exchanges', async () => {
-    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
     mocks.createAdminClient.mockResolvedValue(
       createAdminClientMock({
         pendingDirectInvite: true,
@@ -531,7 +560,7 @@ describe('app token exchange route', () => {
   });
 
   it('refreshes workspace session app tokens without a fresh cross-app token', async () => {
-    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
     const { token: refreshToken } = createAppCoordinationToken(
       {
         email: 'victim@example.com',

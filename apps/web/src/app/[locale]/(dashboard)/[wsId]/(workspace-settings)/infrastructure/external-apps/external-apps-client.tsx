@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/internal-api/infrastructure/apps';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -20,6 +21,14 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 const QUERY_KEY = ['infrastructure', 'external-apps'];
+const SCOPE_PRESETS = [
+  'workspace:session',
+  'external-projects:read',
+  'external-projects:publish',
+  'external-projects:manage',
+  'external-projects:*',
+  '*',
+];
 
 type OneTimeSecret = {
   appId: string;
@@ -35,6 +44,21 @@ function splitLines(value: FormDataEntryValue | null) {
 
 function joinLines(values: string[]) {
   return values.join('\n');
+}
+
+function normalizeScopeInput(value: string) {
+  const scope = value.trim().toLowerCase();
+
+  return /^[a-z0-9:*._-]{1,80}$/u.test(scope) ? scope : undefined;
+}
+
+function buildScopeOptions(scopes: string[]) {
+  return [...new Set([...SCOPE_PRESETS, ...scopes])]
+    .sort((a, b) => a.localeCompare(b))
+    .map((scope) => ({
+      label: scope,
+      value: scope,
+    }));
 }
 
 function readFormPayload(formData: FormData, appId?: string) {
@@ -111,6 +135,8 @@ function ExternalAppForm({
 }) {
   const t = useTranslations('external-apps-settings');
   const isCreate = !app;
+  const [allowedScopes, setAllowedScopes] = useState(app?.allowedScopes ?? []);
+  const scopeOptions = buildScopeOptions(allowedScopes);
 
   return (
     <form
@@ -120,6 +146,7 @@ function ExternalAppForm({
         onSubmit(new FormData(event.currentTarget), app?.id);
         if (isCreate) {
           event.currentTarget.reset();
+          setAllowedScopes([]);
         }
       }}
     >
@@ -164,16 +191,30 @@ function ExternalAppForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={app ? `${app.id}-scopes` : 'new-scopes'}>
-            {t('fields.scopes')}
-          </Label>
-          <Textarea
-            defaultValue={
-              app ? joinLines(app.allowedScopes) : 'external-projects:*'
-            }
+          <Label>{t('fields.scopes')}</Label>
+          <input
             id={app ? `${app.id}-scopes` : 'new-scopes'}
             name="allowedScopes"
-            required
+            readOnly
+            type="hidden"
+            value={joinLines(allowedScopes)}
+          />
+          <Combobox
+            className="w-full"
+            contentWidth="lg"
+            createText={t('fields.scopes_create')}
+            emptyText={t('fields.scopes_empty')}
+            mode="multiple"
+            onChange={(value) =>
+              setAllowedScopes(
+                (Array.isArray(value) ? value : [value]).filter(Boolean)
+              )
+            }
+            onCreate={normalizeScopeInput}
+            options={scopeOptions}
+            placeholder={t('fields.scopes_placeholder')}
+            searchPlaceholder={t('fields.scopes_search')}
+            selected={allowedScopes}
           />
         </div>
         <div className="space-y-2">
