@@ -24,10 +24,35 @@ const settingsDialogRuntimeSource = settingsDialogSource.replace(
   /^\s*import\s+type\b[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gmu,
   ''
 );
+const settingsDialogContentSource = readFileSync(
+  resolveSourcePath('src/components/settings/settings-dialog-content.tsx'),
+  { encoding: 'utf8' }
+);
+const settingsDialogContentRuntimeSource = settingsDialogContentSource.replace(
+  /^\s*import\s+type\b[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gmu,
+  ''
+);
 const lazyPanelsSource = readFileSync(
   resolveSourcePath('src/components/settings/settings-dialog-lazy-panels.tsx'),
   { encoding: 'utf8' }
 );
+const lazyCalendarPanelsSource = readFileSync(
+  resolveSourcePath(
+    'src/components/settings/settings-dialog-lazy-calendar-panels.tsx'
+  ),
+  { encoding: 'utf8' }
+);
+const registrySource = [
+  'src/components/settings/settings-dialog-nav-core.ts',
+  'src/components/settings/settings-dialog-nav-domain.ts',
+  'src/components/settings/settings-dialog-nav-infrastructure.ts',
+  'src/components/settings/settings-dialog-nav-workspace.ts',
+  'src/components/settings/settings-dialog-route-entries.ts',
+]
+  .map((relativePath) =>
+    readFileSync(resolveSourcePath(relativePath), { encoding: 'utf8' })
+  )
+  .join('\n');
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -59,6 +84,9 @@ describe('settings dialog compile graph', () => {
       expect(settingsDialogRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
+      expect(settingsDialogContentRuntimeSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
       expect(lazyPanelsSource).toContain(`import('${modulePath}')`);
     }
 
@@ -71,7 +99,27 @@ describe('settings dialog compile graph', () => {
       expect(settingsDialogRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
+      expect(settingsDialogContentRuntimeSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
       expect(lazyPanelsSource).toContain(`import('${modulePath}')`);
+    }
+
+    for (const modulePath of [
+      '@tuturuuu/ui/calendar-app/components/calendar-connections-unified',
+      '@tuturuuu/ui/custom/settings/lunar-calendar-settings',
+      '@tuturuuu/ui/hooks/use-calendar-sync',
+      './calendar/calendar-settings-content',
+      './calendar/calendar-settings-layout',
+      './calendar/calendar-settings-wrapper',
+    ]) {
+      expect(settingsDialogRuntimeSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
+      expect(settingsDialogContentRuntimeSource).not.toMatch(
+        staticImportPattern(modulePath)
+      );
+      expect(lazyCalendarPanelsSource).toContain(`import('${modulePath}')`);
     }
   });
 
@@ -100,8 +148,8 @@ describe('settings dialog compile graph', () => {
       'infrastructure_monitoring_stress_tests',
       'infrastructure_monitoring_watcher_logs',
     ]) {
-      expect(settingsDialogSource).toContain(`name: '${entryName}'`);
-      expect(settingsDialogSource).toContain(`${entryName}: `);
+      expect(registrySource).toContain(`name: '${entryName}'`);
+      expect(registrySource).toContain(`${entryName}: `);
     }
   });
 });

@@ -1,0 +1,168 @@
+import type { Workspace } from '@tuturuuu/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+
+export type SettingsAvailabilityKey =
+  | 'api_keys'
+  | 'billing'
+  | 'infrastructure'
+  | 'infrastructure_changelog'
+  | 'infrastructure_external_apps'
+  | 'infrastructure_mobile_deployment'
+  | 'inquiries'
+  | 'integrations'
+  | 'migrations'
+  | 'platform_billing'
+  | 'platform_roles'
+  | 'reports'
+  | 'secrets'
+  | 'usage'
+  | 'workspace_members'
+  | 'workspace_roles'
+  | 'workspace_settings';
+
+export type WorkspaceSettingsPermissions = {
+  allow_discord_integrations?: boolean;
+  available?: Partial<Record<SettingsAvailabilityKey, boolean>>;
+  can_access_billing?: boolean;
+  enable_api_keys?: boolean;
+  is_root_workspace?: boolean;
+  manage_api_keys?: boolean;
+  manage_subscription: boolean;
+  manage_user_report_templates?: boolean;
+  manage_workspace_billing?: boolean;
+  manage_workspace_integrations?: boolean;
+  manage_workspace_members: boolean;
+  manage_workspace_roles?: boolean;
+  manage_workspace_secrets?: boolean;
+  manage_workspace_settings: boolean;
+  view_infrastructure?: boolean;
+  view_usage?: boolean;
+};
+
+export type SettingsDialogAvailability = {
+  allowWorkspaceBasicsEdit: boolean;
+  canAccessApiKeys: boolean;
+  canAccessInfrastructure: boolean;
+  canAccessInfrastructureChangelog: boolean;
+  canAccessInfrastructureExternalApps: boolean;
+  canAccessInfrastructureMobileDeployment: boolean;
+  canAccessInquiries: boolean;
+  canAccessIntegrations: boolean;
+  canAccessMigrations: boolean;
+  canAccessPlatformBilling: boolean;
+  canAccessPlatformRoles: boolean;
+  canAccessReports: boolean;
+  canAccessSecrets: boolean;
+  canAccessUsage: boolean;
+  canManageWorkspaceMembers: boolean;
+  canManageWorkspaceSettings: boolean;
+  hasBillingPermission: boolean;
+  isRootWorkspace: boolean;
+};
+
+function isSettingsEntryAvailable(
+  workspacePermissions: WorkspaceSettingsPermissions | undefined,
+  key: SettingsAvailabilityKey,
+  fallback = false
+) {
+  return workspacePermissions?.available?.[key] ?? fallback;
+}
+
+export function getSettingsDialogAvailability({
+  workspace,
+  workspacePermissions,
+}: {
+  workspace: Workspace | null;
+  workspacePermissions?: WorkspaceSettingsPermissions;
+}): SettingsDialogAvailability {
+  const hasBillingPermission =
+    workspacePermissions?.available?.billing ??
+    workspacePermissions?.can_access_billing ??
+    workspacePermissions?.manage_subscription ??
+    false;
+  const canManageWorkspaceSettings =
+    workspacePermissions?.manage_workspace_settings ?? false;
+  const canManageWorkspaceMembers =
+    workspacePermissions?.manage_workspace_members ?? false;
+  const canAccessReports = isSettingsEntryAvailable(
+    workspacePermissions,
+    'reports',
+    workspacePermissions?.manage_user_report_templates ?? false
+  );
+  const canAccessUsage = isSettingsEntryAvailable(
+    workspacePermissions,
+    'usage',
+    workspacePermissions?.view_usage ?? false
+  );
+  const canAccessIntegrations = isSettingsEntryAvailable(
+    workspacePermissions,
+    'integrations',
+    workspacePermissions?.manage_workspace_integrations ??
+      workspacePermissions?.allow_discord_integrations ??
+      false
+  );
+  const canAccessApiKeys = isSettingsEntryAvailable(
+    workspacePermissions,
+    'api_keys',
+    Boolean(
+      workspacePermissions?.enable_api_keys &&
+        workspacePermissions?.manage_api_keys
+    )
+  );
+  const canAccessSecrets = isSettingsEntryAvailable(
+    workspacePermissions,
+    'secrets',
+    workspacePermissions?.manage_workspace_secrets ?? false
+  );
+  const canAccessMigrations = isSettingsEntryAvailable(
+    workspacePermissions,
+    'migrations'
+  );
+  const canAccessInfrastructure = isSettingsEntryAvailable(
+    workspacePermissions,
+    'infrastructure',
+    workspacePermissions?.view_infrastructure ?? false
+  );
+  const isRootWorkspace = workspace?.id === ROOT_WORKSPACE_ID;
+
+  return {
+    allowWorkspaceBasicsEdit:
+      !isRootWorkspace &&
+      (Boolean(workspace?.personal) || canManageWorkspaceSettings),
+    canAccessApiKeys,
+    canAccessInfrastructure,
+    canAccessInfrastructureChangelog: isSettingsEntryAvailable(
+      workspacePermissions,
+      'infrastructure_changelog'
+    ),
+    canAccessInfrastructureExternalApps: isSettingsEntryAvailable(
+      workspacePermissions,
+      'infrastructure_external_apps'
+    ),
+    canAccessInfrastructureMobileDeployment: isSettingsEntryAvailable(
+      workspacePermissions,
+      'infrastructure_mobile_deployment'
+    ),
+    canAccessInquiries: isSettingsEntryAvailable(
+      workspacePermissions,
+      'inquiries'
+    ),
+    canAccessIntegrations,
+    canAccessMigrations,
+    canAccessPlatformBilling: isSettingsEntryAvailable(
+      workspacePermissions,
+      'platform_billing'
+    ),
+    canAccessPlatformRoles: isSettingsEntryAvailable(
+      workspacePermissions,
+      'platform_roles'
+    ),
+    canAccessReports,
+    canAccessSecrets,
+    canAccessUsage,
+    canManageWorkspaceMembers,
+    canManageWorkspaceSettings,
+    hasBillingPermission,
+    isRootWorkspace,
+  };
+}
