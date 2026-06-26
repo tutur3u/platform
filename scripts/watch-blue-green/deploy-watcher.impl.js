@@ -34,6 +34,12 @@ const {
   runChecked,
   runCommand,
 } = require('../docker-web/compose.js');
+const {
+  forceRecoverBuildkitAfterFailure,
+} = require('../docker-web/buildkit-builder.js');
+const {
+  isBuildkitResourceProfileFallbackError,
+} = require('../docker-web/resource-profiles.js');
 const deployWatcherRuntime = require('./deploy-watcher-runtime.js');
 const {
   BLUE_GREEN_PROXY_SERVICE,
@@ -2771,6 +2777,35 @@ async function pruneWatcherFailedBuildResidue({
   }
 }
 
+async function recoverWatcherBuildkitAfterChildDeployFailure({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  env,
+  error,
+  fsImpl,
+  log = console,
+  runCommand: run = runCommand,
+}) {
+  if (!isBuildkitResourceProfileFallbackError(error)) {
+    return;
+  }
+
+  try {
+    await forceRecoverBuildkitAfterFailure({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      fsImpl,
+      reason: 'watcher-child-deploy-failure',
+      runCommand: run,
+    });
+  } catch (recoveryError) {
+    log.warn?.(
+      `Failed to recover BuildKit after child deploy failure: ${getErrorMessage(recoveryError)}`
+    );
+  }
+}
+
 async function runBlueGreenDeploy({
   deploymentKind,
   deployCommand = DEFAULT_DEPLOY_COMMAND,
@@ -2827,6 +2862,13 @@ async function runBlueGreenDeploy({
     } catch (error) {
       await pruneWatcherFailedBuildResidue({
         env: deploymentEnv,
+        fsImpl,
+        log,
+        runCommand: run,
+      });
+      await recoverWatcherBuildkitAfterChildDeployFailure({
+        env: deploymentEnv,
+        error,
         fsImpl,
         log,
         runCommand: run,
@@ -7475,6 +7517,7 @@ module.exports = {
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
+  recoverWatcherBuildkitAfterChildDeployFailure,
   restoreTargetBranchIfDetached,
   resolveLockedBranchTarget,
   resolvePlatformProjectTarget,

@@ -1217,10 +1217,13 @@ deployment kind, and a re-entrant token for nested helper calls).
   production host rewrite `bun.lock` as part of the auto-deploy path. If tarball
   extraction still fails (for example
   `@biomejs/cli-linux-x64`), the blue/green helper prunes BuildKit exec cache
-  mounts, restarts the Compose-owned `buildkit` service, and retries once with
+  mounts, recreates the Compose-owned `buildkit` service, and retries once with
   `docker compose build --no-cache` so a cached failed deps stage is not reused.
-  The same one-time fresh retry is used for `CACHED ERROR ... COPY --from=deps`
-  and for the build watchdog timeout.
+  If BuildKit has already lost transport and the exec-cache prune command exits
+  with EOF or `code = Unavailable`, that prune is treated as best-effort and the
+  service is still recreated before retrying. The same one-time fresh retry is
+  used for `CACHED ERROR ... COPY --from=deps` and for the build watchdog
+  timeout.
 
 ### Monitoring Surfaces
 
@@ -1276,8 +1279,9 @@ transport or resource-pressure signature such as `code = Unavailable`,
 `closing transport`, `error reading from server: EOF`, `received prior goaway`,
 `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`, or
 `[internal] waiting for connection`, the deploy retries once with the next lower
-profile and persists that profile for later runs. The retry also restarts the
-Compose-owned BuildKit service and recreates the remote Buildx builder if
+profile and persists that profile for later runs. The retry also recreates the
+Compose-owned BuildKit service even if the cleanup prune command itself fails
+with the same transport signature, then recreates the remote Buildx builder if
 `docker buildx inspect tuturuuu` reports `Status: inactive`. The downgrade
 ladder is:
 
@@ -1451,10 +1455,11 @@ Operational notes:
 - If Bun fails during an image install with a tarball extraction error such as
   `Fail extracting tarball for "@biomejs/cli-linux-x64"`, the blue/green helper
   treats it as BuildKit exec-cache corruption once per deployment attempt. It
-  prunes BuildKit exec cache mounts, restarts the Compose-owned `buildkit`
-  service, and retries the build once with `--no-cache`. A second failure is
-  recorded as a real deployment failure with the original command context
-  preserved in logs.
+  prunes BuildKit exec cache mounts, recreates the Compose-owned `buildkit`
+  service, and retries the build once with `--no-cache`. If the prune command
+  fails because BuildKit has already dropped transport, recovery still proceeds
+  to service recreation. A second failure is recorded as a real deployment
+  failure with the original command context preserved in logs.
 - If BuildKit reports `CACHED ERROR` after a failed deps stage, or if the
   compose build exceeds `DOCKER_WEB_BUILD_TIMEOUT_MS` (default 45 minutes), the
   helper uses the same one-time cache recovery and fresh `--no-cache` retry.
@@ -2110,7 +2115,10 @@ Dashboard details:
   `DOCKER_WEB_BUILD_BUILDER_NAME` is available, then runs
   `docker image prune --force --filter dangling=true`. Set
   `DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE=0` only when an operator needs
-  to preserve failed build layers for debugging.
+  to preserve failed build layers for debugging. When the child deploy failed
+  with a BuildKit transport/resource signature, the watcher also runs the
+  best-effort exec-cache cleanup and recreates the Compose-owned `buildkit`
+  service so the next poll does not inherit the dead builder endpoint.
 - If `tmp/docker-web/prod/active-color` is missing or stale, the deployer and
   watcher recover the serving lane from the generated nginx proxy config before
   deciding what to rebuild. Treat the proxy config as the runtime source of

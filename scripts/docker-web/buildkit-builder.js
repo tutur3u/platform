@@ -10,6 +10,9 @@ const {
   waitForComposeServiceHealthy,
 } = require('./compose.js');
 const { isTransientDockerRegistryError } = require('./registry-errors.js');
+const {
+  isBuildkitResourceProfileFallbackError,
+} = require('./resource-profiles.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const BUILDKIT_RUNTIME_DIR = path.join(
@@ -658,19 +661,20 @@ function isCachedBuildError(error) {
   return /\bCACHED\s+ERROR\b/iu.test(message);
 }
 
-async function recoverBuildkitBunInstallCache({
-  composeFile,
-  composeGlobalArgs = [],
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isRecoverableBuildkitCleanupError(error) {
+  return isBuildkitResourceProfileFallbackError(error);
+}
+
+async function pruneBuildkitExecCacheMounts({
+  builderName,
   env = process.env,
   fsImpl = fs,
-  reason = 'bun-tarball-extraction',
   runCommand: run = runCommand,
 } = {}) {
-  const builderName =
-    env.BUILDX_BUILDER ||
-    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
-    DEFAULT_BUILDER_NAME;
-
   await runChecked(
     'docker',
     [
@@ -688,9 +692,47 @@ async function recoverBuildkitBunInstallCache({
       runCommand: run,
     }
   );
+}
 
+async function recreateBuildkitComposeService({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
   if (!composeFile) {
-    return;
+    return {
+      recreated: false,
+      skipped: true,
+    };
+  }
+
+  try {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BUILDKIT_SERVICE_NAME
+      ),
+      {
+        env,
+        fsImpl,
+        runCommand: run,
+      }
+    );
+  } catch (error) {
+    if (!isRecoverableBuildkitCleanupError(error)) {
+      throw error;
+    }
+
+    process.stderr.write(
+      `BuildKit stop failed during recovery; continuing with recreate: ${getErrorMessage(error)}\n`
+    );
   }
 
   await runChecked(
@@ -698,9 +740,8 @@ async function recoverBuildkitBunInstallCache({
     getComposeCommandArgs(
       composeFile,
       composeGlobalArgs,
-      'stop',
-      '--timeout',
-      '1',
+      'rm',
+      '-f',
       BUILDKIT_SERVICE_NAME
     ),
     {
@@ -709,6 +750,7 @@ async function recoverBuildkitBunInstallCache({
       runCommand: run,
     }
   );
+
   await runChecked(
     'docker',
     getComposeCommandArgs(
@@ -733,8 +775,156 @@ async function recoverBuildkitBunInstallCache({
   });
 
   return {
+    recreated: true,
+    skipped: false,
+  };
+}
+
+async function recoverBuildkitBunInstallCache({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  reason = 'bun-tarball-extraction',
+  runCommand: run = runCommand,
+} = {}) {
+  const builderName =
+    env.BUILDX_BUILDER ||
+    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
+    DEFAULT_BUILDER_NAME;
+  let execCachePruned = false;
+
+  try {
+    await pruneBuildkitExecCacheMounts({
+      builderName,
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+    execCachePruned = true;
+  } catch (error) {
+    if (!composeFile || !isRecoverableBuildkitCleanupError(error)) {
+      throw error;
+    }
+
+    process.stderr.write(
+      `BuildKit exec-cache prune failed during recovery; recreating BuildKit anyway: ${getErrorMessage(error)}\n`
+    );
+  }
+
+  const service = await recreateBuildkitComposeService({
+    composeFile,
+    composeGlobalArgs,
+    env,
+    fsImpl,
+    runCommand: run,
+  });
+
+  return {
     builderName,
+    execCachePruned,
     reason,
+    service,
+  };
+}
+
+async function forceRecoverBuildkitAfterFailure({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  reason = 'buildkit-failure',
+  runCommand: run = runCommand,
+} = {}) {
+  const builderName =
+    env.BUILDX_BUILDER ||
+    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
+    DEFAULT_BUILDER_NAME;
+
+  return recoverBuildkitBunInstallCache({
+    composeFile,
+    composeGlobalArgs,
+    env: {
+      ...env,
+      BUILDX_BUILDER: builderName,
+    },
+    fsImpl,
+    reason,
+    runCommand: run,
+  });
+}
+
+async function removeBuildkitComposeServiceAfterBuild({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  const hasRunningContainer = await hasComposeServiceContainer(
+    BUILDKIT_SERVICE_NAME,
+    {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+  const hasContainer = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    includeStopped: true,
+    runCommand: run,
+  });
+
+  if (!hasContainer) {
+    return {
+      removed: false,
+      skipped: false,
+      stopped: false,
+    };
+  }
+
+  if (hasRunningContainer) {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BUILDKIT_SERVICE_NAME
+      ),
+      {
+        env,
+        fsImpl,
+        runCommand: run,
+      }
+    );
+  }
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'rm',
+      '-f',
+      BUILDKIT_SERVICE_NAME
+    ),
+    {
+      env,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  return {
+    removed: true,
+    skipped: false,
+    stopped: hasRunningContainer,
   };
 }
 
@@ -808,71 +998,13 @@ async function stopBuildkitComposeServiceAfterBuild({
     };
   }
 
-  const hasRunningContainer = await hasComposeServiceContainer(
-    BUILDKIT_SERVICE_NAME,
-    {
-      composeFile,
-      composeGlobalArgs,
-      env,
-      runCommand: run,
-    }
-  );
-  const hasContainer = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
+  return removeBuildkitComposeServiceAfterBuild({
     composeFile,
     composeGlobalArgs,
     env,
-    includeStopped: true,
+    fsImpl,
     runCommand: run,
   });
-
-  if (!hasContainer) {
-    return {
-      removed: false,
-      skipped: false,
-      stopped: false,
-    };
-  }
-
-  if (hasRunningContainer) {
-    await runChecked(
-      'docker',
-      getComposeCommandArgs(
-        composeFile,
-        composeGlobalArgs,
-        'stop',
-        '--timeout',
-        '1',
-        BUILDKIT_SERVICE_NAME
-      ),
-      {
-        env,
-        fsImpl,
-        runCommand: run,
-      }
-    );
-  }
-
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      composeGlobalArgs,
-      'rm',
-      '-f',
-      BUILDKIT_SERVICE_NAME
-    ),
-    {
-      env,
-      fsImpl,
-      runCommand: run,
-    }
-  );
-
-  return {
-    removed: true,
-    skipped: false,
-    stopped: hasRunningContainer,
-  };
 }
 
 async function cleanupBuildkitAfterBuild({
@@ -969,6 +1101,7 @@ module.exports = {
   cleanupBuildkitAfterBuild,
   ensureBuildkitComposeService,
   ensureBuildkitBuilder,
+  forceRecoverBuildkitAfterFailure,
   getBuildkitPaths,
   getAutoBuildCpus,
   getAutoBuildMaxParallelism,
@@ -976,6 +1109,7 @@ module.exports = {
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
   isBuildxBuilderUsable,
+  isRecoverableBuildkitCleanupError,
   isTransientDockerRegistryError,
   isTransientBuildkitComposeUpError,
   isBuildStallTimeoutError,
@@ -987,9 +1121,12 @@ module.exports = {
   parsePositiveInteger,
   parsePositiveNumber,
   pruneBuildkitCacheAfterBuild,
+  pruneBuildkitExecCacheMounts,
   recoverBuildkitBunInstallCache,
+  recreateBuildkitComposeService,
   renderBuildkitConfig,
   readBuilderState,
+  removeBuildkitComposeServiceAfterBuild,
   shouldPruneBuildkitAfterBuild,
   shouldStopBuildkitAfterBuild,
   stopBuildkitComposeServiceAfterBuild,

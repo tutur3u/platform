@@ -2551,6 +2551,7 @@ test('buildBlueGreenServices recovers Bun tarball extraction once', async () => 
       ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
       ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
       ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
+      ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
       [
         'docker',
         [
@@ -2908,6 +2909,103 @@ test('buildBlueGreenServices retries BuildKit transport failures with a lower pe
           args.includes('remote') &&
           args.includes('tcp://127.0.0.1:7914')
       )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('buildBlueGreenServices retries after BuildKit exec cache prune loses transport', async () => {
+  const calls = [];
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-recover-prune-')
+  );
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+  let buildAttempts = 0;
+
+  try {
+    await buildBlueGreenServices({
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs: ['--profile', 'redis'],
+      env: {
+        BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        [BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV]: '1',
+        [BUILD_RESOURCE_PROFILE_ENV]: 'default',
+        [BUILD_RESOURCE_PROFILE_STATE_FILE_ENV]: profilePaths.stateFile,
+      },
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.env]);
+
+        if (args[0] === 'buildx' && args[1] === 'bake') {
+          buildAttempts += 1;
+
+          return buildAttempts === 1
+            ? {
+                code: 1,
+                signal: null,
+                stderr:
+                  'rpc error: code = Unavailable desc = closing transport due to: error reading from server: EOF',
+                stdout: '',
+              }
+            : createCommandResult('');
+        }
+
+        if (
+          args[0] === 'buildx' &&
+          args[1] === 'prune' &&
+          args.includes('type=exec.cachemount')
+        ) {
+          return {
+            code: 1,
+            signal: null,
+            stderr:
+              'rpc error: code = Unavailable desc = closing transport due to: error reading from server: EOF',
+            stdout: '',
+          };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.at(-1) === 'buildkit') {
+          return createCommandResult('buildkit-id\n');
+        }
+
+        if (args[0] === 'inspect' && args.at(-1) === 'buildkit-id') {
+          return createCommandResult('healthy\n');
+        }
+
+        return createCommandResult('');
+      },
+      services: ['web-blue'],
+    });
+
+    assert.equal(buildAttempts, 2);
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('rm') &&
+          args.includes('buildkit')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'buildx' &&
+          args[1] === 'prune' &&
+          args.includes('type=exec.cachemount')
+      )
+    );
+    assert.equal(
+      readBuildResourceProfileState(profilePaths).profileName,
+      'stable'
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

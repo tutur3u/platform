@@ -26,6 +26,7 @@ const {
   parsePositiveNumber,
   pruneBuildkitCacheAfterBuild,
   readBuilderState,
+  recoverBuildkitBunInstallCache,
   renderBuildkitConfig,
   shouldPruneBuildkitAfterBuild,
   shouldStopBuildkitAfterBuild,
@@ -663,6 +664,70 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
       ['compose', '-f', PROD_COMPOSE_FILE, 'rm', '-f', BUILDKIT_SERVICE_NAME],
     ],
   ]);
+});
+
+test('recoverBuildkitBunInstallCache recreates BuildKit when exec cache prune loses transport', async () => {
+  const calls = [];
+
+  const result = await recoverBuildkitBunInstallCache({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (
+        args[0] === 'buildx' &&
+        args[1] === 'prune' &&
+        args.includes('type=exec.cachemount')
+      ) {
+        return {
+          code: 1,
+          signal: null,
+          stderr:
+            'rpc error: code = Unavailable desc = closing transport: error reading from server: EOF',
+          stdout: '',
+        };
+      }
+
+      if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return {
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: 'buildkit-id\n',
+        };
+      }
+
+      if (args[0] === 'inspect' && args.at(-1) === 'buildkit-id') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      if (command === 'docker') {
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  assert.equal(result.builderName, DEFAULT_BUILDER_NAME);
+  assert.equal(result.execCachePruned, false);
+  assert.deepEqual(result.service, {
+    recreated: true,
+    skipped: false,
+  });
+  assert.deepEqual(
+    calls.map(([command, args]) => `${command} ${args.join(' ')}`),
+    [
+      `docker buildx prune --builder ${DEFAULT_BUILDER_NAME} --force --filter type=exec.cachemount`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BUILDKIT_SERVICE_NAME}`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f ${BUILDKIT_SERVICE_NAME}`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build ${BUILDKIT_SERVICE_NAME}`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q ${BUILDKIT_SERVICE_NAME}`,
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} buildkit-id',
+    ]
+  );
 });
 
 test('getBuilderConfigFingerprint is stable for the same config', () => {

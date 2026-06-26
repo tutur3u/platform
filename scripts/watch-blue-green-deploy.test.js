@@ -437,6 +437,118 @@ test('runBlueGreenDeploy prunes failed build residue after child deploy failures
   }
 });
 
+test('runBlueGreenDeploy recovers BuildKit after transport child deploy failures', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-run-buildkit-recovery-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const deployKey = 'bun serve:web:docker:bg';
+  const buildkitError =
+    'rpc error: code = Unavailable desc = closing transport due to: error reading from server: EOF';
+  const warnings = [];
+
+  try {
+    await assert.rejects(
+      runBlueGreenDeploy({
+        deployCommand: ['bun', 'serve:web:docker:bg'],
+        env: {
+          DOCKER_WEB_BUILD_BUILDER_NAME: 'tuturuuu-builder',
+          PATH: process.env.PATH,
+        },
+        fsImpl: fs,
+        latestCommit: {
+          hash: 'abc123',
+          shortHash: 'abc123',
+          subject: 'Recover BuildKit transport failure',
+        },
+        log: {
+          warn: (message) => warnings.push(message),
+        },
+        paths,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === deployKey) {
+            return createResult('', {
+              code: 1,
+              stderr: buildkitError,
+            });
+          }
+
+          if (
+            key ===
+            'docker buildx prune --builder tuturuuu-builder --all --force'
+          ) {
+            return createResult('', {
+              code: 1,
+              stderr: buildkitError,
+            });
+          }
+
+          if (
+            key ===
+            'docker buildx prune --builder tuturuuu-builder --force --filter type=exec.cachemount'
+          ) {
+            return createResult('', {
+              code: 1,
+              stderr: buildkitError,
+            });
+          }
+
+          if (key === 'docker image prune --force --filter dangling=true') {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q buildkit`
+          ) {
+            return createResult('buildkit-id\n');
+          }
+
+          if (
+            key ===
+            'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} buildkit-id'
+          ) {
+            return createResult('healthy\n');
+          }
+
+          if (
+            key ===
+              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 buildkit` ||
+            key ===
+              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f buildkit` ||
+            key ===
+              `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build buildkit`
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }),
+      (error) => error.message.includes(buildkitError)
+    );
+
+    assert.deepEqual(calls, [
+      deployKey,
+      'docker buildx prune --builder tuturuuu-builder --all --force',
+      'docker image prune --force --filter dangling=true',
+      'docker buildx prune --builder tuturuuu-builder --force --filter type=exec.cachemount',
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 buildkit`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f buildkit`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build buildkit`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q buildkit`,
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} buildkit-id',
+    ]);
+    assert.equal(warnings.length, 1);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('docker daemon restart configuration defaults to host service commands', () => {
   assert.equal(
     getDockerDaemonRestartAfterMs({}),
