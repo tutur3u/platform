@@ -85,6 +85,7 @@ const {
   BUILD_RESOURCE_PROFILE_ENV,
   BUILD_RESOURCE_PROFILE_STATE_FILE_ENV,
   getBuildResourceProfilePaths,
+  isBuildkitResourceProfileFallbackError,
   persistBuildResourceProfile,
   readBuildResourceProfileState,
 } = require('./docker-web/resource-profiles.js');
@@ -2915,6 +2916,104 @@ test('buildBlueGreenServices retries BuildKit transport failures with a lower pe
   }
 });
 
+test('BuildKit resource profile fallback treats exit code 137 as recoverable', () => {
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error('error: script "turbo" exited with code 137')
+    ),
+    true
+  );
+});
+
+test('buildBlueGreenServices keeps lowering build profiles for memory exhaustion until successful', async () => {
+  const calls = [];
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-adaptive-memory-')
+  );
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+  let buildAttempts = 0;
+
+  try {
+    await buildBlueGreenServices({
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      env: {
+        BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        [BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV]: '1',
+        [BUILD_RESOURCE_PROFILE_ENV]: 'default',
+        [BUILD_RESOURCE_PROFILE_STATE_FILE_ENV]: profilePaths.stateFile,
+      },
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.env]);
+
+        if (args[0] === 'buildx' && args[1] === 'bake') {
+          buildAttempts += 1;
+
+          return buildAttempts <= 2
+            ? {
+                code: 1,
+                signal: null,
+                stderr:
+                  'ERROR: failed to solve: ResourceExhausted: cannot allocate memory\nerror: script "turbo" exited with code 137',
+                stdout: '',
+              }
+            : { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.includes('buildkit')) {
+          return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+        }
+
+        if (args[0] === 'inspect') {
+          return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+      services: ['web-blue'],
+    });
+
+    assert.equal(buildAttempts, 3);
+    assert.equal(
+      readBuildResourceProfileState(profilePaths).profileName,
+      'low'
+    );
+    const buildEnvs = calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , callEnv]) => callEnv);
+
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv[BUILD_RESOURCE_PROFILE_ENV]),
+      ['default', 'stable', 'low']
+    );
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv.DOCKER_WEB_BUILD_MEMORY),
+      [undefined, '16g', '10g']
+    );
+
+    const buildkitRecoverProfiles = calls
+      .filter(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('rm') &&
+          args.includes('buildkit')
+      )
+      .map(([, , callEnv]) => callEnv?.[BUILD_RESOURCE_PROFILE_ENV])
+      .filter(Boolean);
+
+    assert.deepEqual(buildkitRecoverProfiles, ['stable', 'low']);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('buildBlueGreenServices retries after BuildKit exec cache prune loses transport', async () => {
   const calls = [];
   const tempDir = fs.mkdtempSync(
@@ -3012,7 +3111,7 @@ test('buildBlueGreenServices retries after BuildKit exec cache prune loses trans
   }
 });
 
-test('buildBlueGreenServices advances persisted profile again when fallback retry fails', async () => {
+test('buildBlueGreenServices keeps retrying lower profiles before failing at the floor profile', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-bg-adaptive-fails-')
   );
@@ -3066,10 +3165,10 @@ test('buildBlueGreenServices advances persisted profile again when fallback retr
       /closing transport/
     );
 
-    assert.equal(buildAttempts, 2);
+    assert.equal(buildAttempts, 4);
     assert.equal(
       readBuildResourceProfileState(profilePaths).profileName,
-      'minimal'
+      'floor'
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

@@ -2320,86 +2320,74 @@ async function buildBlueGreenServices({
   };
 
   const runBuildWithAdaptiveResourceFallback = async () => {
-    try {
-      await runBuildWithCacheRecovery({ buildEnv: env });
-      return;
-    } catch (error) {
-      if (
-        !isAdaptiveBuildResourceProfileEnabled(env) ||
-        !isBuildkitResourceProfileFallbackError(error)
-      ) {
-        throw error;
-      }
+    let buildEnv = env;
 
-      const currentProfile = getBuildResourceProfileFromEnv(env);
-      const nextProfile = getNextLowerBuildResourceProfile(currentProfile.name);
+    while (true) {
+      try {
+        await runBuildWithCacheRecovery({ buildEnv });
+        return;
+      } catch (error) {
+        if (
+          !isAdaptiveBuildResourceProfileEnabled(buildEnv) ||
+          !isBuildkitResourceProfileFallbackError(error)
+        ) {
+          throw error;
+        }
 
-      if (!nextProfile) {
-        throw error;
-      }
+        const currentProfile = getBuildResourceProfileFromEnv(buildEnv);
+        const nextProfile = getNextLowerBuildResourceProfile(
+          currentProfile.name
+        );
 
-      const paths = getBuildResourceProfilePathsFromEnv(env, rootDir);
-      persistBuildResourceProfile({
-        fsImpl,
-        previousProfileName: currentProfile.name,
-        profile: nextProfile,
-        reason: 'buildkit-resource-fallback',
-        stateFile: paths.stateFile,
-      });
-      let retryEnv = {
-        ...applyBuildResourceProfileToEnv(env, nextProfile),
-        [BUILD_RESOURCE_PROFILE_REASON_ENV]: 'buildkit-resource-fallback',
-      };
+        if (!nextProfile) {
+          throw error;
+        }
 
-      process.stderr.write(
-        `BuildKit transport/resource failure detected; retrying with lower build profile ${nextProfile.name} (memory=${nextProfile.memory}, cpus=${nextProfile.cpus}, maxParallelism=${nextProfile.maxParallelism}).\n`
-      );
+        const paths = getBuildResourceProfilePathsFromEnv(buildEnv, rootDir);
+        const fallbackReason = 'buildkit-resource-fallback';
 
-      await recoverBuildkitBunInstallCache({
-        composeFile,
-        composeGlobalArgs,
-        env: retryEnv,
-        reason: 'buildkit-resource-fallback',
-        runCommand: run,
-      });
-      retryEnv = await ensureBuildkitBuilder(
-        {
-          builderName:
-            retryEnv.DOCKER_WEB_BUILD_BUILDER_NAME || retryEnv.BUILDX_BUILDER,
-          cpus: retryEnv.DOCKER_WEB_BUILD_CPUS,
-          maxParallelism: retryEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM,
-          memory: retryEnv.DOCKER_WEB_BUILD_MEMORY,
-        },
-        {
+        persistBuildResourceProfile({
+          fsImpl,
+          previousProfileName: currentProfile.name,
+          profile: nextProfile,
+          reason: fallbackReason,
+          stateFile: paths.stateFile,
+        });
+
+        const retryEnv = {
+          ...applyBuildResourceProfileToEnv(buildEnv, nextProfile),
+          [BUILD_RESOURCE_PROFILE_REASON_ENV]: fallbackReason,
+        };
+
+        process.stderr.write(
+          `BuildKit transport/resource failure detected for build profile ${currentProfile.name}; retrying with lower build profile ${nextProfile.name} (memory=${nextProfile.memory}, cpus=${nextProfile.cpus}, maxParallelism=${nextProfile.maxParallelism}).\n`
+        );
+
+        await recoverBuildkitBunInstallCache({
           composeFile,
           composeGlobalArgs,
           env: retryEnv,
-          fsImpl,
-          rootDir,
+          reason: fallbackReason,
           runCommand: run,
-        }
-      );
+        });
 
-      try {
-        await runBuildWithCacheRecovery({ buildEnv: retryEnv });
-      } catch (retryError) {
-        if (isBuildkitResourceProfileFallbackError(retryError)) {
-          const nextRetryProfile = getNextLowerBuildResourceProfile(
-            nextProfile.name
-          );
-
-          if (nextRetryProfile) {
-            persistBuildResourceProfile({
-              fsImpl,
-              previousProfileName: nextProfile.name,
-              profile: nextRetryProfile,
-              reason: 'buildkit-resource-fallback-retry-failed',
-              stateFile: paths.stateFile,
-            });
+        buildEnv = await ensureBuildkitBuilder(
+          {
+            builderName:
+              retryEnv.DOCKER_WEB_BUILD_BUILDER_NAME || retryEnv.BUILDX_BUILDER,
+            cpus: retryEnv.DOCKER_WEB_BUILD_CPUS,
+            maxParallelism: retryEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM,
+            memory: retryEnv.DOCKER_WEB_BUILD_MEMORY,
+          },
+          {
+            composeFile,
+            composeGlobalArgs,
+            env: retryEnv,
+            fsImpl,
+            rootDir,
+            runCommand: run,
           }
-        }
-
-        throw retryError;
+        );
       }
     }
   };

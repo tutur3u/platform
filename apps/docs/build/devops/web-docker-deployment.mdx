@@ -1278,8 +1278,9 @@ machine-local adaptive profile at
 transport or resource-pressure signature such as `code = Unavailable`,
 `closing transport`, `error reading from server: EOF`, `received prior goaway`,
 `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`, or
-`[internal] waiting for connection`, the deploy retries once with the next lower
-profile and persists that profile for later runs. The retry also recreates the
+`[internal] waiting for connection`, the deploy keeps retrying lower profiles in
+the same command until the build succeeds or the floor profile fails. Each
+downgrade persists the selected profile for later runs, recreates the
 Compose-owned BuildKit service even if the cleanup prune command itself fails
 with the same transport signature, then recreates the remote Buildx builder if
 `docker buildx inspect tuturuuu` reports `Status: inactive`. The downgrade
@@ -1291,12 +1292,12 @@ ladder is:
 - `minimal`: `8g`, 1 CPU, max parallelism 1
 - `floor`: `6g`, 1 CPU, max parallelism 1
 
-If the retry fails with the same BuildKit infrastructure signature, the helper
-persists one more lower profile for the next run before surfacing the failure.
-Delete `tmp/docker-web/buildkit/resource-profile.json` to reset back to the
-default profile. Explicit build cap flags or `DOCKER_WEB_BUILD_MEMORY`,
-`DOCKER_WEB_BUILD_CPUS`, or `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out of the
-adaptive profile for that run.
+If the floor profile still fails with the same BuildKit infrastructure
+signature, the helper leaves the machine-local profile at `floor` and surfaces
+the failure. Delete `tmp/docker-web/buildkit/resource-profile.json` to reset
+back to the default profile. Explicit build cap flags or
+`DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
+`DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out of the adaptive profile for that run.
 
 You can still override those defaults per run by appending your own flags after
 `--`, for example:
@@ -1433,11 +1434,13 @@ Operational notes:
   that legacy builder, run the capped web deploy helper once so it can clean up
   the stale Buildx record.
 - A lower parallelism setting usually trades build speed for host stability.
-- If BuildKit fails with `ResourceExhausted` or `cannot allocate memory` while
-  host memory is still available, the builder cgroup is too small. Prefer the
-  default `--build-memory auto` path so the cap follows Docker's configured
-  allocation, or raise `DOCKER_WEB_BUILD_MEMORY`/`--build-memory` explicitly
-  while keeping `--build-max-parallelism 1`.
+- If BuildKit fails with `ResourceExhausted`, `cannot allocate memory`, or exit
+  code 137 while host memory still appears available, Docker's VM/cgroup budget
+  is the relevant build budget. Prefer the default `--build-memory auto` path so
+  the cap follows Docker's configured allocation and the adaptive profile can
+  lower pressure automatically. Raise `DOCKER_WEB_BUILD_MEMORY`/`--build-memory`
+  only when `docker info` shows enough Docker memory and host swap is not
+  saturated.
 - Docker Desktop resource graphs can show memory near the configured maximum
   because the Docker VM and file cache are preallocated or cached. Treat
   `docker info --format '{{json .MemTotal}}'` as the build budget source of
@@ -1448,7 +1451,8 @@ Operational notes:
 - If the default blue/green deploy keeps failing with BuildKit transport EOFs,
   `context deadline exceeded`, `[internal] waiting for connection`, or
   graceful-stop messages, leave the root-script defaults in place and let the
-  adaptive profile step down automatically. Use `docker buildx ls` or
+  adaptive profile step down through the lower profiles automatically. Use
+  `docker buildx ls` or
   `docker buildx inspect tuturuuu` to confirm whether the remote builder is
   inactive. Use explicit caps only when you want to bypass the remembered local
   profile for a one-off run.

@@ -334,7 +334,7 @@ function persistBuildResourceProfile({
 function isBuildkitResourceProfileFallbackError(error) {
   const message = error instanceof Error ? error.message : String(error);
 
-  return /(?:rpc error:\s*code\s*=\s*Unavailable|closing transport|error reading from server:\s*EOF|received prior goaway|ResourceExhausted|cannot allocate memory|out of memory|no space left on device|buildkit.*(?:killed|exited|stopped|restart)|connection reset by peer|context deadline exceeded|waiting for connection|Status:\s*inactive)/iu.test(
+  return /(?:rpc error:\s*code\s*=\s*Unavailable|closing transport|error reading from server:\s*EOF|received prior goaway|ResourceExhausted|cannot allocate memory|out of memory|exit(?:ed)?(?:\s+with)?\s+code\s+137|exited\s*\(137\)|no space left on device|buildkit.*(?:killed|exited|stopped|restart)|connection reset by peer|context deadline exceeded|waiting for connection|Status:\s*inactive)/iu.test(
     message
   );
 }

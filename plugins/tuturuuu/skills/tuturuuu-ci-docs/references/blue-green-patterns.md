@@ -112,12 +112,14 @@ infrastructure dashboard changes.
   transport/resource failures such as `code = Unavailable`, `closing transport`,
   `error reading from server: EOF`, `received prior goaway`,
   `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`,
-  or `[internal] waiting for connection` should retry once at the next lower
-  profile and persist that profile for future runs. The retry should restart
-  the Compose-owned BuildKit service and recreate the remote Buildx builder when
-  `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
-  cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
-  `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
+  exit code 137, or `[internal] waiting for connection` should keep stepping
+  through lower profiles in the same command until the build succeeds or the
+  floor profile fails. Persist each lower profile before retrying. Each retry
+  should restart the Compose-owned BuildKit service and recreate the remote
+  Buildx builder when `docker buildx inspect tuturuuu` reports
+  `Status: inactive`. Explicit build cap flags or `DOCKER_WEB_BUILD_MEMORY`,
+  `DOCKER_WEB_BUILD_CPUS`, or `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for
+  that run.
 - Watcher-owned deploy failures should prune failed-build residue before the
   next poll so dangling images and stale Buildx cache do not accumulate for a
   commit that will remain blocked. By default, failed child deploys run
