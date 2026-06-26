@@ -88,6 +88,17 @@ describe('settings dialog compile graph', () => {
       'inquiries',
       'infrastructure_overview',
       'infrastructure_external_apps',
+      'infrastructure_timezones',
+      'infrastructure_monitoring_cron',
+      'infrastructure_monitoring_rollouts',
+      'infrastructure_monitoring_logs',
+      'infrastructure_monitoring_analytics',
+      'infrastructure_monitoring_observability',
+      'infrastructure_monitoring_projects',
+      'infrastructure_monitoring_requests',
+      'infrastructure_monitoring_resources',
+      'infrastructure_monitoring_stress_tests',
+      'infrastructure_monitoring_watcher_logs',
     ]) {
       expect(settingsDialogSource).toContain(`name: '${entryName}'`);
       expect(settingsDialogSource).toContain(`${entryName}: `);
