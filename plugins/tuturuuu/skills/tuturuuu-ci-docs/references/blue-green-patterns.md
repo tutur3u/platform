@@ -54,6 +54,10 @@ infrastructure dashboard changes.
   recipients from `emailAlertRecipients`, then
   `PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS`, then `updatedByEmail`; log email
   send failures without changing deployment results.
+- Watcher runtime scripts execute from the repo root. If watcher code imports a
+  workspace package, declare that package as root-resolvable and add a
+  root-runtime import regression test so the containerized watcher can load it
+  after a frozen install.
 - Host-side Docker daemon recovery must treat timed-out Docker CLI probes as
   daemon unresponsive, not only explicit connection failures. Keep the probe
   timeout operator-tunable, restart Docker through host-configured commands

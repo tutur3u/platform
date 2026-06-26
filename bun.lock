@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "tutur3u",
+      "dependencies": {
+        "@tuturuuu/email-service": "workspace:*",
+      },
       "devDependencies": {
         "@biomejs/biome": "^2.5.1",
         "@lingual/i18n-check": "0.9.5",

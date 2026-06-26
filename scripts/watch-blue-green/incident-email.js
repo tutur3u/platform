@@ -518,6 +518,7 @@ module.exports = {
   readBuildFailureAlertSettings,
   readDockerRecoveryAlertState,
   resolveBuildFailureAlertRecipients,
+  resolveSendSystemEmail,
   sendBuildFailureIncidentEmail,
   sendDockerDaemonRecoveryIncidentEmail,
   writeDockerRecoveryAlertState,

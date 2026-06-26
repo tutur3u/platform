@@ -253,5 +253,8 @@
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": ["apps/*", "packages/*"]
+  "workspaces": ["apps/*", "packages/*"],
+  "dependencies": {
+    "@tuturuuu/email-service": "workspace:*"
+  }
 }
