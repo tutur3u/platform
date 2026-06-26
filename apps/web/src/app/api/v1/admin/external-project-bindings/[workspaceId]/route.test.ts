@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { accessMocks } = vi.hoisted(() => ({
+const { accessMocks, serverLogger } = vi.hoisted(() => ({
   accessMocks: {
     requireRootExternalProjectsAdmin: vi.fn(),
     resolveWorkspaceExternalProjectBinding: vi.fn(),
+  },
+  serverLogger: {
+    error: vi.fn(),
   },
 }));
 
@@ -12,6 +15,10 @@ vi.mock('@/lib/external-projects/access', () => ({
     accessMocks.requireRootExternalProjectsAdmin,
   resolveWorkspaceExternalProjectBinding:
     accessMocks.resolveWorkspaceExternalProjectBinding,
+}));
+
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger,
 }));
 
 import { GET, PATCH } from './route';

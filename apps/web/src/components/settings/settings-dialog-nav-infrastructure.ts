@@ -2,6 +2,7 @@ import {
   Bell,
   Box,
   Brain,
+  BriefcaseBusiness,
   Building,
   CalendarDays,
   ClipboardList,
@@ -32,6 +33,7 @@ export function buildInfrastructureSettingsNavGroups({
       availability.canAccessSecrets ||
       availability.canAccessMigrations ||
       availability.canAccessInfrastructure ||
+      availability.canAccessInternalProjects ||
       availability.canAccessPlatformRoles ||
       availability.canAccessPlatformBilling ||
       availability.canAccessInquiries
@@ -124,9 +126,26 @@ function buildInfrastructureRouteItems({
   availability,
   t,
 }: Pick<SettingsNavBuilderParams, 'availability' | 't'>) {
-  if (!availability.canAccessInfrastructure) return [];
+  const internalProjectItems = availability.canAccessInternalProjects
+    ? [
+        {
+          name: 'internal_projects',
+          label: t('infrastructure-tabs.internal_projects'),
+          icon: BriefcaseBusiness,
+          keywords: [
+            'Infrastructure',
+            'Internal Projects',
+            'CMS',
+            'External Projects',
+          ],
+        },
+      ]
+    : [];
+
+  if (!availability.canAccessInfrastructure) return internalProjectItems;
 
   return [
+    ...internalProjectItems,
     {
       name: 'infrastructure_overview',
       label: t('infrastructure-tabs.overview'),

@@ -96,6 +96,9 @@ const LazyInvoiceSettings = lazy(() => import('./finance/invoice-settings'));
 const LazyInvoiceVisibilitySettings = lazy(
   () => import('./finance/invoice-visibility-settings')
 );
+const LazyInternalProjectsSettings = lazy(
+  () => import('./internal-projects-settings')
+);
 const LazyTransactionDefaultsSettings = lazy(
   () => import('./finance/transaction-defaults-settings')
 );
@@ -212,6 +215,9 @@ export const FinanceNavigationSettings = withPanelSuspense(
 export const InvoiceSettings = withPanelSuspense(LazyInvoiceSettings);
 export const InvoiceVisibilitySettings = withPanelSuspense(
   LazyInvoiceVisibilitySettings
+);
+export const InternalProjectsSettings = withPanelSuspense(
+  LazyInternalProjectsSettings
 );
 export const KeyboardShortcutsSettings = withPanelSuspense(
   LazyKeyboardShortcutsSettings

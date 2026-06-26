@@ -17,6 +17,7 @@ const baseAvailability: SettingsDialogAvailability = {
   canAccessInfrastructureChangelog: false,
   canAccessInfrastructureExternalApps: false,
   canAccessInfrastructureMobileDeployment: false,
+  canAccessInternalProjects: false,
   canAccessInquiries: false,
   canAccessIntegrations: false,
   canAccessMigrations: false,
@@ -66,6 +67,20 @@ describe('settings dialog nav items', () => {
     expect(names).not.toContain('secrets');
     expect(names).not.toContain('migrations');
     expect(names).not.toContain('platform_roles');
+    expect(names).not.toContain('internal_projects');
+    expect(names).not.toContain('infrastructure_overview');
+  });
+
+  it('shows internal project management without broad infrastructure access', () => {
+    const names = namesFor(
+      {
+        ...baseAvailability,
+        canAccessInternalProjects: true,
+      },
+      'ws_1'
+    );
+
+    expect(names).toContain('internal_projects');
     expect(names).not.toContain('infrastructure_overview');
   });
 
@@ -78,6 +93,7 @@ describe('settings dialog nav items', () => {
         canAccessInfrastructureChangelog: true,
         canAccessInfrastructureExternalApps: true,
         canAccessInfrastructureMobileDeployment: true,
+        canAccessInternalProjects: true,
         canAccessInquiries: true,
         canAccessIntegrations: true,
         canAccessMigrations: true,
@@ -104,6 +120,7 @@ describe('settings dialog nav items', () => {
     expect(names).toContain('platform_billing');
     expect(names).toContain('inquiries');
     expect(names).toContain('infrastructure_overview');
+    expect(names).toContain('internal_projects');
     expect(names).toContain('infrastructure_external_apps');
     expect(names).toContain('infrastructure_mobile_deployment');
     expect(names).toContain('infrastructure_changelog');

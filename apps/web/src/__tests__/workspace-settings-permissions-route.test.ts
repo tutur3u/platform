@@ -21,7 +21,9 @@ const mocks = vi.hoisted(() => {
     ) =>
       async (
         request: NextRequest,
-        routeContext?: { params?: Promise<{ wsId: string }> | { wsId: string } }
+        routeContext?: {
+          params?: Promise<{ wsId: string }> | { wsId: string };
+        }
       ) =>
         handler(
           request,
@@ -212,6 +214,7 @@ describe('workspace settings permissions route', () => {
       infrastructure: true,
       infrastructure_external_apps: true,
       infrastructure_mobile_deployment: true,
+      internal_projects: true,
       inquiries: true,
       integrations: true,
       migrations: true,
@@ -224,5 +227,24 @@ describe('workspace settings permissions route', () => {
       workspace_roles: true,
       workspace_settings: true,
     });
+  });
+
+  it('exposes internal projects to root external-project managers without broad infrastructure', async () => {
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve(
+        permissionsResult(
+          wsId,
+          wsId === ROOT_WORKSPACE_ID ? ['manage_external_projects'] : []
+        )
+      )
+    );
+
+    const response = await callRoute(ROOT_WORKSPACE_ID);
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.can_manage_internal_projects).toBe(true);
+    expect(payload.available.internal_projects).toBe(true);
+    expect(payload.available.infrastructure).toBe(false);
   });
 });

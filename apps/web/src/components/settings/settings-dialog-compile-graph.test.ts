@@ -66,6 +66,26 @@ function staticImportPattern(modulePath: string) {
   );
 }
 
+function dynamicImportPattern(modulePath: string) {
+  const escapedModulePath = modulePath.replace(
+    /[.*+?^${}()|[\]\\]/gu,
+    String.raw`\$&`
+  );
+
+  return new RegExp(
+    String.raw`import\(\s*['"]${escapedModulePath}['"]\s*\)`,
+    'u'
+  );
+}
+
+function navNamePattern(entryName: string) {
+  return new RegExp(String.raw`name:\s*['"]${entryName}['"]`, 'u');
+}
+
+function routeHrefPattern(entryName: string) {
+  return new RegExp(String.raw`['"]?${entryName}['"]?:\s*`, 'u');
+}
+
 describe('settings dialog compile graph', () => {
   it('keeps settings entry panels behind lazy imports', () => {
     for (const modulePath of [
@@ -75,6 +95,7 @@ describe('settings dialog compile graph', () => {
       './account/session-settings',
       './appearance-settings',
       './forms/forms-autosave-settings',
+      './internal-projects-settings',
       './inventory/referral-settings',
       './keyboard-shortcuts-settings',
       './sidebar-settings',
@@ -87,7 +108,7 @@ describe('settings dialog compile graph', () => {
       expect(settingsDialogContentRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
-      expect(lazyPanelsSource).toContain(`import('${modulePath}')`);
+      expect(lazyPanelsSource).toMatch(dynamicImportPattern(modulePath));
     }
 
     for (const modulePath of [
@@ -102,7 +123,7 @@ describe('settings dialog compile graph', () => {
       expect(settingsDialogContentRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
-      expect(lazyPanelsSource).toContain(`import('${modulePath}')`);
+      expect(lazyPanelsSource).toMatch(dynamicImportPattern(modulePath));
     }
 
     for (const modulePath of [
@@ -119,7 +140,9 @@ describe('settings dialog compile graph', () => {
       expect(settingsDialogContentRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
-      expect(lazyCalendarPanelsSource).toContain(`import('${modulePath}')`);
+      expect(lazyCalendarPanelsSource).toMatch(
+        dynamicImportPattern(modulePath)
+      );
     }
   });
 
@@ -148,8 +171,8 @@ describe('settings dialog compile graph', () => {
       'infrastructure_monitoring_stress_tests',
       'infrastructure_monitoring_watcher_logs',
     ]) {
-      expect(registrySource).toContain(`name: '${entryName}'`);
-      expect(registrySource).toContain(`${entryName}: `);
+      expect(registrySource).toMatch(navNamePattern(entryName));
+      expect(registrySource).toMatch(routeHrefPattern(entryName));
     }
   });
 });

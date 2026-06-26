@@ -18,6 +18,7 @@ import {
   FeaturedGroupsSettings,
   FinanceNavigationSettings,
   FormsAutosaveSettings,
+  InternalProjectsSettings,
   InvoiceSettings,
   InvoiceVisibilitySettings,
   KeyboardShortcutsSettings,
@@ -321,6 +322,11 @@ export function SettingsDialogContent({
           wsId={wsId}
           canManageWorkspaceSettings={canManageWorkspaceSettings}
         />
+      )}
+      {activeTab === 'internal_projects' && (
+        <div className="h-full">
+          <InternalProjectsSettings />
+        </div>
       )}
       {activeTab === 'attendance_display' && wsId && (
         <AttendanceDisplaySettings wsId={wsId} />

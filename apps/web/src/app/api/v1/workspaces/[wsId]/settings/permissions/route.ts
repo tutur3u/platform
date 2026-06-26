@@ -65,6 +65,9 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const canManageExternalMigrations = hasRootPermission(
         'manage_external_migrations'
       );
+      const canManageRootExternalProjects = hasRootPermission(
+        'manage_external_projects'
+      );
       const canManageWorkspaceSecrets = hasRootPermission(
         'manage_workspace_secrets'
       );
@@ -104,6 +107,9 @@ export const GET = withSessionAuth<{ wsId: string }>(
         isRootWorkspace && canManageExternalMigrations;
       const canAccessPlatformAdmin =
         isRootWorkspace && canManageRootWorkspaceRoles;
+      const canManageInternalProjects =
+        isRootWorkspace &&
+        (canManageRootExternalProjects || canManageRootWorkspaceRoles);
       const canManageExternalApps =
         isRootWorkspace &&
         (canManageWorkspaceSecrets || canManageRootWorkspaceRoles);
@@ -124,6 +130,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         can_access_platform_roles: canAccessPlatformAdmin,
         can_access_secrets: canManageWorkspaceSecrets,
         can_manage_external_apps: canManageExternalApps,
+        can_manage_internal_projects: canManageInternalProjects,
         enable_api_keys: apiKeysEnabled,
         is_root_workspace: isRootWorkspace,
         is_tuturuuu_member: isTuturuuuMember,
@@ -150,6 +157,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
             canViewInfrastructure && canManageExternalApps,
           infrastructure_mobile_deployment:
             canViewInfrastructure && canManageMobileDeploymentVault,
+          internal_projects: canManageInternalProjects,
           inquiries: canAccessInquiries,
           integrations: canAccessIntegrations,
           migrations: canAccessMigrations,

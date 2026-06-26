@@ -8,6 +8,7 @@ export type SettingsAvailabilityKey =
   | 'infrastructure_changelog'
   | 'infrastructure_external_apps'
   | 'infrastructure_mobile_deployment'
+  | 'internal_projects'
   | 'inquiries'
   | 'integrations'
   | 'migrations'
@@ -26,6 +27,7 @@ export type WorkspaceSettingsPermissions = {
   can_access_billing?: boolean;
   enable_api_keys?: boolean;
   is_root_workspace?: boolean;
+  can_manage_internal_projects?: boolean;
   manage_api_keys?: boolean;
   manage_subscription: boolean;
   manage_user_report_templates?: boolean;
@@ -46,6 +48,7 @@ export type SettingsDialogAvailability = {
   canAccessInfrastructureChangelog: boolean;
   canAccessInfrastructureExternalApps: boolean;
   canAccessInfrastructureMobileDeployment: boolean;
+  canAccessInternalProjects: boolean;
   canAccessInquiries: boolean;
   canAccessIntegrations: boolean;
   canAccessMigrations: boolean;
@@ -142,6 +145,11 @@ export function getSettingsDialogAvailability({
     canAccessInfrastructureMobileDeployment: isSettingsEntryAvailable(
       workspacePermissions,
       'infrastructure_mobile_deployment'
+    ),
+    canAccessInternalProjects: isSettingsEntryAvailable(
+      workspacePermissions,
+      'internal_projects',
+      workspacePermissions?.can_manage_internal_projects ?? false
     ),
     canAccessInquiries: isSettingsEntryAvailable(
       workspacePermissions,
