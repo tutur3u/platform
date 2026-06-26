@@ -57,6 +57,35 @@ type CrossAppValidationRow = {
   user_id?: string | null;
 };
 
+type AuthUserIdentity = {
+  email: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+type UserPrivateDetailsRow = {
+  email?: string | null;
+  full_name?: string | null;
+};
+
+type UserProfileRow = {
+  avatar_url?: string | null;
+  display_name?: string | null;
+  id?: string | null;
+  user_private_details?: UserPrivateDetailsRow | UserPrivateDetailsRow[] | null;
+};
+
+type ExchangeUserProfile = {
+  avatarUrl: string | null;
+  avatar_url: string | null;
+  displayName: string | null;
+  display_name: string | null;
+  email: string | null;
+  fullName: string | null;
+  full_name: string | null;
+  id: string;
+  name: string | null;
+};
+
 type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
 
 function getValidationRow(value: unknown): CrossAppValidationRow | null {
@@ -201,7 +230,42 @@ async function resolveExchangeTarget({
   } as const;
 }
 
-async function getUserEmail({
+function cleanString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function firstCleanString(...values: unknown[]) {
+  for (const value of values) {
+    const cleaned = cleanString(value);
+    if (cleaned) return cleaned;
+  }
+
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getPrivateDetails(
+  value: UserProfileRow['user_private_details']
+): UserPrivateDetailsRow | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
+function getUserProfileRow(value: unknown): UserProfileRow | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return value as UserProfileRow;
+}
+
+async function getAuthUserIdentity({
   sbAdmin,
   sessionData,
   userId,
@@ -209,18 +273,81 @@ async function getUserEmail({
   sbAdmin: TypedSupabaseClient;
   sessionData: CrossAppValidationRow['session_data'];
   userId: string;
-}) {
-  if (typeof sessionData?.email === 'string' && sessionData.email.trim()) {
-    return sessionData.email.trim();
-  }
-
+}): Promise<AuthUserIdentity> {
+  const sessionEmail = cleanString(sessionData?.email);
   const { data, error } = await sbAdmin.auth.admin.getUserById(userId);
 
-  if (error || !data.user?.email) {
-    return null;
+  if (error) {
+    serverLogger.warn('Failed to fetch app token auth user profile', {
+      error: error.message,
+      userId,
+    });
+
+    return {
+      email: sessionEmail,
+      metadata: null,
+    };
   }
 
-  return data.user.email;
+  return {
+    email: sessionEmail ?? cleanString(data.user?.email),
+    metadata: isRecord(data.user?.user_metadata)
+      ? data.user.user_metadata
+      : null,
+  };
+}
+
+async function getExchangeUserProfile({
+  authIdentity,
+  sbAdmin,
+  userId,
+}: {
+  authIdentity: AuthUserIdentity;
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+}): Promise<ExchangeUserProfile> {
+  const { data, error } = await sbAdmin
+    .from('users')
+    .select(
+      'id, display_name, avatar_url, user_private_details(email, full_name)'
+    )
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    serverLogger.warn('Failed to fetch app token user profile', {
+      error: error.message,
+      userId,
+    });
+  }
+
+  const userProfile = error ? null : getUserProfileRow(data);
+  const privateDetails = getPrivateDetails(userProfile?.user_private_details);
+  const displayName = firstCleanString(
+    userProfile?.display_name,
+    authIdentity.metadata?.display_name
+  );
+  const fullName = firstCleanString(
+    privateDetails?.full_name,
+    authIdentity.metadata?.full_name
+  );
+  const email = firstCleanString(privateDetails?.email, authIdentity.email);
+  const avatarUrl = firstCleanString(
+    userProfile?.avatar_url,
+    authIdentity.metadata?.avatar_url
+  );
+
+  return {
+    avatarUrl,
+    avatar_url: avatarUrl,
+    displayName,
+    display_name: displayName,
+    email,
+    fullName,
+    full_name: fullName,
+    id: firstCleanString(userProfile?.id) ?? userId,
+    name: firstCleanString(displayName, fullName, email),
+  };
 }
 
 function buildInvitationUrl(request: NextRequest, workspaceId: string) {
@@ -241,6 +368,7 @@ async function createExchangeTokenResponse({
   policy,
   scopes,
   targetApp,
+  userProfile,
   userId,
 }: {
   email: string | null;
@@ -248,6 +376,7 @@ async function createExchangeTokenResponse({
   policy: AppCoordinationSessionPolicy;
   scopes: string[];
   targetApp: string;
+  userProfile: ExchangeUserProfile;
   userId: string;
 }) {
   const accessToken = createAppCoordinationToken({
@@ -279,10 +408,7 @@ async function createExchangeTokenResponse({
     refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
     refreshToken: refreshToken.token,
     tokenType: 'Bearer',
-    user: {
-      email,
-      id: userId,
-    },
+    user: userProfile,
     workspaceId: normalizedWorkspaceId,
   });
 }
@@ -441,7 +567,7 @@ async function exchangeAppToken(request: NextRequest) {
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
   const { policy } = await getAppCoordinationSessionPolicy({ db: sbAdmin });
-  let email: string | null;
+  let authIdentity: AuthUserIdentity;
   let userId: string;
 
   if (refreshToken) {
@@ -459,7 +585,7 @@ async function exchangeAppToken(request: NextRequest) {
     }
 
     userId = refreshClaims.sub;
-    email = await getUserEmail({
+    authIdentity = await getAuthUserIdentity({
       sbAdmin,
       sessionData: null,
       userId,
@@ -504,7 +630,7 @@ async function exchangeAppToken(request: NextRequest) {
       );
     }
 
-    email = await getUserEmail({
+    authIdentity = await getAuthUserIdentity({
       sbAdmin,
       sessionData: validationRow?.session_data ?? null,
       userId,
@@ -517,7 +643,7 @@ async function exchangeAppToken(request: NextRequest) {
     ? await authorizeWorkspaceSessionAppTokenExchange({
         admin: sbAdmin,
         allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
-        authEmail: email,
+        authEmail: authIdentity.email,
         userId,
         workspaceId,
       })
@@ -550,7 +676,7 @@ async function exchangeAppToken(request: NextRequest) {
   const exchangeAuthorization = await authorizeExternalProjectAppTokenExchange({
     admin: sbAdmin,
     appId: resolvedTarget.targetApp,
-    authEmail: email,
+    authEmail: authIdentity.email,
     scopes: resolvedTarget.scopes,
     userId,
     workspaceId,
@@ -579,14 +705,21 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
+  const userProfile = await getExchangeUserProfile({
+    authIdentity,
+    sbAdmin,
+    userId,
+  });
+
   return createExchangeTokenResponse({
-    email,
+    email: userProfile.email ?? authIdentity.email,
     normalizedWorkspaceId:
       exchangeAuthorization.normalizedWorkspaceId ??
       workspaceSessionAuthorization?.normalizedWorkspaceId,
     policy,
     scopes: resolvedTarget.scopes,
     targetApp: resolvedTarget.targetApp,
+    userProfile,
     userId,
   });
 }

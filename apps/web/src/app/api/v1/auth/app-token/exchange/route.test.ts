@@ -70,6 +70,9 @@ type AdminState = {
   appAdapter?: string;
   bindingEnabled?: boolean;
   canonicalActive?: boolean;
+  privateFullName?: string | null;
+  profileAvatarUrl?: string | null;
+  profileDisplayName?: string | null;
   pendingDirectInvite?: boolean;
   pendingEmailInvite?: boolean;
   privateEmail?: string | null;
@@ -94,6 +97,9 @@ function createAdminClientMock(state: AdminState = {}) {
     pendingDirectInvite: false,
     pendingEmailInvite: false,
     privateEmail: 'victim@example.com',
+    privateFullName: 'Victim Full Name',
+    profileAvatarUrl: 'https://example.com/victim.png',
+    profileDisplayName: 'Victim Display Name',
     rootPermissions: [],
     workspacePersonal: false,
     workspaceMember: true,
@@ -184,8 +190,26 @@ function createAdminClientMock(state: AdminState = {}) {
       return createQueryResult(
         adminState.privateEmail === null
           ? null
-          : { email: adminState.privateEmail }
+          : {
+              email: adminState.privateEmail,
+              full_name: adminState.privateFullName,
+            }
       );
+    }
+
+    if (table === 'users') {
+      return createQueryResult({
+        avatar_url: adminState.profileAvatarUrl,
+        display_name: adminState.profileDisplayName,
+        id: victimUserId,
+        user_private_details:
+          adminState.privateEmail === null
+            ? null
+            : {
+                email: adminState.privateEmail,
+                full_name: adminState.privateFullName,
+              },
+      });
     }
 
     if (table === 'workspace_invites') {
@@ -261,6 +285,11 @@ function createAdminClientMock(state: AdminState = {}) {
           data: {
             user: {
               email: 'victim@example.com',
+              user_metadata: {
+                avatar_url: 'https://example.com/auth-victim.png',
+                display_name: 'Auth Victim',
+                full_name: 'Auth Victim Full Name',
+              },
             },
           },
           error: null,
@@ -383,6 +412,7 @@ describe('app token exchange route', () => {
       refreshEarlySeconds: number;
       refreshExpiresAt: string;
       refreshToken: string;
+      user: Record<string, unknown>;
       workspaceId?: string;
     };
     const verification = verifyAppCoordinationToken(body.accessToken, {
@@ -394,6 +424,17 @@ describe('app token exchange route', () => {
 
     expect(body.refreshEarlySeconds).toBeGreaterThan(0);
     expect(body.refreshExpiresAt).toEqual(expect.any(String));
+    expect(body.user).toMatchObject({
+      avatarUrl: 'https://example.com/victim.png',
+      avatar_url: 'https://example.com/victim.png',
+      displayName: 'Victim Display Name',
+      display_name: 'Victim Display Name',
+      email: 'victim@example.com',
+      fullName: 'Victim Full Name',
+      full_name: 'Victim Full Name',
+      id: victimUserId,
+      name: 'Victim Display Name',
+    });
     expect(body.workspaceId).toBe(workspaceId);
     expect(verification.ok).toBe(true);
     if (verification.ok) {
@@ -425,6 +466,7 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       accessToken: string;
+      user: Record<string, unknown>;
       workspaceId?: string;
     };
     const verification = verifyAppCoordinationToken(body.accessToken, {
@@ -455,6 +497,7 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       accessToken: string;
+      user: Record<string, unknown>;
       workspaceId?: string;
     };
     const verification = verifyAppCoordinationToken(body.accessToken, {
@@ -617,6 +660,7 @@ describe('app token exchange route', () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
     const body = (await response.json()) as {
       accessToken: string;
+      user: Record<string, unknown>;
       workspaceId?: string;
     };
     const accessVerification = verifyAppCoordinationToken(body.accessToken, {
@@ -624,6 +668,13 @@ describe('app token exchange route', () => {
     });
 
     expect(body.workspaceId).toBe(workspaceId);
+    expect(body.user).toMatchObject({
+      avatarUrl: 'https://example.com/victim.png',
+      displayName: 'Victim Display Name',
+      email: 'victim@example.com',
+      fullName: 'Victim Full Name',
+      name: 'Victim Display Name',
+    });
     expect(accessVerification.ok).toBe(true);
     if (accessVerification.ok) {
       expect(accessVerification.claims.target_app).toBe('workspace-app');
