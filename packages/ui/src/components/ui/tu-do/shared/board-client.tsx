@@ -21,7 +21,7 @@ import {
   setActiveBoardRefresh,
   setActiveBroadcast,
 } from './board-broadcast-context';
-import { BoardViews } from './board-views';
+import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskBoardLoadingState } from './task-board-loading-state';
@@ -35,12 +35,14 @@ interface Props {
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
   routePrefix?: string;
+  defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
   rootLoading?: boolean;
 }
 
 export function BoardClient({
   boardId,
+  defaultView,
   idleBottomIsland,
   workspace,
   workspaceTier,
@@ -265,6 +267,7 @@ export function BoardClient({
           lists={lists}
           workspaceLabels={workspaceLabels}
           currentUserId={currentUserId}
+          defaultView={defaultView}
           canManageBoard={canManageBoard}
           idleBottomIsland={idleBottomIsland}
         />

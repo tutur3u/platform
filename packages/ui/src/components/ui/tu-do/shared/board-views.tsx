@@ -246,6 +246,7 @@ interface Props {
   availableViews?: ViewType[];
   canManageBoard?: boolean;
   currentUserId?: string;
+  defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
   publicHeaderPrefix?: ReactNode;
   publicView?: boolean;
@@ -261,6 +262,7 @@ export function BoardViews({
   availableViews,
   canManageBoard = true,
   currentUserId,
+  defaultView,
   idleBottomIsland,
   publicHeaderPrefix,
   publicView = false,
@@ -551,12 +553,15 @@ export function BoardViews({
         : (new URLSearchParams(window.location.search).get(
             'view'
           ) as ViewType | null);
-    const defaultView = enabledViews?.[0] ?? 'kanban';
+    const fallbackView = enabledViews?.[0] ?? 'kanban';
+    const routeDefaultView =
+      defaultView && viewIsEnabled(defaultView) ? defaultView : null;
+    const effectiveDefaultView = routeDefaultView ?? fallbackView;
     const initialView =
       requestedView && viewIsEnabled(requestedView) ? requestedView : null;
 
     if (!savedConfig) {
-      setCurrentView(initialView ?? defaultView);
+      setCurrentView(initialView ?? effectiveDefaultView);
       setFilters(DEFAULT_TASK_FILTERS);
       setListStatusFilter('all');
       return;
@@ -564,16 +569,17 @@ export function BoardViews({
 
     setCurrentView(
       initialView ??
+        routeDefaultView ??
         (viewIsEnabled(savedConfig.currentView)
           ? savedConfig.currentView
-          : defaultView)
+          : effectiveDefaultView)
     );
     setFilters({
       ...DEFAULT_TASK_FILTERS,
       ...savedConfig.filters,
     });
     setListStatusFilter(savedConfig.listStatusFilter);
-  }, [board.id, enabledViews, viewIsEnabled]);
+  }, [board.id, defaultView, enabledViews, viewIsEnabled]);
 
   useEffect(() => {
     if (!workspace.personal || typeof window === 'undefined') {

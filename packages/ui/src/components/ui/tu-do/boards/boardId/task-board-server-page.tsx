@@ -14,6 +14,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import type { ViewType } from '../../shared/board-views';
 
 interface Props {
   params: Promise<{
@@ -22,6 +23,7 @@ interface Props {
   }>;
   /** Route prefix for tasks URLs. Defaults to '/tasks' (web app). Set to '' for satellite apps. */
   routePrefix?: string;
+  defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
   rootLoading?: boolean;
 }
@@ -72,6 +74,7 @@ async function getAuthorizedBoard(wsId: string, boardId: string) {
  * Used by both apps/web and apps/tasks.
  */
 export default async function TaskBoardServerPage({
+  defaultView,
   idleBottomIsland,
   params,
   routePrefix = '/tasks',
@@ -97,6 +100,7 @@ export default async function TaskBoardServerPage({
       workspace={workspace}
       workspaceTier={workspace.tier ?? null}
       currentUserId={user.id}
+      defaultView={defaultView}
       routePrefix={routePrefix}
       idleBottomIsland={idleBottomIsland}
       rootLoading={rootLoading}

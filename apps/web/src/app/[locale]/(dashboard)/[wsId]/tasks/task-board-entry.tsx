@@ -109,7 +109,7 @@ export async function TaskBoardEntryPage({
   });
 
   if (target.type === 'redirect') {
-    redirect(`/${routeWsId}/tasks/boards/${target.boardId}`);
+    redirect(`/${routeWsId}/tasks/boards/${target.boardId}?view=kanban`);
   }
 
   if (target.type === 'not-found') notFound();

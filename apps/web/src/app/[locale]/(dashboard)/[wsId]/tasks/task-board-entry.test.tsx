@@ -110,7 +110,7 @@ describe('TaskBoardEntryPage', () => {
     });
 
     await expect(renderEntry()).rejects.toThrow(
-      'NEXT_REDIRECT:/ws-1/tasks/boards/board-guest'
+      'NEXT_REDIRECT:/ws-1/tasks/boards/board-guest?view=kanban'
     );
 
     expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe('TaskBoardEntryPage', () => {
     });
 
     await expect(renderEntry()).rejects.toThrow(
-      'NEXT_REDIRECT:/ws-1/tasks/boards/board-default'
+      'NEXT_REDIRECT:/ws-1/tasks/boards/board-default?view=kanban'
     );
 
     expect(mocks.getUserWorkspaceConfig).toHaveBeenCalledWith(

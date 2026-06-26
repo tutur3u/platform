@@ -15,8 +15,9 @@ describe('TaskBoardLoadingState', () => {
     );
     expect(screen.getByTestId('kanban-skeleton')).toHaveClass('bg-transparent');
     expect(screen.getByTestId('kanban-skeleton-frame')).toHaveClass(
-      'px-0',
-      'py-2'
+      'py-2',
+      'pl-2',
+      'pr-0'
     );
     expect(screen.getByTestId('kanban-skeleton-frame')).not.toHaveClass('p-2');
   });

@@ -24,6 +24,7 @@ import {
   type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
 import {
+  INTERNAL_WORKSPACE_SLUG,
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
@@ -230,6 +231,23 @@ function getLocaleAwarePathname(pathname: string) {
     locale,
     pathnameWithoutLocale,
   };
+}
+
+function isInternalTasksEntryPath({
+  hasLocaleInPath,
+  pathSegments,
+}: {
+  hasLocaleInPath: boolean;
+  pathSegments: string[];
+}) {
+  const workspaceIndex = hasLocaleInPath ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex]?.toLowerCase();
+
+  return (
+    workspaceSlug === INTERNAL_WORKSPACE_SLUG &&
+    pathSegments[workspaceIndex + 1] === 'tasks' &&
+    pathSegments.length === workspaceIndex + 2
+  );
 }
 
 function isLocaleRootPublicPath(pathname: string): boolean {
@@ -1278,6 +1296,17 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       propagateAuthCookies(authRes, rootRedirect);
       return rootRedirect;
     }
+  }
+
+  if (
+    isInternalTasksEntryPath({ hasLocaleInPath, pathSegments }) &&
+    !req.nextUrl.searchParams.has('view')
+  ) {
+    const redirectUrl = new URL(req.nextUrl);
+    redirectUrl.searchParams.set('view', 'kanban');
+    const internalTasksRedirect = NextResponse.redirect(redirectUrl);
+    propagateAuthCookies(authRes, internalTasksRedirect);
+    return internalTasksRedirect;
   }
 
   // If we found a potential workspace ID, check if it's a personal workspace

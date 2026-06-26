@@ -81,7 +81,7 @@ export function KanbanSkeleton({ root = false }: { root?: boolean }) {
       <div
         className={cn(
           'flex h-full min-w-0 gap-2 overflow-hidden sm:gap-3',
-          root ? 'px-0 py-2' : 'p-2'
+          root ? 'py-2 pr-0 pl-2' : 'p-2'
         )}
         data-testid="kanban-skeleton-frame"
       >

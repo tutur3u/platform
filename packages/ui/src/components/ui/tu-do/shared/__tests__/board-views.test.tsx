@@ -1134,6 +1134,72 @@ describe('BoardViews', () => {
     });
   });
 
+  it('uses the route default view instead of stale local My Tasks config', async () => {
+    window.localStorage.setItem(
+      getBoardConfigKey(mockBoard.id),
+      JSON.stringify({
+        currentView: 'my_tasks',
+        filters: {
+          assignees: [],
+          dueDateRange: null,
+          estimationRange: null,
+          includeMyTasks: false,
+          includeUnassigned: false,
+          labels: [],
+          priorities: [],
+          projects: [],
+          sourceBoardIds: [],
+          sourceScope: 'all_visible',
+          sourceWorkspaceIds: [],
+        },
+        listStatusFilter: 'all',
+      })
+    );
+    window.history.replaceState({}, '', '/ws-1/tasks/boards/board-1');
+
+    renderBoardViews({ props: { defaultView: 'kanban' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('my-tasks-view')).not.toBeInTheDocument();
+  });
+
+  it('lets an explicit URL view override the route default view', async () => {
+    window.localStorage.setItem(
+      getBoardConfigKey(mockBoard.id),
+      JSON.stringify({
+        currentView: 'timeline',
+        filters: {
+          assignees: [],
+          dueDateRange: null,
+          estimationRange: null,
+          includeMyTasks: false,
+          includeUnassigned: false,
+          labels: [],
+          priorities: [],
+          projects: [],
+          sourceBoardIds: [],
+          sourceScope: 'all_visible',
+          sourceWorkspaceIds: [],
+        },
+        listStatusFilter: 'all',
+      })
+    );
+    window.history.replaceState(
+      {},
+      '',
+      '/ws-1/tasks/boards/board-1?view=my_tasks'
+    );
+
+    renderBoardViews({ props: { defaultView: 'kanban' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('my-tasks-view')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('kanban-view')).not.toBeInTheDocument();
+  });
+
   it('ignores board hotkeys while typing in an input', async () => {
     renderBoardViews();
     const input = screen.getByTestId('board-header-input');

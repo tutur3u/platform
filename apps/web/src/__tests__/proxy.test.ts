@@ -1367,6 +1367,31 @@ describe('web proxy api handling', () => {
     );
   });
 
+  it('normalizes the internal tasks entry to Kanban mode', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/internal/tasks')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/internal/tasks?view=kanban'
+    );
+  });
+
+  it('preserves locale and query params when normalizing internal tasks', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/vi/internal/tasks?task=task-1')
+    );
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.pathname).toBe('/vi/internal/tasks');
+    expect(location.searchParams.get('task')).toBe('task-1');
+    expect(location.searchParams.get('view')).toBe('kanban');
+  });
+
   it('does not apply configured board navigation on direct personal workspace home paths', async () => {
     mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
 
