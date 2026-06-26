@@ -6047,7 +6047,9 @@
   },
   "external-apps-settings": {
     "actions": {
+      "collapse": "Collapse {app}",
       "create": "Create app",
+      "expand": "Expand {app}",
       "rotate_secret": "Rotate secret",
       "save": "Save"
     },

@@ -439,6 +439,36 @@ describe('app token exchange route', () => {
     }
   });
 
+  it('allows configured workspace session scope when the app is linked to the workspace', async () => {
+    mockRegisteredApp(['workspace:session'], 'workspace-app', [workspaceId]);
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['workspace:session'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      accessToken: string;
+      workspaceId?: string;
+    };
+    const verification = verifyAppCoordinationToken(body.accessToken, {
+      secret: 'test-secret',
+    });
+
+    expect(body.workspaceId).toBe(workspaceId);
+    expect(verification.ok).toBe(true);
+    if (verification.ok) {
+      expect(verification.claims.target_app).toBe('workspace-app');
+      expect(verification.claims.scopes).toEqual(['workspace:session']);
+    }
+  });
+
   it('infers workspace session when a workspace-linked app requests no scopes', async () => {
     mockRegisteredApp([], 'workspace-app', [workspaceId]);
 

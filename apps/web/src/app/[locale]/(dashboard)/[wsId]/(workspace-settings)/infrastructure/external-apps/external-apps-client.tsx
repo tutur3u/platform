@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, KeyRound, Loader2, RotateCw, Save } from '@tuturuuu/icons';
+import { Copy, KeyRound } from '@tuturuuu/icons';
 import {
   type ExternalAppRegistration,
   listExternalApps,
@@ -9,73 +9,23 @@ import {
   type SaveExternalAppPayload,
   saveExternalApp,
 } from '@tuturuuu/internal-api/infrastructure/apps';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  appRenderKey,
+  ExternalAppCard,
+  ExternalAppForm,
+} from './external-apps-client-components';
 
 const QUERY_KEY = ['infrastructure', 'external-apps'];
-const SCOPE_PRESETS = [
-  'workspace:session',
-  'external-projects:read',
-  'external-projects:publish',
-  'external-projects:manage',
-  'external-projects:*',
-  '*',
-];
 
 type OneTimeSecret = {
   appId: string;
   value: string;
 } | null;
-
-function splitLines(value: FormDataEntryValue | null) {
-  return String(value ?? '')
-    .split(/[,\n]/u)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
-function joinLines(values: string[]) {
-  return values.join('\n');
-}
-
-function normalizeScopeInput(value: string) {
-  const scope = value.trim().toLowerCase();
-
-  return /^[a-z0-9:*._-]{1,80}$/u.test(scope) ? scope : undefined;
-}
-
-function buildScopeOptions(scopes: string[]) {
-  return [...new Set([...SCOPE_PRESETS, ...scopes])]
-    .sort((a, b) => a.localeCompare(b))
-    .map((scope) => ({
-      label: scope,
-      value: scope,
-    }));
-}
-
-function readFormPayload(formData: FormData, appId?: string) {
-  return {
-    allowedScopes: splitLines(formData.get('allowedScopes')),
-    allowedWorkspaceIds: splitLines(formData.get('allowedWorkspaceIds')),
-    displayName: String(formData.get('displayName') ?? '').trim(),
-    enabled: formData.get('enabled') === 'on',
-    id:
-      appId ??
-      String(formData.get('id') ?? '')
-        .trim()
-        .toLowerCase(),
-    issueSecret: formData.get('issueSecret') === 'on',
-    origins: splitLines(formData.get('origins')),
-  };
-}
 
 function SecretPanel({
   secret,
@@ -120,212 +70,6 @@ function SecretPanel({
           {t('secret.dismiss')}
         </Button>
       </div>
-    </div>
-  );
-}
-
-function ExternalAppForm({
-  app,
-  isPending,
-  onSubmit,
-}: {
-  app?: ExternalAppRegistration;
-  isPending: boolean;
-  onSubmit: (formData: FormData, appId?: string) => void;
-}) {
-  const t = useTranslations('external-apps-settings');
-  const isCreate = !app;
-  const [allowedScopes, setAllowedScopes] = useState(app?.allowedScopes ?? []);
-  const scopeOptions = buildScopeOptions(allowedScopes);
-
-  return (
-    <form
-      className="space-y-4 rounded-lg border border-border bg-card p-4"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit(new FormData(event.currentTarget), app?.id);
-        if (isCreate) {
-          event.currentTarget.reset();
-          setAllowedScopes([]);
-        }
-      }}
-    >
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={app ? `${app.id}-displayName` : 'new-displayName'}>
-            {t('fields.display_name')}
-          </Label>
-          <Input
-            defaultValue={app?.displayName}
-            id={app ? `${app.id}-displayName` : 'new-displayName'}
-            name="displayName"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={app ? `${app.id}-id` : 'new-id'}>
-            {t('fields.app_id')}
-          </Label>
-          <Input
-            defaultValue={app?.id}
-            disabled={!isCreate}
-            id={app ? `${app.id}-id` : 'new-id'}
-            name="id"
-            pattern="[a-z0-9_-]{1,64}"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={app ? `${app.id}-origins` : 'new-origins'}>
-            {t('fields.origins')}
-          </Label>
-          <Textarea
-            defaultValue={app ? joinLines(app.origins) : ''}
-            id={app ? `${app.id}-origins` : 'new-origins'}
-            name="origins"
-            placeholder="https://yoola.ai.vn"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>{t('fields.scopes')}</Label>
-          <input
-            id={app ? `${app.id}-scopes` : 'new-scopes'}
-            name="allowedScopes"
-            readOnly
-            type="hidden"
-            value={joinLines(allowedScopes)}
-          />
-          <Combobox
-            className="w-full"
-            contentWidth="lg"
-            createText={t('fields.scopes_create')}
-            emptyText={t('fields.scopes_empty')}
-            mode="multiple"
-            onChange={(value) =>
-              setAllowedScopes(
-                (Array.isArray(value) ? value : [value]).filter(Boolean)
-              )
-            }
-            onCreate={normalizeScopeInput}
-            options={scopeOptions}
-            placeholder={t('fields.scopes_placeholder')}
-            searchPlaceholder={t('fields.scopes_search')}
-            selected={allowedScopes}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={app ? `${app.id}-workspaces` : 'new-workspaces'}>
-            {t('fields.workspace_ids')}
-          </Label>
-          <Textarea
-            defaultValue={app ? joinLines(app.allowedWorkspaceIds) : ''}
-            id={app ? `${app.id}-workspaces` : 'new-workspaces'}
-            name="allowedWorkspaceIds"
-            placeholder="workspace-id"
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Switch
-            defaultChecked={app?.enabled ?? true}
-            id={app ? `${app.id}-enabled` : 'new-enabled'}
-            name="enabled"
-          />
-          <Label htmlFor={app ? `${app.id}-enabled` : 'new-enabled'}>
-            {t('fields.enabled')}
-          </Label>
-        </div>
-        {isCreate ? (
-          <div className="flex items-center gap-3">
-            <Switch defaultChecked id="new-issueSecret" name="issueSecret" />
-            <Label htmlFor="new-issueSecret">{t('fields.issue_secret')}</Label>
-          </div>
-        ) : null}
-        <Button disabled={isPending} type="submit">
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {isCreate ? t('actions.create') : t('actions.save')}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function ExternalAppCard({
-  app,
-  isPending,
-  onRotate,
-  onSubmit,
-}: {
-  app: ExternalAppRegistration;
-  isPending: boolean;
-  onRotate: (appId: string) => void;
-  onSubmit: (formData: FormData, appId?: string) => void;
-}) {
-  const t = useTranslations('external-apps-settings');
-
-  return (
-    <div className="space-y-4 rounded-lg border border-border bg-background p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold text-lg">{app.displayName}</h2>
-            <Badge variant={app.enabled ? 'success' : 'secondary'}>
-              {app.enabled ? t('status.enabled') : t('status.disabled')}
-            </Badge>
-          </div>
-          <p className="font-mono text-muted-foreground text-sm">{app.id}</p>
-        </div>
-        <Button
-          disabled={isPending}
-          onClick={() => onRotate(app.id)}
-          type="button"
-          variant="secondary"
-        >
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RotateCw className="h-4 w-4" />
-          )}
-          {t('actions.rotate_secret')}
-        </Button>
-      </div>
-
-      <div className="grid gap-3 text-sm md:grid-cols-4">
-        <div>
-          <div className="text-muted-foreground">{t('summary.origins')}</div>
-          <div className="font-medium">{app.origins.length}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">{t('summary.scopes')}</div>
-          <div className="font-medium">{app.allowedScopes.length}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">{t('summary.workspaces')}</div>
-          <div className="font-medium">{app.allowedWorkspaceIds.length}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">
-            {t('summary.last_secret')}
-          </div>
-          <div className="font-medium">
-            {app.secretLastFour
-              ? t('summary.secret_suffix', { suffix: app.secretLastFour })
-              : t('summary.no_secret')}
-          </div>
-        </div>
-      </div>
-
-      <ExternalAppForm app={app} isPending={isPending} onSubmit={onSubmit} />
     </div>
   );
 }
@@ -375,8 +119,8 @@ export function ExternalAppsClient({
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
   });
-  const submitApp = (formData: FormData, appId?: string) => {
-    saveMutation.mutate(readFormPayload(formData, appId));
+  const submitApp = (payload: SaveExternalAppPayload) => {
+    saveMutation.mutate(payload);
   };
 
   return (
@@ -406,7 +150,7 @@ export function ExternalAppsClient({
               <ExternalAppCard
                 app={app}
                 isPending={saveMutation.isPending || rotateMutation.isPending}
-                key={app.id}
+                key={appRenderKey(app)}
                 onRotate={(appId) => rotateMutation.mutate(appId)}
                 onSubmit={submitApp}
               />

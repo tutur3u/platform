@@ -115,22 +115,19 @@ function getAllowedAppTokenScopesWithWorkspaceSession({
     requestedScopes,
     workspaceId,
   });
+  const requestedApiScopes = inferWorkspaceSession
+    ? requestedScopes.filter((scope) => scope !== WORKSPACE_SESSION_SCOPE)
+    : requestedScopes;
   const scopes = getAllowedAppTokenScopes({
     allowedScopes,
-    requestedScopes: inferWorkspaceSession
-      ? requestedScopes.filter((scope) => scope !== WORKSPACE_SESSION_SCOPE)
-      : requestedScopes,
+    requestedScopes: requestedApiScopes,
   });
 
-  if (
-    inferWorkspaceSession &&
-    !scopes.includes(WORKSPACE_SESSION_SCOPE) &&
-    (requestedScopes.includes(WORKSPACE_SESSION_SCOPE) || scopes.length === 0)
-  ) {
-    return [...scopes, WORKSPACE_SESSION_SCOPE].sort();
+  if (!inferWorkspaceSession) {
+    return scopes;
   }
 
-  return scopes;
+  return [...new Set([...scopes, WORKSPACE_SESSION_SCOPE])].sort();
 }
 
 async function resolveExchangeTarget({

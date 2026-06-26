@@ -6047,7 +6047,9 @@
   },
   "external-apps-settings": {
     "actions": {
+      "collapse": "Thu gọn {app}",
       "create": "Tạo ứng dụng",
+      "expand": "Mở {app}",
       "rotate_secret": "Xoay vòng secret",
       "save": "Lưu"
     },
