@@ -22,7 +22,7 @@
     "@ai-sdk/azure": "^3.0.77",
     "@ai-sdk/cerebras": "^2.0.57",
     "@ai-sdk/cohere": "^3.0.39",
-    "@ai-sdk/deepgram": "^2.0.36",
+    "@ai-sdk/deepgram": "^3.0.0",
     "@ai-sdk/deepinfra": "^2.0.55",
     "@ai-sdk/deepseek": "^2.0.39",
     "@ai-sdk/elevenlabs": "^2.0.36",
