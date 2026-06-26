@@ -11,6 +11,7 @@ const {
 } = require('./compose.js');
 const { isTransientDockerRegistryError } = require('./registry-errors.js');
 const {
+  getAutoBuildMemoryBudget,
   isBuildkitResourceProfileFallbackError,
 } = require('./resource-profiles.js');
 
@@ -35,8 +36,6 @@ const CACHED_BUILD_ERROR_RECOVERY_REASON = 'cached-build-error';
 const DISABLED_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
 const AUTO_BUILD_RESOURCE = 'auto';
 const BYTES_PER_GIB = 1024 * 1024 * 1024;
-const BYTES_PER_MIB = 1024 * 1024;
-const AUTO_BUILD_MEMORY_HEADROOM_BYTES = 512 * 1024 * 1024;
 const DEFAULT_AUTO_BUILD_MEMORY = '12g';
 const LOW_DOCKER_MEMORY_THRESHOLD_BYTES = 10 * BYTES_PER_GIB;
 const LARGE_DOCKER_MEMORY_THRESHOLD_BYTES = 16 * BYTES_PER_GIB;
@@ -128,21 +127,7 @@ function getDockerMemoryLimitBytes(env = process.env) {
 }
 
 function getAutoBuildMemory(env = process.env) {
-  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
-
-  if (!dockerMemoryLimitBytes) {
-    return DEFAULT_AUTO_BUILD_MEMORY;
-  }
-
-  const buildMemoryMib = Math.max(
-    4096,
-    Math.floor(
-      (dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_HEADROOM_BYTES) /
-        BYTES_PER_MIB
-    )
-  );
-
-  return `${buildMemoryMib}m`;
+  return getAutoBuildMemoryBudget(env) ?? DEFAULT_AUTO_BUILD_MEMORY;
 }
 
 function getAutoBuildCpus(env = process.env) {

@@ -104,22 +104,25 @@ infrastructure dashboard changes.
   builder because it creates containers outside the Compose `platform` group.
 - Production web serve helpers should default BuildKit memory to
   `--build-memory auto` so the cap follows Docker's configured memory
-  allocation. Keep blue/green max parallelism conservative by default, and keep
-  direct Compose fallbacks concrete because Compose cannot resolve helper-only
-  `auto` values by itself.
+  allocation with a real reserve for the Docker VM and sibling containers. Keep
+  blue/green max parallelism conservative by default, and keep direct Compose
+  fallbacks concrete because Compose cannot resolve helper-only `auto` values by
+  itself.
 - Blue/green runs that use the root-script default caps may use the adaptive
   local profile at `tmp/docker-web/buildkit/resource-profile.json`. BuildKit
   transport/resource failures such as `code = Unavailable`, `closing transport`,
   `error reading from server: EOF`, `received prior goaway`,
   `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`,
   exit code 137, or `[internal] waiting for connection` should keep stepping
-  through lower profiles in the same command until the build succeeds or the
-  floor profile fails. Persist each lower profile before retrying. Each retry
-  should restart the Compose-owned BuildKit service and recreate the remote
-  Buildx builder when `docker buildx inspect tuturuuu` reports
-  `Status: inactive`. Explicit build cap flags or `DOCKER_WEB_BUILD_MEMORY`,
-  `DOCKER_WEB_BUILD_CPUS`, or `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for
-  that run.
+  through budget-valid profiles in the same command until the build succeeds or
+  the retry ladder is exhausted. Persist each retry profile before trying it,
+  skip fixed profiles above the effective Docker budget, and reset persisted
+  state back to the budget-derived `default` profile when `floor` still fails so
+  later runs do not get stuck starting at `floor`. Each retry should restart the
+  Compose-owned BuildKit service and recreate the remote Buildx builder when
+  `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
+  cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
+  `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
 - Watcher-owned deploy failures should prune failed-build residue before the
   next poll so dangling images and stale Buildx cache do not accumulate for a
   commit that will remain blocked. By default, failed child deploys run

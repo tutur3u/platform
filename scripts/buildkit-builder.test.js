@@ -284,7 +284,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
     getAutoBuildMemory({
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
     }),
-    '8418m'
+    '6144m'
   );
   assert.equal(
     getAutoBuildCpus({
@@ -302,7 +302,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
     getAutoBuildMemory({
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: largeDockerMemory,
     }),
-    '28160m'
+    '21504m'
   );
   assert.deepEqual(
     normalizeBuilderConfig(
@@ -320,7 +320,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
       cpus: 1,
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 1,
-      memory: '8418m',
+      memory: '6144m',
     }
   );
   assert.deepEqual(
@@ -339,7 +339,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
       cpus: 4,
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 1,
-      memory: '28160m',
+      memory: '21504m',
     }
   );
 });

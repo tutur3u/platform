@@ -30,6 +30,7 @@ const {
   BUILD_STALL_RECOVERY_REASON,
   BUILDKIT_SERVICE_NAME,
   CACHED_BUILD_ERROR_RECOVERY_REASON,
+  getAutoBuildMemory,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
@@ -43,7 +44,8 @@ const {
   applyBuildResourceProfileToEnv,
   getBuildResourceProfileFromEnv,
   getBuildResourceProfilePathsFromEnv,
-  getNextLowerBuildResourceProfile,
+  getNextAdaptiveBuildResourceProfile,
+  getRecommendedBuildResourceProfile,
   isAdaptiveBuildResourceProfileEnabled,
   isBuildkitResourceProfileFallbackError,
   persistBuildResourceProfile,
@@ -2321,8 +2323,62 @@ async function buildBlueGreenServices({
 
   const runBuildWithAdaptiveResourceFallback = async () => {
     let buildEnv = env;
+    const attemptedProfileNames = new Set();
+
+    const getResolvedBuildMemoryForLog = (attemptEnv) => {
+      const rawMemory = attemptEnv.DOCKER_WEB_BUILD_MEMORY;
+
+      if (
+        String(rawMemory ?? '')
+          .trim()
+          .toLowerCase() === 'auto'
+      ) {
+        return getAutoBuildMemory(attemptEnv);
+      }
+
+      return rawMemory ?? 'unset';
+    };
+
+    const writeAdaptiveAttemptLog = (attemptEnv) => {
+      if (!isAdaptiveBuildResourceProfileEnabled(attemptEnv)) {
+        return;
+      }
+
+      const currentProfile = getBuildResourceProfileFromEnv(attemptEnv);
+      const paths = getBuildResourceProfilePathsFromEnv(attemptEnv, rootDir);
+
+      process.stderr.write(
+        `BuildKit build attempt using profile ${currentProfile.name} (memory=${currentProfile.memory}, resolvedMemory=${getResolvedBuildMemoryForLog(attemptEnv)}, cpus=${attemptEnv.DOCKER_WEB_BUILD_CPUS ?? 'unset'}, maxParallelism=${attemptEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM ?? 'unset'}, dockerMemoryLimit=${attemptEnv.DOCKER_WEB_DOCKER_MEMORY_LIMIT ?? 'unknown'}, dockerContext=${attemptEnv.DOCKER_CONTEXT ?? 'current'}, stateFile=${paths.stateFile}).\n`
+      );
+    };
+
+    const persistRecommendedProfileAfterFailure = ({
+      currentProfile,
+      reason,
+      stateFile,
+    }) => {
+      const recommendedProfile = getRecommendedBuildResourceProfile(buildEnv);
+
+      if (
+        !recommendedProfile ||
+        recommendedProfile.name === currentProfile.name
+      ) {
+        return;
+      }
+
+      persistBuildResourceProfile({
+        fsImpl,
+        previousProfileName: currentProfile.name,
+        profile: recommendedProfile,
+        reason,
+        stateFile,
+      });
+    };
 
     while (true) {
+      const currentProfile = getBuildResourceProfileFromEnv(buildEnv);
+      writeAdaptiveAttemptLog(buildEnv);
+
       try {
         await runBuildWithCacheRecovery({ buildEnv });
         return;
@@ -2334,16 +2390,27 @@ async function buildBlueGreenServices({
           throw error;
         }
 
-        const currentProfile = getBuildResourceProfileFromEnv(buildEnv);
-        const nextProfile = getNextLowerBuildResourceProfile(
-          currentProfile.name
-        );
+        attemptedProfileNames.add(currentProfile.name);
+
+        const paths = getBuildResourceProfilePathsFromEnv(buildEnv, rootDir);
+        const nextProfile = getNextAdaptiveBuildResourceProfile({
+          attemptedProfileNames,
+          currentProfileName: currentProfile.name,
+          env: buildEnv,
+        });
 
         if (!nextProfile) {
+          persistRecommendedProfileAfterFailure({
+            currentProfile,
+            reason:
+              currentProfile.name === 'floor'
+                ? 'buildkit-resource-floor-failed'
+                : 'buildkit-resource-fallback-exhausted',
+            stateFile: paths.stateFile,
+          });
           throw error;
         }
 
-        const paths = getBuildResourceProfilePathsFromEnv(buildEnv, rootDir);
         const fallbackReason = 'buildkit-resource-fallback';
 
         persistBuildResourceProfile({
@@ -2360,7 +2427,7 @@ async function buildBlueGreenServices({
         };
 
         process.stderr.write(
-          `BuildKit transport/resource failure detected for build profile ${currentProfile.name}; retrying with lower build profile ${nextProfile.name} (memory=${nextProfile.memory}, cpus=${nextProfile.cpus}, maxParallelism=${nextProfile.maxParallelism}).\n`
+          `BuildKit transport/resource failure detected for build profile ${currentProfile.name}; ${nextProfile.name === 'default' ? 'resetting to budget-derived' : 'retrying with'} build profile ${nextProfile.name} (memory=${nextProfile.memory}, resolvedMemory=${getResolvedBuildMemoryForLog(retryEnv)}, cpus=${nextProfile.cpus}, maxParallelism=${nextProfile.maxParallelism}).\n`
         );
 
         await recoverBuildkitBunInstallCache({

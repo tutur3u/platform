@@ -22,6 +22,13 @@ const EXPLICIT_BUILD_RESOURCE_ENV_NAMES = Object.freeze([
   'DOCKER_WEB_BUILD_CPUS',
   'DOCKER_WEB_BUILD_MAX_PARALLELISM',
 ]);
+const BYTES_PER_GIB = 1024 * 1024 * 1024;
+const BYTES_PER_MIB = 1024 * 1024;
+const AUTO_BUILD_MEMORY_HEADROOM_BYTES = 512 * 1024 * 1024;
+const AUTO_BUILD_MEMORY_RESERVE_BYTES = 4 * BYTES_PER_GIB;
+const AUTO_BUILD_MEMORY_MIN_BYTES = 6 * BYTES_PER_GIB;
+const AUTO_BUILD_MEMORY_HARD_MIN_BYTES = 4 * BYTES_PER_GIB;
+const AUTO_BUILD_MEMORY_RATIO = 0.75;
 
 const BUILD_RESOURCE_PROFILES = Object.freeze([
   Object.freeze({
@@ -88,6 +95,155 @@ function getNextLowerBuildResourceProfile(profileName) {
   }
 
   return BUILD_RESOURCE_PROFILES[index + 1];
+}
+
+function parseMemoryToBytes(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/^([0-9]+(?:\.[0-9]+)?)([kmgt]i?b?|b)?$/u);
+
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number(match[1]);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  const unit = match[2] ?? 'b';
+  const multiplier =
+    unit === 't' || unit === 'tb' || unit === 'tib'
+      ? 1024 * BYTES_PER_GIB
+      : unit === 'g' || unit === 'gb' || unit === 'gib'
+        ? BYTES_PER_GIB
+        : unit === 'm' || unit === 'mb' || unit === 'mib'
+          ? BYTES_PER_MIB
+          : unit === 'k' || unit === 'kb' || unit === 'kib'
+            ? 1024
+            : 1;
+
+  return Math.floor(amount * multiplier);
+}
+
+function getDockerMemoryLimitBytes(env = {}) {
+  return parseMemoryToBytes(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT);
+}
+
+function getAutoBuildMemoryBudgetBytes(env = {}) {
+  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
+
+  if (!dockerMemoryLimitBytes) {
+    return null;
+  }
+
+  const availableAfterHeadroom =
+    dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_HEADROOM_BYTES;
+
+  if (availableAfterHeadroom <= 0) {
+    return null;
+  }
+
+  const conservativeBudget = Math.min(
+    Math.floor(dockerMemoryLimitBytes * AUTO_BUILD_MEMORY_RATIO),
+    dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_RESERVE_BYTES
+  );
+  const targetBudget = Math.min(
+    availableAfterHeadroom,
+    Math.max(AUTO_BUILD_MEMORY_MIN_BYTES, conservativeBudget)
+  );
+
+  return Math.max(
+    Math.min(availableAfterHeadroom, AUTO_BUILD_MEMORY_HARD_MIN_BYTES),
+    targetBudget
+  );
+}
+
+function formatMemoryBytesAsMib(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return null;
+  }
+
+  return `${Math.floor(bytes / BYTES_PER_MIB)}m`;
+}
+
+function getAutoBuildMemoryBudget(env = {}) {
+  return formatMemoryBytesAsMib(getAutoBuildMemoryBudgetBytes(env));
+}
+
+function getBuildResourceProfileMemoryBytes(profile, env = {}) {
+  if (!profile) {
+    return null;
+  }
+
+  if (profile.memory === DEFAULT_BUILD_RESOURCE_PROFILE.memory) {
+    return getAutoBuildMemoryBudgetBytes(env);
+  }
+
+  return parseMemoryToBytes(profile.memory);
+}
+
+function isBuildResourceProfileWithinBudget(profile, env = {}) {
+  const budgetBytes = getAutoBuildMemoryBudgetBytes(env);
+  const profileBytes = getBuildResourceProfileMemoryBytes(profile, env);
+
+  return !budgetBytes || !profileBytes || profileBytes <= budgetBytes;
+}
+
+function getRecommendedBuildResourceProfile(_env = {}) {
+  return DEFAULT_BUILD_RESOURCE_PROFILE;
+}
+
+function getBudgetedBuildResourceProfile(profile, env = {}) {
+  if (!profile || isBuildResourceProfileWithinBudget(profile, env)) {
+    return profile;
+  }
+
+  return getRecommendedBuildResourceProfile(env);
+}
+
+function getNextAdaptiveBuildResourceProfile({
+  attemptedProfileNames = new Set(),
+  currentProfileName,
+  env = {},
+} = {}) {
+  const currentIndex = getBuildResourceProfileIndex(currentProfileName);
+
+  if (currentIndex < 0) {
+    return null;
+  }
+
+  const nextLowerProfile = BUILD_RESOURCE_PROFILES.slice(currentIndex + 1).find(
+    (profile) =>
+      !attemptedProfileNames.has(profile.name) &&
+      isBuildResourceProfileWithinBudget(profile, env)
+  );
+
+  if (nextLowerProfile) {
+    return nextLowerProfile;
+  }
+
+  const currentProfile = getBuildResourceProfile(currentProfileName);
+  const recommendedProfile = getRecommendedBuildResourceProfile(env);
+
+  if (
+    currentProfile?.name === 'floor' &&
+    recommendedProfile?.name !== currentProfile.name &&
+    !attemptedProfileNames.has(recommendedProfile.name)
+  ) {
+    return recommendedProfile;
+  }
+
+  return null;
 }
 
 function readBuildResourceProfileState(
@@ -221,7 +377,10 @@ function createBuildResourceProfileSelection({
     };
   }
 
-  const profile = getPersistedBuildResourceProfile({ fsImpl, paths });
+  const profile = getBudgetedBuildResourceProfile(
+    getPersistedBuildResourceProfile({ fsImpl, paths }),
+    env
+  );
 
   return {
     enabled: true,
@@ -353,14 +512,22 @@ module.exports = {
   getBuildResourceConfigForSelection,
   getBuildResourceProfile,
   getBuildResourceProfileFromEnv,
+  getBuildResourceProfileMemoryBytes,
   getBuildResourceProfilePaths,
   getBuildResourceProfilePathsFromEnv,
+  getAutoBuildMemoryBudget,
+  getAutoBuildMemoryBudgetBytes,
+  getBudgetedBuildResourceProfile,
   getNextLowerBuildResourceProfile,
+  getNextAdaptiveBuildResourceProfile,
+  getRecommendedBuildResourceProfile,
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,
   isAdaptiveBuildResourceProfileEnabled,
+  isBuildResourceProfileWithinBudget,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
+  parseMemoryToBytes,
   persistBuildResourceProfile,
   readBuildResourceProfileState,
   shouldUseAdaptiveBuildResourceProfile,
