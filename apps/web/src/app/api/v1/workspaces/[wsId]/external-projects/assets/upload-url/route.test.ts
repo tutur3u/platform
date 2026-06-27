@@ -4,7 +4,6 @@ const mocks = vi.hoisted(() => ({
   createWorkspaceStorageUploadPayload: vi.fn(),
   generateRandomUUID: vi.fn(() => 'upload-id'),
   requireWorkspaceExternalProjectAccess: vi.fn(),
-  resolveWorkspaceStorageProvider: vi.fn(),
   uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
@@ -27,7 +26,6 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 vi.mock('@/lib/workspace-storage-provider', () => ({
   createWorkspaceStorageUploadPayload:
     mocks.createWorkspaceStorageUploadPayload,
-  resolveWorkspaceStorageProvider: mocks.resolveWorkspaceStorageProvider,
   uploadWorkspaceStorageFileDirect: mocks.uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
@@ -94,7 +92,6 @@ describe('external project asset upload-url route', () => {
     mocks.generateRandomUUID.mockClear();
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
     mocks.createWorkspaceStorageUploadPayload.mockReset();
-    mocks.resolveWorkspaceStorageProvider.mockReset();
     mocks.uploadWorkspaceStorageFileDirect.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
       binding: {
@@ -102,10 +99,6 @@ describe('external project asset upload-url route', () => {
       },
       normalizedWorkspaceId: 'workspace-1',
       ok: true,
-    });
-    mocks.resolveWorkspaceStorageProvider.mockResolvedValue({
-      misconfigured: false,
-      provider: 'r2',
     });
     mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
       contentType: 'audio/wav',
@@ -275,12 +268,20 @@ describe('external project asset upload-url route', () => {
     );
   });
 
-  it('rejects Supabase signed upload URLs for external assets', async () => {
-    mocks.resolveWorkspaceStorageProvider.mockResolvedValueOnce({
-      misconfigured: false,
+  it('creates Supabase signed upload URLs for external assets', async () => {
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValueOnce({
+      contentType: 'image/png',
+      filename: 'upload-id-starter-signal.png',
+      fullPath:
+        'workspace-1/external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
+      headers: {
+        'Content-Type': 'image/png',
+      },
+      path: 'external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
       provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'storage-token',
     });
-
     const response = await postAssetUploadJson({
       collectionType: 'artworks',
       contentType: 'image/png',
@@ -289,11 +290,30 @@ describe('external project asset upload-url route', () => {
       size: 3,
     });
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      error: 'Direct upload is required for Supabase-backed external assets.',
+      contentType: 'image/png',
+      filename: 'upload-id-starter-signal.png',
+      fullPath:
+        'workspace-1/external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
+      headers: {
+        'Content-Type': 'image/png',
+      },
+      path: 'external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'storage-token',
     });
-    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
+      'workspace-1',
+      'upload-id-starter-signal.png',
+      {
+        contentType: 'image/png',
+        path: 'external-projects/yoola/artworks/starter-signal',
+        size: 3,
+        upsert: false,
+      }
+    );
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 });
