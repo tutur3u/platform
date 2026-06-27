@@ -45,6 +45,115 @@ export function serializeTaskDescriptionContent(
   }
 }
 
+function hasTaskDescriptionContent(content: JSONContent | null): boolean {
+  if (!content) return false;
+
+  if (content.text && content.text.trim().length > 0) {
+    return true;
+  }
+
+  if (
+    content.type &&
+    ['image', 'imageResize', 'youtube', 'video', 'mention', 'table'].includes(
+      content.type
+    )
+  ) {
+    return true;
+  }
+
+  return content.content?.some(hasTaskDescriptionContent) ?? false;
+}
+
+function isSerializedTaskDescriptionEmpty(description: string | null): boolean {
+  if (description === null) return true;
+  if (description.trim().length === 0) return true;
+
+  try {
+    return !hasTaskDescriptionContent(JSON.parse(description) as JSONContent);
+  } catch {
+    return false;
+  }
+}
+
+export function normalizeTaskDescriptionSnapshot(
+  content: JSONContent | null
+): JSONContent | null {
+  return hasTaskDescriptionContent(content) ? content : null;
+}
+
+export function serializeTaskDescriptionPersistenceSnapshot(
+  content: JSONContent | null
+): string | null {
+  return serializeTaskDescriptionContent(
+    normalizeTaskDescriptionSnapshot(content)
+  );
+}
+
+export type TaskDescriptionPersistenceGuardState = {
+  persistedDescription: string | null;
+  hasSeenNonEmptyEditorSnapshot: boolean;
+  hasConfirmedEmptyEditorSnapshot: boolean;
+};
+
+export function createTaskDescriptionPersistenceGuardState({
+  persistedDescription,
+  trustPersistedDescription = false,
+}: {
+  persistedDescription: string | null;
+  trustPersistedDescription?: boolean;
+}): TaskDescriptionPersistenceGuardState {
+  const persistedDescriptionIsEmpty =
+    isSerializedTaskDescriptionEmpty(persistedDescription);
+
+  return {
+    persistedDescription,
+    hasSeenNonEmptyEditorSnapshot:
+      trustPersistedDescription && !persistedDescriptionIsEmpty,
+    hasConfirmedEmptyEditorSnapshot: persistedDescriptionIsEmpty,
+  };
+}
+
+export function recordTaskDescriptionEditorSnapshot(
+  state: TaskDescriptionPersistenceGuardState,
+  content: JSONContent | null,
+  options: { canConfirmEmptySnapshot?: boolean } = {}
+): TaskDescriptionPersistenceGuardState {
+  const serializedDescription =
+    serializeTaskDescriptionPersistenceSnapshot(content);
+
+  if (serializedDescription !== null) {
+    return {
+      ...state,
+      hasSeenNonEmptyEditorSnapshot: true,
+      hasConfirmedEmptyEditorSnapshot: false,
+    };
+  }
+
+  if (options.canConfirmEmptySnapshot && state.hasSeenNonEmptyEditorSnapshot) {
+    return {
+      ...state,
+      hasConfirmedEmptyEditorSnapshot: true,
+    };
+  }
+
+  return state;
+}
+
+export function canPersistTaskDescriptionSnapshot({
+  currentSerializedDescription,
+  guardState,
+}: {
+  currentSerializedDescription: string | null;
+  guardState: TaskDescriptionPersistenceGuardState;
+}): boolean {
+  if (currentSerializedDescription !== null) return true;
+  if (isSerializedTaskDescriptionEmpty(guardState.persistedDescription)) {
+    return true;
+  }
+
+  return guardState.hasConfirmedEmptyEditorSnapshot;
+}
+
 export function getTaskDescriptionStorageLength(
   content: JSONContent | null
 ): number {

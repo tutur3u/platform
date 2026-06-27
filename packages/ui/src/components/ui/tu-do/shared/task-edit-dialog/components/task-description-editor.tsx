@@ -54,6 +54,7 @@ export interface TaskDescriptionEditorProps {
   onImageUpload?: (file: File) => Promise<string>;
   onEditorReady: (editor: Editor) => void;
   onConvertToTask?: () => void | Promise<void>;
+  onDescriptionSnapshotChange?: (description: JSONContent | null) => void;
   onDescriptionStorageLengthChange: (storageLength: number) => void;
   descriptionStorageLength: number;
   descriptionPercentLeft: number;
@@ -109,6 +110,7 @@ export function TaskDescriptionEditor({
   onImageUpload,
   onEditorReady,
   onConvertToTask,
+  onDescriptionSnapshotChange,
   onDescriptionStorageLengthChange,
   descriptionStorageLength,
   descriptionPercentLeft,
@@ -290,6 +292,7 @@ export function TaskDescriptionEditor({
           content={description}
           onChange={setDescription}
           onImmediateChange={(nextDescription) => {
+            onDescriptionSnapshotChange?.(nextDescription);
             if (allowYjsSync) {
               setDescription(nextDescription);
             }

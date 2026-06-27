@@ -104,16 +104,21 @@ import {
 } from './task-edit-dialog/user-display';
 import {
   broadcastTaskDescriptionUpsert,
+  canPersistTaskDescriptionSnapshot,
   clearDraft,
+  createTaskDescriptionPersistenceGuardState,
   getDescriptionContent,
   getDraftStorageKey,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionPreviewText,
   getTaskDescriptionStorageLength,
+  normalizeTaskDescriptionSnapshot,
+  recordTaskDescriptionEditorSnapshot,
   saveAndVerifyYjsDescriptionToDatabase,
   saveYjsDescriptionToDatabase,
-  serializeTaskDescriptionContent,
+  serializeTaskDescriptionPersistenceSnapshot,
   shouldPreserveNativeContextMenu,
+  type TaskDescriptionPersistenceGuardState,
 } from './task-edit-dialog/utils';
 import {
   resolveInlineTaskTargetList,
@@ -290,7 +295,14 @@ export function TaskEditDialog({
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
   const descriptionRef = useRef<JSONContent | null>(formState.description);
   const persistedDescriptionRef = useRef<string | null>(null);
+  const descriptionPersistenceGuardRef =
+    useRef<TaskDescriptionPersistenceGuardState>(
+      createTaskDescriptionPersistenceGuardState({
+        persistedDescription: null,
+      })
+    );
   const taskRealtimeBroadcastRef = useRef<BoardBroadcastFn | null>(null);
+  const [hasHydratedYjsState, setHasHydratedYjsState] = useState(false);
 
   useEffect(() => {
     descriptionRef.current = formState.description;
@@ -367,6 +379,54 @@ export function TaskEditDialog({
     refetchOnReconnect: false,
   });
 
+  const persistedTaskDescriptionSnapshot = useMemo(
+    () =>
+      serializeTaskDescriptionPersistenceSnapshot(
+        getDescriptionContent(task?.description)
+      ) ?? null,
+    [task?.description]
+  );
+
+  useEffect(() => {
+    if (!isOpen || isCreateMode) {
+      persistedDescriptionRef.current = null;
+      descriptionPersistenceGuardRef.current =
+        createTaskDescriptionPersistenceGuardState({
+          persistedDescription: null,
+        });
+      return;
+    }
+
+    persistedDescriptionRef.current = persistedTaskDescriptionSnapshot;
+    descriptionPersistenceGuardRef.current =
+      createTaskDescriptionPersistenceGuardState({
+        persistedDescription: persistedTaskDescriptionSnapshot,
+        trustPersistedDescription: !effectiveRealtimeEnabled,
+      });
+  }, [
+    effectiveRealtimeEnabled,
+    isOpen,
+    isCreateMode,
+    persistedTaskDescriptionSnapshot,
+  ]);
+
+  const canConfirmEmptyDescriptionSnapshot =
+    !effectiveRealtimeEnabled || hasHydratedYjsState;
+
+  const recordDescriptionSnapshot = useCallback(
+    (nextDescription: JSONContent | null) => {
+      descriptionPersistenceGuardRef.current =
+        recordTaskDescriptionEditorSnapshot(
+          descriptionPersistenceGuardRef.current,
+          nextDescription,
+          {
+            canConfirmEmptySnapshot: canConfirmEmptyDescriptionSnapshot,
+          }
+        );
+    },
+    [canConfirmEmptyDescriptionSnapshot]
+  );
+
   const loadTaskDescriptionState = useCallback(async () => {
     if (!task?.id) return null;
     const response = await fetchWorkspaceTaskDescription(
@@ -393,11 +453,22 @@ export function TaskEditDialog({
         return false;
       }
 
-      const serializedDescription = serializeTaskDescriptionContent(content);
+      content = normalizeTaskDescriptionSnapshot(content);
+      const serializedDescription =
+        serializeTaskDescriptionPersistenceSnapshot(content);
 
       if (
         serializedDescription &&
         serializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
+      ) {
+        return false;
+      }
+
+      if (
+        !canPersistTaskDescriptionSnapshot({
+          currentSerializedDescription: serializedDescription,
+          guardState: descriptionPersistenceGuardRef.current,
+        })
       ) {
         return false;
       }
@@ -415,6 +486,11 @@ export function TaskEditDialog({
       if (!didPersist) return false;
 
       persistedDescriptionRef.current = serializedDescription;
+      descriptionPersistenceGuardRef.current =
+        createTaskDescriptionPersistenceGuardState({
+          persistedDescription: serializedDescription,
+          trustPersistedDescription: true,
+        });
 
       const broadcast =
         getActiveBroadcast() ?? taskRealtimeBroadcastRef.current;
@@ -443,8 +519,6 @@ export function TaskEditDialog({
     loadDocumentState: loadTaskDescriptionState,
     saveDocumentState: saveTaskDescriptionState,
   });
-
-  const [hasHydratedYjsState, setHasHydratedYjsState] = useState(false);
 
   useEffect(() => {
     if (!isOpen || isCreateMode || !effectiveRealtimeEnabled || !task?.id) {
@@ -784,34 +858,45 @@ export function TaskEditDialog({
   });
 
   // Change detection
-  const { hasUnsavedChanges, canSave, parseDescription } =
-    useTaskChangeDetection({
-      task,
-      name: formState.name,
-      description: formState.description,
-      priority: formState.priority,
-      startDate: formState.startDate,
-      endDate: formState.endDate,
-      selectedListId: formState.selectedListId,
-      estimationPoints: formState.estimationPoints,
-      selectedLabels: formState.selectedLabels,
-      selectedAssignees: formState.selectedAssignees,
-      isCreateMode,
-      isLoading: isLoading || taskControlsDisabled,
-      collaborationMode: effectiveCollaborationMode,
-      draftId,
-    });
+  const { hasUnsavedChanges, canSave } = useTaskChangeDetection({
+    task,
+    name: formState.name,
+    description: formState.description,
+    priority: formState.priority,
+    startDate: formState.startDate,
+    endDate: formState.endDate,
+    selectedListId: formState.selectedListId,
+    estimationPoints: formState.estimationPoints,
+    selectedLabels: formState.selectedLabels,
+    selectedAssignees: formState.selectedAssignees,
+    isCreateMode,
+    isLoading: isLoading || taskControlsDisabled,
+    collaborationMode: effectiveCollaborationMode,
+    draftId,
+  });
 
   useEffect(() => {
-    if (!isOpen || isCreateMode) {
-      persistedDescriptionRef.current = null;
+    if (!isOpen || isCreateMode) return;
+    if (effectiveRealtimeEnabled && !hasHydratedYjsState) return;
+    if (
+      serializeTaskDescriptionPersistenceSnapshot(formState.description) ===
+      null
+    ) {
       return;
     }
 
-    persistedDescriptionRef.current =
-      serializeTaskDescriptionContent(parseDescription(task?.description)) ??
-      null;
-  }, [isOpen, isCreateMode, parseDescription, task?.description]);
+    descriptionPersistenceGuardRef.current =
+      recordTaskDescriptionEditorSnapshot(
+        descriptionPersistenceGuardRef.current,
+        formState.description
+      );
+  }, [
+    effectiveRealtimeEnabled,
+    formState.description,
+    hasHydratedYjsState,
+    isOpen,
+    isCreateMode,
+  ]);
 
   // Realtime sync for task fields and relations. Description sync remains Yjs-only.
   const { broadcast: taskRealtimeBroadcast } = useTaskRealtimeSync({
@@ -1393,7 +1478,8 @@ export function TaskEditDialog({
       return createWorkspaceTaskSuggestions(effectiveTaskWsId, {
         boardId,
         prompt,
-        description: serializeTaskDescriptionContent(currentDescription),
+        description:
+          serializeTaskDescriptionPersistenceSnapshot(currentDescription),
         currentListId: formState.selectedListId || undefined,
         clientTimezone:
           Intl.DateTimeFormat().resolvedOptions().timeZone || undefined,
@@ -1690,9 +1776,11 @@ export function TaskEditDialog({
 
     closeBlockedByOverflowRef.current = false;
 
-    const currentContent = flushEditorPendingRef.current();
+    const currentContent = normalizeTaskDescriptionSnapshot(
+      flushEditorPendingRef.current()
+    );
     const currentSerializedDescription =
-      serializeTaskDescriptionContent(currentContent) ?? null;
+      serializeTaskDescriptionPersistenceSnapshot(currentContent) ?? null;
 
     if (
       currentSerializedDescription &&
@@ -1707,6 +1795,15 @@ export function TaskEditDialog({
 
     if (currentSerializedDescription === initialSerializedDescription) {
       return true;
+    }
+
+    if (
+      !canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription,
+        guardState: descriptionPersistenceGuardRef.current,
+      })
+    ) {
+      return false;
     }
 
     const yjsState =
@@ -1728,6 +1825,11 @@ export function TaskEditDialog({
 
     if (didPersist) {
       persistedDescriptionRef.current = currentSerializedDescription;
+      descriptionPersistenceGuardRef.current =
+        createTaskDescriptionPersistenceGuardState({
+          persistedDescription: currentSerializedDescription,
+          trustPersistedDescription: true,
+        });
     }
 
     return didPersist;
@@ -1745,9 +1847,11 @@ export function TaskEditDialog({
       return false;
     }
 
-    const currentContent = flushEditorPendingRef.current();
+    const currentContent = normalizeTaskDescriptionSnapshot(
+      flushEditorPendingRef.current()
+    );
     const currentSerializedDescription =
-      serializeTaskDescriptionContent(currentContent) ?? null;
+      serializeTaskDescriptionPersistenceSnapshot(currentContent) ?? null;
 
     if (
       currentSerializedDescription &&
@@ -2554,6 +2658,7 @@ export function TaskEditDialog({
                       onImageUpload={imageUploadHandler}
                       onEditorReady={handleEditorReady}
                       onConvertToTask={handleConvertToTask}
+                      onDescriptionSnapshotChange={recordDescriptionSnapshot}
                       onDescriptionStorageLengthChange={
                         handleDescriptionStorageLengthChange
                       }
