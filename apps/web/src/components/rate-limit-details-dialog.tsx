@@ -1,30 +1,30 @@
 'use client';
 
-import {
-  AlertTriangle,
-  Copy,
-  Loader2,
-  Shield,
-} from '@tuturuuu/icons/lucide-static';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import { AlertTriangle } from '@tuturuuu/icons/lucide-static';
+import { submitRateLimitAppeal } from '@tuturuuu/internal-api';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { unblockBlockedIp } from '@tuturuuu/internal-api/infrastructure';
-import { Button } from '@tuturuuu/ui/button';
+import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type RateLimitDebugDetails,
   setRateLimitDetailsHandler,
 } from '@/lib/fetch-interceptor';
+import {
+  RateLimitAppealRequestSection,
+  RateLimitDetailsDialogFooterActions,
+} from './rate-limit-details-dialog-actions';
 import {
   buildRateLimitDetailSections,
   buildRateLimitHeaderRows,
@@ -36,12 +36,33 @@ import {
 export function RateLimitDetailsDialog() {
   const t = useTranslations('common');
   const [details, setDetails] = useState<RateLimitDebugDetails | null>(null);
+  const [appealMessage, setAppealMessage] = useState('');
+  const [appealReliefExpiresAt, setAppealReliefExpiresAt] = useState<
+    string | null
+  >(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string>();
   const [isClearingIpBlock, setIsClearingIpBlock] = useState(false);
+  const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
   const [open, setOpen] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const turnstileState = useMemo(
+    () => resolveTurnstileClientState({ requireInDevWhenConfigured: true }),
+    []
+  );
+
+  const resetAppealState = useCallback(() => {
+    setAppealMessage('');
+    setAppealReliefExpiresAt(null);
+    setCaptchaError(null);
+    setCaptchaToken(undefined);
+    turnstileRef.current?.reset();
+  }, []);
 
   useEffect(() => {
     const openDetails = (nextDetails: RateLimitDebugDetails) => {
       setDetails(nextDetails);
+      resetAppealState();
       setOpen(true);
     };
     const listener = (event: Event) => {
@@ -55,7 +76,7 @@ export function RateLimitDetailsDialog() {
       setRateLimitDetailsHandler(null);
       window.removeEventListener('tuturuuu:rate-limit-details', listener);
     };
-  }, []);
+  }, [resetAppealState]);
 
   const sections = useMemo(
     () =>
@@ -81,6 +102,18 @@ export function RateLimitDetailsDialog() {
       (isStaffDebugBypass || isTuturuuuStaffEmail)
     );
   }, [details]);
+  const canRequestReview = useMemo(() => {
+    if (!details?.clientIp || !details.userId || canClearIpBlock) {
+      return false;
+    }
+
+    return details.headers['X-Proxy-Block-Reason'] === 'ip-already-blocked';
+  }, [canClearIpBlock, details]);
+  const isAppealSubmitDisabled =
+    isSubmittingAppeal ||
+    !details ||
+    (turnstileState.isRequired &&
+      (!turnstileState.canRenderWidget || !captchaToken));
 
   const copyDetails = async () => {
     if (!details) return;
@@ -90,6 +123,35 @@ export function RateLimitDetailsDialog() {
       toast.success(t('rate_limited_copied'));
     } catch {
       toast.error(t('rate_limited_copy_failed'));
+    }
+  };
+
+  const requestReview = async () => {
+    if (!details || !canRequestReview || isAppealSubmitDisabled) {
+      return;
+    }
+
+    setIsSubmittingAppeal(true);
+    try {
+      const diagnostics = JSON.parse(formatDetailsForCopy(details));
+      const result = await submitRateLimitAppeal({
+        diagnostics,
+        message: appealMessage.trim() || undefined,
+        turnstileToken: captchaToken,
+      });
+      setAppealReliefExpiresAt(result.temporaryReliefExpiresAt);
+      toast.success(t('rate_limited_appeal_success'));
+      turnstileRef.current?.reset();
+      setCaptchaToken(undefined);
+    } catch (error) {
+      toast.error(t('rate_limited_appeal_failed'), {
+        description:
+          error instanceof InternalApiError
+            ? error.message
+            : t('rate_limited_appeal_failed_description'),
+      });
+    } finally {
+      setIsSubmittingAppeal(false);
     }
   };
 
@@ -150,6 +212,26 @@ export function RateLimitDetailsDialog() {
             </div>
           ) : null}
 
+          {canRequestReview ? (
+            <RateLimitAppealRequestSection
+              appealMessage={appealMessage}
+              appealReliefExpiresAt={appealReliefExpiresAt}
+              captchaError={captchaError}
+              onCaptchaError={() => {
+                setCaptchaError(t('rate_limited_appeal_turnstile_failed'));
+                setCaptchaToken(undefined);
+              }}
+              onCaptchaExpire={() => setCaptchaToken(undefined)}
+              onCaptchaSuccess={(token) => {
+                setCaptchaError(null);
+                setCaptchaToken(token);
+              }}
+              onMessageChange={setAppealMessage}
+              turnstileRef={turnstileRef}
+              turnstileState={turnstileState}
+            />
+          ) : null}
+
           <div className="space-y-5">
             {sections.map((section) => (
               <RateLimitDetailSection
@@ -172,42 +254,17 @@ export function RateLimitDetailsDialog() {
           </div>
         </div>
 
-        <DialogFooter className="flex-wrap gap-2 border-border border-t bg-background px-4 py-3 max-sm:gap-2 sm:px-6">
-          {canClearIpBlock ? (
-            <Button
-              aria-label={t('rate_limited_clear_ip_block')}
-              disabled={isClearingIpBlock}
-              onClick={clearIpBlock}
-              type="button"
-              variant="secondary"
-            >
-              {isClearingIpBlock ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Shield className="h-4 w-4" />
-              )}
-              {isClearingIpBlock
-                ? t('rate_limited_clear_ip_block_loading')
-                : t('rate_limited_clear_ip_block')}
-            </Button>
-          ) : null}
-          <Button
-            aria-label={t('rate_limited_copy_details')}
-            onClick={copyDetails}
-            type="button"
-          >
-            <Copy className="h-4 w-4" />
-            {t('rate_limited_copy_details')}
-          </Button>
-          <Button
-            aria-label={t('close')}
-            onClick={() => setOpen(false)}
-            type="button"
-            variant="outline"
-          >
-            {t('close')}
-          </Button>
-        </DialogFooter>
+        <RateLimitDetailsDialogFooterActions
+          canClearIpBlock={canClearIpBlock}
+          canRequestReview={canRequestReview}
+          isAppealSubmitDisabled={isAppealSubmitDisabled}
+          isClearingIpBlock={isClearingIpBlock}
+          isSubmittingAppeal={isSubmittingAppeal}
+          onClearIpBlock={clearIpBlock}
+          onClose={() => setOpen(false)}
+          onCopyDetails={copyDetails}
+          onRequestReview={requestReview}
+        />
       </DialogContent>
     </Dialog>
   );

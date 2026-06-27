@@ -277,6 +277,12 @@ function buildInfrastructureRouteItems({
       keywords: ['Infrastructure', 'Rate Limits'],
     },
     {
+      name: 'infrastructure_rate_limit_appeals',
+      label: t('infrastructure-tabs.rate_limit_appeals'),
+      icon: Shield,
+      keywords: ['Infrastructure', 'Rate Limit Appeals', 'Unblock'],
+    },
+    {
       name: 'infrastructure_otp_limits',
       label: t('infrastructure-tabs.otp_limits'),
       icon: Keyboard,

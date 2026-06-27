@@ -30,6 +30,12 @@ Trust never bypasses active user suspension, active IP blocks, sensitive auth
 route protections, workspace-secret hard overrides, or severe backend abuse
 cascades.
 
+One exception exists for active IP blocks: an authenticated user who passes
+Turnstile through `/api/v1/rate-limit-appeals` can receive a short Redis relief
+key scoped to the same browser session and `ip:<address>`. The relief only lets
+that session continue while admins review the appeal; it does not clear the
+global `blocked_ips` row or help unrelated users behind the same IP.
+
 ## API Abuse IP Blocks
 
 Session-authenticated routes may defer proxy-side `api_abuse` IP blocks only
@@ -128,6 +134,48 @@ Fix read amplification in the app first (batch per-row table fetches server-side
 so one page load costs a few reads, not dozens); the location uplift is
 defense-in-depth for genuinely dense, legitimate locations.
 
+## Trusted-Workspace Uplift
+
+Admins can also raise limits for a legitimate high-volume workspace from
+Infrastructure -> Rate Limits by creating a `workspace` subject rule:
+
+- `subject_type`: `workspace`
+- `subject_key`: `workspace:<workspace_uuid>`
+- `tier`: `trusted`
+- `limit_mode`: `inherit_multiplier`
+- `trust_multiplier`: start at `3`
+- `expires_at`: prefer 30-90 days
+
+Workspace rules are enforced at the edge for workspace-scoped API reads and are
+visible in the Rate Limits admin center. They are safer than globally unblocking
+or uplifting a noisy IP when many unrelated organizations may share that public
+address. Keep them time-bound and review live usage before renewing.
+
+## Rate-Limit Appeals
+
+When the details dialog shows `X-Proxy-Block-Reason: ip-already-blocked`, the
+request is being rejected by an active hard IP block. Raising route limits alone
+will not unblock that user. Admins should first inspect Infrastructure ->
+Blocked IPs and Abuse Intelligence, then clear the block if it is a false
+positive.
+
+Legitimate authenticated users can submit a review request from the rate-limit
+details dialog. The submission route is the only route allowed through an active
+IP block, and it still requires:
+
+- an authenticated session cookie
+- a valid Turnstile token
+- bounded sanitized diagnostics from the dialog
+- a low per-user/IP appeal throttle
+
+Submitting an appeal writes `rate_limit_appeals` and grants only temporary
+session+IP relief. From Infrastructure -> Rate Limit Appeals, admins can approve,
+reject, or close the appeal. Approval clears the active IP block and, by
+default, creates a time-bound trusted workspace rule with `3x` multiplier for 30
+days. Admins can edit the workspace ID, multiplier, and expiry before approval,
+or create more specific IP/CIDR/user rules manually from Infrastructure -> Rate
+Limits.
+
 ## Step-Up Challenges
 
 Browser mutations with medium risk should require Turnstile through the existing
@@ -176,6 +224,11 @@ Abuse Intelligence for active IP blocks or abuse events with `api_abuse` or
 false-positive block, reset affected counters, or add a time-bound IP/CIDR trust
 or rate-limit uplift. Do not relax the per-email OTP cooldown or failed-attempt
 protections.
+
+If the copied details include `limit.proxyBlockReason =
+ip-already-blocked`, route-limit tuning is secondary. Clear the active block or
+approve the user's Rate Limit Appeal first, then decide whether the root cause
+needs a trusted workspace, IP/CIDR uplift, or app-level batching fix.
 
 Manual overrides require a reason and are written to the audit signal stream.
 Prefer expiry-bound overrides for trust and watch decisions so stale operational

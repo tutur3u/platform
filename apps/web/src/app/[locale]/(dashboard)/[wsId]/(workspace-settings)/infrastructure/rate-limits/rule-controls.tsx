@@ -67,9 +67,9 @@ export function RateLimitRuleDialog({
   const t = useTranslations('rate-limits');
   const [open, setOpen] = useState(false);
   const [subjectType, setSubjectType] =
-    useState<AbuseReputationSubjectType>('user');
+    useState<AbuseReputationSubjectType>('workspace');
   const [subjectKey, setSubjectKey] = useState('');
-  const [tier, setTier] = useState<AbuseRiskTier>('standard');
+  const [tier, setTier] = useState<AbuseRiskTier>('trusted');
   const [limitMode, setLimitMode] =
     useState<RateLimitMode>('inherit_multiplier');
   const [multiplier, setMultiplier] = useState('3');

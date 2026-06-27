@@ -5,6 +5,7 @@ import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
 import {
   type CachedTrustEntry,
   getCachedTrustEntries,
+  hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
 import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
@@ -256,6 +257,20 @@ const OTP_VERIFY_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const RATE_LIMIT_APPEAL_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig(
+      'minute',
+      '1 m',
+      1,
+      'API_PROXY_RATE_LIMIT_APPEAL_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 3, 'API_PROXY_RATE_LIMIT_APPEAL_LIMIT_HOUR'),
+    createConfig('day', '1 d', 10, 'API_PROXY_RATE_LIMIT_APPEAL_LIMIT_DAY'),
+  ],
+};
+
 const CRON_RATE_LIMITS: RateLimitProfile = {
   get: [
     createConfig('minute', '1 m', 10, 'API_PROXY_CRON_READ_LIMIT_MINUTE'),
@@ -429,7 +444,19 @@ function isWorkspaceDashboardRead(req: NextRequest) {
   );
 }
 
+function isRateLimitAppealSubmission(req: NextRequest) {
+  return (
+    req.method === 'POST' &&
+    /^\/api\/v1\/rate-limit-appeals\/?$/u.test(req.nextUrl.pathname)
+  );
+}
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
+  {
+    key: 'rate-limit-appeal',
+    matches: isRateLimitAppealSubmission,
+    rateLimits: RATE_LIMIT_APPEAL_RATE_LIMITS,
+  },
   {
     key: 'cron',
     matches: (req) =>
@@ -915,6 +942,13 @@ async function hashStableSubjectEdge(value: string): Promise<string> {
     .slice(0, 24);
 }
 
+export async function buildProxySessionSubjectKey(
+  cookieName: string,
+  cookieValue: string
+): Promise<string> {
+  return `session:${await hashStableSubjectEdge(`${cookieName}:${cookieValue}`)}`;
+}
+
 function parseCookieHeaderEdge(
   cookieHeader: string | null
 ): Array<{ name: string; value: string }> {
@@ -952,6 +986,19 @@ function getSessionAuthCookie(
         GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookie.name)
     ) ?? null
   );
+}
+
+export async function getProxySessionSubjectKeyFromCookieHeader(
+  cookieHeader: string | null
+): Promise<string | null> {
+  const cookie =
+    parseCookieHeaderEdge(cookieHeader).find(
+      (entry) =>
+        entry.name === 'tuturuuu_app_session' ||
+        GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(entry.name)
+    ) ?? null;
+
+  return cookie ? buildProxySessionSubjectKey(cookie.name, cookie.value) : null;
 }
 
 /**
@@ -1013,7 +1060,7 @@ async function resolveProxyIdentity(
   const normalizedIp = ip && ip !== 'unknown' ? ip : null;
   const sessionCookie = getSessionAuthCookie(req);
   const sessionKey = sessionCookie
-    ? `session:${await hashStableSubjectEdge(`${sessionCookie.name}:${sessionCookie.value}`)}`
+    ? await buildProxySessionSubjectKey(sessionCookie.name, sessionCookie.value)
     : null;
 
   return {
@@ -1246,22 +1293,36 @@ export async function guardApiProxyRequest(
     const callerClass = getCallerClass(req);
     const ip = extractIPFromRequest(req.headers);
     const identity = await resolveProxyIdentity(req, ip);
+    const routePolicy = getRoutePolicy(req, routePolicies);
 
     if (ip !== 'unknown') {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-        );
+        const hasTemporaryRelief =
+          routePolicy.key === 'rate-limit-appeal' ||
+          (identity.sessionKey && identity.ipKey
+            ? await hasCachedIpBlockAppealRelief(
+                identity.sessionKey,
+                identity.ipKey
+              )
+            : false);
 
-        return buildRateLimitResponse(429, retryAfter, {
-          'X-Proxy-Block-Reason': 'ip-already-blocked',
-        });
+        if (hasTemporaryRelief) {
+          // Keep processing: appeal submissions and matching temporary relief
+          // still go through the route limiter below.
+        } else {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+          );
+
+          return buildRateLimitResponse(429, retryAfter, {
+            'X-Proxy-Block-Reason': 'ip-already-blocked',
+          });
+        }
       }
     }
 
-    const routePolicy = getRoutePolicy(req, routePolicies);
     const isRead = req.method === 'GET' || req.method === 'HEAD';
 
     // Resolve server-verified session keying for reads and mutations, but apply

@@ -4418,6 +4418,18 @@
     "random_generator": "Trình tạo ngẫu nhiên",
     "random_generator-description": "Tạo ID, token, khóa API và mật khẩu bảo mật ngay trong trình duyệt.",
     "randomize_color": "Chọn màu ngẫu nhiên",
+    "rate_limited_appeal_description": "Yêu cầu quản trị viên xem xét trạng thái chặn này. Sau khi vượt Turnstile, phiên trình duyệt và IP này sẽ có quyền truy cập tạm thời ngắn trong lúc họ kiểm tra.",
+    "rate_limited_appeal_failed": "Không thể gửi yêu cầu xem xét",
+    "rate_limited_appeal_failed_description": "Yêu cầu xem xét chưa được gửi.",
+    "rate_limited_appeal_message_label": "Bối cảnh",
+    "rate_limited_appeal_message_placeholder": "Cho quản trị viên biết vì sao lưu lượng này là hợp lệ",
+    "rate_limited_appeal_review_state": "Đã gửi yêu cầu xem xét. Quyền truy cập tạm thời hết hạn lúc {expiresAt}.",
+    "rate_limited_appeal_submit": "Yêu cầu xem xét",
+    "rate_limited_appeal_submitting": "Đang gửi...",
+    "rate_limited_appeal_success": "Đã gửi yêu cầu xem xét",
+    "rate_limited_appeal_title": "Yêu cầu quản trị viên xem xét",
+    "rate_limited_appeal_turnstile_failed": "Xác minh thất bại. Vui lòng thử lại Turnstile.",
+    "rate_limited_appeal_turnstile_not_configured": "Turnstile chưa được cấu hình cho yêu cầu xem xét.",
     "rate_limited_clear_ip_block": "Xóa chặn IP",
     "rate_limited_clear_ip_block_failed": "Không thể xóa chặn IP",
     "rate_limited_clear_ip_block_failed_description": "Không thể xóa trạng thái chặn IP. Hãy thử lại từ trang quản trị IP bị chặn.",
@@ -7964,6 +7976,7 @@
     "overview": "Tổng quan",
     "post_email_queue": "Hàng Đợi Email Bài Viết",
     "push_notifications": "Thông báo đẩy",
+    "rate_limit_appeals": "Yêu cầu xem xét giới hạn",
     "rate_limits": "Giới hạn tần suất",
     "realtime": "Thời gian thực",
     "storage": "Lưu trữ",
@@ -11101,8 +11114,55 @@
     },
     "title": "Trình tạo ngẫu nhiên bảo mật"
   },
+  "rate-limit-appeals": {
+    "actions": {
+      "approve": "Duyệt",
+      "close": "Đóng",
+      "open_blocked_ip": "Mở IP bị chặn",
+      "open_live_usage": "Mở mức dùng trực tiếp",
+      "open_rate_limits": "Mở Giới hạn tần suất",
+      "reject": "Từ chối",
+      "retry": "Thử lại"
+    },
+    "description": "Xem xét yêu cầu từ người dùng hợp lệ, xóa chặn IP cứng và tạo mức nâng giới hạn cho không gian làm việc tin cậy.",
+    "diagnostics": "Chẩn đoán đã ghi nhận",
+    "empty": "Không có yêu cầu nào khớp bộ lọc hiện tại.",
+    "error": {
+      "description": "Đã xảy ra lỗi khi tải yêu cầu xem xét giới hạn.",
+      "title": "Không thể tải yêu cầu"
+    },
+    "fields": {
+      "block_reason": "Lý do chặn",
+      "expires_days": "Hết hạn sau số ngày",
+      "multiplier": "Hệ số",
+      "relief_until": "Truy cập tạm thời đến",
+      "review_note": "Ghi chú xem xét",
+      "workspace": "Không gian làm việc",
+      "workspace_id": "ID không gian làm việc"
+    },
+    "filters": {
+      "all": "Tất cả trạng thái",
+      "search": "Tìm IP hoặc ID không gian"
+    },
+    "statuses": {
+      "approved": "Đã duyệt",
+      "closed": "Đã đóng",
+      "pending": "Đang chờ",
+      "rejected": "Đã từ chối"
+    },
+    "title": "Yêu cầu xem xét giới hạn",
+    "toasts": {
+      "approve_failed": "Không thể duyệt yêu cầu",
+      "approved": "Đã duyệt yêu cầu",
+      "close_failed": "Không thể đóng yêu cầu",
+      "closed": "Đã đóng yêu cầu",
+      "reject_failed": "Không thể từ chối yêu cầu",
+      "rejected": "Đã từ chối yêu cầu"
+    }
+  },
   "rate-limits": {
     "actions": {
+      "open_appeals": "Mở yêu cầu xem xét",
       "retry": "Thử lại"
     },
     "description": "Quản lý giới hạn tần suất theo từng đối tượng — tăng, giảm, đặt giới hạn tuyệt đối hoặc bỏ giới hạn cho tài khoản, IP, vị trí và không gian làm việc.",

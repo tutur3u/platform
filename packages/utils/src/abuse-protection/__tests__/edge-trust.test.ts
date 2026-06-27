@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getClient: vi.fn(),
+  get: vi.fn(),
   mget: vi.fn(),
   set: vi.fn(),
 }));
@@ -13,6 +14,7 @@ vi.mock('../../upstash-rest', () => ({
 function mockRedisClient() {
   mocks.getClient.mockResolvedValue({
     mget: (...keys: string[]) => mocks.mget(...keys),
+    get: (key: string) => mocks.get(key),
     set: (key: string, value: unknown, options?: unknown) =>
       mocks.set(key, value, options),
   });
@@ -22,6 +24,7 @@ describe('edge-trust cache', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.getClient.mockReset();
+    mocks.get.mockReset();
     mocks.mget.mockReset();
     mocks.set.mockReset();
   });
@@ -254,5 +257,43 @@ describe('edge-trust cache', () => {
     expect(mocks.set).toHaveBeenCalledWith('trust:mult:session:aaa', 3, {
       ex: 900,
     });
+  });
+
+  it('writes and reads a session plus IP scoped appeal relief key', async () => {
+    mockRedisClient();
+    mocks.set.mockResolvedValue('OK');
+    mocks.get.mockResolvedValue('1');
+
+    const {
+      buildIpBlockAppealReliefKey,
+      hasCachedIpBlockAppealRelief,
+      setCachedIpBlockAppealRelief,
+    } = await import('../edge-trust.js');
+
+    expect(buildIpBlockAppealReliefKey('session:abc', 'ip:203.0.113.10')).toBe(
+      'trust:appeal-relief:session:abc:ip:203.0.113.10'
+    );
+
+    await setCachedIpBlockAppealRelief('session:abc', 'ip:203.0.113.10', 600);
+    expect(mocks.set).toHaveBeenCalledWith(
+      'trust:appeal-relief:session:abc:ip:203.0.113.10',
+      '1',
+      { ex: 600 }
+    );
+
+    await expect(
+      hasCachedIpBlockAppealRelief('session:abc', 'ip:203.0.113.10')
+    ).resolves.toBe(true);
+  });
+
+  it('fails closed for appeal relief when Redis is unavailable', async () => {
+    mockRedisClient();
+    mocks.get.mockRejectedValue(new Error('redis down'));
+
+    const { hasCachedIpBlockAppealRelief } = await import('../edge-trust.js');
+
+    await expect(
+      hasCachedIpBlockAppealRelief('session:abc', 'ip:203.0.113.10')
+    ).resolves.toBe(false);
   });
 });

@@ -32,6 +32,7 @@ import { InfrastructureStressTestsClient } from '../../app/[locale]/(dashboard)/
 import { ObservabilityDashboardClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/_components/observability-dashboard-client';
 import OtpLimitResetClient from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/otp-limits/client';
 import { PushTestForm } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/push-notifications/push-test-form';
+import { RateLimitAppealsClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/rate-limit-appeals/rate-limit-appeals-client';
 import { RateLimitsClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/rate-limits/rate-limits-client';
 import { RealtimeAnalyticsClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/realtime/_components/realtime-analytics-client';
 import {
@@ -84,6 +85,7 @@ export const INFRASTRUCTURE_NATIVE_TABS = new Set([
   'infrastructure_overview',
   'infrastructure_post_email_queue',
   'infrastructure_push_notifications',
+  'infrastructure_rate_limit_appeals',
   'infrastructure_rate_limits',
   'infrastructure_realtime',
   'infrastructure_timezones',
@@ -263,6 +265,9 @@ function InfrastructureNativePanelBody({
   }
   if (activeTab === 'infrastructure_rate_limits') {
     return <RateLimitsClient canManage />;
+  }
+  if (activeTab === 'infrastructure_rate_limit_appeals') {
+    return <RateLimitAppealsClient canManage wsId={wsId} />;
   }
   if (activeTab === 'infrastructure_realtime') {
     return <RealtimeAnalyticsClient wsId={wsId} />;

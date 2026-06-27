@@ -11,10 +11,19 @@ import { RateLimitDetailsDialog } from '@/components/rate-limit-details-dialog';
 import type { RateLimitDebugDetails } from '@/lib/fetch-interceptor';
 
 const mocks = vi.hoisted(() => ({
+  submitRateLimitAppeal: vi.fn(),
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
   unblockBlockedIp: vi.fn(),
   writeText: vi.fn(),
+}));
+
+vi.mock('@marsidev/react-turnstile', () => ({
+  Turnstile: ({ onSuccess }: { onSuccess: (token: string) => void }) => (
+    <button onClick={() => onSuccess('captcha-token')} type="button">
+      Turnstile
+    </button>
+  ),
 }));
 
 vi.mock('@tuturuuu/icons/lucide-static', () => ({
@@ -40,8 +49,20 @@ vi.mock('@tuturuuu/icons/lucide-static', () => ({
   ),
 }));
 
+vi.mock('@tuturuuu/internal-api', () => ({
+  submitRateLimitAppeal: mocks.submitRateLimitAppeal,
+}));
+
 vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
   unblockBlockedIp: mocks.unblockBlockedIp,
+}));
+
+vi.mock('@tuturuuu/turnstile/client', () => ({
+  resolveTurnstileClientState: () => ({
+    canRenderWidget: true,
+    isRequired: true,
+    siteKey: 'site-key',
+  }),
 }));
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
@@ -85,6 +106,23 @@ vi.mock('next-intl', () => ({
         'The IP block could not be cleared.',
       rate_limited_clear_ip_block_loading: 'Clearing...',
       rate_limited_clear_ip_block_success: 'IP block cleared',
+      rate_limited_appeal_description:
+        'Ask admins to review this block and grant short temporary access while they investigate.',
+      rate_limited_appeal_failed: 'Failed to submit review request',
+      rate_limited_appeal_failed_description:
+        'The review request could not be submitted.',
+      rate_limited_appeal_message_label: 'Context',
+      rate_limited_appeal_message_placeholder:
+        'Tell admins why this traffic is legitimate',
+      rate_limited_appeal_review_state:
+        'Review requested. Temporary access expires at {expiresAt}.',
+      rate_limited_appeal_submit: 'Request review',
+      rate_limited_appeal_submitting: 'Requesting...',
+      rate_limited_appeal_success: 'Review request submitted',
+      rate_limited_appeal_title: 'Request admin review',
+      rate_limited_appeal_turnstile_failed: 'Verification failed',
+      rate_limited_appeal_turnstile_not_configured:
+        'Turnstile is not configured.',
       rate_limited_copied: 'Rate-limit details copied',
       rate_limited_copy_details: 'Copy details',
       rate_limited_copy_failed: 'Failed to copy rate-limit details',
@@ -170,6 +208,11 @@ describe('RateLimitDetailsDialog', () => {
   beforeEach(() => {
     mocks.toastError.mockClear();
     mocks.toastSuccess.mockClear();
+    mocks.submitRateLimitAppeal.mockReset().mockResolvedValue({
+      appeal: { id: 'appeal-1' },
+      coalesced: false,
+      temporaryReliefExpiresAt: '2026-06-18T08:15:00.000Z',
+    });
     mocks.unblockBlockedIp.mockReset().mockResolvedValue({
       message: 'IP unblocked successfully',
     });
@@ -290,6 +333,56 @@ describe('RateLimitDetailsDialog', () => {
     expect(
       screen.queryByRole('button', { name: /clear ip block/i })
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /request review/i })
+    ).toBeVisible();
+  });
+
+  it('submits a non-staff rate-limit appeal with sanitized diagnostics and Turnstile', async () => {
+    render(<RateLimitDetailsDialog />);
+
+    await act(async () => {});
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tuturuuu:rate-limit-details', {
+          detail: {
+            ...details,
+            debugBypass: undefined,
+            userEmail: 'member@example.com',
+          },
+        })
+      );
+    });
+
+    await screen.findByRole('dialog');
+    fireEvent.change(screen.getByLabelText('Context'), {
+      target: { value: 'This is a classroom attendance session.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Turnstile' }));
+    fireEvent.click(screen.getByRole('button', { name: /request review/i }));
+
+    await waitFor(() =>
+      expect(mocks.submitRateLimitAppeal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'This is a classroom attendance session.',
+          turnstileToken: 'captcha-token',
+        })
+      )
+    );
+
+    const payload = mocks.submitRateLimitAppeal.mock.calls[0]?.[0] as {
+      diagnostics: {
+        identity: { clientIp: string; userEmail: string };
+        request: { requestPath: string };
+      };
+    };
+    expect(payload.diagnostics.identity.clientIp).toBe('203.0.113.10');
+    expect(payload.diagnostics.identity.userEmail).toBe('member@example.com');
+    expect(payload.diagnostics.request.requestPath).toContain('[redacted]');
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Review request submitted');
+    expect(
+      screen.getByText(/Review requested. Temporary access expires at/i)
+    ).toBeVisible();
   });
 
   it('renders the server-observed IP for auth rate-limit diagnostics', async () => {

@@ -4418,6 +4418,18 @@
     "random_generator": "Random Generator",
     "random_generator-description": "Generate secure IDs, tokens, API keys, and passwords locally in your browser.",
     "randomize_color": "Randomize color",
+    "rate_limited_appeal_description": "Ask admins to review this block. Passing Turnstile grants short temporary access for this browser session and IP while they investigate.",
+    "rate_limited_appeal_failed": "Failed to submit review request",
+    "rate_limited_appeal_failed_description": "The review request could not be submitted.",
+    "rate_limited_appeal_message_label": "Context",
+    "rate_limited_appeal_message_placeholder": "Tell admins why this traffic is legitimate",
+    "rate_limited_appeal_review_state": "Review requested. Temporary access expires at {expiresAt}.",
+    "rate_limited_appeal_submit": "Request review",
+    "rate_limited_appeal_submitting": "Requesting...",
+    "rate_limited_appeal_success": "Review request submitted",
+    "rate_limited_appeal_title": "Request admin review",
+    "rate_limited_appeal_turnstile_failed": "Verification failed. Please retry the Turnstile challenge.",
+    "rate_limited_appeal_turnstile_not_configured": "Turnstile is not configured for review requests.",
     "rate_limited_clear_ip_block": "Clear IP block",
     "rate_limited_clear_ip_block_failed": "Failed to clear IP block",
     "rate_limited_clear_ip_block_failed_description": "The IP block could not be cleared. Try again from the Blocked IPs admin page.",
@@ -7964,6 +7976,7 @@
     "overview": "Overview",
     "post_email_queue": "Post Email Queue",
     "push_notifications": "Push Notifications",
+    "rate_limit_appeals": "Rate Limit Appeals",
     "rate_limits": "Rate Limits",
     "realtime": "Realtime",
     "storage": "Storage",
@@ -11101,8 +11114,55 @@
     },
     "title": "Secure random generator"
   },
+  "rate-limit-appeals": {
+    "actions": {
+      "approve": "Approve",
+      "close": "Close",
+      "open_blocked_ip": "Open Blocked IP",
+      "open_live_usage": "Open Live Usage",
+      "open_rate_limits": "Open Rate Limits",
+      "reject": "Reject",
+      "retry": "Retry"
+    },
+    "description": "Review legitimate-user requests, clear hard IP blocks, and create trusted workspace uplifts.",
+    "diagnostics": "Captured diagnostics",
+    "empty": "No appeals match the current filters.",
+    "error": {
+      "description": "Something went wrong loading rate-limit appeals.",
+      "title": "Failed to load appeals"
+    },
+    "fields": {
+      "block_reason": "Block reason",
+      "expires_days": "Expires in days",
+      "multiplier": "Multiplier",
+      "relief_until": "Temporary relief until",
+      "review_note": "Review note",
+      "workspace": "Workspace",
+      "workspace_id": "Workspace ID"
+    },
+    "filters": {
+      "all": "All statuses",
+      "search": "Search IP or workspace ID"
+    },
+    "statuses": {
+      "approved": "Approved",
+      "closed": "Closed",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "title": "Rate Limit Appeals",
+    "toasts": {
+      "approve_failed": "Failed to approve appeal",
+      "approved": "Appeal approved",
+      "close_failed": "Failed to close appeal",
+      "closed": "Appeal closed",
+      "reject_failed": "Failed to reject appeal",
+      "rejected": "Appeal rejected"
+    }
+  },
   "rate-limits": {
     "actions": {
+      "open_appeals": "Open Appeals",
       "retry": "Retry"
     },
     "description": "Manage per-subject rate limits — raise, lower, set absolute limits, or unlimit accounts, IPs, locations, and workspaces.",

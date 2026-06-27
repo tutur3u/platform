@@ -21,6 +21,7 @@ import {
 } from '../upstash-rest';
 
 const TRUST_CACHE_PREFIX = 'trust:mult';
+const APPEAL_RELIEF_CACHE_PREFIX = 'trust:appeal-relief';
 
 // Mirrors the DB CHECK constraint on trust_multiplier (> 0 AND <= 1000).
 const MIN_TRUST_MULTIPLIER = 0.35;
@@ -44,6 +45,7 @@ export interface CachedTrustEntry {
 }
 
 const DEFAULT_TRUST_CACHE_TTL_SECONDS = 3600; // 1 hour
+const DEFAULT_APPEAL_RELIEF_TTL_SECONDS = 15 * 60; // 15 minutes
 
 let trustRedisClient: UpstashRestRedisClient | null = null;
 let trustRedisInitialized = false;
@@ -62,6 +64,13 @@ export function getTrustCacheTtlSeconds(): number {
   return parsePositiveIntEnv(
     'EDGE_TRUST_CACHE_TTL_SECONDS',
     DEFAULT_TRUST_CACHE_TTL_SECONDS
+  );
+}
+
+export function getAppealReliefTtlSeconds(): number {
+  return parsePositiveIntEnv(
+    'RATE_LIMIT_APPEAL_RELIEF_TTL_SECONDS',
+    DEFAULT_APPEAL_RELIEF_TTL_SECONDS
   );
 }
 
@@ -84,6 +93,13 @@ async function getTrustRedisClient() {
  */
 export function buildTrustCacheKey(subjectKey: string): string {
   return `${TRUST_CACHE_PREFIX}:${subjectKey}`;
+}
+
+export function buildIpBlockAppealReliefKey(
+  sessionKey: string,
+  ipKey: string
+): string {
+  return `${APPEAL_RELIEF_CACHE_PREFIX}:${sessionKey}:${ipKey}`;
 }
 
 function clampMultiplier(value: number): number {
@@ -408,5 +424,56 @@ export async function writeVerifiedSessionCacheForSubjects(
     );
   } catch {
     // Cache writes must never block the protected request path.
+  }
+}
+
+/**
+ * Grants a short, session+IP-scoped bypass for the hard IP-block check. This is
+ * used only after an authenticated user passes Turnstile and submits an appeal;
+ * it does not clear the global IP block or elevate unrelated sessions.
+ */
+export async function setCachedIpBlockAppealRelief(
+  sessionKey: string,
+  ipKey: string,
+  ttlSeconds: number = getAppealReliefTtlSeconds()
+): Promise<void> {
+  if (!sessionKey || !ipKey) {
+    return;
+  }
+
+  try {
+    const redis = await getTrustRedisClient();
+    if (!redis) {
+      return;
+    }
+
+    await redis.set(buildIpBlockAppealReliefKey(sessionKey, ipKey), '1', {
+      ex: ttlSeconds,
+    });
+  } catch {
+    // Cache writes must never block the appeal path.
+  }
+}
+
+export async function hasCachedIpBlockAppealRelief(
+  sessionKey: string,
+  ipKey: string
+): Promise<boolean> {
+  if (!sessionKey || !ipKey) {
+    return false;
+  }
+
+  try {
+    const redis = await getTrustRedisClient();
+    if (!redis) {
+      return false;
+    }
+
+    return Boolean(
+      await redis.get<string>(buildIpBlockAppealReliefKey(sessionKey, ipKey))
+    );
+  } catch {
+    // Fail closed for the hard-block bypass.
+    return false;
   }
 }

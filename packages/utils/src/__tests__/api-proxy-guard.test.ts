@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   isBlocked: vi.fn(),
   validateEmoji: vi.fn(),
   getTrustEntries: vi.fn(),
+  hasAppealRelief: vi.fn(),
 }));
 
 vi.mock('@upstash/ratelimit', () => {
@@ -53,6 +54,8 @@ vi.mock('../abuse-protection/edge', () => ({
 
 vi.mock('../abuse-protection/edge-trust', () => ({
   getCachedTrustEntries: (keys: string[]) => mocks.getTrustEntries(keys),
+  hasCachedIpBlockAppealRelief: (sessionKey: string, ipKey: string) =>
+    mocks.hasAppealRelief(sessionKey, ipKey),
 }));
 
 vi.mock('../request-emoji-limit', () => ({
@@ -104,8 +107,10 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockReset();
     mocks.validateEmoji.mockReset();
     mocks.getTrustEntries.mockReset();
+    mocks.hasAppealRelief.mockReset();
     // Default: no cached trust (untrusted). Tests opt in by overriding.
     mocks.getTrustEntries.mockResolvedValue(new Map<string, { m: number }>());
+    mocks.hasAppealRelief.mockResolvedValue(false);
   });
 
   afterEach(() => {
@@ -160,6 +165,147 @@ describe('guardApiProxyRequest', () => {
 
     const response = await guardApiProxyRequest(
       makeRequest('/api/test', 'POST'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-Proxy-Block-Reason')).toBe(
+      'ip-already-blocked'
+    );
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
+  it('allows a blocked IP to submit the rate-limit appeal endpoint only', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 30_000),
+      reason: 'abuse',
+      blockLevel: 'temporary',
+    });
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 1,
+        remaining: 0,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 3,
+        remaining: 2,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 10,
+        remaining: 9,
+        reset: Date.now() + 15_000,
+      });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/rate-limit-appeals', 'POST', {
+        cookie: 'tuturuuu_app_session=session-value',
+      }),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.hasAppealRelief).not.toHaveBeenCalled();
+    expect(mocks.limit).toHaveBeenCalledTimes(3);
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 1,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:rate-limit-appeal:anonymous:mutate:minute'
+    );
+  });
+
+  it('allows a blocked IP through normal APIs only with matching temporary session relief', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 30_000),
+      reason: 'abuse',
+      blockLevel: 'temporary',
+    });
+    mocks.hasAppealRelief.mockResolvedValueOnce(true);
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 30,
+        remaining: 29,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 120,
+        remaining: 119,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 600,
+        remaining: 599,
+        reset: Date.now() + 15_000,
+      });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST', {
+        cookie: 'tuturuuu_app_session=session-value',
+      }),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.hasAppealRelief).toHaveBeenCalledWith(
+      expect.stringMatching(/^session:/),
+      'ip:1.2.3.4'
+    );
+    expect(mocks.limit).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps unrelated blocked sessions without temporary relief blocked', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 30_000),
+      reason: 'abuse',
+      blockLevel: 'temporary',
+    });
+    mocks.hasAppealRelief.mockResolvedValue(false);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST', {
+        cookie: 'tuturuuu_app_session=other-session',
+      }),
       {
         prefixBase: 'proxy:test:api',
       }

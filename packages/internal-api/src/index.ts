@@ -1174,6 +1174,7 @@ export {
   type WorkspaceUserLinkedPromotion,
   type WorkspaceUserReferralDiscount,
 } from './promotions';
+export * from './rate-limit-appeals';
 export * from './rate-limits';
 export {
   type CreateReportUploadUrlPayload,

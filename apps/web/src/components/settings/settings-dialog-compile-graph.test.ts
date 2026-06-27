@@ -127,6 +127,7 @@ const formerRouteOnlyEntries = [
   'infrastructure_overview',
   'infrastructure_post_email_queue',
   'infrastructure_push_notifications',
+  'infrastructure_rate_limit_appeals',
   'infrastructure_rate_limits',
   'infrastructure_realtime',
   'infrastructure_timezones',
