@@ -11,10 +11,12 @@ import {
   uploadWorkspaceTaskFile,
 } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskSuggestionTask } from '@tuturuuu/internal-api/tasks';
+import { getWorkspaceTaskHistory } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
+import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provider';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -30,8 +32,9 @@ import {
 } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Y from 'yjs';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
@@ -64,7 +67,14 @@ import {
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
 import { TaskSuggestionMenus } from './task-edit-dialog/components/task-suggestion-menus';
 import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
-import { fetchWorkspaceTaskDescription } from './task-edit-dialog/hooks/task-api';
+import {
+  buildRecoverableTaskDescriptionVersions,
+  type RecoverableTaskDescriptionVersion,
+} from './task-edit-dialog/description-versions';
+import {
+  fetchWorkspaceTaskDescription,
+  updateWorkspaceTaskDescription,
+} from './task-edit-dialog/hooks/task-api';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
 import { useSuggestionMenus } from './task-edit-dialog/hooks/use-suggestion-menus';
 import { useTaskChangeDetection } from './task-edit-dialog/hooks/use-task-change-detection';
@@ -85,6 +95,8 @@ import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
 import { PersonalOverridesSection } from './task-edit-dialog/personal-overrides-section';
 import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
+import { TaskDescriptionRestoreBanner } from './task-edit-dialog/task-description-restore-banner';
+import { TaskDescriptionVersionRestoreDialog } from './task-edit-dialog/task-description-version-restore-dialog';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
@@ -119,6 +131,7 @@ import {
   serializeTaskDescriptionPersistenceSnapshot,
   shouldPreserveNativeContextMenu,
   type TaskDescriptionPersistenceGuardState,
+  updateTaskDescriptionCaches,
 } from './task-edit-dialog/utils';
 import {
   resolveInlineTaskTargetList,
@@ -129,6 +142,11 @@ import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
 
 type AssigneeMemberSource = 'workspace' | 'board' | 'workspace-and-board';
+
+const EMPTY_TASK_DESCRIPTION_DOC: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+};
 
 export {
   type DialogHeaderInfo,
@@ -221,10 +239,12 @@ export function TaskEditDialog({
   const isCreateMode = mode === 'create';
   const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
   const pathname = usePathname();
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const t = useTranslations('common');
   const rootT = useTranslations();
   const dialogT = useTranslations('ws-task-boards.dialog');
+  const historyT = useTranslations('tasks.history');
   const { registerCloseRequestHandler } = useTaskDialogContext();
 
   // Access workspace tier for tier-aware collaboration settings (null outside the provider)
@@ -303,6 +323,10 @@ export function TaskEditDialog({
     );
   const taskRealtimeBroadcastRef = useRef<BoardBroadcastFn | null>(null);
   const [hasHydratedYjsState, setHasHydratedYjsState] = useState(false);
+  const [showDescriptionVersionsDialog, setShowDescriptionVersionsDialog] =
+    useState(false);
+  const [restoringDescriptionVersionId, setRestoringDescriptionVersionId] =
+    useState<string | null>(null);
 
   useEffect(() => {
     descriptionRef.current = formState.description;
@@ -548,6 +572,49 @@ export function TaskEditDialog({
     task?.id,
     synced,
   ]);
+
+  const { data: descriptionHistoryData } = useQuery({
+    queryKey: ['task-history', effectiveTaskWsId, task?.id, 'description'],
+    queryFn: async () => {
+      if (!task?.id) return null;
+
+      return getWorkspaceTaskHistory(effectiveTaskWsId, task.id, {
+        limit: 100,
+        changeType: 'field_updated',
+        fieldName: 'description',
+      });
+    },
+    enabled:
+      isOpen &&
+      !isCreateMode &&
+      !taskControlsDisabled &&
+      Boolean(effectiveTaskWsId) &&
+      Boolean(task?.id),
+    staleTime: 30 * 1000,
+  });
+
+  const recoverableDescriptionVersions = useMemo(
+    () =>
+      buildRecoverableTaskDescriptionVersions(
+        descriptionHistoryData?.history ?? []
+      ),
+    [descriptionHistoryData?.history]
+  );
+
+  const currentSerializedDescription = useMemo(
+    () =>
+      serializeTaskDescriptionPersistenceSnapshot(formState.description) ??
+      null,
+    [formState.description]
+  );
+
+  const latestRestorableDescriptionVersion = useMemo(() => {
+    const latestVersion = recoverableDescriptionVersions[0] ?? null;
+    if (!latestVersion) return null;
+    return latestVersion.description === currentSerializedDescription
+      ? null
+      : latestVersion;
+  }, [currentSerializedDescription, recoverableDescriptionVersions]);
 
   // Update user when props change
   useEffect(() => {
@@ -1112,6 +1179,135 @@ export function TaskEditDialog({
       currentLength === length ? currentLength : length
     );
   }, []);
+
+  const applyRestoredDescriptionToOpenEditor = useCallback(
+    ({
+      content,
+      yjsState,
+    }: {
+      content: JSONContent | null;
+      yjsState: number[] | null;
+    }) => {
+      const nextContent = content ?? EMPTY_TASK_DESCRIPTION_DOC;
+
+      const nextYjsState =
+        yjsState && yjsState.length > 0
+          ? Uint8Array.from(yjsState)
+          : doc && editorInstance?.schema
+            ? convertJsonContentToYjsState(nextContent, editorInstance.schema)
+            : null;
+
+      if (doc && nextYjsState) {
+        const syncOrigin = provider ?? SUPABASE_PROVIDER_SYNC_ORIGIN;
+        doc.transact(() => {
+          const fragment = doc.getXmlFragment('prosemirror');
+          if (fragment.length > 0) {
+            fragment.delete(0, fragment.length);
+          }
+        }, syncOrigin);
+        Y.applyUpdate(doc, nextYjsState, syncOrigin);
+        return;
+      }
+
+      editorInstance?.commands.setContent(nextContent, {
+        emitUpdate: false,
+      });
+    },
+    [doc, editorInstance, provider]
+  );
+
+  const handleRestoreDescriptionVersion = useCallback(
+    async (version: RecoverableTaskDescriptionVersion) => {
+      if (!task?.id) return;
+
+      setRestoringDescriptionVersionId(version.id);
+
+      try {
+        const response = await updateWorkspaceTaskDescription(
+          effectiveTaskWsId,
+          task.id,
+          { description: version.description }
+        );
+        const restoredDescription = response.description ?? version.description;
+        const restoredContent = normalizeTaskDescriptionSnapshot(
+          getDescriptionContent(restoredDescription)
+        );
+        const serializedRestoredDescription =
+          serializeTaskDescriptionPersistenceSnapshot(restoredContent) ?? null;
+
+        applyRestoredDescriptionToOpenEditor({
+          content: restoredContent,
+          yjsState: response.description_yjs_state,
+        });
+        formState.setDescription(restoredContent);
+        setDescriptionStorageLength(
+          getTaskDescriptionStorageLength(restoredContent)
+        );
+        persistedDescriptionRef.current = serializedRestoredDescription;
+        descriptionPersistenceGuardRef.current =
+          createTaskDescriptionPersistenceGuardState({
+            persistedDescription: serializedRestoredDescription,
+            trustPersistedDescription: true,
+          });
+        setHasHydratedYjsState(true);
+
+        updateTaskDescriptionCaches({
+          taskId: task.id,
+          descriptionString: serializedRestoredDescription,
+          boardId,
+          queryClient,
+        });
+
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['task-history', effectiveTaskWsId, task.id],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ['task', task.id],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ['task-snapshot', effectiveTaskWsId, task.id],
+          }),
+        ]);
+
+        const broadcast =
+          getActiveBroadcast() ?? taskRealtimeBroadcastRef.current;
+        broadcastTaskDescriptionUpsert({
+          taskId: task.id,
+          descriptionString: serializedRestoredDescription,
+          broadcast: broadcast ?? undefined,
+        });
+
+        onUpdate();
+        setShowDescriptionVersionsDialog(false);
+        toast.success(
+          historyT('description_restore_success', {
+            defaultValue: 'Description restored',
+          })
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : historyT('description_restore_failed', {
+                defaultValue: 'Failed to restore description',
+              })
+        );
+      } finally {
+        setRestoringDescriptionVersionId(null);
+      }
+    },
+    [
+      applyRestoredDescriptionToOpenEditor,
+      boardId,
+      effectiveTaskWsId,
+      formState.setDescription,
+      historyT,
+      onUpdate,
+      queryClient,
+      task?.id,
+    ]
+  );
 
   const isDescriptionOverLimit =
     descriptionStorageLength > MAX_TASK_DESCRIPTION_LENGTH;
@@ -2625,6 +2821,30 @@ export function TaskEditDialog({
                         />
                       )}
 
+                    {!taskControlsDisabled && !isCreateMode && (
+                      <TaskDescriptionRestoreBanner
+                        isRestoring={Boolean(restoringDescriptionVersionId)}
+                        latestVersion={latestRestorableDescriptionVersion}
+                        onRestoreLatest={() => {
+                          if (latestRestorableDescriptionVersion) {
+                            void handleRestoreDescriptionVersion(
+                              latestRestorableDescriptionVersion
+                            );
+                          }
+                        }}
+                        onViewVersions={() =>
+                          setShowDescriptionVersionsDialog(true)
+                        }
+                        t={
+                          historyT as (
+                            key: string,
+                            options?: { count?: number; defaultValue?: string }
+                          ) => string
+                        }
+                        versionCount={recoverableDescriptionVersions.length}
+                      />
+                    )}
+
                     <TaskDescriptionEditor
                       description={formState.description}
                       setDescription={formState.setDescription}
@@ -2738,7 +2958,13 @@ export function TaskEditDialog({
                             id: p.id,
                           })),
                         }}
+                        onRestoreDescriptionVersion={
+                          handleRestoreDescriptionVersion
+                        }
                         revertDisabled={true}
+                        restoringDescriptionVersionId={
+                          restoringDescriptionVersionId
+                        }
                       />
                     )}
                   </div>
@@ -2759,6 +2985,22 @@ export function TaskEditDialog({
           )}
         </DialogContent>
       </Dialog>
+
+      <TaskDescriptionVersionRestoreDialog
+        currentDescription={currentSerializedDescription}
+        isOpen={showDescriptionVersionsDialog}
+        locale={locale}
+        onClose={() => setShowDescriptionVersionsDialog(false)}
+        onRestoreVersion={handleRestoreDescriptionVersion}
+        restoringVersionId={restoringDescriptionVersionId}
+        t={
+          historyT as (
+            key: string,
+            options?: { count?: number; defaultValue?: string }
+          ) => string
+        }
+        versions={recoverableDescriptionVersions}
+      />
 
       <TaskDeleteDialog
         open={showDeleteConfirm}

@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const querySchema = z.object({
   limit: z
@@ -38,6 +39,42 @@ const querySchema = z.object({
     ])
     .nullish(),
 });
+
+type TaskHistoryRpcEntry = {
+  id: string;
+  task_id: string;
+  changed_by: string | null;
+  changed_at: string;
+  change_type: string | null;
+  field_name: string | null;
+  old_value: unknown;
+  new_value: unknown;
+  metadata: unknown;
+  user_id: string | null;
+  user_display_name: string | null;
+  user_avatar_url: string | null;
+};
+
+export function formatTaskHistoryEntry(entry: TaskHistoryRpcEntry) {
+  return {
+    id: entry.id,
+    task_id: entry.task_id,
+    changed_by: entry.changed_by ?? undefined,
+    changed_at: entry.changed_at,
+    change_type: entry.change_type ?? undefined,
+    field_name: entry.field_name ?? undefined,
+    old_value: entry.old_value,
+    new_value: entry.new_value,
+    metadata: entry.metadata,
+    user: entry.user_id
+      ? {
+          id: entry.user_id,
+          name: entry.user_display_name || 'Unknown',
+          avatar_url: entry.user_avatar_url,
+        }
+      : null,
+  };
+}
 
 /**
  * GET /api/v1/workspaces/[wsId]/tasks/[taskId]/history
@@ -95,7 +132,7 @@ export async function GET(
     );
 
     if (historyError) {
-      console.error('Error fetching task history:', historyError);
+      serverLogger.error('Error fetching task history:', historyError);
 
       // Handle specific error messages from the RPC
       if (historyError.message === 'Task not found') {
@@ -125,24 +162,9 @@ export async function GET(
     const taskName = history?.[0]?.task_name ?? 'Unknown Task';
 
     // Format the response
-    const formattedHistory = (history || []).map((entry) => ({
-      id: entry.id,
-      task_id: entry.task_id,
-      changed_by: entry.changed_by ?? undefined,
-      changed_at: entry.changed_at,
-      change_type: entry.change_type ?? undefined,
-      field_name: entry.field_name ?? undefined,
-      old_value: entry.old_value ?? undefined,
-      new_value: entry.new_value ?? undefined,
-      metadata: entry.metadata,
-      user: entry.user_id
-        ? {
-            id: entry.user_id,
-            name: entry.user_display_name || 'Unknown',
-            avatar_url: entry.user_avatar_url,
-          }
-        : null,
-    }));
+    const formattedHistory = (history || []).map((entry) =>
+      formatTaskHistoryEntry(entry as TaskHistoryRpcEntry)
+    );
 
     return NextResponse.json({
       history: formattedHistory,
@@ -155,7 +177,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error in task history API:', error);
+    serverLogger.error('Error in task history API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

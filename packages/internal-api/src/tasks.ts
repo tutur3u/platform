@@ -211,6 +211,13 @@ export interface ListWorkspaceTaskHistoryOptions {
   search?: string;
 }
 
+export interface GetWorkspaceTaskHistoryOptions {
+  limit?: number;
+  offset?: number;
+  changeType?: string;
+  fieldName?: string;
+}
+
 export interface WorkspaceTaskHistoryEntry {
   id: string;
   task_id: string;
@@ -243,6 +250,17 @@ export interface WorkspaceTaskHistoryResponse {
   count: number;
   page: number;
   pageSize: number;
+}
+
+export interface WorkspaceTaskHistoryForTaskResponse {
+  history: WorkspaceTaskHistoryEntry[];
+  count: number;
+  limit: number;
+  offset: number;
+  task: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface WorkspaceTaskUpdatePayload {
@@ -2295,6 +2313,27 @@ export async function listWorkspaceTaskHistory(
         change_type: options?.changeType,
         field_name: options?.fieldName,
         search: options?.search,
+      },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTaskHistory(
+  workspaceId: string,
+  taskId: string,
+  options?: GetWorkspaceTaskHistoryOptions,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceTaskHistoryForTaskResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/history`,
+    {
+      query: {
+        limit: options?.limit,
+        offset: options?.offset,
+        change_type: options?.changeType,
+        field_name: options?.fieldName,
       },
       cache: 'no-store',
     }

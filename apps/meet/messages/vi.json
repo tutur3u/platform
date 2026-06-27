@@ -4827,7 +4827,18 @@
     "history": {
       "assignee_added": "Đã giao người dùng",
       "assignee_removed": "Đã xóa người được giao",
+      "before_clear_version": "Trước khi xóa",
+      "compare_version": "So sánh",
+      "description_change_title": "Thay đổi mô tả",
+      "description_restore_banner_description": "Nội dung hiện tại khác với phiên bản đã theo dõi mới nhất. Khôi phục hoặc so sánh tất cả phiên bản đã theo dõi.",
+      "description_restore_banner_title": "Có phiên bản mô tả đã theo dõi",
+      "description_restore_failed": "Không thể khôi phục mô tả",
+      "description_restore_success": "Đã khôi phục mô tả",
+      "description_version_no_preview": "Không có xem trước văn bản",
+      "description_versions_description": "So sánh các phiên bản mô tả đã theo dõi và khôi phục phiên bản nên là hiện tại.",
+      "description_versions_title": "Phiên bản mô tả",
       "empty": "Không có lịch sử cho nhiệm vụ này",
+      "empty_description_value": "Trống hoặc không thể khôi phục",
       "error": "Không thể tải lịch sử nhiệm vụ",
       "field_updated": {
         "completed": "Đã thay đổi trạng thái hoàn thành",
@@ -4841,10 +4852,22 @@
       },
       "label_added": "Đã thêm nhãn",
       "label_removed": "Đã xóa nhãn",
+      "latest_version": "Mới nhất",
+      "no_recoverable_description_versions": "Không tìm thấy phiên bản mô tả có thể khôi phục trong lịch sử.",
+      "previous_description_value": "Trước",
       "project_linked": "Đã liên kết dự án",
       "project_unlinked": "Đã hủy liên kết dự án",
+      "restore_from_change": "Khôi phục từ thay đổi này",
+      "restore_latest_tracked": "Khôi phục bản mới nhất",
+      "restore_previous_description": "Khôi phục bản trước",
+      "restore_resulting_description": "Khôi phục bản sau",
+      "restore_version": "Khôi phục",
+      "resulting_description_value": "Sau",
+      "tracked_by_user": "Được theo dõi bởi",
       "unknown_change": "Đã thực hiện thay đổi",
-      "unknown_user": "Người dùng không xác định"
+      "unknown_user": "Người dùng không xác định",
+      "view_description_diff": "Xem so sánh",
+      "view_description_versions": "Xem phiên bản"
     }
   },
   "team-tabs": {
