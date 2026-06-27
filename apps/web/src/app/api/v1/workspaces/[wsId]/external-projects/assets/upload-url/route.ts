@@ -5,10 +5,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { WORKSPACE_STORAGE_PROVIDER_SUPABASE } from '@/lib/workspace-storage-config';
 import {
   createWorkspaceStorageUploadPayload,
-  resolveWorkspaceStorageProvider,
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
@@ -186,19 +184,6 @@ export async function POST(
     });
 
     if (!target.ok) return target.response;
-
-    const storageProvider = await resolveWorkspaceStorageProvider(
-      access.normalizedWorkspaceId
-    );
-    if (storageProvider.provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
-      return NextResponse.json(
-        {
-          error:
-            'Direct upload is required for Supabase-backed external assets.',
-        },
-        { status: 409 }
-      );
-    }
 
     const uploadPayload = await createWorkspaceStorageUploadPayload(
       access.normalizedWorkspaceId,
