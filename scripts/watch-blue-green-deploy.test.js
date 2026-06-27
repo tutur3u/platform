@@ -121,6 +121,7 @@ const {
   getWatcherStartupComposeEnv,
   hasPersistedPendingDeployRequest,
   handoffLegacyWatcherToTargetProject,
+  recoverDownComposeServices,
   writePendingDeployRequest,
   writeWatchStatus,
 } = require('./watch-blue-green-deploy.js');
@@ -204,6 +205,45 @@ function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
     stderr,
     stdout,
   };
+}
+
+function dockerInspectHealthStatusKey(containerId) {
+  return `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} ${containerId}`;
+}
+
+function addHealthyComposeServiceRecoveryResponses(
+  responses,
+  { activeColor = 'green' } = {}
+) {
+  const serviceContainerIds = {
+    backend: 'backend-123',
+    [`hive-${activeColor}`]: `hive-${activeColor}-123`,
+    'hive-realtime': 'hive-realtime-123',
+    markitdown: 'markitdown-123',
+    'meet-realtime': 'meet-realtime-123',
+    redis: 'redis-123',
+    'serverless-redis-http': 'serverless-redis-http-123',
+    'storage-unzip-proxy': 'storage-unzip-123',
+    supermemory: 'supermemory-123',
+    'web-cron-runner': 'cron-runner-123',
+    [`web-${activeColor}`]: `${activeColor}-123`,
+    'web-proxy': 'proxy-123',
+  };
+
+  for (const [serviceName, containerId] of Object.entries(
+    serviceContainerIds
+  )) {
+    const composePsAllKey = `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q ${serviceName}`;
+    const inspectKey = dockerInspectHealthStatusKey(containerId);
+
+    if (!responses.has(composePsAllKey)) {
+      responses.set(composePsAllKey, createResult(`${containerId}\n`));
+    }
+
+    if (!responses.has(inspectKey)) {
+      responses.set(inspectKey, createResult('healthy\n'));
+    }
+  }
 }
 
 function getMigrationCleanupService(command, args) {
@@ -1283,6 +1323,297 @@ function prodComposeProxyUpKey(extraArgs = []) {
 function prodComposeProjectDownKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared down --remove-orphans`;
 }
+
+function createComposeServiceRecoveryRunCommand({
+  failUp = false,
+  initialStatuses = {},
+} = {}) {
+  const calls = [];
+  const serviceStatuses = new Map(Object.entries(initialStatuses));
+  const containerIds = new Map();
+  const getStatus = (serviceName) =>
+    serviceStatuses.get(serviceName) ?? 'healthy';
+  const getContainerId = (serviceName) => {
+    if (!containerIds.has(serviceName)) {
+      containerIds.set(serviceName, `${serviceName}-123`);
+    }
+
+    return containerIds.get(serviceName);
+  };
+  const getServiceFromContainerId = (containerId) => {
+    for (const [serviceName, id] of containerIds.entries()) {
+      if (id === containerId) {
+        return serviceName;
+      }
+    }
+
+    return String(containerId).replace(/-123$/u, '');
+  };
+
+  return {
+    calls,
+    runCommand: async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (command === 'docker' && args[0] === 'compose') {
+        const serviceName = args.at(-1);
+
+        if (args.includes('ps') && args.includes('-a')) {
+          const status = getStatus(serviceName);
+
+          return createResult(
+            status === 'missing' ? '' : `${getContainerId(serviceName)}\n`
+          );
+        }
+
+        if (args.includes('ps') && args.includes('-q')) {
+          const status = getStatus(serviceName);
+
+          return createResult(
+            ['dead', 'exited', 'missing'].includes(status)
+              ? ''
+              : `${getContainerId(serviceName)}\n`
+          );
+        }
+
+        if (args.includes('up')) {
+          if (failUp) {
+            return createResult('', {
+              code: 1,
+              stderr: 'service recovery failed',
+            });
+          }
+
+          const serviceStartIndex = args.indexOf('--remove-orphans') + 1;
+
+          for (const recoveredServiceName of args.slice(serviceStartIndex)) {
+            serviceStatuses.set(recoveredServiceName, 'healthy');
+          }
+
+          return createResult('');
+        }
+      }
+
+      if (command === 'docker' && args[0] === 'inspect') {
+        const containerId = args.at(-1);
+        const serviceName = getServiceFromContainerId(containerId);
+
+        return createResult(`${getStatus(serviceName)}\n`);
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    },
+  };
+}
+
+function setupRecoveryEnv(tempDir) {
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+  fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+
+  return {
+    envFilePath,
+    paths,
+  };
+}
+
+test('recoverDownComposeServices starts stopped proxy and Redis services without rebuilding', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-start-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+  const { calls, runCommand } = createComposeServiceRecoveryRunCommand({
+    initialStatuses: {
+      redis: 'exited',
+      'serverless-redis-http': 'missing',
+      'web-proxy': 'missing',
+    },
+  });
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: { activeColor: 'green' },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.deepEqual(result.startServices, [
+      'web-proxy',
+      'redis',
+      'serverless-redis-http',
+    ]);
+    assert.deepEqual(result.recreateServices, []);
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-proxy redis serverless-redis-http`
+      )
+    );
+    assert.equal(
+      calls.some((call) => call.includes('--force-recreate')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('recoverDownComposeServices tries cheap recovery for a down active web lane', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-web-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+  const { calls, runCommand } = createComposeServiceRecoveryRunCommand({
+    initialStatuses: {
+      'web-green': 'missing',
+    },
+  });
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: { activeColor: 'green' },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.deepEqual(result.startServices, ['web-green']);
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+      )
+    );
+    assert.equal(
+      calls.some((call) => call.includes(' build ')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('recoverDownComposeServices force-recreates unhealthy services', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-unhealthy-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+  const { calls, runCommand } = createComposeServiceRecoveryRunCommand({
+    initialStatuses: {
+      redis: 'unhealthy',
+      'web-proxy': 'unhealthy',
+    },
+  });
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: { activeColor: 'green' },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.deepEqual(result.recreateServices, ['web-proxy', 'redis']);
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --force-recreate --remove-orphans web-proxy redis`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('recoverDownComposeServices waits instead of restarting starting services', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-starting-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+  const { calls, runCommand } = createComposeServiceRecoveryRunCommand({
+    initialStatuses: {
+      'web-proxy': 'starting',
+    },
+  });
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: { activeColor: 'green' },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'pending');
+    assert.deepEqual(result.pendingServices, ['web-proxy']);
+    assert.equal(
+      calls.some((call) => call.includes(' up ')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('recoverDownComposeServices logs failures without deployment history rows', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-failed-')
+  );
+  const { envFilePath, paths } = setupRecoveryEnv(tempDir);
+  const errors = [];
+  const { runCommand } = createComposeServiceRecoveryRunCommand({
+    failUp: true,
+    initialStatuses: {
+      redis: 'missing',
+    },
+  });
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: { activeColor: 'green' },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: {
+        error(message) {
+          errors.push(message);
+        },
+        info() {},
+        warn() {},
+      },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'failed');
+    assert.match(errors.join('\n'), /service recovery failed/u);
+    assert.deepEqual(readDeploymentHistory(paths, fs), []);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
 
 test('parseArgs uses a 1s interval by default and accepts --once', () => {
   assert.deepEqual(parseArgs([]), {
@@ -3691,7 +4022,8 @@ test('runDeployWatchIteration resets dirty worktrees before comparing upstream b
     );
 
     assert.equal(result.status, 'up-to-date');
-    assert.deepEqual(calls.slice(0, 9), [
+    const gitCalls = calls.filter((call) => call.startsWith('git '));
+    assert.deepEqual(gitCalls.slice(0, 9), [
       'git rev-parse --abbrev-ref HEAD',
       'git status --porcelain',
       'git reset --hard HEAD',
@@ -3753,7 +4085,8 @@ test('runDeployWatchIteration blocks dirty worktrees when watcher reset is disab
     );
 
     assert.equal(result.status, 'dirty');
-    assert.deepEqual(calls.slice(0, 2), [
+    const gitCalls = calls.filter((call) => call.startsWith('git '));
+    assert.deepEqual(gitCalls.slice(0, 2), [
       'git rev-parse --abbrev-ref HEAD',
       'git status --porcelain',
     ]);
@@ -5206,6 +5539,10 @@ test('runDeployWatchIteration waits instead of retrying while a deployment build
           `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
       )
     );
+    assert.equal(
+      calls.some((call) => call.includes('--profile redis ps -a -q')),
+      false
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -5791,6 +6128,9 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
     ]);
+    addHealthyComposeServiceRecoveryResponses(responses, {
+      activeColor: 'green',
+    });
     const runCommand = async (command, args) => {
       const key = `${command} ${args.join(' ')}`;
       calls.push(key);
@@ -6246,169 +6586,168 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
       fs
     );
 
-    const runCommand = createRunCommandMock(
-      new Map([
-        ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
-        ['git status --porcelain', createResult('')],
-        ['git fetch origin main', createResult('')],
-        ['git rev-parse HEAD', createResult('bbb222\n')],
-        ['git rev-parse origin/main', createResult('bbb222\n')],
-        [
-          'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
-          createResult(
-            'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
-          ),
-        ],
-        [
-          prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
-          createResult('proxy-123\n'),
-        ],
-        [prodComposePsKey('web-green'), createResult('green-123\n')],
-        [prodComposePsKey('web-blue'), createResult('blue-123\n')],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`,
-          createResult('green-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`,
-          createResult('blue-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q web-blue`,
-          createResult('blue-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`,
-          createResult('hive-blue-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
-          createResult('hive-realtime-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q meet-realtime`,
-          createResult('meet-realtime-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
-          createResult('hive-blue-123\n'),
-        ],
-        [prodComposePsAllKey('hive-db-migrate'), createResult('')],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop hive-blue`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f hive-blue`,
-          createResult(''),
-        ],
-        [
-          'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue`,
-          createResult(''),
-        ],
-        [prodComposeHiveDbMigrateKey(), createResult('')],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive-blue hive-realtime meet-realtime`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
-          createResult('markitdown-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q backend`,
-          createResult('backend-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
-          createResult('storage-unzip-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q supermemory`,
-          createResult('supermemory-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-cron-runner`,
-          createResult('cron-runner-123\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} meet-realtime-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} backend-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} pronunciation-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} supermemory-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} cron-runner-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
-          createResult(''),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`,
-          createResult(''),
-        ],
-      ])
-    );
+    const responses = new Map([
+      ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+      ['git status --porcelain', createResult('')],
+      ['git fetch origin main', createResult('')],
+      ['git rev-parse HEAD', createResult('bbb222\n')],
+      ['git rev-parse origin/main', createResult('bbb222\n')],
+      [
+        'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+        createResult(
+          'bbb222222222222222222\nbbb222\nRefresh watcher UX and restart logic\n2026-04-18T10:58:00.000Z\n'
+        ),
+      ],
+      [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('proxy-123\n')],
+      [prodComposePsKey('web-green'), createResult('green-123\n')],
+      [prodComposePsKey('web-blue'), createResult('blue-123\n')],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`,
+        createResult('green-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-blue`,
+        createResult('blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q web-blue`,
+        createResult('blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`,
+        createResult('hive-blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
+        createResult('hive-realtime-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q meet-realtime`,
+        createResult('meet-realtime-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
+        createResult('hive-blue-123\n'),
+      ],
+      [prodComposePsAllKey('hive-db-migrate'), createResult('')],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop hive-blue`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f hive-blue`,
+        createResult(''),
+      ],
+      [
+        'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue`,
+        createResult(''),
+      ],
+      [prodComposeHiveDbMigrateKey(), createResult('')],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive-blue hive-realtime meet-realtime`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
+        createResult('markitdown-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q backend`,
+        createResult('backend-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
+        createResult('storage-unzip-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q supermemory`,
+        createResult('supermemory-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-cron-runner`,
+        createResult('cron-runner-123\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} meet-realtime-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} backend-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} markitdown-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} pronunciation-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} supermemory-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} cron-runner-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`,
+        createResult(''),
+      ],
+    ]);
+    addHealthyComposeServiceRecoveryResponses(responses, {
+      activeColor: 'green',
+    });
+    const runCommand = createRunCommandMock(responses);
 
     const result = await runDeployWatchIteration(
       {

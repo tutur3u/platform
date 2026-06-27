@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   assertBlueGreenCachedImageExists,
   getBlueGreenCacheImageTag,
+  getBlueGreenProdServicesWithProxyOption,
   getBlueGreenServiceName,
   readBlueGreenActiveColor,
   readBlueGreenDeploymentStamp,
@@ -31,6 +32,7 @@ const {
   getComposeCommandArgs,
   getComposeFile,
   getContainerHealthStatus,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
 } = require('../docker-web/compose.js');
@@ -2672,6 +2674,359 @@ function needsActiveRuntimeRecovery(runtimeSnapshot) {
   );
 }
 
+function isTruthyEnvValue(value) {
+  return /^(1|true|yes|on)$/iu.test(String(value ?? '').trim());
+}
+
+function getSteadyStateRecoveryComposeGlobalArgs(env = {}) {
+  const composeGlobalArgs = ['--profile', 'redis'];
+
+  if (isTruthyEnvValue(env?.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    composeGlobalArgs.push('--profile', 'cloudflared');
+  }
+
+  return composeGlobalArgs;
+}
+
+function normalizeComposeServiceStatus(status) {
+  return String(status ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+function getPrimaryContainerId(containerIds) {
+  return (
+    String(containerIds ?? '')
+      .split(/\s+/u)
+      .map((value) => value.trim())
+      .find(Boolean) ?? ''
+  );
+}
+
+function getSteadyStateRecoveryServices({
+  composeEnv,
+  composeGlobalArgs,
+  currentBlueGreen,
+} = {}) {
+  const activeColor = currentBlueGreen?.activeColor;
+
+  if (!activeColor) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      getBlueGreenProdServicesWithProxyOption(
+        { composeGlobalArgs },
+        activeColor,
+        true,
+        composeEnv
+      )
+    ),
+  ];
+}
+
+function getComposeServiceRecoveryAction(serviceState) {
+  const normalizedStatus = normalizeComposeServiceStatus(serviceState?.status);
+
+  if (!serviceState?.containerId) {
+    return 'start';
+  }
+
+  if (normalizedStatus === 'healthy' || normalizedStatus === 'running') {
+    return null;
+  }
+
+  if (normalizedStatus === 'starting' || normalizedStatus === 'restarting') {
+    return 'pending';
+  }
+
+  if (normalizedStatus === 'unhealthy') {
+    return 'recreate';
+  }
+
+  if (
+    ['created', 'dead', 'exited', 'paused', 'removing'].includes(
+      normalizedStatus
+    )
+  ) {
+    return 'start';
+  }
+
+  return 'start';
+}
+
+async function inspectComposeServiceForRecovery(
+  serviceName,
+  {
+    composeFile = PROD_COMPOSE_FILE,
+    composeGlobalArgs = [],
+    env,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  let containerId = '';
+
+  try {
+    containerId = getPrimaryContainerId(
+      await getComposeServiceContainerId(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        includeStopped: true,
+        runCommand: run,
+      })
+    );
+  } catch (error) {
+    return {
+      action: 'start',
+      containerId: '',
+      error,
+      serviceName,
+      status: 'missing',
+    };
+  }
+
+  if (!containerId) {
+    return {
+      action: 'start',
+      containerId: '',
+      serviceName,
+      status: 'missing',
+    };
+  }
+
+  try {
+    const status = await getContainerHealthStatus(containerId, {
+      env,
+      runCommand: run,
+    });
+    const serviceState = {
+      containerId,
+      serviceName,
+      status: normalizeComposeServiceStatus(status),
+    };
+
+    return {
+      ...serviceState,
+      action: getComposeServiceRecoveryAction(serviceState),
+    };
+  } catch (error) {
+    return {
+      action: 'start',
+      containerId,
+      error,
+      serviceName,
+      status: 'inspect-failed',
+    };
+  }
+}
+
+async function waitForRecoveredComposeServiceReady(
+  serviceName,
+  {
+    composeFile = PROD_COMPOSE_FILE,
+    composeGlobalArgs = [],
+    env,
+    pollMs = 2_000,
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+    timeoutMs = 180_000,
+  } = {}
+) {
+  const deadline = Date.now() + timeoutMs;
+  let lastStatus = 'missing';
+
+  while (Date.now() <= deadline) {
+    const containerId = getPrimaryContainerId(
+      await getComposeServiceContainerId(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      })
+    );
+
+    if (!containerId) {
+      lastStatus = 'missing';
+    } else {
+      lastStatus = normalizeComposeServiceStatus(
+        await getContainerHealthStatus(containerId, {
+          env,
+          runCommand: run,
+        })
+      );
+
+      if (lastStatus === 'healthy' || lastStatus === 'running') {
+        return {
+          containerId,
+          serviceName,
+          status: lastStatus,
+        };
+      }
+
+      if (['dead', 'exited', 'unhealthy'].includes(lastStatus)) {
+        throw new Error(
+          `${serviceName} did not recover cleanly (status: ${lastStatus}).`
+        );
+      }
+    }
+
+    await sleepImpl(pollMs);
+  }
+
+  throw new Error(
+    `${serviceName} did not become ready within ${timeoutMs}ms (last status: ${lastStatus}).`
+  );
+}
+
+async function recoverDownComposeServices({
+  currentBlueGreen,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  log = console,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  sleepImpl = sleep,
+} = {}) {
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(env);
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const serviceNames = getSteadyStateRecoveryServices({
+    composeEnv,
+    composeGlobalArgs,
+    currentBlueGreen,
+  });
+
+  if (serviceNames.length === 0) {
+    return null;
+  }
+
+  const inspectedServices = await Promise.all(
+    serviceNames.map((serviceName) =>
+      inspectComposeServiceForRecovery(serviceName, {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env: composeEnv,
+        runCommand: run,
+      })
+    )
+  );
+  const startServices = inspectedServices
+    .filter((service) => service.action === 'start')
+    .map((service) => service.serviceName);
+  const recreateServices = inspectedServices
+    .filter((service) => service.action === 'recreate')
+    .map((service) => service.serviceName);
+  const pendingServices = inspectedServices
+    .filter((service) => service.action === 'pending')
+    .map((service) => service.serviceName);
+  const recoverySummary = {
+    inspectedServices,
+    pendingServices,
+    recreateServices,
+    startServices,
+  };
+
+  if (startServices.length === 0 && recreateServices.length === 0) {
+    if (pendingServices.length > 0) {
+      log.warn?.(
+        `Docker Compose service recovery is waiting for starting services: ${pendingServices.join(', ')}.`
+      );
+      return {
+        ...recoverySummary,
+        status: 'pending',
+      };
+    }
+
+    return null;
+  }
+
+  try {
+    if (startServices.length > 0) {
+      log.warn?.(
+        `Recovering down Docker Compose services: ${startServices.join(', ')}.`
+      );
+      await runComposeUpWithNameConflictRecovery({
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env: composeEnv,
+        fsImpl,
+        runCommand: run,
+        services: startServices,
+        upArgs: [
+          'up',
+          '--detach',
+          '--no-build',
+          '--remove-orphans',
+          ...startServices,
+        ],
+      });
+    }
+
+    if (recreateServices.length > 0) {
+      log.warn?.(
+        `Recreating unhealthy Docker Compose services: ${recreateServices.join(', ')}.`
+      );
+      await runComposeUpWithNameConflictRecovery({
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env: composeEnv,
+        fsImpl,
+        runCommand: run,
+        services: recreateServices,
+        upArgs: [
+          'up',
+          '--detach',
+          '--no-build',
+          '--force-recreate',
+          '--remove-orphans',
+          ...recreateServices,
+        ],
+      });
+    }
+
+    const recoveredServices = [...startServices, ...recreateServices];
+    const readyServices = await Promise.all(
+      recoveredServices.map((serviceName) =>
+        waitForRecoveredComposeServiceReady(serviceName, {
+          composeFile: PROD_COMPOSE_FILE,
+          composeGlobalArgs,
+          env: composeEnv,
+          runCommand: run,
+          sleepImpl,
+        })
+      )
+    );
+
+    log.info?.(
+      `Recovered Docker Compose services: ${recoveredServices.join(', ')}.`
+    );
+
+    return {
+      ...recoverySummary,
+      readyServices,
+      recoveredServices,
+      status: 'recovered',
+    };
+  } catch (error) {
+    log.error?.(
+      `Docker Compose service recovery failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return {
+      ...recoverySummary,
+      error,
+      status: 'failed',
+    };
+  }
+}
+
 function getStandbyRefreshCandidate(
   runtimeSnapshot,
   latestCommit,
@@ -4249,11 +4604,13 @@ async function runDeployWatchIteration(
       env,
       ...payload,
     });
+  let composeServiceRecovery = null;
   const attachRuntime = async (result, history = null) => {
     const snapshotNow = now();
 
     return {
       ...result,
+      ...(composeServiceRecovery ? { composeServiceRecovery } : {}),
       deploymentPin: readDeploymentPin(paths, fsImpl),
       ...(await loadRuntimeSnapshot({
         env,
@@ -4334,6 +4691,40 @@ async function runDeployWatchIteration(
     return attachRuntime(
       createDeploymentActiveResult(activeDeploymentConflict, { checkedAt })
     );
+  }
+
+  const runtimeSnapshotBeforeServiceRecovery = await loadRuntimeSnapshot({
+    env,
+    envFilePath,
+    fsImpl,
+    now: now(),
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+  composeServiceRecovery = await recoverDownComposeServices({
+    currentBlueGreen: runtimeSnapshotBeforeServiceRecovery.currentBlueGreen,
+    env,
+    envFilePath,
+    fsImpl,
+    log,
+    rootDir,
+    runCommand: run,
+  });
+
+  if (composeServiceRecovery?.status === 'pending') {
+    return attachRuntime({
+      checkedAt,
+      status: 'service-recovery-pending',
+    });
+  }
+
+  if (composeServiceRecovery?.status === 'failed') {
+    return attachRuntime({
+      checkedAt,
+      error: composeServiceRecovery.error,
+      status: 'service-recovery-failed',
+    });
   }
 
   if (deploymentPin) {
@@ -7471,6 +7862,7 @@ module.exports = {
   getFailedDeploymentCountForCommit,
   getChangedFilesForBuildScope,
   getLatestSuccessfulDeploymentCommitHash,
+  getComposeServiceRecoveryAction,
   getCommitMetadata,
   getCurrentBranch,
   getMigrationRequest,
@@ -7517,6 +7909,7 @@ module.exports = {
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
+  recoverDownComposeServices,
   recoverWatcherBuildkitAfterChildDeployFailure,
   restoreTargetBranchIfDetached,
   resolveLockedBranchTarget,

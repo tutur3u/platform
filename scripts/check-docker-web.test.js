@@ -844,6 +844,38 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
 });
 
+test('validateDockerProdCompose requires restart policies on durable production services', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      '  init: true\n  restart: unless-stopped\n  volumes:',
+      '  init: true\n  volumes:'
+    )
+    .replace(
+      '  init: true\n  restart: unless-stopped\n  depends_on:\n    backend:',
+      '  init: true\n  depends_on:\n    backend:'
+    )
+    .replace(
+      '    restart: unless-stopped\n\n  cloudflared:',
+      '\n  cloudflared:'
+    )
+    .replace(
+      '    restart: unless-stopped\n\n  serverless-redis-http:',
+      '\n  serverless-redis-http:'
+    )
+    .replace(
+      '    restart: unless-stopped\n\n  storage-unzip-proxy:',
+      '\n  storage-unzip-proxy:'
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /x-web-service/u);
+  assert.match(errors, /x-tanstack-web-service/u);
+  assert.match(errors, /web-proxy/u);
+  assert.match(errors, /redis/u);
+  assert.match(errors, /markitdown/u);
+});
+
 test('validateDockerBakeFile accepts the current production bake file', () => {
   const bakeContent = fs.readFileSync(DOCKER_BAKE_WEB_PROD_PATH, 'utf8');
 

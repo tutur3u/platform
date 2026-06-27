@@ -90,6 +90,7 @@ x-web-service: &web-service
     start_period: 10s
     retries: 3
   init: true
+  restart: unless-stopped
   volumes:
     - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control
     - ../tmp/docker-web:/app/runtime/docker-web:ro
@@ -129,6 +130,7 @@ x-tanstack-web-service: &tanstack-web-service
     start_period: 10s
     retries: 3
   init: true
+  restart: unless-stopped
   depends_on:
     backend:
       condition: service_healthy

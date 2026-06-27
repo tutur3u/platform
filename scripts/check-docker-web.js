@@ -210,6 +210,70 @@ function hasComposeDependsOnService(composeContent, serviceName) {
   return false;
 }
 
+function getComposeTopLevelServiceBlock(composeContent, serviceName) {
+  const lines = composeContent.split(/\r?\n/u);
+  const serviceHeader = `  ${serviceName}:`;
+  const startIndex = lines.indexOf(serviceHeader);
+
+  if (startIndex === -1) {
+    return null;
+  }
+
+  const blockLines = [lines[startIndex]];
+
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (/^ {2}[A-Za-z0-9_-]+:\s*$/u.test(line)) {
+      break;
+    }
+
+    blockLines.push(line);
+  }
+
+  return blockLines.join('\n');
+}
+
+function getComposeTopLevelBlock(composeContent, blockName) {
+  const lines = composeContent.split(/\r?\n/u);
+  const startIndex = lines.findIndex((line) =>
+    line.startsWith(`${blockName}:`)
+  );
+
+  if (startIndex === -1) {
+    return null;
+  }
+
+  const blockLines = [lines[startIndex]];
+
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (/^\S/u.test(line)) {
+      break;
+    }
+
+    blockLines.push(line);
+  }
+
+  return blockLines.join('\n');
+}
+
+function serviceBlockHasRestartUnlessStopped(composeContent, serviceName) {
+  const serviceBlock = getComposeTopLevelServiceBlock(
+    composeContent,
+    serviceName
+  );
+
+  return serviceBlock?.includes('    restart: unless-stopped') ?? false;
+}
+
+function topLevelBlockHasRestartUnlessStopped(composeContent, blockName) {
+  const block = getComposeTopLevelBlock(composeContent, blockName);
+
+  return block?.includes('  restart: unless-stopped') ?? false;
+}
+
 function getRetryWrappedBunInstallSnippets(installCommand) {
   return [
     'set -eu;',
@@ -1230,6 +1294,39 @@ function validateDockerProdCompose(composeContent) {
   if (frontendSelectorEnvCount < 2) {
     errors.push(
       'docker-compose.web.prod.yml must pass DOCKER_WEB_FRONTEND to both web-blue-green-watcher and web-cron-runner so TanStack production selection survives container recreation.'
+    );
+  }
+
+  const durableRestartServices = [
+    'markitdown',
+    'redis',
+    'serverless-redis-http',
+    'storage-unzip-proxy',
+    'web-proxy',
+  ];
+
+  for (const serviceName of durableRestartServices) {
+    if (!serviceBlockHasRestartUnlessStopped(composeContent, serviceName)) {
+      errors.push(
+        `docker-compose.web.prod.yml service ${serviceName} must use restart: unless-stopped so the watcher can keep serving services alive after Docker restarts.`
+      );
+    }
+  }
+
+  if (!topLevelBlockHasRestartUnlessStopped(composeContent, 'x-web-service')) {
+    errors.push(
+      'docker-compose.web.prod.yml x-web-service must use restart: unless-stopped so web-blue/web-green resume after Docker restarts.'
+    );
+  }
+
+  if (
+    !topLevelBlockHasRestartUnlessStopped(
+      composeContent,
+      'x-tanstack-web-service'
+    )
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml x-tanstack-web-service must use restart: unless-stopped so tanstack-web-blue/tanstack-web-green resume after Docker restarts.'
     );
   }
 

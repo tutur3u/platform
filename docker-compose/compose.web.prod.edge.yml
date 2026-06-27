@@ -18,6 +18,7 @@ services:
       - "127.0.0.1:${DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816}:7816"
     volumes:
       - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
 
   cloudflared:
     profiles: ["cloudflared"]

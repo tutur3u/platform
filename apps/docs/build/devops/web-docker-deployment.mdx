@@ -1008,6 +1008,18 @@ runs any configured host-level post-restart commands, then recreates the watcher
 container. The recreated watcher reuses the existing cached blue/green recovery
 path to bring `web-proxy` and the active/standby web lanes back to health.
 
+During normal steady-state polling, after active build-lock and revert checks,
+the watcher also reconciles the production Compose services that should already
+be serving. It inspects the expected services with stopped containers included:
+`web-proxy`, the active web or TanStack lane, Redis profile services, enabled
+health-gated sidecars, active-color Hive/realtime services, and `cloudflared`
+when its profile is enabled. Missing, exited, dead, or unhealthy services are
+recovered with bounded no-build Compose operations: stopped or missing services
+use `docker compose ... up --detach --no-build --remove-orphans`, unhealthy
+services are force-recreated, and `starting` services are left alone until the
+next poll. Image rebuilds remain owned by the normal blue/green deploy flow and
+the cached/full active-runtime recovery fallback.
+
 Before recreating the watcher after a suspected devbox/local Supabase mix-up,
 inspect only origin classifications, not secrets. Root `.env.local` should
 classify as cloud for `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVER_URL`;
