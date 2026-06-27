@@ -1,6 +1,12 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
 import type { RateLimitAbsoluteLimits } from './infrastructure';
-import type { RateLimitRule } from './rate-limits';
+import type {
+  RateLimitActionPresetKey,
+  RateLimitRecommendedAction,
+  RateLimitRule,
+  RateLimitUserSummary,
+  RateLimitWorkspaceSummary,
+} from './rate-limits';
 
 export type RateLimitAppealStatus =
   | 'approved'
@@ -44,6 +50,33 @@ export interface RateLimitAppealDiagnostics {
   };
 }
 
+export type RateLimitAppealMembershipStatus =
+  | 'member'
+  | 'not_applicable'
+  | 'not_member'
+  | 'unknown';
+
+export interface RateLimitAppealMembershipContext {
+  label: string;
+  status: RateLimitAppealMembershipStatus;
+  type: string | null;
+  verified: boolean;
+}
+
+export interface RateLimitAppealActiveBlockContext {
+  active: boolean;
+  blockedIpId: string | null;
+  label: string;
+}
+
+export interface RateLimitAppealReviewContext {
+  activeBlock: RateLimitAppealActiveBlockContext;
+  membership: RateLimitAppealMembershipContext;
+  recommendedActions: RateLimitRecommendedAction[];
+  requester: RateLimitUserSummary | null;
+  workspace: RateLimitWorkspaceSummary | null;
+}
+
 export interface RateLimitAppeal {
   cleared_blocked_ip_id: string | null;
   client_ip: string;
@@ -60,6 +93,7 @@ export interface RateLimitAppeal {
   request_method: string | null;
   request_path: string | null;
   response_status: number | null;
+  reviewContext?: RateLimitAppealReviewContext;
   review_note: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
@@ -104,8 +138,10 @@ export interface GetRateLimitAppealResponse {
 
 export interface ApproveRateLimitAppealPayload {
   absoluteLimits?: RateLimitAbsoluteLimits | null;
+  allowWorkspaceMismatch?: boolean;
   createWorkspaceRule?: boolean;
   expiresInDays?: number;
+  presetKey?: RateLimitActionPresetKey;
   reviewNote?: string;
   trustMultiplier?: number;
   workspaceId?: string | null;

@@ -12,9 +12,6 @@ export type {
   RateLimitMode,
 } from './infrastructure';
 
-/** A rate-limit rule is an abuse_trust_override row with mode/absolute fields. */
-export type RateLimitRule = AbuseTrustOverride;
-
 export interface RateLimitWindowTriple {
   day: number;
   hour: number;
@@ -35,6 +32,78 @@ export interface RateLimitRulesSummary {
   unlimitedCount: number;
 }
 
+export type RateLimitResolvedSubjectKind =
+  | 'api_key'
+  | 'cidr'
+  | 'ip'
+  | 'session'
+  | 'unknown'
+  | 'user'
+  | 'user_location'
+  | 'workspace';
+
+export type RateLimitSubjectConfidence = 'parsed' | 'unknown' | 'verified';
+
+export interface RateLimitSubjectResolution {
+  confidence: RateLimitSubjectConfidence;
+  detail: string | null;
+  id: string | null;
+  ip: string | null;
+  kind: RateLimitResolvedSubjectKind;
+  label: string;
+  subjectKey: string;
+  technicalKey: string;
+  userId: string | null;
+  verified: boolean;
+  workspaceId: string | null;
+}
+
+export interface RateLimitWorkspaceSummary {
+  avatarUrl: string | null;
+  handle: string | null;
+  id: string;
+  name: string | null;
+  personal: boolean | null;
+}
+
+export interface RateLimitUserSummary {
+  avatarUrl: string | null;
+  displayName: string | null;
+  email: string | null;
+  handle: string | null;
+  id: string;
+}
+
+export type RateLimitActionPresetKey =
+  | 'clear_ip_only'
+  | 'custom'
+  | 'event_or_classroom'
+  | 'extended_trusted'
+  | 'trusted_workspace';
+
+export interface RateLimitRecommendedAction {
+  createWorkspaceRule: boolean;
+  description: string;
+  disabledReason: string | null;
+  expiresInDays: number | null;
+  key: RateLimitActionPresetKey;
+  label: string;
+  recommended: boolean;
+  requiresAdvancedOverride: boolean;
+  trustMultiplier: number | null;
+}
+
+export interface RateLimitUsageDisplay {
+  action: string;
+  subtitle: string | null;
+  technicalKey: string;
+  title: string;
+}
+
+export type RateLimitRule = AbuseTrustOverride & {
+  subject?: RateLimitSubjectResolution;
+};
+
 export interface RateLimitRulesResponse {
   /** Subject keys whose rule is currently live in the edge trust cache. */
   edgeCachedSubjectKeys: string[];
@@ -46,6 +115,8 @@ export interface RateLimitRulesResponse {
 export interface RateLimitWriteCounter {
   bucket: string;
   current_count: number;
+  display?: RateLimitUsageDisplay;
+  subject?: RateLimitSubjectResolution;
   window_seconds: number;
   window_started_at: string;
 }
@@ -57,8 +128,10 @@ export interface RateLimitEdgeBucket {
   policy: string | null;
   subject: string | null;
   subjectKind: string | null;
+  subjectResolution?: RateLimitSubjectResolution;
   trustSuffix: string | null;
   window: 'minute' | 'hour' | 'day' | null;
+  display?: RateLimitUsageDisplay;
 }
 
 export interface RateLimitEdgeBucketGroup {
@@ -86,6 +159,7 @@ export interface CreateRateLimitRulePayload {
   expiresAt?: string | null;
   limitMode?: RateLimitMode;
   metadata?: Record<string, unknown>;
+  presetKey?: RateLimitActionPresetKey;
   reason: string;
   subjectKey: string;
   subjectType: AbuseReputationSubjectType;
@@ -119,6 +193,21 @@ export interface WorkspaceRateLimitSecretsResponse {
 export interface SaveWorkspaceRateLimitSecretsPayload {
   secrets: Record<string, string | null>;
   wsId: string;
+}
+
+export type RateLimitSubjectSearchKind = 'ip' | 'user' | 'workspace';
+
+export interface RateLimitSubjectSearchResult {
+  detail: string | null;
+  kind: RateLimitSubjectSearchKind;
+  label: string;
+  subjectKey: string;
+  subjectType: AbuseReputationSubjectType;
+  value: string;
+}
+
+export interface RateLimitSubjectSearchResponse {
+  results: RateLimitSubjectSearchResult[];
 }
 
 const BASE_PATH = '/api/v1/infrastructure/rate-limits';
@@ -228,6 +317,28 @@ export async function saveWorkspaceRateLimitSecrets(
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
+    }
+  );
+}
+
+export async function searchRateLimitSubjects(
+  params: {
+    kind: RateLimitSubjectSearchKind;
+    limit?: number;
+    q?: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RateLimitSubjectSearchResponse>(
+    '/api/v1/infrastructure/rate-limit-subjects',
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        limit: params.limit,
+        q: params.q,
+      },
     }
   );
 }

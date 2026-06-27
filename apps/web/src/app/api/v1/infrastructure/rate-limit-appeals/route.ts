@@ -2,13 +2,11 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { enrichRateLimitAppeals } from '@/lib/rate-limits/subject-resolution';
 import { authorizeAbuseIntelligenceRequest } from '../abuse-intelligence/_shared';
 
 const APPEAL_STATUSES = ['approved', 'closed', 'pending', 'rejected'] as const;
 const APPEAL_STATUS_FILTERS = [...APPEAL_STATUSES, 'all'] as const;
-const UUID_PATTERN =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u;
-
 const QuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(500).default(100),
   q: z.string().trim().max(MAX_SEARCH_LENGTH).optional(),
@@ -50,12 +48,6 @@ export async function GET(request: Request) {
   if (status !== 'all') {
     query = query.eq('status', status);
   }
-  if (q) {
-    query = UUID_PATTERN.test(q)
-      ? query.eq('workspace_id', q.toLowerCase())
-      : query.ilike('client_ip', `%${q}%`);
-  }
-
   const { data, error } = await query;
   if (error) {
     serverLogger.error('Failed to load rate-limit appeals', error);
@@ -65,7 +57,28 @@ export async function GET(request: Request) {
     );
   }
 
-  const appeals = data ?? [];
+  const enrichedAppeals = await enrichRateLimitAppeals(
+    authorization.sbAdmin,
+    data ?? []
+  );
+  const normalizedSearch = q?.toLowerCase();
+  const appeals = normalizedSearch
+    ? enrichedAppeals.filter((appeal) =>
+        [
+          appeal.client_ip,
+          appeal.creator_id,
+          appeal.user_email,
+          appeal.workspace_id,
+          appeal.request_path,
+          appeal.reviewContext?.requester?.displayName,
+          appeal.reviewContext?.requester?.email,
+          appeal.reviewContext?.workspace?.name,
+          appeal.reviewContext?.workspace?.handle,
+        ]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(normalizedSearch))
+      )
+    : enrichedAppeals;
   const summary = {
     approved: 0,
     closed: 0,

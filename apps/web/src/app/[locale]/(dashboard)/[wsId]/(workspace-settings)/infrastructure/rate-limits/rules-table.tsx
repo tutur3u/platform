@@ -67,14 +67,27 @@ export function RateLimitRulesTable({
                 <Badge variant="secondary">
                   {t(`subject_types.${rule.subject_type}`)}
                 </Badge>
-                <div className="mt-1 max-w-72 truncate font-mono text-xs">
-                  {rule.subject_key}
+                <div className="mt-2 max-w-80 truncate font-medium">
+                  {rule.subject?.label ?? rule.subject_key}
                 </div>
+                {rule.subject?.detail ? (
+                  <div className="mt-1 max-w-80 truncate text-muted-foreground text-xs">
+                    {rule.subject.detail}
+                  </div>
+                ) : null}
                 {rule.reason ? (
                   <div className="mt-1 max-w-72 truncate text-muted-foreground text-xs">
                     {rule.reason}
                   </div>
                 ) : null}
+                <details className="mt-2 text-muted-foreground text-xs">
+                  <summary className="cursor-pointer">
+                    {t('tables.technical_subject')}
+                  </summary>
+                  <div className="mt-1 break-all font-mono">
+                    {rule.subject_key}
+                  </div>
+                </details>
               </td>
               <td className="p-3">
                 <Badge className={getModeTone(rule.limit_mode)}>

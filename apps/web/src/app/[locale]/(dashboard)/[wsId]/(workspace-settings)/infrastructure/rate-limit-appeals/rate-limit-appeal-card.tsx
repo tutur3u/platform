@@ -1,31 +1,22 @@
 'use client';
 
-import { Check, Loader2, X } from '@tuturuuu/icons';
+import { ShieldAlert, User, Users } from '@tuturuuu/icons';
 import type { RateLimitAppeal } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo } from 'react';
+import {
+  AppealReviewControls,
+  type ApproveAppealPayload,
+  type ReviewAppealPayload,
+} from './rate-limit-appeal-controls';
 
-export interface ApproveAppealPayload {
-  appealId: string;
-  expiresInDays: number;
-  reviewNote?: string;
-  trustMultiplier: number;
-  workspaceId?: string | null;
-}
-
-export interface ReviewAppealPayload {
-  appealId: string;
-  reviewNote?: string;
-}
+export type { ApproveAppealPayload, ReviewAppealPayload };
 
 function formatDateTime(value?: string | null) {
-  return value ? new Date(value).toLocaleString() : '—';
+  return value ? new Date(value).toLocaleString() : '-';
 }
 
 function statusTone(status: RateLimitAppeal['status']) {
@@ -39,6 +30,16 @@ function statusTone(status: RateLimitAppeal['status']) {
     default:
       return 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow';
   }
+}
+
+function membershipTone(status?: string) {
+  if (status === 'member') {
+    return 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green';
+  }
+  if (status === 'not_member') {
+    return 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow';
+  }
+  return 'border-border bg-muted text-muted-foreground';
 }
 
 function AppealDiagnostics({ appeal }: { appeal: RateLimitAppeal }) {
@@ -60,142 +61,27 @@ function AppealDiagnostics({ appeal }: { appeal: RateLimitAppeal }) {
   );
 }
 
-function AppealReviewControls({
-  appeal,
-  canManage,
-  isWorking,
-  onApprove,
-  onClose,
-  onReject,
+function IdentityTile({
+  detail,
+  icon,
+  label,
+  title,
 }: {
-  appeal: RateLimitAppeal;
-  canManage: boolean;
-  isWorking: boolean;
-  onApprove: (payload: ApproveAppealPayload) => void;
-  onClose: (payload: ReviewAppealPayload) => void;
-  onReject: (payload: ReviewAppealPayload) => void;
+  detail?: string | null;
+  icon: ReactNode;
+  label: string;
+  title: string;
 }) {
-  const t = useTranslations('rate-limit-appeals');
-  const [workspaceId, setWorkspaceId] = useState(appeal.workspace_id ?? '');
-  const [trustMultiplier, setTrustMultiplier] = useState('3');
-  const [expiresInDays, setExpiresInDays] = useState('30');
-  const [reviewNote, setReviewNote] = useState('');
-
-  if (!canManage) {
-    return null;
-  }
-
-  const parsedMultiplier = Number.parseFloat(trustMultiplier);
-  const parsedDays = Number.parseInt(expiresInDays, 10);
-  const canApprove =
-    appeal.status === 'pending' &&
-    workspaceId.trim().length > 0 &&
-    Number.isFinite(parsedMultiplier) &&
-    parsedMultiplier > 0 &&
-    Number.isFinite(parsedDays) &&
-    parsedDays > 0;
-
   return (
-    <div className="space-y-3 rounded-md border border-border p-3">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_120px]">
-        <div className="space-y-2">
-          <Label htmlFor={`appeal-${appeal.id}-workspace`}>
-            {t('fields.workspace_id')}
-          </Label>
-          <Input
-            id={`appeal-${appeal.id}-workspace`}
-            onChange={(event) => setWorkspaceId(event.target.value)}
-            placeholder="workspace UUID"
-            value={workspaceId}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`appeal-${appeal.id}-multiplier`}>
-            {t('fields.multiplier')}
-          </Label>
-          <Input
-            id={`appeal-${appeal.id}-multiplier`}
-            min={0.1}
-            onChange={(event) => setTrustMultiplier(event.target.value)}
-            step={0.1}
-            type="number"
-            value={trustMultiplier}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`appeal-${appeal.id}-days`}>
-            {t('fields.expires_days')}
-          </Label>
-          <Input
-            id={`appeal-${appeal.id}-days`}
-            min={1}
-            onChange={(event) => setExpiresInDays(event.target.value)}
-            type="number"
-            value={expiresInDays}
-          />
-        </div>
+    <div className="rounded-md border border-border p-3">
+      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+        {icon}
+        {label}
       </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={`appeal-${appeal.id}-note`}>
-          {t('fields.review_note')}
-        </Label>
-        <Textarea
-          id={`appeal-${appeal.id}-note`}
-          onChange={(event) => setReviewNote(event.target.value)}
-          value={reviewNote}
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button
-          disabled={!canApprove || isWorking}
-          onClick={() =>
-            onApprove({
-              appealId: appeal.id,
-              expiresInDays: parsedDays,
-              reviewNote: reviewNote.trim() || undefined,
-              trustMultiplier: parsedMultiplier,
-              workspaceId: workspaceId.trim(),
-            })
-          }
-          type="button"
-        >
-          {isWorking ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="h-4 w-4" />
-          )}
-          {t('actions.approve')}
-        </Button>
-        <Button
-          disabled={appeal.status !== 'pending' || isWorking}
-          onClick={() =>
-            onReject({
-              appealId: appeal.id,
-              reviewNote: reviewNote.trim() || undefined,
-            })
-          }
-          type="button"
-          variant="destructive"
-        >
-          <X className="h-4 w-4" />
-          {t('actions.reject')}
-        </Button>
-        <Button
-          disabled={isWorking}
-          onClick={() =>
-            onClose({
-              appealId: appeal.id,
-              reviewNote: reviewNote.trim() || undefined,
-            })
-          }
-          type="button"
-          variant="outline"
-        >
-          {t('actions.close')}
-        </Button>
-      </div>
+      <p className="mt-2 truncate font-medium">{title}</p>
+      {detail ? (
+        <p className="mt-1 truncate text-muted-foreground text-xs">{detail}</p>
+      ) : null}
     </div>
   );
 }
@@ -218,43 +104,62 @@ export function RateLimitAppealCard({
   wsId: string;
 }) {
   const t = useTranslations('rate-limit-appeals');
+  const context = appeal.reviewContext;
+  const requester = context?.requester;
+  const workspace = context?.workspace;
 
   return (
     <article className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge className={statusTone(appeal.status)}>
               {t(`statuses.${appeal.status}`)}
             </Badge>
-            <span className="font-mono text-muted-foreground text-xs">
-              {appeal.id}
-            </span>
+            <Badge className={membershipTone(context?.membership.status)}>
+              {context?.membership.label ?? t('review.membership_unknown')}
+            </Badge>
           </div>
           <p className="font-medium">{appeal.client_ip}</p>
           <p className="break-words text-muted-foreground text-sm">
-            {appeal.request_method ?? 'GET'} {appeal.request_path ?? '—'}
+            {appeal.request_method ?? 'GET'} {appeal.request_path ?? '-'}
           </p>
         </div>
         <div className="text-muted-foreground text-sm lg:text-right">
           <p>{formatDateTime(appeal.created_at)}</p>
-          <p>{appeal.user_email ?? appeal.creator_id}</p>
+          <p className="font-mono text-xs">{appeal.id}</p>
         </div>
       </div>
 
-      <div className="grid gap-3 text-sm md:grid-cols-3">
-        <div>
-          <p className="text-muted-foreground">{t('fields.workspace')}</p>
-          <p className="font-mono text-xs">{appeal.workspace_id ?? '—'}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">{t('fields.block_reason')}</p>
-          <p>{appeal.proxy_block_reason ?? '—'}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">{t('fields.relief_until')}</p>
-          <p>{formatDateTime(appeal.temporary_relief_expires_at)}</p>
-        </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <IdentityTile
+          detail={requester?.email ?? requester?.id ?? appeal.creator_id}
+          icon={<User className="h-4 w-4" />}
+          label={t('review.requester')}
+          title={
+            requester?.displayName ??
+            requester?.email ??
+            appeal.user_email ??
+            appeal.creator_id
+          }
+        />
+        <IdentityTile
+          detail={workspace?.handle ? `@${workspace.handle}` : workspace?.id}
+          icon={<Users className="h-4 w-4" />}
+          label={t('review.workspace')}
+          title={
+            workspace?.name ??
+            (appeal.workspace_id
+              ? t('review.unknown_workspace')
+              : t('review.no_workspace'))
+          }
+        />
+        <IdentityTile
+          detail={appeal.proxy_block_reason ?? appeal.rate_limit_policy}
+          icon={<ShieldAlert className="h-4 w-4" />}
+          label={t('review.block_status')}
+          title={context?.activeBlock.label ?? t('review.block_unknown')}
+        />
       </div>
 
       {appeal.message ? (

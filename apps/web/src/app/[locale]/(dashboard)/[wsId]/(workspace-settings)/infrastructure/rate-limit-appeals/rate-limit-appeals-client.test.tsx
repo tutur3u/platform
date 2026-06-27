@@ -16,6 +16,14 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tuturuuu/icons', () => ({
   Check: (props: Record<string, unknown>) => <span {...props}>check</span>,
   Loader2: (props: Record<string, unknown>) => <span {...props}>loading</span>,
+  ShieldAlert: (props: Record<string, unknown>) => (
+    <span {...props}>shield-alert</span>
+  ),
+  ShieldCheck: (props: Record<string, unknown>) => (
+    <span {...props}>shield-check</span>
+  ),
+  User: (props: Record<string, unknown>) => <span {...props}>user</span>,
+  Users: (props: Record<string, unknown>) => <span {...props}>users</span>,
   X: (props: Record<string, unknown>) => <span {...props}>x</span>,
 }));
 
@@ -56,10 +64,32 @@ vi.mock('next-intl', () => ({
       'fields.multiplier': 'Multiplier',
       'fields.relief_until': 'Temporary relief until',
       'fields.review_note': 'Review note',
+      'fields.review_note_placeholder': 'Add what you verified.',
       'fields.workspace': 'Workspace',
       'fields.workspace_id': 'Workspace ID',
+      'fields.workspace_placeholder': 'Workspace ID',
       'filters.all': 'All statuses',
       'filters.search': 'Search IP or workspace ID',
+      'presets.clear_ip_only.description': 'Remove the IP block only.',
+      'presets.clear_ip_only.label': 'Clear IP only',
+      'presets.event_or_classroom.description': '5x for 7 days.',
+      'presets.event_or_classroom.label': 'Short event or classroom',
+      'presets.extended_trusted.description': '10x for 30 days.',
+      'presets.extended_trusted.label': 'Extended trusted workspace',
+      'presets.trusted_workspace.description': '3x for 30 days.',
+      'presets.trusted_workspace.label': 'Approve trusted workspace',
+      'review.allow_mismatch': 'Approve with mismatch',
+      'review.allow_mismatch_description': 'Override mismatch.',
+      'review.block_status': 'Block status',
+      'review.block_unknown': 'Block status unknown',
+      'review.description': 'Choose an action.',
+      'review.membership_unknown': 'Membership unknown',
+      'review.no_workspace': 'No workspace captured',
+      'review.recommended': 'Recommended',
+      'review.requester': 'Requester',
+      'review.title': 'Recommended actions',
+      'review.unknown_workspace': 'Unknown workspace',
+      'review.workspace': 'Workspace',
       'statuses.approved': 'Approved',
       'statuses.closed': 'Closed',
       'statuses.pending': 'Pending',
@@ -117,6 +147,59 @@ describe('RateLimitAppealsClient', () => {
           request_path:
             '/api/v1/workspaces/e9e2073c-7072-4e86-a268-b6e48f541fd5/users/groups',
           response_status: 429,
+          reviewContext: {
+            activeBlock: {
+              active: true,
+              blockedIpId: 'blocked-ip-1',
+              label: 'Active IP block found',
+            },
+            membership: {
+              label: 'Requester is a MEMBER',
+              status: 'member',
+              type: 'MEMBER',
+              verified: true,
+            },
+            recommendedActions: [
+              {
+                createWorkspaceRule: true,
+                description:
+                  'Clear the IP block and give this workspace 3x limits for 30 days.',
+                disabledReason: null,
+                expiresInDays: 30,
+                key: 'trusted_workspace',
+                label: 'Approve trusted workspace',
+                recommended: true,
+                requiresAdvancedOverride: false,
+                trustMultiplier: 3,
+              },
+              {
+                createWorkspaceRule: false,
+                description:
+                  'Clear the active IP block without changing rate limits.',
+                disabledReason: null,
+                expiresInDays: null,
+                key: 'clear_ip_only',
+                label: 'Clear IP only',
+                recommended: false,
+                requiresAdvancedOverride: false,
+                trustMultiplier: null,
+              },
+            ],
+            requester: {
+              avatarUrl: null,
+              displayName: 'Class Member',
+              email: 'member@example.com',
+              handle: null,
+              id: 'user-1',
+            },
+            workspace: {
+              avatarUrl: null,
+              handle: 'classroom',
+              id: 'e9e2073c-7072-4e86-a268-b6e48f541fd5',
+              name: 'Classroom Workspace',
+              personal: false,
+            },
+          },
           review_note: null,
           reviewed_at: null,
           reviewed_by: null,
@@ -148,19 +231,21 @@ describe('RateLimitAppealsClient', () => {
 
     expect(await screen.findByText('203.0.113.10')).toBeVisible();
     expect(screen.getByText('Legitimate classroom usage')).toBeVisible();
-    expect(screen.getByLabelText('Workspace ID')).toHaveValue(
+    expect(screen.getByText('Class Member')).toBeVisible();
+    expect(screen.getByText('Classroom Workspace')).toBeVisible();
+    expect(screen.getByLabelText('Workspace')).toHaveValue(
       'e9e2073c-7072-4e86-a268-b6e48f541fd5'
     );
-    expect(screen.getByLabelText('Multiplier')).toHaveValue(3);
-    expect(screen.getByLabelText('Expires in days')).toHaveValue(30);
 
-    fireEvent.click(screen.getByRole('button', { name: /approve/i }));
+    fireEvent.click(screen.getByRole('button', { name: /approve$/i }));
 
     await waitFor(() =>
       expect(mocks.approveRateLimitAppeal).toHaveBeenCalledWith(
         '42529372-c669-4833-bb32-2cab1f4ffd83',
         expect.objectContaining({
+          createWorkspaceRule: true,
           expiresInDays: 30,
+          presetKey: 'trusted_workspace',
           trustMultiplier: 3,
           workspaceId: 'e9e2073c-7072-4e86-a268-b6e48f541fd5',
         })

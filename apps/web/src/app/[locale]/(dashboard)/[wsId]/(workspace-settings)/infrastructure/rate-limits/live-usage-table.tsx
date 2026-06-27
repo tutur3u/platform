@@ -49,14 +49,25 @@ function EdgeBucketGroup({
             className="space-y-1 rounded-md bg-muted/40 p-2"
             key={bucket.key}
           >
-            <div className="truncate font-mono text-xs">
-              {formatBucketSummary(bucket) || t('live.unknown')}
+            <div className="truncate font-medium text-sm">
+              {bucket.display?.title ?? t('live.unknown')}
             </div>
             <div className="truncate text-muted-foreground text-xs">
-              {t('live.edge_subject', {
-                subject: bucket.subjectKind ?? t('live.unknown'),
-              })}
+              {bucket.display?.action ??
+                formatBucketSummary(bucket) ??
+                t('live.unknown')}
             </div>
+            {bucket.display?.subtitle ? (
+              <div className="truncate text-muted-foreground text-xs">
+                {bucket.display.subtitle}
+              </div>
+            ) : null}
+            <details className="text-muted-foreground text-xs">
+              <summary className="cursor-pointer">
+                {t('live.technical_key')}
+              </summary>
+              <div className="mt-1 break-all font-mono">{bucket.key}</div>
+            </details>
           </div>
         ))}
         {buckets.length === 0 ? (
@@ -107,7 +118,7 @@ export function LiveUsageTable() {
               <table className="w-full text-sm">
                 <thead className="text-left text-muted-foreground">
                   <tr>
-                    <th className="p-3 font-medium">{t('live.bucket')}</th>
+                    <th className="p-3 font-medium">{t('live.subject')}</th>
                     <th className="p-3 font-medium">{t('live.window')}</th>
                     <th className="p-3 text-right font-medium">
                       {t('live.count')}
@@ -120,8 +131,23 @@ export function LiveUsageTable() {
                       className="border-border border-t"
                       key={`${counter.bucket}:${counter.window_seconds}:${counter.window_started_at}`}
                     >
-                      <td className="max-w-72 truncate p-3 font-mono text-xs">
-                        {counter.bucket}
+                      <td className="max-w-96 p-3">
+                        <div className="truncate font-medium">
+                          {counter.display?.title ?? counter.bucket}
+                        </div>
+                        {counter.display?.subtitle ? (
+                          <div className="truncate text-muted-foreground text-xs">
+                            {counter.display.subtitle}
+                          </div>
+                        ) : null}
+                        <details className="mt-1 text-muted-foreground text-xs">
+                          <summary className="cursor-pointer">
+                            {t('live.technical_key')}
+                          </summary>
+                          <div className="mt-1 break-all font-mono">
+                            {counter.bucket}
+                          </div>
+                        </details>
                       </td>
                       <td className="p-3 text-muted-foreground text-xs">
                         {formatWindow(counter.window_seconds)}

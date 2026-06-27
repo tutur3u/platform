@@ -4,6 +4,10 @@ import {
   parseRateLimitBucketKey,
   scanReadUsageKeys,
 } from '@/lib/infrastructure/rate-limit-redis-admin';
+import {
+  enrichRateLimitEdgeBuckets,
+  enrichRateLimitWriteCounters,
+} from '@/lib/rate-limits/subject-resolution';
 import { authorizeAbuseIntelligenceRequest } from '../../abuse-intelligence/_shared';
 
 // Matches the edge proxy guard's Redis bucket namespace (api-proxy-guard.ts).
@@ -38,11 +42,19 @@ export async function GET(request: Request) {
   const parsedBuckets = edgeBuckets.keys.map((key) =>
     parseRateLimitBucketKey(key)
   );
-  const readBuckets = parsedBuckets.filter(
+  const enrichedBuckets = await enrichRateLimitEdgeBuckets(
+    authorization.sbAdmin,
+    parsedBuckets
+  );
+  const readBuckets = enrichedBuckets.filter(
     (bucket) => bucket.operation === 'get'
   );
-  const mutateBuckets = parsedBuckets.filter(
+  const mutateBuckets = enrichedBuckets.filter(
     (bucket) => bucket.operation === 'mutate'
+  );
+  const writeCounters = await enrichRateLimitWriteCounters(
+    authorization.sbAdmin,
+    counters ?? []
   );
 
   return NextResponse.json({
@@ -58,6 +70,6 @@ export async function GET(request: Request) {
       cursor: edgeBuckets.cursor,
       keys: readBuckets.map((bucket) => bucket.key),
     },
-    writeCounters: counters ?? [],
+    writeCounters,
   });
 }

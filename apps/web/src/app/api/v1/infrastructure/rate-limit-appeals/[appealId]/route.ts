@@ -7,12 +7,26 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  enrichRateLimitAppeals,
+  verifyWorkspaceAppealMembership,
+} from '@/lib/rate-limits/subject-resolution';
 import { authorizeAbuseIntelligenceRequest } from '../../abuse-intelligence/_shared';
+
+const RATE_LIMIT_ACTION_PRESETS = [
+  'clear_ip_only',
+  'custom',
+  'event_or_classroom',
+  'extended_trusted',
+  'trusted_workspace',
+] as const;
 
 const ApproveSchema = z.object({
   action: z.literal('approve'),
+  allowWorkspaceMismatch: z.boolean().default(false),
   createWorkspaceRule: z.boolean().default(true),
   expiresInDays: z.number().int().positive().max(365).default(30),
+  presetKey: z.enum(RATE_LIMIT_ACTION_PRESETS).optional(),
   reviewNote: z.string().trim().max(MAX_SEARCH_LENGTH).optional(),
   trustMultiplier: z.number().positive().max(1000).default(3),
   workspaceId: z.string().uuid().nullable().optional(),
@@ -75,12 +89,15 @@ function buildReviewNote(defaultNote: string, reviewNote?: string) {
 }
 
 async function createWorkspaceTrustedRule(args: {
+  allowWorkspaceMismatch?: boolean;
   client: unknown;
   appeal: any;
   expiresInDays: number;
+  presetKey?: string;
   reviewNote?: string;
   reviewerId: string;
   trustMultiplier: number;
+  workspaceMembershipVerified: boolean;
   workspaceId: string;
 }) {
   const expiresAt = new Date(
@@ -102,10 +119,13 @@ async function createWorkspaceTrustedRule(args: {
       expires_at: expiresAt,
       limit_mode: 'inherit_multiplier',
       metadata: {
+        allow_workspace_mismatch: !!args.allowWorkspaceMismatch,
         approved_from_rate_limit_appeal: true,
         appeal_id: args.appeal.id,
         client_ip: args.appeal.client_ip,
+        preset_key: args.presetKey ?? null,
         user_id: args.appeal.creator_id,
+        workspace_membership_verified: args.workspaceMembershipVerified,
       } satisfies Json,
       reason,
       subject_key: subjectKey,
@@ -126,9 +146,11 @@ async function createWorkspaceTrustedRule(args: {
       appealId: args.appeal.id,
       expiresAt,
       limitMode: 'inherit_multiplier',
+      presetKey: args.presetKey,
       reason,
       ruleId: data.id,
       source: 'rate_limit_appeal',
+      workspaceMembershipVerified: args.workspaceMembershipVerified,
     },
     reasonCode: 'rate_limit_appeal_approved',
     riskTier: 'trusted',
@@ -184,7 +206,11 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     const appeal = await loadAppeal(authorization.sbAdmin, appealId);
-    return NextResponse.json({ appeal });
+    const [enrichedAppeal] = await enrichRateLimitAppeals(
+      authorization.sbAdmin,
+      [appeal]
+    );
+    return NextResponse.json({ appeal: enrichedAppeal ?? appeal });
   } catch (error) {
     serverLogger.error('Failed to load rate-limit appeal', error);
     return NextResponse.json(
@@ -240,9 +266,13 @@ export async function PATCH(request: Request, context: RouteContext) {
         reviewerId: authorization.user.id,
         status: payload.action === 'reject' ? 'rejected' : 'closed',
       });
+      const [enrichedAppeal] = await enrichRateLimitAppeals(
+        authorization.sbAdmin,
+        [updatedAppeal]
+      );
 
       return NextResponse.json({
-        appeal: updatedAppeal,
+        appeal: enrichedAppeal ?? updatedAppeal,
         rule: null,
         unblocked: false,
       });
@@ -257,6 +287,36 @@ export async function PATCH(request: Request, context: RouteContext) {
         },
         { status: 400 }
       );
+    }
+
+    let workspaceMembershipVerified = false;
+    if (payload.createWorkspaceRule && workspaceId) {
+      const workspaceReview = await verifyWorkspaceAppealMembership({
+        appeal,
+        client: authorization.sbAdmin,
+        workspaceId,
+      });
+
+      if (!workspaceReview.workspaceExists) {
+        return NextResponse.json(
+          { message: 'Selected workspace was not found' },
+          { status: 400 }
+        );
+      }
+
+      workspaceMembershipVerified = workspaceReview.membershipVerified;
+      if (
+        !workspaceReview.membershipVerified &&
+        !payload.allowWorkspaceMismatch
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              'Requester is not verified as a member of this workspace. Use the advanced override to approve anyway.',
+          },
+          { status: 409 }
+        );
+      }
     }
 
     const clearedBlockedIpId = await findActiveBlockedIpId(
@@ -282,12 +342,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     const rule =
       payload.createWorkspaceRule && workspaceId
         ? await createWorkspaceTrustedRule({
+            allowWorkspaceMismatch: payload.allowWorkspaceMismatch,
             appeal,
             client: authorization.sbAdmin,
             expiresInDays: payload.expiresInDays,
+            presetKey: payload.presetKey,
             reviewNote,
             reviewerId: authorization.user.id,
             trustMultiplier: payload.trustMultiplier,
+            workspaceMembershipVerified,
             workspaceId,
           })
         : null;
@@ -301,9 +364,13 @@ export async function PATCH(request: Request, context: RouteContext) {
       reviewerId: authorization.user.id,
       status: 'approved',
     });
+    const [enrichedAppeal] = await enrichRateLimitAppeals(
+      authorization.sbAdmin,
+      [updatedAppeal]
+    );
 
     return NextResponse.json({
-      appeal: updatedAppeal,
+      appeal: enrichedAppeal ?? updatedAppeal,
       rule,
       unblocked: true,
     });

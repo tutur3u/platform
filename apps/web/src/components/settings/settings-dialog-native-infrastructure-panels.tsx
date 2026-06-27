@@ -264,7 +264,7 @@ function InfrastructureNativePanelBody({
     );
   }
   if (activeTab === 'infrastructure_rate_limits') {
-    return <RateLimitsClient canManage />;
+    return <RateLimitsClient canManage wsId={wsId} />;
   }
   if (activeTab === 'infrastructure_rate_limit_appeals') {
     return <RateLimitAppealsClient canManage wsId={wsId} />;

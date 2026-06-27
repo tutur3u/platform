@@ -1,3 +1,4 @@
+import type { RateLimitRule } from '@tuturuuu/internal-api';
 import type { Json } from '@tuturuuu/types';
 import {
   ABUSE_REPUTATION_SUBJECT_TYPES,
@@ -10,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { readEdgeTrustState } from '@/lib/infrastructure/rate-limit-redis-admin';
+import { enrichRateLimitRules } from '@/lib/rate-limits/subject-resolution';
 import {
   authorizeAbuseIntelligenceRequest,
   defaultTrustMultiplierForTier,
@@ -32,6 +34,8 @@ const WRITE_BASE_LIMITS = {
   userBackstop: { minute: 40, hour: 400, day: 1500 },
 } as const;
 
+type JsonObject = { [key: string]: Json | undefined };
+
 const WindowLimitsSchema = z.object({
   day: z.number().int().positive().max(100_000_000).optional(),
   hour: z.number().int().positive().max(100_000_000).optional(),
@@ -43,12 +47,21 @@ const AbsoluteLimitsSchema = z.object({
   write: WindowLimitsSchema.optional(),
 });
 
+const RATE_LIMIT_ACTION_PRESETS = [
+  'clear_ip_only',
+  'custom',
+  'event_or_classroom',
+  'extended_trusted',
+  'trusted_workspace',
+] as const;
+
 export const CreateRateLimitRuleSchema = z
   .object({
     absoluteLimits: AbsoluteLimitsSchema.nullable().optional(),
     expiresAt: z.string().datetime().nullable().optional(),
     limitMode: z.enum(RATE_LIMIT_MODES).default('inherit_multiplier'),
     metadata: z.record(z.string(), z.unknown()).optional(),
+    presetKey: z.enum(RATE_LIMIT_ACTION_PRESETS).optional(),
     reason: z.string().trim().min(1).max(MAX_SEARCH_LENGTH),
     subjectKey: z.string().trim().min(1).max(256),
     subjectType: z.enum(ABUSE_REPUTATION_SUBJECT_TYPES),
@@ -74,6 +87,25 @@ function parsePositiveInt(value: string | null, fallback: number, max: number) {
     return fallback;
   }
   return Math.min(parsed, max);
+}
+
+function isJsonObject(value: Json): value is JsonObject {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeRateLimitRuleRow(
+  row: Omit<RateLimitRule, 'absolute_limits' | 'metadata'> & {
+    absolute_limits: Json;
+    metadata: Json;
+  }
+): RateLimitRule {
+  return {
+    ...row,
+    absolute_limits: isJsonObject(row.absolute_limits)
+      ? (row.absolute_limits as RateLimitRule['absolute_limits'])
+      : null,
+    metadata: isJsonObject(row.metadata) ? row.metadata : {},
+  };
 }
 
 /** Resolves the trust multiplier to persist given the chosen mode/tier. */
@@ -122,10 +154,6 @@ export async function GET(request: Request) {
       subjectTypeParam as (typeof ABUSE_REPUTATION_SUBJECT_TYPES)[number]
     );
   }
-  if (search) {
-    query = query.ilike('subject_key', `%${search}%`);
-  }
-
   const { data, error } = await query;
 
   if (error) {
@@ -136,7 +164,26 @@ export async function GET(request: Request) {
     );
   }
 
-  const rules = data ?? [];
+  const enrichedRules = await enrichRateLimitRules(
+    authorization.sbAdmin,
+    (data ?? []).map(normalizeRateLimitRuleRow)
+  );
+  const normalizedSearch = search?.toLowerCase();
+  const rules = normalizedSearch
+    ? enrichedRules.filter((rule) =>
+        [
+          rule.subject_key,
+          rule.reason,
+          rule.subject?.label,
+          rule.subject?.detail,
+          rule.subject?.ip,
+          rule.subject?.userId,
+          rule.subject?.workspaceId,
+        ]
+          .filter(Boolean)
+          .some((value) => value!.toLowerCase().includes(normalizedSearch))
+      )
+    : enrichedRules;
   const byMode: Record<string, number> = {};
   const bySubjectType: Record<string, number> = {};
   for (const rule of rules) {
@@ -175,7 +222,14 @@ export async function POST(request: Request) {
     return authorization.response;
   }
 
-  const parsed = CreateRateLimitRuleSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const parsed = CreateRateLimitRuleSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { errors: parsed.error.issues, message: 'Invalid request data' },
@@ -194,7 +248,10 @@ export async function POST(request: Request) {
       created_by: authorization.user.id,
       expires_at: payload.expiresAt ?? null,
       limit_mode: payload.limitMode,
-      metadata: (payload.metadata ?? {}) as Json,
+      metadata: {
+        ...(payload.metadata ?? {}),
+        ...(payload.presetKey ? { preset_key: payload.presetKey } : {}),
+      } as Json,
       reason: payload.reason,
       subject_key: payload.subjectKey,
       subject_type: payload.subjectType,

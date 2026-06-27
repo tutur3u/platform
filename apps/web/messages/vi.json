@@ -11125,7 +11125,7 @@
       "retry": "Thử lại"
     },
     "description": "Xem xét yêu cầu từ người dùng hợp lệ, xóa chặn IP cứng và tạo mức nâng giới hạn cho không gian làm việc tin cậy.",
-    "diagnostics": "Chẩn đoán đã ghi nhận",
+    "diagnostics": "Chi tiết kỹ thuật",
     "empty": "Không có yêu cầu nào khớp bộ lọc hiện tại.",
     "error": {
       "description": "Đã xảy ra lỗi khi tải yêu cầu xem xét giới hạn.",
@@ -11137,12 +11137,46 @@
       "multiplier": "Hệ số",
       "relief_until": "Truy cập tạm thời đến",
       "review_note": "Ghi chú xem xét",
+      "review_note_placeholder": "Ghi lại bạn đã xác minh gì và vì sao hành động này an toàn.",
       "workspace": "Không gian làm việc",
-      "workspace_id": "ID không gian làm việc"
+      "workspace_id": "ID không gian làm việc",
+      "workspace_placeholder": "ID không gian làm việc"
     },
     "filters": {
       "all": "Tất cả trạng thái",
       "search": "Tìm IP hoặc ID không gian"
+    },
+    "presets": {
+      "clear_ip_only": {
+        "description": "Gỡ chặn IP mà không thay đổi giới hạn của không gian.",
+        "label": "Chỉ gỡ chặn IP"
+      },
+      "event_or_classroom": {
+        "description": "Gỡ chặn và nâng giới hạn không gian lên 5x trong 7 ngày.",
+        "label": "Sự kiện hoặc lớp ngắn hạn"
+      },
+      "extended_trusted": {
+        "description": "Gỡ chặn và nâng giới hạn không gian lên 10x trong 30 ngày.",
+        "label": "Không gian tin cậy mở rộng"
+      },
+      "trusted_workspace": {
+        "description": "Gỡ chặn và nâng giới hạn không gian lên 3x trong 30 ngày.",
+        "label": "Duyệt không gian tin cậy"
+      }
+    },
+    "review": {
+      "allow_mismatch": "Duyệt khi không khớp thành viên",
+      "allow_mismatch_description": "Chỉ dùng sau khi xác nhận người yêu cầu nên được hỗ trợ cho không gian đã chọn.",
+      "block_status": "Trạng thái chặn",
+      "block_unknown": "Không rõ trạng thái chặn",
+      "description": "Chọn hành động an toàn nhất sau khi kiểm tra người yêu cầu, không gian, thành viên và chặn IP hiện tại.",
+      "membership_unknown": "Không rõ thành viên",
+      "no_workspace": "Không ghi nhận không gian",
+      "recommended": "Khuyến nghị",
+      "requester": "Người yêu cầu",
+      "title": "Hành động khuyến nghị",
+      "unknown_workspace": "Không rõ không gian",
+      "workspace": "Không gian làm việc"
     },
     "statuses": {
       "approved": "Đã duyệt",
@@ -11171,7 +11205,8 @@
       "synced": "Biên: đang hoạt động"
     },
     "empty": {
-      "rules": "Chưa có quy tắc giới hạn nào. Thêm một quy tắc để tăng, hạn chế hoặc bỏ giới hạn cho đối tượng."
+      "rules": "Chưa có quy tắc giới hạn nào. Thêm một quy tắc để tăng, hạn chế hoặc bỏ giới hạn cho đối tượng.",
+      "trusted_workspaces": "Chưa có mức nâng giới hạn nào cho không gian tin cậy."
     },
     "error": {
       "description": "Đã xảy ra lỗi khi tải các quy tắc giới hạn tần suất.",
@@ -11188,13 +11223,43 @@
       "preview": "Giới hạn hiệu lực",
       "read_per_minute": "Lượt đọc mỗi phút",
       "reason": "Lý do",
+      "reason_placeholder": "Bạn đã xác minh gì, và khi nào cần xem lại?",
       "subject_key": "Khóa đối tượng",
       "subject_type": "Loại đối tượng",
       "tier": "Bậc"
     },
     "filters": {
       "all_subjects": "Tất cả loại đối tượng",
-      "search_subject": "Tìm khóa đối tượng"
+      "search_subject": "Tìm không gian, người dùng, IP hoặc khóa kỹ thuật"
+    },
+    "guided": {
+      "preset": "Hành động khuyến nghị",
+      "search_placeholders": {
+        "ip": "Tìm hoặc nhập địa chỉ IP",
+        "user": "Tìm theo tên người dùng",
+        "workspace": "Tìm theo tên không gian"
+      },
+      "search_subject": "Tìm đối tượng",
+      "searching": "Đang tìm...",
+      "subject_inputs": {
+        "cidr": "Dải CIDR",
+        "session": "Khóa phiên"
+      },
+      "subject_kinds": {
+        "advanced": "Khóa đối tượng nâng cao",
+        "cidr": "Dải mạng",
+        "ip": "Địa chỉ IP",
+        "session": "Phiên",
+        "user": "Người dùng",
+        "workspace": "Không gian làm việc"
+      },
+      "subject_placeholders": {
+        "advanced": "workspace:<uuid>, user:<uuid>, ip:<address>...",
+        "cidr": "203.0.113.0/24",
+        "session": "mã phiên"
+      },
+      "technical_subject": "Đối tượng kỹ thuật",
+      "who": "Ai cần điều chỉnh giới hạn?"
     },
     "live": {
       "bucket": "Bucket",
@@ -11208,7 +11273,9 @@
       "read_active": "{count} bucket đọc đang hoạt động ở biên.",
       "read_title": "Bucket đọc ở biên",
       "read_unavailable": "Redis biên chưa được cấu hình trong môi trường này.",
-      "title": "Mức sử dụng trực tiếp",
+      "subject": "Đối tượng",
+      "technical_key": "Khóa kỹ thuật",
+      "title": "Hoạt động trực tiếp",
       "unknown": "Không rõ",
       "window": "Cửa sổ",
       "write_empty": "Không có bộ đếm ghi nào trong cửa sổ hiện tại.",
@@ -11226,15 +11293,44 @@
       "inherit_multiplier": "Hệ số",
       "unlimited": "Không giới hạn"
     },
+    "presets": {
+      "custom": {
+        "description": "Bậc, chế độ, hệ số hoặc giới hạn tuyệt đối nâng cao.",
+        "label": "Quy tắc nâng cao tùy chỉnh"
+      },
+      "event_or_classroom": {
+        "description": "Giới hạn 5x trong 7 ngày cho lớp, sự kiện hoặc đợt tăng ngắn.",
+        "label": "Sự kiện hoặc lớp ngắn hạn"
+      },
+      "extended_trusted": {
+        "description": "Giới hạn 10x trong 30 ngày cho không gian hợp lệ có mức dùng cao.",
+        "label": "Không gian tin cậy mở rộng"
+      },
+      "trusted_workspace": {
+        "description": "Giới hạn 3x trong 30 ngày. Mặc định tốt nhất cho lưu lượng không gian hợp lệ.",
+        "label": "Không gian tin cậy"
+      }
+    },
+    "review": {
+      "description": "Bắt đầu từ yêu cầu xem xét và quy tắc không gian tin cậy trước khi chỉnh khóa cấp thấp.",
+      "pending_appeals": "Yêu cầu đang chờ",
+      "title": "Cần xem xét",
+      "trusted_rule_detail": "{multiplier}x · hết hạn {expires}",
+      "trusted_workspaces": "Không gian tin cậy"
+    },
     "rules": {
       "create": "Thêm quy tắc",
-      "create_description": "Tăng, giảm, đặt giới hạn tuyệt đối hoặc bỏ giới hạn cho một đối tượng.",
+      "create_description": "Chọn ai cần hỗ trợ, rồi áp dụng preset an toàn hoặc quy tắc nâng cao.",
       "revoke": "Thu hồi",
       "revoke_reason": "Thu hồi từ trung tâm quản lý giới hạn tần suất"
     },
     "sections": {
+      "advanced_controls": "Điều khiển nâng cao",
+      "advanced_controls_description": "Giới hạn cấp workspace-secret và chẩn đoán thô cho nhân sự cần khóa chính xác.",
       "rules": "Quy tắc theo đối tượng",
-      "rules_description": "Ghi đè áp dụng cho người dùng, phiên, khóa API, IP, vị trí hoặc không gian làm việc."
+      "rules_description": "Ghi đè áp dụng cho không gian, người dùng, IP, phiên hoặc đối tượng nâng cao đã được xác định.",
+      "trusted_workspaces": "Không gian tin cậy",
+      "trusted_workspaces_description": "Mức nâng giới hạn có thời hạn được tạo từ duyệt yêu cầu hoặc quy tắc hướng dẫn."
     },
     "subject_types": {
       "api_key": "Khóa API",
@@ -11249,7 +11345,8 @@
       "effective": "Giới hạn hiệu lực",
       "expires": "Hết hạn",
       "mode": "Chế độ",
-      "subject": "Đối tượng"
+      "subject": "Đối tượng",
+      "technical_subject": "Khóa kỹ thuật"
     },
     "tiers": {
       "challenge_required": "Yêu cầu xác minh",

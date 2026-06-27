@@ -53,7 +53,7 @@ export default async function InfrastructureRateLimitsPage({ params }: Props) {
 
       <Separator className="my-4" />
 
-      <RateLimitsClient canManage={canManage} />
+      <RateLimitsClient canManage={canManage} wsId={wsId} />
     </>
   );
 }

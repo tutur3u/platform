@@ -11125,7 +11125,7 @@
       "retry": "Retry"
     },
     "description": "Review legitimate-user requests, clear hard IP blocks, and create trusted workspace uplifts.",
-    "diagnostics": "Captured diagnostics",
+    "diagnostics": "Technical details",
     "empty": "No appeals match the current filters.",
     "error": {
       "description": "Something went wrong loading rate-limit appeals.",
@@ -11137,12 +11137,46 @@
       "multiplier": "Multiplier",
       "relief_until": "Temporary relief until",
       "review_note": "Review note",
+      "review_note_placeholder": "Add what you verified and why this action is safe.",
       "workspace": "Workspace",
-      "workspace_id": "Workspace ID"
+      "workspace_id": "Workspace ID",
+      "workspace_placeholder": "Workspace ID"
     },
     "filters": {
       "all": "All statuses",
       "search": "Search IP or workspace ID"
+    },
+    "presets": {
+      "clear_ip_only": {
+        "description": "Remove the IP block without changing workspace limits.",
+        "label": "Clear IP only"
+      },
+      "event_or_classroom": {
+        "description": "Clear the block and give the workspace 5x limits for 7 days.",
+        "label": "Short event or classroom"
+      },
+      "extended_trusted": {
+        "description": "Clear the block and give the workspace 10x limits for 30 days.",
+        "label": "Extended trusted workspace"
+      },
+      "trusted_workspace": {
+        "description": "Clear the block and give the workspace 3x limits for 30 days.",
+        "label": "Approve trusted workspace"
+      }
+    },
+    "review": {
+      "allow_mismatch": "Approve with a workspace mismatch",
+      "allow_mismatch_description": "Use only after confirming the requester should receive relief for the selected workspace.",
+      "block_status": "Block status",
+      "block_unknown": "Block status unknown",
+      "description": "Choose the safest action after checking requester, workspace, membership, and the active IP block.",
+      "membership_unknown": "Membership unknown",
+      "no_workspace": "No workspace captured",
+      "recommended": "Recommended",
+      "requester": "Requester",
+      "title": "Recommended actions",
+      "unknown_workspace": "Unknown workspace",
+      "workspace": "Workspace"
     },
     "statuses": {
       "approved": "Approved",
@@ -11171,7 +11205,8 @@
       "synced": "Edge: live"
     },
     "empty": {
-      "rules": "No active rate-limit rules. Add one to raise, restrict, or unlimit a subject."
+      "rules": "No active rate-limit rules. Add one to raise, restrict, or unlimit a subject.",
+      "trusted_workspaces": "No trusted workspace uplifts are active."
     },
     "error": {
       "description": "Something went wrong loading the rate-limit rules.",
@@ -11188,13 +11223,43 @@
       "preview": "Effective limits",
       "read_per_minute": "Reads per minute",
       "reason": "Reason",
+      "reason_placeholder": "What did you verify, and when should this be revisited?",
       "subject_key": "Subject key",
       "subject_type": "Subject type",
       "tier": "Tier"
     },
     "filters": {
       "all_subjects": "All subject types",
-      "search_subject": "Search subject key"
+      "search_subject": "Search workspace, user, IP, or technical key"
+    },
+    "guided": {
+      "preset": "Recommended action",
+      "search_placeholders": {
+        "ip": "Search or type an IP address",
+        "user": "Search by user name",
+        "workspace": "Search by workspace name"
+      },
+      "search_subject": "Find the subject",
+      "searching": "Searching...",
+      "subject_inputs": {
+        "cidr": "CIDR range",
+        "session": "Session key"
+      },
+      "subject_kinds": {
+        "advanced": "Advanced subject key",
+        "cidr": "Network range",
+        "ip": "IP address",
+        "session": "Session",
+        "user": "User",
+        "workspace": "Workspace"
+      },
+      "subject_placeholders": {
+        "advanced": "workspace:<uuid>, user:<uuid>, ip:<address>...",
+        "cidr": "203.0.113.0/24",
+        "session": "session hash"
+      },
+      "technical_subject": "Technical subject",
+      "who": "Who needs adjusted limits?"
     },
     "live": {
       "bucket": "Bucket",
@@ -11208,7 +11273,9 @@
       "read_active": "{count} active read buckets at the edge.",
       "read_title": "Edge read buckets",
       "read_unavailable": "Edge Redis is not configured in this environment.",
-      "title": "Live usage",
+      "subject": "Subject",
+      "technical_key": "Technical key",
+      "title": "Live activity",
       "unknown": "Unknown",
       "window": "Window",
       "write_empty": "No active write counters in the current window.",
@@ -11226,15 +11293,44 @@
       "inherit_multiplier": "Multiplier",
       "unlimited": "Unlimited"
     },
+    "presets": {
+      "custom": {
+        "description": "Advanced tier, mode, multiplier, or absolute caps.",
+        "label": "Custom advanced rule"
+      },
+      "event_or_classroom": {
+        "description": "5x limits for 7 days for a short class, event, or burst.",
+        "label": "Short event or classroom"
+      },
+      "extended_trusted": {
+        "description": "10x limits for 30 days for a heavily used legitimate workspace.",
+        "label": "Extended trusted workspace"
+      },
+      "trusted_workspace": {
+        "description": "3x limits for 30 days. Best default for legitimate workspace traffic.",
+        "label": "Trusted workspace"
+      }
+    },
+    "review": {
+      "description": "Start with appeals and trusted workspace rules before editing low-level keys.",
+      "pending_appeals": "Pending appeals",
+      "title": "Needs review",
+      "trusted_rule_detail": "{multiplier}x · expires {expires}",
+      "trusted_workspaces": "Trusted workspaces"
+    },
     "rules": {
       "create": "Add rule",
-      "create_description": "Raise, lower, set absolute limits, or unlimit a subject.",
+      "create_description": "Choose who needs help, then apply a safe preset or advanced rule.",
       "revoke": "Revoke",
       "revoke_reason": "Revoked from the rate limits admin center"
     },
     "sections": {
+      "advanced_controls": "Advanced controls",
+      "advanced_controls_description": "Low-level workspace-secret limits and raw diagnostics for staff who need exact keys.",
       "rules": "Subject rules",
-      "rules_description": "Overrides applied to a user, session, API key, IP, location, or workspace."
+      "rules_description": "Overrides applied to a resolved workspace, user, IP, session, or advanced subject.",
+      "trusted_workspaces": "Trusted workspaces",
+      "trusted_workspaces_description": "Time-bound workspace uplifts created from approvals or guided rules."
     },
     "subject_types": {
       "api_key": "API key",
@@ -11249,7 +11345,8 @@
       "effective": "Effective limits",
       "expires": "Expires",
       "mode": "Mode",
-      "subject": "Subject"
+      "subject": "Subject",
+      "technical_subject": "Technical key"
     },
     "tiers": {
       "challenge_required": "Challenge required",
