@@ -1213,6 +1213,25 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/vi/personal')).toBe(false);
   });
 
+  it('configures only auth recovery routes as public auth paths', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/auth/recovery/confirm'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+        }
+      | undefined;
+
+    expect(authOptions?.isPublicPath?.('/auth/recovery')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/auth/recovery/confirm')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/en/auth/recovery/confirm')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/vi/auth/recovery/confirm')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/personal')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/auth/mfa')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
+  });
+
   it('redirects the legacy dashboard alias to the default workspace home', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),

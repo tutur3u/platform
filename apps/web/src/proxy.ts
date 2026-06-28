@@ -250,10 +250,17 @@ function isInternalTasksEntryPath({
   );
 }
 
-function isLocaleRootPublicPath(pathname: string): boolean {
+function isAuthProxyPublicPath(pathname: string): boolean {
   const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
 
-  return Boolean(locale && pathnameWithoutLocale === '/');
+  if (locale && pathnameWithoutLocale === '/') {
+    return true;
+  }
+
+  return (
+    pathnameWithoutLocale === '/auth/recovery' ||
+    pathnameWithoutLocale.startsWith('/auth/recovery/')
+  );
 }
 
 function redirectToPath(req: NextRequest, pathname: string) {
@@ -935,7 +942,7 @@ function shouldBypassOnboardingCheck(pathname: string): boolean {
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
-  isPublicPath: isLocaleRootPublicPath,
+  isPublicPath: isAuthProxyPublicPath,
   skipApiRoutes: true,
 });
 
