@@ -1531,6 +1531,103 @@
     "email-sent-p1": "Chúng tôi đã gửi cho bạn một email xác nhận đến email",
     "email-sent-p2": "Vui lòng kiểm tra hộp thư đến của bạn và sử dụng mã xác nhận được cung cấp để hoàn tất đăng ký của bạn."
   },
+  "auth-recovery": {
+    "code_hint": "Dùng mã 6 chữ số trong email khôi phục nếu liên kết một chạm không mở được.",
+    "code_label": "Mã xác minh",
+    "description": "Nhập mã khôi phục do bộ phận hỗ trợ gửi để hoàn tất khôi phục tài khoản.",
+    "diagnostic_code": "Mã chẩn đoán: {code}",
+    "email_label": "Địa chỉ email",
+    "generic_error": "Hiện chưa thể hoàn tất khôi phục tài khoản.",
+    "invalid_link": "Liên kết khôi phục không hợp lệ hoặc đã hết hạn. Hãy nhập mã xác minh từ email mới nhất.",
+    "submit": "Xác minh và đăng nhập",
+    "submitting": "Đang xác minh...",
+    "success": "Đã xác nhận khôi phục. Đang chuyển hướng...",
+    "title": "Khôi phục tài khoản"
+  },
+  "auth-recovery-admin": {
+    "actions": {
+      "create": "Tạo ghi đè",
+      "retry": "Thử lại",
+      "revoke": "Thu hồi",
+      "search": "Tìm kiếm",
+      "send_email": "Gửi email khôi phục"
+    },
+    "common": {
+      "no": "Không",
+      "yes": "Có"
+    },
+    "create": {
+      "description": "Thêm ghi đè ngắn hạn cho email đã được kiểm tra thủ công và tùy chọn xóa giới hạn OTP theo email.",
+      "title": "Tạo ghi đè khôi phục"
+    },
+    "description": "Gửi email khôi phục đã được hỗ trợ phê duyệt và kiểm tra các rào cản với người dùng bị kẹt ở bước xác thực.",
+    "diagnostics": {
+      "active_override": "Ghi đè đang hoạt động",
+      "auth_user": "Người dùng Auth",
+      "email_blocked": "Email bị chặn",
+      "recent_abuse_events": "Sự kiện lạm dụng gần đây"
+    },
+    "empty": {
+      "events": "Không tìm thấy sự kiện khôi phục.",
+      "overrides": "Không có ghi đè khôi phục khớp bộ lọc này."
+    },
+    "error": {
+      "description": "Đã xảy ra lỗi khi tải dữ liệu khôi phục xác thực.",
+      "title": "Không thể tải khôi phục xác thực"
+    },
+    "events": {
+      "normal_login_bypass_used": "Đã dùng ghi đè đăng nhập thường",
+      "override_created": "Đã tạo ghi đè",
+      "override_revoked": "Đã thu hồi ghi đè",
+      "recovery_code_consumed": "Đã dùng mã khôi phục",
+      "recovery_email_send_failed": "Gửi email khôi phục thất bại",
+      "recovery_email_sent": "Đã gửi email khôi phục",
+      "recovery_token_consumed": "Đã dùng token khôi phục",
+      "recovery_token_rejected": "Token khôi phục bị từ chối",
+      "supabase_user_created": "Đã tạo người dùng Supabase",
+      "supabase_user_unbanned": "Đã gỡ cấm người dùng Supabase"
+    },
+    "fields": {
+      "allow_normal_login": "Cho phép ghi đè đăng nhập thường",
+      "allow_recovery_email": "Cho phép đăng nhập bằng email khôi phục",
+      "email": "Địa chỉ email",
+      "expires_at": "Hết hạn: {value}",
+      "last_used_at": "Dùng gần nhất: {value}",
+      "reason": "Lý do hỗ trợ",
+      "reason_placeholder": "Đã xác minh điều gì trước khi cấp quyền khôi phục?",
+      "reset_otp_attempts": "Đặt lại lượt xác minh OTP",
+      "reset_otp_send": "Đặt lại giới hạn gửi OTP",
+      "revoke_reason": "Lý do thu hồi",
+      "revoke_reason_placeholder": "Ghi chú tùy chọn cho kiểm toán",
+      "unblock_related_ips": "Gỡ chặn IP liên quan"
+    },
+    "filters": {
+      "email": "Chẩn đoán email",
+      "email_placeholder": "person@example.com"
+    },
+    "modes": {
+      "normal_login": "Đăng nhập thường",
+      "recovery_email": "Email khôi phục"
+    },
+    "sections": {
+      "events": "Sự kiện khôi phục",
+      "overrides": "Ghi đè"
+    },
+    "statuses": {
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn",
+      "revoked": "Đã thu hồi"
+    },
+    "title": "Khôi phục xác thực",
+    "toasts": {
+      "create_failed": "Không thể tạo ghi đè khôi phục",
+      "created": "Đã tạo ghi đè khôi phục",
+      "revoke_failed": "Không thể thu hồi ghi đè khôi phục",
+      "revoked": "Đã thu hồi ghi đè khôi phục",
+      "send_failed": "Không thể gửi email khôi phục",
+      "sent": "Đã gửi email khôi phục"
+    }
+  },
   "avatar": "Ảnh đại diện",
   "basic-data-table": {
     "created_at": "Tạo lúc",
@@ -7946,6 +8043,7 @@
     "ai_credits_models": "Mô hình Gateway",
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "app_coordination": "Điều phối ứng dụng",
+    "auth_recovery": "Khôi phục xác thực",
     "backups": "Sao lưu",
     "blocked_ips": "IP bị chặn",
     "changelog": "Nhật ký thay đổi",

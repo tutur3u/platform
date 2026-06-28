@@ -229,6 +229,12 @@ function buildInfrastructureRouteItems({
       keywords: ['Infrastructure', 'Email', 'Blacklist'],
     },
     {
+      name: 'infrastructure_auth_recovery',
+      label: t('infrastructure-tabs.auth_recovery'),
+      icon: Shield,
+      keywords: ['Infrastructure', 'Auth', 'Recovery', 'Login'],
+    },
+    {
       name: 'infrastructure_email_audit',
       label: t('infrastructure-tabs.email_audit'),
       icon: FileText,

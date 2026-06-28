@@ -1,6 +1,7 @@
 export * from './infrastructure/abuse';
 export * from './infrastructure/ai';
 export * from './infrastructure/apps';
+export * from './infrastructure/auth-recovery';
 export * from './infrastructure/blocked-ips';
 export * from './infrastructure/cron';
 export * from './infrastructure/github-bot';

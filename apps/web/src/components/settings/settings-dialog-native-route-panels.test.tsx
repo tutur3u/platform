@@ -12,6 +12,7 @@ const { adminTabs, infrastructureTabs } = vi.hoisted(() => ({
   ]),
   infrastructureTabs: new Set([
     'infrastructure_calendar_sync',
+    'infrastructure_auth_recovery',
     'infrastructure_devboxes',
     'infrastructure_email_audit',
     'infrastructure_email_templates',
@@ -45,6 +46,7 @@ describe('SettingsDialogNativeRoutePanels', () => {
     'api_keys',
     'secrets',
     'infrastructure_calendar_sync',
+    'infrastructure_auth_recovery',
     'infrastructure_devboxes',
     'infrastructure_email_audit',
     'infrastructure_email_templates',

@@ -17,6 +17,7 @@ import { AbuseIntelligenceClient } from '../../app/[locale]/(dashboard)/[wsId]/(
 import { AiAgentsClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai-agents/ai-agents-client';
 import AiCreditsPage from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai-credits/page';
 import { AppCoordinationClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/app-coordination/app-coordination-client';
+import { AuthRecoveryClient } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/auth-recovery/auth-recovery-client';
 import TemplatePreview from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/email-templates/template-preview';
 import EntityCreationLimitsClient from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/entity-creation-limits/client';
 import type {
@@ -57,6 +58,7 @@ export const INFRASTRUCTURE_NATIVE_TABS = new Set([
   'infrastructure_ai_whitelisted_domains',
   'infrastructure_ai_whitelisted_emails',
   'infrastructure_app_coordination',
+  'infrastructure_auth_recovery',
   'infrastructure_blocked_ips',
   'infrastructure_calendar_sync',
   'infrastructure_changelog',
@@ -210,6 +212,9 @@ function InfrastructureNativePanelBody({
         }}
       />
     );
+  }
+  if (activeTab === 'infrastructure_auth_recovery') {
+    return <AuthRecoveryClient canManage locale="en" />;
   }
   if (activeTab === 'infrastructure_external_apps') {
     return <ExternalAppsClient initialApps={[]} />;

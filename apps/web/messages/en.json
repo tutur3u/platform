@@ -1531,6 +1531,103 @@
     "email-sent-p1": "A confirmation email has been sent to your email",
     "email-sent-p2": "Please check your inbox and use the provided verification code to complete your registration."
   },
+  "auth-recovery": {
+    "code_hint": "Use the 6-digit code from your recovery email if the one-click link did not open.",
+    "code_label": "Verification code",
+    "description": "Enter the recovery code sent by support to complete account recovery.",
+    "diagnostic_code": "Diagnostic code: {code}",
+    "email_label": "Email address",
+    "generic_error": "Unable to complete account recovery right now.",
+    "invalid_link": "That recovery link is invalid or expired. Enter the verification code from the latest email.",
+    "submit": "Verify and sign in",
+    "submitting": "Verifying...",
+    "success": "Recovery confirmed. Redirecting...",
+    "title": "Account recovery"
+  },
+  "auth-recovery-admin": {
+    "actions": {
+      "create": "Create override",
+      "retry": "Retry",
+      "revoke": "Revoke",
+      "search": "Search",
+      "send_email": "Send recovery email"
+    },
+    "common": {
+      "no": "No",
+      "yes": "Yes"
+    },
+    "create": {
+      "description": "Add a short-lived override for a manually reviewed email and optionally clear email-scoped OTP limits.",
+      "title": "Create recovery override"
+    },
+    "description": "Send support-approved recovery emails and inspect blockers for users stuck at authentication.",
+    "diagnostics": {
+      "active_override": "Active override",
+      "auth_user": "Auth user",
+      "email_blocked": "Email blocked",
+      "recent_abuse_events": "Recent abuse events"
+    },
+    "empty": {
+      "events": "No recovery events found.",
+      "overrides": "No recovery overrides match this filter."
+    },
+    "error": {
+      "description": "Something went wrong loading auth recovery data.",
+      "title": "Failed to load auth recovery"
+    },
+    "events": {
+      "normal_login_bypass_used": "Normal login bypass used",
+      "override_created": "Override created",
+      "override_revoked": "Override revoked",
+      "recovery_code_consumed": "Recovery code consumed",
+      "recovery_email_send_failed": "Recovery email failed",
+      "recovery_email_sent": "Recovery email sent",
+      "recovery_token_consumed": "Recovery token consumed",
+      "recovery_token_rejected": "Recovery token rejected",
+      "supabase_user_created": "Supabase user created",
+      "supabase_user_unbanned": "Supabase user unbanned"
+    },
+    "fields": {
+      "allow_normal_login": "Allow normal login bypass",
+      "allow_recovery_email": "Allow recovery email login",
+      "email": "Email address",
+      "expires_at": "Expires: {value}",
+      "last_used_at": "Last used: {value}",
+      "reason": "Support reason",
+      "reason_placeholder": "What was verified before granting recovery access?",
+      "reset_otp_attempts": "Reset OTP verify attempts",
+      "reset_otp_send": "Reset OTP send limits",
+      "revoke_reason": "Revoke reason",
+      "revoke_reason_placeholder": "Optional note for audit",
+      "unblock_related_ips": "Unblock related IPs"
+    },
+    "filters": {
+      "email": "Email diagnostics",
+      "email_placeholder": "person@example.com"
+    },
+    "modes": {
+      "normal_login": "Normal login",
+      "recovery_email": "Recovery email"
+    },
+    "sections": {
+      "events": "Recovery events",
+      "overrides": "Overrides"
+    },
+    "statuses": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "title": "Auth recovery",
+    "toasts": {
+      "create_failed": "Failed to create recovery override",
+      "created": "Recovery override created",
+      "revoke_failed": "Failed to revoke recovery override",
+      "revoked": "Recovery override revoked",
+      "send_failed": "Failed to send recovery email",
+      "sent": "Recovery email sent"
+    }
+  },
   "avatar": "Avatar",
   "basic-data-table": {
     "created_at": "Created at",
@@ -7946,6 +8043,7 @@
     "ai_credits_models": "Gateway Models",
     "ai_whitelisted_emails": "AI Whitelisted Emails",
     "app_coordination": "App Coordination",
+    "auth_recovery": "Auth Recovery",
     "backups": "Backups",
     "blocked_ips": "Blocked IPs",
     "changelog": "Changelog",

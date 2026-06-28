@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
     extractIPFromHeaders: vi.fn(),
     extractUserAgentFromHeaders: vi.fn(),
     logAbuseEvent: vi.fn(),
+    prepareNormalAuthRecoveryOverrideUse: vi.fn(),
     recordPasswordLoginFailure: vi.fn(),
     resolveTurnstileToken: vi.fn(),
     shouldBypassSupabaseAuthCaptchaForDev: vi.fn(),
@@ -88,6 +89,12 @@ vi.mock('@/lib/auth/local-e2e', () => ({
   ) => mocks.shouldBypassSupabaseAuthCaptchaForDev(...args),
 }));
 
+vi.mock('@/lib/auth/recovery', () => ({
+  prepareNormalAuthRecoveryOverrideUse: (
+    ...args: Parameters<typeof mocks.prepareNormalAuthRecoveryOverrideUse>
+  ) => mocks.prepareNormalAuthRecoveryOverrideUse(...args),
+}));
+
 describe('passwordLogin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -115,6 +122,7 @@ describe('passwordLogin', () => {
     mocks.shouldBypassSupabaseAuthCaptchaForDev.mockReturnValue(true);
     mocks.createClient.mockResolvedValue(mocks.browserClient);
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
+    mocks.prepareNormalAuthRecoveryOverrideUse.mockResolvedValue(null);
     mocks.browserSignInWithPassword.mockResolvedValue({
       data: {
         session: {
@@ -265,5 +273,56 @@ describe('passwordLogin', () => {
       status: 400,
     });
     expect(mocks.recordPasswordLoginFailure).not.toHaveBeenCalled();
+  });
+
+  it('uses an active auth recovery override to skip email-scoped password throttling while wrong passwords still fail', async () => {
+    const { passwordLogin } = await import('./password');
+
+    mocks.prepareNormalAuthRecoveryOverrideUse.mockResolvedValue({
+      allowNormalLogin: true,
+      allowRecoveryEmail: true,
+      email: 'person@example.com',
+      id: 'override-1',
+    });
+    mocks.browserSignInWithPassword.mockResolvedValue({
+      data: {
+        session: null,
+        user: null,
+      },
+      error: {
+        message: 'Invalid login credentials',
+      },
+    });
+
+    const result = await passwordLogin(
+      {
+        client: 'web',
+        email: 'person@example.com',
+        locale: 'en',
+        password: 'wrong-password',
+      },
+      {
+        client: 'web',
+        endpoint: '/api/v1/auth/password-login',
+        headers: new Headers(),
+      }
+    );
+
+    expect(result).toEqual({
+      body: {
+        error: 'Invalid login credentials',
+        remainingAttempts: 4,
+      },
+      status: 401,
+    });
+    expect(mocks.checkPasswordLoginLimit).toHaveBeenCalledTimes(1);
+    expect(mocks.checkPasswordLoginLimit).toHaveBeenCalledWith('1.2.3.4', {
+      route: '/api/v1/auth/password-login',
+      source: 'password-login',
+    });
+    expect(mocks.recordPasswordLoginFailure).toHaveBeenCalledWith(
+      '1.2.3.4',
+      undefined
+    );
   });
 });

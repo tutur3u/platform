@@ -99,6 +99,7 @@ const formerRouteOnlyEntries = [
   'infrastructure_ai_whitelisted_domains',
   'infrastructure_ai_whitelisted_emails',
   'infrastructure_app_coordination',
+  'infrastructure_auth_recovery',
   'infrastructure_blocked_ips',
   'infrastructure_calendar_sync',
   'infrastructure_changelog',

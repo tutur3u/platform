@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  consumeAuthRecoveryWithInternalApi,
   listWebAccountsWithInternalApi,
   logoutAllWebAccountsWithInternalApi,
   logoutBrowserSessionWithInternalApi,
@@ -83,6 +84,35 @@ describe('auth internal API helpers', () => {
       error: 'Too Many Requests',
       retryAfter: 35,
     });
+  });
+
+  it('submits auth recovery codes through the centralized auth API route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        redirectTo: '/en/onboarding',
+        success: true,
+      })
+    );
+    const payload = {
+      code: '123456',
+      email: 'person@example.com',
+      locale: 'en',
+      next: '/en/personal',
+    };
+
+    await consumeAuthRecoveryWithInternalApi(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/auth/recovery/consume',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
   });
 
   it('loads web multi-account summaries without caching', async () => {

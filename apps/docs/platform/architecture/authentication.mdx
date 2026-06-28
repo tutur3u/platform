@@ -1,7 +1,7 @@
 ---
 title: "Authentication Patterns"
 description: "Authentication implementation patterns in the Tuturuuu platform"
-updatedAt: "2026-06-21"
+updatedAt: "2026-06-28"
 ---
 
 The Tuturuuu platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, multi-factor authentication (MFA), and cross-app token authentication.
@@ -219,6 +219,49 @@ workspace, do not let the cookie value be the sole authority: use a signed,
 expiry-bound state payload that also binds the workspace or account being
 connected, then require the callback cookie and query `state` to match before
 verifying that payload.
+
+### Email-Based Auth Recovery
+
+Infrastructure admins can use **Infrastructure > Auth Recovery** when a
+manually reviewed user cannot complete normal OTP or password sign-in because of
+email-scoped infrastructure blocks, stale Supabase bans, or OTP counters.
+
+The support flow is:
+
+1. Search the email on the Auth Recovery page and inspect diagnostics.
+2. Create a recovery override with a support reason. Overrides default to 7 days.
+3. Keep both **normal login** and **recovery email** enabled unless the case
+   needs only one path.
+4. Use **Send recovery email**. The platform sends the email; admins should not
+   copy tokens or links manually.
+5. The user can click the recovery link or enter the 6-digit code on
+   `/auth/recovery`. Recovery credentials expire after 15 minutes and are
+   single-use.
+6. Revoke the override once the user has recovered access or the case no longer
+   needs support access.
+
+Normal-login overrides bypass only email-scoped infrastructure and OTP/password
+rate-limit blocks. They still enforce malformed request validation, suspicious
+user-agent checks, Turnstile, password correctness, MFA, and active IP blocks
+unless an admin separately clears those IP blocks. When a valid override is used,
+the service also attempts to clear the Supabase auth ban and confirm the email.
+
+Recovery-email sign-in stores token and code hashes in private schema tables and
+audits sends, consumes, rejects, creates, revokes, and Supabase unban/create
+attempts. The recovery session is created with the existing admin
+`generateLink` plus detached `verifyOtp` pattern, then normal auth cookies are
+set. Redirects are limited to sanitized app paths.
+
+Database objects live in:
+
+- `private.auth_recovery_overrides`
+- `private.auth_recovery_tokens`
+- `private.auth_recovery_events`
+
+Use `AUTH_RECOVERY_HASH_SECRET` in production when available. The code falls
+back to existing Supabase server secrets for local development, but do not expose
+those values to clients or support tooling. Do not run `bun sb:push` for this
+change; apply migrations through the normal database release process.
 
 ### Passkeys
 

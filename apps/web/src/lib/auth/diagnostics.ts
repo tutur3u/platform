@@ -12,6 +12,9 @@ export type AuthDiagnosticStage =
   | 'account_save'
   | 'account_switch'
   | 'account_update'
+  | 'auth_recovery'
+  | 'auth_recovery_confirm'
+  | 'auth_recovery_consume'
   | 'oauth_callback_exchange'
   | 'otp_send'
   | 'otp_settings'
@@ -35,6 +38,9 @@ const AUTH_DIAGNOSTIC_PREFIXES: Record<AuthDiagnosticStage, string> = {
   account_save: 'AUTH-ACC-SAVE',
   account_switch: 'AUTH-ACC-SWITCH',
   account_update: 'AUTH-ACC-UPDATE',
+  auth_recovery: 'AUTH-RECOVERY',
+  auth_recovery_confirm: 'AUTH-RECOVERY-CONFIRM',
+  auth_recovery_consume: 'AUTH-RECOVERY-CONSUME',
   oauth_callback_exchange: 'AUTH-OAUTH',
   otp_send: 'AUTH-OTP-SEND',
   otp_settings: 'AUTH-OTP-SETTINGS',

@@ -611,6 +611,221 @@ export type Database = {
         };
         Relationships: [];
       };
+      auth_recovery_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          email: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          override_id: string | null;
+          token_id: string | null;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          email: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          override_id?: string | null;
+          token_id?: string | null;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          email?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          override_id?: string | null;
+          token_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auth_recovery_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_events_override_id_fkey';
+            columns: ['override_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth_recovery_overrides';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_events_token_id_fkey';
+            columns: ['token_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth_recovery_tokens';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      auth_recovery_overrides: {
+        Row: {
+          allow_normal_login: boolean;
+          allow_recovery_email: boolean;
+          created_at: string;
+          created_by: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          last_used_at: string | null;
+          metadata: Json;
+          reason: string;
+          revoke_reason: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          allow_normal_login?: boolean;
+          allow_recovery_email?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          metadata?: Json;
+          reason: string;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          allow_normal_login?: boolean;
+          allow_recovery_email?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          metadata?: Json;
+          reason?: string;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auth_recovery_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      auth_recovery_tokens: {
+        Row: {
+          code_hash: string;
+          consumed_at: string | null;
+          consumed_ip_hash: string | null;
+          consumed_user_agent_hash: string | null;
+          created_at: string;
+          created_by: string | null;
+          email: string;
+          email_audit_id: string | null;
+          expires_at: string;
+          id: string;
+          metadata: Json;
+          override_id: string;
+          sent_at: string | null;
+          token_hash: string;
+        };
+        Insert: {
+          code_hash: string;
+          consumed_at?: string | null;
+          consumed_ip_hash?: string | null;
+          consumed_user_agent_hash?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          email: string;
+          email_audit_id?: string | null;
+          expires_at?: string;
+          id?: string;
+          metadata?: Json;
+          override_id: string;
+          sent_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          code_hash?: string;
+          consumed_at?: string | null;
+          consumed_ip_hash?: string | null;
+          consumed_user_agent_hash?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string;
+          email_audit_id?: string | null;
+          expires_at?: string;
+          id?: string;
+          metadata?: Json;
+          override_id?: string;
+          sent_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auth_recovery_tokens_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_tokens_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_tokens_override_id_fkey';
+            columns: ['override_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth_recovery_overrides';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_user_workspace_preferences: {
         Row: {
           conflict_policy: string;
@@ -11274,6 +11489,21 @@ export type Database = {
         };
         Returns: number;
       };
+      consume_auth_recovery_credential: {
+        Args: {
+          p_code_hash?: string;
+          p_email?: string;
+          p_ip_hash?: string;
+          p_token_hash?: string;
+          p_user_agent_hash?: string;
+        };
+        Returns: {
+          consumed_by: string;
+          email: string;
+          override_id: string;
+          token_id: string;
+        }[];
+      };
       count_task_source_filter_lists: {
         Args: {
           p_actor_id: string;
@@ -11407,6 +11637,19 @@ export type Database = {
       form_id_from_share_link: {
         Args: { p_share_link_id: string };
         Returns: string;
+      };
+      get_active_auth_recovery_override: {
+        Args: { p_email: string };
+        Returns: {
+          allow_normal_login: boolean;
+          allow_recovery_email: boolean;
+          created_at: string;
+          created_by: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          last_used_at: string;
+        }[];
       };
       get_ai_memory_settings: {
         Args: { p_product?: string; p_user_id: string; p_ws_id: string };
@@ -27678,6 +27921,8 @@ export type Database = {
           cron_job_id: number | null;
           dataset_id: string | null;
           endpoint_url: string | null;
+          external_app_id: string | null;
+          external_job_key: string | null;
           failure_count: number;
           headers_config: Json;
           http_method: string;
@@ -27699,6 +27944,8 @@ export type Database = {
           cron_job_id?: number | null;
           dataset_id?: string | null;
           endpoint_url?: string | null;
+          external_app_id?: string | null;
+          external_job_key?: string | null;
           failure_count?: number;
           headers_config?: Json;
           http_method?: string;
@@ -27720,6 +27967,8 @@ export type Database = {
           cron_job_id?: number | null;
           dataset_id?: string | null;
           endpoint_url?: string | null;
+          external_app_id?: string | null;
+          external_job_key?: string | null;
           failure_count?: number;
           headers_config?: Json;
           http_method?: string;

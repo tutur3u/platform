@@ -24,6 +24,7 @@ import { validateEmail } from '@tuturuuu/utils/email/server';
 import { z } from 'zod';
 import { shouldBypassSupabaseAuthCaptchaForDev } from '@/lib/auth/local-e2e';
 import { OTP_SPAM_BLOCK_ERROR } from '@/lib/auth/otp';
+import { prepareNormalAuthRecoveryOverrideUse } from '@/lib/auth/recovery';
 
 export const PASSWORD_LOGIN_GENERIC_ERROR = 'Invalid login credentials';
 
@@ -168,14 +169,24 @@ export async function passwordLogin(
     };
   }
 
-  const abuseCheck = await checkPasswordLoginLimit(
-    suspiciousAgentCheck.ipAddress,
-    validatedEmail,
-    {
-      route: context.endpoint,
-      source: 'password-login',
-    }
-  );
+  const recoveryOverride = await prepareNormalAuthRecoveryOverrideUse({
+    email: validatedEmail,
+    metadata: {
+      client: input.client,
+      stage: 'password_login',
+    },
+  });
+
+  const abuseCheck = recoveryOverride
+    ? ipAbuseCheck
+    : await checkPasswordLoginLimit(
+        suspiciousAgentCheck.ipAddress,
+        validatedEmail,
+        {
+          route: context.endpoint,
+          source: 'password-login',
+        }
+      );
   if (!abuseCheck.allowed) {
     return {
       body: {
@@ -214,7 +225,7 @@ export async function passwordLogin(
 
     await recordPasswordLoginFailure(
       suspiciousAgentCheck.ipAddress,
-      validatedEmail
+      recoveryOverride ? undefined : validatedEmail
     );
     return {
       body: {
