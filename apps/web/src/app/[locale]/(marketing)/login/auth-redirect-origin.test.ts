@@ -41,6 +41,14 @@ describe('auth redirect origin', () => {
     ).toBe('https://tuturuuu.com');
   });
 
+  it('canonicalizes the current platform http origin to https', () => {
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'http://tuturuuu.com',
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
   it('ignores configured non-platform app origins', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://chat.tuturuuu.com');
 

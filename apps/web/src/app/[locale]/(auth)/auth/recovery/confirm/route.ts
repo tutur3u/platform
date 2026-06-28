@@ -6,6 +6,8 @@ import {
 } from '@/lib/auth/diagnostics';
 import {
   consumeAuthRecoveryCredential,
+  getAuthRecoveryLocalizedPath,
+  getAuthRecoveryRequestOrigin,
   setAuthRecoverySessionCookies,
 } from '@/lib/auth/recovery';
 
@@ -14,7 +16,10 @@ interface Params {
 }
 
 function recoveryPageUrl(request: NextRequest, locale: string, error?: string) {
-  const url = new URL(`/${locale}/auth/recovery`, request.url);
+  const url = new URL(
+    getAuthRecoveryLocalizedPath('/auth/recovery', locale),
+    getAuthRecoveryRequestOrigin(request)
+  );
   if (error) url.searchParams.set('error', error);
   return url;
 }
@@ -36,7 +41,9 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
     await setAuthRecoverySessionCookies(request, result.session);
 
-    return NextResponse.redirect(new URL(result.redirectTo, request.url));
+    return NextResponse.redirect(
+      new URL(result.redirectTo, getAuthRecoveryRequestOrigin(request))
+    );
   } catch (error) {
     const diagnosticCode = createAuthDiagnosticCode('auth_recovery');
     logAuthDiagnostic({

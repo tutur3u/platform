@@ -11,6 +11,10 @@ export const AUTH_RECOVERY_TOKEN_TTL_MINUTES = 15;
 export const AUTH_RECOVERY_GENERIC_ERROR =
   'Unable to complete account recovery right now.';
 export const AUTH_RECOVERY_FALLBACK_LOCALE = 'en';
+const AUTH_RECOVERY_SUPPORTED_LOCALES = new Set([
+  AUTH_RECOVERY_FALLBACK_LOCALE,
+  'vi',
+]);
 
 type QueryResult = {
   count?: number | null;
@@ -145,20 +149,57 @@ export async function normalizeAuthRecoveryEmail(email: string) {
   return validateEmail(email.trim());
 }
 
+export function normalizeAuthRecoveryLocale(locale?: string | null) {
+  return locale && AUTH_RECOVERY_SUPPORTED_LOCALES.has(locale)
+    ? locale
+    : AUTH_RECOVERY_FALLBACK_LOCALE;
+}
+
+export function getAuthRecoveryLocalePrefix(locale?: string | null) {
+  const normalizedLocale = normalizeAuthRecoveryLocale(locale);
+  return normalizedLocale === AUTH_RECOVERY_FALLBACK_LOCALE
+    ? ''
+    : `/${normalizedLocale}`;
+}
+
+export function getAuthRecoveryLocalizedPath(
+  pathname: string,
+  locale?: string | null
+) {
+  const normalizedPathname = pathname.startsWith('/')
+    ? pathname
+    : `/${pathname}`;
+  return `${getAuthRecoveryLocalePrefix(locale)}${normalizedPathname}`;
+}
+
+function canonicalizeAuthRecoveryRedirectPath(path: string) {
+  if (path === `/${AUTH_RECOVERY_FALLBACK_LOCALE}`) {
+    return '/';
+  }
+
+  const defaultLocalePrefix = `/${AUTH_RECOVERY_FALLBACK_LOCALE}/`;
+  return path.startsWith(defaultLocalePrefix)
+    ? path.slice(AUTH_RECOVERY_FALLBACK_LOCALE.length + 1)
+    : path;
+}
+
 export function sanitizeAuthRecoveryRedirectPath(
   value: string | null | undefined,
   locale = AUTH_RECOVERY_FALLBACK_LOCALE
 ) {
-  if (!value) return `/${locale}/onboarding`;
+  const fallbackPath = getAuthRecoveryLocalizedPath('/onboarding', locale);
+  if (!value) return fallbackPath;
 
   try {
     const parsed = new URL(value, 'https://tuturuuu.local');
     if (parsed.origin !== 'https://tuturuuu.local') {
-      return `/${locale}/onboarding`;
+      return fallbackPath;
     }
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    return canonicalizeAuthRecoveryRedirectPath(
+      `${parsed.pathname}${parsed.search}${parsed.hash}`
+    );
   } catch {
-    return `/${locale}/onboarding`;
+    return fallbackPath;
   }
 }
 

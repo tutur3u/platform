@@ -174,6 +174,7 @@ export function resolveAuthRedirectOrigin({
     resolveCurrentPortlessOrigin(currentOrigin) ||
     resolveConfiguredPortlessOrigin(env) ||
     resolveConfiguredWebOrigin(env) ||
+    normalizeConfiguredWebOrigin(currentOrigin) ||
     normalizeHttpOrigin(currentOrigin) ||
     (isProduction
       ? DEFAULT_PRODUCTION_AUTH_ORIGIN

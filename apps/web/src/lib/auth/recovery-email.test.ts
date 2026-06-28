@@ -5,9 +5,8 @@ describe('auth recovery email template', () => {
   it('includes the one-click link, fallback code, expiry, and recipient warning', () => {
     const email = renderAuthRecoveryEmail({
       code: '123456',
-      codeUrl:
-        'https://tuturuuu.com/en/auth/recovery?email=person%40example.com',
-      confirmUrl: 'https://tuturuuu.com/en/auth/recovery/confirm?token=secret',
+      codeUrl: 'https://tuturuuu.com/auth/recovery?email=person%40example.com',
+      confirmUrl: 'https://tuturuuu.com/auth/recovery/confirm?token=secret',
       expiresInMinutes: 15,
     });
 
@@ -15,7 +14,7 @@ describe('auth recovery email template', () => {
     expect(email.text).toContain('123456');
     expect(email.text).toContain('15 minutes');
     expect(email.text).toContain(
-      'https://tuturuuu.com/en/auth/recovery/confirm?token=secret'
+      'https://tuturuuu.com/auth/recovery/confirm?token=secret'
     );
     expect(email.html).toContain('123456');
     expect(email.html).toContain('intended recipient');

@@ -4,6 +4,7 @@ import {
   extractIPFromHeaders,
   extractUserAgentFromHeaders,
 } from '@tuturuuu/utils/abuse-protection';
+import { resolveAuthRedirectOrigin } from '@/app/[locale]/(marketing)/login/auth-redirect-origin';
 import {
   createAuthRecoveryCode,
   createAuthRecoveryToken,
@@ -19,6 +20,7 @@ import {
   type AuthRecoveryOverrideSummary,
   asArray,
   asRecord,
+  getAuthRecoveryLocalizedPath,
   getPrivateSchema,
   logAuthRecoveryEvent,
   normalizeAuthRecoveryEmail,
@@ -46,21 +48,15 @@ export interface ConsumeAuthRecoveryCredentialInput {
   token?: string | null;
 }
 
-function getRequestOrigin(request: Pick<Request, 'headers' | 'url'>) {
-  const forwardedProto =
-    request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || 'https';
-  const forwardedHost =
-    request.headers.get('x-forwarded-host')?.split(',')[0]?.trim() ||
-    request.headers.get('host');
-
-  if (forwardedHost && !/[\r\n]/u.test(forwardedHost)) {
-    return `${forwardedProto === 'http' ? 'http' : 'https'}://${forwardedHost}`;
-  }
-
-  return new URL(request.url).origin;
+export function getAuthRecoveryRequestOrigin(
+  request: Pick<Request, 'headers' | 'url'>
+) {
+  return resolveAuthRedirectOrigin({
+    currentOrigin: new URL(request.url).origin,
+  });
 }
 
-function buildRecoveryUrls(input: {
+export function buildRecoveryUrls(input: {
   email: string;
   locale?: string;
   next?: string | null;
@@ -68,13 +64,19 @@ function buildRecoveryUrls(input: {
   token: string;
 }) {
   const locale = input.locale || AUTH_RECOVERY_FALLBACK_LOCALE;
-  const origin = getRequestOrigin(input.request);
+  const origin = getAuthRecoveryRequestOrigin(input.request);
   const next = sanitizeAuthRecoveryRedirectPath(input.next, locale);
-  const codeUrl = new URL(`/${locale}/auth/recovery`, origin);
+  const codeUrl = new URL(
+    getAuthRecoveryLocalizedPath('/auth/recovery', locale),
+    origin
+  );
   codeUrl.searchParams.set('email', input.email);
   codeUrl.searchParams.set('next', next);
 
-  const confirmUrl = new URL(`/${locale}/auth/recovery/confirm`, origin);
+  const confirmUrl = new URL(
+    getAuthRecoveryLocalizedPath('/auth/recovery/confirm', locale),
+    origin
+  );
   confirmUrl.searchParams.set('token', input.token);
   confirmUrl.searchParams.set('next', next);
 
