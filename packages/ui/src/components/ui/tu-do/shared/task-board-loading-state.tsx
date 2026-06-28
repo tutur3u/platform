@@ -17,7 +17,7 @@ function TaskBoardHeaderSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="-mt-2 border-b p-2"
+      className="border-b px-2 pt-2 pb-2"
       data-testid="task-board-header-skeleton"
     >
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">

@@ -57,9 +57,13 @@ describe('TaskBoardLoadingState', () => {
       'true'
     );
     expect(screen.getByTestId('task-board-header-skeleton')).toHaveClass(
-      '-mt-2',
       'border-b',
-      'p-2'
+      'px-2',
+      'pt-2',
+      'pb-2'
+    );
+    expect(screen.getByTestId('task-board-header-skeleton')).not.toHaveClass(
+      '-mt-2'
     );
     expect(screen.getByTestId('task-board-loading-body')).toHaveClass(
       'min-h-0',
