@@ -5,6 +5,7 @@ import {
   Boxes,
   CalendarDays,
   CircleDollarSign,
+  MonitorSmartphone,
   Paintbrush,
   PanelLeft,
   User,
@@ -21,6 +22,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PolarSettingsPanel } from '@/components/operator/polar-settings-panel';
+import { SquareSettingsPanel } from '@/components/operator/square-settings-panel';
 import { InventoryCurrencySettings } from '@/components/settings/currency-settings';
 import { useSidebar } from '@/context/sidebar-context';
 
@@ -70,6 +72,13 @@ export function SettingsDialog({
           icon: CircleDollarSign,
           description: t('settings.inventory.polar_description'),
           keywords: ['Polar', 'Checkout', 'Storefront', 'Payments'],
+        },
+        {
+          name: 'inventory_square',
+          label: t('settings.inventory.square'),
+          icon: MonitorSmartphone,
+          description: t('settings.inventory.square_description'),
+          keywords: ['Square', 'Terminal', 'POS', 'Checkout', 'Payments'],
         },
       ],
     },
@@ -158,6 +167,12 @@ export function SettingsDialog({
       {activeTab === 'inventory_polar' && wsId && (
         <div className="h-full">
           <PolarSettingsPanel wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'inventory_square' && wsId && (
+        <div className="h-full">
+          <SquareSettingsPanel wsId={wsId} />
         </div>
       )}
 

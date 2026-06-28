@@ -217,6 +217,11 @@ describe('Inventory proxy storefront access', () => {
       'POST',
       'https://inventory.tuturuuu.com/api/v1/inventory/polar/webhook/ws-1',
     ],
+    [
+      'POST',
+      'https://inventory.tuturuuu.com/api/v1/inventory/square/webhook/ws-1',
+    ],
+    ['POST', 'https://inventory.tuturuuu.com/api/v1/inventory/square/webhook'],
   ])('allows anonymous public inventory API %s %s', async (method, url) => {
     const request = new NextRequest(url, { method });
 
@@ -236,6 +241,22 @@ describe('Inventory proxy storefront access', () => {
     });
     const request = new NextRequest(
       'https://inventory.tuturuuu.com/api/v1/inventory/polar/webhook/ws-1',
+      { method: 'GET' }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(401);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps non-POST Square webhook API requests gated', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/inventory/square/webhook/ws-1',
       { method: 'GET' }
     );
 

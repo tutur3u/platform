@@ -940,6 +940,7 @@
         "visibility": "Hiển thị"
       },
       "commerce": {
+        "cancelSquare": "Hủy trên terminal",
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
         "metrics": {
           "completed": "Hoàn tất",
@@ -970,6 +971,7 @@
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "sendSquare": "Gửi tới terminal",
         "source": {
           "checkout": "Checkout",
           "finance": "Hóa đơn"
@@ -1208,7 +1210,8 @@
         "checkoutModes": {
           "disabled": "Đã tắt",
           "polar": "Polar",
-          "simulated": "Mô phỏng"
+          "simulated": "Mô phỏng",
+          "square_terminal": "Square Terminal"
         },
         "clearImage": "Xóa ảnh",
         "componentCount": "{count, plural, one {# thành phần} other {# thành phần}}",
@@ -1749,6 +1752,44 @@
         "suppliers": "Nhà cung cấp",
         "units": "Đơn vị",
         "warehouses": "Kho"
+      },
+      "square": {
+        "connectOAuth": "Kết nối OAuth",
+        "copyWebhook": "Sao chép URL",
+        "createDeviceCode": "Tạo mã ghép nối",
+        "description": "Kết nối Square, chọn địa điểm và gửi đơn đã giữ hàng tới Square Terminal vật lý.",
+        "deviceCodeError": "Không thể tạo mã thiết bị.",
+        "deviceCodeNamePlaceholder": "Terminal quầy trước",
+        "deviceCodeSuccess": "Đã tạo mã ghép nối.",
+        "deviceLabel": "Terminal mặc định",
+        "devicePlaceholder": "Chọn terminal",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "environmentLabel": "Môi trường",
+        "locationLabel": "Địa điểm",
+        "locationPlaceholder": "Chọn địa điểm",
+        "notConfigured": "Chưa lưu token Square",
+        "oauthError": "Không thể bắt đầu OAuth Square.",
+        "readiness": "Sẵn sàng: {issues}",
+        "ready": "sẵn sàng",
+        "sandboxDeviceLabel": "ID thiết bị sandbox",
+        "saveDefaults": "Lưu mặc định",
+        "saveError": "Không thể lưu cài đặt Square.",
+        "saveManual": "Lưu token thủ công",
+        "saveSuccess": "Đã lưu cài đặt Square.",
+        "saving": "Đang lưu...",
+        "terminalDescription": "Dùng thiết bị đã ghép nối trong production. Trong sandbox, dán ID thiết bị terminal sandbox của Square.",
+        "terminalTitle": "Điều hướng terminal",
+        "title": "Square Terminal",
+        "tokenEnding": "Token kết thúc bằng {last4}",
+        "tokenLabel": "Access token",
+        "tokenPlaceholder": "Access token Square",
+        "webhookSignatureLabel": "Khóa chữ ký webhook",
+        "webhookSignaturePlaceholder": "Khóa chữ ký webhook Square",
+        "webhookTitle": "Nhận webhook",
+        "webhookUrlPending": "URL webhook sẽ xuất hiện sau khi tải cài đặt"
       },
       "states": {
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
@@ -2516,6 +2557,8 @@
       "general_description": "Thông tin workspace và tùy chọn Inventory",
       "polar": "Thanh toán Polar",
       "polar_description": "Thông tin checkout và môi trường mặc định của workspace",
+      "square": "Square Terminal",
+      "square_description": "OAuth Square, ghép nối terminal và trạng thái webhook",
       "title": "Inventory",
       "workspace_name": "Workspace",
       "workspace_name_description": "Workspace đang vận hành bảng điều khiển Inventory này."

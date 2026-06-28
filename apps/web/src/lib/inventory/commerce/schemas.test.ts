@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { storefrontPayloadSchema } from './schemas';
+import {
+  squareSettingsPayloadSchema,
+  storefrontPayloadSchema,
+} from './schemas';
 
 const baseStorefrontPayload = {
   name: 'Preview Store',
@@ -63,5 +66,32 @@ describe('storefrontPayloadSchema', () => {
         ],
       }).success
     ).toBe(false);
+  });
+
+  it('accepts Square Terminal as a first-class checkout mode', () => {
+    expect(
+      storefrontPayloadSchema.safeParse({
+        ...baseStorefrontPayload,
+        checkoutMode: 'square_terminal',
+      }).success
+    ).toBe(true);
+  });
+});
+
+describe('squareSettingsPayloadSchema', () => {
+  it('requires a Square environment when saving manual credentials', () => {
+    expect(
+      squareSettingsPayloadSchema.safeParse({
+        accessToken: 'EAAAE.square-token',
+      }).success
+    ).toBe(false);
+
+    expect(
+      squareSettingsPayloadSchema.safeParse({
+        accessToken: 'EAAAE.square-token',
+        environment: 'sandbox',
+        webhookSignatureKey: 'sq-webhook-key',
+      }).success
+    ).toBe(true);
   });
 });

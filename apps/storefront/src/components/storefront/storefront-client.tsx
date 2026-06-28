@@ -82,6 +82,8 @@ export function StorefrontClient({
   const isDemoStorefront = isDemoStorefrontFixture(storefront);
   const isSimulatedCheckout =
     isDemoStorefront || storefront?.checkoutMode === 'simulated';
+  const isSquareTerminalCheckout =
+    storefront?.checkoutMode === 'square_terminal';
   const orderQuery = useQuery({
     enabled:
       mode === 'order' &&
@@ -207,21 +209,22 @@ export function StorefrontClient({
           : t('checkoutError')
       );
     },
-    onSuccess: async ({ checkoutUrl }) => {
-      if (!checkoutUrl) {
+    onSuccess: async ({ checkoutMode, checkoutUrl, nextUrl }) => {
+      const targetUrl = nextUrl ?? checkoutUrl;
+      if (!targetUrl) {
         setIsRedirecting(false);
         toast.error(t('checkoutError'));
         return;
       }
 
-      if (isSimulatedCheckout) {
+      if (isSimulatedCheckout || checkoutMode === 'square_terminal') {
         cart.clear();
         setIsCheckoutOpen(false);
-        navigateToCheckoutResult(checkoutUrl);
+        navigateToCheckoutResult(targetUrl);
         return;
       }
 
-      openPolarCheckoutWindow(checkoutUrl);
+      openPolarCheckoutWindow(targetUrl);
     },
   });
 
@@ -269,13 +272,16 @@ export function StorefrontClient({
                 {t('orderPlaced')}
               </h1>
               <p className="mt-2 text-muted-foreground text-sm leading-6">
-                {t('orderPlacedDescription')}
+                {order?.checkoutProvider === 'square_terminal'
+                  ? t('squareOrderPlacedDescription')
+                  : t('orderPlacedDescription')}
               </p>
               {order ? (
                 <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-xs">
                   <span className="size-1.5 rounded-full bg-primary" />
                   {t('orderStatus', {
-                    status: order.polarStatus ?? order.status,
+                    status:
+                      order.squareStatus ?? order.polarStatus ?? order.status,
                   })}
                 </span>
               ) : (
@@ -391,11 +397,21 @@ export function StorefrontClient({
     product: t('product'),
     publicStore: t('publicStore'),
     quantity: t('quantity'),
-    reserve: isSimulatedCheckout ? t('simulatedReserve') : t('reserve'),
-    reserving: isSimulatedCheckout ? t('simulatedReserving') : t('reserving'),
+    reserve: isSimulatedCheckout
+      ? t('simulatedReserve')
+      : isSquareTerminalCheckout
+        ? t('squareReserve')
+        : t('reserve'),
+    reserving: isSimulatedCheckout
+      ? t('simulatedReserving')
+      : isSquareTerminalCheckout
+        ? t('squareReserving')
+        : t('reserving'),
     reservedCopy: isSimulatedCheckout
       ? t('simulatedReservedCopy')
-      : t('reservedCopy'),
+      : isSquareTerminalCheckout
+        ? t('squareReservedCopy')
+        : t('reservedCopy'),
     simulatedBadge: t('simulatedBadge'),
     soldOut: t('soldOut'),
     total: t('total'),

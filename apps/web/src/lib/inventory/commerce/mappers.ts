@@ -7,6 +7,8 @@ import type {
   InventoryListingStatus,
   InventoryPolarCheckoutStatus,
   InventoryPolarEnvironment,
+  InventorySquareEnvironment,
+  InventorySquareTerminalCheckoutStatus,
   InventoryStorefront,
   InventoryStorefrontCheckoutMode,
   InventoryStorefrontListing,
@@ -142,6 +144,7 @@ export type CheckoutRow = {
   customer_email: string;
   customer_name: string;
   customer_phone: string | null;
+  checkout_provider?: InventoryStorefrontCheckoutMode | null;
   expires_at: string | null;
   finance_invoice_id: string | null;
   id: string;
@@ -155,6 +158,16 @@ export type CheckoutRow = {
   polar_status: InventoryPolarCheckoutStatus | null;
   processing_fee_estimate_amount: number;
   public_token: string;
+  square_device_id?: string | null;
+  square_environment?: InventorySquareEnvironment | null;
+  square_failure_reason?: string | null;
+  square_last_synced_at?: string | null;
+  square_location_id?: string | null;
+  square_order_id?: string | null;
+  square_payment_id?: string | null;
+  square_receipt_url?: string | null;
+  square_status?: InventorySquareTerminalCheckoutStatus | null;
+  square_terminal_checkout_id?: string | null;
   status: InventoryCheckoutStatus;
   subtotal_amount: number;
   total_amount: number;
@@ -336,6 +349,7 @@ export function mapCheckout(
   lines: CheckoutLineRow[]
 ): InventoryCheckoutSession {
   return {
+    checkoutProvider: row.checkout_provider ?? null,
     completedAt: row.completed_at,
     conversionFeeEstimateAmount: row.conversion_fee_estimate_amount,
     currency: row.currency,
@@ -370,6 +384,16 @@ export function mapCheckout(
     polarStatus: row.polar_status,
     processingFeeEstimateAmount: row.processing_fee_estimate_amount,
     publicToken: row.public_token,
+    squareDeviceId: row.square_device_id ?? null,
+    squareEnvironment: row.square_environment ?? null,
+    squareFailureReason: row.square_failure_reason ?? null,
+    squareLastSyncedAt: row.square_last_synced_at ?? null,
+    squareLocationId: row.square_location_id ?? null,
+    squareOrderId: row.square_order_id ?? null,
+    squarePaymentId: row.square_payment_id ?? null,
+    squareReceiptUrl: row.square_receipt_url ?? null,
+    squareStatus: row.square_status ?? null,
+    squareTerminalCheckoutId: row.square_terminal_checkout_id ?? null,
     status: row.status,
     subtotalAmount: row.subtotal_amount,
     totalAmount: row.total_amount,

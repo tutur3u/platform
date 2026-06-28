@@ -69,6 +69,21 @@ const CHECKOUT_HISTORY_SELECT = `
   polar_status
 `;
 
+const CHECKOUT_SQUARE_SELECT = `
+  ${CHECKOUT_HISTORY_SELECT},
+  checkout_provider,
+  square_environment,
+  square_location_id,
+  square_device_id,
+  square_order_id,
+  square_terminal_checkout_id,
+  square_payment_id,
+  square_receipt_url,
+  square_status,
+  square_failure_reason,
+  square_last_synced_at
+`;
+
 const CHECKOUT_LINE_SELECT = `
   id,
   checkout_session_id,
@@ -194,6 +209,7 @@ function mapOrderHistoryItem({
     lines: checkout.lines,
     polarStatus: row.polar_status,
     publicToken: row.public_token,
+    squareStatus: row.square_status ?? null,
     status: row.status,
     storefrontId: storefront.id,
     storefrontName: storefront.name,
@@ -221,6 +237,7 @@ function mapCheckoutSaleSummary(
     paid_amount: row.total_amount,
     polar_order_id: row.polar_order_id,
     public_token: row.public_token,
+    square_order_id: row.square_order_id ?? null,
     source: 'checkout_session',
     total_quantity: lines.reduce((sum, line) => sum + Number(line.quantity), 0),
     wallet_name: null,
@@ -267,6 +284,44 @@ export async function getCheckoutByPublicToken(publicToken: string) {
   if (error) throw error;
 
   return data ?? null;
+}
+
+export async function getCheckoutById(wsId: string, checkoutId: string) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_checkout_sessions')
+    .select(CHECKOUT_SQUARE_SELECT)
+    .eq('id', checkoutId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const lines = await loadCheckoutLines(inventory, [checkoutId]);
+  return mapCheckout(data as unknown as CheckoutRow, lines);
+}
+
+export async function markCheckoutProvider({
+  checkoutId,
+  provider,
+  wsId,
+}: {
+  checkoutId: string;
+  provider: 'polar' | 'square_terminal';
+  wsId: string;
+}) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { error } = await inventory
+    .from('inventory_checkout_sessions')
+    .update({
+      checkout_provider: provider,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq('id', checkoutId)
+    .eq('ws_id', wsId);
+
+  if (error) throw error;
 }
 
 export async function getCheckoutStorefrontAccessByPublicToken(

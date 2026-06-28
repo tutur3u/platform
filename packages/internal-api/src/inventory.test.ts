@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  cancelInventorySquareTerminalCheckout,
   createInventoryBatch,
   createInventoryCheckoutSession,
   createInventoryCostProfile,
@@ -8,6 +9,8 @@ import {
   createInventoryProduct,
   createInventoryProductCategory,
   createInventoryPromotion,
+  createInventorySquareDeviceCode,
+  createInventorySquareTerminalCheckout,
   createInventoryStorefront,
   createInventorySupplier,
   createInventoryUnit,
@@ -30,14 +33,18 @@ import {
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
+  getInventorySquareSettings,
   importInventoryCostingCsv,
   listInventoryBundles,
   listInventoryCostProfiles,
   listInventoryPromotions,
+  listInventorySquareDevices,
+  listInventorySquareLocations,
   listInventoryStorefronts,
   listInventoryUnits,
   recordInventoryStorefrontAnalyticsEvent,
   releaseInventoryCheckout,
+  startInventorySquareOAuth,
   toPolarCurrency,
   updateInventoryBatch,
   updateInventoryCostProfile,
@@ -47,6 +54,7 @@ import {
   updateInventoryProductInventory,
   updateInventoryPromotion,
   updateInventorySale,
+  updateInventorySquareSettings,
   updateInventoryStorefrontListing,
   updateInventorySupplier,
   updateInventoryUnit,
@@ -872,6 +880,118 @@ describe('inventory internal API helpers', () => {
           listingId: 'listing_1',
           quantity: 1,
         }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('routes Square settings and device helpers through workspace inventory APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        readiness: { issues: [], ready: true },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getInventorySquareSettings('ws 1', options);
+    await updateInventorySquareSettings(
+      'ws 1',
+      {
+        environment: 'sandbox',
+        locationId: 'loc-1',
+        webhookSignatureKey: 'sig-key',
+      },
+      options
+    );
+    await startInventorySquareOAuth('ws 1', 'production', options);
+    await listInventorySquareLocations('ws 1', options);
+    await listInventorySquareDevices('ws 1', options);
+    await createInventorySquareDeviceCode(
+      'ws 1',
+      { locationId: 'loc-1', name: 'Front counter' },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square-settings',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square-settings',
+      expect.objectContaining({
+        body: JSON.stringify({
+          environment: 'sandbox',
+          locationId: 'loc-1',
+          webhookSignatureKey: 'sig-key',
+        }),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/oauth/start?environment=production',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/locations',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/devices',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/device-codes',
+      expect.objectContaining({
+        body: JSON.stringify({ locationId: 'loc-1', name: 'Front counter' }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('routes Square terminal checkout actions through workspace APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        checkout: { id: 'checkout 1' },
+        squareCheckout: { id: 'terminal-checkout-1' },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventorySquareTerminalCheckout(
+      'ws 1',
+      { checkoutId: 'checkout 1', deviceId: 'device 1' },
+      options
+    );
+    await cancelInventorySquareTerminalCheckout('ws 1', 'checkout 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/terminal-checkouts',
+      expect.objectContaining({
+        body: JSON.stringify({
+          checkoutId: 'checkout 1',
+          deviceId: 'device 1',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/terminal-checkouts/checkout%201/cancel',
+      expect.objectContaining({
         method: 'POST',
       })
     );

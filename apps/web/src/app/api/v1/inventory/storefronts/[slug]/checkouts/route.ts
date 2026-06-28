@@ -5,11 +5,15 @@ import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isInventoryEnabled } from '@/lib/inventory/access';
-import { getCheckoutByPublicToken } from '@/lib/inventory/commerce/checkouts';
+import {
+  getCheckoutByPublicToken,
+  markCheckoutProvider,
+} from '@/lib/inventory/commerce/checkouts';
 import { createInventoryPolarCheckout } from '@/lib/inventory/commerce/polar';
 import { getPublicStorefront } from '@/lib/inventory/commerce/public-storefront';
 import { checkoutCreatePayloadSchema } from '@/lib/inventory/commerce/schemas';
 import { createSimulatedCheckoutResponse } from '@/lib/inventory/commerce/simulated-checkout';
+import { assertInventorySquareReady } from '@/lib/inventory/commerce/square';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -224,14 +228,16 @@ export async function POST(request: Request, { params }: Params) {
         payload.customerPhone?.trim() || buyerDefaults.customerPhone,
     };
 
-    if (storefrontPayload.storefront.checkoutMode === 'disabled') {
+    const checkoutMode = storefrontPayload.storefront.checkoutMode;
+
+    if (checkoutMode === 'disabled') {
       return NextResponse.json(
         { message: 'Checkout is disabled for this storefront' },
         { status: 409 }
       );
     }
 
-    if (storefrontPayload.storefront.checkoutMode === 'simulated') {
+    if (checkoutMode === 'simulated') {
       await recordCheckoutAnalyticsEventWithAdmin({
         customerAuthUid: checkoutPayload.customerAuthUid,
         eventType: 'checkout_created',
@@ -247,6 +253,22 @@ export async function POST(request: Request, { params }: Params) {
         }),
         { status: 201 }
       );
+    }
+
+    if (checkoutMode === 'square_terminal') {
+      try {
+        await assertInventorySquareReady(storefrontPayload.storefront.wsId);
+      } catch (error) {
+        return NextResponse.json(
+          {
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Square Terminal is not ready',
+          },
+          { status: 409 }
+        );
+      }
     }
 
     const sbAdmin = (await createAdminClient()) as unknown as RpcClient;
@@ -284,6 +306,72 @@ export async function POST(request: Request, { params }: Params) {
         { message: 'Checkout reservation failed' },
         { status: 500 }
       );
+    }
+
+    if (checkoutMode === 'square_terminal') {
+      try {
+        await markCheckoutProvider({
+          checkoutId: checkout.id,
+          provider: 'square_terminal',
+          wsId: checkout.wsId,
+        });
+        const refreshedCheckout =
+          (await getCheckoutByPublicToken(publicToken)) ?? checkout;
+        const nextUrl = `${getStorefrontUrl(request).replace(/\/$/u, '')}/${slug}/orders/${publicToken}`;
+        await recordCheckoutAnalyticsEvent(privateRpc, {
+          checkoutId: checkout.id,
+          customerAuthUid: checkoutPayload.customerAuthUid,
+          eventType: 'checkout_created',
+          metadata: { checkoutMode: 'square_terminal' },
+          storefront: storefrontPayload.storefront,
+        });
+
+        return NextResponse.json(
+          {
+            checkout: refreshedCheckout,
+            checkoutMode: 'square_terminal',
+            checkoutUrl: nextUrl,
+            nextUrl,
+          },
+          { status: 201 }
+        );
+      } catch (error) {
+        const { error: releaseError } = await privateRpc.rpc(
+          'release_inventory_checkout_session',
+          {
+            p_checkout_id: checkout.id,
+            p_ws_id: checkout.wsId,
+          }
+        );
+
+        if (releaseError) {
+          serverLogger.error(
+            'Failed to release inventory checkout after Square error',
+            releaseError
+          );
+        }
+        await recordCheckoutAnalyticsEvent(privateRpc, {
+          checkoutId: checkout.id,
+          customerAuthUid: checkoutPayload.customerAuthUid,
+          eventType: 'checkout_failed',
+          metadata: { checkoutMode: 'square_terminal' },
+          storefront: storefrontPayload.storefront,
+        });
+
+        serverLogger.error(
+          'Failed to prepare Square inventory checkout',
+          error
+        );
+        return NextResponse.json(
+          {
+            message:
+              error instanceof Error && error.message
+                ? error.message
+                : 'Failed to prepare Square Terminal checkout',
+          },
+          { status: 409 }
+        );
+      }
     }
 
     try {

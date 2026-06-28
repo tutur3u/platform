@@ -190,6 +190,11 @@ describe('Storefront proxy', () => {
       'GET',
       'https://storefront.tuturuuu.com/api/v1/inventory/orders/public-token',
     ],
+    [
+      'POST',
+      'https://storefront.tuturuuu.com/api/v1/inventory/square/webhook/ws-1',
+    ],
+    ['POST', 'https://storefront.tuturuuu.com/api/v1/inventory/square/webhook'],
   ])('allows anonymous public storefront API %s %s', async (method, url) => {
     const request = new NextRequest(url, { method });
 
@@ -200,6 +205,22 @@ describe('Storefront proxy', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
       prefixBase: 'proxy:storefront:api',
     });
+  });
+
+  it('keeps non-POST Square webhook API requests gated', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    const request = new NextRequest(
+      'https://storefront.tuturuuu.com/api/v1/inventory/square/webhook/ws-1',
+      { method: 'GET' }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(401);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
   it('gates checkout API requests when app-session refresh fails', async () => {

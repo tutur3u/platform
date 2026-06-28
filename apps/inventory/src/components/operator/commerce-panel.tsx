@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Clock,
   CreditCard,
+  MonitorSmartphone,
   RotateCcw,
   ShieldCheck,
   TicketPercent,
@@ -17,7 +18,11 @@ import type {
   InventoryCheckoutSession,
   InventorySaleSummary,
 } from '@tuturuuu/internal-api/inventory';
-import { releaseInventoryCheckout } from '@tuturuuu/internal-api/inventory';
+import {
+  cancelInventorySquareTerminalCheckout,
+  createInventorySquareTerminalCheckout,
+  releaseInventoryCheckout,
+} from '@tuturuuu/internal-api/inventory';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -176,6 +181,30 @@ function CheckoutRows({
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
     },
   });
+  const sendToSquare = useMutation({
+    mutationFn: (row: InventoryCheckoutSession) =>
+      createInventorySquareTerminalCheckout(wsId, { checkoutId: row.id }),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : actionText('saveError')
+      ),
+    onSuccess: () => {
+      toast.success(actionText('saveSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+    },
+  });
+  const cancelSquare = useMutation({
+    mutationFn: (row: InventoryCheckoutSession) =>
+      cancelInventorySquareTerminalCheckout(wsId, row.id),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : actionText('saveError')
+      ),
+    onSuccess: () => {
+      toast.success(actionText('saveSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+    },
+  });
 
   if (rows.length === 0) {
     return (
@@ -190,6 +219,14 @@ function CheckoutRows({
     <div className="grid gap-2">
       {rows.map((row) => {
         const date = formatDate(row.completedAt ?? row.expiresAt, locale);
+        const isSquareCheckout =
+          row.checkoutProvider === 'square_terminal' ||
+          Boolean(row.squareStatus);
+        const squareActive = [
+          'checkout_created',
+          'pending',
+          'in_progress',
+        ].includes(row.squareStatus ?? '');
 
         return (
           <article
@@ -216,10 +253,40 @@ function CheckoutRows({
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               <CheckoutStatusBadge status={row.status} />
               {row.polarStatus ? <StatusBadge value={row.polarStatus} /> : null}
+              {row.squareStatus ? (
+                <StatusBadge value={row.squareStatus} />
+              ) : null}
               <StatusBadge value={money(row.totalAmount, row.currency)} />
+              {isSquareCheckout && row.status === 'reserved' ? (
+                row.squareTerminalCheckoutId ? (
+                  <Button
+                    disabled={!squareActive || cancelSquare.isPending}
+                    onClick={() => cancelSquare.mutate(row)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('commerce.cancelSquare')}
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={sendToSquare.isPending}
+                    onClick={() => sendToSquare.mutate(row)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <MonitorSmartphone className="h-4 w-4" />
+                    {t('commerce.sendSquare')}
+                  </Button>
+                )
+              ) : null}
               {(() => {
                 const releasable =
-                  row.status === 'reserved' && !releaseCheckout.isPending;
+                  row.status === 'reserved' &&
+                  !squareActive &&
+                  !releaseCheckout.isPending;
                 return (
                   <TooltipProvider>
                     <Tooltip>

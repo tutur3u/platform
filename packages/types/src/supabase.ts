@@ -3281,6 +3281,7 @@ export type Database = {
       };
       inventory_checkout_sessions: {
         Row: {
+          checkout_provider: string | null;
           completed_at: string | null;
           conversion_fee_estimate_amount: number;
           created_at: string | null;
@@ -3305,6 +3306,18 @@ export type Database = {
           polar_status: string | null;
           processing_fee_estimate_amount: number;
           public_token: string;
+          square_device_id: string | null;
+          square_environment: string | null;
+          square_failure_reason: string | null;
+          square_idempotency_key: string | null;
+          square_last_event_id: string | null;
+          square_last_synced_at: string | null;
+          square_location_id: string | null;
+          square_order_id: string | null;
+          square_payment_id: string | null;
+          square_receipt_url: string | null;
+          square_status: string | null;
+          square_terminal_checkout_id: string | null;
           status: string;
           storefront_id: string;
           subtotal_amount: number;
@@ -3313,6 +3326,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          checkout_provider?: string | null;
           completed_at?: string | null;
           conversion_fee_estimate_amount?: number;
           created_at?: string | null;
@@ -3337,6 +3351,18 @@ export type Database = {
           polar_status?: string | null;
           processing_fee_estimate_amount?: number;
           public_token?: string;
+          square_device_id?: string | null;
+          square_environment?: string | null;
+          square_failure_reason?: string | null;
+          square_idempotency_key?: string | null;
+          square_last_event_id?: string | null;
+          square_last_synced_at?: string | null;
+          square_location_id?: string | null;
+          square_order_id?: string | null;
+          square_payment_id?: string | null;
+          square_receipt_url?: string | null;
+          square_status?: string | null;
+          square_terminal_checkout_id?: string | null;
           status?: string;
           storefront_id: string;
           subtotal_amount?: number;
@@ -3345,6 +3371,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          checkout_provider?: string | null;
           completed_at?: string | null;
           conversion_fee_estimate_amount?: number;
           created_at?: string | null;
@@ -3369,6 +3396,18 @@ export type Database = {
           polar_status?: string | null;
           processing_fee_estimate_amount?: number;
           public_token?: string;
+          square_device_id?: string | null;
+          square_environment?: string | null;
+          square_failure_reason?: string | null;
+          square_idempotency_key?: string | null;
+          square_last_event_id?: string | null;
+          square_last_synced_at?: string | null;
+          square_location_id?: string | null;
+          square_order_id?: string | null;
+          square_payment_id?: string | null;
+          square_receipt_url?: string | null;
+          square_status?: string | null;
+          square_terminal_checkout_id?: string | null;
           status?: string;
           storefront_id?: string;
           subtotal_amount?: number;
@@ -4122,6 +4161,210 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      inventory_square_connections: {
+        Row: {
+          access_token_encrypted: string;
+          access_token_fingerprint: string;
+          access_token_last4: string | null;
+          auth_method: string;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          id: string;
+          last_error: string | null;
+          last_validated_at: string | null;
+          merchant_id: string | null;
+          refresh_token_encrypted: string | null;
+          refresh_token_last4: string | null;
+          scopes: string[];
+          status: string;
+          token_expires_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          webhook_signature_key_encrypted: string | null;
+          webhook_signature_key_last4: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          access_token_fingerprint: string;
+          access_token_last4?: string | null;
+          auth_method?: string;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          id?: string;
+          last_error?: string | null;
+          last_validated_at?: string | null;
+          merchant_id?: string | null;
+          refresh_token_encrypted?: string | null;
+          refresh_token_last4?: string | null;
+          scopes?: string[];
+          status?: string;
+          token_expires_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_signature_key_encrypted?: string | null;
+          webhook_signature_key_last4?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          access_token_fingerprint?: string;
+          access_token_last4?: string | null;
+          auth_method?: string;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          id?: string;
+          last_error?: string | null;
+          last_validated_at?: string | null;
+          merchant_id?: string | null;
+          refresh_token_encrypted?: string | null;
+          refresh_token_last4?: string | null;
+          scopes?: string[];
+          status?: string;
+          token_expires_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_signature_key_encrypted?: string | null;
+          webhook_signature_key_last4?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_devices: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          device_code_id: string | null;
+          device_id: string | null;
+          device_name: string | null;
+          environment: string;
+          id: string;
+          last_seen_at: string | null;
+          location_id: string | null;
+          metadata: Json;
+          paired_at: string | null;
+          pairing_code: string | null;
+          product_type: string | null;
+          status: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          device_code_id?: string | null;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment: string;
+          id?: string;
+          last_seen_at?: string | null;
+          location_id?: string | null;
+          metadata?: Json;
+          paired_at?: string | null;
+          pairing_code?: string | null;
+          product_type?: string | null;
+          status?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          device_code_id?: string | null;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment?: string;
+          id?: string;
+          last_seen_at?: string | null;
+          location_id?: string | null;
+          metadata?: Json;
+          paired_at?: string | null;
+          pairing_code?: string | null;
+          product_type?: string | null;
+          status?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_oauth_states: {
+        Row: {
+          consumed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          expires_at: string;
+          return_to: string | null;
+          state: string;
+          ws_id: string;
+        };
+        Insert: {
+          consumed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          expires_at: string;
+          return_to?: string | null;
+          state: string;
+          ws_id: string;
+        };
+        Update: {
+          consumed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          expires_at?: string;
+          return_to?: string | null;
+          state?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_settings: {
+        Row: {
+          created_at: string;
+          device_id: string | null;
+          device_name: string | null;
+          environment: string;
+          location_id: string | null;
+          location_name: string | null;
+          sandbox_device_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment?: string;
+          location_id?: string | null;
+          location_name?: string | null;
+          sandbox_device_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment?: string;
+          location_id?: string | null;
+          location_name?: string | null;
+          sandbox_device_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
       };
       inventory_storefront_events: {
         Row: {
@@ -10968,6 +11211,16 @@ export type Database = {
           p_checkout_id: string;
           p_now?: string;
           p_polar_order_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      complete_inventory_checkout_session_square_payment: {
+        Args: {
+          p_checkout_id: string;
+          p_now?: string;
+          p_square_order_id?: string;
+          p_square_payment_id: string;
           p_ws_id: string;
         };
         Returns: string;
@@ -33730,6 +33983,16 @@ export type Database = {
           p_checkout_id: string;
           p_now?: string;
           p_polar_order_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      complete_inventory_checkout_session_square_payment: {
+        Args: {
+          p_checkout_id: string;
+          p_now?: string;
+          p_square_order_id?: string;
+          p_square_payment_id: string;
           p_ws_id: string;
         };
         Returns: string;

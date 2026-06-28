@@ -200,6 +200,7 @@ export const demoPublicStorefront: InventoryPublicStorefrontResponse = {
 };
 
 export const demoCheckoutSession: InventoryCheckoutSession = {
+  checkoutProvider: 'simulated',
   completedAt: null,
   conversionFeeEstimateAmount: 0,
   currency: 'USD',
@@ -235,6 +236,16 @@ export const demoCheckoutSession: InventoryCheckoutSession = {
   polarStatus: null,
   processingFeeEstimateAmount: 0,
   publicToken: DEMO_ORDER_PUBLIC_TOKEN,
+  squareDeviceId: null,
+  squareEnvironment: null,
+  squareFailureReason: null,
+  squareLastSyncedAt: null,
+  squareLocationId: null,
+  squareOrderId: null,
+  squarePaymentId: null,
+  squareReceiptUrl: null,
+  squareStatus: null,
+  squareTerminalCheckoutId: null,
   status: 'reserved',
   subtotalAmount: 18,
   totalAmount: 18,

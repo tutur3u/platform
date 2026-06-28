@@ -1,0 +1,133 @@
+---
+title: Square Terminal integration
+description: Connect Inventory and Storefront checkout to Square Terminal, OAuth, device pairing, and webhooks.
+---
+
+This runbook covers the Inventory and Storefront integration with
+[Square Terminal](https://developer.squareup.com/docs/terminal-api/overview).
+Use Square Terminal API for countertop terminal payments; the
+[Square POS API](https://developer.squareup.com/docs/pos-api/what-it-does)
+opens the mobile Square Point of Sale app and is not the right integration for
+driving physical terminals from Tuturuuu.
+
+<Warning>
+  Never paste Square access tokens, OAuth secrets, webhook signature keys, or
+  device identifiers into source, docs, or chat. Store workspace credentials
+  only through the Inventory Square settings panel, which encrypts them before
+  private-schema storage.
+</Warning>
+
+## How the flow works
+
+1. A shopper checks out on a `checkoutMode: 'square_terminal'` storefront.
+   Tuturuuu validates Square readiness, creates a local checkout reservation,
+   stores the provider as `square_terminal`, and returns the buyer to the local
+   order reference page.
+2. Inventory staff sends the reserved checkout to a Square Terminal from the
+   commerce workflow. Tuturuuu creates a Square order, then creates a Terminal
+   checkout for the selected location and device.
+3. Square sends terminal checkout and payment webhooks. Tuturuuu verifies the
+   raw webhook body signature before parsing, reconciles duplicate deliveries
+   idempotently, and completes the checkout only after a verified paid payment.
+4. On Square create failure, cancellation, expiry, or failed terminal checkout,
+   Tuturuuu releases the local reservation so stock returns to availability.
+
+V1 does not sync the Square catalog. Tuturuuu Inventory remains the source of
+truth for products, stock, bundles, listing prices, and checkout reservation
+state.
+
+## Environment variables
+
+Set these on `apps/web` as deployment secrets, referenced by name only:
+
+| Variable | Purpose |
+| --- | --- |
+| `SQUARE_APPLICATION_ID` | Production OAuth application id. |
+| `SQUARE_APPLICATION_SECRET` | Production OAuth application secret. |
+| `SQUARE_SANDBOX_APPLICATION_ID` | Optional sandbox OAuth app id. Falls back to `SQUARE_APPLICATION_ID` when omitted. |
+| `SQUARE_SANDBOX_APPLICATION_SECRET` | Optional sandbox OAuth app secret. Falls back to `SQUARE_APPLICATION_SECRET` when omitted. |
+| `SQUARE_OAUTH_REDIRECT_URL` | Public OAuth callback URL. Defaults to `<web-origin>/api/v1/inventory/square/oauth/callback` when the request origin is known. |
+| `SQUARE_WEBHOOK_NOTIFICATION_URL` | Optional exact webhook URL override used during HMAC validation when Square is configured with a tunnel or canonical production URL. |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Optional global fallback signature key for the non-workspace webhook route. Workspace-specific keys from Inventory settings are preferred. |
+
+The Square REST client pins `Square-Version: 2026-05-20` and uses native
+`fetch`. OAuth is the recommended connection method because Tuturuuu can refresh
+tokens and validate granted scopes. Manual access-token configuration remains
+available for controlled deployments.
+
+## Configure Square
+
+1. Create or open a Square application in the Square Developer Dashboard.
+2. Configure the OAuth redirect URL:
+
+   ```
+   https://<your-tuturuuu-domain>/api/v1/inventory/square/oauth/callback
+   ```
+
+3. Grant these OAuth scopes:
+
+   - `MERCHANT_PROFILE_READ`
+   - `ORDERS_READ`
+   - `ORDERS_WRITE`
+   - `PAYMENTS_READ`
+   - `PAYMENTS_WRITE`
+   - `DEVICE_CREDENTIAL_MANAGEMENT`
+
+4. Create a webhook subscription for the Inventory Square endpoint:
+
+   ```
+   https://<your-tuturuuu-domain>/api/v1/inventory/square/webhook/<workspace-id>
+   ```
+
+   Subscribe at minimum to:
+
+   - `device.code.paired`
+   - `terminal.checkout.created`
+   - `terminal.checkout.updated`
+   - `payment.created`
+   - `payment.updated`
+   - `oauth.authorization.revoked`
+
+5. Copy the webhook signature key into **Inventory → Settings → Square
+   Terminal** for the matching environment.
+
+For local development, expose `apps/web` with an HTTPS tunnel and either use the
+tunnel URL in Square or set `SQUARE_WEBHOOK_NOTIFICATION_URL` to the exact URL
+registered in Square so signature validation uses the same value.
+
+## Connect a workspace
+
+1. Open **Inventory → Settings → Square Terminal**.
+2. Choose `Sandbox` or `Production`.
+3. Prefer **Connect OAuth**. For manual setup, paste an access token and save it
+   with the matching environment.
+4. Save the webhook signature key for the same environment.
+5. Select a Square location.
+6. Pair or select a terminal:
+   - Production: create a device pairing code, enter it on the physical Square
+     Terminal, then select the paired device.
+   - Sandbox: use Square's sandbox terminal device id when device listing is not
+     available.
+7. Set a storefront's checkout mode to `Square Terminal`.
+
+Readiness fails closed until the connection, required scopes, webhook signature
+key, location, device, and environment all match. Storefront checkout returns a
+configuration error instead of reserving stock when Square is not ready.
+
+## Physical-terminal smoke checklist
+
+Use sandbox first when terminal coverage is available. If hardware sandbox
+coverage is not sufficient, use a production test procedure that avoids real
+customer inventory and refunds immediately after verification.
+
+1. Pair a terminal for the selected Square location.
+2. Create a small Storefront order and confirm Inventory shows it as reserved.
+3. Use Inventory commerce actions to send it to the terminal.
+4. Complete the payment on the terminal.
+5. Confirm Square webhook delivery succeeded and Tuturuuu marked the checkout
+   completed with Square order, terminal checkout, payment, and receipt URL
+   metadata.
+6. Confirm stock reservations were consumed and the finance ledger sale was
+   booked once.
+7. Repeat cancel, expiry/failure, duplicate webhook delivery, and transient
+   Square failure cases. Cancel/failure/expiry must release inventory.

@@ -29,6 +29,7 @@ export const StorefrontCornerStyleSchema = z.enum([
 
 export const StorefrontCheckoutModeSchema = z.enum([
   'polar',
+  'square_terminal',
   'simulated',
   'disabled',
 ]);
@@ -70,6 +71,7 @@ export const CheckoutStatusSchema = z.enum([
 ]);
 
 export const PolarEnvironmentSchema = z.enum(['sandbox', 'production']);
+export const SquareEnvironmentSchema = z.enum(['sandbox', 'production']);
 
 export const PolarCurrencySchema = z
   .string()
@@ -280,3 +282,43 @@ export const polarSettingsPayloadSchema = z
     (value) => !value.webhookSecret || value.environment,
     'environment is required when webhookSecret is provided'
   );
+
+export const squareSettingsPayloadSchema = z
+  .object({
+    accessToken: z.string().trim().min(1).max(4096).optional(),
+    deviceId: z.string().trim().max(255).nullable().optional(),
+    deviceName: z.string().trim().max(255).nullable().optional(),
+    environment: SquareEnvironmentSchema.optional(),
+    locationId: z.string().trim().max(255).nullable().optional(),
+    locationName: z.string().trim().max(255).nullable().optional(),
+    sandboxDeviceId: z.string().trim().max(255).nullable().optional(),
+    webhookSignatureKey: z.string().trim().min(1).max(4096).optional(),
+  })
+  .refine(
+    (value) =>
+      !value.accessToken ||
+      value.environment === 'sandbox' ||
+      value.environment === 'production',
+    'environment is required when accessToken is provided'
+  )
+  .refine(
+    (value) =>
+      !value.webhookSignatureKey ||
+      value.environment === 'sandbox' ||
+      value.environment === 'production',
+    'environment is required when webhookSignatureKey is provided'
+  );
+
+export const squareOAuthStartQuerySchema = z.object({
+  environment: SquareEnvironmentSchema.default('sandbox'),
+});
+
+export const squareDeviceCodePayloadSchema = z.object({
+  locationId: z.string().trim().max(255).optional(),
+  name: z.string().trim().min(1).max(120).optional(),
+});
+
+export const squareTerminalCheckoutPayloadSchema = z.object({
+  checkoutId: z.guid(),
+  deviceId: z.string().trim().max(255).optional(),
+});

@@ -4,10 +4,12 @@ import { POST } from './route';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createInventoryPolarCheckout: vi.fn(),
+  assertInventorySquareReady: vi.fn(),
   getCheckoutByPublicToken: vi.fn(),
   getPublicStorefront: vi.fn(),
   insert: vi.fn(),
   isInventoryEnabled: vi.fn(),
+  markCheckoutProvider: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   rpc: vi.fn(),
   schema: vi.fn(),
@@ -21,11 +23,18 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@/lib/inventory/commerce/checkouts', () => ({
   getCheckoutByPublicToken: (...args: unknown[]) =>
     mocks.getCheckoutByPublicToken(...args),
+  markCheckoutProvider: (...args: unknown[]) =>
+    mocks.markCheckoutProvider(...args),
 }));
 
 vi.mock('@/lib/inventory/commerce/polar', () => ({
   createInventoryPolarCheckout: (...args: unknown[]) =>
     mocks.createInventoryPolarCheckout(...args),
+}));
+
+vi.mock('@/lib/inventory/commerce/square', () => ({
+  assertInventorySquareReady: (...args: unknown[]) =>
+    mocks.assertInventorySquareReady(...args),
 }));
 
 vi.mock('@/lib/inventory/commerce/public-storefront', () => ({
@@ -81,6 +90,10 @@ describe('inventory storefront checkout route', () => {
       error: null,
     });
     mocks.insert.mockResolvedValue({ error: null });
+    mocks.assertInventorySquareReady.mockResolvedValue({
+      readiness: { issues: [], ready: true },
+    });
+    mocks.markCheckoutProvider.mockResolvedValue(undefined);
     mocks.getCheckoutByPublicToken.mockResolvedValue({
       customerEmail: 'buyer@example.com',
       customerName: 'Buyer',
@@ -241,5 +254,129 @@ describe('inventory storefront checkout route', () => {
     expect(body.checkoutUrl).toContain('/shop/orders/simulated-order-');
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
+  });
+
+  it('blocks misconfigured Square storefronts before creating reservations', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.assertInventorySquareReady.mockRejectedValue(
+      new Error('Square Terminal is not ready: device_missing')
+    );
+
+    const response = await POST(
+      new Request('http://test.local/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Square Terminal is not ready: device_missing',
+    });
+    expect(mocks.assertInventorySquareReady).toHaveBeenCalledWith('ws-1');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.markCheckoutProvider).not.toHaveBeenCalled();
+  });
+
+  it('returns a local order page for Square Terminal reservations', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'create_inventory_checkout_session',
+      expect.any(Object)
+    );
+    expect(mocks.markCheckoutProvider).toHaveBeenCalledWith({
+      checkoutId: 'checkout-1',
+      provider: 'square_terminal',
+      wsId: 'ws-1',
+    });
+    expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
+    expect(body.checkoutMode).toBe('square_terminal');
+    expect(body.nextUrl).toBe(
+      'http://storefront.test/shop/orders/public-token'
+    );
+  });
+
+  it('releases Square reservations when provider marking fails', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.markCheckoutProvider.mockRejectedValue(
+      new Error('checkout_provider column missing')
+    );
+
+    const response = await POST(
+      new Request('http://test.local/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'release_inventory_checkout_session',
+      {
+        p_checkout_id: 'checkout-1',
+        p_ws_id: 'ws-1',
+      }
+    );
   });
 });

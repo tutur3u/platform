@@ -264,6 +264,7 @@ export function createSimulatedCheckoutResponse({
     };
   });
   const checkout: InventoryCheckoutSession = {
+    checkoutProvider: 'simulated',
     completedAt: now.toISOString(),
     conversionFeeEstimateAmount: 0,
     currency,
@@ -285,6 +286,16 @@ export function createSimulatedCheckoutResponse({
     polarStatus: null,
     processingFeeEstimateAmount: 0,
     publicToken,
+    squareDeviceId: null,
+    squareEnvironment: null,
+    squareFailureReason: null,
+    squareLastSyncedAt: null,
+    squareLocationId: null,
+    squareOrderId: null,
+    squarePaymentId: null,
+    squareReceiptUrl: null,
+    squareStatus: null,
+    squareTerminalCheckoutId: null,
     status: 'completed',
     subtotalAmount,
     totalAmount: subtotalAmount,
@@ -310,6 +321,7 @@ export function getSimulatedOrderResponse(
 
   return {
     order: {
+      checkoutProvider: 'simulated',
       completedAt: new Date(claims.iat * 1000).toISOString(),
       conversionFeeEstimateAmount: 0,
       currency: claims.currency,
@@ -331,6 +343,16 @@ export function getSimulatedOrderResponse(
       polarStatus: null,
       processingFeeEstimateAmount: 0,
       publicToken,
+      squareDeviceId: null,
+      squareEnvironment: null,
+      squareFailureReason: null,
+      squareLastSyncedAt: null,
+      squareLocationId: null,
+      squareOrderId: null,
+      squarePaymentId: null,
+      squareReceiptUrl: null,
+      squareStatus: null,
+      squareTerminalCheckoutId: null,
       status: 'completed',
       subtotalAmount: claims.subtotalAmount,
       totalAmount: claims.totalAmount,

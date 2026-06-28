@@ -1,7 +1,7 @@
 ---
 title: 'Inventory'
 description: 'How inventory.tuturuuu.com is wired as the inventory satellite app, operator console, public storefront, checkout reservation, and audit operations surface.'
-updatedAt: '2026-05-28'
+updatedAt: '2026-06-28'
 ---
 
 Inventory lives in `apps/inventory` and runs locally through Portless at
@@ -12,7 +12,7 @@ The app is a registered Tuturuuu satellite app. It uses Tuturuuu app-session
 auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
 `/api/auth/verify-app-token` handoff routes, and forwards fallback `/api/*`
 traffic to centralized `apps/web` APIs. Keep protected inventory, payment,
-Stripe Connect, checkout, and audit mutations behind `apps/web` so provider
+Stripe Connect, checkout, Square Terminal, and audit mutations behind `apps/web` so provider
 secrets, bot protection, request logging, and Observability stay centralized.
 Workspace-scoped Inventory APIs in `apps/web` must authorize through
 `authorizeInventoryWorkspace`, which accepts the Inventory app-session cookie
@@ -78,11 +78,16 @@ The commerce storefront extension adds:
 - public routes for `/store/[storeSlug]`,
   `/store/[storeSlug]/products/[listingId]`, cart, checkout, and order status
 - private-schema tables for storefronts, listings, bundles, checkout sessions,
-  checkout lines, reservations, and settlement ledger entries
+  checkout lines, reservations, Square connection state, terminal checkout
+  identifiers, and settlement ledger entries
 - commerce money (listing/bundle prices, checkout amounts, settlement, and
   costing) stored in integer minor units of the row currency (cents for USD,
   whole units for JPY/VND); convert with `@tuturuuu/utils/money` and enter with
-  the shared `MoneyInput`. See the Polar storefront integration runbook.
+  the shared `MoneyInput`. See the Polar storefront and Square Terminal
+  integration runbooks.
+- Square Terminal settings for OAuth/manual tokens, location selection, device
+  pairing, webhook verification, and commerce actions that send, cancel, and
+  reconcile terminal payments after local stock is reserved.
 - service-role-only RPCs for creating reservations, releasing or expiring
   reservations, and linking a completed checkout to a `finance_invoice`
 

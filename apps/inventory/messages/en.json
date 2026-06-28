@@ -940,6 +940,7 @@
         "visibility": "Visibility"
       },
       "commerce": {
+        "cancelSquare": "Cancel terminal",
         "items": "{count, plural, one {# item} other {# items}}",
         "metrics": {
           "completed": "Completed",
@@ -970,6 +971,7 @@
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
+        "sendSquare": "Send to terminal",
         "source": {
           "checkout": "Checkout",
           "finance": "Invoice"
@@ -1208,7 +1210,8 @@
         "checkoutModes": {
           "disabled": "Disabled",
           "polar": "Polar",
-          "simulated": "Simulated"
+          "simulated": "Simulated",
+          "square_terminal": "Square Terminal"
         },
         "clearImage": "Clear image",
         "componentCount": "{count, plural, one {# component} other {# components}}",
@@ -1749,6 +1752,44 @@
         "suppliers": "Suppliers",
         "units": "Units",
         "warehouses": "Warehouses"
+      },
+      "square": {
+        "connectOAuth": "Connect OAuth",
+        "copyWebhook": "Copy URL",
+        "createDeviceCode": "Create pairing code",
+        "description": "Connect Square, select a location, and send reserved orders to a physical Square Terminal.",
+        "deviceCodeError": "Could not create device code.",
+        "deviceCodeNamePlaceholder": "Front counter terminal",
+        "deviceCodeSuccess": "Pairing code created.",
+        "deviceLabel": "Default terminal",
+        "devicePlaceholder": "Choose a terminal",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "environmentLabel": "Environment",
+        "locationLabel": "Location",
+        "locationPlaceholder": "Choose a location",
+        "notConfigured": "No Square token saved",
+        "oauthError": "Could not start Square OAuth.",
+        "readiness": "Readiness: {issues}",
+        "ready": "ready",
+        "sandboxDeviceLabel": "Sandbox device ID",
+        "saveDefaults": "Save defaults",
+        "saveError": "Could not save Square settings.",
+        "saveManual": "Save manual token",
+        "saveSuccess": "Square settings saved.",
+        "saving": "Saving...",
+        "terminalDescription": "Use a paired device in production. In sandbox, paste Square's sandbox terminal device ID.",
+        "terminalTitle": "Terminal routing",
+        "title": "Square Terminal",
+        "tokenEnding": "Token ending in {last4}",
+        "tokenLabel": "Access token",
+        "tokenPlaceholder": "Square access token",
+        "webhookSignatureLabel": "Webhook signature key",
+        "webhookSignaturePlaceholder": "Square webhook signature key",
+        "webhookTitle": "Webhook ingestion",
+        "webhookUrlPending": "Webhook URL will appear after settings load"
       },
       "states": {
         "errorDescription": "Refresh this view or try again after the API recovers.",
@@ -2516,6 +2557,8 @@
       "general_description": "Workspace identity and Inventory preferences",
       "polar": "Polar checkout",
       "polar_description": "Workspace checkout credentials and environment defaults",
+      "square": "Square Terminal",
+      "square_description": "Square OAuth, terminal pairing, and webhook readiness",
       "title": "Inventory",
       "workspace_name": "Workspace",
       "workspace_name_description": "The workspace currently powering this Inventory console."

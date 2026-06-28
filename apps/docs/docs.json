@@ -262,7 +262,8 @@
                   "build/devops/mobile-store-deployment",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide",
-                  "build/devops/polar-storefront-integration"
+                  "build/devops/polar-storefront-integration",
+                  "build/devops/square-terminal-integration"
                 ]
               },
               "build/development-tools/overview",

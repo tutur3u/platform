@@ -196,6 +196,7 @@ export type InventoryStorefrontCornerStyle = 'compact' | 'rounded' | 'soft';
 export type InventoryStorefrontCheckoutMode =
   | 'disabled'
   | 'polar'
+  | 'square_terminal'
   | 'simulated';
 
 export type InventoryStorefrontSectionType =
@@ -462,6 +463,7 @@ export type InventoryCheckoutSession = {
   wsId: string;
   publicToken: string;
   status: InventoryCheckoutStatus;
+  checkoutProvider: InventoryStorefrontCheckoutMode | null;
   customerAuthUid: string | null;
   customerName: string;
   customerEmail: string;
@@ -482,6 +484,16 @@ export type InventoryCheckoutSession = {
   polarOrderId: string | null;
   polarProductId: string | null;
   polarStatus: InventoryPolarCheckoutStatus | null;
+  squareEnvironment: InventorySquareEnvironment | null;
+  squareLocationId: string | null;
+  squareDeviceId: string | null;
+  squareOrderId: string | null;
+  squareTerminalCheckoutId: string | null;
+  squarePaymentId: string | null;
+  squareReceiptUrl: string | null;
+  squareStatus: InventorySquareTerminalCheckoutStatus | null;
+  squareFailureReason: string | null;
+  squareLastSyncedAt: string | null;
   lines: InventoryCheckoutLine[];
 };
 
@@ -528,6 +540,115 @@ export type InventoryPolarSettingsPayload = {
   webhookSecret?: string;
   testingEnvironment?: InventoryPolarEnvironment;
   productionEnvironment?: InventoryPolarEnvironment;
+};
+
+export type InventorySquareEnvironment = 'production' | 'sandbox';
+
+export type InventorySquareAuthMethod = 'manual' | 'oauth';
+
+export type InventorySquareConnectionStatus =
+  | 'error'
+  | 'pending'
+  | 'ready'
+  | 'revoked';
+
+export type InventorySquareTerminalCheckoutStatus =
+  | 'canceled'
+  | 'cancelled'
+  | 'checkout_created'
+  | 'completed'
+  | 'expired'
+  | 'failed'
+  | 'in_progress'
+  | 'paid'
+  | 'pending';
+
+export type InventorySquareReadinessIssue =
+  | 'app_credentials_missing'
+  | 'connection_missing'
+  | 'device_missing'
+  | 'location_missing'
+  | 'scopes_missing'
+  | 'webhook_signature_missing';
+
+export type InventorySquareConnection = {
+  environment: InventorySquareEnvironment;
+  authMethod: InventorySquareAuthMethod;
+  merchantId: string | null;
+  accessTokenLast4: string | null;
+  accessTokenFingerprint: string | null;
+  refreshTokenLast4: string | null;
+  tokenExpiresAt: string | null;
+  scopes: string[];
+  status: InventorySquareConnectionStatus;
+  lastValidatedAt: string | null;
+  lastError: string | null;
+  updatedAt: string | null;
+  webhookSignatureKeyLast4: string | null;
+};
+
+export type InventorySquareSettings = {
+  wsId: string;
+  environment: InventorySquareEnvironment;
+  locationId: string | null;
+  locationName: string | null;
+  deviceId: string | null;
+  deviceName: string | null;
+  sandboxDeviceId: string | null;
+  readiness: {
+    ready: boolean;
+    issues: InventorySquareReadinessIssue[];
+  };
+  connections: InventorySquareConnection[];
+};
+
+export type InventorySquareSettingsPayload = {
+  environment?: InventorySquareEnvironment;
+  accessToken?: string;
+  webhookSignatureKey?: string;
+  locationId?: string | null;
+  locationName?: string | null;
+  deviceId?: string | null;
+  deviceName?: string | null;
+  sandboxDeviceId?: string | null;
+};
+
+export type InventorySquareOAuthStartResponse = {
+  authorizeUrl: string;
+};
+
+export type InventorySquareLocation = {
+  id: string;
+  name: string;
+  status: string | null;
+  country: string | null;
+  currency: string | null;
+};
+
+export type InventorySquareDevice = {
+  id: string;
+  name: string;
+  status: string | null;
+  locationId: string | null;
+  productType: string | null;
+  code: string | null;
+  pairedAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventorySquareDeviceCode = {
+  id: string;
+  code: string;
+  name: string | null;
+  status: string | null;
+  pairBy: string | null;
+  locationId: string | null;
+  productType: string | null;
+};
+
+export type InventorySquareTerminalCheckoutPayload = {
+  checkoutId: string;
+  deviceId?: string;
 };
 
 export type InventoryPolarSyncStatusCounts = {
@@ -589,6 +710,7 @@ export type InventoryDashboardCounts = {
   sales: number;
   costingProfiles: number;
   polarReady: number;
+  squareReady?: number;
   simulatedCheckoutStorefronts: number;
 };
 
@@ -665,6 +787,7 @@ export type InventoryDashboardSnapshot = {
     withoutPublishedListings: number;
     themeGaps: number;
     polarCheckout: number;
+    squareTerminalCheckout?: number;
     simulatedCheckout: number;
     disabledCheckout: number;
   };
@@ -808,6 +931,7 @@ export type InventorySaleSummary = {
   paid_amount: number;
   polar_order_id?: string | null;
   public_token?: string | null;
+  square_order_id?: string | null;
   source: InventorySaleSource;
   total_quantity: number;
   wallet_name?: string | null;
@@ -1239,6 +1363,8 @@ export type InventoryPublicStorefrontResponse = {
 export type InventoryCheckoutResponse = {
   checkout: InventoryCheckoutSession;
   checkoutUrl: string | null;
+  checkoutMode?: InventoryStorefrontCheckoutMode;
+  nextUrl?: string | null;
 };
 
 export type InventoryOrderHistoryItem = {
@@ -1249,6 +1375,7 @@ export type InventoryOrderHistoryItem = {
   id: string;
   lines: InventoryCheckoutLine[];
   polarStatus: InventoryPolarCheckoutStatus | null;
+  squareStatus: InventorySquareTerminalCheckoutStatus | null;
   publicToken: string;
   status: InventoryCheckoutStatus;
   storefrontId: string;
@@ -2514,6 +2641,39 @@ export function releaseInventoryCheckout(
   );
 }
 
+export function createInventorySquareTerminalCheckout(
+  wsId: string,
+  payload: InventorySquareTerminalCheckoutPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryCheckoutSession;
+  }>(workspaceInventoryPath(wsId, '/square/terminal-checkouts'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
+}
+
+export function cancelInventorySquareTerminalCheckout(
+  wsId: string,
+  checkoutId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryCheckoutSession;
+  }>(
+    workspaceInventoryPath(
+      wsId,
+      `/square/terminal-checkouts/${encodePathSegment(checkoutId)}/cancel`
+    ),
+    {
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
 export function getInventoryPolarSettings(
   wsId: string,
   options?: InternalApiClientOptions
@@ -2537,6 +2697,81 @@ export function updateInventoryPolarSettings(
       method: 'PUT',
     }
   );
+}
+
+export function getInventorySquareSettings(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareSettings>(
+    workspaceInventoryPath(wsId, '/square-settings'),
+    { cache: 'no-store' }
+  );
+}
+
+export function updateInventorySquareSettings(
+  wsId: string,
+  payload: InventorySquareSettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareSettings>(
+    workspaceInventoryPath(wsId, '/square-settings'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function startInventorySquareOAuth(
+  wsId: string,
+  environment: InventorySquareEnvironment,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareOAuthStartResponse>(
+    workspaceInventoryPath(
+      wsId,
+      `/square/oauth/start?environment=${encodeURIComponent(environment)}`
+    ),
+    { cache: 'no-store', headers: options?.defaultHeaders }
+  );
+}
+
+export function listInventorySquareLocations(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySquareLocation[];
+  }>(workspaceInventoryPath(wsId, '/square/locations'), {
+    cache: 'no-store',
+  });
+}
+
+export function listInventorySquareDevices(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySquareDevice[];
+  }>(workspaceInventoryPath(wsId, '/square/devices'), {
+    cache: 'no-store',
+  });
+}
+
+export function createInventorySquareDeviceCode(
+  wsId: string,
+  payload: { locationId?: string; name?: string },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySquareDeviceCode;
+  }>(workspaceInventoryPath(wsId, '/square/device-codes'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
 }
 
 export function getInventoryStorefrontAnalytics(
