@@ -44,13 +44,36 @@ export function ExternalAppApprovalClient({
         : null,
     [app, requestedOrigin, requestedScopes, requestedWorkspaceId]
   );
+  const missingScopes = approval?.missingScopes ?? [];
+  const approvedScopes = approval?.approvedScopes ?? [];
+  const missingOrigins = approval?.missingOrigins ?? [];
+  const missingWorkspaceIds = approval?.missingWorkspaceIds ?? [];
+  const needsRegistrationApproval =
+    missingScopes.length > 0 ||
+    missingOrigins.length > 0 ||
+    missingWorkspaceIds.length > 0;
+  const needsManagedCronDomainApproval = Boolean(
+    requestedOrigin && !cronDomainApproved
+  );
+  const canApprove =
+    invalidScopes.length === 0 &&
+    (needsRegistrationApproval || needsManagedCronDomainApproval);
+  const usesSetupApprovalCopy =
+    missingOrigins.length > 0 ||
+    missingWorkspaceIds.length > 0 ||
+    needsManagedCronDomainApproval;
   const mutation = useMutation({
     mutationFn: async () => {
       if (!approval) throw new Error(t('approval.missing_app'));
-      const result = await saveExternalApp(approval.payload);
-      if (requestedOrigin && !cronDomainApproved) {
+      let result = null;
+
+      if (needsRegistrationApproval) {
+        result = await saveExternalApp(approval.payload);
+      }
+      if (requestedOrigin && needsManagedCronDomainApproval) {
         await approveExternalAppManagedCron({ origin: requestedOrigin });
       }
+
       return result;
     },
     onError: (error) =>
@@ -59,7 +82,11 @@ export function ExternalAppApprovalClient({
       ),
     onSuccess: () => {
       setApproved(true);
-      toast.success(t('approval.success'));
+      toast.success(
+        usesSetupApprovalCopy
+          ? t('approval.setup_success')
+          : t('approval.success')
+      );
       if (returnUrl) window.location.assign(returnUrl);
     },
   });
@@ -73,17 +100,6 @@ export function ExternalAppApprovalClient({
       />
     );
   }
-
-  const missingScopes = approval?.missingScopes ?? [];
-  const approvedScopes = approval?.approvedScopes ?? [];
-  const missingOrigins = approval?.missingOrigins ?? [];
-  const missingWorkspaceIds = approval?.missingWorkspaceIds ?? [];
-  const canApprove =
-    invalidScopes.length === 0 &&
-    (missingScopes.length > 0 ||
-      missingOrigins.length > 0 ||
-      missingWorkspaceIds.length > 0 ||
-      !cronDomainApproved);
 
   return (
     <ApprovalShell
@@ -142,7 +158,9 @@ export function ExternalAppApprovalClient({
             <CheckCircle className="h-4 w-4" />
             <span className="font-medium text-sm">
               {approved
-                ? t('approval.approved')
+                ? usesSetupApprovalCopy
+                  ? t('approval.approved_setup')
+                  : t('approval.approved')
                 : canApprove
                   ? t('approval.ready_to_approve')
                   : t('approval.no_missing_scopes')}
@@ -162,7 +180,9 @@ export function ExternalAppApprovalClient({
               ) : (
                 <CheckCircle className="h-4 w-4" />
               )}
-              {t('actions.approve_scopes')}
+              {usesSetupApprovalCopy
+                ? t('actions.approve_setup')
+                : t('actions.approve_scopes')}
             </Button>
           ) : null}
           {returnUrl ? (

@@ -64,6 +64,7 @@ vi.mock('next-intl', () => ({
     () => (key: string, values?: Record<string, string | number>) => {
       const messages: Record<string, string> = {
         'actions.collapse': 'Collapse {app}',
+        'actions.approve_setup': 'Approve setup',
         'actions.approve_scopes': 'Approve scopes',
         'actions.create': 'Create app',
         'actions.expand': 'Expand {app}',
@@ -84,6 +85,7 @@ vi.mock('next-intl', () => ({
         'new_app.title': 'New external app',
         'approval.already_allowed': 'Already allowed',
         'approval.approved': 'Approved',
+        'approval.approved_setup': 'Setup approved',
         'approval.description': 'Review requested scopes for {app}.',
         'approval.invalid_scopes': 'Invalid scopes',
         'approval.missing_app': 'External app not found.',
@@ -96,6 +98,7 @@ vi.mock('next-intl', () => ({
         'approval.ready_to_approve': 'Ready to approve',
         'approval.requested_scopes': 'Requested scopes',
         'approval.return': 'Return to app',
+        'approval.setup_success': 'Setup approved',
         'approval.success': 'Scopes approved',
         'approval.title': 'Approve external app scopes',
         'registered.empty': 'No external apps registered yet.',
@@ -301,6 +304,65 @@ describe('ExternalAppsClient', () => {
         id: 'workspace-app',
         issueSecret: false,
         origins: ['https://workspace.example.com'],
+      });
+    });
+  });
+
+  it('approves managed scheduler domains without rewriting the app registration', async () => {
+    renderWithQuery(
+      <ExternalAppApprovalClient
+        app={workspaceApp}
+        cronDomainApproved={false}
+        invalidScopes={[]}
+        requestedOrigin="https://workspace.example.com"
+        requestedScopes={['workspace:session']}
+        requestedWorkspaceId={null}
+        returnUrl={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve setup' }));
+
+    await waitFor(() => {
+      expect(mocks.approveExternalAppManagedCron).toHaveBeenCalledWith({
+        origin: 'https://workspace.example.com',
+      });
+    });
+    expect(mocks.saveExternalApp).not.toHaveBeenCalled();
+  });
+
+  it('merges missing registration access before approving the managed scheduler domain', async () => {
+    renderWithQuery(
+      <ExternalAppApprovalClient
+        app={workspaceApp}
+        cronDomainApproved={false}
+        invalidScopes={[]}
+        requestedOrigin="https://new-workspace.example.com"
+        requestedScopes={['workspace:session', 'workspace:cron:read']}
+        requestedWorkspaceId="workspace-2"
+        returnUrl={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve setup' }));
+
+    await waitFor(() => {
+      expect(mocks.saveExternalApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowedScopes: ['workspace:cron:read', 'workspace:session'],
+          allowedWorkspaceIds: [
+            '449cdd3b-121b-40f7-9cee-28f5b582e204',
+            'workspace-2',
+          ],
+          issueSecret: false,
+          origins: [
+            'https://new-workspace.example.com',
+            'https://workspace.example.com',
+          ],
+        })
+      );
+      expect(mocks.approveExternalAppManagedCron).toHaveBeenCalledWith({
+        origin: 'https://new-workspace.example.com',
       });
     });
   });

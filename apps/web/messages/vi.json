@@ -6157,6 +6157,7 @@
   "external-apps-settings": {
     "actions": {
       "approve_scopes": "Duyệt phạm vi",
+      "approve_setup": "Duyệt thiết lập",
       "collapse": "Thu gọn {app}",
       "create": "Tạo ứng dụng",
       "expand": "Mở {app}",
@@ -6166,6 +6167,7 @@
     "approval": {
       "already_allowed": "Đã được duyệt",
       "approved": "Đã duyệt phạm vi",
+      "approved_setup": "Đã duyệt thiết lập",
       "description": "Kiểm tra các phạm vi mà {app} yêu cầu trước khi cập nhật đăng ký ứng dụng bên ngoài.",
       "invalid_scopes": "Phạm vi không hợp lệ",
       "missing_app": "Không tìm thấy đăng ký ứng dụng bên ngoài.",
@@ -6178,6 +6180,7 @@
       "ready_to_approve": "Kiểm tra thay đổi được yêu cầu rồi duyệt.",
       "requested_scopes": "Phạm vi được yêu cầu",
       "return": "Quay lại ứng dụng",
+      "setup_success": "Đã duyệt thiết lập ứng dụng bên ngoài",
       "success": "Đã duyệt phạm vi ứng dụng bên ngoài",
       "title": "Duyệt phạm vi ứng dụng bên ngoài"
     },

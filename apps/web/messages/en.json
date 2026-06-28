@@ -6157,6 +6157,7 @@
   "external-apps-settings": {
     "actions": {
       "approve_scopes": "Approve scopes",
+      "approve_setup": "Approve setup",
       "collapse": "Collapse {app}",
       "create": "Create app",
       "expand": "Expand {app}",
@@ -6166,6 +6167,7 @@
     "approval": {
       "already_allowed": "Already allowed",
       "approved": "Scopes approved",
+      "approved_setup": "Setup approved",
       "description": "Review the scopes requested for {app} before updating its external app registration.",
       "invalid_scopes": "Invalid scopes",
       "missing_app": "External app registration not found.",
@@ -6178,6 +6180,7 @@
       "ready_to_approve": "Review the requested changes, then approve.",
       "requested_scopes": "Requested scopes",
       "return": "Return to app",
+      "setup_success": "External app setup approved",
       "success": "External app scopes approved",
       "title": "Approve external app scopes"
     },
