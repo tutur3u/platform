@@ -83,7 +83,7 @@ function matchesCronJobSearch(job: WorkspaceCronJobSummary, q: string) {
   }
 
   return [job.name, job.schedule, job.dataset_id, job.id].some((value) =>
-    value.toLowerCase().includes(query)
+    (value ?? '').toLowerCase().includes(query)
   );
 }
 
