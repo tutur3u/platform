@@ -145,6 +145,53 @@ export async function addManagedCronWhitelistedDomain({
   return row;
 }
 
+export async function upsertManagedCronWhitelistedDomain({
+  actorId,
+  description,
+  domain,
+  enabled,
+}: {
+  actorId: string;
+  description: string | null;
+  domain: string;
+  enabled: boolean;
+}) {
+  const sql = getPlatformSql();
+  const normalizedDomain = normalizeManagedCronDomain(domain);
+  const [row] = await sql<ManagedCronWhitelistedDomain[]>`
+    insert into private.managed_cron_whitelisted_domains (
+      domain,
+      description,
+      enabled,
+      created_by,
+      updated_by
+    )
+    values (
+      ${normalizedDomain},
+      ${description},
+      ${enabled},
+      ${actorId},
+      ${actorId}
+    )
+    on conflict (domain)
+    do update set
+      description = coalesce(excluded.description, private.managed_cron_whitelisted_domains.description),
+      enabled = excluded.enabled,
+      updated_at = now(),
+      updated_by = excluded.updated_by
+    returning
+      domain,
+      description,
+      enabled,
+      created_at::text as created_at,
+      updated_at::text as updated_at,
+      created_by::text as created_by,
+      updated_by::text as updated_by
+  `;
+
+  return row;
+}
+
 export async function updateManagedCronWhitelistedDomainEnabled({
   actorId,
   domain,

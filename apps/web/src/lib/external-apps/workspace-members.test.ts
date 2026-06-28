@@ -58,7 +58,7 @@ function access(overrides: Record<string, unknown> = {}) {
     canManageRoles: true,
     normalizedWorkspaceId: 'workspace-1',
     permissions: {},
-    targetApp: 'cybershield35',
+    targetApp: 'external-app',
     user: { email: 'actor@example.com', id: 'user-1' },
     ...overrides,
   } as never;

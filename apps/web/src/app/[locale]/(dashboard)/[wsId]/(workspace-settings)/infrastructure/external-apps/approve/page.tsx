@@ -6,6 +6,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { listExternalApps } from '@/lib/app-coordination/external-apps';
+import { listEnabledManagedCronDomains } from '@/lib/managed-cron/domain-repository';
+import { validateManagedCronEndpointUrl } from '@/lib/managed-cron/validation';
 import { enforceInfrastructureRootWorkspace } from '../../enforce-infrastructure-root';
 import {
   type ExternalAppApprovalSearchParams,
@@ -55,9 +57,14 @@ export default async function ExternalAppApprovalPage({
     ? sanitizeExternalAppApprovalReturnUrl(
         parsed.returnUrl,
         app,
-        getPlatformWebAppUrl()
+        getPlatformWebAppUrl(),
+        parsed.origin ? [parsed.origin] : []
       )
     : null;
+  const cronDomainApproved =
+    parsed.feature === 'managed-cron' && parsed.origin
+      ? await isManagedCronOriginApproved(parsed.origin)
+      : true;
 
   return (
     <>
@@ -75,12 +82,28 @@ export default async function ExternalAppApprovalPage({
 
       <ExternalAppApprovalClient
         app={app}
+        cronDomainApproved={cronDomainApproved}
         invalidScopes={parsed.invalidScopes}
+        requestedOrigin={parsed.origin}
         requestedScopes={parsed.requestedScopes}
+        requestedWorkspaceId={parsed.workspaceId}
         returnUrl={returnUrl}
       />
     </>
   );
+}
+
+async function isManagedCronOriginApproved(origin: string) {
+  const endpointUrl = new URL(
+    '/api/cron/scans/process-queue',
+    origin
+  ).toString();
+  const validation = validateManagedCronEndpointUrl(
+    endpointUrl,
+    await listEnabledManagedCronDomains()
+  );
+
+  return validation.ok;
 }
 
 function getPlatformWebAppUrl() {

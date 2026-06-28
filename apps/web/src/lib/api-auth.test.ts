@@ -146,7 +146,7 @@ describe('withSessionAuth app-session step-up controls', () => {
     });
     mocks.verifyAppSessionRequest.mockReturnValue({
       claims: {
-        origin_app: 'cybershield35',
+        origin_app: 'external-app',
         scopes: ['users:profile:write'],
         target_app: 'platform',
       },

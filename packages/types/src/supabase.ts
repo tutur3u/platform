@@ -5704,6 +5704,36 @@ export type Database = {
           },
         ];
       };
+      managed_cron_whitelisted_domains: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          domain: string;
+          enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          domain: string;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          domain?: string;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       meet_stream_events: {
         Row: {
           actor_id: string | null;
@@ -10912,6 +10942,10 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
+      cancel_pending_post_email_queue_for_recipient_email: {
+        Args: { p_email: string; p_reason?: string };
+        Returns: number;
+      };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
         Returns: boolean;
@@ -15085,10 +15119,10 @@ export type Database = {
           },
           {
             foreignKeyName: 'course_test_attempt_answers_selected_option_id_fkey';
-            columns: ['selected_option_id'];
+            columns: ['selected_option_id', 'quiz_id'];
             isOneToOne: false;
             referencedRelation: 'quiz_options';
-            referencedColumns: ['id'];
+            referencedColumns: ['id', 'quiz_id'];
           },
         ];
       };
@@ -19821,6 +19855,170 @@ export type Database = {
           },
         ];
       };
+      rate_limit_appeals: {
+        Row: {
+          cleared_blocked_ip_id: string | null;
+          client_ip: string;
+          created_at: string;
+          created_rate_limit_rule_id: string | null;
+          creator_id: string;
+          diagnostics: Json;
+          id: string;
+          message: string | null;
+          page_path: string | null;
+          proxy_block_reason: string | null;
+          rate_limit_policy: string | null;
+          rate_limit_window: string | null;
+          request_method: string | null;
+          request_path: string | null;
+          response_status: number | null;
+          retry_after_seconds: number | null;
+          review_note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          temporary_relief_expires_at: string | null;
+          temporary_relief_granted_at: string | null;
+          timezone: string | null;
+          turnstile_verified_at: string | null;
+          updated_at: string;
+          user_agent: string | null;
+          user_email: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          cleared_blocked_ip_id?: string | null;
+          client_ip: string;
+          created_at?: string;
+          created_rate_limit_rule_id?: string | null;
+          creator_id: string;
+          diagnostics?: Json;
+          id?: string;
+          message?: string | null;
+          page_path?: string | null;
+          proxy_block_reason?: string | null;
+          rate_limit_policy?: string | null;
+          rate_limit_window?: string | null;
+          request_method?: string | null;
+          request_path?: string | null;
+          response_status?: number | null;
+          retry_after_seconds?: number | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          temporary_relief_expires_at?: string | null;
+          temporary_relief_granted_at?: string | null;
+          timezone?: string | null;
+          turnstile_verified_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_email?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          cleared_blocked_ip_id?: string | null;
+          client_ip?: string;
+          created_at?: string;
+          created_rate_limit_rule_id?: string | null;
+          creator_id?: string;
+          diagnostics?: Json;
+          id?: string;
+          message?: string | null;
+          page_path?: string | null;
+          proxy_block_reason?: string | null;
+          rate_limit_policy?: string | null;
+          rate_limit_window?: string | null;
+          request_method?: string | null;
+          request_path?: string | null;
+          response_status?: number | null;
+          retry_after_seconds?: number | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          temporary_relief_expires_at?: string | null;
+          temporary_relief_granted_at?: string | null;
+          timezone?: string | null;
+          turnstile_verified_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_email?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rate_limit_appeals_cleared_blocked_ip_id_fkey';
+            columns: ['cleared_blocked_ip_id'];
+            isOneToOne: false;
+            referencedRelation: 'blocked_ips';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_created_rate_limit_rule_id_fkey';
+            columns: ['created_rate_limit_rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'abuse_trust_overrides';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       realtime_log_aggregations: {
         Row: {
           channel_id: string | null;
@@ -21317,6 +21515,241 @@ export type Database = {
           },
         ];
       };
+      task_leaderboard_members: {
+        Row: {
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          joined_by: string;
+          leaderboard_id: string;
+          status: string;
+          team_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          joined_by: string;
+          leaderboard_id: string;
+          status?: string;
+          team_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          joined_by?: string;
+          leaderboard_id?: string;
+          status?: string;
+          team_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_leaderboard_members_joined_by_fkey';
+            columns: ['joined_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_joined_by_fkey';
+            columns: ['joined_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_leaderboard_id_fkey';
+            columns: ['leaderboard_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_leaderboards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_leaderboard_teams';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_leaderboard_teams: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          leaderboard_id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          leaderboard_id: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          leaderboard_id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_leaderboard_teams_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_teams_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_teams_leaderboard_id_fkey';
+            columns: ['leaderboard_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_leaderboards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_leaderboards: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string;
+          description: string | null;
+          id: string;
+          join_code: string;
+          metric_id: string;
+          name: string;
+          period_end: string | null;
+          period_start: string;
+          starred: boolean;
+          status: string;
+          updated_at: string;
+          visibility: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by: string;
+          description?: string | null;
+          id?: string;
+          join_code?: string;
+          metric_id: string;
+          name: string;
+          period_end?: string | null;
+          period_start: string;
+          starred?: boolean;
+          status?: string;
+          updated_at?: string;
+          visibility?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          description?: string | null;
+          id?: string;
+          join_code?: string;
+          metric_id?: string;
+          name?: string;
+          period_end?: string | null;
+          period_start?: string;
+          starred?: boolean;
+          status?: string;
+          updated_at?: string;
+          visibility?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_leaderboards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_metric_id_fkey';
+            columns: ['metric_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_progress_metrics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_lists: {
         Row: {
           archived: boolean | null;
@@ -21814,6 +22247,471 @@ export type Database = {
           {
             foreignKeyName: 'task_plans_personal_ws_id_fkey';
             columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_profile_progress_settings: {
+        Row: {
+          created_at: string;
+          display_name: string | null;
+          show_goals: boolean;
+          show_leaderboards: boolean;
+          show_progress: boolean;
+          updated_at: string;
+          user_id: string;
+          visibility: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string | null;
+          show_goals?: boolean;
+          show_leaderboards?: boolean;
+          show_progress?: boolean;
+          updated_at?: string;
+          user_id: string;
+          visibility?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string | null;
+          show_goals?: boolean;
+          show_leaderboards?: boolean;
+          show_progress?: boolean;
+          updated_at?: string;
+          user_id?: string;
+          visibility?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_profile_progress_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_entries: {
+        Row: {
+          board_id: string | null;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          entry_date: string;
+          id: string;
+          list_id: string | null;
+          metric_id: string;
+          mode: string;
+          note: string | null;
+          project_id: string | null;
+          source_id: string | null;
+          source_type: string;
+          tags: string[];
+          task_id: string | null;
+          updated_at: string;
+          value: number;
+          ws_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          deleted_at?: string | null;
+          entry_date?: string;
+          id?: string;
+          list_id?: string | null;
+          metric_id: string;
+          mode?: string;
+          note?: string | null;
+          project_id?: string | null;
+          source_id?: string | null;
+          source_type?: string;
+          tags?: string[];
+          task_id?: string | null;
+          updated_at?: string;
+          value: number;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          entry_date?: string;
+          id?: string;
+          list_id?: string | null;
+          metric_id?: string;
+          mode?: string;
+          note?: string | null;
+          project_id?: string | null;
+          source_id?: string | null;
+          source_type?: string;
+          tags?: string[];
+          task_id?: string | null;
+          updated_at?: string;
+          value?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_entries_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_metric_id_fkey';
+            columns: ['metric_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_progress_metrics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_goals: {
+        Row: {
+          archived_at: string | null;
+          board_id: string | null;
+          created_at: string;
+          description: string | null;
+          goal_type: string;
+          id: string;
+          metric_id: string;
+          name: string;
+          owner_id: string;
+          period_end: string | null;
+          period_start: string;
+          project_id: string | null;
+          recurrence: string;
+          starred: boolean;
+          status: string;
+          tags: string[];
+          target_value: number;
+          task_id: string | null;
+          updated_at: string;
+          visibility: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          board_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          goal_type?: string;
+          id?: string;
+          metric_id: string;
+          name: string;
+          owner_id: string;
+          period_end?: string | null;
+          period_start: string;
+          project_id?: string | null;
+          recurrence?: string;
+          starred?: boolean;
+          status?: string;
+          tags?: string[];
+          target_value: number;
+          task_id?: string | null;
+          updated_at?: string;
+          visibility?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          board_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          goal_type?: string;
+          id?: string;
+          metric_id?: string;
+          name?: string;
+          owner_id?: string;
+          period_end?: string | null;
+          period_start?: string;
+          project_id?: string | null;
+          recurrence?: string;
+          starred?: boolean;
+          status?: string;
+          tags?: string[];
+          target_value?: number;
+          task_id?: string | null;
+          updated_at?: string;
+          visibility?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_goals_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_metric_id_fkey';
+            columns: ['metric_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_progress_metrics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_metrics: {
+        Row: {
+          aggregation: string;
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          is_default: boolean;
+          name: string;
+          unit_kind: string;
+          unit_label: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          aggregation?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          unit_kind?: string;
+          unit_label: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          aggregation?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          unit_kind?: string;
+          unit_label?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_metrics_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
@@ -26724,7 +27622,11 @@ export type Database = {
         Row: {
           created_at: string;
           cron_run_id: number | null;
+          duration_ms: number | null;
           end_time: string | null;
+          endpoint_url: string | null;
+          error: string | null;
+          http_status: number | null;
           id: string;
           job_id: string;
           response: string | null;
@@ -26734,7 +27636,11 @@ export type Database = {
         Insert: {
           created_at?: string;
           cron_run_id?: number | null;
+          duration_ms?: number | null;
           end_time?: string | null;
+          endpoint_url?: string | null;
+          error?: string | null;
+          http_status?: number | null;
           id?: string;
           job_id: string;
           response?: string | null;
@@ -26744,7 +27650,11 @@ export type Database = {
         Update: {
           created_at?: string;
           cron_run_id?: number | null;
+          duration_ms?: number | null;
           end_time?: string | null;
+          endpoint_url?: string | null;
+          error?: string | null;
+          http_status?: number | null;
           id?: string;
           job_id?: string;
           response?: string | null;
@@ -26766,30 +27676,63 @@ export type Database = {
           active: boolean;
           created_at: string;
           cron_job_id: number | null;
-          dataset_id: string;
+          dataset_id: string | null;
+          endpoint_url: string | null;
+          failure_count: number;
+          headers_config: Json;
+          http_method: string;
           id: string;
+          last_run_at: string | null;
+          last_status: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
           name: string;
+          next_run_at: string | null;
+          retry_count: number;
           schedule: string;
+          timeout_ms: number;
           ws_id: string;
         };
         Insert: {
           active?: boolean;
           created_at?: string;
           cron_job_id?: number | null;
-          dataset_id: string;
+          dataset_id?: string | null;
+          endpoint_url?: string | null;
+          failure_count?: number;
+          headers_config?: Json;
+          http_method?: string;
           id?: string;
+          last_run_at?: string | null;
+          last_status?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
           name: string;
+          next_run_at?: string | null;
+          retry_count?: number;
           schedule: string;
+          timeout_ms?: number;
           ws_id: string;
         };
         Update: {
           active?: boolean;
           created_at?: string;
           cron_job_id?: number | null;
-          dataset_id?: string;
+          dataset_id?: string | null;
+          endpoint_url?: string | null;
+          failure_count?: number;
+          headers_config?: Json;
+          http_method?: string;
           id?: string;
+          last_run_at?: string | null;
+          last_status?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
           name?: string;
+          next_run_at?: string | null;
+          retry_count?: number;
           schedule?: string;
+          timeout_ms?: number;
           ws_id?: string;
         };
         Relationships: [
@@ -36437,6 +37380,10 @@ export type Database = {
         Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
       };
+      is_task_progress_workspace_member: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
       is_task_sharing_enabled: {
         Args: { p_task_id: string };
         Returns: boolean;
@@ -37368,6 +38315,15 @@ export type Database = {
       upsert_calendar_events_and_count: {
         Args: { events: Json };
         Returns: Json;
+      };
+      upsert_course_test_question: {
+        Args: {
+          p_module_id: string;
+          p_quiz: Json;
+          p_test_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       upsert_personal_task_placement: {
         Args: {

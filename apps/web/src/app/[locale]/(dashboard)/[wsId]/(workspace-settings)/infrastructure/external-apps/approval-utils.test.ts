@@ -11,10 +11,10 @@ const app: ExternalAppRegistration = {
   allowedWorkspaceIds: ['workspace-1'],
   createdAt: null,
   createdBy: null,
-  displayName: 'CyberShield 35',
+  displayName: 'External App',
   enabled: true,
-  id: 'cybershield35',
-  origins: ['https://cybershield.example.com'],
+  id: 'external-app',
+  origins: ['https://external.example.com'],
   secretIssuedAt: null,
   secretLastFour: '70Kc',
   updatedAt: '2026-06-26T00:00:00.000Z',
@@ -24,7 +24,9 @@ const app: ExternalAppRegistration = {
 describe('external app approval utilities', () => {
   it('parses app id and repeated requested scopes with normalization', () => {
     const parsed = parseExternalAppApprovalSearchParams({
-      appId: ' CyberShield35 ',
+      appId: ' External-App ',
+      feature: 'managed-cron',
+      origin: 'https://new-external.example.com/settings',
       returnUrl: 'https://tuturuuu.com/login',
       scope: [
         'WORKSPACE:SESSION',
@@ -32,19 +34,26 @@ describe('external app approval utilities', () => {
         'workspace:members:write',
         'workspace:roles:read',
         'workspace:roles:write',
+        'workspace:cron:read',
+        'workspace:cron:write',
         'users:profile:read',
         'users:profile:write',
         'bad scope',
         'users:profile:read',
       ],
+      workspaceId: 'WORKSPACE-2',
     });
 
     expect(parsed).toEqual({
-      appId: 'cybershield35',
+      appId: 'external-app',
+      feature: 'managed-cron',
       invalidScopes: ['bad scope'],
+      origin: 'https://new-external.example.com',
       requestedScopes: [
         'users:profile:read',
         'users:profile:write',
+        'workspace:cron:read',
+        'workspace:cron:write',
         'workspace:members:read',
         'workspace:members:write',
         'workspace:roles:read',
@@ -52,44 +61,63 @@ describe('external app approval utilities', () => {
         'workspace:session',
       ],
       returnUrl: 'https://tuturuuu.com/login',
+      workspaceId: 'workspace-2',
     });
   });
 
-  it('builds a save payload that preserves app fields and merges missing scopes', () => {
-    const result = buildExternalAppApprovalPayload(app, [
-      'workspace:session',
-      'workspace:members:read',
-      'workspace:members:write',
-      'workspace:roles:read',
-      'workspace:roles:write',
-      'users:profile:read',
-      'users:profile:write',
-    ]);
+  it('builds a save payload that preserves app fields and merges missing access', () => {
+    const result = buildExternalAppApprovalPayload(
+      app,
+      [
+        'workspace:session',
+        'workspace:members:read',
+        'workspace:members:write',
+        'workspace:roles:read',
+        'workspace:roles:write',
+        'workspace:cron:read',
+        'workspace:cron:write',
+        'users:profile:read',
+        'users:profile:write',
+      ],
+      {
+        requestedOrigin: 'https://new-external.example.com/setup',
+        requestedWorkspaceId: 'workspace-2',
+      }
+    );
 
     expect(result.missingScopes).toEqual([
       'users:profile:read',
       'users:profile:write',
+      'workspace:cron:read',
+      'workspace:cron:write',
       'workspace:members:read',
       'workspace:members:write',
       'workspace:roles:read',
       'workspace:roles:write',
     ]);
+    expect(result.missingOrigins).toEqual(['https://new-external.example.com']);
+    expect(result.missingWorkspaceIds).toEqual(['workspace-2']);
     expect(result.payload).toEqual({
       allowedScopes: [
         'users:profile:read',
         'users:profile:write',
+        'workspace:cron:read',
+        'workspace:cron:write',
         'workspace:members:read',
         'workspace:members:write',
         'workspace:roles:read',
         'workspace:roles:write',
         'workspace:session',
       ],
-      allowedWorkspaceIds: ['workspace-1'],
-      displayName: 'CyberShield 35',
+      allowedWorkspaceIds: ['workspace-1', 'workspace-2'],
+      displayName: 'External App',
       enabled: true,
-      id: 'cybershield35',
+      id: 'external-app',
       issueSecret: false,
-      origins: ['https://cybershield.example.com'],
+      origins: [
+        'https://external.example.com',
+        'https://new-external.example.com',
+      ],
     });
   });
 
@@ -103,11 +131,11 @@ describe('external app approval utilities', () => {
     ).toBe('https://tuturuuu.com/login');
     expect(
       sanitizeExternalAppApprovalReturnUrl(
-        'https://cybershield.example.com/login?nextUrl=%2Fsources',
+        'https://external.example.com/login?nextUrl=%2Fsources',
         app,
         'https://tuturuuu.com'
       )
-    ).toBe('https://cybershield.example.com/login?nextUrl=%2Fsources');
+    ).toBe('https://external.example.com/login?nextUrl=%2Fsources');
     expect(
       sanitizeExternalAppApprovalReturnUrl(
         'https://attacker.example.com/login',
@@ -115,5 +143,13 @@ describe('external app approval utilities', () => {
         'https://tuturuuu.com'
       )
     ).toBeNull();
+    expect(
+      sanitizeExternalAppApprovalReturnUrl(
+        'https://new-external.example.com/settings?cronSetup=retry',
+        app,
+        'https://tuturuuu.com',
+        ['https://new-external.example.com']
+      )
+    ).toBe('https://new-external.example.com/settings?cronSetup=retry');
   });
 });

@@ -467,6 +467,15 @@ export interface SaveExternalAppResponse {
   secret: string | null;
 }
 
+export interface ApproveExternalAppManagedCronPayload {
+  origin: string;
+}
+
+export interface ApproveExternalAppManagedCronResponse {
+  domain: string;
+  enabled: boolean;
+}
+
 export interface SaveAiAgentPayload {
   channels?: Array<{
     adapter: AiAgentAdapter;

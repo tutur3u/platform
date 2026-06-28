@@ -2,6 +2,8 @@ import { getInternalApiClient, type InternalApiClientOptions } from '../client';
 import type {
   AppCoordinationSessionPolicy,
   AppCoordinationSessionPolicyResponse,
+  ApproveExternalAppManagedCronPayload,
+  ApproveExternalAppManagedCronResponse,
   ExternalAppsResponse,
   SaveExternalAppPayload,
   SaveExternalAppResponse,
@@ -44,6 +46,24 @@ export async function rotateExternalAppSecret(
     `/api/v1/infrastructure/external-apps/${encodeURIComponent(appId)}/secrets`,
     {
       cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function approveExternalAppManagedCron(
+  payload: ApproveExternalAppManagedCronPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ApproveExternalAppManagedCronResponse>(
+    '/api/v1/infrastructure/external-apps/managed-cron-approval',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       method: 'POST',
     }
   );

@@ -27,41 +27,77 @@ export function parseExternalAppApprovalSearchParams(
 
   return {
     appId,
+    feature: firstValue(searchParams.feature)?.trim() || null,
     invalidScopes: [...invalidScopes].sort((a, b) => a.localeCompare(b)),
+    origin: normalizeApprovalOrigin(firstValue(searchParams.origin)),
     requestedScopes: [...validScopes].sort((a, b) => a.localeCompare(b)),
     returnUrl: firstValue(searchParams.returnUrl)?.trim() || null,
+    workspaceId: normalizeWorkspaceId(firstValue(searchParams.workspaceId)),
   };
 }
 
 export function buildExternalAppApprovalPayload(
   app: ExternalAppRegistration,
-  requestedScopes: string[]
+  requestedScopes: string[],
+  options: {
+    requestedOrigin?: string | null;
+    requestedWorkspaceId?: string | null;
+  } = {}
 ): {
   approvedScopes: string[];
+  approvedOrigins: string[];
+  approvedWorkspaceIds: string[];
+  missingOrigins: string[];
   missingScopes: string[];
+  missingWorkspaceIds: string[];
   payload: SaveExternalAppPayload;
 } {
   const approvedScopes = normalizeStringList(app.allowedScopes);
+  const approvedOrigins = normalizeStringList(app.origins);
+  const approvedWorkspaceIds = normalizeStringList(app.allowedWorkspaceIds);
   const requested = normalizeStringList(requestedScopes);
   const missingScopes = requested.filter(
     (scope) => !scopeIsCovered(scope, approvedScopes)
   );
+  const requestedOrigin = options.requestedOrigin
+    ? normalizeApprovalOrigin(options.requestedOrigin)
+    : null;
+  const requestedWorkspaceId = options.requestedWorkspaceId
+    ? normalizeWorkspaceId(options.requestedWorkspaceId)
+    : null;
+  const missingOrigins =
+    requestedOrigin && !approvedOrigins.includes(requestedOrigin)
+      ? [requestedOrigin]
+      : [];
+  const missingWorkspaceIds =
+    requestedWorkspaceId && !approvedWorkspaceIds.includes(requestedWorkspaceId)
+      ? [requestedWorkspaceId]
+      : [];
   const allowedScopes = normalizeStringList([
     ...approvedScopes,
     ...missingScopes,
   ]);
+  const origins = normalizeStringList([...approvedOrigins, ...missingOrigins]);
+  const allowedWorkspaceIds = normalizeStringList([
+    ...approvedWorkspaceIds,
+    ...missingWorkspaceIds,
+  ]);
 
   return {
     approvedScopes,
+    approvedOrigins,
+    approvedWorkspaceIds,
+    missingOrigins,
     missingScopes,
+    missingWorkspaceIds,
     payload: {
       allowedScopes,
-      allowedWorkspaceIds: normalizeStringList(app.allowedWorkspaceIds),
+      allowedWorkspaceIds,
       displayName: app.displayName,
       enabled: app.enabled,
       id: app.id,
       issueSecret: false,
-      origins: normalizeStringList(app.origins),
+      origins,
     },
   };
 }
@@ -69,7 +105,8 @@ export function buildExternalAppApprovalPayload(
 export function sanitizeExternalAppApprovalReturnUrl(
   rawReturnUrl: string | null | undefined,
   app: ExternalAppRegistration,
-  tuturuuuWebAppUrl = 'https://tuturuuu.com'
+  tuturuuuWebAppUrl = 'https://tuturuuu.com',
+  extraAllowedOrigins: string[] = []
 ) {
   if (!rawReturnUrl?.trim()) return null;
 
@@ -88,6 +125,10 @@ export function sanitizeExternalAppApprovalReturnUrl(
     const parsedOrigin = originFromUrl(origin);
     if (parsedOrigin) allowedOrigins.add(parsedOrigin);
   }
+  for (const origin of extraAllowedOrigins) {
+    const parsedOrigin = originFromUrl(origin);
+    if (parsedOrigin) allowedOrigins.add(parsedOrigin);
+  }
 
   return allowedOrigins.has(returnUrl.origin) ? returnUrl.toString() : null;
 }
@@ -100,6 +141,18 @@ function normalizeAppId(value: string | undefined) {
 function normalizeScope(value: string) {
   const scope = value.trim().toLowerCase();
   return /^[a-z0-9:*._-]{1,80}$/u.test(scope) ? scope : null;
+}
+
+function normalizeWorkspaceId(value: string | undefined) {
+  const workspaceId = value?.trim().toLowerCase();
+  return workspaceId && /^[a-z0-9][a-z0-9_-]{0,127}$/u.test(workspaceId)
+    ? workspaceId
+    : null;
+}
+
+function normalizeApprovalOrigin(value: string | undefined) {
+  if (!value?.trim()) return null;
+  return originFromUrl(value);
 }
 
 function normalizeStringList(values: string[]) {

@@ -35,7 +35,7 @@ type AdminDb = TypedSupabaseClient;
 type WorkspaceRolePermissionValue =
   Database['public']['Enums']['workspace_role_permission'];
 
-const ADMIN_ROLE_NAME = 'CyberShield35 Admin';
+const ADMIN_ROLE_NAME = 'External App Admin';
 const WORKSPACE_MEMBERS_READ_SCOPE = 'workspace:members:read';
 const WORKSPACE_MEMBERS_WRITE_SCOPE = 'workspace:members:write';
 const WORKSPACE_ROLES_READ_SCOPE = 'workspace:roles:read';

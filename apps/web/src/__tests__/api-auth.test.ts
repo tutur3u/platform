@@ -1141,7 +1141,7 @@ describe('withSessionAuth', () => {
       email: 'operator@example.com',
       originApp: 'web',
       scopes: ['users:profile:write'],
-      targetApp: 'cybershield35',
+      targetApp: 'external-app',
       userId: 'external-user-1',
     });
     const request = new Request(
@@ -1177,7 +1177,7 @@ describe('withSessionAuth', () => {
       email: 'operator@example.com',
       originApp: 'web',
       scopes: ['users:profile:read'],
-      targetApp: 'cybershield35',
+      targetApp: 'external-app',
       userId: 'external-user-1',
     });
     const request = new Request(

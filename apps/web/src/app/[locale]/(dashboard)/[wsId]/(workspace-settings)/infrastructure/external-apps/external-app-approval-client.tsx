@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { CheckCircle, Loader2, ShieldAlert } from '@tuturuuu/icons';
 import {
+  approveExternalAppManagedCron,
   type ExternalAppRegistration,
   saveExternalApp,
 } from '@tuturuuu/internal-api/infrastructure/apps';
@@ -16,25 +17,41 @@ import { buildExternalAppApprovalPayload } from './approval-utils';
 
 export function ExternalAppApprovalClient({
   app,
+  cronDomainApproved,
   invalidScopes,
+  requestedOrigin,
   requestedScopes,
+  requestedWorkspaceId,
   returnUrl,
 }: {
   app: ExternalAppRegistration | null;
+  cronDomainApproved: boolean;
   invalidScopes: string[];
+  requestedOrigin: string | null;
   requestedScopes: string[];
+  requestedWorkspaceId: string | null;
   returnUrl: string | null;
 }) {
   const t = useTranslations('external-apps-settings');
   const [approved, setApproved] = useState(false);
   const approval = useMemo(
-    () => (app ? buildExternalAppApprovalPayload(app, requestedScopes) : null),
-    [app, requestedScopes]
+    () =>
+      app
+        ? buildExternalAppApprovalPayload(app, requestedScopes, {
+            requestedOrigin,
+            requestedWorkspaceId,
+          })
+        : null,
+    [app, requestedOrigin, requestedScopes, requestedWorkspaceId]
   );
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!approval) throw new Error(t('approval.missing_app'));
-      return saveExternalApp(approval.payload);
+      const result = await saveExternalApp(approval.payload);
+      if (requestedOrigin && !cronDomainApproved) {
+        await approveExternalAppManagedCron({ origin: requestedOrigin });
+      }
+      return result;
     },
     onError: (error) =>
       toast.error(
@@ -59,7 +76,14 @@ export function ExternalAppApprovalClient({
 
   const missingScopes = approval?.missingScopes ?? [];
   const approvedScopes = approval?.approvedScopes ?? [];
-  const canApprove = invalidScopes.length === 0 && missingScopes.length > 0;
+  const missingOrigins = approval?.missingOrigins ?? [];
+  const missingWorkspaceIds = approval?.missingWorkspaceIds ?? [];
+  const canApprove =
+    invalidScopes.length === 0 &&
+    (missingScopes.length > 0 ||
+      missingOrigins.length > 0 ||
+      missingWorkspaceIds.length > 0 ||
+      !cronDomainApproved);
 
   return (
     <ApprovalShell
@@ -84,10 +108,27 @@ export function ExternalAppApprovalClient({
           scopes={approvedScopes}
         />
         <ScopeGroup
+          label={t('approval.missing_workspaces')}
+          scopes={missingWorkspaceIds}
+          variant="warning"
+        />
+        <ScopeGroup
+          label={t('approval.missing_origins')}
+          scopes={missingOrigins}
+          variant="warning"
+        />
+        <ScopeGroup
           label={t('approval.missing_scopes')}
           scopes={missingScopes}
           variant="warning"
         />
+        {!cronDomainApproved && requestedOrigin ? (
+          <ScopeGroup
+            label={t('approval.missing_managed_cron_domain')}
+            scopes={[new URL(requestedOrigin).hostname]}
+            variant="warning"
+          />
+        ) : null}
         {invalidScopes.length > 0 ? (
           <ScopeGroup
             label={t('approval.invalid_scopes')}
@@ -102,7 +143,9 @@ export function ExternalAppApprovalClient({
             <span className="font-medium text-sm">
               {approved
                 ? t('approval.approved')
-                : t('approval.no_missing_scopes')}
+                : canApprove
+                  ? t('approval.ready_to_approve')
+                  : t('approval.no_missing_scopes')}
             </span>
           </div>
         ) : null}

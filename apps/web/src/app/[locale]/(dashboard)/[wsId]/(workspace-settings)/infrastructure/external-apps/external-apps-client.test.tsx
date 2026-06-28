@@ -12,6 +12,7 @@ import { ExternalAppApprovalClient } from './external-app-approval-client';
 import { ExternalAppsClient } from './external-apps-client';
 
 const mocks = vi.hoisted(() => ({
+  approveExternalAppManagedCron: vi.fn(),
   listExternalApps: vi.fn(),
   rotateExternalAppSecret: vi.fn(),
   saveExternalApp: vi.fn(),
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/internal-api/infrastructure/apps', () => ({
+  approveExternalAppManagedCron: mocks.approveExternalAppManagedCron,
   listExternalApps: mocks.listExternalApps,
   rotateExternalAppSecret: mocks.rotateExternalAppSecret,
   saveExternalApp: mocks.saveExternalApp,
@@ -85,8 +87,13 @@ vi.mock('next-intl', () => ({
         'approval.description': 'Review requested scopes for {app}.',
         'approval.invalid_scopes': 'Invalid scopes',
         'approval.missing_app': 'External app not found.',
+        'approval.missing_managed_cron_domain':
+          'Managed scheduler domain approval',
+        'approval.missing_origins': 'Missing origins',
         'approval.missing_scopes': 'Missing scopes',
+        'approval.missing_workspaces': 'Missing workspace bindings',
         'approval.no_missing_scopes': 'No missing scopes',
+        'approval.ready_to_approve': 'Ready to approve',
         'approval.requested_scopes': 'Requested scopes',
         'approval.return': 'Return to app',
         'approval.success': 'Scopes approved',
@@ -159,6 +166,10 @@ describe('ExternalAppsClient', () => {
       app: workspaceApp,
       secret: null,
     });
+    mocks.approveExternalAppManagedCron.mockResolvedValue({
+      domain: 'workspace.example.com',
+      enabled: true,
+    });
   });
 
   it('renders registered apps collapsed until expanded', () => {
@@ -205,6 +216,12 @@ describe('ExternalAppsClient', () => {
       scopeOptions.some((value) => value?.includes('workspace:roles:write'))
     ).toBe(true);
     expect(
+      scopeOptions.some((value) => value?.includes('workspace:cron:read'))
+    ).toBe(true);
+    expect(
+      scopeOptions.some((value) => value?.includes('workspace:cron:write'))
+    ).toBe(true);
+    expect(
       scopeOptions.some((value) => value?.includes('users:profile:read'))
     ).toBe(true);
     expect(
@@ -244,16 +261,21 @@ describe('ExternalAppsClient', () => {
     renderWithQuery(
       <ExternalAppApprovalClient
         app={workspaceApp}
+        cronDomainApproved={true}
         invalidScopes={[]}
+        requestedOrigin={null}
         requestedScopes={[
           'workspace:session',
           'workspace:members:read',
           'workspace:members:write',
           'workspace:roles:read',
           'workspace:roles:write',
+          'workspace:cron:read',
+          'workspace:cron:write',
           'users:profile:read',
           'users:profile:write',
         ]}
+        requestedWorkspaceId={null}
         returnUrl={null}
       />
     );
@@ -265,6 +287,8 @@ describe('ExternalAppsClient', () => {
         allowedScopes: [
           'users:profile:read',
           'users:profile:write',
+          'workspace:cron:read',
+          'workspace:cron:write',
           'workspace:members:read',
           'workspace:members:write',
           'workspace:roles:read',

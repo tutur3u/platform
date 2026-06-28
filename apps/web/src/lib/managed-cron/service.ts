@@ -51,6 +51,15 @@ export interface ManagedCronProcessSummary {
   timedOut: number;
 }
 
+export interface ManagedCronRunNowResult {
+  durationMs: number;
+  error: string | null;
+  httpStatus: number | null;
+  jobId: string;
+  response: string | null;
+  status: 'configuration_error' | 'failed' | 'success' | 'timeout';
+}
+
 export async function processDueManagedCronJobs({
   fetchImpl = fetch,
   limit = CLAIM_LIMIT,
@@ -94,6 +103,80 @@ export async function processDueManagedCronJobs({
   }
 
   return summary;
+}
+
+export async function runExternalManagedCronJobNow({
+  externalAppId,
+  fetchImpl = fetch,
+  jobKey,
+  runnerId = `external-app-${externalAppId}-${crypto.randomUUID()}`,
+  sql = getPlatformSql(),
+  wsId,
+}: {
+  externalAppId: string;
+  fetchImpl?: typeof fetch;
+  jobKey: string;
+  runnerId?: string;
+  sql?: Sql;
+  wsId: string;
+}): Promise<ManagedCronRunNowResult | null> {
+  const rows = await sql<
+    Array<
+      Omit<ManagedCronJobRow, 'headers_config'> & {
+        headers_config: ManagedCronHeaderConfig[] | string | null;
+      }
+    >
+  >`
+    select
+      j.id::text,
+      j.ws_id::text,
+      j.name,
+      j.schedule,
+      j.active,
+      j.endpoint_url,
+      j.http_method,
+      j.headers_config,
+      j.timeout_ms,
+      j.retry_count
+    from public.workspace_cron_jobs j
+    where j.ws_id = ${wsId}
+      and j.external_app_id = ${externalAppId}
+      and j.external_job_key = ${jobKey}
+    limit 1
+  `;
+  const row = rows[0];
+
+  if (!row) return null;
+
+  const job: ManagedCronJobRow = {
+    ...row,
+    headers_config: parseHeaderConfig(row.headers_config),
+  };
+  await sql`
+    update public.workspace_cron_jobs
+    set
+      locked_at = now(),
+      locked_by = ${runnerId}
+    where id = ${job.id}
+  `;
+  const allowedDomains = await listEnabledManagedCronDomainsWithSql(sql);
+  const result = await executeManagedCronJob({
+    allowedDomains,
+    fetchImpl,
+    job,
+    sql,
+  });
+
+  await recordManagedCronExecution({ job, result, runnerId, sql });
+
+  return {
+    durationMs: result.durationMs,
+    error: result.error,
+    httpStatus: result.httpStatus,
+    jobId: job.id,
+    response: result.response,
+    status: result.status,
+  };
 }
 
 async function claimDueManagedCronJobs({
