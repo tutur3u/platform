@@ -168,10 +168,22 @@ export default async function Login({ searchParams }: LoginProps) {
   const returnUrl = getSingleSearchParam(params.returnUrl);
   const multiAccount = getSingleSearchParam(params.multiAccount) === 'true';
   const authenticatedRedirectPath = getAuthenticatedLoginRedirectPath(params);
+  const shouldCheckAuthenticatedSession =
+    Boolean(authenticatedRedirectPath) || Boolean(returnUrl && !multiAccount);
+  const authenticatedSession = shouldCheckAuthenticatedSession
+    ? await hasAuthenticatedSession()
+    : false;
 
-  if (authenticatedRedirectPath && (await hasAuthenticatedSession())) {
+  if (authenticatedRedirectPath && authenticatedSession) {
     redirect(authenticatedRedirectPath);
   }
+
+  const deferAuthSurfaceUntilSessionCheck = Boolean(
+    authenticatedSession &&
+      returnUrl &&
+      !multiAccount &&
+      !getSafeLocalRedirectPath(returnUrl)
+  );
 
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
 
@@ -185,6 +197,7 @@ export default async function Login({ searchParams }: LoginProps) {
   return (
     <LoginContent
       currentDomain={currentDomain ?? null}
+      deferAuthSurfaceUntilSessionCheck={deferAuthSurfaceUntilSessionCheck}
       localE2EAuthBypass={localE2EAuthBypass}
       multiAccount={multiAccount}
       runtimeSupabaseConfig={

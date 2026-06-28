@@ -18,6 +18,7 @@ export type LoginRuntimeSupabaseConfig = {
 
 type LoginContentProps = {
   currentDomain: LoginDomain | null;
+  deferAuthSurfaceUntilSessionCheck: boolean;
   localE2EAuthBypass: boolean;
   multiAccount: boolean;
   runtimeSupabaseConfig: LoginRuntimeSupabaseConfig | null;
@@ -37,6 +38,7 @@ function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
 
 export function LoginContent({
   currentDomain,
+  deferAuthSurfaceUntilSessionCheck,
   localE2EAuthBypass,
   multiAccount,
   runtimeSupabaseConfig,
@@ -116,6 +118,9 @@ export function LoginContent({
               }
             >
               <LoginForm
+                deferAuthSurfaceUntilSessionCheck={
+                  deferAuthSurfaceUntilSessionCheck
+                }
                 localE2EAuthBypass={localE2EAuthBypass}
                 runtimeSupabaseConfig={runtimeSupabaseConfig}
               />

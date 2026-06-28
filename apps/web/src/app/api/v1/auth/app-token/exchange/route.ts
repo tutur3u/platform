@@ -407,6 +407,7 @@ async function createExchangeTokenResponse({
     refreshExpiresAt: refreshToken.expiresAt,
     refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
     refreshToken: refreshToken.token,
+    scopes,
     tokenType: 'Bearer',
     user: userProfile,
     workspaceId: normalizedWorkspaceId,

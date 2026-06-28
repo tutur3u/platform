@@ -412,6 +412,7 @@ describe('app token exchange route', () => {
       refreshEarlySeconds: number;
       refreshExpiresAt: string;
       refreshToken: string;
+      scopes: string[];
       user: Record<string, unknown>;
       workspaceId?: string;
     };
@@ -424,6 +425,7 @@ describe('app token exchange route', () => {
 
     expect(body.refreshEarlySeconds).toBeGreaterThan(0);
     expect(body.refreshExpiresAt).toEqual(expect.any(String));
+    expect(body.scopes).toEqual(['external-projects:read']);
     expect(body.user).toMatchObject({
       avatarUrl: 'https://example.com/victim.png',
       avatar_url: 'https://example.com/victim.png',
@@ -466,6 +468,7 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       accessToken: string;
+      scopes: string[];
       user: Record<string, unknown>;
       workspaceId?: string;
     };
@@ -474,6 +477,7 @@ describe('app token exchange route', () => {
     });
 
     expect(body.workspaceId).toBe(workspaceId);
+    expect(body.scopes).toEqual(['workspace:session']);
     expect(verification.ok).toBe(true);
     if (verification.ok) {
       expect(verification.claims.target_app).toBe('workspace-app');
@@ -497,6 +501,7 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       accessToken: string;
+      scopes: string[];
       user: Record<string, unknown>;
       workspaceId?: string;
     };
@@ -505,6 +510,7 @@ describe('app token exchange route', () => {
     });
 
     expect(body.workspaceId).toBe(workspaceId);
+    expect(body.scopes).toEqual(['workspace:session']);
     expect(verification.ok).toBe(true);
     if (verification.ok) {
       expect(verification.claims.target_app).toBe('workspace-app');
@@ -527,6 +533,7 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       accessToken: string;
+      scopes: string[];
       workspaceId?: string;
     };
     const verification = verifyAppCoordinationToken(body.accessToken, {
@@ -534,6 +541,7 @@ describe('app token exchange route', () => {
     });
 
     expect(body.workspaceId).toBe(workspaceId);
+    expect(body.scopes).toEqual(['workspace:session']);
     expect(verification.ok).toBe(true);
     if (verification.ok) {
       expect(verification.claims.target_app).toBe('workspace-app');

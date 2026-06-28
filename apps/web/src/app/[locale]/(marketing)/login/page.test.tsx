@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   isLocalE2EAuthBypassEnabled: vi.fn(),
   cookieHeader: '',
   loginFormProps: [] as Array<{
+    deferAuthSurfaceUntilSessionCheck?: boolean;
     localE2EAuthBypass?: boolean;
     runtimeSupabaseConfig?: {
       supabasePublishableKey: string;
@@ -62,6 +63,7 @@ vi.mock('@/lib/auth/local-e2e', () => ({
 
 vi.mock('./form', () => ({
   default: (props: {
+    deferAuthSurfaceUntilSessionCheck?: boolean;
     localE2EAuthBypass?: boolean;
     runtimeSupabaseConfig?: {
       supabasePublishableKey: string;
@@ -72,6 +74,9 @@ vi.mock('./form', () => ({
 
     return (
       <div
+        data-defer-auth-surface={String(
+          props.deferAuthSurfaceUntilSessionCheck ?? false
+        )}
         data-local-e2e-auth-bypass={String(props.localE2EAuthBypass ?? false)}
         data-runtime-supabase-url={props.runtimeSupabaseConfig?.supabaseUrl}
         data-testid="login-form"
@@ -228,6 +233,7 @@ describe('Login page', () => {
       'http://127.0.0.1:8001'
     );
     expect(mocks.loginFormProps).toContainEqual({
+      deferAuthSurfaceUntilSessionCheck: false,
       localE2EAuthBypass: true,
       runtimeSupabaseConfig,
     });
@@ -312,6 +318,27 @@ describe('Login page', () => {
     expect(redirectMock).not.toHaveBeenCalled();
     expect(screen.getByText('Learn')).toBeInTheDocument();
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'true'
+    );
+    expect(mocks.loginFormProps.at(-1)).toMatchObject({
+      deferAuthSurfaceUntilSessionCheck: true,
+    });
+  });
+
+  it('does not defer the login form for unauthenticated external returnUrls', async () => {
+    await renderLoginPage({
+      returnUrl: 'https://partner.example/launch',
+    });
+
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'false'
+    );
+    expect(mocks.loginFormProps.at(-1)).toMatchObject({
+      deferAuthSurfaceUntilSessionCheck: false,
+    });
   });
 
   it('does not redirect authenticated multi-account hard loads', async () => {

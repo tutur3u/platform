@@ -249,6 +249,7 @@ function LoginMethodSeparator({ label }: { label: string }) {
 }
 
 type LoginFormProps = {
+  deferAuthSurfaceUntilSessionCheck?: boolean;
   localE2EAuthBypass?: boolean;
   runtimeSupabaseConfig?: {
     supabasePublishableKey: string;
@@ -257,6 +258,7 @@ type LoginFormProps = {
 };
 
 export default function LoginForm({
+  deferAuthSurfaceUntilSessionCheck = false,
   localE2EAuthBypass: runtimeLocalE2EAuthBypass = false,
   runtimeSupabaseConfig = null,
 }: LoginFormProps) {
@@ -498,7 +500,8 @@ export default function LoginForm({
       ? returnUrlValidationFailure
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
-  const canRenderAuthSurface = readyForAuth || !initialized;
+  const canRenderAuthSurface =
+    readyForAuth || (!initialized && !deferAuthSurfaceUntilSessionCheck);
   const authStageTransitionClassName = `space-y-6 animate-in fade-in-0 duration-200 ${
     transitionDirection > 0 ? 'slide-in-from-right-4' : 'slide-in-from-left-4'
   }`;
