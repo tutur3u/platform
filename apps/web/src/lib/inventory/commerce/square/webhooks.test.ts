@@ -72,7 +72,11 @@ describe('Square webhook verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getInventorySquareWebhookSecrets.mockResolvedValue([
-      { environment: 'sandbox', secret: 'sq-webhook-secret' },
+      {
+        environment: 'sandbox',
+        notificationUrl: null,
+        secret: 'sq-webhook-secret',
+      },
     ]);
     mocks.markConnectionRevoked.mockResolvedValue(undefined);
     mocks.markConnectionsRevokedByMerchantId.mockResolvedValue(undefined);
@@ -278,34 +282,55 @@ describe('Square webhook verification', () => {
     });
   });
 
-  it('marks global OAuth revocation events as revoked by merchant id', async () => {
-    vi.stubEnv('SQUARE_WEBHOOK_SIGNATURE_KEY', 'global-square-secret');
+  it('uses the saved workspace webhook notification URL override when validating signatures', async () => {
+    mocks.getInventorySquareWebhookSecrets.mockResolvedValue([
+      {
+        environment: 'production',
+        notificationUrl:
+          'https://inventory.example.com/api/v1/inventory/square/webhook/ws-1',
+        secret: 'production-webhook-secret',
+      },
+    ]);
     const rawBody = JSON.stringify({
-      event_id: 'event-revoked-2',
-      merchant_id: 'merchant-2',
-      type: 'oauth.authorization.revoked',
+      data: {
+        object: {
+          payment: {
+            id: 'payment-2',
+            order_id: 'order-2',
+            status: 'COMPLETED',
+          },
+        },
+      },
+      event_id: 'event-payment-2',
+      type: 'payment.updated',
     });
     const requestUrl =
-      'https://web.example.com/api/v1/inventory/square/webhook';
+      'https://web.example.com/api/v1/inventory/square/webhook/ws-1';
 
     await expect(
       processInventorySquareWebhook({
         rawBody,
         requestUrl,
         signature: sign({
-          notificationUrl: requestUrl,
+          notificationUrl:
+            'https://inventory.example.com/api/v1/inventory/square/webhook/ws-1',
           rawBody,
-          signatureKey: 'global-square-secret',
+          signatureKey: 'production-webhook-secret',
         }),
+        wsId: 'ws-1',
       })
     ).resolves.toEqual({
       environment: 'production',
-      eventType: 'oauth.authorization.revoked',
+      eventType: 'payment.updated',
     });
 
-    expect(mocks.markConnectionsRevokedByMerchantId).toHaveBeenCalledWith({
-      environment: 'production',
-      merchantId: 'merchant-2',
-    });
+    expect(mocks.syncInventorySquarePayment).toHaveBeenCalledWith(
+      {
+        id: 'payment-2',
+        order_id: 'order-2',
+        status: 'COMPLETED',
+      },
+      { eventId: 'event-payment-2' }
+    );
   });
 });

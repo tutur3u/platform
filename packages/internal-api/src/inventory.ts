@@ -588,6 +588,16 @@ export type InventorySquareConnection = {
   webhookSignatureKeyLast4: string | null;
 };
 
+export type InventorySquareAppCredential = {
+  environment: InventorySquareEnvironment;
+  applicationId: string | null;
+  applicationSecretLast4: string | null;
+  applicationSecretFingerprint: string | null;
+  oauthRedirectUrl: string | null;
+  webhookNotificationUrl: string | null;
+  updatedAt: string | null;
+};
+
 export type InventorySquareSettings = {
   wsId: string;
   environment: InventorySquareEnvironment;
@@ -600,12 +610,17 @@ export type InventorySquareSettings = {
     ready: boolean;
     issues: InventorySquareReadinessIssue[];
   };
+  appCredentials: InventorySquareAppCredential[];
   connections: InventorySquareConnection[];
 };
 
 export type InventorySquareSettingsPayload = {
   environment?: InventorySquareEnvironment;
   accessToken?: string;
+  applicationId?: string;
+  applicationSecret?: string;
+  oauthRedirectUrl?: string | null;
+  webhookNotificationUrl?: string | null;
   webhookSignatureKey?: string;
   locationId?: string | null;
   locationName?: string | null;

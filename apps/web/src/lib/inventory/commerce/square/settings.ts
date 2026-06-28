@@ -5,7 +5,13 @@ import type {
   InventorySquareSettings,
   InventorySquareSettingsPayload,
 } from '@tuturuuu/internal-api/inventory';
-import { hasSquareAppConfig } from './client';
+import {
+  hasUsableSquareAppCredentials,
+  loadAppCredentialRows,
+  mapAppCredential,
+  type SquareAppCredentialRow,
+  saveSquareAppCredentials,
+} from './app-credentials-store';
 import {
   loadConnectionRows,
   mapConnection,
@@ -21,10 +27,12 @@ import {
 } from './settings-store';
 import { SQUARE_OAUTH_SCOPES } from './types';
 
-function computeReadiness({
+export function computeReadiness({
+  appCredentials,
   connections,
   settings,
 }: {
+  appCredentials: SquareAppCredentialRow[];
   connections: SquareConnectionRow[];
   settings: SquareSettingsRow;
 }): { issues: InventorySquareReadinessIssue[]; ready: boolean } {
@@ -38,11 +46,14 @@ function computeReadiness({
   }
 
   if (connection?.auth_method === 'oauth') {
+    const appCredential = appCredentials.find(
+      (item) => item.environment === settings.environment
+    );
     const scopes = new Set(connection.scopes ?? []);
     if (SQUARE_OAUTH_SCOPES.some((scope) => !scopes.has(scope))) {
       issues.add('scopes_missing');
     }
-    if (!hasSquareAppConfig(settings.environment)) {
+    if (!hasUsableSquareAppCredentials(appCredential)) {
       issues.add('app_credentials_missing');
     }
   }
@@ -66,13 +77,15 @@ function computeReadiness({
 export async function getInventorySquareSettings(
   wsId: string
 ): Promise<InventorySquareSettings> {
-  const [settings, connections] = await Promise.all([
+  const [settings, connections, appCredentials] = await Promise.all([
     loadSettingsRow(wsId),
     loadConnectionRows(wsId),
+    loadAppCredentialRows(wsId),
   ]);
-  const readiness = computeReadiness({ connections, settings });
+  const readiness = computeReadiness({ appCredentials, connections, settings });
 
   return {
+    appCredentials: appCredentials.map(mapAppCredential),
     connections: connections.map(mapConnection),
     deviceId: settings.device_id,
     deviceName: settings.device_name,
@@ -95,6 +108,24 @@ export async function saveInventorySquareSettings({
   wsId: string;
 }) {
   await upsertSettings({ payload, userId, wsId });
+  if (
+    payload.applicationId !== undefined ||
+    payload.applicationSecret !== undefined ||
+    payload.oauthRedirectUrl !== undefined ||
+    payload.webhookNotificationUrl !== undefined
+  ) {
+    if (!payload.environment) {
+      throw new Error(
+        'Square environment is required when saving app credentials'
+      );
+    }
+    await saveSquareAppCredentials({
+      environment: payload.environment,
+      payload,
+      userId,
+      wsId,
+    });
+  }
 
   if (payload.accessToken?.trim()) {
     if (!payload.environment) {

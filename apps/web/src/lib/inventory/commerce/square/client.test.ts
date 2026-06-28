@@ -3,7 +3,10 @@ import {
   createSquareAuthorizeUrl,
   createSquareDeviceCodeApi,
   createSquareIdempotencyKey,
+  createSquareOAuthRedirectUrl,
+  exchangeSquareOAuthCode,
   parseSquareScopes,
+  refreshSquareOAuthToken,
   type SquareApiError,
   squareFetch,
   toSquareMoney,
@@ -43,34 +46,101 @@ describe('Square REST client', () => {
   });
 
   it('builds OAuth authorization URLs with state, redirect, and required scopes', () => {
-    vi.stubEnv('SQUARE_SANDBOX_APPLICATION_ID', 'sandbox-app-id');
-    vi.stubEnv(
-      'SQUARE_OAUTH_REDIRECT_URL',
-      'https://web.example.com/api/v1/inventory/square/oauth/callback'
-    );
-    vi.stubEnv('SQUARE_SANDBOX_APPLICATION_SECRET', 'sandbox-secret');
+    const redirectUrl =
+      'https://web.example.com/api/v1/inventory/square/oauth/callback';
 
     const url = new URL(
       createSquareAuthorizeUrl({
+        config: {
+          applicationId: 'workspace-square-app-id',
+          redirectUrl,
+        },
         environment: 'sandbox',
-        origin: 'https://web.example.com',
         state: 'oauth-state-1',
       })
     );
 
     expect(url.origin).toBe('https://connect.squareupsandbox.com');
     expect(url.pathname).toBe('/oauth2/authorize');
-    expect(url.searchParams.get('client_id')).toBe('sandbox-app-id');
+    expect(url.searchParams.get('client_id')).toBe('workspace-square-app-id');
     expect(url.searchParams.get('state')).toBe('oauth-state-1');
-    expect(url.searchParams.get('redirect_uri')).toBe(
-      'https://web.example.com/api/v1/inventory/square/oauth/callback'
-    );
+    expect(url.searchParams.get('redirect_uri')).toBe(redirectUrl);
     expect(url.searchParams.get('scope')?.split(' ')).toEqual(
       expect.arrayContaining([
         'DEVICE_CREDENTIAL_MANAGEMENT',
         'ORDERS_WRITE',
         'PAYMENTS_WRITE',
       ])
+    );
+  });
+
+  it('derives the default OAuth redirect URL from the request origin', () => {
+    expect(createSquareOAuthRedirectUrl('https://web.example.com/')).toBe(
+      'https://web.example.com/api/v1/inventory/square/oauth/callback'
+    );
+  });
+
+  it('exchanges OAuth codes with workspace-supplied app credentials', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ access_token: 'oauth-access-token' }), {
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await exchangeSquareOAuthCode({
+      code: 'square-code',
+      config: {
+        applicationId: 'workspace-app-id',
+        applicationSecret: 'workspace-app-secret',
+        redirectUrl:
+          'https://web.example.com/api/v1/inventory/square/oauth/callback',
+      },
+      environment: 'production',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://connect.squareup.com/oauth2/token',
+      expect.objectContaining({
+        body: JSON.stringify({
+          client_id: 'workspace-app-id',
+          client_secret: 'workspace-app-secret',
+          code: 'square-code',
+          grant_type: 'authorization_code',
+          redirect_uri:
+            'https://web.example.com/api/v1/inventory/square/oauth/callback',
+        }),
+      })
+    );
+  });
+
+  it('refreshes OAuth tokens with workspace-supplied app credentials', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ access_token: 'new-access-token' }), {
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await refreshSquareOAuthToken({
+      config: {
+        applicationId: 'workspace-app-id',
+        applicationSecret: 'workspace-app-secret',
+      },
+      environment: 'sandbox',
+      refreshToken: 'refresh-token',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://connect.squareupsandbox.com/oauth2/token',
+      expect.objectContaining({
+        body: JSON.stringify({
+          client_id: 'workspace-app-id',
+          client_secret: 'workspace-app-secret',
+          grant_type: 'refresh_token',
+          refresh_token: 'refresh-token',
+        }),
+      })
     );
   });
 

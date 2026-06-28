@@ -14,6 +14,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
+  SquareAppCredentialsCard,
   SquareConnectionCard,
   SquareTerminalCard,
   SquareWebhookCard,
@@ -27,6 +28,10 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
   const [environment, setEnvironment] =
     useState<InventorySquareEnvironment>('sandbox');
   const [accessToken, setAccessToken] = useState('');
+  const [applicationId, setApplicationId] = useState('');
+  const [applicationSecret, setApplicationSecret] = useState('');
+  const [oauthRedirectUrl, setOauthRedirectUrl] = useState('');
+  const [webhookNotificationUrl, setWebhookNotificationUrl] = useState('');
   const [webhookSignatureKey, setWebhookSignatureKey] = useState('');
   const [locationId, setLocationId] = useState('');
   const [deviceId, setDeviceId] = useState('');
@@ -66,6 +71,13 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     value: device.id,
   }));
   const selectedEnvironment = settings.data?.environment ?? environment;
+  const activeAppCredential = (settings.data?.appCredentials ?? []).find(
+    (item) => item.environment === environment
+  );
+  const oauthReady = Boolean(
+    activeAppCredential?.applicationId &&
+      activeAppCredential.applicationSecretLast4
+  );
   const webhookUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     const resolvedWsId = settings.data?.wsId ?? wsId;
@@ -83,6 +95,26 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
       queryKey: ['inventory', wsId, 'square-devices'],
     });
   };
+  const appCredentialsMutation = useMutation({
+    mutationFn: () =>
+      updateInventorySquareSettings(wsId, {
+        applicationId: applicationId || undefined,
+        applicationSecret: applicationSecret || undefined,
+        environment,
+        oauthRedirectUrl: oauthRedirectUrl || undefined,
+        webhookNotificationUrl: webhookNotificationUrl || undefined,
+      }),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('saveError')),
+    onSuccess: () => {
+      setApplicationId('');
+      setApplicationSecret('');
+      setOauthRedirectUrl('');
+      setWebhookNotificationUrl('');
+      toast.success(t('saveSuccess'));
+      invalidateSquare();
+    },
+  });
   const tokenMutation = useMutation({
     mutationFn: () =>
       updateInventorySquareSettings(wsId, {
@@ -150,16 +182,33 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
 
   return (
     <section className="grid gap-4">
-      <SquareConnectionCard
-        accessToken={accessToken}
+      <SquareAppCredentialsCard
+        appCredential={activeAppCredential}
+        applicationId={applicationId}
+        applicationSecret={applicationSecret}
         environment={environment}
         environmentOptions={environmentOptions}
         oauthPending={oauthMutation.isPending}
+        oauthReady={oauthReady}
+        oauthRedirectUrl={oauthRedirectUrl}
         onOAuth={() => oauthMutation.mutate()}
+        onSaveAppCredentials={() => appCredentialsMutation.mutate()}
+        saveAppCredentialsPending={appCredentialsMutation.isPending}
+        setApplicationId={setApplicationId}
+        setApplicationSecret={setApplicationSecret}
+        setEnvironment={setEnvironment}
+        setOauthRedirectUrl={setOauthRedirectUrl}
+        setWebhookNotificationUrl={setWebhookNotificationUrl}
+        webhookNotificationUrl={webhookNotificationUrl}
+      />
+      <SquareConnectionCard
+        accessToken={accessToken}
+        environmentLabel={t('selectedEnvironment', {
+          environment: t(`environment.${environment}`),
+        })}
         onSaveToken={() => tokenMutation.mutate()}
         saveTokenPending={tokenMutation.isPending}
         setAccessToken={setAccessToken}
-        setEnvironment={setEnvironment}
         setWebhookSignatureKey={setWebhookSignatureKey}
         webhookSignatureKey={webhookSignatureKey}
       />

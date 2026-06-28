@@ -12,6 +12,10 @@ import {
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
 import {
+  getSquareOAuthCredentials,
+  loadAppCredentialRows,
+} from './app-credentials-store';
+import {
   listSquareLocationsApi,
   parseSquareScopes,
   refreshSquareOAuthToken,
@@ -314,7 +318,12 @@ export async function refreshConnectionIfNeeded(row: SquareConnectionRow) {
   if (!refreshToken) return row;
 
   try {
+    const config = await getSquareOAuthCredentials({
+      environment: row.environment,
+      wsId: row.ws_id,
+    });
     const refreshed = await refreshSquareOAuthToken({
+      config,
       environment: row.environment,
       refreshToken,
     });
@@ -390,15 +399,23 @@ export async function getInventorySquareTerminalContext(
 }
 
 export async function getInventorySquareWebhookSecrets(wsId: string) {
-  const rows = await loadConnectionRows(wsId);
+  const [rows, appCredentials] = await Promise.all([
+    loadConnectionRows(wsId),
+    loadAppCredentialRows(wsId),
+  ]);
   const workspaceKey = await getWorkspaceKey(wsId);
   if (!workspaceKey) return [];
+  const appCredentialsByEnvironment = new Map(
+    appCredentials.map((row) => [row.environment, row])
+  );
 
   return rows.flatMap((row) => {
     if (!row.webhook_signature_key_encrypted) return [];
+    const appCredential = appCredentialsByEnvironment.get(row.environment);
     return [
       {
         environment: row.environment,
+        notificationUrl: appCredential?.webhook_notification_url ?? null,
         secret: decryptField(row.webhook_signature_key_encrypted, workspaceKey),
       },
     ];

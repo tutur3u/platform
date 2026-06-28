@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { randomBytes } from 'node:crypto';
+import { getSquareOAuthAppConfig } from './app-credentials-store';
 import {
   createSquareAuthorizeUrl,
   exchangeSquareOAuthCode,
@@ -36,6 +37,7 @@ export async function createInventorySquareOAuthStart({
   userId: string;
   wsId: string;
 }) {
+  const config = await getSquareOAuthAppConfig({ environment, origin, wsId });
   const privateAdmin = await getPrivateAdmin();
   const state = randomBytes(24).toString('hex');
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -53,7 +55,7 @@ export async function createInventorySquareOAuthStart({
   if (error) throw new Error(error.message ?? 'Failed to create OAuth state');
 
   return {
-    authorizeUrl: createSquareAuthorizeUrl({ environment, origin, state }),
+    authorizeUrl: createSquareAuthorizeUrl({ config, environment, state }),
   };
 }
 
@@ -83,10 +85,15 @@ export async function completeInventorySquareOAuthCallback({
     throw new Error('Square OAuth state expired');
   }
 
-  const token = await exchangeSquareOAuthCode({
-    code,
+  const config = await getSquareOAuthAppConfig({
     environment: result.data.environment,
     origin,
+    wsId: result.data.ws_id,
+  });
+  const token = await exchangeSquareOAuthCode({
+    code,
+    config,
+    environment: result.data.environment,
   });
   if (!token.access_token) throw new Error('Square OAuth returned no token');
 

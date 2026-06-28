@@ -7,7 +7,10 @@ import {
   Settings2,
   Webhook,
 } from '@tuturuuu/icons';
-import type { InventorySquareEnvironment } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventorySquareAppCredential,
+  InventorySquareEnvironment,
+} from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
@@ -15,30 +18,42 @@ import { SelectValueField } from './operator-form-fields';
 
 export type SquareSelectOption = { label: string; value: string };
 
-export function SquareConnectionCard({
-  accessToken,
+export function SquareAppCredentialsCard({
+  appCredential,
+  applicationId,
+  applicationSecret,
   environment,
   environmentOptions,
   oauthPending,
+  oauthReady,
+  oauthRedirectUrl,
   onOAuth,
-  onSaveToken,
-  saveTokenPending,
-  setAccessToken,
+  onSaveAppCredentials,
+  saveAppCredentialsPending,
+  setApplicationId,
+  setApplicationSecret,
   setEnvironment,
-  setWebhookSignatureKey,
-  webhookSignatureKey,
+  setOauthRedirectUrl,
+  setWebhookNotificationUrl,
+  webhookNotificationUrl,
 }: {
-  accessToken: string;
+  appCredential?: InventorySquareAppCredential;
+  applicationId: string;
+  applicationSecret: string;
   environment: InventorySquareEnvironment;
   environmentOptions: SquareSelectOption[];
   oauthPending: boolean;
+  oauthReady: boolean;
+  oauthRedirectUrl: string;
   onOAuth: () => void;
-  onSaveToken: () => void;
-  saveTokenPending: boolean;
-  setAccessToken: (value: string) => void;
+  onSaveAppCredentials: () => void;
+  saveAppCredentialsPending: boolean;
+  setApplicationId: (value: string) => void;
+  setApplicationSecret: (value: string) => void;
   setEnvironment: (value: InventorySquareEnvironment) => void;
-  setWebhookSignatureKey: (value: string) => void;
-  webhookSignatureKey: string;
+  setOauthRedirectUrl: (value: string) => void;
+  setWebhookNotificationUrl: (value: string) => void;
+  webhookNotificationUrl: string;
 }) {
   const t = useTranslations('inventory.operator.square');
 
@@ -47,17 +62,17 @@ export function SquareConnectionCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
-            <KeyRound className="h-4 w-4" />
+            <Settings2 className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <p className="font-semibold">{t('title')}</p>
+            <p className="font-semibold">{t('appCredentialsTitle')}</p>
             <p className="mt-1 text-muted-foreground text-sm">
-              {t('description')}
+              {t('appCredentialsDescription')}
             </p>
           </div>
         </div>
         <Button
-          disabled={oauthPending}
+          disabled={oauthPending || !oauthReady}
           onClick={onOAuth}
           type="button"
           variant="outline"
@@ -77,6 +92,107 @@ export function SquareConnectionCard({
           placeholder={t('environmentLabel')}
           value={environment}
         />
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium">{t('applicationIdLabel')}</span>
+          <Input
+            onChange={(event) => setApplicationId(event.target.value)}
+            placeholder={
+              appCredential?.applicationId ?? t('applicationIdPlaceholder')
+            }
+            value={applicationId}
+          />
+        </label>
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium">{t('applicationSecretLabel')}</span>
+          <Input
+            onChange={(event) => setApplicationSecret(event.target.value)}
+            placeholder={t('applicationSecretPlaceholder')}
+            type="password"
+            value={applicationSecret}
+          />
+        </label>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium">{t('oauthRedirectLabel')}</span>
+          <Input
+            onChange={(event) => setOauthRedirectUrl(event.target.value)}
+            placeholder={
+              appCredential?.oauthRedirectUrl ?? t('oauthRedirectPlaceholder')
+            }
+            value={oauthRedirectUrl}
+          />
+        </label>
+        <label className="grid gap-1 text-sm">
+          <span className="font-medium">{t('webhookNotificationLabel')}</span>
+          <Input
+            onChange={(event) => setWebhookNotificationUrl(event.target.value)}
+            placeholder={
+              appCredential?.webhookNotificationUrl ??
+              t('webhookNotificationPlaceholder')
+            }
+            value={webhookNotificationUrl}
+          />
+        </label>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Button
+          disabled={saveAppCredentialsPending}
+          onClick={onSaveAppCredentials}
+          type="button"
+        >
+          {saveAppCredentialsPending ? t('saving') : t('saveAppCredentials')}
+        </Button>
+        <p className="text-muted-foreground text-xs">
+          {appCredential?.applicationSecretLast4
+            ? t('appSecretEnding', {
+                last4: appCredential.applicationSecretLast4,
+              })
+            : t('oauthRequiresAppCredentials')}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function SquareConnectionCard({
+  accessToken,
+  environmentLabel,
+  onSaveToken,
+  saveTokenPending,
+  setAccessToken,
+  setWebhookSignatureKey,
+  webhookSignatureKey,
+}: {
+  accessToken: string;
+  environmentLabel: string;
+  onSaveToken: () => void;
+  saveTokenPending: boolean;
+  setAccessToken: (value: string) => void;
+  setWebhookSignatureKey: (value: string) => void;
+  webhookSignatureKey: string;
+}) {
+  const t = useTranslations('inventory.operator.square');
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+            <KeyRound className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold">{t('title')}</p>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {t('description')}
+            </p>
+          </div>
+        </div>
+        <p className="rounded-md border border-border bg-muted/30 px-2 py-1 text-muted-foreground text-xs">
+          {environmentLabel}
+        </p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm">
           <span className="font-medium">{t('tokenLabel')}</span>
           <Input

@@ -60,6 +60,17 @@ describe('inventory Square settings route', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.getInventorySquareSettings.mockResolvedValue({
+      appCredentials: [
+        {
+          applicationId: 'square-app-id',
+          applicationSecretFingerprint: 'app-secret-sha256',
+          applicationSecretLast4: 'cdef',
+          environment: 'sandbox',
+          oauthRedirectUrl: null,
+          updatedAt: '2026-06-28T00:00:00.000Z',
+          webhookNotificationUrl: null,
+        },
+      ],
       connections: [
         {
           accessTokenFingerprint: 'token-sha256',
@@ -112,6 +123,12 @@ describe('inventory Square settings route', () => {
       'workspace-1'
     );
     await expect(response.json()).resolves.toMatchObject({
+      appCredentials: [
+        {
+          applicationId: 'square-app-id',
+          applicationSecretLast4: 'cdef',
+        },
+      ],
       connections: [
         {
           accessTokenLast4: '1234',
@@ -159,6 +176,58 @@ describe('inventory Square settings route', () => {
     });
   });
 
+  it('passes validated workspace app-credential payloads through with authorized user scope', async () => {
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: withPermissions(['manage_inventory_setup']),
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      },
+    });
+    mocks.saveInventorySquareSettings.mockResolvedValue({
+      appCredentials: [
+        {
+          applicationId: 'square-app-id',
+          applicationSecretLast4: 'cdef',
+          environment: 'sandbox',
+        },
+      ],
+      environment: 'sandbox',
+      readiness: { issues: ['connection_missing'], ready: false },
+      wsId: 'workspace-1',
+    });
+
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      request('PUT', {
+        applicationId: 'square-app-id',
+        applicationSecret: 'square-app-secret',
+        environment: 'sandbox',
+        oauthRedirectUrl:
+          'https://inventory.example.com/api/v1/inventory/square/oauth/callback',
+        webhookNotificationUrl:
+          'https://inventory.example.com/api/v1/inventory/square/webhook/workspace-1',
+      }),
+      params()
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.saveInventorySquareSettings).toHaveBeenCalledWith({
+      payload: {
+        applicationId: 'square-app-id',
+        applicationSecret: 'square-app-secret',
+        environment: 'sandbox',
+        oauthRedirectUrl:
+          'https://inventory.example.com/api/v1/inventory/square/oauth/callback',
+        webhookNotificationUrl:
+          'https://inventory.example.com/api/v1/inventory/square/webhook/workspace-1',
+      },
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    });
+  });
+
   it('rejects manual tokens without a matching environment', async () => {
     mocks.authorizeInventoryWorkspace.mockResolvedValue({
       ok: true,
@@ -172,6 +241,26 @@ describe('inventory Square settings route', () => {
     const { PUT } = await import('./route');
     const response = await PUT(
       request('PUT', { accessToken: 'square-token' }),
+      params()
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.saveInventorySquareSettings).not.toHaveBeenCalled();
+  });
+
+  it('rejects app credentials without a matching environment', async () => {
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: withPermissions(['manage_inventory_setup']),
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      },
+    });
+
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      request('PUT', { applicationId: 'square-app-id' }),
       params()
     );
 

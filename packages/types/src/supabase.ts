@@ -4377,6 +4377,54 @@ export type Database = {
           },
         ];
       };
+      inventory_square_app_credentials: {
+        Row: {
+          application_id: string | null;
+          application_secret_encrypted: string | null;
+          application_secret_fingerprint: string | null;
+          application_secret_last4: string | null;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          id: string;
+          oauth_redirect_url: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          webhook_notification_url: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          application_id?: string | null;
+          application_secret_encrypted?: string | null;
+          application_secret_fingerprint?: string | null;
+          application_secret_last4?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          id?: string;
+          oauth_redirect_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_notification_url?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          application_id?: string | null;
+          application_secret_encrypted?: string | null;
+          application_secret_fingerprint?: string | null;
+          application_secret_last4?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          id?: string;
+          oauth_redirect_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_notification_url?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       inventory_square_connections: {
         Row: {
           access_token_encrypted: string;

@@ -286,12 +286,16 @@ export const polarSettingsPayloadSchema = z
 export const squareSettingsPayloadSchema = z
   .object({
     accessToken: z.string().trim().min(1).max(4096).optional(),
+    applicationId: z.string().trim().min(1).max(255).optional(),
+    applicationSecret: z.string().trim().min(1).max(4096).optional(),
     deviceId: z.string().trim().max(255).nullable().optional(),
     deviceName: z.string().trim().max(255).nullable().optional(),
     environment: SquareEnvironmentSchema.optional(),
     locationId: z.string().trim().max(255).nullable().optional(),
     locationName: z.string().trim().max(255).nullable().optional(),
+    oauthRedirectUrl: httpUrlSchema.nullable().optional(),
     sandboxDeviceId: z.string().trim().max(255).nullable().optional(),
+    webhookNotificationUrl: httpUrlSchema.nullable().optional(),
     webhookSignatureKey: z.string().trim().min(1).max(4096).optional(),
   })
   .refine(
@@ -307,6 +311,16 @@ export const squareSettingsPayloadSchema = z
       value.environment === 'sandbox' ||
       value.environment === 'production',
     'environment is required when webhookSignatureKey is provided'
+  )
+  .refine(
+    (value) =>
+      (!value.applicationId &&
+        !value.applicationSecret &&
+        value.oauthRedirectUrl === undefined &&
+        value.webhookNotificationUrl === undefined) ||
+      value.environment === 'sandbox' ||
+      value.environment === 'production',
+    'environment is required when Square app credentials are provided'
   );
 
 export const squareOAuthStartQuerySchema = z.object({

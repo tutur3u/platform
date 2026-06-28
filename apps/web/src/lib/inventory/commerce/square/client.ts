@@ -31,7 +31,7 @@ export class SquareApiError extends Error {
   }
 }
 
-type SquareAppConfig = {
+export type SquareOAuthAppConfig = {
   applicationId: string;
   applicationSecret: string;
   redirectUrl: string;
@@ -51,66 +51,19 @@ function baseUrl(environment: SquareEnvironment) {
     : 'https://connect.squareup.com';
 }
 
-function optionalEnv(primary: string, fallback?: string) {
-  return process.env[primary] || (fallback ? process.env[fallback] : undefined);
-}
-
-export function getSquareAppConfig({
-  environment,
-  origin,
-}: {
-  environment: SquareEnvironment;
-  origin?: string;
-}): SquareAppConfig {
-  const applicationId =
-    environment === 'sandbox'
-      ? optionalEnv('SQUARE_SANDBOX_APPLICATION_ID', 'SQUARE_APPLICATION_ID')
-      : optionalEnv('SQUARE_APPLICATION_ID');
-  const applicationSecret =
-    environment === 'sandbox'
-      ? optionalEnv(
-          'SQUARE_SANDBOX_APPLICATION_SECRET',
-          'SQUARE_APPLICATION_SECRET'
-        )
-      : optionalEnv('SQUARE_APPLICATION_SECRET');
-  const redirectUrl =
-    process.env.SQUARE_OAUTH_REDIRECT_URL ||
-    (origin
-      ? `${origin.replace(/\/$/u, '')}/api/v1/inventory/square/oauth/callback`
-      : undefined);
-
-  if (!applicationId || !applicationSecret || !redirectUrl) {
-    throw new SquareConfigurationError(
-      'Square OAuth app credentials and redirect URL are not configured'
-    );
-  }
-
-  return {
-    applicationId,
-    applicationSecret,
-    redirectUrl,
-  };
-}
-
-export function hasSquareAppConfig(environment: SquareEnvironment) {
-  try {
-    getSquareAppConfig({ environment, origin: 'https://tuturuuu.com' });
-    return true;
-  } catch {
-    return false;
-  }
+export function createSquareOAuthRedirectUrl(origin: string) {
+  return new URL('/api/v1/inventory/square/oauth/callback', origin).toString();
 }
 
 export function createSquareAuthorizeUrl({
+  config,
   environment,
-  origin,
   state,
 }: {
+  config: Pick<SquareOAuthAppConfig, 'applicationId' | 'redirectUrl'>;
   environment: SquareEnvironment;
-  origin: string;
   state: string;
 }) {
-  const config = getSquareAppConfig({ environment, origin });
   const url = new URL(`${baseUrl(environment)}/oauth2/authorize`);
   url.searchParams.set('client_id', config.applicationId);
   url.searchParams.set('scope', SQUARE_OAUTH_SCOPES.join(' '));
@@ -204,14 +157,13 @@ export function parseSquareScopes(scope: string | null | undefined) {
 
 export async function exchangeSquareOAuthCode({
   code,
+  config,
   environment,
-  origin,
 }: {
   code: string;
+  config: SquareOAuthAppConfig;
   environment: SquareEnvironment;
-  origin?: string;
 }) {
-  const config = getSquareAppConfig({ environment, origin });
   return squareOAuthFetch<SquareOAuthTokenResponse>({
     body: {
       client_id: config.applicationId,
@@ -225,13 +177,14 @@ export async function exchangeSquareOAuthCode({
 }
 
 export async function refreshSquareOAuthToken({
+  config,
   environment,
   refreshToken,
 }: {
+  config: Pick<SquareOAuthAppConfig, 'applicationId' | 'applicationSecret'>;
   environment: SquareEnvironment;
   refreshToken: string;
 }) {
-  const config = getSquareAppConfig({ environment });
   return squareOAuthFetch<SquareOAuthTokenResponse>({
     body: {
       client_id: config.applicationId,

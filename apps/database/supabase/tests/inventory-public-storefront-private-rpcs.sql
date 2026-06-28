@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(31);
+select plan(33);
 
 select ok(
   to_regprocedure(
@@ -89,6 +89,7 @@ select ok(
 
 select ok(
   to_regclass('private.inventory_square_connections') is not null
+  and to_regclass('private.inventory_square_app_credentials') is not null
   and to_regclass('private.inventory_square_settings') is not null
   and to_regclass('private.inventory_square_devices') is not null
   and to_regclass('private.inventory_square_oauth_states') is not null,
@@ -115,8 +116,48 @@ select ok(
     'authenticated',
     'private.inventory_square_settings',
     'select'
+  )
+  and not has_table_privilege(
+    'anon',
+    'private.inventory_square_app_credentials',
+    'select'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'private.inventory_square_app_credentials',
+    'select'
   ),
-  'Square private connection/settings tables are not exposed to anon or authenticated'
+  'Square private connection/settings/app credential tables are not exposed to anon or authenticated'
+);
+
+select ok(
+  has_table_privilege(
+    'service_role',
+    'private.inventory_square_app_credentials',
+    'insert'
+  )
+  and has_table_privilege(
+    'service_role',
+    'private.inventory_square_app_credentials',
+    'update'
+  )
+  and has_table_privilege(
+    'service_role',
+    'private.inventory_square_app_credentials',
+    'select'
+  ),
+  'Square app credentials table is service-role writable'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'inventory_square_app_credentials_ws_environment_key'
+      and conrelid = 'private.inventory_square_app_credentials'::regclass
+      and contype = 'u'
+  ),
+  'Square app credentials are unique per workspace and environment'
 );
 
 insert into public.users (id, display_name)

@@ -145,23 +145,18 @@ export async function processInventorySquareWebhook({
   signature: string | null;
   wsId?: string;
 }) {
-  const notificationUrl =
-    process.env.SQUARE_WEBHOOK_NOTIFICATION_URL || requestUrl;
-  const secrets: Array<{ environment: SquareEnvironment; secret: string }> =
-    wsId
-      ? await getInventorySquareWebhookSecrets(wsId)
-      : [
-          {
-            environment: 'production',
-            secret: process.env.SQUARE_WEBHOOK_SIGNATURE_KEY || '',
-          },
-        ];
+  if (!wsId) throw new SquareWebhookSignatureError();
+  const secrets: Array<{
+    environment: SquareEnvironment;
+    notificationUrl: string | null;
+    secret: string;
+  }> = await getInventorySquareWebhookSecrets(wsId);
 
   const matchingSecret = secrets.find(
     (item) =>
       item.secret &&
       verifySquareWebhookSignature({
-        notificationUrl,
+        notificationUrl: item.notificationUrl || requestUrl,
         rawBody,
         signature,
         signatureKey: item.secret,

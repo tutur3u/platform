@@ -37,24 +37,19 @@ V1 does not sync the Square catalog. Tuturuuu Inventory remains the source of
 truth for products, stock, bundles, listing prices, and checkout reservation
 state.
 
-## Environment variables
+## Workspace credentials
 
-Set these on `apps/web` as deployment secrets, referenced by name only:
-
-| Variable | Purpose |
-| --- | --- |
-| `SQUARE_APPLICATION_ID` | Production OAuth application id. |
-| `SQUARE_APPLICATION_SECRET` | Production OAuth application secret. |
-| `SQUARE_SANDBOX_APPLICATION_ID` | Optional sandbox OAuth app id. Falls back to `SQUARE_APPLICATION_ID` when omitted. |
-| `SQUARE_SANDBOX_APPLICATION_SECRET` | Optional sandbox OAuth app secret. Falls back to `SQUARE_APPLICATION_SECRET` when omitted. |
-| `SQUARE_OAUTH_REDIRECT_URL` | Public OAuth callback URL. Defaults to `<web-origin>/api/v1/inventory/square/oauth/callback` when the request origin is known. |
-| `SQUARE_WEBHOOK_NOTIFICATION_URL` | Optional exact webhook URL override used during HMAC validation when Square is configured with a tunnel or canonical production URL. |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Optional global fallback signature key for the non-workspace webhook route. Workspace-specific keys from Inventory settings are preferred. |
+Square credentials are self-serve per workspace, like Inventory Polar settings.
+Do not configure Square app credentials, access tokens, or webhook signature
+keys as deployment secrets. Workspace admins save these values in **Inventory →
+Settings → Square Terminal**, where Tuturuuu encrypts secret values before
+private-schema storage.
 
 The Square REST client pins `Square-Version: 2026-05-20` and uses native
 `fetch`. OAuth is the recommended connection method because Tuturuuu can refresh
 tokens and validate granted scopes. Manual access-token configuration remains
-available for controlled deployments.
+available for controlled deployments and does not require saved Square OAuth app
+credentials.
 
 ## Configure Square
 
@@ -93,28 +88,34 @@ available for controlled deployments.
    Terminal** for the matching environment.
 
 For local development, expose `apps/web` with an HTTPS tunnel and either use the
-tunnel URL in Square or set `SQUARE_WEBHOOK_NOTIFICATION_URL` to the exact URL
-registered in Square so signature validation uses the same value.
+tunnel URL in Square or save that exact URL as the workspace webhook
+notification URL so signature validation uses the same value.
 
 ## Connect a workspace
 
 1. Open **Inventory → Settings → Square Terminal**.
 2. Choose `Sandbox` or `Production`.
-3. Prefer **Connect OAuth**. For manual setup, paste an access token and save it
+3. Save the Square Application ID and Application Secret for that environment.
+   If Square is configured with a tunnel or canonical URL that differs from the
+   actual request URL, also save the exact webhook notification URL so HMAC
+   validation uses the same URL Square signed.
+4. Prefer **Connect OAuth**. For manual setup, paste an access token and save it
    with the matching environment.
-4. Save the webhook signature key for the same environment.
-5. Select a Square location.
-6. Pair or select a terminal:
+5. Save the webhook signature key for the same environment.
+6. Select a Square location.
+7. Pair or select a terminal:
    - Production: create a device pairing code, enter it on the physical Square
      Terminal, then select the paired device. The pairing request uses Square's
      `TERMINAL_API` product type.
    - Sandbox: use Square's sandbox terminal device id when device listing is not
      available.
-7. Set a storefront's checkout mode to `Square Terminal`.
+8. Set a storefront's checkout mode to `Square Terminal`.
 
 Readiness fails closed until the connection, required scopes, webhook signature
-key, location, device, and environment all match. Storefront checkout returns a
-configuration error instead of reserving stock when Square is not ready.
+key, location, device, and environment all match. OAuth-backed connections also
+require saved workspace Square app credentials so refresh can continue without
+deployment secrets. Storefront checkout returns a configuration error instead of
+reserving stock when Square is not ready.
 
 ## Hardware-free verification
 
