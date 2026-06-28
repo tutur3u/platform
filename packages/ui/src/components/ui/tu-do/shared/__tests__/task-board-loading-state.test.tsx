@@ -20,6 +20,9 @@ describe('TaskBoardLoadingState', () => {
       'pr-0'
     );
     expect(screen.getByTestId('kanban-skeleton-frame')).not.toHaveClass('p-2');
+    expect(
+      screen.queryByTestId('task-board-header-skeleton')
+    ).not.toBeInTheDocument();
   });
 
   it('keeps embedded loading skeletons constrained to the parent width', () => {
@@ -34,5 +37,35 @@ describe('TaskBoardLoadingState', () => {
       'w-[calc(100%+2rem)]'
     );
     expect(screen.getByTestId('kanban-skeleton-frame')).toHaveClass('p-2');
+    expect(
+      screen.queryByTestId('task-board-header-skeleton')
+    ).not.toBeInTheDocument();
+  });
+
+  it('can include the board header skeleton above the kanban skeleton', () => {
+    render(<TaskBoardLoadingState root showHeader />);
+
+    expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
+      '-m-4',
+      'h-[calc(100dvh+2rem)]',
+      'w-[calc(100%+2rem)]',
+      'flex',
+      'flex-col'
+    );
+    expect(screen.getByTestId('task-board-header-skeleton')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+    expect(screen.getByTestId('task-board-header-skeleton')).toHaveClass(
+      '-mt-2',
+      'border-b',
+      'p-2'
+    );
+    expect(screen.getByTestId('task-board-loading-body')).toHaveClass(
+      'min-h-0',
+      'flex-1',
+      'overflow-hidden'
+    );
+    expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
   });
 });

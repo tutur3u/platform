@@ -181,6 +181,9 @@ describe('BoardClient', () => {
       '-m-4'
     );
     expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('task-board-header-skeleton')
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('Loading board...')).not.toBeInTheDocument();
   });
 
@@ -210,6 +213,10 @@ describe('BoardClient', () => {
       'h-[calc(100dvh+2rem)]',
       'w-[calc(100%+2rem)]'
     );
+    expect(
+      screen.getByTestId('task-board-header-skeleton')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
   });
 
   it('can revalidate loaded board lists without invalidating visible task caches', async () => {

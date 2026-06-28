@@ -75,6 +75,7 @@ vi.mock('./tasks-no-board-client', () => ({
   TasksNoBoardClient: mocks.TasksNoBoardClient,
 }));
 
+import TaskBoardDetailLoading from './boards/[boardId]/loading';
 import TaskBoardsLoading from './boards/loading';
 import TasksLoading from './loading';
 import { TaskBoardEntryPage } from './task-board-entry';
@@ -183,15 +184,32 @@ describe('TaskBoardEntryPage', () => {
     expect(mocks.getWorkspace).not.toHaveBeenCalled();
   });
 
-  it('uses the root task board skeleton for entry loading routes', () => {
-    const tasksLoading = TasksLoading() as ReactElement<{ root?: boolean }>;
+  it('uses the root task board skeleton for entry loading routes without the board header', () => {
+    const tasksLoading = TasksLoading() as ReactElement<{
+      root?: boolean;
+      showHeader?: boolean;
+    }>;
     const boardsLoading = TaskBoardsLoading() as ReactElement<{
       root?: boolean;
+      showHeader?: boolean;
     }>;
 
     expect(tasksLoading.type).toBe(TaskBoardLoadingState);
     expect(tasksLoading.props.root).toBe(true);
+    expect(tasksLoading.props.showHeader).toBeUndefined();
     expect(boardsLoading.type).toBe(TaskBoardLoadingState);
     expect(boardsLoading.props.root).toBe(true);
+    expect(boardsLoading.props.showHeader).toBeUndefined();
+  });
+
+  it('includes the board header skeleton for board detail loading routes', () => {
+    const boardDetailLoading = TaskBoardDetailLoading() as ReactElement<{
+      root?: boolean;
+      showHeader?: boolean;
+    }>;
+
+    expect(boardDetailLoading.type).toBe(TaskBoardLoadingState);
+    expect(boardDetailLoading.props.root).toBe(true);
+    expect(boardDetailLoading.props.showHeader).toBe(true);
   });
 });

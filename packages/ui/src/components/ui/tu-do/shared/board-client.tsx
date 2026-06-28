@@ -247,7 +247,9 @@ export function BoardClient({
   ]);
 
   if (boardLoading && !board) {
-    return <TaskBoardLoadingState root={rootLoading} />;
+    return (
+      <TaskBoardLoadingState root={rootLoading} showHeader={rootLoading} />
+    );
   }
 
   if (!board?.id) {
