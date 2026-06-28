@@ -25,7 +25,8 @@ driving physical terminals from Tuturuuu.
    order reference page.
 2. Inventory staff sends the reserved checkout to a Square Terminal from the
    commerce workflow. Tuturuuu creates a Square order, then creates a Terminal
-   checkout for the selected location and device.
+   checkout for the selected location and device with the Square order id and
+   itemized cart display enabled.
 3. Square sends terminal checkout and payment webhooks. Tuturuuu verifies the
    raw webhook body signature before parsing, reconciles duplicate deliveries
    idempotently, and completes the checkout only after a verified paid payment.
@@ -105,7 +106,8 @@ registered in Square so signature validation uses the same value.
 5. Select a Square location.
 6. Pair or select a terminal:
    - Production: create a device pairing code, enter it on the physical Square
-     Terminal, then select the paired device.
+     Terminal, then select the paired device. The pairing request uses Square's
+     `TERMINAL_API` product type.
    - Sandbox: use Square's sandbox terminal device id when device listing is not
      available.
 7. Set a storefront's checkout mode to `Square Terminal`.
@@ -113,6 +115,33 @@ registered in Square so signature validation uses the same value.
 Readiness fails closed until the connection, required scopes, webhook signature
 key, location, device, and environment all match. Storefront checkout returns a
 configuration error instead of reserving stock when Square is not ready.
+
+## Hardware-free verification
+
+No mocked test can prove that a specific production countertop terminal is
+online, paired to the right Square seller account, assigned to the selected
+location, has a working network path, and can complete a real card-present
+payment. Without hardware, treat the automated suite as Square contract and
+reconciliation verification, not physical-device certification.
+
+The no-hardware suite must cover these Square contracts before release:
+
+- OAuth authorization URL, token exchange, refresh, scope parsing, encrypted
+  storage, and secret redaction.
+- REST base URLs for sandbox and production, `Square-Version`, bearer auth,
+  sanitized upstream errors, and idempotency keys.
+- Orders API payloads before Terminal checkout creation.
+- Terminal checkout payloads with `order_id`,
+  `device_options.device_id`, and `device_options.show_itemized_cart`.
+- Device Code creation with `product_type: TERMINAL_API` and paired-device
+  webhook reconciliation.
+- Raw-body webhook HMAC validation against the exact Square notification URL
+  before JSON parsing.
+- Terminal checkout, payment, OAuth revocation, cancellation, expiry, failure,
+  duplicate delivery, and event-id reconciliation behavior.
+- Reservation-first lifecycle: create local reservation before Square calls,
+  release on Square create/cancel/failure/expiry, and complete stock/ledger
+  state only after verified Square payment success.
 
 ## Physical-terminal smoke checklist
 

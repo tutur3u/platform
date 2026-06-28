@@ -2,6 +2,7 @@ export {
   createInventorySquareDeviceCode,
   listInventorySquareDevices,
   listInventorySquareLocations,
+  syncInventorySquareDeviceCodePaired,
 } from './devices';
 export {
   completeInventorySquareOAuthCallback,

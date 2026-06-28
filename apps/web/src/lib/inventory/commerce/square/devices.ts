@@ -173,3 +173,42 @@ export async function createInventorySquareDeviceCode({
   if (error) throw new Error(error.message ?? 'Failed to save device code');
   return mapped;
 }
+
+export async function syncInventorySquareDeviceCodePaired({
+  deviceCode,
+  environment,
+  wsId,
+}: {
+  deviceCode: SquareApiDeviceCode;
+  environment: SquareEnvironment;
+  wsId: string;
+}) {
+  const codeId = deviceCode.id;
+  const deviceId = deviceCode.device_id;
+  if (!codeId || !deviceId) return false;
+
+  const mapped = mapDeviceCode(deviceCode);
+  const privateAdmin = await getPrivateAdmin();
+  const { error } = (await privateAdmin
+    .from('inventory_square_devices' as never)
+    .upsert(
+      {
+        device_code_id: codeId,
+        device_id: deviceId,
+        device_name: mapped.name,
+        environment,
+        last_seen_at: new Date().toISOString(),
+        location_id: mapped.locationId,
+        metadata: deviceCode as never,
+        pairing_code: mapped.code || null,
+        product_type: mapped.productType,
+        status: mapped.status ?? 'PAIRED',
+        updated_at: new Date().toISOString(),
+        ws_id: wsId,
+      } as never,
+      { onConflict: 'device_code_id' }
+    )) as { error: SupabaseErrorLike };
+
+  if (error) throw new Error(error.message ?? 'Failed to save paired device');
+  return true;
+}

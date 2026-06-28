@@ -223,6 +223,7 @@ function CheckoutRows({
           row.checkoutProvider === 'square_terminal' ||
           Boolean(row.squareStatus);
         const squareActive = [
+          'cancel_requested',
           'checkout_created',
           'pending',
           'in_progress',

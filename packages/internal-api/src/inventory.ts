@@ -553,6 +553,7 @@ export type InventorySquareConnectionStatus =
   | 'revoked';
 
 export type InventorySquareTerminalCheckoutStatus =
+  | 'cancel_requested'
   | 'canceled'
   | 'cancelled'
   | 'checkout_created'

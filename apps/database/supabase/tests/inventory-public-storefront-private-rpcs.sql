@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(29);
+select plan(31);
 
 select ok(
   to_regprocedure(
@@ -525,6 +525,29 @@ values (
 )
 on conflict (id) do update
 set quantity = excluded.quantity;
+
+select lives_ok(
+  $$
+    update private.inventory_checkout_sessions
+    set square_status = 'cancel_requested'
+    where id = '00000000-0000-4000-8000-000000002001'
+  $$,
+  'Square checkout status accepts cancel_requested'
+);
+
+select is(
+  (
+    select square_status
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  'cancel_requested',
+  'cancel_requested status is persisted for Square checkout rows'
+);
+
+update private.inventory_checkout_sessions
+set square_status = 'checkout_created'
+where id = '00000000-0000-4000-8000-000000002001';
 
 select throws_ok(
   $$

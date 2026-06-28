@@ -81,6 +81,7 @@ export type SquareApiTerminalCheckout = {
   created_at?: string;
   device_options?: {
     device_id?: string;
+    show_itemized_cart?: boolean;
   };
   id?: string;
   note?: string;

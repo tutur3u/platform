@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createSquareAuthorizeUrl,
+  createSquareDeviceCodeApi,
   createSquareIdempotencyKey,
   parseSquareScopes,
   type SquareApiError,
@@ -98,6 +99,50 @@ describe('Square REST client', () => {
           'Content-Type': 'application/json',
           'Square-Version': SQUARE_API_VERSION,
         },
+        method: 'POST',
+      })
+    );
+  });
+
+  it('creates Terminal API device codes with Square contract fields', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          device_code: {
+            code: 'PAIRME',
+            id: 'device-code-1',
+            product_type: 'TERMINAL_API',
+          },
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      createSquareDeviceCodeApi({
+        accessToken: 'square-access-token',
+        environment: 'production',
+        idempotencyKey: 'device-idem-1',
+        locationId: 'location-1',
+        name: 'Front counter',
+      })
+    ).resolves.toMatchObject({
+      id: 'device-code-1',
+      product_type: 'TERMINAL_API',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://connect.squareup.com/v2/devices/codes',
+      expect.objectContaining({
+        body: JSON.stringify({
+          device_code: {
+            location_id: 'location-1',
+            name: 'Front counter',
+            product_type: 'TERMINAL_API',
+          },
+          idempotency_key: 'device-idem-1',
+        }),
         method: 'POST',
       })
     );

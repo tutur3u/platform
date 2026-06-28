@@ -288,7 +288,7 @@ export async function createSquareDeviceCodeApi({
       device_code: {
         location_id: locationId,
         name,
-        product_type: 'TERMINAL',
+        product_type: 'TERMINAL_API',
       },
       idempotency_key: idempotencyKey,
     },

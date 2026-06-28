@@ -29,6 +29,8 @@ function mapTerminalStatus(
   status: string | null | undefined
 ): InventorySquareTerminalCheckoutStatus {
   switch ((status ?? '').toUpperCase()) {
+    case 'CANCEL_REQUESTED':
+      return 'cancel_requested';
     case 'CANCELED':
       return 'canceled';
     case 'CANCELLED':
@@ -118,6 +120,7 @@ function buildTerminalCheckoutPayload({
       amount_money: toSquareMoney(checkout.totalAmount, checkout.currency),
       device_options: {
         device_id: deviceId,
+        show_itemized_cart: true,
       },
       note: checkout.note || `Tuturuuu order ${checkout.publicToken}`,
       order_id: orderId,
@@ -246,7 +249,8 @@ async function findCheckoutBySquareField(field: string, value: string) {
 }
 
 export async function syncInventorySquareTerminalCheckout(
-  squareCheckout: SquareApiTerminalCheckout
+  squareCheckout: SquareApiTerminalCheckout,
+  options: { eventId?: string | null } = {}
 ) {
   if (!squareCheckout.id) return false;
   const checkout = await findCheckoutBySquareField(
@@ -257,6 +261,7 @@ export async function syncInventorySquareTerminalCheckout(
 
   const status = mapTerminalStatus(squareCheckout.status);
   await updateCheckoutSquareState(checkout.id, checkout.ws_id, {
+    ...(options.eventId ? { square_last_event_id: options.eventId } : {}),
     square_device_id: squareCheckout.device_options?.device_id ?? null,
     square_order_id: squareCheckout.order_id ?? null,
     square_payment_id: squareCheckout.payment_ids?.[0] ?? null,
@@ -319,7 +324,10 @@ export async function completeSquareCheckoutPayment({
   await recordInventorySaleFinanceTransaction({ checkoutId });
 }
 
-export async function syncInventorySquarePayment(payment: SquareApiPayment) {
+export async function syncInventorySquarePayment(
+  payment: SquareApiPayment,
+  options: { eventId?: string | null } = {}
+) {
   if (!payment.id) return false;
   const orderId = payment.order_id ?? null;
   if (!orderId) return false;
@@ -329,6 +337,7 @@ export async function syncInventorySquarePayment(payment: SquareApiPayment) {
 
   const status = mapPaymentStatus(payment.status);
   await updateCheckoutSquareState(checkout.id, checkout.ws_id, {
+    ...(options.eventId ? { square_last_event_id: options.eventId } : {}),
     square_order_id: orderId,
     square_payment_id: payment.id,
     square_receipt_url: payment.receipt_url ?? null,

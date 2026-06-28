@@ -126,6 +126,48 @@ export async function updateConnection(
   if (error) throw new Error(error.message ?? 'Failed to update Square token');
 }
 
+export async function markConnectionRevoked({
+  environment,
+  merchantId,
+  wsId,
+}: {
+  environment: SquareEnvironment;
+  merchantId?: string | null;
+  wsId: string;
+}) {
+  await updateConnection(wsId, environment, {
+    last_error: merchantId
+      ? `Square OAuth authorization revoked for merchant ${merchantId}`
+      : 'Square OAuth authorization revoked',
+    status: 'revoked',
+  });
+}
+
+export async function markConnectionsRevokedByMerchantId({
+  environment,
+  merchantId,
+}: {
+  environment: SquareEnvironment;
+  merchantId: string;
+}) {
+  const privateAdmin = await getPrivateAdmin();
+  const { error } = (await privateAdmin
+    .from('inventory_square_connections' as never)
+    .update({
+      last_error: `Square OAuth authorization revoked for merchant ${merchantId}`,
+      status: 'revoked',
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq('environment', environment)
+    .eq('merchant_id', merchantId)) as { error: SupabaseErrorLike };
+
+  if (error) {
+    throw new Error(
+      error.message ?? 'Failed to mark Square connections revoked'
+    );
+  }
+}
+
 export async function decryptConnectionToken(row: SquareConnectionRow) {
   const workspaceKey = await getWorkspaceKey(row.ws_id);
   if (!workspaceKey) throw new Error('Workspace encryption key is unavailable');
