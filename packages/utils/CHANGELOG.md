@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/utils-v0.10.0...utils-v0.11.0) (2026-06-29)
+
+
+### Features
+
+* **infrastructure:** add rate-limit appeals ([f1e50e9](https://github.com/tutur3u/platform/commit/f1e50e9fd805dca6c80da8daab60ed24199f24ab))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/utils-v0.9.0...utils-v0.10.0) (2026-06-26)
 
 

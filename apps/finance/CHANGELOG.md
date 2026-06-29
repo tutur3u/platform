@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/finance-v0.9.0...finance-v0.10.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/finance-v0.8.0...finance-v0.9.0) (2026-06-24)
 
 

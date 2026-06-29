@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/sdk-v0.11.0...sdk-v0.12.0) (2026-06-29)
+
+
+### Features
+
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **external-apps:** allow signed asset uploads ([0d83b3b](https://github.com/tutur3u/platform/commit/0d83b3b50b235faf5894539a18c955ad0432e0b3))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/sdk-v0.10.1...sdk-v0.11.0) (2026-06-26)
 
 

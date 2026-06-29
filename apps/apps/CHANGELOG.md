@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/apps-v0.2.2...apps-v0.3.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/apps-v0.2.1...apps-v0.2.2) (2026-06-24)
 
 

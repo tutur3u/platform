@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/ui-v0.10.0...ui-v0.11.0) (2026-06-29)
+
+
+### Features
+
+* **finance:** support prepaid subscription invoice ranges ([fa0f338](https://github.com/tutur3u/platform/commit/fa0f3388dfb3d3ea539a8d8bdc3f100f268542c6))
+* **tasks:** add board header loading skeleton ([73f1242](https://github.com/tutur3u/platform/commit/73f12421a9cd50c035a1c9940e152354b1974f26))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** pad board header skeleton ([b0c5c0f](https://github.com/tutur3u/platform/commit/b0c5c0fea8871cac2603da6239b980c752b1c9f6))
+* **tasks:** prevent description wipes during yjs hydration ([947f38c](https://github.com/tutur3u/platform/commit/947f38c6474d07b1fac1c44e166638bfc87260c0))
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/ui-v0.9.0...ui-v0.10.0) (2026-06-26)
 
 
