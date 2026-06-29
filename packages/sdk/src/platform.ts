@@ -43,6 +43,9 @@ import {
   type MoveWorkspaceTaskPayload,
   moveWorkspaceTask,
   removeWorkspaceTaskLabel,
+  type SearchWorkspaceTasksPayload,
+  type SearchWorkspaceTasksResponse,
+  searchWorkspaceTasks,
   triggerWorkspaceTaskEmbedding,
   type UpdateWorkspaceTaskBoardPayload,
   type UpdateWorkspaceTaskListPayload,
@@ -537,6 +540,17 @@ export class TasksClient {
       workspaceId,
       taskId,
       labelId,
+      this.client.getClientOptions()
+    );
+  }
+
+  search(
+    workspaceId: string,
+    payload: SearchWorkspaceTasksPayload
+  ): Promise<SearchWorkspaceTasksResponse> {
+    return searchWorkspaceTasks(
+      workspaceId,
+      payload,
       this.client.getClientOptions()
     );
   }

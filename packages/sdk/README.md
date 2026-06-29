@@ -74,6 +74,9 @@ ttr lists use
 ttr tasks use
 ttr tasks --board <board-id>
 ttr tasks --compact
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode text
+ttr tasks search "deadline review" --mode semantic
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
 ttr tasks done <task-id>
@@ -145,6 +148,7 @@ ttr calendar events --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
+ttr tasks search --help
 ttr tasks create --help
 ttr tasks done --help
 ttr tasks close --help
@@ -182,8 +186,18 @@ count and current page/max page. Add `--compact` to task lists when an agent
 only needs the task title, task list name, and per-task workspace name. Task
 lists are ordered by priority and due date, with prettier due dates and
 configured task-list colors in table output. Use `--json` on read commands when
-another agent or script needs machine-readable output. `tasks
-create`, `boards create`, and `lists create` accept a quoted positional name as
+another agent or script needs machine-readable output.
+
+Use `ttr tasks search <query>` for ranked task search. Search defaults to
+`--mode hybrid`, accepts `--mode text` for PostgreSQL full-text search only and
+`--mode semantic` for embedding similarity only, and supports
+`--query`/`--q`, `--limit`/`--match-count`, `--threshold`/`--match-threshold`,
+`--workspace`/`--ws`, `--compact`, and `--json`. Search output preserves API
+relevance order and shows the score when available. Existing list filtering
+with `ttr tasks --q <query>` is unchanged and remains the lightweight list text
+filter.
+
+`tasks create`, `boards create`, and `lists create` accept a quoted positional name as
 a shorthand for `--name`. Task CRUD accepts either the task UUID or the board
 identifier shown in the UI, such as `VHP-12`; prefixed identifiers resolve
 within the selected workspace even when another list is selected. Marking a task
@@ -256,6 +270,9 @@ Common task examples:
 ttr tasks
 ttr tasks --compact
 ttr tasks --json --no-update-check
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode hybrid --limit 20 --threshold 0.25
+ttr tasks search --query "deadline review" --mode text --json --no-update-check
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
 ttr tasks done VHP-12

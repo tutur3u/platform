@@ -317,6 +317,7 @@ const helpTopics: Record<string, HelpTopic> = {
   tasks: {
     commands: [
       'list                         list open tasks plus assigned external tasks in personal workspace',
+      'search <query>               full-text, semantic, or hybrid task search',
       'use [id]                     select a task',
       'get [id]                     show task details',
       'create [name]                create a task',
@@ -332,6 +333,9 @@ const helpTopics: Record<string, HelpTopic> = {
       'Task lists are sorted by priority and due date. Unscoped lists start from the personal workspace and include assigned tasks from other accessible workspaces. Human-readable lists show total tasks and page/max page. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
     examples: [
       'ttr tasks',
+      'ttr tasks search "deadline review"',
+      'ttr tasks search "deadline review" --mode text',
+      'ttr tasks search "deadline review" --mode semantic',
       'ttr tasks --compact',
       'ttr tasks --page 2 --page-size 50',
       'ttr tasks --include-review --include-done',
@@ -359,11 +363,11 @@ const helpTopics: Record<string, HelpTopic> = {
       '--list <id>                  filter by list or choose target list',
       '--page <n>, --page-size <n>   paginate list output',
       '--limit <n>, --offset <n>     paginate list output (offset form)',
-      '--q <query>                  search task text',
+      '--q <query>                  filter list output by task text; search query alias for tasks search',
       '--json                       print machine-readable JSON',
     ],
     usage:
-      'ttr tasks [list|use|get|create|update|description|delete|move|bulk] [id] [options]',
+      'ttr tasks [list|search|use|get|create|update|description|delete|move|bulk] [id] [options]',
   },
   tiptap: {
     commands: [
@@ -847,6 +851,26 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       options: helpTopics.tasks?.options ?? [],
       usage: 'ttr tasks [list] [options]',
     },
+    search: {
+      description:
+        'Searches task name and description text with text, semantic, or hybrid ranking. Results preserve API relevance order.',
+      examples: [
+        'ttr tasks search "deadline review"',
+        'ttr tasks search "deadline review" --mode text',
+        'ttr tasks search "deadline review" --mode semantic',
+        'ttr tasks search --query "deadline review" --mode hybrid --limit 20 --threshold 0.25',
+      ],
+      options: [
+        '--query, --q <query>        search query',
+        '--mode <mode>               text, semantic, or hybrid; default hybrid',
+        '--limit, --match-count <n>  maximum matches',
+        '--threshold, --match-threshold <n> semantic similarity threshold from 0 to 1',
+        '--compact                   show compact table output',
+        '--workspace, --ws <id>      override the selected workspace',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr tasks search <query> [options]',
+    },
     move: {
       examples: [
         'ttr tasks move',
@@ -925,7 +949,7 @@ export function getGlobalHelp() {
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',
-    '  tasks [list]|use|get|create|update|done|close|delete|move|bulk',
+    '  tasks [list]|search|use|get|create|update|done|close|delete|move|bulk',
     '  tiptap [parse|encode|decode|validate]',
     '  labels [list]|use|create',
     '  projects [list]|use|create|get|tasks',

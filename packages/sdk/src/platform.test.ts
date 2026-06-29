@@ -263,6 +263,45 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('searches tasks through the authenticated task search API', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        tasks: [{ id: 'task-1', name: 'Deadline review', similarity: 0.92 }],
+      })
+    );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.search('ws-1', {
+      matchCount: 5,
+      matchThreshold: 0.25,
+      mode: 'hybrid',
+      query: 'deadline review',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          matchCount: 5,
+          matchThreshold: 0.25,
+          mode: 'hybrid',
+          query: 'deadline review',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
+
   it('passes task description reads and direct updates through the authenticated internal API client', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

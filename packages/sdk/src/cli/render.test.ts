@@ -169,6 +169,40 @@ describe('CLI rendering', () => {
     });
   });
 
+  it('preserves ranked task search order and renders scores', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        tasks: [
+          {
+            id: 'lower-priority-first',
+            name: 'Lower priority but first ranked',
+            priority: 'low',
+            similarity: 0.4,
+          },
+          {
+            id: 'critical-second',
+            name: 'Critical but second ranked',
+            priority: 'critical',
+            similarity: 0.9,
+          },
+        ],
+      },
+      { group: 'tasks', preserveTaskOrder: true, showTaskScore: true }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Score');
+    expect(output).toContain('40.0%');
+    expect(output).toContain('90.0%');
+    expect(output.indexOf('Lower priority but first ranked')).toBeLessThan(
+      output.indexOf('Critical but second ranked')
+    );
+  });
+
   it('formats task due dates for table output', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-03T12:00:00.000+07:00'));

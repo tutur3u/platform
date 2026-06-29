@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import type {
   ListWorkspaceTasksOptions,
+  SearchWorkspaceTasksPayload,
   WorkspaceTaskApiTask,
   WorkspaceTasksResponse,
 } from '@tuturuuu/internal-api/tasks';
@@ -72,6 +73,7 @@ const DOCUMENT_TASK_LIST_STATUSES = ['documents'] as const;
 const REVIEW_TASK_LIST_STATUSES = ['review'] as const;
 const DONE_TASK_LIST_STATUSES = ['review', 'done'] as const;
 const CLOSED_TASK_LIST_STATUSES = ['closed'] as const;
+const TASK_SEARCH_MODES = ['text', 'semantic', 'hybrid'] as const;
 const LABEL_COLOR_ALIASES: Record<string, string> = {
   amber: '#D97706',
   blue: '#2563EB',
@@ -97,6 +99,7 @@ type CliTask = WorkspaceTaskApiTask & {
   workspace_id?: string | null;
   workspace_name?: string | null;
 };
+type TaskSearchMode = (typeof TASK_SEARCH_MODES)[number];
 
 interface TaskPaginationSummary {
   hasNextPage: boolean;
@@ -197,6 +200,38 @@ function parseNonNegativeInteger(value: string | undefined) {
   if (!value) return undefined;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function parseTaskSearchMode(flags: Record<string, FlagValue>): TaskSearchMode {
+  const mode = getFlag(flags, 'mode') || 'hybrid';
+  if (TASK_SEARCH_MODES.includes(mode as TaskSearchMode)) {
+    return mode as TaskSearchMode;
+  }
+
+  throw new Error('Invalid task search mode. Use text, semantic, or hybrid.');
+}
+
+function parseTaskSearchPositiveInteger(
+  value: string | undefined,
+  flagName: string
+) {
+  if (!value) return undefined;
+  const parsed = Number(value);
+
+  if (Number.isInteger(parsed) && parsed > 0) return parsed;
+
+  throw new Error(`${flagName} must be a positive integer.`);
+}
+
+function parseTaskSearchThreshold(value: string | undefined) {
+  if (!value) return undefined;
+  const parsed = Number(value);
+
+  if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) {
+    return parsed;
+  }
+
+  throw new Error('--threshold must be a number between 0 and 1.');
 }
 
 function getTaskPagination(flags: Record<string, FlagValue>) {
@@ -326,6 +361,38 @@ function getCliTaskListOptions(
     listStatuses,
     offset: pagination.offset,
     q: getFlag(flags, 'q'),
+  };
+}
+
+function getCliTaskSearchPayload(
+  flags: Record<string, FlagValue>,
+  positionals: string[]
+): SearchWorkspaceTasksPayload {
+  const query =
+    getFlag(flags, 'query') ||
+    getFlag(flags, 'q') ||
+    positionals.slice(2).join(' ');
+  const trimmedQuery = query.trim();
+
+  if (!trimmedQuery) {
+    throw new Error(
+      'Missing search query. Use `ttr tasks search <query>` or --query.'
+    );
+  }
+
+  const matchCount = parseTaskSearchPositiveInteger(
+    getFlag(flags, 'match-count') || getFlag(flags, 'limit'),
+    '--match-count'
+  );
+  const matchThreshold = parseTaskSearchThreshold(
+    getFlag(flags, 'match-threshold') || getFlag(flags, 'threshold')
+  );
+
+  return {
+    ...(matchCount !== undefined ? { matchCount } : {}),
+    ...(matchThreshold !== undefined ? { matchThreshold } : {}),
+    mode: parseTaskSearchMode(flags),
+    query: trimmedQuery,
   };
 }
 
@@ -525,6 +592,41 @@ export async function listTasksForCli(
       paginationLimit,
       paginationOffset
     ),
+    workspaceName,
+  };
+}
+
+export async function searchTasksForCli(
+  client: TuturuuuUserClient,
+  _config: CliConfig,
+  workspaceId: string,
+  flags: Record<string, FlagValue>,
+  positionals: string[]
+): Promise<{
+  response: Awaited<ReturnType<TuturuuuUserClient['tasks']['search']>>;
+  workspaceName?: string;
+}> {
+  const payload = getCliTaskSearchPayload(flags, positionals);
+  const workspaces = await client.workspaces.list();
+  const requestedWorkspace = resolveWorkspace(workspaceId, workspaces);
+  const personalWorkspace = workspaces.find((workspace) => workspace.personal);
+  const currentWorkspace =
+    shouldUseDefaultPersonalTaskScope(flags) && personalWorkspace
+      ? personalWorkspace
+      : requestedWorkspace;
+  const effectiveWorkspaceId = currentWorkspace?.id ?? workspaceId;
+  const workspaceName = currentWorkspace?.name || workspaceId;
+  const response = await client.tasks.search(effectiveWorkspaceId, payload);
+
+  return {
+    response: {
+      ...response,
+      tasks: response.tasks.map((task) => ({
+        ...task,
+        workspace_id: effectiveWorkspaceId,
+        workspace_name: workspaceName,
+      })),
+    },
     workspaceName,
   };
 }
@@ -1280,6 +1382,25 @@ export async function runCli(argv = process.argv.slice(2)) {
         currentWorkspaceId: workspaceId,
         group,
         json,
+        workspaceName,
+      });
+      return;
+    }
+    if (action === 'search') {
+      const { response: taskResponse, workspaceName } = await searchTasksForCli(
+        client,
+        config,
+        workspaceId,
+        flags,
+        positionals
+      );
+      render(taskResponse, {
+        compact: flags.compact === true,
+        currentWorkspaceId: workspaceId,
+        group,
+        json,
+        preserveTaskOrder: true,
+        showTaskScore: true,
         workspaceName,
       });
       return;

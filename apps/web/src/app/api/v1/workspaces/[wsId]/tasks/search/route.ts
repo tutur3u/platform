@@ -1,22 +1,23 @@
 import { createMeteredTextEmbedding } from '@tuturuuu/ai/embeddings/metered';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 import { validateRequestBody } from '@/lib/api-middleware';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
-interface Params {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
+type Params = { wsId: string };
+
+type SearchMode = 'text' | 'semantic' | 'hybrid';
+
+const TASK_SEARCH_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 const searchTasksBodySchema = z.object({
   matchCount: z
@@ -27,6 +28,7 @@ const searchTasksBodySchema = z.object({
     .default(50)
     .transform((value) => Math.min(value, 50)),
   matchThreshold: z.number().min(0).max(1).optional().default(0.3),
+  mode: z.enum(['text', 'semantic', 'hybrid']).optional().default('hybrid'),
   query: z.string().trim().min(1),
 });
 
@@ -84,96 +86,121 @@ function enhanceSearchQuery(query: string): string {
   return Array.from(expandedTerms).join(' ');
 }
 
-export async function POST(req: NextRequest, { params }: Params) {
-  try {
-    const supabase = await createClient(req);
-    const { wsId: id } = await params;
+export const POST = withSessionAuth<Params>(
+  async (req: NextRequest, { supabase, user }, params) => {
+    try {
+      const bodyResult = await validateRequestBody(req, searchTasksBodySchema);
+      if (!('data' in bodyResult)) return bodyResult;
 
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+      const { query, matchThreshold, matchCount, mode } = bodyResult.data;
+      const wsId = await normalizeWorkspaceId(params.wsId, supabase);
 
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const wsId = await normalizeWorkspaceId(id, supabase);
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      console.error(
-        'Error verifying workspace membership for task search:',
-        membership.error
-      );
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-
-    const bodyResult = await validateRequestBody(req, searchTasksBodySchema);
-    if (!('data' in bodyResult)) return bodyResult;
-
-    const { query, matchThreshold, matchCount } = bodyResult.data;
-
-    const sbAdmin = await createAdminClient();
-
-    // Enhance query with context for better semantic matching
-    const enhancedQuery = enhanceSearchQuery(query);
-
-    const embeddingResult = await createMeteredTextEmbedding({
-      metadata: {
-        operation: 'task_semantic_search',
-      },
-      source: 'task_search',
-      taskType: 'RETRIEVAL_QUERY',
-      userId: user.id,
-      value: enhancedQuery,
-      wsId,
-    });
-
-    if (!embeddingResult.ok) {
-      return NextResponse.json({
-        message: 'Task semantic search skipped',
-        reason: embeddingResult.reason,
-        tasks: [],
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
       });
-    }
 
-    // Call the hybrid match_tasks function with both embedding and text
-    const { data, error } = await sbAdmin.rpc('match_tasks', {
-      query_embedding: JSON.stringify(embeddingResult.embedding),
-      query_text: query, // Pass original query for full-text search
-      match_threshold: matchThreshold,
-      match_count: matchCount,
-      filter_ws_id: wsId,
-      filter_deleted: false,
-    });
+      if (membership.error === 'membership_lookup_failed') {
+        serverLogger.error(
+          'Failed to verify workspace membership for task search',
+          {
+            error: membership.error,
+            userId: user.id,
+            wsId,
+          }
+        );
+        return NextResponse.json(
+          { error: 'Failed to verify workspace membership' },
+          { status: 500 }
+        );
+      }
 
-    if (error) {
-      console.error('Error searching tasks:', error);
+      if (!membership.ok) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+      }
+
+      const sbAdmin = await createAdminClient();
+      let queryEmbedding: string | null = null;
+      let searchMode: SearchMode = mode;
+      let fallbackReason: string | undefined;
+
+      if (mode !== 'text') {
+        const embeddingResult = await createMeteredTextEmbedding({
+          metadata: {
+            operation: 'task_semantic_search',
+          },
+          source: 'task_search',
+          taskType: 'RETRIEVAL_QUERY',
+          userId: user.id,
+          value: enhanceSearchQuery(query),
+          wsId,
+        });
+
+        if (embeddingResult.ok) {
+          queryEmbedding = JSON.stringify(embeddingResult.embedding);
+        } else if (mode === 'semantic') {
+          return NextResponse.json({
+            message: 'Task semantic search skipped',
+            reason: embeddingResult.reason,
+            tasks: [],
+          });
+        } else {
+          fallbackReason = embeddingResult.reason;
+          searchMode = 'text';
+          serverLogger.warn('Task hybrid search falling back to text search', {
+            reason: fallbackReason,
+            userId: user.id,
+            wsId,
+          });
+        }
+      }
+
+      const { data, error } = await sbAdmin.rpc('match_tasks', {
+        query_embedding: queryEmbedding,
+        query_text: query,
+        match_threshold: matchThreshold,
+        match_count: matchCount,
+        filter_ws_id: wsId,
+        filter_deleted: false,
+        search_mode: searchMode,
+      });
+
+      if (error) {
+        serverLogger.error('Error searching tasks', {
+          error,
+          mode: searchMode,
+          userId: user.id,
+          wsId,
+        });
+        return NextResponse.json(
+          { message: 'Error searching tasks', error: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        ...(fallbackReason
+          ? {
+              message: 'Task hybrid search fell back to text search',
+              reason: fallbackReason,
+            }
+          : {}),
+        tasks: data ?? [],
+      });
+    } catch (error) {
+      serverLogger.error('Error in task search', error);
       return NextResponse.json(
-        { message: 'Error searching tasks', error: error.message },
+        {
+          message: 'Internal server error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ tasks: data });
-  } catch (error) {
-    console.error('Error in semantic search:', error);
-    return NextResponse.json(
-      {
-        message: 'Internal server error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    allowAppSessionAuth: TASK_SEARCH_APP_SESSION_AUTH,
+    rateLimitKind: 'read',
   }
-}
+);

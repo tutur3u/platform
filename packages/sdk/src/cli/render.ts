@@ -18,6 +18,8 @@ export interface RenderOptions {
   financeResource?: string;
   group?: string;
   json?: boolean;
+  preserveTaskOrder?: boolean;
+  showTaskScore?: boolean;
   workspaceName?: string;
 }
 
@@ -581,6 +583,7 @@ function styleTier(value: string) {
 }
 
 function styleTaskCell({ column, row, value }: Parameters<TableCellStyle>[0]) {
+  if (column === 'Score') return color.magenta(value);
   if (column === 'Key') return color.cyan(value);
   if (column === 'List' && value)
     return formatListName(value, asString(row.__ListColor));
@@ -1153,10 +1156,25 @@ function renderCalendar(data: unknown, resource?: string) {
   renderTable(calendarRows(data, resource));
 }
 
-function getTaskRows(tasks: unknown[]) {
-  return sortTasksForCli(tasks).map((task) => {
+function getDisplayTasks(tasks: unknown[], options: RenderOptions) {
+  return options.preserveTaskOrder ? tasks : sortTasksForCli(tasks);
+}
+
+function formatTaskScore(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  if (value >= 0 && value <= 1) {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+  return value.toFixed(3);
+}
+
+function getTaskRows(tasks: unknown[], options: RenderOptions) {
+  return getDisplayTasks(tasks, options).map((task) => {
     const record = asRecord(task);
     return {
+      ...(options.showTaskScore
+        ? { Score: formatTaskScore(record.similarity) }
+        : {}),
       Key: getTaskKey(task),
       Title: asString(record.name, 'Untitled task'),
       List: getTaskListName(task),
@@ -1209,17 +1227,24 @@ function renderTasks(data: unknown, options: RenderOptions) {
 
   if (options.compact) {
     renderTable(
-      sortTasksForCli(tasks).map((task) => ({
-        Title: asString(asRecord(task).name, 'Untitled task'),
-        List: getTaskListName(task),
-        Workspace: getTaskWorkspaceName(
-          task,
-          options.workspaceName || options.currentWorkspaceId || ''
-        ),
-        __ListColor: getTaskListColor(task),
-      })),
+      getDisplayTasks(tasks, options).map((task) => {
+        const record = asRecord(task);
+        return {
+          ...(options.showTaskScore
+            ? { Score: formatTaskScore(record.similarity) }
+            : {}),
+          Title: asString(record.name, 'Untitled task'),
+          List: getTaskListName(task),
+          Workspace: getTaskWorkspaceName(
+            task,
+            options.workspaceName || options.currentWorkspaceId || ''
+          ),
+          __ListColor: getTaskListColor(task),
+        };
+      }),
       {
         styleCell: ({ column, row, value }) => {
+          if (column === 'Score') return color.magenta(value);
           if (column === 'List') {
             return formatListName(value, asString(row.__ListColor));
           }
@@ -1231,7 +1256,7 @@ function renderTasks(data: unknown, options: RenderOptions) {
     return;
   }
 
-  renderTable(getTaskRows(tasks), { styleCell: styleTaskCell });
+  renderTable(getTaskRows(tasks, options), { styleCell: styleTaskCell });
   renderTaskPagination(record);
 }
 

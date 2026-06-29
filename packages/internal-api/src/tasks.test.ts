@@ -167,7 +167,12 @@ describe('workspace board internal-api helpers', () => {
 
     await searchWorkspaceTasks(
       'ws-1',
-      { query: 'deadline review', matchCount: 20, matchThreshold: 0.3 },
+      {
+        query: 'deadline review',
+        matchCount: 20,
+        matchThreshold: 0.3,
+        mode: 'text',
+      },
       {
         baseUrl: 'https://internal.example.com',
         fetch: fetchMock as unknown as typeof fetch,
@@ -182,6 +187,7 @@ describe('workspace board internal-api helpers', () => {
           query: 'deadline review',
           matchCount: 20,
           matchThreshold: 0.3,
+          mode: 'text',
         }),
         cache: 'no-store',
       })

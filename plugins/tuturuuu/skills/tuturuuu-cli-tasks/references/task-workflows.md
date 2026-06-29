@@ -31,6 +31,25 @@ ttr tasks --closed
 `ttr tasks` orders rows by priority and then due date. Human table output should
 show compact due labels such as `Today`, `Tomorrow`, or `May 10`.
 
+## Search
+
+Use `ttr tasks search` when the agent needs ranked matching across task name and
+description text:
+
+```bash
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode text
+ttr tasks search "deadline review" --mode semantic
+ttr tasks search "deadline review" --mode hybrid --limit 20 --threshold 0.25
+ttr tasks search --query "deadline review" --json --no-update-check
+```
+
+Search defaults to `hybrid`, preserves API relevance order in human and compact
+output, and shows score values when available. Use `--mode text` for full-text
+search only when embedding credits should not be spent. Keep existing
+`ttr tasks --q <query>` usage as the lightweight list text filter; do not
+repurpose it as ranked search.
+
 ## Keyboard Selection
 
 Omit IDs in a TTY to select with the keyboard:

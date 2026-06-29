@@ -37839,6 +37839,7 @@ export type Database = {
           match_threshold?: number;
           query_embedding: unknown;
           query_text: string;
+          search_mode?: string;
         };
         Returns: {
           board_id: string;

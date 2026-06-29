@@ -217,6 +217,110 @@ describe('CLI commands', () => {
     );
   });
 
+  it('runs task search with a positional query through the search API', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'team-ws',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json([
+          { id: 'team-ws', name: 'Team', personal: false },
+          { id: 'personal-ws', name: 'Personal', personal: true },
+        ])
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          tasks: [
+            { id: 'task-2', name: 'Second ranked', similarity: 0.7 },
+            { id: 'task-1', name: 'First ranked', similarity: 0.9 },
+          ],
+        })
+      );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'search',
+      'deadline',
+      'review',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/personal-ws/tasks/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          mode: 'hybrid',
+          query: 'deadline review',
+        }),
+        method: 'POST',
+      })
+    );
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output.indexOf('"id": "task-2"')).toBeLessThan(
+      output.indexOf('"id": "task-1"')
+    );
+  });
+
+  it('maps task search flags to mode match count and threshold', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json([{ id: 'team-ws', name: 'Team', personal: false }])
+      )
+      .mockResolvedValueOnce(Response.json({ tasks: [] }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'search',
+      '--query',
+      'deadline review',
+      '--mode',
+      'semantic',
+      '--limit',
+      '7',
+      '--threshold',
+      '0.4',
+      '--workspace',
+      'team-ws',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/team-ws/tasks/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          matchCount: 7,
+          matchThreshold: 0.4,
+          mode: 'semantic',
+          query: 'deadline review',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
   it('creates wallet checkpoints with timezone-normalized checked_at values', async () => {
     await writeTestConfig({
       baseUrl: 'https://tuturuuu.com',
@@ -1025,7 +1129,7 @@ describe('CLI commands', () => {
 
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining(
-        'Usage: ttr tasks [list|use|get|create|update|description|delete|move|bulk]'
+        'Usage: ttr tasks [list|search|use|get|create|update|description|delete|move|bulk]'
       )
     );
     expect(write).toHaveBeenCalledWith(

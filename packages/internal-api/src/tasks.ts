@@ -474,6 +474,7 @@ export interface WorkspaceTaskSearchResult {
 export interface SearchWorkspaceTasksPayload {
   matchCount?: number;
   matchThreshold?: number;
+  mode?: 'text' | 'semantic' | 'hybrid';
   query: string;
 }
 
