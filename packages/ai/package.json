@@ -17,7 +17,7 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^4.0.120",
+    "@ai-sdk/amazon-bedrock": "^5.0.2",
     "@ai-sdk/anthropic": "^3.0.85",
     "@ai-sdk/azure": "^3.0.77",
     "@ai-sdk/cerebras": "^2.0.57",
