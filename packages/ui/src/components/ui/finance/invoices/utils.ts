@@ -69,6 +69,8 @@ export const getLinkedFinanceCategorySelection = (
 
 const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
 const DATE_VALUE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+export const MAX_PREPAID_MONTH_COUNT = 12;
+export const PREPAID_MONTH_OPTION_HORIZON = 12;
 
 export const parseLocalCalendarDate = (
   value: string | Date | null | undefined
@@ -120,6 +122,79 @@ export const formatMonthLabel = (month: string, locale: string): string => {
     year: 'numeric',
     month: 'long',
   });
+};
+
+export const addMonthsToMonthValue = (
+  month: string,
+  monthOffset: number
+): string => {
+  const date = getMonthStartDate(month);
+  if (Number.isNaN(date.getTime())) return month;
+
+  date.setMonth(date.getMonth() + monthOffset);
+  return formatMonthValue(date);
+};
+
+export const normalizePrepaidMonthCount = (
+  value: number | null | undefined
+): number => {
+  if (!Number.isFinite(value) || !value) return 1;
+
+  return Math.min(MAX_PREPAID_MONTH_COUNT, Math.max(1, Math.trunc(value)));
+};
+
+export const getCoverageMonths = (
+  selectedMonth: string,
+  prepaidMonthCount = 1
+): string[] => {
+  const monthCount = normalizePrepaidMonthCount(prepaidMonthCount);
+  const startMonth = getMonthStartDate(selectedMonth);
+  if (Number.isNaN(startMonth.getTime())) return [];
+
+  return Array.from({ length: monthCount }, (_, index) => {
+    const date = new Date(startMonth);
+    date.setMonth(date.getMonth() + index);
+    return formatMonthValue(date);
+  });
+};
+
+export const getCoverageEndMonthValue = (
+  selectedMonth: string,
+  prepaidMonthCount = 1
+): string => {
+  const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
+  return coverageMonths[coverageMonths.length - 1] ?? selectedMonth;
+};
+
+export const getCoverageValidUntilMonthValue = (
+  selectedMonth: string,
+  prepaidMonthCount = 1
+): string => addMonthsToMonthValue(selectedMonth, prepaidMonthCount);
+
+export const formatCoverageRangeLabel = ({
+  locale,
+  prepaidMonthCount,
+  selectedMonth,
+}: {
+  locale: string;
+  prepaidMonthCount?: number | null;
+  selectedMonth: string;
+}): string => {
+  const coverageMonths = getCoverageMonths(
+    selectedMonth,
+    prepaidMonthCount ?? 1
+  );
+  const firstMonth = coverageMonths[0];
+  const lastMonth = coverageMonths[coverageMonths.length - 1];
+
+  if (!firstMonth || !lastMonth || firstMonth === lastMonth) {
+    return formatMonthLabel(selectedMonth, locale);
+  }
+
+  return `${formatMonthLabel(firstMonth, locale)} - ${formatMonthLabel(
+    lastMonth,
+    locale
+  )}`;
 };
 
 const getComparableTimestamp = (value: string | null | undefined): number => {
@@ -182,6 +257,38 @@ export const isSubscriptionMonthPaidForGroup = (
     selectedMonth,
     getSubscriptionCoverageInvoiceForGroup(latestInvoices, groupId)
   );
+
+export const isSubscriptionRangePaidForGroup = (
+  groupId: string,
+  selectedMonth: string,
+  prepaidMonthCount: number,
+  latestInvoices: SubscriptionCoverageInvoice[]
+): boolean => {
+  const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
+  if (coverageMonths.length === 0) return false;
+
+  return coverageMonths.every((month) =>
+    isSubscriptionMonthPaidForGroup(groupId, month, latestInvoices)
+  );
+};
+
+export const isSubscriptionRangeFullyPaidForGroups = (
+  groupIds: string[],
+  selectedMonth: string,
+  prepaidMonthCount: number,
+  latestInvoices: SubscriptionCoverageInvoice[]
+): boolean => {
+  if (groupIds.length === 0) return false;
+
+  return groupIds.every((groupId) =>
+    isSubscriptionRangePaidForGroup(
+      groupId,
+      selectedMonth,
+      prepaidMonthCount,
+      latestInvoices
+    )
+  );
+};
 
 export const getAttendanceStats = (
   attendance: AttendanceRecord[]
@@ -283,6 +390,17 @@ export const getBillableSessionsForGroups = (
   });
 };
 
+export const getBillableSessionsForGroupsInRange = (
+  userGroups: UserGroup[],
+  groupIds: string[],
+  selectedMonth: string,
+  prepaidMonthCount = 1,
+  latestInvoices: SubscriptionCoverageInvoice[] = []
+): BillableSession[] =>
+  getCoverageMonths(selectedMonth, prepaidMonthCount).flatMap((month) =>
+    getBillableSessionsForGroups(userGroups, groupIds, month, latestInvoices)
+  );
+
 export const getBillableAttendanceRecords = (
   attendance: AttendanceRecord[],
   groupIds: string[],
@@ -304,6 +422,17 @@ export const getBillableAttendanceRecords = (
     return !validUntil || attendanceDate >= validUntil;
   });
 };
+
+export const getBillableAttendanceRecordsInRange = (
+  attendance: AttendanceRecord[],
+  groupIds: string[],
+  selectedMonth: string,
+  prepaidMonthCount = 1,
+  latestInvoices: SubscriptionCoverageInvoice[] = []
+): AttendanceRecord[] =>
+  getCoverageMonths(selectedMonth, prepaidMonthCount).flatMap((month) =>
+    getBillableAttendanceRecords(attendance, groupIds, month, latestInvoices)
+  );
 
 export const getSessionsForMonth = (
   sessionsArray: string[] | null,
@@ -453,26 +582,35 @@ export const getAvailableMonths = (
   groupIds: string[],
   latestInvoices: SubscriptionCoverageInvoice[],
   locale: string,
-  selectedMonthFallback: string | null = null
+  selectedMonthFallback: string | null = null,
+  futureMonthHorizon = 0
 ): AvailableMonthOption[] => {
   if (groupIds.length === 0) return [];
   const { earliestStart, latestEnd } = getGroupsDateRange(userGroups, groupIds);
   if (!earliestStart) return [];
 
+  const currentMonthStart = (() => {
+    const date = new Date();
+    date.setDate(1);
+    return date;
+  })();
+  const futureHorizonEnd = new Date(currentMonthStart);
+  futureHorizonEnd.setMonth(
+    futureHorizonEnd.getMonth() + Math.max(0, futureMonthHorizon)
+  );
+
   const resolvedLatestEnd = latestEnd
     ? latestEnd
     : selectedMonthFallback
       ? getMonthStartDate(selectedMonthFallback)
-      : (() => {
-          const d = new Date();
-          d.setDate(1);
-          return d;
-        })();
+      : currentMonthStart;
+  const resolvedRangeEnd =
+    futureMonthHorizon > 0 && !latestEnd ? futureHorizonEnd : resolvedLatestEnd;
 
   const months: AvailableMonthOption[] = [];
   const currentDate = new Date(earliestStart);
   currentDate.setDate(1);
-  const normalizedLatestEnd = new Date(resolvedLatestEnd);
+  const normalizedLatestEnd = new Date(resolvedRangeEnd);
   normalizedLatestEnd.setDate(1);
 
   while (currentDate <= normalizedLatestEnd) {
@@ -503,6 +641,101 @@ export const getTotalSessionsForGroups = (
     latestInvoices
   ).length;
 };
+
+export const getBillableQuantityForGroupRange = ({
+  groupId,
+  latestInvoices,
+  now = new Date(),
+  prepaidMonthCount = 1,
+  selectedMonth,
+  useAttendanceBased,
+  userAttendance,
+  userGroups,
+}: {
+  groupId: string;
+  latestInvoices?: SubscriptionCoverageInvoice[];
+  now?: Date;
+  prepaidMonthCount?: number;
+  selectedMonth: string;
+  useAttendanceBased: boolean;
+  userAttendance: AttendanceRecord[];
+  userGroups: UserGroup[];
+}): number => {
+  const currentMonthStart = getMonthStartDate(now);
+  const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
+
+  return coverageMonths.reduce((total, month) => {
+    if (isSubscriptionMonthPaidForGroup(groupId, month, latestInvoices ?? [])) {
+      return total;
+    }
+
+    const monthStart = getMonthStartDate(month);
+    const useScheduledSessions =
+      !useAttendanceBased ||
+      (!Number.isNaN(monthStart.getTime()) &&
+        !Number.isNaN(currentMonthStart.getTime()) &&
+        monthStart > currentMonthStart);
+
+    if (useScheduledSessions) {
+      return (
+        total +
+        getBillableSessionsForGroups(
+          userGroups,
+          [groupId],
+          month,
+          latestInvoices
+        ).length
+      );
+    }
+
+    return (
+      total +
+      getEffectiveAttendanceDays(
+        getBillableAttendanceRecords(
+          userAttendance,
+          [groupId],
+          month,
+          latestInvoices
+        )
+      )
+    );
+  }, 0);
+};
+
+export const getBillableQuantityMapForGroupsRange = ({
+  groupIds,
+  latestInvoices,
+  now,
+  prepaidMonthCount = 1,
+  selectedMonth,
+  useAttendanceBased,
+  userAttendance,
+  userGroups,
+}: {
+  groupIds: string[];
+  latestInvoices?: SubscriptionCoverageInvoice[];
+  now?: Date;
+  prepaidMonthCount?: number;
+  selectedMonth: string;
+  useAttendanceBased: boolean;
+  userAttendance: AttendanceRecord[];
+  userGroups: UserGroup[];
+}): Record<string, number> =>
+  Object.fromEntries(
+    groupIds.map((groupId) => [
+      groupId,
+      getBillableQuantityForGroupRange({
+        groupId,
+        latestInvoices,
+        now,
+        prepaidMonthCount,
+        selectedMonth,
+        useAttendanceBased,
+        userAttendance,
+        userGroups,
+      }),
+    ])
+  );
 
 /** Days before valid_until to consider "expiring soon" */
 const EXPIRING_SOON_DAYS = 14;

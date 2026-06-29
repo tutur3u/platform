@@ -3,11 +3,15 @@ import { useEffect, useRef } from 'react';
 import type { SelectedProductItem, UserGroupProducts } from '../types';
 import type { UserGroup } from '../utils';
 import {
+  formatCoverageRangeLabel,
   formatMonthLabel,
   getAttendanceStats,
+  getBillableAttendanceRecordsInRange,
+  getBillableSessionsForGroupsInRange,
+  getCoverageEndMonthValue,
+  getCoverageMonths,
   getSubscriptionCoverageInvoiceForGroup,
-  getTotalSessionsForGroups,
-  parseLocalCalendarDate,
+  isSubscriptionMonthPaidForGroup,
 } from '../utils';
 
 interface UseSubscriptionInvoiceContentProps {
@@ -26,6 +30,7 @@ interface UseSubscriptionInvoiceContentProps {
   locale: string;
   onContentChange: (content: string) => void;
   onNotesChange: (notes: string) => void;
+  prepaidMonthCount?: number;
 }
 
 export function useSubscriptionInvoiceContent({
@@ -41,6 +46,7 @@ export function useSubscriptionInvoiceContent({
   locale,
   onContentChange,
   onNotesChange,
+  prepaidMonthCount = 1,
 }: UseSubscriptionInvoiceContentProps): void {
   const t = useTranslations();
   const contentCallbackRef = useRef(onContentChange);
@@ -63,7 +69,18 @@ export function useSubscriptionInvoiceContent({
     const formatMonth = (monthStr: string) =>
       formatMonthLabel(monthStr, locale);
 
-    // Group by month ranges
+    const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
+    const coverageEndMonth = getCoverageEndMonthValue(
+      selectedMonth,
+      prepaidMonthCount
+    );
+    const fallbackRangeLabel = formatCoverageRangeLabel({
+      locale,
+      prepaidMonthCount,
+      selectedMonth,
+    });
+
+    // Group by unpaid month ranges.
     const rangeToGroups = new Map<string, string[]>();
 
     selectedGroupIds.forEach((groupId) => {
@@ -77,12 +94,21 @@ export function useSubscriptionInvoiceContent({
         latestSubscriptionInvoices,
         groupId
       );
+      const unpaidMonths = coverageMonths.filter(
+        (month) =>
+          !isSubscriptionMonthPaidForGroup(
+            groupId,
+            month,
+            latestSubscriptionInvoices
+          )
+      );
 
-      const startMonth = latestInvoice?.valid_until
-        ? latestInvoice.valid_until.slice(0, 7)
-        : null;
-
-      const endMonth = selectedMonth;
+      const startMonth =
+        unpaidMonths[0] ??
+        latestInvoice?.valid_until?.slice(0, 7) ??
+        selectedMonth;
+      const endMonth =
+        unpaidMonths[unpaidMonths.length - 1] ?? coverageEndMonth;
 
       let rangeLabel = '';
       if (startMonth && startMonth < endMonth) {
@@ -90,7 +116,10 @@ export function useSubscriptionInvoiceContent({
         rangeLabel = `${formatMonth(startMonth)} - ${formatMonth(endMonth)}`;
       } else {
         // Single month
-        rangeLabel = formatMonth(endMonth);
+        rangeLabel =
+          unpaidMonths.length === 0
+            ? fallbackRangeLabel
+            : formatMonth(endMonth);
       }
 
       if (!rangeToGroups.has(rangeLabel)) {
@@ -126,28 +155,23 @@ export function useSubscriptionInvoiceContent({
     }
 
     let autoNotes: string | null = null;
-    if (selectedGroupIds.length > 0 && userAttendance.length > 0) {
-      const filteredAttendance = userAttendance.filter((a) => {
-        const latestInvoice = a.group_id
-          ? getSubscriptionCoverageInvoiceForGroup(
-              latestSubscriptionInvoices,
-              a.group_id
-            )
-          : undefined;
-        if (!latestInvoice?.valid_until) return true;
-        const validUntil = parseLocalCalendarDate(latestInvoice.valid_until);
-        const attendanceDate = parseLocalCalendarDate(a.date);
-        return attendanceDate >= validUntil;
-      });
-
+    if (selectedGroupIds.length > 0) {
+      const filteredAttendance = getBillableAttendanceRecordsInRange(
+        userAttendance,
+        selectedGroupIds,
+        selectedMonth,
+        prepaidMonthCount,
+        latestSubscriptionInvoices
+      );
       const attendanceStats = getAttendanceStats(filteredAttendance);
       const attendanceDays = attendanceStats.present + attendanceStats.late;
-      const totalSessions = getTotalSessionsForGroups(
+      const totalSessions = getBillableSessionsForGroupsInRange(
         userGroups,
         selectedGroupIds,
         selectedMonth,
+        prepaidMonthCount,
         latestSubscriptionInvoices
-      );
+      ).length;
       autoNotes = t('ws-invoices.attendance_summary_note', {
         attended: attendanceDays,
         total: totalSessions,
@@ -192,5 +216,6 @@ export function useSubscriptionInvoiceContent({
     locale,
     t,
     latestSubscriptionInvoices,
+    prepaidMonthCount,
   ]);
 }

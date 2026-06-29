@@ -31,6 +31,7 @@ interface CreateSubscriptionInvoiceRequest {
   group_id?: string;
   group_ids?: string[];
   selected_month: string; // YYYY-MM
+  prepaid_month_count?: number;
   content: string;
   notes?: string;
   wallet_id: string;
@@ -40,6 +41,78 @@ interface CreateSubscriptionInvoiceRequest {
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
   frontend_total?: number;
+}
+
+const MAX_SUBSCRIPTION_PREPAID_MONTH_COUNT = 12;
+const SELECTED_MONTH_PATTERN = /^(\d{4})-(\d{2})$/;
+
+function parseSelectedMonthStart(selectedMonth: string): Date | null {
+  const monthMatch = SELECTED_MONTH_PATTERN.exec(selectedMonth);
+  if (!monthMatch) return null;
+
+  const [, yearValue, monthValue] = monthMatch;
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12
+  ) {
+    return null;
+  }
+
+  return new Date(Date.UTC(year, month - 1, 1));
+}
+
+function formatMonthValue(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
+    2,
+    '0'
+  )}`;
+}
+
+export function resolveSubscriptionCoverageRange({
+  prepaidMonthCount,
+  selectedMonth,
+}: {
+  prepaidMonthCount?: number;
+  selectedMonth: string;
+}):
+  | {
+      coverageEndMonth: string;
+      prepaidMonthCount: number;
+      validUntil: Date;
+    }
+  | { error: string } {
+  const startOfMonth = parseSelectedMonthStart(selectedMonth);
+  if (!startOfMonth) {
+    return { error: 'selected_month must be formatted as YYYY-MM' };
+  }
+
+  const resolvedMonthCount = prepaidMonthCount ?? 1;
+  if (
+    !Number.isInteger(resolvedMonthCount) ||
+    resolvedMonthCount < 1 ||
+    resolvedMonthCount > MAX_SUBSCRIPTION_PREPAID_MONTH_COUNT
+  ) {
+    return {
+      error: `prepaid_month_count must be an integer between 1 and ${MAX_SUBSCRIPTION_PREPAID_MONTH_COUNT}`,
+    };
+  }
+
+  const coverageEnd = new Date(startOfMonth);
+  coverageEnd.setUTCMonth(coverageEnd.getUTCMonth() + resolvedMonthCount - 1);
+
+  const validUntil = new Date(startOfMonth);
+  validUntil.setUTCMonth(validUntil.getUTCMonth() + resolvedMonthCount);
+
+  return {
+    coverageEndMonth: formatMonthValue(coverageEnd),
+    prepaidMonthCount: resolvedMonthCount,
+    validUntil,
+  };
 }
 
 export function resolveSubscriptionInvoiceCategoryId({
@@ -104,6 +177,7 @@ export async function POST(req: Request, { params }: Params) {
       group_id,
       group_ids,
       selected_month,
+      prepaid_month_count,
       content,
       notes,
       wallet_id,
@@ -134,6 +208,18 @@ export async function POST(req: Request, { params }: Params) {
           message:
             'Missing required fields: customer_id, group_id(s), selected_month, products, and wallet_id',
         },
+        { status: 400 }
+      );
+    }
+
+    const coverageRange = resolveSubscriptionCoverageRange({
+      prepaidMonthCount: prepaid_month_count,
+      selectedMonth: selected_month,
+    });
+
+    if ('error' in coverageRange) {
+      return NextResponse.json(
+        { message: coverageRange.error },
         { status: 400 }
       );
     }
@@ -294,11 +380,6 @@ export async function POST(req: Request, { params }: Params) {
       workspaceUserId = workspaceUser?.virtual_user_id || null;
     }
 
-    // Compute valid_until as the first day of the next month after selected_month
-    const startOfMonth = new Date(`${selected_month}-01T00:00:00.000Z`);
-    const validUntil = new Date(startOfMonth);
-    validUntil.setMonth(validUntil.getMonth() + 1);
-
     // Round values first to avoid floating-point precision issues
     const roundedTotal = Math.round(total);
     const roundedRounding = Math.round(rounding_applied);
@@ -314,7 +395,7 @@ export async function POST(req: Request, { params }: Params) {
       wallet_id,
       category_id: resolvedCategoryId,
       completed_at: new Date().toISOString(),
-      valid_until: validUntil.toISOString(),
+      valid_until: coverageRange.validUntil.toISOString(),
       paid_amount: roundedTotal,
       platform_creator_id: user.id,
     };
@@ -544,6 +625,10 @@ export async function POST(req: Request, { params }: Params) {
         customer_id: resolvedCustomerId,
         group_ids: groupIds,
         selected_month,
+        prepaid_month_count: coverageRange.prepaidMonthCount,
+        coverage_start_month: selected_month,
+        coverage_end_month: coverageRange.coverageEndMonth,
+        valid_until: coverageRange.validUntil.toISOString(),
         total,
         subtotal,
         discount_amount,

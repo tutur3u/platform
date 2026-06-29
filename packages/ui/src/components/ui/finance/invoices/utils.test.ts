@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatCoverageRangeLabel,
+  getAvailableMonths,
   getBillableAttendanceRecords,
+  getBillableQuantityMapForGroupsRange,
   getBillableSessionsForGroups,
+  getCoverageMonths,
   getLinkedFinanceCategorySelection,
   getSubscriptionAttendanceDisplayData,
   getSubscriptionCoverageInvoiceForGroup,
   isSubscriptionMonthPaidForGroup,
+  isSubscriptionRangeFullyPaidForGroups,
   type UserGroup,
 } from './utils';
 
@@ -138,6 +143,21 @@ describe('subscription invoice attendance display data', () => {
 });
 
 describe('subscription invoice coverage', () => {
+  it('builds coverage months and labels multi-month ranges', () => {
+    expect(getCoverageMonths('2026-06', 3)).toEqual([
+      '2026-06',
+      '2026-07',
+      '2026-08',
+    ]);
+    expect(
+      formatCoverageRangeLabel({
+        locale: 'en-US',
+        prepaidMonthCount: 3,
+        selectedMonth: '2026-06',
+      })
+    ).toBe('June 2026 - August 2026');
+  });
+
   it('treats valid_until as the exclusive first unpaid month', () => {
     const latestInvoices = [{ group_id: groupId, valid_until: '2026-06-01' }];
 
@@ -182,6 +202,68 @@ describe('subscription invoice coverage', () => {
     expect(
       isSubscriptionMonthPaidForGroup(groupId, '2026-06', latestInvoices)
     ).toBe(true);
+  });
+
+  it('requires every coverage month to be paid before marking a range paid', () => {
+    expect(
+      isSubscriptionRangeFullyPaidForGroups([groupId], '2026-06', 3, [
+        { group_id: groupId, valid_until: '2026-08-01' },
+      ])
+    ).toBe(false);
+    expect(
+      isSubscriptionRangeFullyPaidForGroups([groupId], '2026-06', 3, [
+        { group_id: groupId, valid_until: '2026-09-01' },
+      ])
+    ).toBe(true);
+  });
+
+  it('generates prepaid future month options capped by group ending dates', () => {
+    const groups = [
+      {
+        workspace_user_groups: {
+          id: groupId,
+          name: 'Math 7',
+          sessions: ['2026-06-05', '2026-07-05', '2026-08-05'],
+          starting_date: '2026-06-01',
+          ending_date: '2026-08-31',
+        } as NonNullable<UserGroup['workspace_user_groups']>,
+      },
+    ] satisfies UserGroup[];
+
+    expect(
+      getAvailableMonths(groups, [groupId], [], 'en-US', '2026-06', 12).map(
+        (month) => month.value
+      )
+    ).toEqual(['2026-06', '2026-07', '2026-08']);
+  });
+
+  it('skips paid months and uses scheduled sessions for future prepaid quantities', () => {
+    const groups = [
+      {
+        workspace_user_groups: {
+          id: groupId,
+          name: 'Math 7',
+          sessions: ['2026-06-05', '2026-07-05', '2026-08-05'],
+          starting_date: '2026-06-01',
+          ending_date: null,
+        } as NonNullable<UserGroup['workspace_user_groups']>,
+      },
+    ] satisfies UserGroup[];
+
+    expect(
+      getBillableQuantityMapForGroupsRange({
+        groupIds: [groupId],
+        latestInvoices: [{ group_id: groupId, valid_until: '2026-07-01' }],
+        now: new Date(2026, 5, 15),
+        prepaidMonthCount: 3,
+        selectedMonth: '2026-06',
+        useAttendanceBased: true,
+        userAttendance: [
+          { group_id: groupId, date: '2026-06-05', status: 'PRESENT' },
+        ],
+        userGroups: groups,
+      })
+    ).toEqual({ [groupId]: 2 });
   });
 });
 

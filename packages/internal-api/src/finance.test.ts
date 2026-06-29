@@ -632,6 +632,7 @@ describe('finance internal API helpers', () => {
       {
         groupIds: ['group/1', 'group/2'],
         month: '2026-05',
+        monthCount: 3,
         userId: 'user/1',
       },
       {
@@ -641,7 +642,7 @@ describe('finance internal API helpers', () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://internal.example.com/api/v1/workspaces/workspace%201/finance/invoices/subscription/context?month=2026-05&userId=user%2F1&groupIds=group%2F1&groupIds=group%2F2',
+      'https://internal.example.com/api/v1/workspaces/workspace%201/finance/invoices/subscription/context?month=2026-05&userId=user%2F1&monthCount=3&groupIds=group%2F1&groupIds=group%2F2',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -683,6 +684,7 @@ describe('finance internal API helpers', () => {
         ...invoicePayload,
         customer_id: 'user-1',
         group_ids: ['group-1'],
+        prepaid_month_count: 3,
         selected_month: '2026-05',
       },
       options
@@ -710,6 +712,13 @@ describe('finance internal API helpers', () => {
       2,
       'https://internal.example.com/api/v1/workspaces/workspace%201/finance/invoices/subscription',
       expect.objectContaining({
+        body: JSON.stringify({
+          ...invoicePayload,
+          customer_id: 'user-1',
+          group_ids: ['group-1'],
+          prepaid_month_count: 3,
+          selected_month: '2026-05',
+        }),
         method: 'POST',
       })
     );

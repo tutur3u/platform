@@ -1050,6 +1050,7 @@ export interface CreateSubscriptionFinanceInvoicePayload
   extends CreateFinanceInvoicePayload {
   customer_id: string;
   group_ids: string[];
+  prepaid_month_count?: number;
   selected_month: string;
 }
 
@@ -1062,6 +1063,8 @@ export interface FinanceInvoiceMutationResponse {
       total: number;
     };
     category_id?: string | null;
+    coverage_end_month?: string;
+    coverage_start_month?: string;
     customer_id?: string | null;
     discount_amount?: number;
     frontend_values?: {
@@ -1071,10 +1074,12 @@ export interface FinanceInvoiceMutationResponse {
     };
     group_ids?: string[];
     id?: string;
+    prepaid_month_count?: number;
     products_count?: number;
     selected_month?: string;
     subtotal?: number;
     total?: number;
+    valid_until?: string;
     values_recalculated?: boolean;
   };
   invoice_id: string;
@@ -1103,6 +1108,7 @@ export interface PendingFinanceInvoicesResponse {
 export interface SubscriptionInvoiceContextQuery {
   groupIds: string[];
   month: string;
+  monthCount?: number;
   userId: string;
 }
 
@@ -1220,6 +1226,10 @@ function buildSubscriptionInvoiceContextSearchParams(
     month: query.month,
     userId: query.userId,
   });
+
+  if (query.monthCount !== undefined) {
+    searchParams.set('monthCount', String(query.monthCount));
+  }
 
   appendFinanceArrayParam(searchParams, 'groupIds', query.groupIds);
 

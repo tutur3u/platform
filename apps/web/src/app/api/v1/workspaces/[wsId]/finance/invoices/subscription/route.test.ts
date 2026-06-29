@@ -160,6 +160,69 @@ describe('subscription invoice create route', () => {
     });
   });
 
+  it('defaults subscription coverage to one month when prepaid count is omitted', async () => {
+    const { resolveSubscriptionCoverageRange } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route'
+    );
+
+    expect(
+      resolveSubscriptionCoverageRange({
+        selectedMonth: '2026-04',
+      })
+    ).toEqual({
+      coverageEndMonth: '2026-04',
+      prepaidMonthCount: 1,
+      validUntil: new Date('2026-05-01T00:00:00.000Z'),
+    });
+  });
+
+  it('rejects invalid prepaid month counts', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route'
+    );
+
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/finance/invoices/subscription',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_id: 'customer-1',
+            group_ids: ['group-1'],
+            selected_month: '2026-04',
+            prepaid_month_count: 13,
+            content: 'Subscription invoice',
+            wallet_id: 'wallet-1',
+            category_id: 'category-1',
+            products: [
+              {
+                product_id: 'product-1',
+                unit_id: 'unit-1',
+                warehouse_id: 'warehouse-1',
+                quantity: 1,
+                price: 100,
+                category_id: 'category-1',
+              },
+            ],
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'prepaid_month_count must be an integer between 1 and 12',
+    });
+  });
+
   it('rejects non-default wallets on create without wallet override permissions', async () => {
     const { POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route'
@@ -403,6 +466,7 @@ describe('subscription invoice create route', () => {
               },
             ],
             promotion_id: 'promo-referral-1',
+            prepaid_month_count: 3,
             selected_month: '2026-04',
             wallet_id: 'wallet-1',
           }),
@@ -420,6 +484,19 @@ describe('subscription invoice create route', () => {
     );
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        coverage_end_month: '2026-06',
+        coverage_start_month: '2026-04',
+        prepaid_month_count: 3,
+        valid_until: '2026-07-01T00:00:00.000Z',
+      },
+    });
+    expect(invoiceBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        valid_until: '2026-07-01T00:00:00.000Z',
+      })
+    );
     expect(promotionBuilder.insert).toHaveBeenCalledWith({
       code: 'REF',
       description: 'Referral Code for Referral System',

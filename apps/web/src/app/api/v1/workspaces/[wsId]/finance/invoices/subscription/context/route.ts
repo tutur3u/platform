@@ -15,6 +15,29 @@ function getComparableTimestamp(value: string | null | undefined) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+const MAX_PREPAID_MONTH_COUNT = 12;
+
+function resolveMonthCount(
+  value: string | null
+):
+  | { monthCount: number; error?: never }
+  | { error: string; monthCount?: never } {
+  if (!value) return { monthCount: 1 };
+
+  const monthCount = Number(value);
+  if (
+    !Number.isInteger(monthCount) ||
+    monthCount < 1 ||
+    monthCount > MAX_PREPAID_MONTH_COUNT
+  ) {
+    return {
+      error: `monthCount must be an integer between 1 and ${MAX_PREPAID_MONTH_COUNT}`,
+    };
+  }
+
+  return { monthCount };
+}
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
   const access = await getFinanceRouteContext(
@@ -36,6 +59,9 @@ export async function GET(req: Request, { params }: Params) {
   const requestUrl = new URL(req.url);
   const userId = requestUrl.searchParams.get('userId')?.trim();
   const month = requestUrl.searchParams.get('month')?.trim();
+  const monthCountResult = resolveMonthCount(
+    requestUrl.searchParams.get('monthCount')
+  );
   const groupIds = requestUrl.searchParams
     .getAll('groupIds')
     .map((groupId) => groupId.trim())
@@ -48,9 +74,16 @@ export async function GET(req: Request, { params }: Params) {
     });
   }
 
+  if ('error' in monthCountResult) {
+    return NextResponse.json(
+      { message: monthCountResult.error },
+      { status: 400 }
+    );
+  }
+
   const startOfMonth = new Date(`${month}-01`);
   const nextMonth = new Date(startOfMonth);
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  nextMonth.setMonth(nextMonth.getMonth() + monthCountResult.monthCount);
 
   const { data: validGroups, error: validGroupsError } = await sbAdmin
     .from('workspace_user_groups_users')

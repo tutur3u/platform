@@ -61,6 +61,7 @@ export interface CreateInvoicePayload {
 export interface CreateSubscriptionInvoicePayload extends CreateInvoicePayload {
   customer_id: string;
   group_ids: string[];
+  prepaid_month_count?: number;
   selected_month: string;
 }
 
@@ -72,11 +73,15 @@ export interface InvoiceMutationResponse {
       subtotal: number;
       total: number;
     };
+    coverage_end_month?: string;
+    coverage_start_month?: string;
     frontend_values?: {
       discount_amount?: number;
       subtotal?: number;
       total?: number;
     };
+    prepaid_month_count?: number;
+    valid_until?: string;
     values_recalculated?: boolean;
   };
   invoice_id: string;
