@@ -20,7 +20,7 @@
     "@ai-sdk/amazon-bedrock": "^4.0.120",
     "@ai-sdk/anthropic": "^3.0.85",
     "@ai-sdk/azure": "^3.0.77",
-    "@ai-sdk/cerebras": "^2.0.57",
+    "@ai-sdk/cerebras": "^3.0.1",
     "@ai-sdk/cohere": "^3.0.39",
     "@ai-sdk/deepgram": "^2.0.36",
     "@ai-sdk/deepinfra": "^2.0.55",
