@@ -155,6 +155,90 @@
     "name_required": "Name is required",
     "start_date_required": "Start date is required"
   },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Archive template",
+      "cancel": "Cancel",
+      "create": "Create template",
+      "create_task": "Create task",
+      "new_template": "New template",
+      "save": "Save template",
+      "save_from_task": "Save from task",
+      "use": "Use"
+    },
+    "card": {
+      "assignees": "{count} assignees",
+      "labels": "{count} labels",
+      "projects": "{count} projects"
+    },
+    "create": {
+      "description": "Save reusable task defaults for repeated work.",
+      "title": "Create task template"
+    },
+    "empty": {
+      "description": "Create a template for recurring tasks, checklists, and standard handoffs.",
+      "no_results": "No templates match your search.",
+      "title": "No task templates"
+    },
+    "fields": {
+      "board": "Board",
+      "description": "Description",
+      "description_placeholder": "Default task description",
+      "key": "Key",
+      "key_placeholder": "bug-report",
+      "list": "List",
+      "override_name": "Override task title",
+      "priority": "Priority",
+      "search": "Search",
+      "search_placeholder": "Search task templates",
+      "task_id": "Task ID",
+      "task_id_placeholder": "Task UUID",
+      "task_name": "Task title",
+      "task_name_placeholder": "Investigate reported bug",
+      "template_name": "Template name",
+      "template_name_placeholder": "Sprint bug report",
+      "unnamed_board": "Untitled board",
+      "unnamed_list": "Untitled list",
+      "visibility": "Visibility"
+    },
+    "gallery": {
+      "board_marketplace": "Board marketplace",
+      "description": "Create reusable task starters and keep board templates available in one place.",
+      "header": "Task templates"
+    },
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "low": "Low",
+      "none": "No priority",
+      "normal": "Normal"
+    },
+    "save_from_task": {
+      "description": "Enter a task ID to snapshot its current fields into a reusable template.",
+      "title": "Save task as template"
+    },
+    "tabs": {
+      "boards": "Board Templates",
+      "tasks": "Task Templates"
+    },
+    "toast": {
+      "archived": "Task template archived",
+      "created": "Task template created",
+      "failed": "Task template action failed",
+      "no_template_selected": "No task template selected",
+      "saved_from_task": "Task template saved",
+      "task_created": "Task created from template"
+    },
+    "use": {
+      "description": "Create a task from {name}.",
+      "description_empty": "Create a task from the selected template.",
+      "title": "Use task template"
+    },
+    "visibility": {
+      "private": "Private",
+      "workspace": "Workspace"
+    }
+  },
   "ws-user-fields": {
     "value": "Value"
   }

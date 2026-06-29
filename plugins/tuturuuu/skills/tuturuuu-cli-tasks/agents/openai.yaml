@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu CLI Tasks"
-  short_description: "Use ttr tasks for task capture, listing, and mutation"
-  default_prompt: "Add this as a Tuturuuu task with the ttr CLI."
+  short_description: "Use ttr tasks and task templates for task workflows"
+  default_prompt: "Create a reusable task template with the ttr CLI."

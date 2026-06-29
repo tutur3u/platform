@@ -79,6 +79,9 @@ ttr tasks search "deadline review" --mode text
 ttr tasks search "deadline review" --mode semantic
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug"
+ttr task-templates use bug-report --list <list-id>
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
 ttr tasks done <task-id>
 ttr tasks close <task-id>
 ttr tasks update <task-id> --json-payload '{"completed":true}'
@@ -150,6 +153,9 @@ ttr finance transactions --help
 ttr tasks --help
 ttr tasks search --help
 ttr tasks create --help
+ttr task-templates --help
+ttr task-templates import --help
+ttr task-templates export --help
 ttr tasks done --help
 ttr tasks close --help
 ttr tasks update --help
@@ -207,6 +213,16 @@ completed stamps `completed_at` so Tuturuuu moves it to the first
 [task-id]` as the quick shortcut. Use `ttr tasks close [task-id]` to stamp
 `closed_at`; pass `--list <closed-list-id>` to choose a specific closed
 destination.
+
+Task templates are single-task starters, separate from board templates. Workspace
+templates are managed with `ttr task-templates list/show/create/update/delete/use`
+and can be imported from or exported to local markdown files. Local templates
+live under `.tuturuuu/task-templates/*.md`, use YAML frontmatter for fields such
+as `key`, `name`, `task_name`, `priority`, `label_ids`, `assignee_ids`, and
+`project_ids`, and use the markdown body as the task description. `ttr tasks
+create --template <key-or-path>` resolves workspace keys or local markdown
+paths; explicit flags such as `--name`, `--list`, `--priority`, `--labels`, and
+`--projects` override template defaults.
 
 Finance commands cover workspace wallets, transactions, categories, budgets,
 and recurring transactions through the same authenticated internal APIs as the
@@ -275,6 +291,11 @@ ttr tasks search "deadline review" --mode hybrid --limit 20 --threshold 0.25
 ttr tasks search --query "deadline review" --mode text --json --no-update-check
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
+ttr task-templates list
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
 ttr tasks done VHP-12
 ttr tasks done <task-id> --list <done-list-id>
 ttr tasks close VHP-12

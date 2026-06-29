@@ -310,6 +310,9 @@ ttr finance transactions --help
 ttr tasks --help
 ttr tasks search --help
 ttr tasks create --help
+ttr task-templates --help
+ttr task-templates import --help
+ttr task-templates export --help
 ttr tasks done --help
 ttr tasks close --help
 ttr tasks update --help
@@ -383,6 +386,17 @@ pass `--list <done-list-id>` or include `list_id` in `--json-payload` to choose
 another done destination. Use `ttr tasks done [task-id]` as the quick shortcut.
 Use `ttr tasks close [task-id]` to stamp `closed_at`; pass `--list
 <closed-list-id>` to choose a specific closed destination.
+
+Task templates are single-task starters, separate from board templates.
+Workspace templates are managed with
+`ttr task-templates list/show/create/update/delete/use` and can be imported
+from or exported to local markdown files. Local templates live under
+`.tuturuuu/task-templates/*.md`, use YAML frontmatter for fields such as `key`,
+`name`, `task_name`, `priority`, `label_ids`, `assignee_ids`, and
+`project_ids`, and use the markdown body as the task description. `ttr tasks
+create --template <key-or-path>` resolves workspace keys or local markdown
+paths; explicit flags such as `--name`, `--list`, `--priority`, `--labels`, and
+`--projects` override template defaults.
 
 ### Finance CLI
 
@@ -508,6 +522,13 @@ ttr tasks create "Add Tuturuuu CLI"
 
 # Create directly into a known list.
 ttr tasks create --list <list-id> --name "Write release notes"
+
+# Create and use task templates.
+ttr task-templates list
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
 
 # Move with the keyboard picker.
 ttr tasks move

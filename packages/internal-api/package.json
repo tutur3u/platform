@@ -187,6 +187,11 @@
       "import": "./dist/tasks.js",
       "require": "./dist/tasks.js"
     },
+    "./task-templates": {
+      "types": "./dist/task-templates.d.ts",
+      "import": "./dist/task-templates.js",
+      "require": "./dist/task-templates.js"
+    },
     "./tasks-scheduling": {
       "types": "./dist/tasks-scheduling.d.ts",
       "import": "./dist/tasks-scheduling.js",

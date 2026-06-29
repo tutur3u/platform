@@ -105,17 +105,19 @@ Then verify the cached page after refresh at
   stale handoffs, explicit write sets, commit-window coordination, and
   path-scoped staging safety.
 - `$tuturuuu-cli`: core native `ttr` CLI install, browser login, copy-token
-  login, workspace discovery, scoped help, SDK-backed command surfaces, version
-  checks, and release verification guidance. It documents autonomous Bun and CLI
-  installation with `curl -fsSL https://bun.sh/install | bash` on macOS/Linux,
+  login, workspace discovery, scoped help, SDK-backed command surfaces, task
+  template command boundaries, version checks, and release verification
+  guidance. It documents autonomous Bun and CLI installation with
+  `curl -fsSL https://bun.sh/install | bash` on macOS/Linux,
   `powershell -c "irm bun.sh/install.ps1 | iex"` on Windows, then
   `bun i -g tuturuuu`.
-- `$tuturuuu-cli-tasks`: focused `ttr tasks` guidance for task capture, task
-  board/list/label discovery, open-task defaults, compact task tables, task
-  creation, splitting, movement, completion, closure, and task verification. It
-  documents ttr-first task capture for requests to add, create, track, or split
-  Tuturuuu tasks, including label discovery and closing superseded combined
-  tasks after replacements are created.
+- `$tuturuuu-cli-tasks`: focused `ttr tasks` and `ttr task-templates` guidance
+  for task capture, task board/list/label discovery, open-task defaults,
+  compact task tables, task creation, reusable task-template import/export,
+  template instantiation, splitting, movement, completion, closure, and task
+  verification. It documents ttr-first task capture for requests to add, create,
+  template, track, or split Tuturuuu tasks, including label discovery and
+  closing superseded combined tasks after replacements are created.
 - `$tuturuuu-cli-finance`: focused `ttr finance` guidance for wallet,
   transaction, category, budget, and recurring CRUD; analytics reads; finance
   pagination footers; explicit-workspace finance read diagnostics; and wrapped
@@ -209,6 +211,7 @@ The CI check currently verifies:
   release lookup
 - durable CI tooling guidance for bounded Codecov coverage test retries
 - scoped commit workflow coverage for explicit commit requests
+- native `ttr` task-template workflow coverage in the CLI task skill
 - proof-gated no-verify commit evidence coverage
 - commit-window claim, wait, release, and stale-lock guidance
 - repo marketplace metadata at `.agents/plugins/marketplace.json`

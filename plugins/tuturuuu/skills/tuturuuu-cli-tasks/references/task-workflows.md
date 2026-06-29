@@ -26,6 +26,8 @@ ttr tasks --compact --json --no-update-check
 ttr tasks --all
 ttr tasks --done
 ttr tasks --closed
+ttr task-templates list
+ttr task-templates list --json --no-update-check
 ```
 
 `ttr tasks` orders rows by priority and then due date. Human table output should
@@ -88,6 +90,15 @@ ttr boards --no-update-check
 ttr lists --no-update-check
 ttr labels --no-update-check
 ttr tasks create "Fix calendar sync cron job" --board <board-id> --list <list-id> --labels <label-id>,<label-id>
+```
+
+Create from a workspace or local template. Explicit flags win over template
+defaults:
+
+```bash
+ttr task-templates list --no-update-check
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
+ttr tasks create --template .tuturuuu/task-templates/bug-report.md --priority high
 ```
 
 Split a combined task by creating the replacements first, then closing the
@@ -171,3 +182,37 @@ ttr tiptap parse --input notes.md --format markdown --output yjs-base64
 ttr tiptap encode --input description.json --format json --output bytes-json
 ttr tiptap decode --input state.txt --format yjs-base64 --output text
 ```
+
+## Task Templates
+
+Task templates are reusable single-task starters. They are distinct from board
+templates and should be managed through `ttr task-templates` when a workflow
+needs repeatable title, description, priority, labels, assignees, projects,
+dates, estimate, or default board/list metadata.
+
+Workspace templates live in Tuturuuu and can be shared at `workspace`
+visibility or kept private to the creator:
+
+```bash
+ttr task-templates list
+ttr task-templates show bug-report
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high
+ttr task-templates update bug-report --visibility workspace
+ttr task-templates use bug-report --list <list-id> --name "Investigate checkout bug"
+ttr task-templates delete bug-report
+```
+
+Local templates live under `.tuturuuu/task-templates/*.md`. The YAML
+frontmatter stores metadata such as `key`, `name`, `task_name`, `priority`,
+`label_ids`, `assignee_ids`, and `project_ids`; the markdown body becomes the
+task description.
+
+```bash
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tasks create --template .tuturuuu/task-templates/bug-report.md --list <list-id>
+```
+
+For agent workflows, keep stdout parseable with `--json --no-update-check`.
+When a key could match both a workspace template and local markdown file, pass
+the explicit file path for the local template.

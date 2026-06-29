@@ -51,6 +51,7 @@ export function getDefaultAction(group?: string) {
       'lists',
       'projects',
       'relationships',
+      'task-templates',
       'tasks',
       'workspaces',
     ].includes(group)

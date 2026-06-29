@@ -313,6 +313,41 @@ ttr tiptap encode --input description.json --format json --output yjs-base64
 ttr tiptap decode --input state.txt --format yjs-base64 --output text
 ```
 
+#### Task templates
+
+Task templates are reusable single-task starters and are intentionally separate
+from board templates. Store workspace templates in `task_templates` with
+creator ownership, `private` or `workspace` visibility, archived timestamps,
+default board/list ids, priority, dates, estimate, labels, assignees, projects,
+and optional TipTap/Yjs description state.
+
+Template API routes live under
+`/api/v1/workspaces/{wsId}/task-templates`. They must accept authenticated
+workspace members and `tasks` app-session JWTs from `ttr`, reject direct
+task-board guests, and keep private templates readable only by their creator.
+Workspace-visible template mutation should follow the task/project management
+permission used by task-board management flows; private template mutation stays
+scoped to the member owner.
+
+The web templates hub at `/{locale}/{wsId}/tasks/templates` should default to
+the Task Templates tab while preserving Board Templates as the secondary tab and
+keeping existing board-template detail links stable.
+
+The CLI supports both workspace-stored and local markdown templates:
+
+```bash
+ttr task-templates list --no-update-check
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug"
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
+```
+
+Local files under `.tuturuuu/task-templates/*.md` use YAML frontmatter for
+template fields and the markdown body as the task description. Explicit
+`ttr tasks create` flags must override template defaults so users can reuse a
+starter without losing the current task context.
+
 #### Mobile board caching
 
 The mobile task-board flow restores workspace boards, board metadata, and per-list

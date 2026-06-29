@@ -25,8 +25,9 @@ they are independently revertible.
 
 Use the focused companion skills when the task is specific:
 
-- `$tuturuuu-cli-tasks` for task listing, task capture, task mutation, compact
-  task output, task board/list/label discovery, and `ttr tasks` verification.
+- `$tuturuuu-cli-tasks` for task listing, task capture, task templates, task
+  mutation, compact task output, task board/list/label discovery, and `ttr
+  tasks` verification.
 - `$tuturuuu-cli-finance` for finance CRUD, analytics reads, finance pagination,
   explicit-workspace finance diagnostics, and wrapped finance response
   normalization.
@@ -73,6 +74,9 @@ ttr finance wallets --help
 ttr finance transactions --help
 ttr tasks --help
 ttr tasks create --help
+ttr task-templates --help
+ttr task-templates create --help
+ttr task-templates import --help
 ttr tasks done --help
 ttr tasks close --help
 ttr tasks update --help
@@ -141,6 +145,13 @@ If task helper queries changed, also run:
 
 ```bash
 bun --cwd packages/internal-api test src/tasks.test.ts
+```
+
+If task-template commands changed, also run:
+
+```bash
+bun --cwd packages/sdk test src/cli/task-templates.test.ts src/cli/commands.test.ts
+bun --cwd packages/internal-api test src/task-templates.test.ts
 ```
 
 If finance helper queries changed, run the focused SDK command and platform

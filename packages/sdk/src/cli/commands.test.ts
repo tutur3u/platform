@@ -321,6 +321,216 @@ describe('CLI commands', () => {
     );
   });
 
+  it('lists remote task templates through the workspace API', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        templates: [
+          {
+            id: 'template-1',
+            name: 'Bug report',
+            slug: 'bug-report',
+            task_name: 'Investigate bug',
+            visibility: 'workspace',
+          },
+        ],
+      })
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'list',
+      '--visibility',
+      'workspace',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates?includeArchived=false&visibility=workspace',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('"slug": "bug-report"')
+    );
+  });
+
+  it('creates remote task templates with normalized CLI metadata', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        template: {
+          id: 'template-1',
+          name: 'Bug report',
+          slug: 'bug-report',
+        },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'create',
+      '--name',
+      'Bug report',
+      '--key',
+      'bug-report',
+      '--title',
+      'Investigate bug',
+      '--priority',
+      'high',
+      '--labels',
+      'label-1,label-2',
+      '--visibility',
+      'workspace',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
+      expect.objectContaining({
+        body: JSON.stringify({
+          key: 'bug-report',
+          label_ids: ['label-1', 'label-2'],
+          name: 'Bug report',
+          priority: 'high',
+          task_name: 'Investigate bug',
+          visibility: 'workspace',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('uses remote task templates with list and task-name overrides', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        task: { id: 'task-1', name: 'Checkout bug' },
+        template: { id: 'template-1', slug: 'bug-report' },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'use',
+      'bug-report',
+      '--list',
+      'list-1',
+      '--name',
+      'Checkout bug',
+      '--priority',
+      'critical',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates/bug-report/instantiate',
+      expect.objectContaining({
+        body: JSON.stringify({
+          listId: 'list-1',
+          name: 'Checkout bug',
+          priority: 'critical',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('creates tasks from local markdown templates with CLI overrides winning', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-template-command-'));
+    const templatePath = join(dir, 'bug.md');
+    await writeFile(
+      templatePath,
+      `---
+name: Bug report
+task_name: Investigate template bug
+priority: low
+label_ids:
+  - label-1
+---
+
+Template body
+`,
+      'utf8'
+    );
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentListId: 'saved-list',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        id: 'task-1',
+        name: 'Override title',
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'create',
+      '--template',
+      templatePath,
+      '--name',
+      'Override title',
+      '--list',
+      'override-list',
+      '--priority',
+      'high',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      assignee_ids: [],
+      description: 'Template body',
+      end_date: null,
+      estimation_points: null,
+      label_ids: ['label-1'],
+      listId: 'override-list',
+      name: 'Override title',
+      priority: 'high',
+      project_ids: [],
+      start_date: null,
+    });
+  });
+
   it('creates wallet checkpoints with timezone-normalized checked_at values', async () => {
     await writeTestConfig({
       baseUrl: 'https://tuturuuu.com',
@@ -1138,6 +1348,27 @@ describe('CLI commands', () => {
   });
 
   it.each([
+    ['task-templates', '--help'],
+    ['help', 'task-templates'],
+    ['task-templates', 'help'],
+  ])('prints task template group help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr task-templates [list|show|create|update|delete|use|import|export|save-from-task]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('.tuturuuu/task-templates')
+    );
+  });
+
+  it.each([
     ['finance', '--help'],
     ['help', 'finance'],
     ['finance', 'help'],
@@ -1326,6 +1557,9 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('ttr tasks create "Add Tuturuuu CLI"')
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('--template <key-or-path>')
     );
   });
 

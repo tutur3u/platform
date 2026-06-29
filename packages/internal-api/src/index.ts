@@ -1351,6 +1351,25 @@ export {
   updateTaskProgressMetric,
 } from './task-progress';
 export {
+  createWorkspaceTaskTemplate,
+  deleteWorkspaceTaskTemplate,
+  getWorkspaceTaskTemplate,
+  type InstantiateWorkspaceTaskTemplatePayload,
+  type InstantiateWorkspaceTaskTemplateResponse,
+  instantiateWorkspaceTaskTemplate,
+  type ListWorkspaceTaskTemplatesOptions,
+  listWorkspaceTaskTemplates,
+  type SaveWorkspaceTaskTemplateFromTaskPayload,
+  saveWorkspaceTaskTemplateFromTask,
+  type UpdateWorkspaceTaskTemplatePayload,
+  updateWorkspaceTaskTemplate,
+  type WorkspaceTaskTemplate,
+  type WorkspaceTaskTemplatePayload,
+  type WorkspaceTaskTemplateResponse,
+  type WorkspaceTaskTemplatesResponse,
+  type WorkspaceTaskTemplateVisibility,
+} from './task-templates';
+export {
   type AccessibleWorkspaceTaskBoard,
   abortWorkspaceTaskDescriptionChunks,
   addWorkspaceTaskLabel,

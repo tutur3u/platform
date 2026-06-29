@@ -2,8 +2,8 @@ import TaskTemplatesPage from '@tuturuuu/ui/tu-do/templates/task-templates-page'
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Board Templates',
-  description: 'Browse and manage board templates in your Tuturuuu workspace.',
+  title: 'Task Templates',
+  description: 'Browse and manage task and board templates in your workspace.',
 };
 
 interface Props {

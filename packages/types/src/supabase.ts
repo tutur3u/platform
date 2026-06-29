@@ -11957,6 +11957,43 @@ export type Database = {
           total_count: number;
         }[];
       };
+      get_post_email_queue_age_buckets: {
+        Args: { p_now?: string };
+        Returns: {
+          bucket_key: string;
+          failed: number;
+          processing: number;
+          queued: number;
+          total: number;
+        }[];
+      };
+      get_post_email_queue_failure_reasons: {
+        Args: { p_limit?: number };
+        Returns: {
+          blocked: number;
+          failed: number;
+          last_seen_at: string;
+          reason: string;
+          total: number;
+        }[];
+      };
+      get_post_email_queue_recent_batches: {
+        Args: { p_limit?: number };
+        Returns: {
+          batch_id: string;
+          blocked: number;
+          cancelled: number;
+          claimed: number;
+          duration_seconds: number;
+          failed: number;
+          first_attempt_at: string;
+          last_attempt_at: string;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+        }[];
+      };
       get_post_email_queue_status_summary: {
         Args: { p_ws_id?: string };
         Returns: {
@@ -11968,6 +12005,38 @@ export type Database = {
           sent: number;
           skipped: number;
           total: number;
+        }[];
+      };
+      get_post_email_queue_throughput: {
+        Args: { p_now?: string };
+        Returns: {
+          failed_last_1h: number;
+          failed_last_24h: number;
+          oldest_queued_at: string;
+          queued_last_1h: number;
+          queued_last_24h: number;
+          sent_last_1h: number;
+          sent_last_24h: number;
+          stale_approved_queued_1h: number;
+          stale_approved_queued_24h: number;
+        }[];
+      };
+      get_post_email_queue_workspace_breakdown: {
+        Args: { p_limit?: number; p_now?: string };
+        Returns: {
+          blocked: number;
+          cancelled: number;
+          failed: number;
+          oldest_queued_at: string;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+          stale_queued_1h: number;
+          stale_queued_24h: number;
+          total: number;
+          workspace_name: string;
+          ws_id: string;
         }[];
       };
       get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
@@ -12231,6 +12300,8 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: {
+          approval_approved_at: string;
+          approval_rejected_at: string;
           approval_rejection_reason: string;
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
@@ -12248,9 +12319,15 @@ export type Database = {
           post_id: string;
           post_title: string;
           queue_attempt_count: number;
+          queue_cancelled_at: string;
+          queue_claimed_at: string;
+          queue_created_at: string;
+          queue_last_attempt_at: string;
           queue_last_error: string;
           queue_sent_at: string;
+          queue_skipped_at: string;
           queue_status: string;
+          queue_updated_at: string;
           recipient: string;
           review_stage: string;
           row_key: string;
@@ -12292,6 +12369,8 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: {
+          approval_approved_at: string;
+          approval_rejected_at: string;
           approval_rejection_reason: string;
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
@@ -12309,9 +12388,15 @@ export type Database = {
           post_id: string;
           post_title: string;
           queue_attempt_count: number;
+          queue_cancelled_at: string;
+          queue_claimed_at: string;
+          queue_created_at: string;
+          queue_last_attempt_at: string;
           queue_last_error: string;
           queue_sent_at: string;
+          queue_skipped_at: string;
           queue_status: string;
+          queue_updated_at: string;
           recipient: string;
           review_stage: string;
           row_key: string;
@@ -23658,6 +23743,152 @@ export type Database = {
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_templates: {
+        Row: {
+          archived_at: string | null;
+          assignee_ids: string[];
+          created_at: string;
+          created_by: string;
+          default_board_id: string | null;
+          default_list_id: string | null;
+          description: string | null;
+          description_yjs_state: number[] | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          id: string;
+          label_ids: string[];
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          project_ids: string[];
+          slug: string;
+          source_task_id: string | null;
+          start_date: string | null;
+          task_name: string;
+          updated_at: string;
+          visibility: Database['public']['Enums']['task_template_visibility'];
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          assignee_ids?: string[];
+          created_at?: string;
+          created_by?: string;
+          default_board_id?: string | null;
+          default_list_id?: string | null;
+          description?: string | null;
+          description_yjs_state?: number[] | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[];
+          name: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[];
+          slug: string;
+          source_task_id?: string | null;
+          start_date?: string | null;
+          task_name: string;
+          updated_at?: string;
+          visibility?: Database['public']['Enums']['task_template_visibility'];
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          assignee_ids?: string[];
+          created_at?: string;
+          created_by?: string;
+          default_board_id?: string | null;
+          default_list_id?: string | null;
+          description?: string | null;
+          description_yjs_state?: number[] | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[];
+          name?: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[];
+          slug?: string;
+          source_task_id?: string | null;
+          start_date?: string | null;
+          task_name?: string;
+          updated_at?: string;
+          visibility?: Database['public']['Enums']['task_template_visibility'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_default_board_id_fkey';
+            columns: ['default_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_default_list_id_fkey';
+            columns: ['default_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_source_task_id_fkey';
+            columns: ['source_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_source_task_id_fkey';
+            columns: ['source_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -40603,6 +40834,7 @@ export type Database = {
       task_relationship_type: 'parent_child' | 'blocks' | 'related';
       task_share_permission: 'view' | 'edit';
       task_share_public_access: 'none' | 'view';
+      task_template_visibility: 'private' | 'workspace';
       time_of_day_preference: 'morning' | 'afternoon' | 'evening' | 'night';
       time_tracking_request_activity_action:
         | 'CREATED'
@@ -43349,6 +43581,7 @@ export const Constants = {
       task_relationship_type: ['parent_child', 'blocks', 'related'],
       task_share_permission: ['view', 'edit'],
       task_share_public_access: ['none', 'view'],
+      task_template_visibility: ['private', 'workspace'],
       time_of_day_preference: ['morning', 'afternoon', 'evening', 'night'],
       time_tracking_request_activity_action: [
         'CREATED',

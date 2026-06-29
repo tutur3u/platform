@@ -69,6 +69,20 @@ import { type CliSession, normalizeBaseUrl } from './cli/config';
 import { CalendarClient } from './platform-calendar';
 import { DevboxesClient } from './platform-devbox';
 import { FinanceClient } from './platform-finance';
+import {
+  createWorkspaceTaskTemplate,
+  deleteWorkspaceTaskTemplate,
+  getWorkspaceTaskTemplate,
+  type InstantiateWorkspaceTaskTemplatePayload,
+  instantiateWorkspaceTaskTemplate,
+  type ListWorkspaceTaskTemplatesOptions,
+  listWorkspaceTaskTemplates,
+  type SaveWorkspaceTaskTemplateFromTaskPayload,
+  saveWorkspaceTaskTemplateFromTask,
+  type UpdateWorkspaceTaskTemplatePayload,
+  updateWorkspaceTaskTemplate,
+  type WorkspaceTaskTemplatePayload,
+} from './task-templates';
 
 export interface TuturuuuUserClientConfig {
   accessToken: string;
@@ -247,6 +261,14 @@ export class TasksClient {
     );
   }
 
+  createTemplate(workspaceId: string, payload: WorkspaceTaskTemplatePayload) {
+    return createWorkspaceTaskTemplate(
+      workspaceId,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
   getDescription(workspaceId: string, taskId: string) {
     return getWorkspaceTaskDescription(
       workspaceId,
@@ -383,6 +405,19 @@ export class TasksClient {
     );
   }
 
+  deleteTemplate(
+    workspaceId: string,
+    templateKey: string,
+    options?: { permanent?: boolean }
+  ) {
+    return deleteWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
+      options,
+      this.client.getClientOptions()
+    );
+  }
+
   deleteBoard(workspaceId: string, boardId: string) {
     return deleteWorkspaceTaskBoard(
       workspaceId,
@@ -408,6 +443,14 @@ export class TasksClient {
     return getWorkspaceTask(
       workspaceId,
       taskId,
+      this.client.getClientOptions()
+    );
+  }
+
+  getTemplate(workspaceId: string, templateKey: string) {
+    return getWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
       this.client.getClientOptions()
     );
   }
@@ -522,6 +565,17 @@ export class TasksClient {
     );
   }
 
+  listTemplates(
+    workspaceId: string,
+    options?: ListWorkspaceTaskTemplatesOptions
+  ) {
+    return listWorkspaceTaskTemplates(
+      workspaceId,
+      options,
+      this.client.getClientOptions()
+    );
+  }
+
   listStatusTemplates() {
     return listTaskBoardStatusTemplates(this.client.getClientOptions());
   }
@@ -555,6 +609,17 @@ export class TasksClient {
     );
   }
 
+  saveTemplateFromTask(
+    workspaceId: string,
+    payload: SaveWorkspaceTaskTemplateFromTaskPayload
+  ) {
+    return saveWorkspaceTaskTemplateFromTask(
+      workspaceId,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
   triggerEmbedding(workspaceId: string, taskId: string) {
     return triggerWorkspaceTaskEmbedding(
       workspaceId,
@@ -571,6 +636,32 @@ export class TasksClient {
     return updateWorkspaceTask(
       workspaceId,
       taskId,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
+  updateTemplate(
+    workspaceId: string,
+    templateKey: string,
+    payload: UpdateWorkspaceTaskTemplatePayload
+  ) {
+    return updateWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
+  useTemplate(
+    workspaceId: string,
+    templateKey: string,
+    payload: InstantiateWorkspaceTaskTemplatePayload
+  ) {
+    return instantiateWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
       payload,
       this.client.getClientOptions()
     );
