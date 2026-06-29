@@ -1557,7 +1557,7 @@
       "yes": "Yes"
     },
     "create": {
-      "description": "Add a short-lived override for a manually reviewed email and optionally clear email-scoped OTP limits.",
+      "description": "Add a short-lived override for a manually reviewed email and optionally clear related OTP limits and IP blocks.",
       "title": "Create recovery override"
     },
     "description": "Send support-approved recovery emails and inspect blockers for users stuck at authentication.",
@@ -1565,7 +1565,10 @@
       "active_override": "Active override",
       "auth_user": "Auth user",
       "email_blocked": "Email blocked",
-      "recent_abuse_events": "Recent abuse events"
+      "recent_abuse_events": "Recent abuse events",
+      "related_ip_block_expires": "Expires: {value}",
+      "related_ip_block_reason": "Reason: {value}",
+      "related_ip_blocks": "Active related IP blocks"
     },
     "empty": {
       "events": "No recovery events found.",
@@ -4584,6 +4587,11 @@
       "request": "Request"
     },
     "rate_limited_details_title": "Rate-limit details",
+    "rate_limited_hard_block_copy_hint": "Use Copy details, then send the copied text with a screenshot if possible.",
+    "rate_limited_hard_block_description": "Your current network appears to be blocked. Share these debugging details with the support team so they can review the block.",
+    "rate_limited_hard_block_notice_description": "This block can affect everyone using the same public IP address. Support needs the details below to confirm and clear the correct block.",
+    "rate_limited_hard_block_notice_title": "Support review needed",
+    "rate_limited_hard_block_title": "Access blocked temporarily",
     "rate_limited_retry": "You're being rate limited. Retrying in {seconds}s…",
     "rate_limited_staff_debug_warning": "Rate limit triggered. Your Tuturuuu staff account was allowed through for debugging.",
     "rate_limited_view_details": "View details",

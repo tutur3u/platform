@@ -42,6 +42,7 @@ const SENSITIVE_QUERY_PARAM_NAMES = new Set([
 ]);
 
 export type RateLimitDebugDetails = {
+  blockKind?: 'hard_ip_block';
   capturedAt: string;
   clientIp?: string;
   debugBypass?: string;
@@ -72,6 +73,7 @@ let formatWarningMessage = (): string =>
 let viewDetailsLabel = 'View details';
 let detailsHandler: RateLimitDetailsHandler | null = null;
 let lastRateLimitDetails: RateLimitDebugDetails | null = null;
+let pendingHardBlockDetails: RateLimitDebugDetails | null = null;
 
 /**
  * Replaces the default English message with a translated formatter.
@@ -93,6 +95,11 @@ export function setRateLimitDetailsHandler(
   handler: RateLimitDetailsHandler | null
 ) {
   detailsHandler = handler;
+  if (handler && pendingHardBlockDetails) {
+    const details = pendingHardBlockDetails;
+    pendingHardBlockDetails = null;
+    handler(details);
+  }
 }
 
 let rateLimitToastActive = false;
@@ -103,9 +110,18 @@ function openRateLimitDetails(details: RateLimitDebugDetails) {
     return;
   }
 
+  if (details.blockKind === 'hard_ip_block') {
+    pendingHardBlockDetails = details;
+  }
+
   window.dispatchEvent(
     new CustomEvent('tuturuuu:rate-limit-details', { detail: details })
   );
+}
+
+function notifyHardIpBlock(details: RateLimitDebugDetails) {
+  lastRateLimitDetails = details;
+  openRateLimitDetails(details);
 }
 
 function notifyRateLimit(retryAfter: number, details: RateLimitDebugDetails) {
@@ -302,6 +318,13 @@ function readOptionalIntegerHeader(headers: Headers, name: string) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function isHardIpBlockResponse(response: Response) {
+  return (
+    response.status === 429 &&
+    response.headers.get('X-Proxy-Block-Reason') === 'ip-already-blocked'
+  );
+}
+
 function buildRateLimitDebugDetails({
   input,
   init,
@@ -318,8 +341,12 @@ function buildRateLimitDebugDetails({
   willRetry: boolean;
 }): RateLimitDebugDetails {
   const pageUrl = `${window.location.pathname}${window.location.search}`;
+  const blockKind = isHardIpBlockResponse(response)
+    ? 'hard_ip_block'
+    : undefined;
 
   return {
+    ...(blockKind ? { blockKind } : {}),
     capturedAt: new Date().toISOString(),
     clientIp: readOptionalHeader(response.headers, 'X-RateLimit-Client-IP'),
     debugBypass: readOptionalHeader(
@@ -405,6 +432,20 @@ export function installFetchInterceptor() {
 
     while (lastResponse.status === 429) {
       const retryAfter = getRetryAfterSeconds(lastResponse);
+      if (isHardIpBlockResponse(lastResponse)) {
+        notifyHardIpBlock(
+          buildRateLimitDebugDetails({
+            input,
+            init,
+            response: lastResponse,
+            retryAfterSeconds: retryAfter,
+            retryAttempt: retries,
+            willRetry: false,
+          })
+        );
+        return lastResponse;
+      }
+
       const willRetry = shouldRetry && retries < MAX_RETRIES;
       notifyRateLimit(
         retryAfter,

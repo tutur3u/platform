@@ -363,6 +363,55 @@ describe('fetch-interceptor', () => {
     );
   });
 
+  it('opens hard IP block details immediately without retrying', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response(
+      JSON.stringify({ error: 'Too Many Requests' }),
+      {
+        status: 429,
+        headers: {
+          'CF-Ray': 'ray-456',
+          'Retry-After': '30',
+          'X-Proxy-Block-Reason': 'ip-already-blocked',
+          'X-RateLimit-Client-IP': '203.0.113.88',
+          'X-Request-Id': 'req-hard-block',
+          'X-Vercel-Id': 'sin1::hard-block',
+        },
+      }
+    );
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    const response = await globalThis.fetch('/api/v1/auth/otp/send', {
+      method: 'POST',
+    });
+
+    expect(response.status).toBe(429);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockWarning).not.toHaveBeenCalled();
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        blockKind: 'hard_ip_block',
+        clientIp: '203.0.113.88',
+        headers: expect.objectContaining({
+          'CF-Ray': 'ray-456',
+          'Retry-After': '30',
+          'X-Proxy-Block-Reason': 'ip-already-blocked',
+          'X-RateLimit-Client-IP': '203.0.113.88',
+          'X-Request-Id': 'req-hard-block',
+          'X-Vercel-Id': 'sin1::hard-block',
+        }),
+        requestPath: '/api/v1/auth/otp/send',
+        retryAfterSeconds: 30,
+        retryAttempt: 0,
+        status: 429,
+        willRetry: false,
+      })
+    );
+  });
+
   it('should stop after MAX_RETRIES (3) and return the 429 response', async () => {
     const make429 = () =>
       new Response('', {

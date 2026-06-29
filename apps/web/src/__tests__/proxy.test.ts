@@ -425,6 +425,7 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(response.headers.get('Retry-After')).not.toBeNull();
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
@@ -638,6 +639,7 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(response.headers.get('Retry-After')).not.toBeNull();
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });

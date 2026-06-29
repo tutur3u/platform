@@ -15,6 +15,7 @@ const AUTH_RECOVERY_SUPPORTED_LOCALES = new Set([
   AUTH_RECOVERY_FALLBACK_LOCALE,
   'vi',
 ]);
+const RELATED_IP_LOOKBACK_MS = 24 * 60 * 60 * 1000;
 
 type QueryResult = {
   count?: number | null;
@@ -24,7 +25,9 @@ type QueryResult = {
 
 type QueryBuilder = PromiseLike<QueryResult> & {
   eq(column: string, value: unknown): QueryBuilder;
+  gte(column: string, value: unknown): QueryBuilder;
   gt(column: string, value: unknown): QueryBuilder;
+  in(column: string, values: unknown[]): QueryBuilder;
   insert(value: Record<string, unknown>): QueryBuilder;
   is(column: string, value: unknown): QueryBuilder;
   limit(value: number): QueryBuilder;
@@ -57,6 +60,7 @@ export interface AuthRecoveryOverrideSummary {
 
 export interface AuthRecoverySnapshot {
   activeOverride: AuthRecoveryOverrideSummary | null;
+  diagnostics: AuthRecoveryDiagnostics | null;
   email: string | null;
   emailInfrastructure: {
     blockType: string | null;
@@ -73,6 +77,31 @@ export interface AuthRecoverySnapshot {
     id: string;
     lastSignInAt: string | null;
   } | null;
+}
+
+export interface AuthRecoveryDiagnostics {
+  activeOverride: AuthRecoveryOverrideSummary | null;
+  authUser: {
+    bannedUntil: string | null;
+    confirmedAt: string | null;
+    createdAt: string | null;
+    email: string | null;
+    id: string | null;
+  } | null;
+  emailBlocked: boolean;
+  emailBlockedReason: string | null;
+  recentAbuseEvents: Record<string, unknown>[];
+  relatedIpBlocks: AuthRecoveryRelatedIpBlockSummary[];
+}
+
+export interface AuthRecoveryRelatedIpBlockSummary {
+  blockLevel: number | null;
+  blockedAt: string | null;
+  expiresAt: string | null;
+  id: string;
+  ipAddress: string;
+  reason: string | null;
+  status: string | null;
 }
 
 export interface AuthRecoveryEventSummary {
@@ -143,6 +172,32 @@ function toEventSummary(row: Record<string, unknown>) {
     overrideId: toStringOrNull(row.override_id),
     tokenId: toStringOrNull(row.token_id),
   } satisfies AuthRecoveryEventSummary;
+}
+
+function toNumberOrNull(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function toRelatedIpBlockSummary(row: Record<string, unknown>) {
+  return {
+    blockLevel: toNumberOrNull(row.block_level),
+    blockedAt: toStringOrNull(row.blocked_at),
+    expiresAt: toStringOrNull(row.expires_at),
+    id: String(row.id ?? ''),
+    ipAddress: String(row.ip_address ?? ''),
+    reason: toStringOrNull(row.reason),
+    status: toStringOrNull(row.status),
+  } satisfies AuthRecoveryRelatedIpBlockSummary;
+}
+
+function readRelatedIps(rows: Record<string, unknown>[]) {
+  return Array.from(
+    new Set(
+      rows
+        .map((row) => toStringOrNull(row.ip_address))
+        .filter((value): value is string => Boolean(value))
+    )
+  );
 }
 
 export async function normalizeAuthRecoveryEmail(email: string) {
@@ -275,23 +330,40 @@ export async function listAuthRecoverySnapshot(email?: string | null) {
     eventsQuery = eventsQuery.eq('email', normalizedEmail);
   }
 
-  const [overridesResult, eventsResult, recentAuthEventsResult] =
-    await Promise.all([
-      overridesQuery,
-      eventsQuery,
-      normalizedEmail
-        ? getPublicTable(admin, 'abuse_events')
-            .select('id, created_at, event_type, ip_address, email, metadata')
-            .eq('email', normalizedEmail)
-            .order('created_at', { ascending: false })
-            .limit(20)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+  const relatedIpsSinceIso = new Date(
+    Date.now() - RELATED_IP_LOOKBACK_MS
+  ).toISOString();
+  const [
+    overridesResult,
+    eventsResult,
+    recentAuthEventsResult,
+    relatedIpEventsResult,
+  ] = await Promise.all([
+    overridesQuery,
+    eventsQuery,
+    normalizedEmail
+      ? getPublicTable(admin, 'abuse_events')
+          .select('id, created_at, event_type, ip_address, email, metadata')
+          .eq('email', normalizedEmail)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [], error: null }),
+    normalizedEmail
+      ? getPublicTable(admin, 'abuse_events')
+          .select('ip_address')
+          .eq('email', normalizedEmail)
+          .in('event_type', ['otp_send', 'otp_verify_failed'])
+          .gte('created_at', relatedIpsSinceIso)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   if (overridesResult.error) throw new Error(overridesResult.error.message);
   if (eventsResult.error) throw new Error(eventsResult.error.message);
   if (recentAuthEventsResult.error) {
     throw new Error(recentAuthEventsResult.error.message);
+  }
+  if (relatedIpEventsResult.error) {
+    throw new Error(relatedIpEventsResult.error.message);
   }
 
   const overrides = asArray(overridesResult.data).map(toOverrideSummary);
@@ -310,9 +382,75 @@ export async function listAuthRecoverySnapshot(email?: string | null) {
   const authUser = userId
     ? await admin.auth.admin.getUserById(userId).catch(() => null)
     : null;
+  const recentAuthEvents = asArray(recentAuthEventsResult.data);
+  const relatedIps = readRelatedIps(asArray(relatedIpEventsResult.data));
+  const relatedIpBlocksResult =
+    relatedIps.length > 0
+      ? await getPublicTable(admin, 'blocked_ips')
+          .select(
+            'id, ip_address, reason, block_level, blocked_at, expires_at, status'
+          )
+          .in('ip_address', relatedIps)
+          .in('reason', ['otp_send', 'otp_verify_failed'])
+          .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
+          .order('blocked_at', { ascending: false })
+          .limit(50)
+      : { data: [], error: null };
+
+  if (relatedIpBlocksResult.error) {
+    throw new Error(relatedIpBlocksResult.error.message);
+  }
+
+  const user = authUser?.data?.user
+    ? {
+        bannedUntil: authUser.data.user.banned_until ?? null,
+        createdAt: authUser.data.user.created_at ?? null,
+        emailConfirmedAt: authUser.data.user.email_confirmed_at ?? null,
+        id: userId ?? authUser.data.user.id,
+        lastSignInAt: authUser.data.user.last_sign_in_at ?? null,
+      }
+    : userId
+      ? {
+          bannedUntil: null,
+          createdAt: null,
+          emailConfirmedAt: null,
+          id: userId,
+          lastSignInAt: null,
+        }
+      : null;
+  const relatedIpBlocks = asArray(relatedIpBlocksResult.data).map(
+    toRelatedIpBlockSummary
+  );
 
   return {
     activeOverride,
+    diagnostics: normalizedEmail
+      ? {
+          activeOverride,
+          authUser: authUser?.data?.user
+            ? {
+                bannedUntil: authUser.data.user.banned_until ?? null,
+                confirmedAt: authUser.data.user.email_confirmed_at ?? null,
+                createdAt: authUser.data.user.created_at ?? null,
+                email: authUser.data.user.email ?? normalizedEmail,
+                id: userId ?? authUser.data.user.id ?? null,
+              }
+            : user
+              ? {
+                  bannedUntil: null,
+                  confirmedAt: null,
+                  createdAt: null,
+                  email: normalizedEmail,
+                  id: user.id,
+                }
+              : null,
+          emailBlocked: emailInfrastructure?.isBlocked ?? false,
+          emailBlockedReason: emailInfrastructure?.reason ?? null,
+          recentAbuseEvents: recentAuthEvents,
+          relatedIpBlocks,
+        }
+      : null,
     email: normalizedEmail,
     emailInfrastructure: emailInfrastructure
       ? {
@@ -323,24 +461,8 @@ export async function listAuthRecoverySnapshot(email?: string | null) {
       : null,
     events: asArray(eventsResult.data).map(toEventSummary),
     overrides,
-    recentAuthEvents: asArray(recentAuthEventsResult.data),
-    user: authUser?.data?.user
-      ? {
-          bannedUntil: authUser.data.user.banned_until ?? null,
-          createdAt: authUser.data.user.created_at ?? null,
-          emailConfirmedAt: authUser.data.user.email_confirmed_at ?? null,
-          id: authUser.data.user.id,
-          lastSignInAt: authUser.data.user.last_sign_in_at ?? null,
-        }
-      : userId
-        ? {
-            bannedUntil: null,
-            createdAt: null,
-            emailConfirmedAt: null,
-            id: userId,
-            lastSignInAt: null,
-          }
-        : null,
+    recentAuthEvents,
+    user,
   } satisfies AuthRecoverySnapshot;
 }
 

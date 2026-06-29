@@ -13,7 +13,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AuthRecoveryCreateForm } from './auth-recovery-create-form';
 import { AuthRecoverySnapshotView } from './auth-recovery-snapshot-view';
 
@@ -40,6 +40,8 @@ export function AuthRecoveryClient({
   const [clearEmailScoped, setClearEmailScoped] = useState(true);
   const [clearRelatedIpCounters, setClearRelatedIpCounters] = useState(true);
   const [clearRelatedIpBlocks, setClearRelatedIpBlocks] = useState(false);
+  const [clearRelatedIpBlocksTouched, setClearRelatedIpBlocksTouched] =
+    useState(false);
 
   const snapshotQuery = useQuery({
     queryFn: () =>
@@ -105,6 +107,13 @@ export function AuthRecoveryClient({
     revokeMutation.isPending ||
     sendMutation.isPending;
   const snapshot = snapshotQuery.data;
+  const relatedIpBlockCount =
+    snapshot?.diagnostics?.relatedIpBlocks.length ?? 0;
+
+  useEffect(() => {
+    if (clearRelatedIpBlocksTouched) return;
+    setClearRelatedIpBlocks(relatedIpBlockCount > 0);
+  }, [clearRelatedIpBlocksTouched, relatedIpBlockCount]);
 
   return (
     <div className="space-y-5">
@@ -119,7 +128,10 @@ export function AuthRecoveryClient({
           <Label htmlFor="auth-recovery-filter">{t('filters.email')}</Label>
           <Input
             id="auth-recovery-filter"
-            onChange={(event) => setEmailFilter(event.target.value)}
+            onChange={(event) => {
+              setClearRelatedIpBlocksTouched(false);
+              setEmailFilter(event.target.value);
+            }}
             placeholder={t('filters.email_placeholder')}
             value={emailFilter}
           />
@@ -145,7 +157,10 @@ export function AuthRecoveryClient({
           setAllowNormalLogin={setAllowNormalLogin}
           setAllowRecoveryEmail={setAllowRecoveryEmail}
           setClearEmailScoped={setClearEmailScoped}
-          setClearRelatedIpBlocks={setClearRelatedIpBlocks}
+          setClearRelatedIpBlocks={(value) => {
+            setClearRelatedIpBlocksTouched(true);
+            setClearRelatedIpBlocks(value);
+          }}
           setClearRelatedIpCounters={setClearRelatedIpCounters}
           setEmail={setEmail}
           setReason={setReason}

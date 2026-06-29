@@ -1557,7 +1557,7 @@
       "yes": "Có"
     },
     "create": {
-      "description": "Thêm ghi đè ngắn hạn cho email đã được kiểm tra thủ công và tùy chọn xóa giới hạn OTP theo email.",
+      "description": "Thêm ghi đè ngắn hạn cho email đã được kiểm tra thủ công và tùy chọn xóa giới hạn OTP cùng các lệnh chặn IP liên quan.",
       "title": "Tạo ghi đè khôi phục"
     },
     "description": "Gửi email khôi phục đã được hỗ trợ phê duyệt và kiểm tra các rào cản với người dùng bị kẹt ở bước xác thực.",
@@ -1565,7 +1565,10 @@
       "active_override": "Ghi đè đang hoạt động",
       "auth_user": "Người dùng Auth",
       "email_blocked": "Email bị chặn",
-      "recent_abuse_events": "Sự kiện lạm dụng gần đây"
+      "recent_abuse_events": "Sự kiện lạm dụng gần đây",
+      "related_ip_block_expires": "Hết hạn: {value}",
+      "related_ip_block_reason": "Lý do: {value}",
+      "related_ip_blocks": "IP liên quan đang bị chặn"
     },
     "empty": {
       "events": "Không tìm thấy sự kiện khôi phục.",
@@ -4584,6 +4587,11 @@
       "request": "Yêu cầu"
     },
     "rate_limited_details_title": "Chi tiết giới hạn tần suất",
+    "rate_limited_hard_block_copy_hint": "Dùng Sao chép chi tiết, rồi gửi nội dung đã sao chép kèm ảnh chụp màn hình nếu có thể.",
+    "rate_limited_hard_block_description": "Mạng hiện tại của bạn có vẻ đang bị chặn. Hãy chia sẻ các chi tiết gỡ lỗi này với đội ngũ hỗ trợ để họ xem xét trạng thái chặn.",
+    "rate_limited_hard_block_notice_description": "Trạng thái chặn này có thể ảnh hưởng đến mọi người dùng cùng địa chỉ IP công cộng. Đội ngũ hỗ trợ cần các chi tiết bên dưới để xác nhận và xóa đúng trạng thái chặn.",
+    "rate_limited_hard_block_notice_title": "Cần đội ngũ hỗ trợ xem xét",
+    "rate_limited_hard_block_title": "Tạm thời bị chặn truy cập",
     "rate_limited_retry": "Bạn đang bị giới hạn tần suất. Thử lại sau {seconds} giây…",
     "rate_limited_staff_debug_warning": "Giới hạn tần suất đã kích hoạt. Tài khoản nhân sự Tuturuuu của bạn được cho phép tiếp tục để debug.",
     "rate_limited_view_details": "Xem chi tiết",

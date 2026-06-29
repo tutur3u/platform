@@ -43,6 +43,7 @@ export function formatDetailsForCopy(details: RateLimitDebugDetails) {
         userId: details.userId,
       },
       limit: {
+        blockKind: details.blockKind,
         callerClass: readHeader(details, 'X-RateLimit-Caller-Class'),
         debugBypass: details.debugBypass,
         limit: readHeader(details, 'X-RateLimit-Limit'),

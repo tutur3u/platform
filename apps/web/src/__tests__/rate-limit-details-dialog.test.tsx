@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -131,6 +132,14 @@ vi.mock('next-intl', () => ({
       rate_limited_debug_warning_description:
         'This verified Tuturuuu staff session was allowed through so you can keep debugging. The limit still triggered.',
       rate_limited_debug_warning_title: 'Debug bypass active',
+      rate_limited_hard_block_copy_hint:
+        'Use Copy details, then send the copied text with a screenshot if possible.',
+      rate_limited_hard_block_description:
+        'Your current network appears to be blocked. Share these debugging details with the support team so they can review the block.',
+      rate_limited_hard_block_notice_description:
+        'Support needs the details below to confirm and clear the correct block.',
+      rate_limited_hard_block_notice_title: 'Support review needed',
+      rate_limited_hard_block_title: 'Access blocked temporarily',
       'rate_limited_details_fields.caller_class': 'Caller class',
       'rate_limited_details_fields.captured_at': 'Captured at',
       'rate_limited_details_fields.client_ip': 'Current IP',
@@ -311,6 +320,70 @@ describe('RateLimitDetailsDialog', () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith('IP block cleared', {
       description: '203.0.113.10',
     });
+  });
+
+  it('renders hard IP block support instructions and copies support diagnostics', async () => {
+    render(<RateLimitDetailsDialog />);
+
+    await act(async () => {});
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('tuturuuu:rate-limit-details', {
+          detail: {
+            ...details,
+            blockKind: 'hard_ip_block',
+            clientIp: '203.0.113.88',
+            debugBypass: undefined,
+            headers: {
+              'CF-Ray': 'ray-456',
+              'Retry-After': '30',
+              'X-Proxy-Block-Reason': 'ip-already-blocked',
+              'X-RateLimit-Client-IP': '203.0.113.88',
+              'X-Request-Id': 'req-hard-block',
+              'X-Vercel-Id': 'sin1::hard-block',
+            },
+            rateLimitStatus: undefined,
+            requestPath: '/api/v1/auth/otp/send',
+            retryAfterSeconds: 30,
+            status: 429,
+            userEmail: 'member@example.com',
+            warning: undefined,
+            willRetry: false,
+          },
+        })
+      );
+    });
+
+    await expect(screen.findByRole('dialog')).resolves.toBeVisible();
+    expect(screen.getByText('Access blocked temporarily')).toBeVisible();
+    expect(screen.getByText('Support review needed')).toBeVisible();
+    expect(
+      screen.getByText(/send the copied text with a screenshot/i)
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole('region', { name: 'Identity' })).getByText(
+        '203.0.113.88'
+      )
+    ).toBeVisible();
+    expect(screen.getByText('/api/v1/auth/otp/send')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: /copy details/i }));
+
+    await waitFor(() => expect(mocks.writeText).toHaveBeenCalled());
+    const copied = JSON.parse(mocks.writeText.mock.calls[0]?.[0] as string) as {
+      headers: Record<string, string>;
+      limit: { blockKind?: string; proxyBlockReason?: string };
+      request: { requestPath: string; responseStatus: number };
+    };
+
+    expect(copied.limit.blockKind).toBe('hard_ip_block');
+    expect(copied.limit.proxyBlockReason).toBe('ip-already-blocked');
+    expect(copied.headers['X-RateLimit-Client-IP']).toBe('203.0.113.88');
+    expect(copied.headers['X-Request-Id']).toBe('req-hard-block');
+    expect(copied.headers['X-Vercel-Id']).toBe('sin1::hard-block');
+    expect(copied.headers['CF-Ray']).toBe('ray-456');
+    expect(copied.request.requestPath).toBe('/api/v1/auth/otp/send');
+    expect(copied.request.responseStatus).toBe(429);
   });
 
   it('does not show the clear action for non-staff diagnostics', async () => {

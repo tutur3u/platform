@@ -85,6 +85,7 @@ export function RateLimitDetailsDialog() {
         : [],
     [details, t]
   );
+  const isHardIpBlock = details?.blockKind === 'hard_ip_block';
   const headerRows = useMemo(
     () => (details ? buildRateLimitHeaderRows(details) : []),
     [details]
@@ -188,13 +189,39 @@ export function RateLimitDetailsDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="grid max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-0 sm:max-w-3xl">
         <DialogHeader className="border-border border-b px-4 py-4 sm:px-6">
-          <DialogTitle>{t('rate_limited_details_title')}</DialogTitle>
+          <DialogTitle>
+            {isHardIpBlock
+              ? t('rate_limited_hard_block_title')
+              : t('rate_limited_details_title')}
+          </DialogTitle>
           <DialogDescription>
-            {t('rate_limited_details_description')}
+            {isHardIpBlock
+              ? t('rate_limited_hard_block_description')
+              : t('rate_limited_details_description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
+          {isHardIpBlock ? (
+            <div
+              className="mb-5 flex gap-3 rounded-md border border-border bg-muted/40 p-3"
+              role="alert"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="min-w-0 space-y-1">
+                <p className="font-medium text-sm">
+                  {t('rate_limited_hard_block_notice_title')}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {t('rate_limited_hard_block_notice_description')}
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {t('rate_limited_hard_block_copy_hint')}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           {details?.warning ? (
             <div
               className="mb-5 flex gap-3 rounded-md border border-border bg-muted/40 p-3"
@@ -257,6 +284,7 @@ export function RateLimitDetailsDialog() {
         <RateLimitDetailsDialogFooterActions
           canClearIpBlock={canClearIpBlock}
           canRequestReview={canRequestReview}
+          isHardIpBlock={!!isHardIpBlock}
           isAppealSubmitDisabled={isAppealSubmitDisabled}
           isClearingIpBlock={isClearingIpBlock}
           isSubmittingAppeal={isSubmittingAppeal}

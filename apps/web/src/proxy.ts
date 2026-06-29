@@ -629,7 +629,10 @@ function buildProxyBlockResponse(
     | 'malformed-auth-header'
     | 'malformed-supabase-auth-cookie'
     | 'suspicious-anonymous-request',
-  retryAfter?: number
+  options: {
+    ipAddress?: string | null;
+    retryAfter?: number;
+  } = {}
 ) {
   const body =
     status === 429
@@ -642,7 +645,10 @@ function buildProxyBlockResponse(
     status,
     headers: {
       'Cache-Control': 'no-store',
-      ...(retryAfter ? { 'Retry-After': `${retryAfter}` } : {}),
+      ...(options.retryAfter ? { 'Retry-After': `${options.retryAfter}` } : {}),
+      ...(options.ipAddress && options.ipAddress !== 'unknown'
+        ? { 'X-RateLimit-Client-IP': options.ipAddress }
+        : {}),
       'X-Proxy-Block-Reason': reason,
     },
   });
@@ -686,11 +692,10 @@ async function blockMalformedApiAuthCookieRequest(
       1,
       Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    const response = buildProxyBlockResponse(
-      429,
-      'ip-already-blocked',
-      retryAfter
-    );
+    const response = buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
     applyExpiredCookies(response, malformedCookieNames);
     return response;
   }
@@ -705,18 +710,18 @@ async function blockMalformedApiAuthCookieRequest(
       1,
       Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    const response = buildProxyBlockResponse(
-      429,
-      'ip-already-blocked',
-      retryAfter
-    );
+    const response = buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
     applyExpiredCookies(response, malformedCookieNames);
     return response;
   }
 
   const response = buildProxyBlockResponse(
     401,
-    'malformed-supabase-auth-cookie'
+    'malformed-supabase-auth-cookie',
+    { ipAddress }
   );
   applyExpiredCookies(response, malformedCookieNames);
   return response;
@@ -778,7 +783,10 @@ async function blockSuspiciousAnonymousApiRequest(
       1,
       Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+    return buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
   }
 
   const newBlock =
@@ -791,10 +799,13 @@ async function blockSuspiciousAnonymousApiRequest(
       1,
       Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+    return buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
   }
 
-  return buildProxyBlockResponse(signal.status, signal.reason);
+  return buildProxyBlockResponse(signal.status, signal.reason, { ipAddress });
 }
 
 /**

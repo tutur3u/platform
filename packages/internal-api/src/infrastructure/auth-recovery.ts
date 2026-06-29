@@ -54,6 +54,17 @@ export interface AuthRecoveryDiagnostics {
   emailBlocked: boolean;
   emailBlockedReason: string | null;
   recentAbuseEvents: Array<Record<string, unknown>>;
+  relatedIpBlocks: AuthRecoveryRelatedIpBlockSummary[];
+}
+
+export interface AuthRecoveryRelatedIpBlockSummary {
+  blockLevel: number | null;
+  blockedAt: string | null;
+  expiresAt: string | null;
+  id: string;
+  ipAddress: string;
+  reason: string | null;
+  status: string | null;
 }
 
 export interface AuthRecoverySnapshot {

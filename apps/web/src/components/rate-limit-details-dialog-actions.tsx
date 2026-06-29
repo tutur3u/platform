@@ -95,6 +95,7 @@ export function RateLimitAppealRequestSection({
 export function RateLimitDetailsDialogFooterActions({
   canClearIpBlock,
   canRequestReview,
+  isHardIpBlock,
   isAppealSubmitDisabled,
   isClearingIpBlock,
   isSubmittingAppeal,
@@ -105,6 +106,7 @@ export function RateLimitDetailsDialogFooterActions({
 }: {
   canClearIpBlock: boolean;
   canRequestReview: boolean;
+  isHardIpBlock: boolean;
   isAppealSubmitDisabled: boolean;
   isClearingIpBlock: boolean;
   isSubmittingAppeal: boolean;
@@ -115,52 +117,59 @@ export function RateLimitDetailsDialogFooterActions({
 }) {
   const t = useTranslations('common');
 
+  const clearButton = canClearIpBlock ? (
+    <Button
+      aria-label={t('rate_limited_clear_ip_block')}
+      disabled={isClearingIpBlock}
+      onClick={onClearIpBlock}
+      type="button"
+      variant="secondary"
+    >
+      {isClearingIpBlock ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Shield className="h-4 w-4" />
+      )}
+      {isClearingIpBlock
+        ? t('rate_limited_clear_ip_block_loading')
+        : t('rate_limited_clear_ip_block')}
+    </Button>
+  ) : null;
+  const reviewButton = canRequestReview ? (
+    <Button
+      aria-label={t('rate_limited_appeal_submit')}
+      disabled={isAppealSubmitDisabled}
+      onClick={onRequestReview}
+      type="button"
+      variant="secondary"
+    >
+      {isSubmittingAppeal ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Shield className="h-4 w-4" />
+      )}
+      {isSubmittingAppeal
+        ? t('rate_limited_appeal_submitting')
+        : t('rate_limited_appeal_submit')}
+    </Button>
+  ) : null;
+  const copyButton = (
+    <Button
+      aria-label={t('rate_limited_copy_details')}
+      onClick={onCopyDetails}
+      type="button"
+    >
+      <Copy className="h-4 w-4" />
+      {t('rate_limited_copy_details')}
+    </Button>
+  );
+
   return (
     <DialogFooter className="flex-wrap gap-2 border-border border-t bg-background px-4 py-3 max-sm:gap-2 sm:px-6">
-      {canClearIpBlock ? (
-        <Button
-          aria-label={t('rate_limited_clear_ip_block')}
-          disabled={isClearingIpBlock}
-          onClick={onClearIpBlock}
-          type="button"
-          variant="secondary"
-        >
-          {isClearingIpBlock ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Shield className="h-4 w-4" />
-          )}
-          {isClearingIpBlock
-            ? t('rate_limited_clear_ip_block_loading')
-            : t('rate_limited_clear_ip_block')}
-        </Button>
-      ) : null}
-      {canRequestReview ? (
-        <Button
-          aria-label={t('rate_limited_appeal_submit')}
-          disabled={isAppealSubmitDisabled}
-          onClick={onRequestReview}
-          type="button"
-          variant="secondary"
-        >
-          {isSubmittingAppeal ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Shield className="h-4 w-4" />
-          )}
-          {isSubmittingAppeal
-            ? t('rate_limited_appeal_submitting')
-            : t('rate_limited_appeal_submit')}
-        </Button>
-      ) : null}
-      <Button
-        aria-label={t('rate_limited_copy_details')}
-        onClick={onCopyDetails}
-        type="button"
-      >
-        <Copy className="h-4 w-4" />
-        {t('rate_limited_copy_details')}
-      </Button>
+      {isHardIpBlock ? copyButton : null}
+      {clearButton}
+      {reviewButton}
+      {isHardIpBlock ? null : copyButton}
       <Button
         aria-label={t('close')}
         onClick={onClose}
