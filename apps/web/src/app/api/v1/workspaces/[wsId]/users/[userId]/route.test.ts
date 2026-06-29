@@ -9,6 +9,11 @@ const workspaceUsersSelectSingleMock = vi.fn();
 const adminRpcMock = vi.fn();
 const statusChangesInsertMock = vi.fn();
 const cancelPendingPostEmailsForWorkspaceUserMock = vi.fn();
+const guestGroupsResultMock = vi.fn();
+const guestGroupUpsertMock = vi.fn();
+const guestMembershipDeleteMock = vi.fn();
+const guestMembershipDeleteEqMock = vi.fn();
+const guestMembershipDeleteInMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -50,6 +55,19 @@ vi.mock('@/lib/post-email-queue', () => ({
 
 import { DELETE, PUT } from './route';
 
+function createGuestGroupsQuery() {
+  let eqCallCount = 0;
+  const query = {
+    eq: vi.fn(() => {
+      eqCallCount += 1;
+      return eqCallCount >= 2 ? guestGroupsResultMock() : query;
+    }),
+    select: vi.fn(() => query),
+  };
+
+  return query;
+}
+
 describe('workspace user write routes preserve audit actor context', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -70,6 +88,18 @@ describe('workspace user write routes preserve audit actor context', () => {
     });
     statusChangesInsertMock.mockResolvedValue({ error: null });
     cancelPendingPostEmailsForWorkspaceUserMock.mockResolvedValue(2);
+    guestGroupsResultMock.mockResolvedValue({
+      data: [{ id: 'guest-group-1' }, { id: 'guest-group-2' }],
+      error: null,
+    });
+    guestGroupUpsertMock.mockResolvedValue({ error: null });
+    guestMembershipDeleteInMock.mockResolvedValue({ error: null });
+    guestMembershipDeleteEqMock.mockReturnValue({
+      in: guestMembershipDeleteInMock,
+    });
+    guestMembershipDeleteMock.mockReturnValue({
+      eq: guestMembershipDeleteEqMock,
+    });
 
     createAdminClientMock.mockResolvedValue({
       from: (table: string) => {
@@ -88,6 +118,17 @@ describe('workspace user write routes preserve audit actor context', () => {
         if (table === 'workspace_user_status_changes') {
           return {
             insert: statusChangesInsertMock,
+          };
+        }
+
+        if (table === 'workspace_user_groups') {
+          return createGuestGroupsQuery();
+        }
+
+        if (table === 'workspace_user_groups_users') {
+          return {
+            delete: guestMembershipDeleteMock,
+            upsert: guestGroupUpsertMock,
           };
         }
 
@@ -165,6 +206,59 @@ describe('workspace user write routes preserve audit actor context', () => {
         reason: 'Recipient is archived or temporarily archived.',
       }
     );
+  });
+
+  it('removes users from all guest groups when the guest toggle is turned off', async () => {
+    workspaceUsersSelectSingleMock.mockResolvedValueOnce({
+      data: {
+        archived: false,
+        archived_until: null,
+      },
+      error: null,
+    });
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: (permission: string) => permission === 'update_users',
+    });
+
+    const request = new NextRequest(
+      'http://localhost/api/v1/workspaces/ws-1/users/user-1',
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          full_name: 'Alice Example',
+          is_guest: false,
+        }),
+      }
+    );
+
+    const response = await PUT(request, {
+      params: Promise.resolve({
+        wsId: 'ws-1',
+        userId: 'user-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(adminRpcMock).toHaveBeenCalledWith(
+      'admin_update_workspace_user_with_audit_actor',
+      expect.objectContaining({
+        p_payload: {
+          full_name: 'Alice Example',
+        },
+      })
+    );
+    expect(guestMembershipDeleteMock).toHaveBeenCalledTimes(1);
+    expect(guestMembershipDeleteEqMock).toHaveBeenCalledWith(
+      'user_id',
+      'user-1'
+    );
+    expect(guestMembershipDeleteInMock).toHaveBeenCalledWith('group_id', [
+      'guest-group-1',
+      'guest-group-2',
+    ]);
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+    });
   });
 
   it('deletes users through an admin RPC that forwards actor_auth_uid', async () => {

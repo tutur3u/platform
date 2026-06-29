@@ -5,8 +5,8 @@ const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const adminRpcMock = vi.fn();
-const guestGroupMaybeSingleMock = vi.fn();
 const guestGroupUpsertMock = vi.fn();
+const guestGroupsResultMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -26,6 +26,19 @@ vi.mock('@/lib/workspace-api-key', () => ({
 
 import { POST } from './route';
 
+function createGuestGroupsQuery() {
+  let eqCallCount = 0;
+  const query = {
+    eq: vi.fn(() => {
+      eqCallCount += 1;
+      return eqCallCount >= 2 ? guestGroupsResultMock() : query;
+    }),
+    select: vi.fn(() => query),
+  };
+
+  return query;
+}
+
 describe('workspace users create route audit actor forwarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -39,10 +52,8 @@ describe('workspace users create route audit actor forwarding', () => {
       },
       error: null,
     });
-    guestGroupMaybeSingleMock.mockResolvedValue({
-      data: {
-        id: 'guest-group-1',
-      },
+    guestGroupsResultMock.mockResolvedValue({
+      data: [{ id: 'guest-group-1' }],
       error: null,
     });
     guestGroupUpsertMock.mockResolvedValue({ error: null });
@@ -51,15 +62,7 @@ describe('workspace users create route audit actor forwarding', () => {
       rpc: adminRpcMock,
       from: (table: string) => {
         if (table === 'workspace_user_groups') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  maybeSingle: guestGroupMaybeSingleMock,
-                }),
-              }),
-            }),
-          };
+          return createGuestGroupsQuery();
         }
 
         if (table === 'workspace_user_groups_users') {
@@ -120,5 +123,51 @@ describe('workspace users create route audit actor forwarding', () => {
       }
     );
     expect(response.status).toBe(200);
+  });
+
+  it('links created guest users to all workspace guest groups', async () => {
+    guestGroupsResultMock.mockResolvedValue({
+      data: [{ id: 'guest-group-1' }, { id: 'guest-group-2' }],
+      error: null,
+    });
+    const request = new NextRequest(
+      'http://localhost/api/v1/workspaces/ws-1/users',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          full_name: 'Alice Example',
+          is_guest: true,
+        }),
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({
+        wsId: 'ws-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(adminRpcMock).toHaveBeenCalledWith(
+      'admin_create_workspace_user_with_audit_actor',
+      expect.objectContaining({
+        p_payload: {
+          full_name: 'Alice Example',
+        },
+      })
+    );
+    expect(guestGroupUpsertMock).toHaveBeenCalledWith(
+      [
+        { group_id: 'guest-group-1', user_id: 'created-user-1' },
+        { group_id: 'guest-group-2', user_id: 'created-user-1' },
+      ],
+      {
+        ignoreDuplicates: true,
+        onConflict: 'group_id,user_id',
+      }
+    );
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+    });
   });
 });

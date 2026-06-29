@@ -16,6 +16,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { syncWorkspaceUserGuestMembership } from '@/lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -233,35 +234,21 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  // If marked as guest, attach the user to the workspace's guest group
   let warning: string | undefined;
   if (is_guest && createdUser?.id) {
-    const { data: guestGroup, error: groupError } = await sbAdmin
-      .from('workspace_user_groups')
-      .select('id')
-      .eq('ws_id', wsId)
-      .eq('is_guest', true)
-      .maybeSingle();
-
-    if (!groupError && guestGroup?.id) {
-      // Insert relation; use upsert to handle case where trigger already assigned user to this group
-      const { error: linkError } = await sbAdmin
-        .from('workspace_user_groups_users')
-        .upsert(
-          {
-            group_id: guestGroup.id,
-            user_id: createdUser.id,
-          },
-          { onConflict: 'group_id, user_id', ignoreDuplicates: true }
-        );
-
-      if (linkError) {
-        serverLogger.error('Error linking guest workspace user:', linkError);
-        warning = 'User created, but failed to link to guest group.';
-      }
-    } else {
-      warning = 'User created, but no guest group found in this workspace.';
-    }
+    warning = await syncWorkspaceUserGuestMembership({
+      isGuest: true,
+      sbAdmin,
+      userId: createdUser.id,
+      warningMessages: {
+        linkFailed: 'User created, but failed to link to guest group.',
+        noGuestGroups:
+          'User created, but no guest group found in this workspace.',
+        resolveFailed:
+          'User created, but no guest group found in this workspace.',
+      },
+      wsId,
+    });
   }
 
   return NextResponse.json({ message: 'success', warning });

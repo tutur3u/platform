@@ -24,6 +24,7 @@ import {
   isWorkspaceUserInactiveForPostEmail,
   POST_EMAIL_INACTIVE_RECIPIENT_REASON,
 } from '@/lib/post-email-queue';
+import { syncWorkspaceUserGuestMembership } from '@/lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 const userUpdateSchema = z.object({
@@ -215,46 +216,16 @@ export async function PUT(req: Request, { params }: Params) {
     }
   }
 
-  // Sync guest membership based on is_guest flag when provided
   if (typeof is_guest === 'boolean') {
-    const { data: guestGroup, error: groupError } = await sbAdmin
-      .from('workspace_user_groups')
-      .select('id')
-      .eq('ws_id', wsId)
-      .eq('is_guest', true)
-      .maybeSingle();
+    const guestWarning = await syncWorkspaceUserGuestMembership({
+      isGuest: is_guest,
+      sbAdmin,
+      userId,
+      wsId,
+    });
 
-    if (groupError) {
-      serverLogger.error('Error resolving guest group:', groupError);
-      warning = 'Failed to resolve guest group for this workspace.';
-    } else if (!guestGroup?.id) {
-      warning = 'No guest group found in this workspace.';
-    } else {
-      if (is_guest) {
-        const { error: linkError } = await sbAdmin
-          .from('workspace_user_groups_users')
-          .upsert(
-            { group_id: guestGroup.id, user_id: userId },
-            { onConflict: 'group_id,user_id' }
-          );
-        if (linkError) {
-          serverLogger.error('Error linking guest workspace user:', linkError);
-          warning = 'Failed to link user to guest group.';
-        }
-      } else {
-        const { error: unlinkError } = await sbAdmin
-          .from('workspace_user_groups_users')
-          .delete()
-          .eq('group_id', guestGroup.id)
-          .eq('user_id', userId);
-        if (unlinkError) {
-          serverLogger.error(
-            'Error unlinking guest workspace user:',
-            unlinkError
-          );
-          warning = 'Failed to unlink user from guest group.';
-        }
-      }
+    if (guestWarning) {
+      warning = guestWarning;
     }
   }
 
