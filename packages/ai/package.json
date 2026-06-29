@@ -38,7 +38,7 @@
     "@ai-sdk/luma": "^2.0.36",
     "@ai-sdk/mistral": "^3.0.40",
     "@ai-sdk/openai": "^3.0.74",
-    "@ai-sdk/openai-compatible": "^2.0.51",
+    "@ai-sdk/openai-compatible": "^3.0.1",
     "@ai-sdk/perplexity": "^3.0.36",
     "@ai-sdk/react": "^3.0.210",
     "@ai-sdk/replicate": "^2.0.36",
