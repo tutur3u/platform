@@ -1,26 +1,26 @@
 import {
   externalAppWorkspaceCronScopes,
-  requireExternalAppWorkspaceCronAccess,
+  handleExternalAppWorkspaceCronRoute,
   runExternalAppWorkspaceCronJobNow,
 } from '@/lib/external-apps/workspace-cron';
+
+const ROUTE =
+  '/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/run-now';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ jobKey: string; wsId: string }> }
 ) {
   const { jobKey, wsId } = await params;
-  const access = await requireExternalAppWorkspaceCronAccess({
+  return handleExternalAppWorkspaceCronRoute({
+    handler: (access) => runExternalAppWorkspaceCronJobNow({ access, jobKey }),
+    operation: 'run_now',
     request,
     requiredScopes: [
       externalAppWorkspaceCronScopes.cronRead,
       externalAppWorkspaceCronScopes.cronWrite,
     ],
+    route: ROUTE,
     wsId,
   });
-
-  if (!access.ok) {
-    return access.response;
-  }
-
-  return runExternalAppWorkspaceCronJobNow({ access, jobKey });
 }

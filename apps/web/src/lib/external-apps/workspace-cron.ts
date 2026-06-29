@@ -19,6 +19,11 @@ import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
 import { getExternalAppById } from '@/lib/app-coordination/external-apps';
 import { getPlatformSql } from '@/lib/database/platform-sql';
+import {
+  serverLogger,
+  setLogDrainUserContext,
+  withRequestLogDrain,
+} from '@/lib/infrastructure/log-drain';
 import { listEnabledManagedCronDomainsWithSql } from '@/lib/managed-cron/domain-repository';
 import { runExternalManagedCronJobNow } from '@/lib/managed-cron/service';
 import {
@@ -63,6 +68,55 @@ type RequiredScope =
   | typeof WORKSPACE_CRON_READ_SCOPE
   | typeof WORKSPACE_CRON_WRITE_SCOPE;
 
+type ManagedCronOperation = 'job_update' | 'run_now' | 'setup' | 'status';
+
+type ManagedCronFailureReason =
+  | 'database_unavailable'
+  | 'schema_not_ready'
+  | 'unexpected_error';
+
+const MANAGED_CRON_DATABASE_ENV_KEYS = [
+  'PLATFORM_DATABASE_URL',
+  'POSTGRES_URL',
+  'DATABASE_URL',
+  'DIRECT_URL',
+] as const;
+const MANAGED_CRON_REQUIRED_MIGRATIONS = [
+  '20260625232000_managed_workspace_cron.sql',
+  '20260628120000_external_app_managed_cron_jobs.sql',
+] as const;
+const MANAGED_CRON_SCHEMA_IDENTIFIERS = [
+  'external_app_id',
+  'external_job_key',
+  'managed_cron_whitelisted_domains',
+  'workspace_cron_executions',
+  'workspace_cron_jobs',
+  'workspace_secrets',
+] as const;
+const MANAGED_CRON_OPERATION_FAILURE_CODES: Record<
+  ManagedCronOperation,
+  string
+> = {
+  job_update: 'MANAGED_CRON_JOB_UPDATE_FAILED',
+  run_now: 'MANAGED_CRON_RUN_NOW_FAILED',
+  setup: 'MANAGED_CRON_SETUP_FAILED',
+  status: 'MANAGED_CRON_STATUS_CHECK_FAILED',
+};
+
+type ManagedCronFailure = {
+  code: string;
+  developerDebug: {
+    operation: ManagedCronOperation;
+    reason: ManagedCronFailureReason;
+    requiredEnv?: string[];
+    requiredMigrations?: string[];
+  };
+  hint: string;
+  reason: ManagedCronFailureReason;
+  setupDisabledReason: string;
+  status: 500 | 503;
+};
+
 export type ExternalAppWorkspaceCronAccess = {
   admin: AdminDb;
   normalizedWorkspaceId: string;
@@ -103,6 +157,150 @@ function approvalRequired(extra: Record<string, unknown>) {
     code: 'CRON_APPROVAL_REQUIRED',
     ...extra,
   });
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : '';
+  }
+  return typeof error === 'string' ? error : '';
+}
+
+function errorName(error: unknown) {
+  if (error instanceof Error) return error.name;
+  if (typeof error === 'object' && error !== null && 'name' in error) {
+    const name = (error as { name?: unknown }).name;
+    return typeof name === 'string' ? name : null;
+  }
+  return null;
+}
+
+function postgresErrorCode(error: unknown) {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return null;
+  }
+
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : null;
+}
+
+function isManagedCronDatabaseUnavailable(error: unknown) {
+  return errorMessage(error).includes(
+    'Missing private database connection URL'
+  );
+}
+
+function isManagedCronSchemaNotReady(error: unknown) {
+  const message = errorMessage(error).toLowerCase();
+  const code = postgresErrorCode(error);
+  const schemaCode = code
+    ? ['3F000', '42703', '42P01', '42704'].includes(code)
+    : false;
+  const schemaMessage =
+    /column|relation|schema|table/u.test(message) &&
+    /does not exist|not exist|missing/u.test(message);
+
+  if (!schemaCode && !schemaMessage) return false;
+  return MANAGED_CRON_SCHEMA_IDENTIFIERS.some((identifier) =>
+    message.includes(identifier)
+  );
+}
+
+function managedCronFailureForOperation(
+  operation: ManagedCronOperation,
+  error: unknown
+): ManagedCronFailure {
+  if (isManagedCronDatabaseUnavailable(error)) {
+    const setupDisabledReason =
+      'Managed cron database is unavailable. Set a private platform database URL for Tuturuuu, then retry.';
+    return {
+      code: 'MANAGED_CRON_DATABASE_UNAVAILABLE',
+      developerDebug: {
+        operation,
+        reason: 'database_unavailable',
+        requiredEnv: [...MANAGED_CRON_DATABASE_ENV_KEYS],
+      },
+      hint: `Set one of: ${MANAGED_CRON_DATABASE_ENV_KEYS.join(', ')}.`,
+      reason: 'database_unavailable',
+      setupDisabledReason,
+      status: 503,
+    };
+  }
+
+  if (isManagedCronSchemaNotReady(error)) {
+    const setupDisabledReason =
+      'Managed cron database schema is not ready. Apply the managed-cron database migrations, then retry.';
+    return {
+      code: 'MANAGED_CRON_SCHEMA_NOT_READY',
+      developerDebug: {
+        operation,
+        reason: 'schema_not_ready',
+        requiredMigrations: [...MANAGED_CRON_REQUIRED_MIGRATIONS],
+      },
+      hint: `Apply migrations: ${MANAGED_CRON_REQUIRED_MIGRATIONS.join(', ')}.`,
+      reason: 'schema_not_ready',
+      setupDisabledReason,
+      status: 503,
+    };
+  }
+
+  const setupDisabledReason =
+    'Managed cron operation failed inside Tuturuuu. Check Tuturuuu server logs, then retry.';
+  return {
+    code: MANAGED_CRON_OPERATION_FAILURE_CODES[operation],
+    developerDebug: {
+      operation,
+      reason: 'unexpected_error',
+    },
+    hint: 'Check Tuturuuu server logs for the managed-cron operation.',
+    reason: 'unexpected_error',
+    setupDisabledReason,
+    status: 500,
+  };
+}
+
+function managedCronFailureResponse({
+  access,
+  error,
+  operation,
+  route,
+  wsId,
+}: {
+  access?: ExternalAppWorkspaceCronAccess | null;
+  error: unknown;
+  operation: ManagedCronOperation;
+  route: string;
+  wsId: string;
+}) {
+  const failure = managedCronFailureForOperation(operation, error);
+
+  serverLogger.error('External app managed cron operation failed', {
+    code: failure.code,
+    errorName: errorName(error),
+    externalAppId: access?.targetApp.id ?? null,
+    hint: failure.hint,
+    operation,
+    postgresCode: postgresErrorCode(error),
+    reason: failure.reason,
+    route,
+    userId: access?.user.id ?? null,
+    workspaceId: access?.normalizedWorkspaceId ?? wsId,
+  });
+
+  return NextResponse.json(
+    {
+      code: failure.code,
+      configured: false,
+      developerDebug: failure.developerDebug,
+      enabled: false,
+      error: failure.setupDisabledReason,
+      jobs: [],
+      setupDisabledReason: failure.setupDisabledReason,
+    },
+    { status: failure.status }
+  );
 }
 
 function isWorkspaceHandleCandidate(value: string) {
@@ -257,6 +455,54 @@ export async function requireExternalAppWorkspaceCronAccess({
       id: verification.claims.sub,
     },
   };
+}
+
+export async function handleExternalAppWorkspaceCronRoute({
+  handler,
+  operation,
+  request,
+  requiredScopes,
+  route,
+  wsId,
+}: {
+  handler: (access: ExternalAppWorkspaceCronAccess) => Promise<Response>;
+  operation: ManagedCronOperation;
+  request: Request;
+  requiredScopes: RequiredScope[];
+  route: string;
+  wsId: string;
+}) {
+  return withRequestLogDrain({ request, route }, async () => {
+    let access: ExternalAppWorkspaceCronAccess | null = null;
+
+    try {
+      const accessResult = await requireExternalAppWorkspaceCronAccess({
+        request,
+        requiredScopes,
+        wsId,
+      });
+
+      if (!accessResult.ok) {
+        return accessResult.response;
+      }
+
+      access = accessResult;
+      setLogDrainUserContext({
+        userEmail: access.user.email,
+        userId: access.user.id,
+      });
+
+      return await handler(access);
+    } catch (error) {
+      return managedCronFailureResponse({
+        access,
+        error,
+        operation,
+        route,
+        wsId,
+      });
+    }
+  });
 }
 
 export async function loadExternalAppWorkspaceCron(
