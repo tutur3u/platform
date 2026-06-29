@@ -189,6 +189,7 @@ function createSnapshot(
       totalJobs: 1,
     },
     retainedExecutionCount: 1,
+    runnerRecoveryRequest: null,
     runs: [],
     source: {
       configAvailable: true,

@@ -2091,6 +2091,19 @@
         "queued": "Đã xếp hàng",
         "skipped": "Đã bỏ qua"
       },
+      "runner_recovery": {
+        "description": "Phục hồi dịch vụ Docker cron runner mà không thay đổi các điều kiện bắt buộc của cơ sở dữ liệu managed-cron.",
+        "ensure_action": "Đảm bảo đang phục vụ",
+        "ensure_pending": "Đang xếp lệnh đảm bảo",
+        "last_error": "Lỗi phục hồi gần nhất",
+        "last_heartbeat": "Heartbeat gần nhất",
+        "pending": "Đang chờ phục hồi",
+        "requested": "Đã yêu cầu",
+        "restart_action": "Restart dịch vụ cron",
+        "restart_pending": "Đang xếp lệnh restart",
+        "title": "Phục hồi cron runner",
+        "watcher_waiting": "Yêu cầu phục hồi đã được xếp hàng. Docker watcher sẽ xử lý ở chu kỳ khỏe tiếp theo."
+      },
       "runner_status": {
         "live": "Đang chạy",
         "missing": "Thiếu",

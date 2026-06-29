@@ -39,6 +39,7 @@ import {
   queueCronRun,
   queueInfrastructureStressTest,
   requestBlueGreenInstantRollout,
+  requestCronRunnerRecovery,
   revokeGitHubBotWatcherClient,
   rotateAiAgentChannelSecret,
   saveAiAgent,
@@ -1272,6 +1273,33 @@ describe('observability internal API helpers', () => {
       })
     );
     expect(getCalledHeaders(fetchMock, 1).get('Content-Type')).toBe(
+      'application/json'
+    );
+  });
+
+  it('queues cron runner recovery through a JSON mutation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await requestCronRunnerRecovery(
+      { action: 'restart', reason: 'operator-requested-restart' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/runner-recovery',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'restart',
+          reason: 'operator-requested-restart',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
       'application/json'
     );
   });

@@ -127,6 +127,76 @@ function createSqlMock({
   });
 }
 
+function createSetupSqlMock() {
+  type TestSql = ((
+    strings: TemplateStringsArray | string[],
+    ...values: unknown[]
+  ) => unknown) & {
+    begin?: (handler: (transaction: TestSql) => Promise<void>) => Promise<void>;
+    json: (value: unknown) => unknown;
+  };
+
+  const transactionCalls: {
+    query: string;
+    values: unknown[];
+  }[] = [];
+  const jobs = [
+    {
+      active: true,
+      external_job_key: 'enqueue-tracked-sources',
+      failure_count: 0,
+      last_run_at: null,
+      last_status: null,
+      name: 'Managed scheduler enqueue tracked sources',
+      next_run_at: '2026-06-29 08:00:00+00',
+      schedule: '0 * * * *',
+    },
+    {
+      active: true,
+      external_job_key: 'process-queue',
+      failure_count: 0,
+      last_run_at: null,
+      last_status: null,
+      name: 'Managed scheduler process queue',
+      next_run_at: '2026-06-29 07:35:00+00',
+      schedule: '*/5 * * * *',
+    },
+  ];
+  const secrets = [
+    { name: 'MANAGED_CRON_ENABLED', value: 'true' },
+    { name: 'EXTERNAL_APP_MANAGED_CRON_TOKEN', value: 'Bearer token' },
+  ];
+  const transaction = vi.fn(
+    (strings: TemplateStringsArray | string[], ...values: unknown[]) => {
+      if (!('raw' in strings)) return strings;
+
+      transactionCalls.push({
+        query: strings.join(' '),
+        values,
+      });
+      return [];
+    }
+  ) as unknown as TestSql;
+  transaction.json = (value: unknown) => ({ __json: value });
+
+  const sql = vi.fn(
+    (strings: TemplateStringsArray | string[], ..._values: unknown[]) => {
+      if (!('raw' in strings)) return strings;
+
+      const query = strings.join(' ');
+      if (query.includes('from public.workspace_cron_jobs')) return jobs;
+      if (query.includes('from public.workspace_secrets')) return secrets;
+      return [];
+    }
+  ) as unknown as TestSql;
+  sql.begin = async (handler: (transaction: TestSql) => Promise<void>) => {
+    await handler(transaction);
+  };
+  sql.json = (value: unknown) => ({ __json: value });
+
+  return { sql, transactionCalls };
+}
+
 function postgresError(code: string, message: string) {
   return Object.assign(new Error(message), {
     code,
@@ -184,6 +254,10 @@ describe('external app managed cron routes', () => {
 
     expect(response.status).toBe(503);
     expect(body).toMatchObject({
+      adminRecoveryHref:
+        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
+      adminRecoveryReason:
+        'Managed cron database is unavailable. Set a private platform database URL for Tuturuuu, then retry.',
       code: 'MANAGED_CRON_DATABASE_UNAVAILABLE',
       configured: false,
       developerDebug: {
@@ -219,6 +293,8 @@ describe('external app managed cron routes', () => {
 
     expect(response.status).toBe(503);
     expect(body).toMatchObject({
+      adminRecoveryHref:
+        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
       code: 'MANAGED_CRON_SCHEMA_NOT_READY',
       configured: false,
       developerDebug: {
@@ -247,6 +323,8 @@ describe('external app managed cron routes', () => {
 
     expect(response.status).toBe(503);
     expect(body).toMatchObject({
+      adminRecoveryHref:
+        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
       code: 'MANAGED_CRON_SCHEMA_NOT_READY',
       configured: false,
       developerDebug: {
@@ -278,7 +356,46 @@ describe('external app managed cron routes', () => {
       workspaceId,
     });
     expect(mocks.serverLoggerError).not.toHaveBeenCalled();
+    expect(body.adminRecoveryHref).toBeUndefined();
     expectNoSensitiveDiagnostics(body);
+  });
+
+  it('sets up managed cron jobs with current endpoint and header schema', async () => {
+    const { sql, transactionCalls } = createSetupSqlMock();
+    mocks.getPlatformSql.mockReturnValue(sql);
+    mocks.listEnabledManagedCronDomainsWithSql.mockResolvedValue([
+      'cybershield35.ttr.gg',
+    ]);
+
+    const response = await SETUP(setupRequest(), context());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      configured: true,
+      enabled: true,
+    });
+    expect(body.jobs).toHaveLength(2);
+
+    const jobInsertCalls = transactionCalls.filter(({ query }) =>
+      query.includes('insert into public.workspace_cron_jobs')
+    );
+    expect(jobInsertCalls).toHaveLength(2);
+
+    for (const { query, values } of jobInsertCalls) {
+      expect(query).toContain('endpoint_url');
+      expect(query).toContain('headers_config');
+      expect(query).not.toContain(' url,');
+      expect(query).not.toContain('excluded.url');
+      expect(values).toContainEqual({
+        __json: [
+          {
+            name: 'Authorization',
+            secretName: 'EXTERNAL_APP_MANAGED_CRON_TOKEN',
+          },
+        ],
+      });
+    }
   });
 
   it('logs unknown failures and returns sanitized operation diagnostics', async () => {
@@ -296,6 +413,8 @@ describe('external app managed cron routes', () => {
 
     expect(response.status).toBe(500);
     expect(body).toMatchObject({
+      adminRecoveryHref:
+        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
       code: 'MANAGED_CRON_STATUS_CHECK_FAILED',
       configured: false,
       developerDebug: {

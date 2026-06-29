@@ -6,10 +6,13 @@ import type {
   CronMonitoringControl,
   CronMonitoringJob,
   CronMonitoringSnapshot,
+  CronRunnerRecoveryAction,
+  CronRunnerRecoveryRequest,
   CronRunRecord,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 
 const DEFAULT_CRON_STATUS_STALE_MS = 120_000;
+const CRON_RUNNER_RECOVERY_REQUEST_FILE = 'cron-runner-recovery.request.json';
 
 function readJsonFile<T>(filePath: string, fallback: T, fsImpl = fs): T {
   if (!fsImpl.existsSync(/*turbopackIgnore: true*/ filePath)) {
@@ -95,6 +98,10 @@ export function getCronMonitoringPaths() {
     controlDir,
     controlFile: path.join(controlDir, 'cron-control.json'),
     executionDir: path.join(runtimeDir, 'executions'),
+    runnerRecoveryRequestFile: path.join(
+      controlDir,
+      CRON_RUNNER_RECOVERY_REQUEST_FILE
+    ),
     runRequestsDir: path.join(controlDir, 'cron-run-requests'),
     runtimeDir,
     statusFile: path.join(runtimeDir, 'status.json'),
@@ -185,6 +192,54 @@ function readControl(
     ...control,
     jobs: control.jobs && typeof control.jobs === 'object' ? control.jobs : {},
   };
+}
+
+function normalizeCronRunnerRecoveryRequest(
+  value: unknown
+): CronRunnerRecoveryRequest | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Partial<CronRunnerRecoveryRequest>;
+  if (
+    record.kind !== 'cron-runner-recovery' ||
+    (record.action !== 'ensure' && record.action !== 'restart') ||
+    typeof record.reason !== 'string' ||
+    typeof record.requestedAt !== 'string' ||
+    typeof record.requestedBy !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    action: record.action,
+    attemptCount:
+      typeof record.attemptCount === 'number' ? record.attemptCount : 0,
+    kind: 'cron-runner-recovery',
+    lastAttemptAt:
+      typeof record.lastAttemptAt === 'number' ? record.lastAttemptAt : null,
+    lastError:
+      typeof record.lastError === 'string' && record.lastError.trim()
+        ? record.lastError.trim()
+        : null,
+    reason: record.reason,
+    requestedAt: record.requestedAt,
+    requestedBy: record.requestedBy,
+    requestedByEmail:
+      typeof record.requestedByEmail === 'string'
+        ? record.requestedByEmail
+        : null,
+  };
+}
+
+function readCronRunnerRecoveryRequest(
+  paths = getCronMonitoringPaths(),
+  fsImpl = fs
+) {
+  return normalizeCronRunnerRecoveryRequest(
+    readJsonFile(paths.runnerRecoveryRequestFile, null, fsImpl)
+  );
 }
 
 function getJobControlEnabled(control: CronMonitoringControl, jobId: string) {
@@ -362,6 +417,7 @@ export function readCronMonitoringSnapshot({
       totalJobs: effectiveJobs.length,
     },
     retainedExecutionCount: executions.length,
+    runnerRecoveryRequest: readCronRunnerRecoveryRequest(paths, fsImpl),
     runs,
     source: {
       configAvailable: fsImpl.existsSync(
@@ -500,5 +556,36 @@ export function queueCronRunRequest({
     fsImpl
   );
 
+  return request;
+}
+
+export function queueCronRunnerRecoveryRequest({
+  action,
+  fsImpl = fs,
+  paths = getCronMonitoringPaths(),
+  reason,
+  requestedBy,
+  requestedByEmail,
+}: {
+  action: CronRunnerRecoveryAction;
+  fsImpl?: typeof fs;
+  paths?: ReturnType<typeof getCronMonitoringPaths>;
+  reason: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+}) {
+  const request: CronRunnerRecoveryRequest = {
+    action,
+    attemptCount: 0,
+    kind: 'cron-runner-recovery',
+    lastAttemptAt: null,
+    lastError: null,
+    reason,
+    requestedAt: new Date().toISOString(),
+    requestedBy,
+    requestedByEmail,
+  };
+
+  writeJsonFile(paths.runnerRecoveryRequestFile, request, fsImpl);
   return request;
 }

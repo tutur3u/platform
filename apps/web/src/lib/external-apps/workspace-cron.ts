@@ -102,6 +102,8 @@ const MANAGED_CRON_OPERATION_FAILURE_CODES: Record<
   setup: 'MANAGED_CRON_SETUP_FAILED',
   status: 'MANAGED_CRON_STATUS_CHECK_FAILED',
 };
+const MANAGED_CRON_ADMIN_RECOVERY_PATH =
+  '/vi/internal/infrastructure/monitoring/cron?focus=cron-runner';
 
 type ManagedCronFailure = {
   code: string;
@@ -265,16 +267,19 @@ function managedCronFailureResponse({
   access,
   error,
   operation,
+  request,
   route,
   wsId,
 }: {
   access?: ExternalAppWorkspaceCronAccess | null;
   error: unknown;
   operation: ManagedCronOperation;
+  request: Request;
   route: string;
   wsId: string;
 }) {
   const failure = managedCronFailureForOperation(operation, error);
+  const adminRecoveryHref = buildManagedCronAdminRecoveryHref(request);
 
   serverLogger.error('External app managed cron operation failed', {
     code: failure.code,
@@ -291,6 +296,8 @@ function managedCronFailureResponse({
 
   return NextResponse.json(
     {
+      adminRecoveryHref,
+      adminRecoveryReason: failure.setupDisabledReason,
       code: failure.code,
       configured: false,
       developerDebug: failure.developerDebug,
@@ -301,6 +308,10 @@ function managedCronFailureResponse({
     },
     { status: failure.status }
   );
+}
+
+function buildManagedCronAdminRecoveryHref(request: Request) {
+  return new URL(MANAGED_CRON_ADMIN_RECOVERY_PATH, request.url).toString();
 }
 
 function isWorkspaceHandleCandidate(value: string) {
@@ -498,6 +509,7 @@ export async function handleExternalAppWorkspaceCronRoute({
         access,
         error,
         operation,
+        request,
         route,
         wsId,
       });
@@ -637,16 +649,15 @@ export async function setupExternalAppWorkspaceCron({
 
     for (const job of MANAGED_JOBS) {
       const endpointUrl = new URL(job.path, callbackBaseUrl).toString();
-      const headersConfig = JSON.stringify([
+      const headersConfig = [
         { name: 'Authorization', secretName: MANAGED_CRON_TOKEN_SECRET },
-      ]);
+      ];
       await transaction`
         insert into public.workspace_cron_jobs (
           ws_id,
           name,
           dataset_id,
           schedule,
-          url,
           active,
           endpoint_url,
           http_method,
@@ -662,11 +673,10 @@ export async function setupExternalAppWorkspaceCron({
           ${job.name},
           null,
           ${job.schedule},
-          ${endpointUrl},
           true,
           ${endpointUrl},
           'POST',
-          ${headersConfig}::jsonb,
+          ${transaction.json(headersConfig)}::jsonb,
           15000,
           1,
           ${getNextManagedCronRunAt(job.schedule).toISOString()},
@@ -679,7 +689,6 @@ export async function setupExternalAppWorkspaceCron({
         do update set
           name = excluded.name,
           schedule = excluded.schedule,
-          url = excluded.url,
           active = true,
           endpoint_url = excluded.endpoint_url,
           http_method = excluded.http_method,

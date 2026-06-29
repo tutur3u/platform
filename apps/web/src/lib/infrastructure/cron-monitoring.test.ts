@@ -114,6 +114,10 @@ describe('readCronMonitoringSnapshot', () => {
       controlDir,
       controlFile: path.join(controlDir, 'cron-control.json'),
       executionDir: path.join(runtimeDir, 'executions'),
+      runnerRecoveryRequestFile: path.join(
+        controlDir,
+        'cron-runner-recovery.request.json'
+      ),
       runRequestsDir: path.join(controlDir, 'cron-run-requests'),
       runtimeDir,
       statusFile: path.join(runtimeDir, 'status.json'),
@@ -174,6 +178,60 @@ describe('readCronMonitoringSnapshot', () => {
       ]);
       expect(snapshot.overview.processingRuns).toBe(1);
       expect(snapshot.overview.queuedRuns).toBe(1);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('includes pending cron runner recovery requests in the snapshot', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-runner-recovery-')
+    );
+    const configFile = path.join(tempDir, 'cron.config.json');
+    const runtimeDir = path.join(tempDir, 'runtime');
+    const controlDir = path.join(tempDir, 'control');
+    const paths = {
+      configFile,
+      controlDir,
+      controlFile: path.join(controlDir, 'cron-control.json'),
+      executionDir: path.join(runtimeDir, 'executions'),
+      runnerRecoveryRequestFile: path.join(
+        controlDir,
+        'cron-runner-recovery.request.json'
+      ),
+      runRequestsDir: path.join(controlDir, 'cron-run-requests'),
+      runtimeDir,
+      statusFile: path.join(runtimeDir, 'status.json'),
+    };
+
+    try {
+      writeCronConfig(configFile);
+      fs.mkdirSync(controlDir, { recursive: true });
+      fs.writeFileSync(
+        paths.runnerRecoveryRequestFile,
+        JSON.stringify({
+          action: 'restart',
+          attemptCount: 1,
+          kind: 'cron-runner-recovery',
+          lastAttemptAt: 1_700_000_000_000,
+          lastError: 'compose failed',
+          reason: 'operator-requested-restart',
+          requestedAt: '2026-06-29T00:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@tuturuuu.com',
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        paths,
+      });
+
+      expect(snapshot.runnerRecoveryRequest).toMatchObject({
+        action: 'restart',
+        attemptCount: 1,
+        kind: 'cron-runner-recovery',
+        lastError: 'compose failed',
+      });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }

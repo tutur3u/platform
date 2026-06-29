@@ -1230,6 +1230,20 @@ export interface CronMonitoringControl {
   updatedByEmail: string | null;
 }
 
+export type CronRunnerRecoveryAction = 'ensure' | 'restart';
+
+export interface CronRunnerRecoveryRequest {
+  action: CronRunnerRecoveryAction;
+  attemptCount: number;
+  kind: 'cron-runner-recovery';
+  lastAttemptAt: number | null;
+  lastError: string | null;
+  reason: string;
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+}
+
 export interface CronMonitoringSnapshot {
   control: CronMonitoringControl;
   enabled: boolean;
@@ -1246,6 +1260,7 @@ export interface CronMonitoringSnapshot {
     totalJobs: number;
   };
   retainedExecutionCount: number;
+  runnerRecoveryRequest: CronRunnerRecoveryRequest | null;
   runs: CronRunRecord[];
   source: {
     configAvailable: boolean;
@@ -1520,6 +1535,16 @@ export interface UpdateCronMonitoringControlPayload {
 export interface UpdateCronMonitoringControlResponse {
   control: CronMonitoringControl;
   message: string;
+}
+
+export interface RequestCronRunnerRecoveryPayload {
+  action: CronRunnerRecoveryAction;
+  reason?: string;
+}
+
+export interface RequestCronRunnerRecoveryResponse {
+  message: string;
+  request: CronRunnerRecoveryRequest;
 }
 
 export type ObservabilityLogLevel = 'debug' | 'error' | 'info' | 'warn';

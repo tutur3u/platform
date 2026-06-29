@@ -4,6 +4,7 @@ const {
   authorizeInfrastructureOperatorMock,
   authorizeInfrastructureViewerMock,
   queueCronRunRequestMock,
+  queueCronRunnerRecoveryRequestMock,
   readCronExecutionArchiveMock,
   readCronMonitoringSnapshotMock,
   updateCronMonitoringControlMock,
@@ -11,6 +12,7 @@ const {
   authorizeInfrastructureOperatorMock: vi.fn(),
   authorizeInfrastructureViewerMock: vi.fn(),
   queueCronRunRequestMock: vi.fn(),
+  queueCronRunnerRecoveryRequestMock: vi.fn(),
   readCronExecutionArchiveMock: vi.fn(),
   readCronMonitoringSnapshotMock: vi.fn(),
   updateCronMonitoringControlMock: vi.fn(),
@@ -28,6 +30,7 @@ vi.mock('../../blue-green/authorization', () => ({
 
 vi.mock('@/lib/infrastructure/cron-monitoring', () => ({
   queueCronRunRequest: queueCronRunRequestMock,
+  queueCronRunnerRecoveryRequest: queueCronRunnerRecoveryRequestMock,
   readCronExecutionArchive: readCronExecutionArchiveMock,
   readCronMonitoringSnapshot: readCronMonitoringSnapshotMock,
   updateCronMonitoringControl: updateCronMonitoringControlMock,
@@ -37,6 +40,7 @@ import { PUT as PUTControl } from './control/route';
 import { GET as GETExecutions } from './executions/route';
 import { GET } from './route';
 import { POST as POSTRun } from './run/route';
+import { POST as POSTRunnerRecovery } from './runner-recovery/route';
 
 function authorize() {
   const authorization = {
@@ -199,5 +203,55 @@ describe('cron monitoring routes', () => {
     expect(response.status).toBe(403);
     expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
     expect(updateCronMonitoringControlMock).not.toHaveBeenCalled();
+  });
+
+  it('queues cron runner recovery for authorized infrastructure operators', async () => {
+    queueCronRunnerRecoveryRequestMock.mockReturnValue({
+      action: 'restart',
+      attemptCount: 0,
+      kind: 'cron-runner-recovery',
+      lastAttemptAt: null,
+      lastError: null,
+      reason: 'operator-requested-restart',
+      requestedAt: '2026-06-29T00:00:00.000Z',
+      requestedBy: 'user-1',
+      requestedByEmail: 'ops@tuturuuu.com',
+    });
+
+    const response = await POSTRunnerRecovery(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/runner-recovery',
+        {
+          body: JSON.stringify({ action: 'restart' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(queueCronRunnerRecoveryRequestMock).toHaveBeenCalledWith({
+      action: 'restart',
+      reason: 'operator-requested-restart',
+      requestedBy: 'user-1',
+      requestedByEmail: 'ops@tuturuuu.com',
+    });
+  });
+
+  it('rejects cron runner recovery without infrastructure operator access', async () => {
+    denyOperator();
+
+    const response = await POSTRunnerRecovery(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/runner-recovery',
+        {
+          body: JSON.stringify({ action: 'ensure' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(403);
+    expect(queueCronRunnerRecoveryRequestMock).not.toHaveBeenCalled();
   });
 });

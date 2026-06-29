@@ -52,6 +52,7 @@ const {
 const {
   ROOT_DIR,
   WATCH_ARGS_FILE,
+  WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
@@ -296,6 +297,7 @@ const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const WATCHER_CONTAINER_REFRESH_MESSAGE =
   'host-supervised watcher service recreation';
+const CRON_RUNNER_RECOVERY_RETRY_MS = 60_000;
 const MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
 const MIGRATION_STAGING_PORT_ENV = {
   DOCKER_WEB_BUILDKIT_PORT: '17914',
@@ -985,6 +987,145 @@ function clearPendingDeployRequest({
   paths = getWatchPaths(),
 } = {}) {
   fsImpl.rmSync(paths.pendingDeployFile, { force: true });
+}
+
+function normalizeCronRunnerRecoveryRequest(request) {
+  if (!request || typeof request !== 'object' || Array.isArray(request)) {
+    return null;
+  }
+
+  if (
+    request.kind !== 'cron-runner-recovery' ||
+    (request.action !== 'ensure' && request.action !== 'restart') ||
+    typeof request.reason !== 'string' ||
+    typeof request.requestedAt !== 'string' ||
+    typeof request.requestedBy !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    ...request,
+    attemptCount:
+      typeof request.attemptCount === 'number' ? request.attemptCount : 0,
+    lastAttemptAt:
+      typeof request.lastAttemptAt === 'number' ? request.lastAttemptAt : null,
+    lastError:
+      typeof request.lastError === 'string' && request.lastError.trim()
+        ? request.lastError.trim()
+        : null,
+  };
+}
+
+function readCronRunnerRecoveryRequest(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.cronRunnerRecoveryRequestFile)) {
+    return null;
+  }
+
+  try {
+    return normalizeCronRunnerRecoveryRequest(
+      JSON.parse(
+        fsImpl.readFileSync(paths.cronRunnerRecoveryRequestFile, 'utf8')
+      )
+    );
+  } catch {
+    return null;
+  }
+}
+
+function writeCronRunnerRecoveryRequest(
+  request,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.controlDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.cronRunnerRecoveryRequestFile,
+    `${JSON.stringify(request, null, 2)}\n`,
+    'utf8'
+  );
+}
+
+function clearCronRunnerRecoveryRequest({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.cronRunnerRecoveryRequestFile, { force: true });
+}
+
+async function processCronRunnerRecoveryRequest({
+  env = process.env,
+  fsImpl = fs,
+  log = console,
+  now = Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const request = readCronRunnerRecoveryRequest(paths, fsImpl);
+  if (!request) return null;
+
+  if (
+    request.lastAttemptAt &&
+    now - request.lastAttemptAt < CRON_RUNNER_RECOVERY_RETRY_MS
+  ) {
+    return { request, status: 'backoff' };
+  }
+
+  const attemptCount = request.attemptCount + 1;
+  const attemptedRequest = {
+    ...request,
+    attemptCount,
+    lastAttemptAt: now,
+  };
+  writeCronRunnerRecoveryRequest(attemptedRequest, { fsImpl, paths });
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: {
+      ...env,
+      [HOST_WORKSPACE_DIR_ENV]: env[HOST_WORKSPACE_DIR_ENV] || rootDir,
+    },
+    fsImpl,
+    rootDir,
+  });
+  const result = await run(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'up',
+      '--build',
+      '--detach',
+      request.action === 'restart' ? '--force-recreate' : '--no-recreate',
+      '--remove-orphans',
+      WEB_CRON_RUNNER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      stdio: 'pipe',
+    }
+  );
+
+  if (result.code !== 0) {
+    const lastError =
+      result.stderr?.trim() ||
+      result.stdout?.trim() ||
+      `docker compose exited with code ${result.code}`;
+    const failedRequest = {
+      ...attemptedRequest,
+      lastError,
+    };
+    writeCronRunnerRecoveryRequest(failedRequest, { fsImpl, paths });
+    log.warn?.(`Cron runner recovery failed: ${lastError}`);
+    return { request: failedRequest, status: 'failed' };
+  }
+
+  clearCronRunnerRecoveryRequest({ fsImpl, paths });
+  log.info?.(
+    request.action === 'restart'
+      ? 'Recreated web-cron-runner from operator recovery request.'
+      : 'Ensured web-cron-runner is started from operator recovery request.'
+  );
+  return { request: attemptedRequest, status: 'recovered' };
 }
 
 function hasPersistedPendingDeployRequest(
@@ -4644,6 +4785,35 @@ async function runDeployWatchIteration(
       })),
     };
   };
+  const cronRunnerRecovery = await processCronRunnerRecoveryRequest({
+    env,
+    fsImpl,
+    log,
+    now: checkedAt,
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+
+  if (cronRunnerRecovery?.status === 'recovered') {
+    return attachRuntime({
+      checkedAt,
+      cronRunnerRecovery,
+      status: 'cron-runner-recovered',
+    });
+  }
+
+  if (cronRunnerRecovery?.status === 'failed') {
+    return attachRuntime({
+      checkedAt,
+      cronRunnerRecovery,
+      error: new Error(
+        cronRunnerRecovery.request.lastError ?? 'Cron runner recovery failed.'
+      ),
+      status: 'cron-runner-recovery-failed',
+    });
+  }
+
   const timedOutBuild = await stopTimedOutDeploymentBuildIfNeeded({
     env,
     fsImpl,
@@ -7842,6 +8012,7 @@ module.exports = {
   CONTAINER_REFRESH_WATCHED_FILES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
+  WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
@@ -7851,6 +8022,7 @@ module.exports = {
   WATCH_STATUS_FILE,
   WATCHER_CONTAINER_ENV,
   WEB_CRON_RUNNER_SERVICE,
+  CRON_RUNNER_RECOVERY_RETRY_MS,
   DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
   DOCKER_DAEMON_RESTART_COMMAND_ENV,
   DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,
@@ -7867,6 +8039,7 @@ module.exports = {
   clearInstantRolloutRequest,
   clearWatchStatus,
   clearContainerManagedWatcherState,
+  clearCronRunnerRecoveryRequest,
   clearPendingDeployRequest,
   createWatchUi,
   fetchTrackedBranch,
@@ -7924,6 +8097,7 @@ module.exports = {
   pullTrackedBranch,
   readDeploymentHistory,
   readDockerDaemonRecoverySettings,
+  readCronRunnerRecoveryRequest,
   readInstantRolloutRequest,
   readPendingDeployRequest,
   readWatchArgsFile,
@@ -7938,6 +8112,7 @@ module.exports = {
   runBunFrozenInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
+  processCronRunnerRecoveryRequest,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
   runDeployWatchLoop,
@@ -7961,6 +8136,7 @@ module.exports = {
   summarizeResult,
   waitForProcessExit,
   writeWatchArgsFile,
+  writeCronRunnerRecoveryRequest,
   writePendingDeployRequest,
   writeWatchStatus,
   writeDeploymentHistory,

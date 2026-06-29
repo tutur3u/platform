@@ -122,6 +122,7 @@ export function useCronMonitoringSnapshot() {
     queryKey: ['infrastructure', 'monitoring', 'cron', 'snapshot'],
     queryFn: () => getCronMonitoringSnapshot(),
     refetchInterval: (query) =>
+      query.state.data?.runnerRecoveryRequest ||
       (query.state.data?.runs ?? []).some(
         (run) => run.status === 'queued' || run.status === 'processing'
       )

@@ -42,6 +42,8 @@ import type {
   RequestBlueGreenInstantRolloutResponse,
   RequestBlueGreenWatcherRecoveryPayload,
   RequestBlueGreenWatcherRecoveryResponse,
+  RequestCronRunnerRecoveryPayload,
+  RequestCronRunnerRecoveryResponse,
   UpdateBlueGreenDockerRecoverySettingsPayload,
   UpdateBlueGreenDockerRecoverySettingsResponse,
   UpdateCronMonitoringControlPayload,
@@ -243,6 +245,24 @@ export async function getInfrastructureStressTestSnapshot(
     '/api/v1/infrastructure/monitoring/stress-tests',
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function requestCronRunnerRecovery(
+  payload: RequestCronRunnerRecoveryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RequestCronRunnerRecoveryResponse>(
+    '/api/v1/infrastructure/monitoring/cron/runner-recovery',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
     }
   );
 }

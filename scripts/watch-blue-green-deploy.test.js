@@ -86,6 +86,7 @@ const {
   parseUpstreamRef,
   pullTrackedBranch,
   readDeploymentHistory,
+  readCronRunnerRecoveryRequest,
   readWatchArgsFile,
   readWatchLock,
   readPendingDeployRequest,
@@ -95,6 +96,7 @@ const {
   runBunFrozenInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
+  processCronRunnerRecoveryRequest,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
   runDeployWatchLoop,
@@ -110,6 +112,7 @@ const {
   summarizeRequestRate,
   getLatestDeploymentSummary,
   writeDeploymentHistory,
+  writeCronRunnerRecoveryRequest,
   writeWatchArgsFile,
   loadRuntimeSnapshot,
   mirrorExistingWatchSession,
@@ -197,6 +200,157 @@ test('watcher restart globs include blue-green service wiring files', () => {
       'packages/realtime/src/meet/index.ts'
     )
   );
+});
+
+test('processCronRunnerRecoveryRequest ensures the cron runner without recreating it', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-recovery-ensure-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+
+  try {
+    writeCronRunnerRecoveryRequest(
+      {
+        action: 'ensure',
+        attemptCount: 0,
+        kind: 'cron-runner-recovery',
+        lastAttemptAt: null,
+        lastError: null,
+        reason: 'operator-requested-ensure',
+        requestedAt: '2026-06-29T00:00:00.000Z',
+        requestedBy: 'user-1',
+        requestedByEmail: null,
+      },
+      { paths }
+    );
+
+    const result = await processCronRunnerRecoveryRequest({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args, options) => {
+        calls.push({ args, command, env: options.env });
+        return createResult('');
+      },
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].args, [
+      'compose',
+      '-f',
+      PROD_COMPOSE_FILE,
+      '--profile',
+      'redis',
+      'up',
+      '--build',
+      '--detach',
+      '--no-recreate',
+      '--remove-orphans',
+      WEB_CRON_RUNNER_SERVICE,
+    ]);
+    assert.equal(calls[0].command, 'docker');
+    assert.equal(calls[0].env.PLATFORM_HOST_WORKSPACE_DIR, tempDir);
+    assert.equal(readCronRunnerRecoveryRequest(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('processCronRunnerRecoveryRequest force recreates the cron runner for restarts', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-recovery-restart-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+
+  try {
+    writeCronRunnerRecoveryRequest(
+      {
+        action: 'restart',
+        attemptCount: 0,
+        kind: 'cron-runner-recovery',
+        lastAttemptAt: null,
+        lastError: null,
+        reason: 'operator-requested-restart',
+        requestedAt: '2026-06-29T00:00:00.000Z',
+        requestedBy: 'user-1',
+        requestedByEmail: null,
+      },
+      { paths }
+    );
+
+    const result = await processCronRunnerRecoveryRequest({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args, options) => {
+        calls.push({ args, command, env: options.env });
+        return createResult('');
+      },
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.ok(calls[0].args.includes('--force-recreate'));
+    assert.ok(!calls[0].args.includes('--no-recreate'));
+    assert.equal(readCronRunnerRecoveryRequest(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('processCronRunnerRecoveryRequest keeps failed cron runner recovery requests for retry', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-recovery-failed-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeCronRunnerRecoveryRequest(
+      {
+        action: 'restart',
+        attemptCount: 0,
+        kind: 'cron-runner-recovery',
+        lastAttemptAt: null,
+        lastError: null,
+        reason: 'operator-requested-restart',
+        requestedAt: '2026-06-29T00:00:00.000Z',
+        requestedBy: 'user-1',
+        requestedByEmail: null,
+      },
+      { paths }
+    );
+
+    const result = await processCronRunnerRecoveryRequest({
+      env: {},
+      now: 1_700_000_000_000,
+      paths,
+      rootDir: tempDir,
+      runCommand: async () =>
+        createResult('', { code: 1, stderr: 'compose refused' }),
+    });
+    const pending = readCronRunnerRecoveryRequest(paths);
+
+    assert.equal(result.status, 'failed');
+    assert.equal(pending.attemptCount, 1);
+    assert.equal(pending.lastAttemptAt, 1_700_000_000_000);
+    assert.equal(pending.lastError, 'compose refused');
+
+    const backoff = await processCronRunnerRecoveryRequest({
+      env: {},
+      now: 1_700_000_010_000,
+      paths,
+      rootDir: tempDir,
+      runCommand: async () => {
+        throw new Error('should not run during backoff');
+      },
+    });
+
+    assert.equal(backoff.status, 'backoff');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {

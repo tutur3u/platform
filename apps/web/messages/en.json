@@ -2091,6 +2091,19 @@
         "queued": "Queued",
         "skipped": "Skipped"
       },
+      "runner_recovery": {
+        "description": "Recover the Docker cron runner service without changing managed-cron database prerequisites.",
+        "ensure_action": "Ensure serving",
+        "ensure_pending": "Queueing ensure",
+        "last_error": "Last recovery error",
+        "last_heartbeat": "Last heartbeat",
+        "pending": "Recovery pending",
+        "requested": "Requested",
+        "restart_action": "Restart cron service",
+        "restart_pending": "Queueing restart",
+        "title": "Cron runner recovery",
+        "watcher_waiting": "Recovery is queued. The Docker watcher will apply it on its next healthy polling cycle."
+      },
       "runner_status": {
         "live": "Live",
         "missing": "Missing",

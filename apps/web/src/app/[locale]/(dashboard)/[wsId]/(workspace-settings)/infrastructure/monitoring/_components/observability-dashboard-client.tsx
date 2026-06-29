@@ -45,6 +45,7 @@ import {
   queueCronRun,
   queueInfrastructureProjectDeploy,
   requestBlueGreenWatcherRecovery,
+  requestCronRunnerRecovery,
   syncInfrastructureProject,
   type UpdateInfrastructureProjectPayload,
   updateCronMonitoringControl,
@@ -341,6 +342,13 @@ function getCronRunTone(status: string | null | undefined): Tone {
   if (status === 'queued') return 'amber';
   if (status === 'timeout') return 'orange';
   if (status === 'failed') return 'red';
+  return 'muted';
+}
+
+function getCronRunnerTone(status: string | null | undefined): Tone {
+  if (status === 'live') return 'green';
+  if (status === 'stale') return 'orange';
+  if (status === 'missing') return 'red';
   return 'muted';
 }
 
@@ -975,6 +983,10 @@ export function ObservabilityDashboardClient({
     'project',
     parseAsString.withDefault('platform').withOptions({ shallow: true })
   );
+  const [focus] = useQueryState(
+    'focus',
+    parseAsString.withDefault('').withOptions({ shallow: true })
+  );
   const [pageSize] = useQueryState(
     'limit',
     parseAsInteger.withDefault(100).withOptions({ shallow: true })
@@ -1143,7 +1155,8 @@ export function ObservabilityDashboardClient({
     enabled: mode === 'cron',
     queryFn: () => getCronMonitoringSnapshot(),
     queryKey: ['infrastructure', 'monitoring', 'cron', 'snapshot'],
-    refetchInterval: 5_000,
+    refetchInterval: (query) =>
+      query.state.data?.runnerRecoveryRequest ? 1000 : 5000,
   });
   const cronExecutionsQuery = useInfiniteQuery<
     CronExecutionsPage,
@@ -1259,6 +1272,20 @@ export function ObservabilityDashboardClient({
   const cronControlMutation = useMutation({
     mutationFn: (payload: { enabled: boolean; jobId?: string }) =>
       updateCronMonitoringControl(payload),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['infrastructure', 'monitoring', 'cron'],
+      }),
+  });
+  const cronRunnerRecoveryMutation = useMutation({
+    mutationFn: (action: 'ensure' | 'restart') =>
+      requestCronRunnerRecovery({
+        action,
+        reason:
+          action === 'restart'
+            ? 'operator-requested-restart'
+            : 'operator-requested-ensure',
+      }),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ['infrastructure', 'monitoring', 'cron'],
@@ -2280,6 +2307,101 @@ export function ObservabilityDashboardClient({
               meta={t('cron.summary.next_run_meta')}
               value={formatTime(cronSnapshot?.nextRunAt)}
             />
+          </section>
+
+          <section
+            className={cn(
+              'rounded-lg border bg-background',
+              focus === 'cron-runner'
+                ? 'border-dynamic-blue/35 bg-dynamic-blue/5'
+                : 'border-border'
+            )}
+            id="cron-runner"
+          >
+            <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-sm">
+                    {cronT('runner_recovery.title')}
+                  </p>
+                  <ToneBadge tone={getCronRunnerTone(cronSnapshot?.status)}>
+                    {cronT(
+                      `runner_status.${cronSnapshot?.status ?? 'missing'}`
+                    )}
+                  </ToneBadge>
+                  {cronSnapshot?.runnerRecoveryRequest ? (
+                    <ToneBadge tone="amber">
+                      {cronT('runner_recovery.pending')}
+                    </ToneBadge>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-muted-foreground text-xs leading-5">
+                  {cronT('runner_recovery.description')}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  <ToneBadge tone="muted">
+                    {cronT('runner_recovery.last_heartbeat')}:{' '}
+                    {formatTime(cronSnapshot?.updatedAt)}
+                  </ToneBadge>
+                  {cronSnapshot?.runnerRecoveryRequest ? (
+                    <ToneBadge tone="blue">
+                      {cronT('runner_recovery.requested')}:{' '}
+                      {formatTime(
+                        Date.parse(
+                          cronSnapshot.runnerRecoveryRequest.requestedAt
+                        )
+                      )}
+                    </ToneBadge>
+                  ) : null}
+                </div>
+                {cronSnapshot?.runnerRecoveryRequest?.lastError ? (
+                  <p className="mt-3 rounded-md border border-dynamic-red/25 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
+                    {cronT('runner_recovery.last_error')}:{' '}
+                    {cronSnapshot.runnerRecoveryRequest.lastError}
+                  </p>
+                ) : cronSnapshot?.runnerRecoveryRequest ? (
+                  <p className="mt-3 rounded-md border border-dynamic-yellow/25 bg-dynamic-yellow/10 px-3 py-2 text-dynamic-yellow text-xs">
+                    {cronT('runner_recovery.watcher_waiting')}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <Button
+                  disabled={
+                    cronRunnerRecoveryMutation.isPending ||
+                    !cronSnapshot ||
+                    Boolean(cronSnapshot.runnerRecoveryRequest)
+                  }
+                  onClick={() => cronRunnerRecoveryMutation.mutate('ensure')}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <Power className="mr-2 h-4 w-4" />
+                  {cronRunnerRecoveryMutation.isPending &&
+                  cronRunnerRecoveryMutation.variables === 'ensure'
+                    ? cronT('runner_recovery.ensure_pending')
+                    : cronT('runner_recovery.ensure_action')}
+                </Button>
+                <Button
+                  disabled={
+                    cronRunnerRecoveryMutation.isPending ||
+                    !cronSnapshot ||
+                    Boolean(cronSnapshot.runnerRecoveryRequest)
+                  }
+                  onClick={() => cronRunnerRecoveryMutation.mutate('restart')}
+                  size="sm"
+                  type="button"
+                  variant="destructive"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {cronRunnerRecoveryMutation.isPending &&
+                  cronRunnerRecoveryMutation.variables === 'restart'
+                    ? cronT('runner_recovery.restart_pending')
+                    : cronT('runner_recovery.restart_action')}
+                </Button>
+              </div>
+            </div>
           </section>
 
           <section className="rounded-lg border border-border bg-background">
