@@ -4,8 +4,9 @@
 
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TaskPropertiesSection } from './task-properties-section';
 
@@ -25,7 +26,9 @@ vi.mock('@tuturuuu/ui/hooks/use-calendar-preferences', () => ({
   }),
 }));
 
-function renderTaskPropertiesSection() {
+function renderTaskPropertiesSection(
+  overrides: Partial<ComponentProps<typeof TaskPropertiesSection>> = {}
+) {
   const props = {
     wsId: 'ws-1',
     boardId: 'board-1',
@@ -72,7 +75,13 @@ function renderTaskPropertiesSection() {
         created_at: '2026-01-01T00:00:00.000Z',
       },
     ],
-    taskProjects: [],
+    taskProjects: [
+      {
+        id: 'project-1',
+        name: 'Launch',
+        status: 'active',
+      },
+    ],
     workspaceMembers: [
       {
         id: 'user-1',
@@ -105,6 +114,7 @@ function renderTaskPropertiesSection() {
     disabled: false,
     isDraftMode: false,
     variant: 'compact' as const,
+    ...overrides,
   };
 
   const queryClient = new QueryClient({
@@ -124,13 +134,18 @@ function renderTaskPropertiesSection() {
 }
 
 describe('TaskPropertiesSection', () => {
-  it('keeps only one property popover open at a time', () => {
+  it('keeps only one property popover open at a time', async () => {
     renderTaskPropertiesSection();
 
     fireEvent.click(screen.getByLabelText('common.priority'));
     expect(screen.getByText('tasks.priority_critical')).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('common.labels'));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('tasks.priority_critical')
+      ).not.toBeInTheDocument()
+    );
     expect(
       screen.queryByText('tasks.priority_critical')
     ).not.toBeInTheDocument();
@@ -139,12 +154,150 @@ describe('TaskPropertiesSection', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('common.list_name_to_do'));
+    await waitFor(() =>
+      expect(
+        screen.queryByPlaceholderText('common.search_labels')
+      ).not.toBeInTheDocument()
+    );
     expect(
       screen.queryByPlaceholderText('common.search_labels')
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText('common.list_name_to_do')).toHaveAttribute(
       'aria-expanded',
       'true'
+    );
+  });
+
+  it('switches from priority to dates without closing the target popover', async () => {
+    renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.priority'));
+    expect(screen.getByText('tasks.priority_critical')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('ws-task-boards.dialog.dates'));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('ws-task-boards.dialog.start_date')
+      ).toBeInTheDocument()
+    );
+    expect(
+      screen.getByText('ws-task-boards.dialog.due_date')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('tasks.priority_critical')
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      triggerLabel: 'common.labels',
+      targetPlaceholder: 'common.search_labels',
+    },
+    {
+      triggerLabel: 'common.projects',
+      targetPlaceholder: 'common.search_projects',
+    },
+    {
+      triggerLabel: 'common.assignees',
+      targetPlaceholder: 'common.search_members',
+    },
+  ])('switches from priority to $triggerLabel and keeps the target popover open', async ({
+    targetPlaceholder,
+    triggerLabel,
+  }) => {
+    renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.priority'));
+    expect(screen.getByText('tasks.priority_critical')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText(triggerLabel));
+
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(targetPlaceholder)).toBeInTheDocument()
+    );
+    expect(
+      screen.queryByText('tasks.priority_critical')
+    ).not.toBeInTheDocument();
+  });
+
+  it('closes the priority popover after selecting a priority', () => {
+    const props = renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.priority'));
+    fireEvent.click(screen.getByText('tasks.priority_high'));
+
+    expect(props.onPriorityChange).toHaveBeenCalledWith('high');
+    expect(
+      screen.queryByText('tasks.priority_critical')
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps labels popover open after toggling a label', () => {
+    const props = renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.labels'));
+    fireEvent.click(screen.getByText('Bug'));
+
+    expect(props.onLabelToggle).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'label-1' })
+    );
+    expect(
+      screen.getByPlaceholderText('common.search_labels')
+    ).toBeInTheDocument();
+  });
+
+  it('keeps projects popover open after toggling a project', () => {
+    const props = renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.projects'));
+    fireEvent.click(screen.getByText('Launch'));
+
+    expect(props.onProjectToggle).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'project-1' })
+    );
+    expect(
+      screen.getByPlaceholderText('common.search_projects')
+    ).toBeInTheDocument();
+  });
+
+  it('keeps assignees popover open after toggling an assignee', () => {
+    const props = renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.assignees'));
+    fireEvent.click(screen.getByText('Taylor'));
+
+    expect(props.onAssigneeToggle).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 'user-1' })
+    );
+    expect(
+      screen.getByPlaceholderText('common.search_members')
+    ).toBeInTheDocument();
+  });
+
+  it('closes the active popover when clicking outside', async () => {
+    renderTaskPropertiesSection();
+
+    fireEvent.click(screen.getByLabelText('common.labels'));
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText('common.search_labels')
+      ).toBeInTheDocument()
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fireEvent.pointerDown(document.body, {
+      button: 0,
+      ctrlKey: false,
+      pointerType: 'mouse',
+    });
+    fireEvent.mouseDown(document.body, { button: 0, ctrlKey: false });
+    fireEvent.click(document.body);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByPlaceholderText('common.search_labels')
+      ).not.toBeInTheDocument()
     );
   });
 });

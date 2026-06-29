@@ -42,6 +42,10 @@ import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import {
+  type ComponentProps,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
   type ReactNode,
   useCallback,
   useEffect,
@@ -162,28 +166,74 @@ type TaskPropertyPopoverId =
   | 'assignees'
   | 'scheduling';
 
+const TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE =
+  'data-task-property-popover-trigger';
+
+const taskPropertyPopoverIds = new Set<TaskPropertyPopoverId>([
+  'priority',
+  'list',
+  'dates',
+  'estimation',
+  'labels',
+  'projects',
+  'assignees',
+  'scheduling',
+]);
+
+function isTaskPropertyPopoverId(
+  value: string | null
+): value is TaskPropertyPopoverId {
+  return !!value && taskPropertyPopoverIds.has(value as TaskPropertyPopoverId);
+}
+
+function getTaskPropertyPopoverIdFromTarget(
+  target: EventTarget | null
+): TaskPropertyPopoverId | null {
+  if (typeof Element === 'undefined' || !(target instanceof Element)) {
+    return null;
+  }
+
+  const trigger = target.closest(
+    `[${TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE}]`
+  );
+  const popoverId =
+    trigger?.getAttribute(TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE) ?? null;
+
+  return isTaskPropertyPopoverId(popoverId) ? popoverId : null;
+}
+
 function TaskPropertyPopoverTrigger({
   children,
   compact,
   label,
+  popoverId,
 }: {
   children: ReactNode;
   compact: boolean;
   label: ReactNode;
+  popoverId: TaskPropertyPopoverId;
 }) {
+  const trigger = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        [TASK_PROPERTY_POPOVER_TRIGGER_ATTRIBUTE]: popoverId,
+      })
+    : children;
+
   if (!compact) {
-    return <PopoverTrigger asChild>{children}</PopoverTrigger>;
+    return <PopoverTrigger asChild>{trigger}</PopoverTrigger>;
   }
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <PopoverTrigger asChild>{children}</PopoverTrigger>
+        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       </TooltipTrigger>
       <TooltipContent side="bottom">{label}</TooltipContent>
     </Tooltip>
   );
 }
+
+type TaskPropertyPopoverContentProps = ComponentProps<typeof PopoverContent>;
 
 // Calendar hours type options
 const getCalendarHoursOptions = (t: any) => [
@@ -422,15 +472,91 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     [activePopover]
   );
 
-  const setPopoverOpen = useCallback(
-    (popoverId: TaskPropertyPopoverId, open: boolean) => {
-      setActivePopover((currentPopover) => {
-        if (open) return popoverId;
-        return currentPopover === popoverId ? null : currentPopover;
-      });
+  const openPropertyPopover = useCallback(
+    (popoverId: TaskPropertyPopoverId) => {
+      setActivePopover(popoverId);
     },
     []
   );
+
+  const closePropertyPopover = useCallback(
+    (popoverId: TaskPropertyPopoverId) => {
+      setActivePopover((currentPopover) =>
+        currentPopover === popoverId ? null : currentPopover
+      );
+    },
+    []
+  );
+
+  const setPopoverOpen = useCallback(
+    (popoverId: TaskPropertyPopoverId, open: boolean) => {
+      if (open) {
+        openPropertyPopover(popoverId);
+        return;
+      }
+
+      closePropertyPopover(popoverId);
+    },
+    [closePropertyPopover, openPropertyPopover]
+  );
+
+  const handlePropertyPopoverCloseAutoFocus = useCallback<
+    NonNullable<TaskPropertyPopoverContentProps['onCloseAutoFocus']>
+  >((event) => {
+    event.preventDefault();
+  }, []);
+
+  const handlePropertyPopoverInteractOutside = useCallback<
+    NonNullable<TaskPropertyPopoverContentProps['onInteractOutside']>
+  >(
+    (event) => {
+      const targetPopoverId = getTaskPropertyPopoverIdFromTarget(event.target);
+
+      if (!targetPopoverId || targetPopoverId === activePopover) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const openTargetPopover = () => {
+        openPropertyPopover(targetPopoverId);
+      };
+
+      if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+        window.requestAnimationFrame(openTargetPopover);
+        return;
+      }
+
+      openTargetPopover();
+    },
+    [activePopover, openPropertyPopover]
+  );
+
+  const propertyPopoverContentProps = useMemo(
+    () => ({
+      onCloseAutoFocus: handlePropertyPopoverCloseAutoFocus,
+      onInteractOutside: handlePropertyPopoverInteractOutside,
+    }),
+    [handlePropertyPopoverCloseAutoFocus, handlePropertyPopoverInteractOutside]
+  );
+
+  useEffect(() => {
+    if (activePopover !== 'labels') {
+      setLabelSearchQuery('');
+    }
+  }, [activePopover]);
+
+  useEffect(() => {
+    if (activePopover !== 'projects') {
+      setProjectSearchQuery('');
+    }
+  }, [activePopover]);
+
+  useEffect(() => {
+    if (activePopover !== 'assignees') {
+      setAssigneeSearchQuery('');
+    }
+  }, [activePopover]);
 
   const unselectedAvailableLabels = useMemo(
     () =>
@@ -903,6 +1029,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     ? t(`tasks.priority_${priority}`)
                     : t('common.priority')
                 }
+                popoverId="priority"
               >
                 <button
                   type="button"
@@ -932,7 +1059,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   </span>
                 </button>
               </TaskPropertyPopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-0">
+              <PopoverContent
+                align="start"
+                className="w-56 p-0"
+                {...propertyPopoverContentProps}
+              >
                 <div className="p-1">
                   {[
                     {
@@ -1000,7 +1131,10 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               compact={isCompact}
               open={isPopoverOpen('list')}
               onOpenChange={(open) => setPopoverOpen('list', open)}
+              onPopoverCloseAutoFocus={handlePropertyPopoverCloseAutoFocus}
+              onPopoverInteractOutside={handlePropertyPopoverInteractOutside}
               onListChange={onListChange}
+              propertyPopoverId="list"
             />
 
             {/* Dates Badge */}
@@ -1015,6 +1149,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
                     : t('ws-task-boards.dialog.dates')
                 }
+                popoverId="dates"
               >
                 <button
                   type="button"
@@ -1036,7 +1171,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   </span>
                 </button>
               </TaskPropertyPopoverTrigger>
-              <PopoverContent align="start" className="w-80 p-0">
+              <PopoverContent
+                align="start"
+                className="w-80 p-0"
+                {...propertyPopoverContentProps}
+              >
                 <div className="rounded-lg p-3.5">
                   <div className="space-y-3">
                     {/* Start Date */}
@@ -1165,6 +1304,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       )
                     : t('ws-task-boards.dialog.estimate')
                 }
+                popoverId="estimation"
               >
                 <button
                   type="button"
@@ -1191,7 +1331,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   </span>
                 </button>
               </TaskPropertyPopoverTrigger>
-              <PopoverContent align="start" className="w-64 p-0">
+              <PopoverContent
+                align="start"
+                className="w-64 p-0"
+                {...propertyPopoverContentProps}
+              >
                 {!boardConfig?.estimation_type ? (
                   <EmptyStateCard
                     title={t('ws-task-boards.dialog.no_estimation_configured')}
@@ -1265,6 +1409,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           count: selectedLabels.length,
                         })
                 }
+                popoverId="labels"
               >
                 <button
                   type="button"
@@ -1290,7 +1435,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   </span>
                 </button>
               </TaskPropertyPopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-0">
+              <PopoverContent
+                align="start"
+                className="w-72 p-0"
+                {...propertyPopoverContentProps}
+              >
                 {availableLabels.length === 0 ? (
                   <EmptyStateCard
                     title={t('ws-task-boards.dialog.no_labels_configured')}
@@ -1415,6 +1564,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             count: selectedProjects.length,
                           })
                   }
+                  popoverId="projects"
                 >
                   <button
                     type="button"
@@ -1440,7 +1590,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     </span>
                   </button>
                 </TaskPropertyPopoverTrigger>
-                <PopoverContent align="start" className="w-72 p-0">
+                <PopoverContent
+                  align="start"
+                  className="w-72 p-0"
+                  {...propertyPopoverContentProps}
+                >
                   {taskProjects.length === 0 ? (
                     <EmptyStateCard
                       title={t('ws-task-boards.dialog.no_projects_configured')}
@@ -1556,6 +1710,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             count: selectedAssignees.length,
                           })
                   }
+                  popoverId="assignees"
                 >
                   <button
                     type="button"
@@ -1582,7 +1737,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     </span>
                   </button>
                 </TaskPropertyPopoverTrigger>
-                <PopoverContent align="start" className="w-72 p-0">
+                <PopoverContent
+                  align="start"
+                  className="w-72 p-0"
+                  {...propertyPopoverContentProps}
+                >
                   {workspaceMembers.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
                       {t('ws-task-boards.dialog.no_members_found')}
@@ -1679,6 +1838,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       ? formatDuration(totalMinutes, t)
                       : t('ws-task-boards.dialog.schedule')
                   }
+                  popoverId="scheduling"
                 >
                   <button
                     type="button"
@@ -1711,7 +1871,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     )}
                   </button>
                 </TaskPropertyPopoverTrigger>
-                <PopoverContent align="start" className="w-72 p-0">
+                <PopoverContent
+                  align="start"
+                  className="w-72 p-0"
+                  {...propertyPopoverContentProps}
+                >
                   <div className="rounded-lg p-3">
                     <div className="space-y-3">
                       {/* Duration */}

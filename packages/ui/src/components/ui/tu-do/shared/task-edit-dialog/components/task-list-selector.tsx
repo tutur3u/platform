@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { type ComponentProps, useMemo, useState } from 'react';
 import { CreateListDialog } from '../../create-list-dialog';
 import { translateTaskListNameForDisplay } from '../../utils/translate-task-list-display-name';
 import { TaskListPickerPanel } from './task-list-picker-panel';
@@ -23,7 +23,14 @@ interface TaskListSelectorProps {
   compact?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onPopoverCloseAutoFocus?: ComponentProps<
+    typeof PopoverContent
+  >['onCloseAutoFocus'];
+  onPopoverInteractOutside?: ComponentProps<
+    typeof PopoverContent
+  >['onInteractOutside'];
   onListChange: (listId: string) => void;
+  propertyPopoverId?: string;
 }
 
 export function TaskListSelector({
@@ -35,7 +42,10 @@ export function TaskListSelector({
   compact = false,
   open,
   onOpenChange,
+  onPopoverCloseAutoFocus,
+  onPopoverInteractOutside,
   onListChange,
+  propertyPopoverId,
 }: TaskListSelectorProps) {
   const t = useTranslations();
   const [uncontrolledPopoverOpen, setUncontrolledPopoverOpen] = useState(false);
@@ -80,6 +90,7 @@ export function TaskListSelector({
   const triggerButton = (
     <button
       type="button"
+      data-task-property-popover-trigger={propertyPopoverId}
       disabled={disabled}
       aria-label={compact ? triggerLabel : undefined}
       className={cn(
@@ -111,7 +122,12 @@ export function TaskListSelector({
         ) : (
           <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
         )}
-        <PopoverContent align="start" className="w-80 p-0">
+        <PopoverContent
+          align="start"
+          className="w-80 p-0"
+          onCloseAutoFocus={onPopoverCloseAutoFocus}
+          onInteractOutside={onPopoverInteractOutside}
+        >
           <TaskListPickerPanel
             selectedListId={selectedListId}
             availableLists={availableLists}
