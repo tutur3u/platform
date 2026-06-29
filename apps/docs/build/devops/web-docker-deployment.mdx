@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-06-21"
+updatedAt: "2026-06-29"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime and the
@@ -941,6 +941,13 @@ Docker environment generator creates a persisted internal secret at
 `web-cron-runner` service as `CRON_SECRET`. This keeps native Docker cron auth
 self-contained while preserving explicit host-provided secrets when present.
 
+Watcher startup also keeps the cron runner present. `bun serve:web:docker:bg`,
+`bun serve:web:docker:bg:watch`, and watcher recovery recreate or resume
+`web-blue-green-watcher` first, then ensure `web-cron-runner` exists with a
+no-recreate Compose start. A healthy existing cron runner is left running; a
+missing runner fails watcher bootstrap instead of leaving the stack without
+native cron execution.
+
 The managed workspace cron worker runs at
 `/api/cron/workspaces/managed-jobs` through the `managed-workspace-cron-jobs`
 entry. It claims due `workspace_cron_jobs` rows with endpoint URLs, but only for
@@ -955,6 +962,11 @@ Job endpoint URLs must use HTTPS, cannot include credentials, and must resolve
 to an exact or subdomain match of an enabled allowlist domain. Per-job request
 headers can be static values or references to `workspace_secrets` names; secret
 values are read server-side at execution time and are not exposed in the job UI.
+If a managed-cron status or setup request still returns HTTP 500 after the cron
+runner is available, check the Tuturuuu managed-cron prerequisites first:
+`PLATFORM_DATABASE_URL` or an equivalent private database URL must be present,
+and the managed-cron migrations must have created `workspace_cron_jobs` plus
+`private.managed_cron_whitelisted_domains`.
 
 Runtime cron telemetry is intentionally file-based and local to the host:
 
@@ -1140,6 +1152,31 @@ service or run it as an operator account with permission to execute only the
 configured Docker restart command and the explicit post-restart commands needed
 by colocated projects. Use `Restart=always` so the host supervisor itself comes
 back after reboots or process crashes.
+
+Example unit:
+
+```ini
+[Unit]
+Description=Tuturuuu blue/green watcher
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/tuturuuu
+Environment=NODE_ENV=production
+ExecStart=/usr/local/bin/bun serve:web:docker:bg:watch -- --if-locked resume
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Install it with the production checkout path and Bun path for the host, then
+run `systemctl enable --now tuturuuu-blue-green-watcher.service`. Keep
+deployment secrets in the checkout's root `.env.local` or an explicit env file,
+not in the unit file.
 
 Additional behavior:
 
@@ -1618,7 +1655,10 @@ host PID. Each invocation:
 
 1. Writes the forwarded watcher CLI args to `tmp/docker-web/watch/blue-green-auto-deploy.args.json`.
 2. Rebuilds and force-recreates the dedicated `web-blue-green-watcher` service.
-3. Tails that container's live logs so the terminal still shows the watcher dashboard.
+3. Builds and starts `web-cron-runner` with `--no-recreate` so native Docker
+   cron stays available without interrupting a healthy runner.
+4. Tails the watcher container's live logs so the terminal still shows the
+   watcher dashboard.
 
 The watcher container mounts:
 

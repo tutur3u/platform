@@ -42,10 +42,18 @@ interface PostEmailRowRpc {
   queue_status: string | null;
   queue_attempt_count: number | null;
   queue_last_error: string | null;
+  queue_created_at?: string | null;
+  queue_updated_at?: string | null;
+  queue_last_attempt_at?: string | null;
+  queue_claimed_at?: string | null;
+  queue_cancelled_at?: string | null;
   queue_sent_at: string | null;
+  queue_skipped_at?: string | null;
   delivery_issue_reason: string | null;
   approval_status: PostApprovalStatus | null;
   approval_rejection_reason: string | null;
+  approval_approved_at?: string | null;
+  approval_rejected_at?: string | null;
   can_remove_approval: boolean | null;
   check_created_at: string | null;
   review_stage: PostReviewStage;
@@ -124,11 +132,19 @@ function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
     }),
     queue_attempt_count: row.queue_attempt_count ?? undefined,
     queue_last_error: row.queue_last_error,
+    queue_created_at: row.queue_created_at ?? null,
+    queue_updated_at: row.queue_updated_at ?? null,
+    queue_last_attempt_at: row.queue_last_attempt_at ?? null,
+    queue_claimed_at: row.queue_claimed_at ?? null,
+    queue_cancelled_at: row.queue_cancelled_at ?? null,
     queue_sent_at: row.queue_sent_at,
+    queue_skipped_at: row.queue_skipped_at ?? null,
     delivery_issue_reason:
       (row.delivery_issue_reason as PostDeliveryIssueReason | null) ?? null,
     approval_status: row.approval_status ?? undefined,
     approval_rejection_reason: row.approval_rejection_reason,
+    approval_approved_at: row.approval_approved_at ?? null,
+    approval_rejected_at: row.approval_rejected_at ?? null,
     can_remove_approval: row.can_remove_approval ?? undefined,
     created_at: row.check_created_at ? new Date(row.check_created_at) : null,
     stage: row.review_stage as PostReviewStage,

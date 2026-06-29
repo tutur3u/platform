@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(19);
 
 set local session_replication_role = replica;
 insert into public.users (id)
@@ -186,7 +186,10 @@ insert into public.post_email_queue (
   post_id,
   user_id,
   sender_platform_user_id,
-  status
+  status,
+  attempt_count,
+  last_error,
+  last_attempt_at
 )
 values
   (
@@ -196,7 +199,10 @@ values
     '00000000-0000-0000-0000-00000000010D',
     '00000000-0000-0000-0000-000000000114',
     '00000000-0000-0000-0000-00000000010A',
-    'queued'
+    'queued',
+    2,
+    null,
+    now() - interval '2 hours'
   ),
   (
     '00000000-0000-0000-0000-000000000122',
@@ -205,7 +211,10 @@ values
     '00000000-0000-0000-0000-00000000010D',
     '00000000-0000-0000-0000-000000000116',
     '00000000-0000-0000-0000-00000000010A',
-    'blocked'
+    'blocked',
+    3,
+    'Blocked by policy',
+    now() - interval '3 hours'
   ),
   (
     '00000000-0000-0000-0000-000000000123',
@@ -214,10 +223,17 @@ values
     '00000000-0000-0000-0000-00000000010D',
     '00000000-0000-0000-0000-000000000117',
     '00000000-0000-0000-0000-00000000010A',
-    'skipped'
+    'skipped',
+    0,
+    null,
+    null
   )
 on conflict (post_id, user_id) do update
-set status = excluded.status;
+set
+  status = excluded.status,
+  attempt_count = excluded.attempt_count,
+  last_error = excluded.last_error,
+  last_attempt_at = excluded.last_attempt_at;
 
 select is(
   (
@@ -295,6 +311,21 @@ select is(
   ),
   'approved_awaiting_delivery',
   'approved recipients without queue rows stay in approved_awaiting_delivery'
+);
+
+select ok(
+  (
+    select approval_approved_at is not null
+      and queue_created_at is not null
+      and queue_last_attempt_at is not null
+      and queue_attempt_count = 2
+    from private.get_workspace_post_review_rows(
+      p_ws_id => '00000000-0000-0000-0000-00000000010B',
+      p_limit => 20
+    )
+    where user_id = '00000000-0000-0000-0000-000000000114'
+  ),
+  'post review rows expose approval and queue timeline diagnostics'
 );
 
 select is(
@@ -390,6 +421,32 @@ select is(
   ),
   2::bigint,
   'workspace post review summary reports undeliverable approved recipients separately'
+);
+
+select is(
+  (
+    select queued
+    from private.get_post_email_queue_workspace_breakdown(
+      p_limit => 100,
+      p_now => now() + interval '2 hours'
+    )
+    where ws_id = '00000000-0000-0000-0000-00000000010B'
+  ),
+  1::bigint,
+  'post email queue workspace breakdown counts queued rows for the review workspace'
+);
+
+select is(
+  (
+    select stale_queued_1h
+    from private.get_post_email_queue_workspace_breakdown(
+      p_limit => 100,
+      p_now => now() + interval '2 hours'
+    )
+    where ws_id = '00000000-0000-0000-0000-00000000010B'
+  ),
+  1::bigint,
+  'post email queue workspace breakdown reports stale queued rows'
 );
 
 select is(

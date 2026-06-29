@@ -44,6 +44,7 @@ import {
   getBackendWorkspaceLimits,
   getBackendWorkspacePostPermissions,
   getConfiguredBackendApiBaseUrl,
+  runBackendInfrastructurePostEmailQueue,
   updateBackendInfrastructureEmailBlacklistEntry,
   updateBackendInfrastructureTimezone,
   updateBackendInternalHoliday,
@@ -1011,6 +1012,9 @@ describe('backend API client', () => {
           processing: 0,
           queued: 2,
           sent: 3,
+          skipped: 0,
+          staleQueued1h: 1,
+          staleQueued24h: 0,
           total: 6,
           ws_id: 'ws-1',
         },
@@ -1021,7 +1025,10 @@ describe('backend API client', () => {
           claimed: 4,
           failed: 1,
           last_attempt_at: '2026-01-01T00:00:00.000Z',
+          processing: 0,
+          queued: 0,
           sent: 3,
+          skipped: 0,
         },
       ],
       summary: {
@@ -1031,7 +1038,16 @@ describe('backend API client', () => {
         processing: 0,
         queued: 2,
         sent: 3,
+        skipped: 0,
         total: 6,
+      },
+      health: {
+        activeBacklog: 3,
+        generatedAt: '2026-01-01T00:00:00.000Z',
+        oldestQueuedAt: '2025-12-31T23:00:00.000Z',
+        staleQueued1h: 1,
+        staleQueued24h: 0,
+        status: 'degraded',
       },
     };
     const fetchMock = vi.fn().mockResolvedValue({
@@ -1052,6 +1068,39 @@ describe('backend API client', () => {
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('runs the infrastructure post email queue through the protected backend helper', async () => {
+    const response = {
+      claimed: 10,
+      ok: true,
+      processed: 10,
+      requestId: 'queue-run-1',
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => response,
+    });
+
+    await expect(
+      runBackendInfrastructurePostEmailQueue(
+        { limit: 500, sendLimit: 200 },
+        {
+          baseUrl: 'http://backend:7820',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    ).resolves.toEqual(response);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://backend:7820/api/v1/infrastructure/post-email-queue/run-now',
+      expect.objectContaining({
+        body: JSON.stringify({ limit: 500, sendLimit: 200 }),
+        cache: 'no-store',
+        method: 'POST',
       })
     );
   });

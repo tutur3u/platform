@@ -93,6 +93,9 @@ export function PostApprovalActions({
       await queryClient.invalidateQueries({
         queryKey: ['group-post-checks'],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ['workspace-posts', wsId],
+      });
 
       if (onCompleted) {
         await onCompleted();

@@ -37,9 +37,10 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-  const privateRpc = sbAdmin.schema('private')
-    .rpc as unknown as PostReviewFilterOptionsRpc;
-  const userGroupsPromise = privateRpc(
+  const privateClient = sbAdmin.schema('private') as unknown as {
+    rpc: PostReviewFilterOptionsRpc;
+  };
+  const { data: filterOptions, error } = await privateClient.rpc(
     'get_workspace_post_review_filter_options',
     {
       p_cutoff: getPostEmailMaxAgeCutoff(),
@@ -48,8 +49,6 @@ export async function GET(request: Request, { params }: Params) {
       p_ws_id: wsId,
     }
   );
-
-  const { data: filterOptions, error } = await userGroupsPromise;
 
   if (error) {
     serverLogger.error('Error loading post filter options', { error });

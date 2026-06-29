@@ -1,7 +1,7 @@
 import { POST_EMAIL_QUEUE_STATUSES } from './constants';
 import type { PostEmailQueueRow } from './types';
 
-export const POST_EMAIL_QUERY_CHUNK_SIZE = 500;
+export const POST_EMAIL_QUERY_CHUNK_SIZE = 100;
 
 export function isValidEmailAddress(
   email: string | null | undefined

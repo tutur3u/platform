@@ -281,26 +281,99 @@ export type BackendInfrastructurePostEmailQueueStatusCount = {
   processing: number;
   queued: number;
   sent: number;
+  skipped: number;
   total: number;
 };
 
 export type BackendInfrastructurePostEmailQueueWorkspaceSummary =
   BackendInfrastructurePostEmailQueueStatusCount & {
+    oldestQueuedAt?: string | null;
+    staleQueued1h?: number;
+    staleQueued24h?: number;
+    workspaceName?: string | null;
     ws_id: string;
   };
 
 export type BackendInfrastructurePostEmailQueueBatchSummary = {
   batch_id: string;
+  blocked?: number;
+  cancelled?: number;
   claimed: number;
+  durationSeconds?: number;
   failed: number;
+  first_attempt_at?: string | null;
   last_attempt_at: string | null;
+  processing?: number;
+  queued?: number;
   sent: number;
+  skipped?: number;
+};
+
+export type BackendInfrastructurePostEmailQueueAgeBucket = {
+  bucket: 'under_1h' | '1h_6h' | '6h_24h' | 'over_24h';
+  failed: number;
+  processing: number;
+  queued: number;
+  total: number;
+};
+
+export type BackendInfrastructurePostEmailQueueFailureReason = {
+  blocked: number;
+  failed: number;
+  lastSeenAt: string | null;
+  reason: string;
+  total: number;
+};
+
+export type BackendInfrastructurePostEmailQueueThroughput = {
+  failedLast1h: number;
+  failedLast24h: number;
+  oldestQueuedAt: string | null;
+  queuedLast1h: number;
+  queuedLast24h: number;
+  sentLast1h: number;
+  sentLast24h: number;
+  staleApprovedQueued1h: number;
+  staleApprovedQueued24h: number;
+};
+
+export type BackendInfrastructurePostEmailQueueHealth = {
+  activeBacklog: number;
+  generatedAt: string;
+  oldestQueuedAt: string | null;
+  staleQueued1h: number;
+  staleQueued24h: number;
+  status: 'critical' | 'degraded' | 'healthy';
 };
 
 export type BackendInfrastructurePostEmailQueueResponse = {
+  ageBuckets?: BackendInfrastructurePostEmailQueueAgeBucket[];
   byWorkspace: BackendInfrastructurePostEmailQueueWorkspaceSummary[];
+  dataSource?: 'fallback' | 'rpc';
+  failureReasons?: BackendInfrastructurePostEmailQueueFailureReason[];
+  health?: BackendInfrastructurePostEmailQueueHealth;
   recentBatches: BackendInfrastructurePostEmailQueueBatchSummary[];
   summary: BackendInfrastructurePostEmailQueueStatusCount;
+  throughput?: BackendInfrastructurePostEmailQueueThroughput;
+  truncated?: boolean;
+  workspaceBreakdown?: BackendInfrastructurePostEmailQueueWorkspaceSummary[];
+};
+
+export type BackendInfrastructurePostEmailQueueRunNowRequest = {
+  limit?: number | string;
+  sendLimit?: number | string;
+};
+
+export type BackendInfrastructurePostEmailQueueRunNowResponse = {
+  claimed?: number;
+  diagnostics?: Record<string, unknown>;
+  error?: string;
+  failed?: number;
+  ok: boolean;
+  processed?: number;
+  requestId?: string;
+  timedOut?: boolean;
+  totalDurationMs?: number;
 };
 
 export type BackendNovaCurrentTeamResponse = {
@@ -1320,6 +1393,27 @@ export function getBackendInfrastructurePostEmailQueue(
     '/api/v1/infrastructure/post-email-queue',
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export function runBackendInfrastructurePostEmailQueue(
+  payload: BackendInfrastructurePostEmailQueueRunNowRequest = {},
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendInfrastructurePostEmailQueueRunNowResponse>(
+    '/api/v1/infrastructure/post-email-queue/run-now',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
     }
   );
 }

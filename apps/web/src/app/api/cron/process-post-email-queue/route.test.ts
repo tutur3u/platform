@@ -474,6 +474,14 @@ describe('process-post-email-queue cron route', () => {
     });
 
     expect(processPostEmailQueueBatchMock).toHaveBeenCalledTimes(1);
+    expect(processPostEmailQueueBatchMock).toHaveBeenCalledWith(
+      adminClientMock,
+      expect.objectContaining({
+        limit: 500,
+        maxDurationMs: 165_000,
+        sendLimit: 200,
+      })
+    );
   });
 
   it('keeps scanning reconciliation pages when the queue is idle and the first page enqueues nothing', async () => {

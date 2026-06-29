@@ -515,7 +515,7 @@ async function processEmailWithContext(
     const nextStatus = isOld ? 'skipped' : 'cancelled';
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: isOld ? 'skipped' : 'cancelled',
-      batch_id: null,
+      batch_id: row.batch_id,
       cancelled_at: new Date().toISOString(),
       last_error: isOld
         ? buildPostEmailAgeSkipReason()
@@ -532,7 +532,7 @@ async function processEmailWithContext(
   if (existingSentEmail) {
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'sent',
-      batch_id: null,
+      batch_id: row.batch_id,
       sent_at: existingSentEmail.created_at,
       sent_email_id: existingSentEmail.id,
       last_error: null,
@@ -585,7 +585,7 @@ async function processEmailWithContext(
 
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'sent',
-      batch_id: null,
+      batch_id: row.batch_id,
       sent_at: existingSentAudit.sent_at ?? existingSentAudit.created_at,
       sent_email_id: recoveredSentEmail?.id ?? null,
       last_error: recoveryWarning,
@@ -600,7 +600,7 @@ async function processEmailWithContext(
   ) {
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'skipped',
-      batch_id: null,
+      batch_id: row.batch_id,
       blocked_reason: 'blacklist',
       last_error: 'Blocked: blacklist',
     });
@@ -611,7 +611,7 @@ async function processEmailWithContext(
   if (!emailService) {
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
-      batch_id: null,
+      batch_id: row.batch_id,
       blocked_reason: null,
       last_error: `Email service unavailable for workspace ${row.ws_id}`,
     });
@@ -622,7 +622,7 @@ async function processEmailWithContext(
   if (!sourceInfo) {
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
-      batch_id: null,
+      batch_id: row.batch_id,
       blocked_reason: null,
       last_error: `Email source unavailable for workspace ${row.ws_id}`,
     });
@@ -679,7 +679,7 @@ async function processEmailWithContext(
     if (blockedRecipient) {
       const updated = await markClaimedQueueRow(sbAdmin, row, {
         status: 'skipped',
-        batch_id: null,
+        batch_id: row.batch_id,
         blocked_reason: blockedRecipient.reason ?? null,
         last_error: `Blocked: ${blockedRecipient.reason ?? 'recipient blocked'}`,
       });
@@ -689,7 +689,7 @@ async function processEmailWithContext(
     if (isRateLimited) {
       const updated = await markClaimedQueueRow(sbAdmin, row, {
         status: 'failed',
-        batch_id: null,
+        batch_id: row.batch_id,
         blocked_reason: null,
         last_error: sendResult.rateLimitInfo?.reason ?? 'Rate limited',
       });
@@ -698,7 +698,7 @@ async function processEmailWithContext(
 
     const updated = await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
-      batch_id: null,
+      batch_id: row.batch_id,
       blocked_reason: null,
       last_error: sendResult.error ?? 'Unknown send failure',
     });
@@ -735,7 +735,7 @@ async function processEmailWithContext(
 
   const updated = await markClaimedQueueRow(sbAdmin, row, {
     status: 'sent',
-    batch_id: null,
+    batch_id: row.batch_id,
     sent_at: deliveredAt,
     sent_email_id: sentEmail?.id ?? null,
     last_error: persistenceWarning,
@@ -832,7 +832,7 @@ async function normalizeQueueError(
   try {
     await markClaimedQueueRow(sbAdmin, row, {
       status: 'failed',
-      batch_id: null,
+      batch_id: row.batch_id,
       blocked_reason: null,
       last_error: error.message || 'Unknown processing error',
     });

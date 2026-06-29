@@ -14,6 +14,12 @@ import {
   reconcileOrphanedApprovedPosts,
   reEnqueueSkippedPostEmails,
 } from '@/lib/post-email-queue';
+import {
+  POST_EMAIL_QUEUE_DEFAULT_DRAIN_LIMIT,
+  POST_EMAIL_QUEUE_DEFAULT_SEND_LIMIT,
+  POST_EMAIL_QUEUE_MAX_DRAIN_LIMIT,
+  POST_EMAIL_QUEUE_MAX_SEND_LIMIT,
+} from '@/lib/post-email-queue/observability';
 
 const LOG_PREFIX = '[PostEmailQueueCron]';
 const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
@@ -172,11 +178,11 @@ export async function GET(req: NextRequest) {
       path: '/api/cron/process-post-email-queue',
       request: req,
     },
-    () => handleGET(req)
+    () => handlePostEmailQueueCron(req)
   );
 }
 
-async function handleGET(req: NextRequest) {
+export async function handlePostEmailQueueCron(req: NextRequest) {
   const requestId = crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
 
@@ -207,11 +213,13 @@ async function handleGET(req: NextRequest) {
     const sbAdmin = await createAdminClient();
     const debugMode = req.nextUrl.searchParams.get('debug') === '1';
     const batchLimit = Number.parseInt(
-      req.nextUrl.searchParams.get('limit') || '200',
+      req.nextUrl.searchParams.get('limit') ||
+        String(POST_EMAIL_QUEUE_DEFAULT_DRAIN_LIMIT),
       10
     );
     const sendLimit = Number.parseInt(
-      req.nextUrl.searchParams.get('sendLimit') || '50',
+      req.nextUrl.searchParams.get('sendLimit') ||
+        String(POST_EMAIL_QUEUE_DEFAULT_SEND_LIMIT),
       10
     );
     const phaseTimingsMs: Record<string, number> = {};
@@ -361,20 +369,20 @@ async function handleGET(req: NextRequest) {
     } else {
       log('info', `[${requestId}] Phase 4: processPostEmailQueueBatch`, {
         batchLimit: Number.isFinite(batchLimit)
-          ? Math.min(Math.max(batchLimit, 1), 500)
-          : 200,
+          ? Math.min(Math.max(batchLimit, 1), POST_EMAIL_QUEUE_MAX_DRAIN_LIMIT)
+          : POST_EMAIL_QUEUE_DEFAULT_DRAIN_LIMIT,
         sendLimit: Number.isFinite(sendLimit)
-          ? Math.min(Math.max(sendLimit, 1), 200)
-          : 50,
+          ? Math.min(Math.max(sendLimit, 1), POST_EMAIL_QUEUE_MAX_SEND_LIMIT)
+          : POST_EMAIL_QUEUE_DEFAULT_SEND_LIMIT,
       });
       const batchStart = Date.now();
       result = await processPostEmailQueueBatch(sbAdmin, {
         limit: Number.isFinite(batchLimit)
-          ? Math.min(Math.max(batchLimit, 1), 500)
-          : 200,
+          ? Math.min(Math.max(batchLimit, 1), POST_EMAIL_QUEUE_MAX_DRAIN_LIMIT)
+          : POST_EMAIL_QUEUE_DEFAULT_DRAIN_LIMIT,
         sendLimit: Number.isFinite(sendLimit)
-          ? Math.min(Math.max(sendLimit, 1), 200)
-          : 50,
+          ? Math.min(Math.max(sendLimit, 1), POST_EMAIL_QUEUE_MAX_SEND_LIMIT)
+          : POST_EMAIL_QUEUE_DEFAULT_SEND_LIMIT,
         maxDurationMs: 165_000,
       });
       phaseTimingsMs.phase4ProcessQueue = Date.now() - batchStart;

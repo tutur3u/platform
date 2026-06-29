@@ -865,6 +865,14 @@ test('validateDockerProdCompose requires restart policies on durable production 
     .replace(
       '    restart: unless-stopped\n\n  storage-unzip-proxy:',
       '\n  storage-unzip-proxy:'
+    )
+    .replace(
+      /^[ ]{2}web-blue-green-watcher:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    restart: unless-stopped\n', '')
+    )
+    .replace(
+      /^[ ]{2}web-cron-runner:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    restart: unless-stopped\n', '')
     );
 
   const errors = validateDockerProdCompose(composeContent).join('\n');
@@ -874,6 +882,8 @@ test('validateDockerProdCompose requires restart policies on durable production 
   assert.match(errors, /web-proxy/u);
   assert.match(errors, /redis/u);
   assert.match(errors, /markitdown/u);
+  assert.match(errors, /web-blue-green-watcher/u);
+  assert.match(errors, /web-cron-runner/u);
 });
 
 test('validateDockerBakeFile accepts the current production bake file', () => {
@@ -1142,6 +1152,23 @@ test('validateDockerProdCompose reports missing cron runner wiring', () => {
   const errors = validateDockerProdCompose(composeContent);
 
   assert.match(errors.join('\n'), /web-cron-runner/);
+});
+
+test('validateDockerProdCompose requires watcher companion healthchecks', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      /^[ ]{2}web-blue-green-watcher:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    healthcheck:', '    x-healthcheck:')
+    )
+    .replace(
+      /^[ ]{2}web-cron-runner:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    healthcheck:', '    x-healthcheck:')
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /web-blue-green-watcher.*healthcheck/u);
+  assert.match(errors, /web-cron-runner.*healthcheck/u);
 });
 
 test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {

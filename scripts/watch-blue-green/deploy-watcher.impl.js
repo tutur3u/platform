@@ -290,6 +290,7 @@ const DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS = 10 * 60_000;
 const DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS = 10_000;
 const DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS = 60_000;
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
+const WEB_CRON_RUNNER_SERVICE = 'web-cron-runner';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
@@ -695,6 +696,25 @@ async function startBlueGreenWatcherContainer(
       '--force-recreate',
       '--remove-orphans',
       BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: startupComposeEnv,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'up',
+      '--build',
+      '--detach',
+      '--no-recreate',
+      '--remove-orphans',
+      WEB_CRON_RUNNER_SERVICE
     ),
     {
       env: startupComposeEnv,
@@ -7830,6 +7850,7 @@ module.exports = {
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
   WATCHER_CONTAINER_ENV,
+  WEB_CRON_RUNNER_SERVICE,
   DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
   DOCKER_DAEMON_RESTART_COMMAND_ENV,
   DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,

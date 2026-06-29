@@ -268,6 +268,15 @@ function serviceBlockHasRestartUnlessStopped(composeContent, serviceName) {
   return serviceBlock?.includes('    restart: unless-stopped') ?? false;
 }
 
+function serviceBlockIncludes(composeContent, serviceName, snippet) {
+  const serviceBlock = getComposeTopLevelServiceBlock(
+    composeContent,
+    serviceName
+  );
+
+  return serviceBlock?.includes(snippet) ?? false;
+}
+
 function topLevelBlockHasRestartUnlessStopped(composeContent, blockName) {
   const block = getComposeTopLevelBlock(composeContent, blockName);
 
@@ -1302,6 +1311,8 @@ function validateDockerProdCompose(composeContent) {
     'redis',
     'serverless-redis-http',
     'storage-unzip-proxy',
+    'web-blue-green-watcher',
+    'web-cron-runner',
     'web-proxy',
   ];
 
@@ -1309,6 +1320,45 @@ function validateDockerProdCompose(composeContent) {
     if (!serviceBlockHasRestartUnlessStopped(composeContent, serviceName)) {
       errors.push(
         `docker-compose.web.prod.yml service ${serviceName} must use restart: unless-stopped so the watcher can keep serving services alive after Docker restarts.`
+      );
+    }
+  }
+
+  const watcherCompanionServices = [
+    'web-blue-green-watcher',
+    'web-cron-runner',
+  ];
+
+  for (const serviceName of watcherCompanionServices) {
+    if (
+      !serviceBlockIncludes(composeContent, serviceName, '    healthcheck:')
+    ) {
+      errors.push(
+        `docker-compose.web.prod.yml service ${serviceName} must define a healthcheck so watcher and cron availability can be monitored.`
+      );
+    }
+
+    if (
+      !serviceBlockIncludes(
+        composeContent,
+        serviceName,
+        '$' + '{PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}'
+      )
+    ) {
+      errors.push(
+        `docker-compose.web.prod.yml service ${serviceName} must mount PLATFORM_HOST_WORKSPACE_DIR so watcher-managed compose commands resolve host paths.`
+      );
+    }
+
+    if (
+      !serviceBlockIncludes(
+        composeContent,
+        serviceName,
+        '/var/run/docker.sock:/var/run/docker.sock'
+      )
+    ) {
+      errors.push(
+        `docker-compose.web.prod.yml service ${serviceName} must mount /var/run/docker.sock so watcher and cron recovery can manage the production Compose fleet.`
       );
     }
   }

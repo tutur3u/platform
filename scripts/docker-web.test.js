@@ -1550,20 +1550,30 @@ test('ensureProductionSupabaseOrigin allows explicit local Supabase rehearsals',
 });
 
 test('getDockerWebSupabaseOriginReport redacts values and reports source classifications', () => {
-  const report = getDockerWebSupabaseOriginReport({
-    baseEnv: {
-      NEXT_PUBLIC_SUPABASE_URL: 'https://cloud.supabase.co',
-      PATH: 'test-path',
-    },
-    composeEnv: {
-      SUPABASE_SERVER_URL: 'https://cloud.supabase.co',
-      SUPABASE_URL: 'https://cloud.supabase.co',
-    },
-  });
-  const formattedReport = formatSupabaseOriginReport(report);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-supabase-report-')
+  );
 
-  assert.match(formattedReport, /NEXT_PUBLIC_SUPABASE_URL: cloud/);
-  assert.doesNotMatch(formattedReport, /https:\/\/cloud\.supabase\.co/);
+  try {
+    const report = getDockerWebSupabaseOriginReport({
+      baseEnv: {
+        NEXT_PUBLIC_SUPABASE_URL: 'https://cloud.supabase.co',
+        PATH: 'test-path',
+      },
+      composeEnv: {
+        SUPABASE_SERVER_URL: 'https://cloud.supabase.co',
+        SUPABASE_URL: 'https://cloud.supabase.co',
+      },
+      envFilePath: path.join(tempDir, '.env.local'),
+      rootDir: tempDir,
+    });
+    const formattedReport = formatSupabaseOriginReport(report);
+
+    assert.match(formattedReport, /NEXT_PUBLIC_SUPABASE_URL: cloud/);
+    assert.doesNotMatch(formattedReport, /https:\/\/cloud\.supabase\.co/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('rewriteLocalhostUrl maps local URLs to the Docker host alias', () => {

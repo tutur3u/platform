@@ -123,9 +123,17 @@ export interface PostEmail {
   queue_status?: PostEmailQueueStatus;
   queue_attempt_count?: number;
   queue_last_error?: string | null;
+  queue_created_at?: string | null;
+  queue_updated_at?: string | null;
+  queue_last_attempt_at?: string | null;
+  queue_claimed_at?: string | null;
+  queue_cancelled_at?: string | null;
   queue_sent_at?: string | null;
+  queue_skipped_at?: string | null;
   delivery_issue_reason?: PostDeliveryIssueReason | null;
   approval_status?: PostApprovalStatus;
   approval_rejection_reason?: string | null;
+  approval_approved_at?: string | null;
+  approval_rejected_at?: string | null;
   can_remove_approval?: boolean;
 }
