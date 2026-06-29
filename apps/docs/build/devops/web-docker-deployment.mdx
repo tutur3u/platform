@@ -169,8 +169,9 @@ parallel `apps/tanstack-web` migration runtime.
   keeps nginx on the public `web-proxy:7803` listener but routes the active
   upstream to `tanstack-web-blue:7824` or `tanstack-web-green:7824`. Set the
   variable in the host/root deployment env before creating
-  `web-blue-green-watcher` or `web-cron-runner`, because both containers inherit
-  it for status probes, cached recovery, and watcher recreation. Cloudflare
+  `web-blue-green-watcher`, `web-docker-control`, or `web-cron-runner`, because
+  those containers inherit it for status probes, cached recovery, and service
+  recreation. Cloudflare
   preview deploys use
   `apps/tanstack-web/wrangler.jsonc` plus the app-local
   `deploy:cloudflare`, `deploy:cloudflare:dry-run`, `preview:cloudflare`, and
@@ -455,10 +456,11 @@ The runner reads `tmp/docker-web/prod/active-color` and retags the matching
 both `web-blue` and `web-green`, then skips the web build stage. When the same
 local blue/green build also left the support images behind, the runner retags
 `hive-<color>`, `hive-realtime`, `backend`, `meet-realtime`, `markitdown`,
-`storage-unzip-proxy`, `supermemory`, and `web-cron-runner` into the E2E
-project and skips those support builds too. If any support image is missing, E2E
-falls back to the normal support-service build path while still reusing the web
-image. Use this only when the source image was built from the current checkout.
+`storage-unzip-proxy`, `supermemory`, `web-docker-control`, and
+`web-cron-runner` into the E2E project and skips those support builds too. If
+any support image is missing, E2E falls back to the normal support-service build
+path while still reusing the web image. Use this only when the source image was
+built from the current checkout.
 Set `E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE=<image>` to reuse a specific web image
 tag, or `E2E_DOCKER_REUSE_WEB_IMAGE_COLOR=blue|green|auto` when the active-color
 file is not the lane you want.
@@ -593,7 +595,8 @@ Blue/green deploy does this:
    failure marks the Hive stage failed, leaves `active-color` on the previous
    web lane, and keeps the staged target web lane out of public routing.
 6. Refreshes support services (`backend`, `meet-realtime`, `markitdown`,
-   `storage-unzip-proxy`, and `web-cron-runner`) after web/Hive target work.
+   `storage-unzip-proxy`, `web-docker-control`, and `web-cron-runner`) after
+   web/Hive target work.
    A support build or health failure also blocks `web-proxy` reload and leaves
    the previous active web lane serving.
    Their build step is scoped:
@@ -941,12 +944,19 @@ Docker environment generator creates a persisted internal secret at
 `web-cron-runner` service as `CRON_SECRET`. This keeps native Docker cron auth
 self-contained while preserving explicit host-provided secrets when present.
 
-Watcher startup also keeps the cron runner present. `bun serve:web:docker:bg`,
-`bun serve:web:docker:bg:watch`, and watcher recovery recreate or resume
-`web-blue-green-watcher` first, then ensure `web-cron-runner` exists with a
-no-recreate Compose start. A healthy existing cron runner is left running; a
-missing runner fails watcher bootstrap instead of leaving the stack without
-native cron execution.
+Watcher startup also keeps the Docker control sidecar and cron runner present.
+`bun serve:web:docker:bg`, `bun serve:web:docker:bg:watch`, and watcher
+recovery recreate or resume `web-blue-green-watcher` first, refresh
+`web-docker-control`, then ensure `web-cron-runner` exists with a no-recreate
+Compose start. A healthy existing cron runner is left running; a missing control
+sidecar or runner fails watcher bootstrap instead of leaving the stack without
+native cron recovery or execution.
+
+`web-docker-control` is an internal-only sidecar with the Docker CLI, Docker
+socket, and host worktree mount. `apps/web` reaches it through
+`PLATFORM_DOCKER_CONTROL_URL` and `PLATFORM_DOCKER_CONTROL_TOKEN` for hardcoded
+watcher/cron-runner recovery actions only; it does not expose a general Docker
+or shell interface.
 
 The managed workspace cron worker runs at
 `/api/cron/workspaces/managed-jobs` through the `managed-workspace-cron-jobs`
@@ -964,9 +974,12 @@ headers can be static values or references to `workspace_secrets` names; secret
 values are read server-side at execution time and are not exposed in the job UI.
 If a managed-cron status or setup request still returns HTTP 500 after the cron
 runner is available, check the Tuturuuu managed-cron prerequisites first:
-`PLATFORM_DATABASE_URL` or an equivalent private database URL must be present,
-and the managed-cron migrations must have created `workspace_cron_jobs` plus
-`private.managed_cron_whitelisted_domains`.
+Supabase service-role access must be configured (`SUPABASE_SERVER_URL` or
+`NEXT_PUBLIC_SUPABASE_URL`, plus `SUPABASE_SECRET_KEY`), and the managed-cron
+migrations must have created `workspace_cron_jobs`,
+`private.managed_cron_whitelisted_domains`, and the private managed-cron RPCs.
+Managed cron status/setup no longer requires `PLATFORM_DATABASE_URL`,
+`POSTGRES_URL`, `DATABASE_URL`, or `DIRECT_URL`.
 
 Runtime cron telemetry is intentionally file-based and local to the host:
 
@@ -1655,9 +1668,11 @@ host PID. Each invocation:
 
 1. Writes the forwarded watcher CLI args to `tmp/docker-web/watch/blue-green-auto-deploy.args.json`.
 2. Rebuilds and force-recreates the dedicated `web-blue-green-watcher` service.
-3. Builds and starts `web-cron-runner` with `--no-recreate` so native Docker
+3. Builds and force-recreates `web-docker-control` so direct admin recovery
+   uses the current sidecar code.
+4. Builds and starts `web-cron-runner` with `--no-recreate` so native Docker
    cron stays available without interrupting a healthy runner.
-4. Tails the watcher container's live logs so the terminal still shows the
+5. Tails the watcher container's live logs so the terminal still shows the
    watcher dashboard.
 
 The watcher container mounts:
@@ -1674,7 +1689,7 @@ The watcher container mounts:
 Behavior:
 
 1. Reads the built-in `platform` project from the log-drain Postgres project registry. The production watcher service is wired with `PLATFORM_LOG_DRAIN_DATABASE_URL` so a live watcher can consume queued Infrastructure project deployments instead of falling back to the legacy single-branch loop.
-2. The seeded branch is `production`, but operators can change it from Infrastructure → Monitoring → Projects. If the selected project branch differs from the current checkout, the watcher restarts its child process, resets tracked changes, removes untracked files, fetches, and checks out that branch. Set `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` to restore the protective dirty-worktree block instead. If the watcher is already stuck on the wrong branch, the monitoring UI queues a watcher recovery request and `web-cron-runner` recreates `web-blue-green-watcher` through Docker Compose out of band.
+2. The seeded branch is `production`, but operators can change it from Infrastructure → Monitoring → Projects. If the selected project branch differs from the current checkout, the watcher restarts its child process, resets tracked changes, removes untracked files, fetches, and checks out that branch. Set `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` to restore the protective dirty-worktree block instead. If the watcher is already stuck or missing, the monitoring UI asks `web-docker-control` to ensure the watcher before ensuring or restarting `web-cron-runner`. If direct control is unavailable, the UI keeps the stalled request visible so host supervisor recovery can be diagnosed instead of appearing queued forever.
 3. Locks the selected local branch and tracked upstream at startup.
 4. Writes a PID-backed lock file at `tmp/docker-web/watch/blue-green-auto-deploy.lock`.
 5. Renders a live terminal dashboard with the locked branch, tracked upstream,

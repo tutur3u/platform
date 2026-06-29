@@ -18,13 +18,13 @@ import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
 import { getExternalAppById } from '@/lib/app-coordination/external-apps';
-import { getPlatformSql } from '@/lib/database/platform-sql';
 import {
   serverLogger,
   setLogDrainUserContext,
   withRequestLogDrain,
 } from '@/lib/infrastructure/log-drain';
-import { listEnabledManagedCronDomainsWithSql } from '@/lib/managed-cron/domain-repository';
+import { listEnabledManagedCronDomains } from '@/lib/managed-cron/domain-repository';
+import { callManagedCronRpc, ensureRpcArray } from '@/lib/managed-cron/rpc';
 import { runExternalManagedCronJobNow } from '@/lib/managed-cron/service';
 import {
   getNextManagedCronRunAt,
@@ -71,23 +71,27 @@ type RequiredScope =
 type ManagedCronOperation = 'job_update' | 'run_now' | 'setup' | 'status';
 
 type ManagedCronFailureReason =
-  | 'database_unavailable'
+  | 'supabase_admin_unavailable'
   | 'schema_not_ready'
   | 'unexpected_error';
 
-const MANAGED_CRON_DATABASE_ENV_KEYS = [
-  'PLATFORM_DATABASE_URL',
-  'POSTGRES_URL',
-  'DATABASE_URL',
-  'DIRECT_URL',
+const MANAGED_CRON_SUPABASE_ADMIN_ENV_KEYS = [
+  'SUPABASE_SERVER_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'SUPABASE_SECRET_KEY',
 ] as const;
 const MANAGED_CRON_REQUIRED_MIGRATIONS = [
   '20260625232000_managed_workspace_cron.sql',
   '20260628120000_external_app_managed_cron_jobs.sql',
+  '20260629160000_managed_cron_private_rpcs.sql',
 ] as const;
 const MANAGED_CRON_SCHEMA_IDENTIFIERS = [
+  'external_app_managed_cron_setup',
+  'external_app_managed_cron_status',
+  'external_app_managed_cron_update_job',
   'external_app_id',
   'external_job_key',
+  'managed_cron_claim_due_jobs',
   'managed_cron_whitelisted_domains',
   'workspace_cron_executions',
   'workspace_cron_jobs',
@@ -132,6 +136,21 @@ export type ExternalAppWorkspaceCronAccess = {
     email: string | null;
     id: string;
   };
+};
+
+type ExternalAppWorkspaceCronStatus = {
+  configured: boolean;
+  enabled: boolean;
+  jobs: Array<{
+    active: boolean;
+    failureCount: number;
+    jobKey: string;
+    lastRunAt: string | null;
+    lastStatus: string | null;
+    name: string;
+    nextRunAt: string | null;
+    schedule: string;
+  }>;
 };
 
 function hasScope(scopes: string[], requiredScope: RequiredScope) {
@@ -188,9 +207,11 @@ function postgresErrorCode(error: unknown) {
   return typeof code === 'string' ? code : null;
 }
 
-function isManagedCronDatabaseUnavailable(error: unknown) {
-  return errorMessage(error).includes(
-    'Missing private database connection URL'
+function isManagedCronSupabaseAdminUnavailable(error: unknown) {
+  const message = errorMessage(error);
+  return (
+    message.includes('Missing Supabase URL') ||
+    message.includes('Missing Supabase key')
   );
 }
 
@@ -198,10 +219,10 @@ function isManagedCronSchemaNotReady(error: unknown) {
   const message = errorMessage(error).toLowerCase();
   const code = postgresErrorCode(error);
   const schemaCode = code
-    ? ['3F000', '42703', '42P01', '42704'].includes(code)
+    ? ['3F000', '42703', '42P01', '42704', 'PGRST202'].includes(code)
     : false;
   const schemaMessage =
-    /column|relation|schema|table/u.test(message) &&
+    /column|function|relation|rpc|schema|table/u.test(message) &&
     /does not exist|not exist|missing/u.test(message);
 
   if (!schemaCode && !schemaMessage) return false;
@@ -214,18 +235,18 @@ function managedCronFailureForOperation(
   operation: ManagedCronOperation,
   error: unknown
 ): ManagedCronFailure {
-  if (isManagedCronDatabaseUnavailable(error)) {
+  if (isManagedCronSupabaseAdminUnavailable(error)) {
     const setupDisabledReason =
-      'Managed cron database is unavailable. Set a private platform database URL for Tuturuuu, then retry.';
+      'Managed cron Supabase admin access is unavailable. Configure Supabase service-role access for Tuturuuu, then retry.';
     return {
-      code: 'MANAGED_CRON_DATABASE_UNAVAILABLE',
+      code: 'MANAGED_CRON_SUPABASE_ADMIN_UNAVAILABLE',
       developerDebug: {
         operation,
-        reason: 'database_unavailable',
-        requiredEnv: [...MANAGED_CRON_DATABASE_ENV_KEYS],
+        reason: 'supabase_admin_unavailable',
+        requiredEnv: [...MANAGED_CRON_SUPABASE_ADMIN_ENV_KEYS],
       },
-      hint: `Set one of: ${MANAGED_CRON_DATABASE_ENV_KEYS.join(', ')}.`,
-      reason: 'database_unavailable',
+      hint: `Set Supabase service-role env: ${MANAGED_CRON_SUPABASE_ADMIN_ENV_KEYS.join(', ')}.`,
+      reason: 'supabase_admin_unavailable',
       setupDisabledReason,
       status: 503,
     };
@@ -519,63 +540,24 @@ export async function handleExternalAppWorkspaceCronRoute({
 
 export async function loadExternalAppWorkspaceCron(
   access: ExternalAppWorkspaceCronAccess
-) {
-  const sql = getPlatformSql();
-  const jobs = await sql<
-    Array<{
-      active: boolean;
-      external_job_key: string;
-      failure_count: number;
-      last_run_at: string | null;
-      last_status: string | null;
-      name: string;
-      next_run_at: string | null;
-      schedule: string;
-    }>
-  >`
-    select
-      active,
-      external_job_key,
-      failure_count,
-      last_run_at::text,
-      last_status,
-      name,
-      next_run_at::text,
-      schedule
-    from public.workspace_cron_jobs
-    where ws_id = ${access.normalizedWorkspaceId}
-      and external_app_id = ${access.targetApp.id}
-      and external_job_key is not null
-    order by external_job_key asc
-  `;
-  const secrets = await sql<Array<{ name: string; value: string | null }>>`
-    select name, value
-    from public.workspace_secrets
-    where ws_id = ${access.normalizedWorkspaceId}
-      and name in ${sql([MANAGED_CRON_ENABLED_SECRET, MANAGED_CRON_TOKEN_SECRET])}
-  `;
-  const enabled = secrets.some(
-    (secret) =>
-      secret.name === MANAGED_CRON_ENABLED_SECRET &&
-      secret.value?.trim().toLowerCase() === 'true'
-  );
-  const tokenConfigured = secrets.some(
-    (secret) => secret.name === MANAGED_CRON_TOKEN_SECRET && secret.value
+): Promise<ExternalAppWorkspaceCronStatus> {
+  const payload = await callManagedCronRpc<ExternalAppWorkspaceCronStatus>(
+    'external_app_managed_cron_status',
+    {
+      p_enabled_secret: MANAGED_CRON_ENABLED_SECRET,
+      p_expected_job_count: MANAGED_JOBS.length,
+      p_external_app_id: access.targetApp.id,
+      p_token_secret: MANAGED_CRON_TOKEN_SECRET,
+      p_ws_id: access.normalizedWorkspaceId,
+    }
   );
 
   return {
-    configured: tokenConfigured && jobs.length >= MANAGED_JOBS.length,
-    enabled,
-    jobs: jobs.map((job) => ({
-      active: job.active,
-      failureCount: job.failure_count,
-      jobKey: job.external_job_key,
-      lastRunAt: job.last_run_at,
-      lastStatus: job.last_status,
-      name: job.name,
-      nextRunAt: job.next_run_at,
-      schedule: job.schedule,
-    })),
+    configured: Boolean(payload.configured),
+    enabled: Boolean(payload.enabled),
+    jobs: ensureRpcArray<ExternalAppWorkspaceCronStatus['jobs'][number]>(
+      payload.jobs
+    ),
   };
 }
 
@@ -608,8 +590,7 @@ export async function setupExternalAppWorkspaceCron({
     missing.push('origin');
   }
 
-  const sql = getPlatformSql();
-  const allowedDomains = await listEnabledManagedCronDomainsWithSql(sql);
+  const allowedDomains = await listEnabledManagedCronDomains();
   const endpointUrls = MANAGED_JOBS.map((job) =>
     new URL(job.path, callbackBaseUrl).toString()
   );
@@ -631,76 +612,36 @@ export async function setupExternalAppWorkspaceCron({
     }).response;
   }
 
-  await sql.begin(async (transaction) => {
-    await transaction`
-      delete from public.workspace_secrets
-      where ws_id = ${access.normalizedWorkspaceId}
-        and name in ${transaction([
-          MANAGED_CRON_ENABLED_SECRET,
-          MANAGED_CRON_TOKEN_SECRET,
-        ])}
-    `;
-    await transaction`
-      insert into public.workspace_secrets (ws_id, name, value)
-      values
-        (${access.normalizedWorkspaceId}, ${MANAGED_CRON_ENABLED_SECRET}, 'true'),
-        (${access.normalizedWorkspaceId}, ${MANAGED_CRON_TOKEN_SECRET}, ${`Bearer ${validation.data.token}`})
-    `;
-
-    for (const job of MANAGED_JOBS) {
-      const endpointUrl = new URL(job.path, callbackBaseUrl).toString();
-      const headersConfig = [
-        { name: 'Authorization', secretName: MANAGED_CRON_TOKEN_SECRET },
-      ];
-      await transaction`
-        insert into public.workspace_cron_jobs (
-          ws_id,
-          name,
-          dataset_id,
-          schedule,
-          active,
-          endpoint_url,
-          http_method,
-          headers_config,
-          timeout_ms,
-          retry_count,
-          next_run_at,
-          external_app_id,
-          external_job_key
-        )
-        values (
-          ${access.normalizedWorkspaceId},
-          ${job.name},
-          null,
-          ${job.schedule},
-          true,
-          ${endpointUrl},
-          'POST',
-          ${transaction.json(headersConfig)}::jsonb,
-          15000,
-          1,
-          ${getNextManagedCronRunAt(job.schedule).toISOString()},
-          ${access.targetApp.id},
-          ${job.jobKey}
-        )
-        on conflict (ws_id, external_app_id, external_job_key)
-        where external_app_id is not null
-          and external_job_key is not null
-        do update set
-          name = excluded.name,
-          schedule = excluded.schedule,
-          active = true,
-          endpoint_url = excluded.endpoint_url,
-          http_method = excluded.http_method,
-          headers_config = excluded.headers_config,
-          timeout_ms = excluded.timeout_ms,
-          retry_count = excluded.retry_count,
-          next_run_at = coalesce(public.workspace_cron_jobs.next_run_at, excluded.next_run_at)
-      `;
+  const status = await callManagedCronRpc<ExternalAppWorkspaceCronStatus>(
+    'external_app_managed_cron_setup',
+    {
+      p_enabled_secret: MANAGED_CRON_ENABLED_SECRET,
+      p_external_app_id: access.targetApp.id,
+      p_jobs: MANAGED_JOBS.map((job) => ({
+        endpointUrl: new URL(job.path, callbackBaseUrl).toString(),
+        headersConfig: [
+          { name: 'Authorization', secretName: MANAGED_CRON_TOKEN_SECRET },
+        ],
+        jobKey: job.jobKey,
+        name: job.name,
+        nextRunAt: getNextManagedCronRunAt(job.schedule).toISOString(),
+        retryCount: 1,
+        schedule: job.schedule,
+        timeoutMs: 15000,
+      })),
+      p_token_secret: MANAGED_CRON_TOKEN_SECRET,
+      p_token_value: `Bearer ${validation.data.token}`,
+      p_ws_id: access.normalizedWorkspaceId,
     }
-  });
+  );
 
-  return NextResponse.json(await loadExternalAppWorkspaceCron(access));
+  return NextResponse.json({
+    configured: Boolean(status.configured),
+    enabled: Boolean(status.enabled),
+    jobs: ensureRpcArray<ExternalAppWorkspaceCronStatus['jobs'][number]>(
+      status.jobs
+    ),
+  });
 }
 
 export async function updateExternalAppWorkspaceCronJob({
@@ -727,22 +668,18 @@ export async function updateExternalAppWorkspaceCronJob({
   if (!job)
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
 
-  const sql = getPlatformSql();
-  const rows = await sql<Array<{ id: string }>>`
-    update public.workspace_cron_jobs
-    set
-      active = ${validation.data.enabled},
-      next_run_at = case
-        when ${validation.data.enabled} then coalesce(next_run_at, ${getNextManagedCronRunAt(job.schedule).toISOString()})
-        else next_run_at
-      end
-    where ws_id = ${access.normalizedWorkspaceId}
-      and external_app_id = ${access.targetApp.id}
-      and external_job_key = ${jobKey}
-    returning id::text
-  `;
+  const updated = await callManagedCronRpc<boolean>(
+    'external_app_managed_cron_update_job',
+    {
+      p_enabled: validation.data.enabled,
+      p_external_app_id: access.targetApp.id,
+      p_external_job_key: jobKey,
+      p_next_run_at: getNextManagedCronRunAt(job.schedule).toISOString(),
+      p_ws_id: access.normalizedWorkspaceId,
+    }
+  );
 
-  if (!rows[0]) {
+  if (!updated) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }
 

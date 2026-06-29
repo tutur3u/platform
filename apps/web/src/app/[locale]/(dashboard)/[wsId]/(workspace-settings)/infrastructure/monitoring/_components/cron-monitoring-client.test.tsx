@@ -189,6 +189,20 @@ function createSnapshot(
       totalJobs: 1,
     },
     retainedExecutionCount: 1,
+    recovery: {
+      blockedReason: null,
+      canRequest: true,
+      consumer: 'none',
+      directControl: {
+        configured: false,
+        lastRecovery: null,
+        status: 'missing',
+        updatedAt: null,
+      },
+      pendingRequestAgeMs: null,
+      requestIsStale: false,
+      watcherStatus: 'missing',
+    },
     runnerRecoveryRequest: null,
     runs: [],
     source: {

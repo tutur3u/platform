@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  callManagedCronRpc: vi.fn(),
   getBearerAppCoordinationToken: vi.fn(),
   getExternalAppById: vi.fn(),
   getPermissions: vi.fn(),
-  getPlatformSql: vi.fn(),
-  listEnabledManagedCronDomainsWithSql: vi.fn(),
+  listEnabledManagedCronDomains: vi.fn(),
   serverLoggerError: vi.fn(),
   setLogDrainUserContext: vi.fn(),
   verifyAppCoordinationToken: vi.fn(),
@@ -45,11 +45,6 @@ vi.mock('@/lib/app-coordination/external-apps', () => ({
     mocks.getExternalAppById(...args),
 }));
 
-vi.mock('@/lib/database/platform-sql', () => ({
-  getPlatformSql: (...args: Parameters<typeof mocks.getPlatformSql>) =>
-    mocks.getPlatformSql(...args),
-}));
-
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: (...args: Parameters<typeof mocks.serverLoggerError>) =>
@@ -64,9 +59,16 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 vi.mock('@/lib/managed-cron/domain-repository', () => ({
-  listEnabledManagedCronDomainsWithSql: (
-    ...args: Parameters<typeof mocks.listEnabledManagedCronDomainsWithSql>
-  ) => mocks.listEnabledManagedCronDomainsWithSql(...args),
+  listEnabledManagedCronDomains: (
+    ...args: Parameters<typeof mocks.listEnabledManagedCronDomains>
+  ) => mocks.listEnabledManagedCronDomains(...args),
+}));
+
+vi.mock('@/lib/managed-cron/rpc', () => ({
+  callManagedCronRpc: (...args: Parameters<typeof mocks.callManagedCronRpc>) =>
+    mocks.callManagedCronRpc(...args),
+  ensureRpcArray: <T>(value: unknown): T[] =>
+    Array.isArray(value) ? (value as T[]) : [],
 }));
 
 vi.mock('@/lib/managed-cron/service', () => ({
@@ -110,93 +112,6 @@ function setupRequest() {
   );
 }
 
-function createSqlMock({
-  jobs = [],
-  secrets = [],
-}: {
-  jobs?: unknown[];
-  secrets?: unknown[];
-} = {}) {
-  return vi.fn((strings: TemplateStringsArray | string[]) => {
-    if (!('raw' in strings)) return strings;
-
-    const query = strings.join(' ');
-    if (query.includes('from public.workspace_cron_jobs')) return jobs;
-    if (query.includes('from public.workspace_secrets')) return secrets;
-    return [];
-  });
-}
-
-function createSetupSqlMock() {
-  type TestSql = ((
-    strings: TemplateStringsArray | string[],
-    ...values: unknown[]
-  ) => unknown) & {
-    begin?: (handler: (transaction: TestSql) => Promise<void>) => Promise<void>;
-    json: (value: unknown) => unknown;
-  };
-
-  const transactionCalls: {
-    query: string;
-    values: unknown[];
-  }[] = [];
-  const jobs = [
-    {
-      active: true,
-      external_job_key: 'enqueue-tracked-sources',
-      failure_count: 0,
-      last_run_at: null,
-      last_status: null,
-      name: 'Managed scheduler enqueue tracked sources',
-      next_run_at: '2026-06-29 08:00:00+00',
-      schedule: '0 * * * *',
-    },
-    {
-      active: true,
-      external_job_key: 'process-queue',
-      failure_count: 0,
-      last_run_at: null,
-      last_status: null,
-      name: 'Managed scheduler process queue',
-      next_run_at: '2026-06-29 07:35:00+00',
-      schedule: '*/5 * * * *',
-    },
-  ];
-  const secrets = [
-    { name: 'MANAGED_CRON_ENABLED', value: 'true' },
-    { name: 'EXTERNAL_APP_MANAGED_CRON_TOKEN', value: 'Bearer token' },
-  ];
-  const transaction = vi.fn(
-    (strings: TemplateStringsArray | string[], ...values: unknown[]) => {
-      if (!('raw' in strings)) return strings;
-
-      transactionCalls.push({
-        query: strings.join(' '),
-        values,
-      });
-      return [];
-    }
-  ) as unknown as TestSql;
-  transaction.json = (value: unknown) => ({ __json: value });
-
-  const sql = vi.fn(
-    (strings: TemplateStringsArray | string[], ..._values: unknown[]) => {
-      if (!('raw' in strings)) return strings;
-
-      const query = strings.join(' ');
-      if (query.includes('from public.workspace_cron_jobs')) return jobs;
-      if (query.includes('from public.workspace_secrets')) return secrets;
-      return [];
-    }
-  ) as unknown as TestSql;
-  sql.begin = async (handler: (transaction: TestSql) => Promise<void>) => {
-    await handler(transaction);
-  };
-  sql.json = (value: unknown) => ({ __json: value });
-
-  return { sql, transactionCalls };
-}
-
 function postgresError(code: string, message: string) {
   return Object.assign(new Error(message), {
     code,
@@ -238,16 +153,18 @@ describe('external app managed cron routes', () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: () => false,
     });
-    mocks.getPlatformSql.mockReturnValue(createSqlMock());
-    mocks.listEnabledManagedCronDomainsWithSql.mockResolvedValue([appOrigin]);
+    mocks.callManagedCronRpc.mockResolvedValue({
+      configured: false,
+      enabled: false,
+      jobs: [],
+    });
+    mocks.listEnabledManagedCronDomains.mockResolvedValue([appOrigin]);
   });
 
-  it('returns structured diagnostics when the platform database URL is missing', async () => {
-    mocks.getPlatformSql.mockImplementation(() => {
-      throw new Error(
-        'Missing private database connection URL. Set one of: PLATFORM_DATABASE_URL, POSTGRES_URL, DATABASE_URL, DIRECT_URL.'
-      );
-    });
+  it('returns structured diagnostics when Supabase admin access is unavailable', async () => {
+    mocks.callManagedCronRpc.mockRejectedValue(
+      new Error('Missing Supabase key')
+    );
 
     const response = await GET(statusRequest(), context());
     const body = await response.json();
@@ -257,22 +174,22 @@ describe('external app managed cron routes', () => {
       adminRecoveryHref:
         'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
       adminRecoveryReason:
-        'Managed cron database is unavailable. Set a private platform database URL for Tuturuuu, then retry.',
-      code: 'MANAGED_CRON_DATABASE_UNAVAILABLE',
+        'Managed cron Supabase admin access is unavailable. Configure Supabase service-role access for Tuturuuu, then retry.',
+      code: 'MANAGED_CRON_SUPABASE_ADMIN_UNAVAILABLE',
       configured: false,
       developerDebug: {
         operation: 'status',
-        reason: 'database_unavailable',
+        reason: 'supabase_admin_unavailable',
       },
       enabled: false,
       jobs: [],
     });
-    expect(body.developerDebug.requiredEnv).toContain('PLATFORM_DATABASE_URL');
+    expect(body.developerDebug.requiredEnv).toContain('SUPABASE_SECRET_KEY');
     expectNoSensitiveDiagnostics(body);
     expect(mocks.serverLoggerError).toHaveBeenCalledWith(
       'External app managed cron operation failed',
       expect.objectContaining({
-        code: 'MANAGED_CRON_DATABASE_UNAVAILABLE',
+        code: 'MANAGED_CRON_SUPABASE_ADMIN_UNAVAILABLE',
         externalAppId: 'cybershield35',
         operation: 'status',
         userId,
@@ -282,10 +199,8 @@ describe('external app managed cron routes', () => {
   });
 
   it('returns structured diagnostics when managed-cron schema is not ready', async () => {
-    mocks.getPlatformSql.mockReturnValue(
-      vi.fn(() => {
-        throw postgresError('42703', 'column "external_app_id" does not exist');
-      })
+    mocks.callManagedCronRpc.mockRejectedValue(
+      postgresError('42703', 'column "external_app_id" does not exist')
     );
 
     const response = await GET(statusRequest(), context());
@@ -311,7 +226,7 @@ describe('external app managed cron routes', () => {
   });
 
   it('blocks setup with diagnostics when managed-cron schema is missing', async () => {
-    mocks.listEnabledManagedCronDomainsWithSql.mockRejectedValue(
+    mocks.listEnabledManagedCronDomains.mockRejectedValue(
       postgresError(
         '42P01',
         'relation "private.managed_cron_whitelisted_domains" does not exist'
@@ -340,7 +255,7 @@ describe('external app managed cron routes', () => {
   });
 
   it('keeps domain approval responses actionable for setup', async () => {
-    mocks.listEnabledManagedCronDomainsWithSql.mockResolvedValue([
+    mocks.listEnabledManagedCronDomains.mockResolvedValue([
       'approved.example.com',
     ]);
 
@@ -361,11 +276,35 @@ describe('external app managed cron routes', () => {
   });
 
   it('sets up managed cron jobs with current endpoint and header schema', async () => {
-    const { sql, transactionCalls } = createSetupSqlMock();
-    mocks.getPlatformSql.mockReturnValue(sql);
-    mocks.listEnabledManagedCronDomainsWithSql.mockResolvedValue([
+    mocks.listEnabledManagedCronDomains.mockResolvedValue([
       'cybershield35.ttr.gg',
     ]);
+    mocks.callManagedCronRpc.mockResolvedValue({
+      configured: true,
+      enabled: true,
+      jobs: [
+        {
+          active: true,
+          failureCount: 0,
+          jobKey: 'enqueue-tracked-sources',
+          lastRunAt: null,
+          lastStatus: null,
+          name: 'Managed scheduler enqueue tracked sources',
+          nextRunAt: '2026-06-29 08:00:00+00',
+          schedule: '0 * * * *',
+        },
+        {
+          active: true,
+          failureCount: 0,
+          jobKey: 'process-queue',
+          lastRunAt: null,
+          lastStatus: null,
+          name: 'Managed scheduler process queue',
+          nextRunAt: '2026-06-29 07:35:00+00',
+          schedule: '*/5 * * * *',
+        },
+      ],
+    });
 
     const response = await SETUP(setupRequest(), context());
     const body = await response.json();
@@ -377,35 +316,30 @@ describe('external app managed cron routes', () => {
     });
     expect(body.jobs).toHaveLength(2);
 
-    const jobInsertCalls = transactionCalls.filter(({ query }) =>
-      query.includes('insert into public.workspace_cron_jobs')
+    const setupCall = mocks.callManagedCronRpc.mock.calls.find(
+      ([fn]) => fn === 'external_app_managed_cron_setup'
     );
-    expect(jobInsertCalls).toHaveLength(2);
+    expect(setupCall).toBeTruthy();
+    const setupArgs = setupCall?.[1] as {
+      p_jobs: Array<{ endpointUrl: string; headersConfig: unknown[] }>;
+    };
+    expect(setupArgs.p_jobs).toHaveLength(2);
 
-    for (const { query, values } of jobInsertCalls) {
-      expect(query).toContain('endpoint_url');
-      expect(query).toContain('headers_config');
-      expect(query).not.toContain(' url,');
-      expect(query).not.toContain('excluded.url');
-      expect(values).toContainEqual({
-        __json: [
-          {
-            name: 'Authorization',
-            secretName: 'EXTERNAL_APP_MANAGED_CRON_TOKEN',
-          },
-        ],
+    for (const job of setupArgs.p_jobs) {
+      expect(job.endpointUrl).toMatch(/^https:\/\/cybershield35\.ttr\.gg\//u);
+      expect(job.headersConfig).toContainEqual({
+        name: 'Authorization',
+        secretName: 'EXTERNAL_APP_MANAGED_CRON_TOKEN',
       });
     }
   });
 
   it('logs unknown failures and returns sanitized operation diagnostics', async () => {
-    mocks.getPlatformSql.mockReturnValue(
-      vi.fn(() => {
-        throw postgresError(
-          'XX000',
-          'password=secret SELECT * from private.runtime_failure'
-        );
-      })
+    mocks.callManagedCronRpc.mockRejectedValue(
+      postgresError(
+        'XX000',
+        'password=secret SELECT * from private.runtime_failure'
+      )
     );
 
     const response = await GET(statusRequest(), context());

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { queueCronRunnerRecoveryRequest } from '@/lib/infrastructure/cron-monitoring';
+import { requestDockerControlCronRunnerRecovery } from '@/lib/infrastructure/docker-control';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../../blue-green/authorization';
 
@@ -26,13 +27,40 @@ export async function POST(request: Request) {
   }
 
   try {
+    const reason =
+      parsed.data.reason ??
+      (parsed.data.action === 'restart'
+        ? 'operator-requested-restart'
+        : 'operator-requested-ensure');
+    const directRecovery = await requestDockerControlCronRunnerRecovery({
+      action: parsed.data.action,
+      reason,
+      requestedBy: authorization.user.id,
+      requestedByEmail: authorization.user.email ?? null,
+    });
+
+    if (directRecovery.ok) {
+      return NextResponse.json({
+        message: directRecovery.message,
+        mode: 'direct-control',
+        recovery: directRecovery.recovery,
+        request: directRecovery.request,
+      });
+    }
+
+    if (directRecovery.configured) {
+      return NextResponse.json(
+        {
+          message: 'Docker control service is unavailable',
+          reason: directRecovery.message,
+        },
+        { status: 503 }
+      );
+    }
+
     const queuedRequest = queueCronRunnerRecoveryRequest({
       action: parsed.data.action,
-      reason:
-        parsed.data.reason ??
-        (parsed.data.action === 'restart'
-          ? 'operator-requested-restart'
-          : 'operator-requested-ensure'),
+      reason,
       requestedBy: authorization.user.id,
       requestedByEmail: authorization.user.email ?? null,
     });
@@ -42,6 +70,7 @@ export async function POST(request: Request) {
         parsed.data.action === 'restart'
           ? 'Queued cron runner restart for the Docker watcher.'
           : 'Queued cron runner service ensure for the Docker watcher.',
+      mode: 'watcher-queue',
       request: queuedRequest,
     });
   } catch (error) {

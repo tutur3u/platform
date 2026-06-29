@@ -620,6 +620,7 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
     'backend',
     'markitdown',
     'storage-unzip-proxy',
+    'web-docker-control',
     'web-cron-runner',
   ]);
   assert.deepEqual(
@@ -636,6 +637,7 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
       'meet-realtime',
       'markitdown',
       'storage-unzip-proxy',
+      'web-docker-control',
       'web-cron-runner',
     ]
   );
@@ -806,6 +808,7 @@ test('getBlueGreenDeploymentBuildServices scopes support image builds to changed
       'markitdown',
       'storage-unzip-proxy',
       'supermemory',
+      'web-docker-control',
       'web-cron-runner',
     ]
   );
@@ -4832,6 +4835,7 @@ test('runBlueGreenProdWorkflow promotes pretagged images without rebuilding them
         'meet-realtime',
         'storage-unzip-proxy',
         'supermemory',
+        'web-docker-control',
         'web-cron-runner',
       ].includes(args.at(-1))
     ) {
@@ -4894,6 +4898,7 @@ test('runBlueGreenProdWorkflow promotes pretagged images without rebuilding them
         'meet-realtime',
         'storage-unzip-proxy',
         'supermemory',
+        'web-docker-control',
         'web-cron-runner',
       ]) {
         if (args.includes(serviceName)) {

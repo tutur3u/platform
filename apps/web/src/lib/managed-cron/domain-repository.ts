@@ -1,7 +1,6 @@
 import 'server-only';
 
-import type { Sql } from 'postgres';
-import { getPlatformSql } from '@/lib/database/platform-sql';
+import { callManagedCronRpc, ensureRpcArray } from './rpc';
 import { normalizeManagedCronDomain } from './validation';
 
 export interface ManagedCronWhitelistedDomain {
@@ -35,73 +34,30 @@ export async function listManagedCronWhitelistedDomains({
   pageSize,
   q,
 }: ListManagedCronDomainsOptions = {}) {
-  const sql = getPlatformSql();
   const limit = parsePositiveInteger(pageSize, 10);
   const offset = (parsePositiveInteger(page, 1) - 1) * limit;
   const search = normalizeDomainSearch(q);
-
-  const rows = search
-    ? await sql<ManagedCronWhitelistedDomain[]>`
-        select
-          domain,
-          description,
-          enabled,
-          created_at::text as created_at,
-          updated_at::text as updated_at,
-          created_by::text as created_by,
-          updated_by::text as updated_by
-        from private.managed_cron_whitelisted_domains
-        where domain ilike ${search}
-        order by created_at desc
-        limit ${limit}
-        offset ${offset}
-      `
-    : await sql<ManagedCronWhitelistedDomain[]>`
-        select
-          domain,
-          description,
-          enabled,
-          created_at::text as created_at,
-          updated_at::text as updated_at,
-          created_by::text as created_by,
-          updated_by::text as updated_by
-        from private.managed_cron_whitelisted_domains
-        order by created_at desc
-        limit ${limit}
-        offset ${offset}
-      `;
-
-  const [countRow] = search
-    ? await sql<{ count: number }[]>`
-        select count(*)::int as count
-        from private.managed_cron_whitelisted_domains
-        where domain ilike ${search}
-      `
-    : await sql<{ count: number }[]>`
-        select count(*)::int as count
-        from private.managed_cron_whitelisted_domains
-      `;
+  const payload = await callManagedCronRpc<{
+    count?: number;
+    data?: ManagedCronWhitelistedDomain[];
+  }>('list_managed_cron_whitelisted_domains', {
+    p_limit: limit,
+    p_offset: offset,
+    p_search: search,
+  });
 
   return {
-    count: countRow?.count ?? 0,
-    data: rows,
+    count: typeof payload.count === 'number' ? payload.count : 0,
+    data: ensureRpcArray<ManagedCronWhitelistedDomain>(payload.data),
   };
 }
 
 export async function listEnabledManagedCronDomains() {
-  const sql = getPlatformSql();
-  return listEnabledManagedCronDomainsWithSql(sql);
-}
+  const rows = await callManagedCronRpc<Array<{ domain: string }>>(
+    'list_enabled_managed_cron_domains'
+  );
 
-export async function listEnabledManagedCronDomainsWithSql(sql: Sql) {
-  const rows = await sql<{ domain: string }[]>`
-    select domain
-    from private.managed_cron_whitelisted_domains
-    where enabled = true
-    order by domain asc
-  `;
-
-  return rows.map((row) => row.domain);
+  return ensureRpcArray<{ domain: string }>(rows).map((row) => row.domain);
 }
 
 export async function addManagedCronWhitelistedDomain({
@@ -115,34 +71,12 @@ export async function addManagedCronWhitelistedDomain({
   domain: string;
   enabled: boolean;
 }) {
-  const sql = getPlatformSql();
-  const normalizedDomain = normalizeManagedCronDomain(domain);
-  const [row] = await sql<ManagedCronWhitelistedDomain[]>`
-    insert into private.managed_cron_whitelisted_domains (
-      domain,
-      description,
-      enabled,
-      created_by,
-      updated_by
-    )
-    values (
-      ${normalizedDomain},
-      ${description},
-      ${enabled},
-      ${actorId},
-      ${actorId}
-    )
-    returning
-      domain,
-      description,
-      enabled,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      created_by::text as created_by,
-      updated_by::text as updated_by
-  `;
-
-  return row;
+  return upsertManagedCronWhitelistedDomain({
+    actorId,
+    description,
+    domain,
+    enabled,
+  });
 }
 
 export async function upsertManagedCronWhitelistedDomain({
@@ -156,40 +90,16 @@ export async function upsertManagedCronWhitelistedDomain({
   domain: string;
   enabled: boolean;
 }) {
-  const sql = getPlatformSql();
   const normalizedDomain = normalizeManagedCronDomain(domain);
-  const [row] = await sql<ManagedCronWhitelistedDomain[]>`
-    insert into private.managed_cron_whitelisted_domains (
-      domain,
-      description,
-      enabled,
-      created_by,
-      updated_by
-    )
-    values (
-      ${normalizedDomain},
-      ${description},
-      ${enabled},
-      ${actorId},
-      ${actorId}
-    )
-    on conflict (domain)
-    do update set
-      description = coalesce(excluded.description, private.managed_cron_whitelisted_domains.description),
-      enabled = excluded.enabled,
-      updated_at = now(),
-      updated_by = excluded.updated_by
-    returning
-      domain,
-      description,
-      enabled,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      created_by::text as created_by,
-      updated_by::text as updated_by
-  `;
-
-  return row;
+  return callManagedCronRpc<ManagedCronWhitelistedDomain>(
+    'upsert_managed_cron_whitelisted_domain',
+    {
+      p_actor_id: actorId,
+      p_description: description,
+      p_domain: normalizedDomain,
+      p_enabled: enabled,
+    }
+  );
 }
 
 export async function updateManagedCronWhitelistedDomainEnabled({
@@ -201,21 +111,15 @@ export async function updateManagedCronWhitelistedDomainEnabled({
   domain: string;
   enabled: boolean;
 }) {
-  const sql = getPlatformSql();
-  await sql`
-    update private.managed_cron_whitelisted_domains
-    set
-      enabled = ${enabled},
-      updated_at = now(),
-      updated_by = ${actorId}
-    where domain = ${normalizeManagedCronDomain(domain)}
-  `;
+  await callManagedCronRpc('update_managed_cron_whitelisted_domain_enabled', {
+    p_actor_id: actorId,
+    p_domain: normalizeManagedCronDomain(domain),
+    p_enabled: enabled,
+  });
 }
 
 export async function deleteManagedCronWhitelistedDomain(domain: string) {
-  const sql = getPlatformSql();
-  await sql`
-    delete from private.managed_cron_whitelisted_domains
-    where domain = ${normalizeManagedCronDomain(domain)}
-  `;
+  await callManagedCronRpc('delete_managed_cron_whitelisted_domain', {
+    p_domain: normalizeManagedCronDomain(domain),
+  });
 }

@@ -22,6 +22,10 @@ const DOCKER_WEB_CRON_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'cron-token'
 );
+const DOCKER_WEB_DOCKER_CONTROL_TOKEN_FILE = path.join(
+  DOCKER_WEB_RUNTIME_DIR,
+  'docker-control-token'
+);
 const DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'storage-unzip-token'
@@ -74,6 +78,7 @@ const DOCKER_STORAGE_UNZIP_PROXY_URL =
 const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
 const DOCKER_BACKEND_INTERNAL_URL = 'http://backend:7820';
+const DOCKER_CONTROL_INTERNAL_URL = 'http://web-docker-control:7810';
 const DOCKER_WEB_NEXT_PRIVATE_ORIGIN = 'http://127.0.0.1:7803';
 const DOCKER_SUPERMEMORY_BASE_URL = 'http://supermemory:8787';
 const DOCKER_SUPERMEMORY_DATABASE_HOST = 'supermemory-postgres';
@@ -670,6 +675,14 @@ function getComposeEnvironment({
     });
     composeEnv.CRON_SECRET = dockerCronRuntime.secret;
 
+    const dockerControlRuntime = getDockerControlRuntime({
+      baseEnv,
+      fsImpl,
+      rootDir,
+    });
+    composeEnv.PLATFORM_DOCKER_CONTROL_TOKEN = dockerControlRuntime.token;
+    composeEnv.PLATFORM_DOCKER_CONTROL_URL = dockerControlRuntime.url;
+
     const dockerMarkitdownRuntime = getDockerMarkitdownRuntime({
       baseEnv,
       fsImpl,
@@ -804,6 +817,12 @@ function getDockerWebRuntimePaths(rootDir = ROOT_DIR) {
   return {
     backendTokenFile: path.join(rootDir, 'tmp', 'docker-web', 'backend-token'),
     cronTokenFile: path.join(rootDir, 'tmp', 'docker-web', 'cron-token'),
+    dockerControlTokenFile: path.join(
+      rootDir,
+      'tmp',
+      'docker-web',
+      'docker-control-token'
+    ),
     markitdownTokenFile: path.join(
       rootDir,
       'tmp',
@@ -1056,6 +1075,35 @@ function getDockerCronRuntime({
   return { secret };
 }
 
+function getDockerControlRuntime({
+  baseEnv = process.env,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const paths = getDockerWebRuntimePaths(rootDir);
+  const envToken = getFirstNonBlank([
+    baseEnv.DOCKER_PLATFORM_DOCKER_CONTROL_TOKEN,
+    baseEnv.PLATFORM_DOCKER_CONTROL_TOKEN,
+  ]);
+  const token =
+    envToken ??
+    getPersistedDockerToken(paths.dockerControlTokenFile, fsImpl) ??
+    generateDockerServiceToken();
+
+  if (token !== envToken) {
+    writeDockerToken(token, paths.dockerControlTokenFile, paths, fsImpl);
+  }
+
+  return {
+    token,
+    url:
+      getFirstNonBlank([
+        baseEnv.DOCKER_PLATFORM_DOCKER_CONTROL_URL,
+        baseEnv.PLATFORM_DOCKER_CONTROL_URL,
+      ]) ?? DOCKER_CONTROL_INTERNAL_URL,
+  };
+}
+
 function getDockerBackendRuntime({
   baseEnv = process.env,
   fsImpl = fs,
@@ -1158,6 +1206,7 @@ function getDockerStorageUnzipRuntime({
 module.exports = {
   DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   DOCKER_BACKEND_INTERNAL_URL,
+  DOCKER_CONTROL_INTERNAL_URL,
   DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
   DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -1167,6 +1216,7 @@ module.exports = {
   DOCKER_STORAGE_UNZIP_PROXY_URL,
   DOCKER_WEB_BACKEND_TOKEN_FILE,
   DOCKER_WEB_CRON_TOKEN_FILE,
+  DOCKER_WEB_DOCKER_CONTROL_TOKEN_FILE,
   DOCKER_WEB_MARKITDOWN_TOKEN_FILE,
   DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV,
   DOCKER_WEB_REDIS_TOKEN_FILE,
@@ -1196,6 +1246,7 @@ module.exports = {
   getDockerBackendRuntime,
   getDockerCloudflaredRuntime,
   getDockerCronRuntime,
+  getDockerControlRuntime,
   getDockerMarkitdownRuntime,
   getDockerRedisRuntime,
   getDockerSupermemoryRuntime,

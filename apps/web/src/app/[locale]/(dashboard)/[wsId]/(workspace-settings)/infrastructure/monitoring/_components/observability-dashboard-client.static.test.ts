@@ -17,5 +17,7 @@ describe('ObservabilityDashboardClient cron runner recovery panel', () => {
     expect(source).toContain("cronT('runner_recovery.ensure_action')");
     expect(source).toContain("cronT('runner_recovery.restart_action')");
     expect(source).toContain('cronSnapshot?.runnerRecoveryRequest');
+    expect(source).toContain('cronSnapshot.recovery.canRequest === false');
+    expect(source).toContain('cronSnapshot?.recovery.blockedReason');
   });
 });

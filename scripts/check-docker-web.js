@@ -74,6 +74,13 @@ const CRON_RUNNER_DOCKERFILE_PATH = path.join(
   'docker',
   'cron-runner.Dockerfile'
 );
+const DOCKER_CONTROL_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'web',
+  'docker',
+  'docker-control.Dockerfile'
+);
 const NATIVE_WEB_RUNNER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -1015,6 +1022,7 @@ function validateDockerProdCompose(composeContent) {
     '  tanstack-web-green:',
     '  buildkit:',
     '  web-blue-green-watcher:',
+    '  web-docker-control:',
     '  web-cron-runner:',
     '  cloudflared:',
     'x-hive-service: &hive-service',
@@ -1045,6 +1053,7 @@ function validateDockerProdCompose(composeContent) {
       '{BACKEND_PUBLIC_ORIGIN:-http://backend:7820}',
     '    - PORT=7824',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
+    '      dockerfile: apps/web/docker/docker-control.Dockerfile',
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
     '    container_name: ' +
       '${' +
@@ -1090,6 +1099,10 @@ function validateDockerProdCompose(composeContent) {
     '      - DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT',
     '      - DOCKER_WEB_TURBO_CONCURRENCY',
     '      - DOCKER_WEB_WITH_CLOUDFLARED',
+    '      - BACKEND_INTERNAL_TOKEN',
+    '      - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
     '      - GITHUB_TOKEN',
     '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain',
     '      - PLATFORM_LOG_DRAIN_ENABLED=' +
@@ -1108,6 +1121,14 @@ function validateDockerProdCompose(composeContent) {
     '      - SUPERMEMORY_TIMEOUT_MS=${' + 'SUPERMEMORY_TIMEOUT_MS:-1500' + '}',
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
+    '      - PLATFORM_DOCKER_CONTROL_PORT=${' +
+      'PLATFORM_DOCKER_CONTROL_PORT:-7810' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_STATUS_FILE=${' +
+      'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
+      '}' +
+      '/tmp/docker-web/docker-control/status.json',
+    '      - PLATFORM_DOCKER_CONTROL_TOKEN',
     '      context: ../apps/storage-unzip-proxy',
     '    - CRON_SECRET',
     '      - CRON_SECRET',
@@ -1173,6 +1194,7 @@ function validateDockerProdCompose(composeContent) {
     '    - DISCORD_APP_DEPLOYMENT_URL',
     '    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
     '    - DRIVE_AUTO_EXTRACT_PROXY_URL',
+    '    - CRON_SECRET',
     '    - HIVE_DATABASE_URL=${' +
       'HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive' +
       '}',
@@ -1213,6 +1235,10 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'PLATFORM_LOG_DRAIN_SUMMARY_RETENTION_DAYS:-90' +
       '}',
+    '    - PLATFORM_DOCKER_CONTROL_URL=${' +
+      'PLATFORM_DOCKER_CONTROL_URL:-http://web-docker-control:7810' +
+      '}',
+    '    - PLATFORM_DOCKER_CONTROL_TOKEN',
     '    - SUPABASE_SERVER_URL',
     '    - SUPERMEMORY_API_KEY',
     '    - SUPERMEMORY_BASE_URL=${' +
@@ -1223,6 +1249,7 @@ function validateDockerProdCompose(composeContent) {
     '    - SUPERMEMORY_TIMEOUT_MS=${' + 'SUPERMEMORY_TIMEOUT_MS:-1500' + '}',
     '    - UPSTASH_REDIS_REST_TOKEN',
     '    - UPSTASH_REDIS_REST_URL',
+    '    - VERCEL_CRON_SECRET',
     '    - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control',
     '    - ../tmp/docker-web:/app/runtime/docker-web:ro',
     '  hive-postgres:',
@@ -1300,9 +1327,22 @@ function validateDockerProdCompose(composeContent) {
     ...composeContent.matchAll(/^\s+- DOCKER_WEB_FRONTEND$/gmu),
   ].length;
 
-  if (frontendSelectorEnvCount < 2) {
+  for (const snippet of [
+    '      - DOCKER_WEB_BUILD_MEMORY',
+    '      - DOCKER_WEB_NEXT_BUILD_CPUS',
+  ]) {
+    if (
+      !serviceBlockIncludes(composeContent, 'web-blue-green-watcher', snippet)
+    ) {
+      errors.push(
+        `docker-compose.web.prod.yml service web-blue-green-watcher is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  if (frontendSelectorEnvCount < 3) {
     errors.push(
-      'docker-compose.web.prod.yml must pass DOCKER_WEB_FRONTEND to both web-blue-green-watcher and web-cron-runner so TanStack production selection survives container recreation.'
+      'docker-compose.web.prod.yml must pass DOCKER_WEB_FRONTEND to web-blue-green-watcher, web-docker-control, and web-cron-runner so TanStack production selection survives service recreation.'
     );
   }
 
@@ -1312,6 +1352,7 @@ function validateDockerProdCompose(composeContent) {
     'serverless-redis-http',
     'storage-unzip-proxy',
     'web-blue-green-watcher',
+    'web-docker-control',
     'web-cron-runner',
     'web-proxy',
   ];
@@ -1326,6 +1367,7 @@ function validateDockerProdCompose(composeContent) {
 
   const watcherCompanionServices = [
     'web-blue-green-watcher',
+    'web-docker-control',
     'web-cron-runner',
   ];
 
@@ -1494,13 +1536,14 @@ function validateDockerBakeFile(bakeContent) {
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
     'group "blue-green-tanstack-web" {\n  targets = ["tanstack-web-blue", "tanstack-web-green"]\n}',
-    'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-cron-runner"]\n}',
+    'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-docker-control", "web-cron-runner"]\n}',
     `target "tanstack-web-blue" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-tanstack-web-blue"]\n}`,
     `target "tanstack-web-green" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-tanstack-web-green"]\n}`,
     `target "backend" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-backend"]\n}`,
     `target "chat-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-chat-realtime"]\n}`,
     `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
     `target "supermemory" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-supermemory"]\n}`,
+    `target "web-docker-control" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-web-docker-control"]\n}`,
   ];
 
   for (const snippet of requiredSnippets) {
@@ -1663,6 +1706,26 @@ function validateCronRunnerDockerfile(dockerfileContent) {
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/web/docker/cron-runner.Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateDockerControlDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'FROM oven/bun:1.3.14-alpine',
+    'RUN apk add --no-cache docker-cli docker-cli-compose',
+    'COPY apps/web/docker/docker-control-server.js /usr/local/bin/docker-control-server.js',
+    'CMD ["bun", "/usr/local/bin/docker-control-server.js"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/web/docker/docker-control.Dockerfile is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -2080,6 +2143,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'web', 'docker', 'cron-runner.Dockerfile'),
     'utf8'
   ),
+  dockerControlDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'web', 'docker', 'docker-control.Dockerfile'),
+    'utf8'
+  ),
   nativeWebRunnerDockerfileContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'web', 'docker', 'native-runner.Dockerfile'),
     'utf8'
@@ -2148,6 +2215,7 @@ function checkDockerWebSetup({
     ...validateDockerBakeFile(dockerBakeContent),
     ...validateDockerignore(dockerignoreContent),
     ...validateWatcherDockerfile(watcherDockerfileContent),
+    ...validateDockerControlDockerfile(dockerControlDockerfileContent),
     ...validateCronRunnerDockerfile(cronRunnerDockerfileContent),
     ...validateNativeWebRunnerDockerfile(
       nativeWebRunnerDockerfileContent,
@@ -2211,6 +2279,7 @@ module.exports = {
   MARKITDOWN_DOCKERFILE_PATH,
   SUPERMEMORY_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
+  DOCKER_CONTROL_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   DOCKERIGNORE_PATH,
@@ -2238,6 +2307,7 @@ module.exports = {
   validateDockerignore,
   validateDockerfile,
   validateCronRunnerDockerfile,
+  validateDockerControlDockerfile,
   validateDepsStageManifestCopies,
   validateHiveDockerfile,
   validateHiveDbMigrateScript,

@@ -49,6 +49,7 @@ const {
   WATCH_PENDING_DEPLOY_ENV,
   WATCHER_CONTAINER_ENV,
   WEB_CRON_RUNNER_SERVICE,
+  WEB_DOCKER_CONTROL_SERVICE,
   acquireWatchLock,
   appendFailedDeploymentHistoryAndNotify,
   appendDeploymentHistory,
@@ -380,6 +381,7 @@ function addHealthyComposeServiceRecoveryResponses(
     'serverless-redis-http': 'serverless-redis-http-123',
     'storage-unzip-proxy': 'storage-unzip-123',
     supermemory: 'supermemory-123',
+    'web-docker-control': 'docker-control-123',
     'web-cron-runner': 'cron-runner-123',
     [`web-${activeColor}`]: `${activeColor}-123`,
     'web-proxy': 'proxy-123',
@@ -1457,6 +1459,10 @@ function prodComposeWatcherUpKey() {
 
 function prodComposeCronRunnerUpKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --no-recreate --remove-orphans ${WEB_CRON_RUNNER_SERVICE}`;
+}
+
+function prodComposeDockerControlUpKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --force-recreate --remove-orphans ${WEB_DOCKER_CONTROL_SERVICE}`;
 }
 
 function prodComposeWatcherLogsKey() {
@@ -6199,7 +6205,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [prodComposeHiveDbMigrateKey(), createResult('')],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-docker-control web-cron-runner redis serverless-redis-http`,
         createResult(''),
       ],
       [
@@ -6221,6 +6227,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q supermemory`,
         createResult('supermemory-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-docker-control`,
+        createResult('docker-control-123\n'),
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-cron-runner`,
@@ -6264,6 +6274,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} supermemory-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} docker-control-123`,
         createResult('healthy\n'),
       ],
       [
@@ -6367,7 +6381,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
       ) <
         calls.indexOf(
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-docker-control web-cron-runner redis serverless-redis-http`
         )
     );
     assert.ok(
@@ -6815,7 +6829,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
       ],
       [prodComposeHiveDbMigrateKey(), createResult('')],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-docker-control web-cron-runner redis serverless-redis-http`,
         createResult(''),
       ],
       [
@@ -6837,6 +6851,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q supermemory`,
         createResult('supermemory-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-docker-control`,
+        createResult('docker-control-123\n'),
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-cron-runner`,
@@ -6880,6 +6898,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
       ],
       [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} supermemory-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} docker-control-123`,
         createResult('healthy\n'),
       ],
       [
@@ -7482,6 +7504,7 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
     ]);
     assert.deepEqual(
@@ -7509,6 +7532,53 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.match(envs[1].SUPERMEMORY_POSTGRES_PASSWORD, /^[a-f0-9]{64}$/u);
     assert.equal(envs[2][HOST_WORKSPACE_DIR_ENV], tempDir);
     assert.equal(envs[2].COMPOSE_PROJECT_NAME, path.basename(tempDir));
+    assert.equal(envs[3][HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(envs[3].COMPOSE_PROJECT_NAME, path.basename(tempDir));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer fails when Docker control ensure fails', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-container-control-fail-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+
+    await assert.rejects(
+      () =>
+        startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+          env: { ...LOCAL_SUPABASE_TEST_ENV, PATH: process.env.PATH },
+          envFilePath,
+          fsImpl: fs,
+          rootDir: tempDir,
+          runCommand: async (command, args) => {
+            const key = `${command} ${args.join(' ')}`;
+            calls.push(key);
+
+            if (key === prodComposeDockerControlUpKey()) {
+              return createResult('', {
+                code: 1,
+                stderr: 'docker control image missing',
+              });
+            }
+
+            return createResult('');
+          },
+        }),
+      /docker control image missing/u
+    );
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
+    ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -7552,6 +7622,7 @@ test('startBlueGreenWatcherContainer fails when cron runner ensure fails', async
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
     ]);
   } finally {
@@ -7742,6 +7813,7 @@ test('handoffLegacyWatcherToTargetProject starts a staged target watcher and sto
       `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_WATCHER_SERVICE}`,
     ]);
@@ -7754,8 +7826,11 @@ test('handoffLegacyWatcherToTargetProject starts a staged target watcher and sto
     assert.equal(envs[3].COMPOSE_PROJECT_NAME, 'tuturuuu');
     assert.equal(envs[3].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
     assert.equal(envs[3].DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
-    assert.equal(envs[4].COMPOSE_PROJECT_NAME, 'platform');
-    assert.equal(envs[4].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(envs[4].COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(envs[4].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(envs[4].DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
+    assert.equal(envs[5].COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(envs[5].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'platform');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -7798,6 +7873,7 @@ test('handoffLegacyWatcherToTargetProject detects legacy watcher containers with
       `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_WATCHER_SERVICE}`,
     ]);
@@ -8351,6 +8427,10 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
           return createResult('');
         }
 
+        if (key === prodComposeDockerControlUpKey()) {
+          return createResult('');
+        }
+
         if (key === prodComposeCronRunnerUpKey()) {
           return createResult('');
         }
@@ -8377,6 +8457,7 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
@@ -8420,6 +8501,10 @@ test('runWatcherCommand forwards build overrides when booting watcher container'
 
         if (key === prodComposeWatcherUpKey()) {
           watcherUpEnv = options.env;
+          return createResult('');
+        }
+
+        if (key === prodComposeDockerControlUpKey()) {
           return createResult('');
         }
 
@@ -8487,6 +8572,10 @@ test('runWatcherCommand reconnects log tail after a transient docker logs failur
           return createResult('');
         }
 
+        if (key === prodComposeDockerControlUpKey()) {
+          return createResult('');
+        }
+
         if (key === prodComposeCronRunnerUpKey()) {
           return createResult('');
         }
@@ -8518,6 +8607,7 @@ test('runWatcherCommand reconnects log tail after a transient docker logs failur
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
@@ -8574,6 +8664,10 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
           return createResult('');
         }
 
+        if (key === prodComposeDockerControlUpKey()) {
+          return createResult('');
+        }
+
         if (key === prodComposeCronRunnerUpKey()) {
           return createResult('');
         }
@@ -8617,6 +8711,7 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
@@ -8624,6 +8719,7 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
       'docker info',
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
@@ -8708,6 +8804,10 @@ test('runWatcherCommand reconnects after watcher service recreation', async () =
           return createResult('');
         }
 
+        if (key === prodComposeDockerControlUpKey()) {
+          return createResult('');
+        }
+
         if (key === prodComposeCronRunnerUpKey()) {
           return createResult('');
         }
@@ -8739,6 +8839,7 @@ test('runWatcherCommand reconnects after watcher service recreation', async () =
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
@@ -8783,6 +8884,10 @@ test('runWatcherCommand recreates the watcher when the log stream completes afte
           return createResult('');
         }
 
+        if (key === prodComposeDockerControlUpKey()) {
+          return createResult('');
+        }
+
         if (key === prodComposeCronRunnerUpKey()) {
           return createResult('');
         }
@@ -8821,12 +8926,14 @@ test('runWatcherCommand recreates the watcher when the log stream completes afte
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
       'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
@@ -8866,6 +8973,10 @@ test('runWatcherCommand force-recreates when watcher logs request host-supervise
           return createResult('');
         }
 
+        if (key === prodComposeDockerControlUpKey()) {
+          return createResult('');
+        }
+
         if (key === prodComposeCronRunnerUpKey()) {
           return createResult('');
         }
@@ -8899,10 +9010,12 @@ test('runWatcherCommand force-recreates when watcher logs request host-supervise
     assert.deepEqual(calls, [
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       'docker compose version',
       prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
       prodComposeCronRunnerUpKey(),
       prodComposeWatcherLogsKey(),
       prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),

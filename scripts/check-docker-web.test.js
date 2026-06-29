@@ -24,6 +24,7 @@ const {
   BACKEND_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   CHAT_REALTIME_DOCKERFILE_PATH,
+  DOCKER_CONTROL_DOCKERFILE_PATH,
   DOCKER_BAKE_WEB_PROD_PATH,
   DOCKER_SETUP_WORKFLOW_PATH,
   DOCKERIGNORE_PATH,
@@ -51,6 +52,7 @@ const {
   validateBackendDockerfile,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
+  validateDockerControlDockerfile,
   validateDockerSetupWorkflow,
   validateDockerBakeFile,
   validateDockerProdCompose,
@@ -1298,6 +1300,15 @@ test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
   assert.deepEqual(validateWatcherDockerfile(dockerfileContent), []);
 });
 
+test('validateDockerControlDockerfile accepts the current Docker control Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(
+    DOCKER_CONTROL_DOCKERFILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateDockerControlDockerfile(dockerfileContent), []);
+});
+
 test('validateCronRunnerDockerfile accepts the current cron runner Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(
     CRON_RUNNER_DOCKERFILE_PATH,
@@ -1481,6 +1492,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'docker', 'cron-runner.Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'web', 'docker', 'docker-control.Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

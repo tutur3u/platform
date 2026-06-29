@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  CronDockerControlRecoveryStatus,
   CronExecutionRecord,
   CronMonitoringControl,
   CronMonitoringJob,
@@ -97,6 +98,11 @@ export function getCronMonitoringPaths() {
     configFile: resolveCronConfigPath(),
     controlDir,
     controlFile: path.join(controlDir, 'cron-control.json'),
+    dockerControlStatusFile: path.join(
+      runtimeRoot,
+      'docker-control',
+      'status.json'
+    ),
     executionDir: path.join(runtimeDir, 'executions'),
     runnerRecoveryRequestFile: path.join(
       controlDir,
@@ -105,6 +111,11 @@ export function getCronMonitoringPaths() {
     runRequestsDir: path.join(controlDir, 'cron-run-requests'),
     runtimeDir,
     statusFile: path.join(runtimeDir, 'status.json'),
+    watcherStatusFile: path.join(
+      runtimeRoot,
+      'watch',
+      'blue-green-auto-deploy.status.json'
+    ),
   };
 }
 
@@ -240,6 +251,136 @@ function readCronRunnerRecoveryRequest(
   return normalizeCronRunnerRecoveryRequest(
     readJsonFile(paths.runnerRecoveryRequestFile, null, fsImpl)
   );
+}
+
+function normalizeDockerControlRecovery(
+  value: unknown
+): CronDockerControlRecoveryStatus | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const rawAction = typeof record.action === 'string' ? record.action : null;
+  const action: CronRunnerRecoveryAction | null =
+    rawAction === 'ensure' || rawAction === 'restart' ? rawAction : null;
+  const status =
+    record.status === 'failed' ||
+    record.status === 'running' ||
+    record.status === 'succeeded'
+      ? record.status
+      : null;
+
+  return {
+    action,
+    completedAt:
+      typeof record.completedAt === 'string' ? record.completedAt : null,
+    durationMs:
+      typeof record.durationMs === 'number' ? record.durationMs : null,
+    error: typeof record.error === 'string' ? record.error : null,
+    requestedAt:
+      typeof record.requestedAt === 'string' ? record.requestedAt : null,
+    status,
+  };
+}
+
+function readDockerControlStatus({
+  fsImpl = fs,
+  now,
+  paths = getCronMonitoringPaths(),
+}: {
+  fsImpl?: typeof fs;
+  now: number;
+  paths?: ReturnType<typeof getCronMonitoringPaths>;
+}) {
+  const record = readJsonFile<Record<string, unknown> | null>(
+    paths.dockerControlStatusFile,
+    null,
+    fsImpl
+  );
+  const updatedAt =
+    typeof record?.updatedAt === 'number' ? record.updatedAt : null;
+
+  return {
+    configured: Boolean(
+      process.env.PLATFORM_DOCKER_CONTROL_URL &&
+        process.env.PLATFORM_DOCKER_CONTROL_TOKEN
+    ),
+    lastRecovery: normalizeDockerControlRecovery(record?.lastRecovery),
+    status: normalizeStatusHealth(updatedAt, now),
+    updatedAt,
+  };
+}
+
+function readWatcherStatus({
+  fsImpl = fs,
+  now,
+  paths = getCronMonitoringPaths(),
+}: {
+  fsImpl?: typeof fs;
+  now: number;
+  paths?: ReturnType<typeof getCronMonitoringPaths>;
+}) {
+  const record = readJsonFile<Record<string, unknown> | null>(
+    paths.watcherStatusFile,
+    null,
+    fsImpl
+  );
+  const updatedAt =
+    typeof record?.updatedAt === 'number' ? record.updatedAt : null;
+
+  return normalizeStatusHealth(updatedAt, now);
+}
+
+function getPendingRequestAgeMs(
+  request: CronRunnerRecoveryRequest | null,
+  now: number
+) {
+  if (!request) return null;
+  const requestedAt = Date.parse(request.requestedAt);
+  if (!Number.isFinite(requestedAt)) return null;
+  return Math.max(0, now - requestedAt);
+}
+
+function buildRecoveryState({
+  directControl,
+  pendingRequestAgeMs,
+  request,
+  watcherStatus,
+}: {
+  directControl: ReturnType<typeof readDockerControlStatus>;
+  pendingRequestAgeMs: number | null;
+  request: CronRunnerRecoveryRequest | null;
+  watcherStatus: ReturnType<typeof readWatcherStatus>;
+}) {
+  const requestIsStale =
+    pendingRequestAgeMs != null &&
+    pendingRequestAgeMs > DEFAULT_CRON_STATUS_STALE_MS;
+  const directControlAvailable =
+    directControl.configured && directControl.status === 'live';
+  const canRequest = !request || directControlAvailable || requestIsStale;
+  let blockedReason: string | null = null;
+
+  if (request && !directControlAvailable && requestIsStale) {
+    blockedReason =
+      directControl.configured && directControl.status !== 'live'
+        ? 'Cron recovery is stalled because the direct Docker control service is unavailable.'
+        : 'Cron recovery is stalled because the watcher is not consuming the queued request.';
+  }
+
+  return {
+    blockedReason,
+    canRequest,
+    consumer: directControlAvailable
+      ? ('direct-control' as const)
+      : watcherStatus === 'live'
+        ? ('watcher' as const)
+        : ('none' as const),
+    directControl,
+    pendingRequestAgeMs,
+    requestIsStale,
+    watcherStatus,
+  };
 }
 
 function getJobControlEnabled(control: CronMonitoringControl, jobId: string) {
@@ -400,6 +541,13 @@ export function readCronMonitoringSnapshot({
     typeof persistedStatus.updatedAt === 'number'
       ? persistedStatus.updatedAt
       : null;
+  const runnerRecoveryRequest = readCronRunnerRecoveryRequest(paths, fsImpl);
+  const dockerControl = readDockerControlStatus({ fsImpl, now, paths });
+  const watcherStatus = readWatcherStatus({ fsImpl, now, paths });
+  const pendingRequestAgeMs = getPendingRequestAgeMs(
+    runnerRecoveryRequest,
+    now
+  );
 
   return {
     control,
@@ -417,7 +565,13 @@ export function readCronMonitoringSnapshot({
       totalJobs: effectiveJobs.length,
     },
     retainedExecutionCount: executions.length,
-    runnerRecoveryRequest: readCronRunnerRecoveryRequest(paths, fsImpl),
+    recovery: buildRecoveryState({
+      directControl: dockerControl,
+      pendingRequestAgeMs,
+      request: runnerRecoveryRequest,
+      watcherStatus,
+    }),
+    runnerRecoveryRequest,
     runs,
     source: {
       configAvailable: fsImpl.existsSync(
@@ -426,11 +580,17 @@ export function readCronMonitoringSnapshot({
       controlAvailable: fsImpl.existsSync(
         /*turbopackIgnore: true*/ paths.controlFile
       ),
+      dockerControlStatusAvailable: fsImpl.existsSync(
+        /*turbopackIgnore: true*/ paths.dockerControlStatusFile
+      ),
       runtimeDirAvailable: fsImpl.existsSync(
         /*turbopackIgnore: true*/ paths.runtimeDir
       ),
       statusAvailable: fsImpl.existsSync(
         /*turbopackIgnore: true*/ paths.statusFile
+      ),
+      watcherStatusAvailable: fsImpl.existsSync(
+        /*turbopackIgnore: true*/ paths.watcherStatusFile
       ),
     },
     status: normalizeStatusHealth(updatedAt, now),

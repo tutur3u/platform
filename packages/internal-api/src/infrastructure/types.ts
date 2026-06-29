@@ -1244,6 +1244,32 @@ export interface CronRunnerRecoveryRequest {
   requestedByEmail: string | null;
 }
 
+export interface CronDockerControlRecoveryStatus {
+  action: CronRunnerRecoveryAction | null;
+  completedAt: string | null;
+  durationMs: number | null;
+  error: string | null;
+  requestedAt: string | null;
+  status: 'failed' | 'running' | 'succeeded' | null;
+}
+
+export interface CronDockerControlStatus {
+  configured: boolean;
+  lastRecovery: CronDockerControlRecoveryStatus | null;
+  status: CronMonitoringStatus;
+  updatedAt: number | null;
+}
+
+export interface CronMonitoringRecoveryState {
+  blockedReason: string | null;
+  canRequest: boolean;
+  consumer: 'direct-control' | 'none' | 'watcher';
+  directControl: CronDockerControlStatus;
+  pendingRequestAgeMs: number | null;
+  requestIsStale: boolean;
+  watcherStatus: CronMonitoringStatus;
+}
+
 export interface CronMonitoringSnapshot {
   control: CronMonitoringControl;
   enabled: boolean;
@@ -1260,13 +1286,16 @@ export interface CronMonitoringSnapshot {
     totalJobs: number;
   };
   retainedExecutionCount: number;
+  recovery: CronMonitoringRecoveryState;
   runnerRecoveryRequest: CronRunnerRecoveryRequest | null;
   runs: CronRunRecord[];
   source: {
     configAvailable: boolean;
     controlAvailable: boolean;
+    dockerControlStatusAvailable?: boolean;
     runtimeDirAvailable: boolean;
     statusAvailable: boolean;
+    watcherStatusAvailable?: boolean;
   };
   status: CronMonitoringStatus;
   updatedAt: number | null;
@@ -1544,6 +1573,8 @@ export interface RequestCronRunnerRecoveryPayload {
 
 export interface RequestCronRunnerRecoveryResponse {
   message: string;
+  mode?: 'direct-control' | 'watcher-queue';
+  recovery?: unknown;
   request: CronRunnerRecoveryRequest;
 }
 

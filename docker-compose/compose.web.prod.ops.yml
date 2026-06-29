@@ -69,6 +69,73 @@ services:
       - platform-blue-green-watcher-node_modules:/workspace/node_modules
       - platform-blue-green-watcher-node_modules:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/node_modules
 
+  web-docker-control:
+    build:
+      context: ..
+      dockerfile: apps/web/docker/docker-control.Dockerfile
+    env_file:
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
+        required: false
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
+        required: false
+    environment:
+      - BACKEND_INTERNAL_TOKEN
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
+      - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}
+      - CRON_SECRET
+      - DOCKER_WEB_BUILD_BUILDER_NAME
+      - DOCKER_WEB_BUILD_CPUS
+      - DOCKER_WEB_BUILD_MAX_PARALLELISM
+      - DOCKER_WEB_BUILD_MEMORY
+      - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234
+      - DOCKER_WEB_BUILDKIT_PORT
+      - DOCKER_WEB_COMPOSE_PROJECT_NAME
+      - DOCKER_WEB_FRONTEND
+      - DOCKER_WEB_NATIVE_BUILD
+      - DOCKER_WEB_NATIVE_BUILD_MEMORY
+      - DOCKER_WEB_NEXT_APP_ONLY
+      - DOCKER_WEB_NEXT_BUILD_CPUS
+      - DOCKER_WEB_NEXT_BUILD_ENGINE
+      - DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE
+      - DOCKER_WEB_REACT_COMPILER
+      - DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY
+      - DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT
+      - DOCKER_WEB_TURBO_CONCURRENCY
+      - DOCKER_WEB_WITH_CLOUDFLARED
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+      - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
+      - INTERNAL_WEB_API_ORIGIN=${INTERNAL_WEB_API_ORIGIN:-http://web-proxy:7803}
+      - PLATFORM_DOCKER_CONTROL_PORT=${PLATFORM_DOCKER_CONTROL_PORT:-7810}
+      - PLATFORM_DOCKER_CONTROL_STATUS_FILE=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/tmp/docker-web/docker-control/status.json
+      - PLATFORM_DOCKER_CONTROL_TOKEN
+      - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - SUPERMEMORY_API_KEY
+      - SUPERMEMORY_BASE_URL=${SUPERMEMORY_BASE_URL:-http://supermemory:8787}
+      - SUPERMEMORY_DATABASE_URL
+      - SUPERMEMORY_ENABLED=${SUPERMEMORY_ENABLED:-true}
+      - SUPERMEMORY_FAIL_OPEN=${SUPERMEMORY_FAIL_OPEN:-true}
+      - SUPERMEMORY_POSTGRES_PASSWORD
+      - SUPERMEMORY_TIMEOUT_MS=${SUPERMEMORY_TIMEOUT_MS:-1500}
+      - UPSTASH_REDIS_REST_TOKEN
+      - UPSTASH_REDIS_REST_URL
+      - VERCEL_CRON_SECRET
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bun -e \"fetch('http://127.0.0.1:' + (process.env.PLATFORM_DOCKER_CONTROL_PORT || 7810) + '/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    restart: unless-stopped
+    volumes:
+      - ..:/workspace:ro
+      - ..:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - /var/run/docker.sock:/var/run/docker.sock
+
   web-cron-runner:
     build:
       context: ..

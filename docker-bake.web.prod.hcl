@@ -47,7 +47,7 @@ group "blue-green-hive-realtime" {
 }
 
 group "blue-green-support" {
-  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-cron-runner"]
+  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-docker-control", "web-cron-runner"]
 }
 
 target "web-blue" {
@@ -113,6 +113,11 @@ target "storage-unzip-proxy" {
 target "supermemory" {
   inherits = ["_platform_local"]
   tags = ["${COMPOSE_PROJECT_NAME}-supermemory"]
+}
+
+target "web-docker-control" {
+  inherits = ["_platform_local"]
+  tags = ["${COMPOSE_PROJECT_NAME}-web-docker-control"]
 }
 
 target "web-cron-runner" {

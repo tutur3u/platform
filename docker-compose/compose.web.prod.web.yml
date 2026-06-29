@@ -64,6 +64,8 @@ x-web-service: &web-service
     - PLATFORM_BLUE_GREEN_CONTROL_DIR=/app/runtime/docker-web-control
     - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web
     - PLATFORM_DEPLOYMENT_STAMP
+    - PLATFORM_DOCKER_CONTROL_TOKEN
+    - PLATFORM_DOCKER_CONTROL_URL=${PLATFORM_DOCKER_CONTROL_URL:-http://web-docker-control:7810}
     - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain
     - PLATFORM_LOG_DRAIN_ENABLED=${PLATFORM_LOG_DRAIN_ENABLED:-true}
     - PLATFORM_LOG_DRAIN_RAW_RETENTION_DAYS=${PLATFORM_LOG_DRAIN_RAW_RETENTION_DAYS:-30}

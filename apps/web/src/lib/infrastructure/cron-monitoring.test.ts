@@ -113,6 +113,12 @@ describe('readCronMonitoringSnapshot', () => {
       configFile,
       controlDir,
       controlFile: path.join(controlDir, 'cron-control.json'),
+      dockerControlStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'docker-control',
+        'status.json'
+      ),
       executionDir: path.join(runtimeDir, 'executions'),
       runnerRecoveryRequestFile: path.join(
         controlDir,
@@ -121,6 +127,12 @@ describe('readCronMonitoringSnapshot', () => {
       runRequestsDir: path.join(controlDir, 'cron-run-requests'),
       runtimeDir,
       statusFile: path.join(runtimeDir, 'status.json'),
+      watcherStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'watch',
+        'blue-green-auto-deploy.status.json'
+      ),
     };
 
     try {
@@ -194,6 +206,12 @@ describe('readCronMonitoringSnapshot', () => {
       configFile,
       controlDir,
       controlFile: path.join(controlDir, 'cron-control.json'),
+      dockerControlStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'docker-control',
+        'status.json'
+      ),
       executionDir: path.join(runtimeDir, 'executions'),
       runnerRecoveryRequestFile: path.join(
         controlDir,
@@ -202,6 +220,12 @@ describe('readCronMonitoringSnapshot', () => {
       runRequestsDir: path.join(controlDir, 'cron-run-requests'),
       runtimeDir,
       statusFile: path.join(runtimeDir, 'status.json'),
+      watcherStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'watch',
+        'blue-green-auto-deploy.status.json'
+      ),
     };
 
     try {
@@ -223,6 +247,7 @@ describe('readCronMonitoringSnapshot', () => {
       );
 
       const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:00:30.000Z'),
         paths,
       });
 
@@ -231,6 +256,140 @@ describe('readCronMonitoringSnapshot', () => {
         attemptCount: 1,
         kind: 'cron-runner-recovery',
         lastError: 'compose failed',
+      });
+      expect(snapshot.recovery.canRequest).toBe(false);
+      expect(snapshot.recovery.consumer).toBe('none');
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('marks stale cron runner recovery requests as replaceable', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-stale-recovery-')
+    );
+    const configFile = path.join(tempDir, 'cron.config.json');
+    const runtimeDir = path.join(tempDir, 'runtime');
+    const controlDir = path.join(tempDir, 'control');
+    const paths = {
+      configFile,
+      controlDir,
+      controlFile: path.join(controlDir, 'cron-control.json'),
+      dockerControlStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'docker-control',
+        'status.json'
+      ),
+      executionDir: path.join(runtimeDir, 'executions'),
+      runnerRecoveryRequestFile: path.join(
+        controlDir,
+        'cron-runner-recovery.request.json'
+      ),
+      runRequestsDir: path.join(controlDir, 'cron-run-requests'),
+      runtimeDir,
+      statusFile: path.join(runtimeDir, 'status.json'),
+      watcherStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'watch',
+        'blue-green-auto-deploy.status.json'
+      ),
+    };
+
+    try {
+      writeCronConfig(configFile);
+      fs.mkdirSync(controlDir, { recursive: true });
+      fs.writeFileSync(
+        paths.runnerRecoveryRequestFile,
+        JSON.stringify({
+          action: 'ensure',
+          attemptCount: 0,
+          kind: 'cron-runner-recovery',
+          lastAttemptAt: null,
+          lastError: null,
+          reason: 'operator-requested-ensure',
+          requestedAt: '2026-06-29T00:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@tuturuuu.com',
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:03:00.000Z'),
+        paths,
+      });
+
+      expect(snapshot.recovery.requestIsStale).toBe(true);
+      expect(snapshot.recovery.canRequest).toBe(true);
+      expect(snapshot.recovery.blockedReason).toMatch(/stalled/u);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('reads direct Docker control health from the runtime status file', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-docker-control-')
+    );
+    const configFile = path.join(tempDir, 'cron.config.json');
+    const runtimeDir = path.join(tempDir, 'runtime');
+    const controlDir = path.join(tempDir, 'control');
+    const paths = {
+      configFile,
+      controlDir,
+      controlFile: path.join(controlDir, 'cron-control.json'),
+      dockerControlStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'docker-control',
+        'status.json'
+      ),
+      executionDir: path.join(runtimeDir, 'executions'),
+      runnerRecoveryRequestFile: path.join(
+        controlDir,
+        'cron-runner-recovery.request.json'
+      ),
+      runRequestsDir: path.join(controlDir, 'cron-run-requests'),
+      runtimeDir,
+      statusFile: path.join(runtimeDir, 'status.json'),
+      watcherStatusFile: path.join(
+        runtimeDir,
+        '..',
+        'watch',
+        'blue-green-auto-deploy.status.json'
+      ),
+    };
+
+    try {
+      writeCronConfig(configFile);
+      fs.mkdirSync(path.dirname(paths.dockerControlStatusFile), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        paths.dockerControlStatusFile,
+        JSON.stringify({
+          kind: 'docker-control-status',
+          lastRecovery: {
+            action: 'restart',
+            completedAt: '2026-06-29T00:00:05.000Z',
+            durationMs: 5000,
+            requestedAt: '2026-06-29T00:00:00.000Z',
+            status: 'succeeded',
+          },
+          updatedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:01:00.000Z'),
+        paths,
+      });
+
+      expect(snapshot.recovery.directControl.status).toBe('live');
+      expect(snapshot.recovery.directControl.lastRecovery).toMatchObject({
+        action: 'restart',
+        status: 'succeeded',
       });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });

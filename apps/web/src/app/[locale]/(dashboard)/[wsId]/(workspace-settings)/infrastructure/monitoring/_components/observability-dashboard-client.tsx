@@ -1156,7 +1156,10 @@ export function ObservabilityDashboardClient({
     queryFn: () => getCronMonitoringSnapshot(),
     queryKey: ['infrastructure', 'monitoring', 'cron', 'snapshot'],
     refetchInterval: (query) =>
-      query.state.data?.runnerRecoveryRequest ? 1000 : 5000,
+      query.state.data?.runnerRecoveryRequest ||
+      query.state.data?.recovery.directControl.status === 'stale'
+        ? 1000
+        : 5000,
   });
   const cronExecutionsQuery = useInfiniteQuery<
     CronExecutionsPage,
@@ -2334,6 +2337,17 @@ export function ObservabilityDashboardClient({
                       {cronT('runner_recovery.pending')}
                     </ToneBadge>
                   ) : null}
+                  {cronSnapshot?.recovery.directControl.configured ? (
+                    <ToneBadge
+                      tone={getCronRunnerTone(
+                        cronSnapshot.recovery.directControl.status
+                      )}
+                    >
+                      {cronT(
+                        `runner_status.${cronSnapshot.recovery.directControl.status}`
+                      )}
+                    </ToneBadge>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-muted-foreground text-xs leading-5">
                   {cronT('runner_recovery.description')}
@@ -2359,6 +2373,10 @@ export function ObservabilityDashboardClient({
                     {cronT('runner_recovery.last_error')}:{' '}
                     {cronSnapshot.runnerRecoveryRequest.lastError}
                   </p>
+                ) : cronSnapshot?.recovery.blockedReason ? (
+                  <p className="mt-3 rounded-md border border-dynamic-red/25 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
+                    {cronSnapshot.recovery.blockedReason}
+                  </p>
                 ) : cronSnapshot?.runnerRecoveryRequest ? (
                   <p className="mt-3 rounded-md border border-dynamic-yellow/25 bg-dynamic-yellow/10 px-3 py-2 text-dynamic-yellow text-xs">
                     {cronT('runner_recovery.watcher_waiting')}
@@ -2370,7 +2388,7 @@ export function ObservabilityDashboardClient({
                   disabled={
                     cronRunnerRecoveryMutation.isPending ||
                     !cronSnapshot ||
-                    Boolean(cronSnapshot.runnerRecoveryRequest)
+                    cronSnapshot.recovery.canRequest === false
                   }
                   onClick={() => cronRunnerRecoveryMutation.mutate('ensure')}
                   size="sm"
@@ -2387,7 +2405,7 @@ export function ObservabilityDashboardClient({
                   disabled={
                     cronRunnerRecoveryMutation.isPending ||
                     !cronSnapshot ||
-                    Boolean(cronSnapshot.runnerRecoveryRequest)
+                    cronSnapshot.recovery.canRequest === false
                   }
                   onClick={() => cronRunnerRecoveryMutation.mutate('restart')}
                   size="sm"

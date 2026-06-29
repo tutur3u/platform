@@ -124,6 +124,7 @@ const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
   'markitdown',
   'storage-unzip-proxy',
   'supermemory',
+  'web-docker-control',
   'web-cron-runner',
 ]);
 const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
@@ -138,6 +139,7 @@ const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'markitdown',
   'storage-unzip-proxy',
   'supermemory',
+  'web-docker-control',
   'web-cron-runner',
 ]);
 const BLUE_GREEN_BUILD_HASH_VERSION = 1;
@@ -187,6 +189,11 @@ const BLUE_GREEN_SUPERMEMORY_BUILD_PATHS = Object.freeze(['apps/supermemory/']);
 const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
   'apps/web/docker/cron-runner-entrypoint.js',
   'apps/web/docker/cron-runner.Dockerfile',
+  'docker-compose/compose.web.prod.ops.yml',
+]);
+const BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS = Object.freeze([
+  'apps/web/docker/docker-control-server.js',
+  'apps/web/docker/docker-control.Dockerfile',
   'docker-compose/compose.web.prod.ops.yml',
 ]);
 const BLUE_GREEN_COLORS = ['blue', 'green'];
@@ -1674,6 +1681,13 @@ function getBlueGreenSupportBuildInputSpecs(targetColor, env = {}) {
     {
       paths: [
         'docker-compose.web.prod.yml',
+        ...BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS,
+      ],
+      serviceName: 'web-docker-control',
+    },
+    {
+      paths: [
+        'docker-compose.web.prod.yml',
         ...BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS,
       ],
       serviceName: 'web-cron-runner',
@@ -1855,6 +1869,14 @@ function getBlueGreenChangedSupportBuildServices(
     )
   ) {
     addService('supermemory');
+  }
+
+  if (
+    BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('web-docker-control');
   }
 
   if (

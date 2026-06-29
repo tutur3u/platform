@@ -7,6 +7,7 @@ const {
   queueCronRunnerRecoveryRequestMock,
   readCronExecutionArchiveMock,
   readCronMonitoringSnapshotMock,
+  requestDockerControlCronRunnerRecoveryMock,
   updateCronMonitoringControlMock,
 } = vi.hoisted(() => ({
   authorizeInfrastructureOperatorMock: vi.fn(),
@@ -15,6 +16,7 @@ const {
   queueCronRunnerRecoveryRequestMock: vi.fn(),
   readCronExecutionArchiveMock: vi.fn(),
   readCronMonitoringSnapshotMock: vi.fn(),
+  requestDockerControlCronRunnerRecoveryMock: vi.fn(),
   updateCronMonitoringControlMock: vi.fn(),
 }));
 
@@ -34,6 +36,11 @@ vi.mock('@/lib/infrastructure/cron-monitoring', () => ({
   readCronExecutionArchive: readCronExecutionArchiveMock,
   readCronMonitoringSnapshot: readCronMonitoringSnapshotMock,
   updateCronMonitoringControl: updateCronMonitoringControlMock,
+}));
+
+vi.mock('@/lib/infrastructure/docker-control', () => ({
+  requestDockerControlCronRunnerRecovery:
+    requestDockerControlCronRunnerRecoveryMock,
 }));
 
 import { PUT as PUTControl } from './control/route';
@@ -64,6 +71,11 @@ function denyOperator() {
 describe('cron monitoring routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    requestDockerControlCronRunnerRecoveryMock.mockResolvedValue({
+      configured: false,
+      ok: false,
+      reason: 'not_configured',
+    });
     authorize();
   });
 
@@ -230,12 +242,82 @@ describe('cron monitoring routes', () => {
 
     expect(response.status).toBe(200);
     expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(requestDockerControlCronRunnerRecoveryMock).toHaveBeenCalledWith({
+      action: 'restart',
+      reason: 'operator-requested-restart',
+      requestedBy: 'user-1',
+      requestedByEmail: 'ops@tuturuuu.com',
+    });
     expect(queueCronRunnerRecoveryRequestMock).toHaveBeenCalledWith({
       action: 'restart',
       reason: 'operator-requested-restart',
       requestedBy: 'user-1',
       requestedByEmail: 'ops@tuturuuu.com',
     });
+  });
+
+  it('uses direct Docker control for cron runner recovery when available', async () => {
+    requestDockerControlCronRunnerRecoveryMock.mockResolvedValue({
+      configured: true,
+      message: 'Restarted cron runner service.',
+      ok: true,
+      recovery: { status: 'succeeded' },
+      request: {
+        action: 'restart',
+        attemptCount: 1,
+        kind: 'cron-runner-recovery',
+        lastAttemptAt: 1_700_000_000_000,
+        lastError: null,
+        reason: 'operator-requested-restart',
+        requestedAt: '2026-06-29T00:00:00.000Z',
+        requestedBy: 'user-1',
+        requestedByEmail: 'ops@tuturuuu.com',
+      },
+    });
+
+    const response = await POSTRunnerRecovery(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/runner-recovery',
+        {
+          body: JSON.stringify({ action: 'restart' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      mode: 'direct-control',
+      recovery: { status: 'succeeded' },
+    });
+    expect(queueCronRunnerRecoveryRequestMock).not.toHaveBeenCalled();
+  });
+
+  it('reports unavailable direct Docker control without queueing a stale watcher request', async () => {
+    requestDockerControlCronRunnerRecoveryMock.mockResolvedValue({
+      configured: true,
+      message: 'fetch failed',
+      ok: false,
+      reason: 'request_failed',
+      status: null,
+    });
+
+    const response = await POSTRunnerRecovery(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/runner-recovery',
+        {
+          body: JSON.stringify({ action: 'ensure' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Docker control service is unavailable',
+      reason: 'fetch failed',
+    });
+    expect(queueCronRunnerRecoveryRequestMock).not.toHaveBeenCalled();
   });
 
   it('rejects cron runner recovery without infrastructure operator access', async () => {

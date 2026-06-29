@@ -66,9 +66,15 @@ infrastructure dashboard changes.
   recipients when a Docker restart was required for services to recover.
 - Watcher restart/recreate must reconcile current `HEAD` against the latest
   successful deployment and deploy `HEAD` when runtime history lags.
-- Watcher bootstrap must ensure the companion `web-cron-runner` service exists
-  after recreating `web-blue-green-watcher`. Use a no-recreate Compose start for
-  the cron runner so healthy cron execution is not interrupted.
+- Watcher bootstrap must refresh the companion `web-docker-control` sidecar and
+  ensure the companion `web-cron-runner` service exists after recreating
+  `web-blue-green-watcher`. Use force-recreate for `web-docker-control` so
+  admin recovery picks up sidecar changes, and use no-recreate for the cron
+  runner so healthy cron execution is not interrupted.
+- Apps/web must route Docker recovery through the narrow `web-docker-control`
+  sidecar with allowlisted watcher/cron-runner actions only. Do not mount the
+  Docker socket into apps/web or expose arbitrary Docker commands through the
+  UI/API.
 - Before any automatic deploy, recovery handoff, runtime recovery, standby
   refresh, or reconciliation build for the latest commit, the watcher should
   inspect the latest GitHub Actions workflow runs for that exact `head_sha`
