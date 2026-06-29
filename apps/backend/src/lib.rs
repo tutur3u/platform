@@ -389,6 +389,56 @@ mod workspaces_wallets_infinite;
 mod workspaces_wallets_walletid;
 mod workspaces_wallets_walletid_checkpoints;
 mod workspaces_wallets_walletid_credit_summary;
+mod infrastructure_entity_creation_limits;
+mod infrastructure_rate_limit_appeals;
+mod infrastructure_rate_limit_subjects;
+mod workspaces_wsid_api_keys_roles;
+mod workspaces_wsid_external_apps_members;
+mod workspaces_wsid_settings_members;
+mod workspaces_wsid_settings_email_audit;
+mod workspaces_wsid_task_progress_stats;
+mod hive_members;
+mod workspaces_wsid_members;
+mod workspaces_wsid_users;
+mod integrations_discord_members;
+mod users_me_board_list_overrides;
+mod workspaces_wsid_api_keys;
+mod workspaces_wsid_courses;
+mod workspaces_wsid_habits;
+mod workspaces_wsid_labels;
+mod workspaces_wsid_product_units;
+mod workspaces_wsid_promotions;
+mod workspaces_wsid_quiz_sets;
+mod workspaces_wsid_quizzes;
+mod workspaces_wsid_roles;
+mod workspaces_wsid_settings;
+mod workspaces_wsid_task_cycles;
+mod workspaces_wsid_task_drafts;
+mod workspaces_wsid_task_initiatives;
+mod workspaces_wsid_task_plans;
+mod workspaces_wsid_task_projects;
+mod workspaces_wsid_task_templates;
+mod workspaces_wsid_topic_announcements;
+mod workspaces_wsid_user_groups;
+mod workspaces_wsid_users_2;
+mod users_me_configs_configid;
+mod workspaces_wsid_api_keys_keyid;
+mod workspaces_wsid_calendar_categories;
+mod workspaces_wsid_habits_habitid;
+mod workspaces_wsid_inventory_batches;
+mod workspaces_wsid_inventory_categories;
+mod workspaces_wsid_inventory_manufacturers;
+mod workspaces_wsid_inventory_suppliers;
+mod workspaces_wsid_inventory_warehouses;
+mod workspaces_wsid_promotions_referral_settings;
+mod workspaces_wsid_roles_roleid;
+mod workspaces_wsid_roles_default;
+mod workspaces_wsid_settings_configid;
+mod workspaces_wsid_settings_configs;
+mod workspaces_wsid_task_drafts_draftid;
+mod workspaces_wsid_task_plans_planid;
+mod workspaces_wsid_task_progress_goals;
+mod workspaces_wsid_task_projects_projectid;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -772,6 +822,14 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_10(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_11(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_12(config, request, outbound).await {
         return response;
     }
 
@@ -5344,6 +5402,322 @@ pub mod native {
                 .unwrap_or_else(|_| Response::new(Body::from(r#"{"error":"response"}"#)))
         }
     }
+}
+
+async fn dispatch_chunk_11(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        infrastructure_entity_creation_limits::handle_infrastructure_entity_creation_limits_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        infrastructure_rate_limit_appeals::handle_infrastructure_rate_limit_appeals_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        infrastructure_rate_limit_subjects::handle_infrastructure_rate_limit_subjects_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_api_keys_roles::handle_workspaces_wsid_api_keys_roles_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_external_apps_members::handle_workspaces_wsid_external_apps_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_settings_members::handle_workspaces_wsid_settings_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_settings_email_audit::handle_workspaces_wsid_settings_email_audit_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_stats::handle_workspaces_wsid_task_progress_stats_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        hive_members::handle_hive_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_members::handle_workspaces_wsid_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users::handle_workspaces_wsid_users_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        integrations_discord_members::handle_integrations_discord_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        users_me_board_list_overrides::handle_users_me_board_list_overrides_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_api_keys::handle_workspaces_wsid_api_keys_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_courses::handle_workspaces_wsid_courses_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_habits::handle_workspaces_wsid_habits_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_labels::handle_workspaces_wsid_labels_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_product_units::handle_workspaces_wsid_product_units_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_promotions::handle_workspaces_wsid_promotions_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_quiz_sets::handle_workspaces_wsid_quiz_sets_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_quizzes::handle_workspaces_wsid_quizzes_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_roles::handle_workspaces_wsid_roles_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_settings::handle_workspaces_wsid_settings_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_cycles::handle_workspaces_wsid_task_cycles_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_drafts::handle_workspaces_wsid_task_drafts_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_12(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_wsid_task_initiatives::handle_workspaces_wsid_task_initiatives_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_plans::handle_workspaces_wsid_task_plans_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_projects::handle_workspaces_wsid_task_projects_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_templates::handle_workspaces_wsid_task_templates_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_topic_announcements::handle_workspaces_wsid_topic_announcements_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups::handle_workspaces_wsid_user_groups_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_2::handle_workspaces_wsid_users_2_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        users_me_configs_configid::handle_users_me_configs_configid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_api_keys_keyid::handle_workspaces_wsid_api_keys_keyid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_calendar_categories::handle_workspaces_wsid_calendar_categories_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_habits_habitid::handle_workspaces_wsid_habits_habitid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_inventory_batches::handle_workspaces_wsid_inventory_batches_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_inventory_categories::handle_workspaces_wsid_inventory_categories_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_inventory_manufacturers::handle_workspaces_wsid_inventory_manufacturers_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_inventory_suppliers::handle_workspaces_wsid_inventory_suppliers_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_inventory_warehouses::handle_workspaces_wsid_inventory_warehouses_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_promotions_referral_settings::handle_workspaces_wsid_promotions_referral_settings_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_roles_roleid::handle_workspaces_wsid_roles_roleid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_roles_default::handle_workspaces_wsid_roles_default_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_settings_configid::handle_workspaces_wsid_settings_configid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_settings_configs::handle_workspaces_wsid_settings_configs_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_drafts_draftid::handle_workspaces_wsid_task_drafts_draftid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_plans_planid::handle_workspaces_wsid_task_plans_planid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_goals::handle_workspaces_wsid_task_progress_goals_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_projects_projectid::handle_workspaces_wsid_task_projects_projectid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    None
 }
 
 #[cfg(all(feature = "worker", target_arch = "wasm32"))]
