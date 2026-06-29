@@ -27,6 +27,7 @@ interface ManagedCronJobRow {
   name: string;
   retry_count: number;
   schedule: string;
+  schedule_timezone: string;
   timeout_ms: number;
   ws_id: string;
 }
@@ -141,7 +142,12 @@ export async function runExternalManagedCronJobNow({
     job,
   });
 
-  await recordManagedCronExecution({ job, result, runnerId });
+  await recordManagedCronExecution({
+    job,
+    result,
+    runnerId,
+    source: 'manual',
+  });
 
   return {
     durationMs: result.durationMs,
@@ -294,12 +300,18 @@ async function recordManagedCronExecution({
   job,
   result,
   runnerId,
+  source = 'scheduled',
 }: {
   job: ManagedCronJobRow;
   result: ManagedCronExecutionResult;
   runnerId: string;
+  source?: 'manual' | 'scheduled';
 }) {
-  const nextRunAt = getNextManagedCronRunAt(job.schedule, result.endTime);
+  const nextRunAt = getNextManagedCronRunAt(
+    job.schedule,
+    result.endTime,
+    job.schedule_timezone
+  );
   const response =
     result.response?.slice(0, MANAGED_CRON_MAX_RESPONSE_CHARS) ?? null;
   const error = result.error?.slice(0, 2000) ?? null;
@@ -314,6 +326,7 @@ async function recordManagedCronExecution({
     p_next_run_at: nextRunAt.toISOString(),
     p_response: response,
     p_runner_id: runnerId,
+    p_source: source,
     p_start_time: result.startTime.toISOString(),
     p_status: result.status,
   });

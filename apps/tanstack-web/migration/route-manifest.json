@@ -6,12 +6,12 @@
         "acceptedRemoval": 83,
         "key": "api",
         "label": "api",
-        "legacyNext": 978,
+        "legacyNext": 982,
         "migrated": 147,
-        "percentComplete": 19.04,
-        "remaining": 978,
+        "percentComplete": 18.98,
+        "remaining": 982,
         "terminal": 230,
-        "total": 1208,
+        "total": 1212,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 83,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 998,
+        "legacyNext": 1002,
         "migrated": 152,
-        "percentComplete": 19.06,
-        "remaining": 998,
+        "percentComplete": 19,
+        "remaining": 1002,
         "terminal": 235,
-        "total": 1233,
+        "total": 1237,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 85,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 1099,
+      "legacyNext": 1103,
       "migrated": 439,
-      "percentComplete": 32.29,
-      "remaining": 1099,
+      "percentComplete": 32.21,
+      "remaining": 1103,
       "terminal": 524,
-      "total": 1623,
+      "total": 1627,
       "unknownStatus": 0
     }
   },
@@ -3786,6 +3786,24 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/infrastructure/monitoring/cron/managed/job:apps/web/src/app/api/v1/infrastructure/monitoring/cron/managed/job/route.ts",
+      "kind": "api",
+      "methods": ["PATCH"],
+      "routePath": "/api/v1/infrastructure/monitoring/cron/managed/job",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/monitoring/cron/managed/job/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/infrastructure/monitoring/cron/managed/run:apps/web/src/app/api/v1/infrastructure/monitoring/cron/managed/run/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/infrastructure/monitoring/cron/managed/run",
+      "sourceFile": "apps/web/src/app/api/v1/infrastructure/monitoring/cron/managed/run/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/infrastructure/monitoring/cron/run:apps/web/src/app/api/v1/infrastructure/monitoring/cron/run/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -6275,11 +6293,29 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/cron/executions:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/executions/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/cron/executions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/executions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/external-apps/cron/jobs/:jobKey:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/route.ts",
       "kind": "api",
       "methods": ["PATCH"],
       "routePath": "/api/v1/workspaces/:wsId/external-apps/cron/jobs/:jobKey",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/cron/jobs/:jobKey/executions:apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/executions/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/cron/jobs/:jobKey/executions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/executions/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -15100,20 +15136,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 1208,
+    "apiRoutes": 1212,
     "cronRoutes": 20,
     "layouts": 67,
     "pages": 316,
-    "routeHandlers": 1233,
+    "routeHandlers": 1237,
     "methodCounts": {
-      "GET": 691,
+      "GET": 693,
       "HEAD": 1,
-      "POST": 541,
+      "POST": 542,
       "PUT": 175,
-      "PATCH": 137,
+      "PATCH": 138,
       "DELETE": 205,
       "OPTIONS": 17
     },
-    "total": 1623
+    "total": 1627
   }
 }

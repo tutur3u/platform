@@ -5,6 +5,7 @@ import parser from 'cron-parser';
 import { z } from 'zod';
 
 export const MANAGED_CRON_DEFAULT_TIMEOUT_MS = 15_000;
+export const MANAGED_CRON_DEFAULT_TIMEZONE = 'UTC';
 export const MANAGED_CRON_MAX_RESPONSE_CHARS = 12_000;
 export const MANAGED_CRON_USER_AGENT = 'Tuturuuu-Managed-Cron/1.0';
 
@@ -117,14 +118,32 @@ export type ManagedCronJobPayload = z.infer<typeof managedCronJobPayloadSchema>;
 
 export function getNextManagedCronRunAt(
   schedule: string,
-  currentDate: Date = new Date()
+  currentDate: Date = new Date(),
+  timezone = MANAGED_CRON_DEFAULT_TIMEZONE
 ) {
-  const interval = parser.parse(schedule, { currentDate });
+  const interval = parser.parse(schedule, {
+    currentDate,
+    tz: normalizeManagedCronTimezone(timezone),
+  });
   return interval.next().toDate();
 }
 
-export function assertValidManagedCronSchedule(schedule: string) {
-  getNextManagedCronRunAt(schedule);
+export function assertValidManagedCronSchedule(
+  schedule: string,
+  timezone = MANAGED_CRON_DEFAULT_TIMEZONE
+) {
+  getNextManagedCronRunAt(schedule, new Date(), timezone);
+}
+
+export function normalizeManagedCronTimezone(value: string | null | undefined) {
+  const timezone = value?.trim() || MANAGED_CRON_DEFAULT_TIMEZONE;
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+    return timezone;
+  } catch {
+    throw new Error('Invalid managed cron timezone.');
+  }
 }
 
 export function normalizeManagedCronDomain(input: string) {

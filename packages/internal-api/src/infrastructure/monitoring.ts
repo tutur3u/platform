@@ -44,11 +44,15 @@ import type {
   RequestBlueGreenWatcherRecoveryResponse,
   RequestCronRunnerRecoveryPayload,
   RequestCronRunnerRecoveryResponse,
+  RunManagedExternalCronPayload,
+  RunManagedExternalCronResponse,
   UpdateBlueGreenDockerRecoverySettingsPayload,
   UpdateBlueGreenDockerRecoverySettingsResponse,
   UpdateCronMonitoringControlPayload,
   UpdateCronMonitoringControlResponse,
   UpdateInfrastructureProjectPayload,
+  UpdateManagedExternalCronJobPayload,
+  UpdateManagedExternalCronJobResponse,
 } from './types';
 
 export async function getBlueGreenMonitoringSnapshot(
@@ -215,6 +219,42 @@ export async function queueCronRun(
         'Content-Type': 'application/json',
       },
       method: 'POST',
+    }
+  );
+}
+
+export async function runManagedExternalCronJob(
+  payload: RunManagedExternalCronPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RunManagedExternalCronResponse>(
+    '/api/v1/infrastructure/monitoring/cron/managed/run',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateManagedExternalCronJob(
+  payload: UpdateManagedExternalCronJobPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateManagedExternalCronJobResponse>(
+    '/api/v1/infrastructure/monitoring/cron/managed/job',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
     }
   );
 }

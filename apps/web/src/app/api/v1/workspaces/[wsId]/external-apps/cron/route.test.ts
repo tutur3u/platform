@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getExternalAppById: vi.fn(),
   getPermissions: vi.fn(),
   listEnabledManagedCronDomains: vi.fn(),
+  runExternalManagedCronJobNow: vi.fn(),
   serverLoggerError: vi.fn(),
   setLogDrainUserContext: vi.fn(),
   verifyAppCoordinationToken: vi.fn(),
@@ -72,9 +73,15 @@ vi.mock('@/lib/managed-cron/rpc', () => ({
 }));
 
 vi.mock('@/lib/managed-cron/service', () => ({
-  runExternalManagedCronJobNow: vi.fn(),
+  runExternalManagedCronJobNow: (
+    ...args: Parameters<typeof mocks.runExternalManagedCronJobNow>
+  ) => mocks.runExternalManagedCronJobNow(...args),
 }));
 
+import { GET as GET_EXECUTIONS } from './executions/route';
+import { GET as GET_JOB_EXECUTIONS } from './jobs/[jobKey]/executions/route';
+import { PATCH as PATCH_JOB } from './jobs/[jobKey]/route';
+import { POST as RUN_NOW } from './jobs/[jobKey]/run-now/route';
 import { GET } from './route';
 import { POST as SETUP } from './setup/route';
 
@@ -110,6 +117,10 @@ function setupRequest() {
       method: 'POST',
     }
   );
+}
+
+function jobContext(jobKey = 'process-queue') {
+  return { params: Promise.resolve({ jobKey, wsId: workspaceId }) };
 }
 
 function postgresError(code: string, message: string) {
@@ -366,6 +377,236 @@ describe('external app managed cron routes', () => {
         operation: 'status',
         postgresCode: 'XX000',
         reason: 'unexpected_error',
+      })
+    );
+  });
+
+  it('returns scheduler freshness, timezone, execution summary, and overdue diagnostics', async () => {
+    mocks.callManagedCronRpc.mockResolvedValue({
+      configured: true,
+      enabled: true,
+      generatedAt: '2026-06-29T11:41:00.000Z',
+      jobs: [
+        {
+          active: true,
+          failureCount: 0,
+          isOverdue: true,
+          jobId: '33333333-3333-4333-8333-333333333333',
+          jobKey: 'process-queue',
+          lastExecution: {
+            durationMs: 123,
+            id: '44444444-4444-4444-8444-444444444444',
+            jobKey: 'process-queue',
+            source: 'manual',
+            startedAt: '2026-06-29T11:25:00.000Z',
+            status: 'success',
+          },
+          lastRunAt: '2026-06-29T11:25:00.000Z',
+          lastStatus: 'success',
+          name: 'Managed scheduler process queue',
+          nextRunAt: '2026-06-29T11:30:00.000Z',
+          overdueReason: 'No execution recorded after scheduled time.',
+          overdueSince: '2026-06-29T11:30:00.000Z',
+          schedule: '*/5 * * * *',
+          scheduleTimezone: 'Asia/Ho_Chi_Minh',
+        },
+      ],
+      serverNow: '2026-06-29T11:41:00.000Z',
+    });
+
+    const response = await GET(statusRequest(), context());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      configured: true,
+      enabled: true,
+      generatedAt: '2026-06-29T11:41:00.000Z',
+      serverNow: '2026-06-29T11:41:00.000Z',
+    });
+    expect(body.jobs[0]).toMatchObject({
+      isOverdue: true,
+      overdueReason: 'No execution recorded after scheduled time.',
+      scheduleTimezone: 'Asia/Ho_Chi_Minh',
+    });
+    expect(body.jobs[0].scheduleDescription).toContain('Asia/Ho_Chi_Minh');
+    expect(body.jobs[0].lastExecution).toMatchObject({
+      id: '44444444-4444-4444-8444-444444444444',
+      source: 'manual',
+      status: 'success',
+    });
+  });
+
+  it('updates external app managed cron schedule and timezone', async () => {
+    mocks.callManagedCronRpc.mockResolvedValueOnce(true);
+    mocks.callManagedCronRpc.mockResolvedValueOnce({
+      configured: true,
+      enabled: true,
+      jobs: [],
+    });
+
+    const response = await PATCH_JOB(
+      new Request(
+        `https://tuturuuu.com/api/v1/workspaces/${workspaceId}/external-apps/cron/jobs/process-queue`,
+        {
+          body: JSON.stringify({
+            schedule: '0 9 * * *',
+            scheduleTimezone: 'Asia/Ho_Chi_Minh',
+          }),
+          headers: {
+            Authorization: 'Bearer app-token',
+            'Content-Type': 'application/json',
+          },
+          method: 'PATCH',
+        }
+      ),
+      jobContext()
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.callManagedCronRpc).toHaveBeenCalledWith(
+      'external_app_managed_cron_update_job',
+      expect.objectContaining({
+        p_enabled: null,
+        p_external_app_id: 'cybershield35',
+        p_external_job_key: 'process-queue',
+        p_schedule: '0 9 * * *',
+        p_schedule_timezone: 'Asia/Ho_Chi_Minh',
+      })
+    );
+    const updateArgs = mocks.callManagedCronRpc.mock.calls[0]?.[1] as {
+      p_next_run_at?: string | null;
+    };
+    expect(updateArgs.p_next_run_at).toEqual(expect.any(String));
+  });
+
+  it('rejects invalid external app managed cron timezone edits', async () => {
+    const response = await PATCH_JOB(
+      new Request(
+        `https://tuturuuu.com/api/v1/workspaces/${workspaceId}/external-apps/cron/jobs/process-queue`,
+        {
+          body: JSON.stringify({
+            schedule: '0 9 * * *',
+            scheduleTimezone: 'Not/A_Timezone',
+          }),
+          headers: {
+            Authorization: 'Bearer app-token',
+            'Content-Type': 'application/json',
+          },
+          method: 'PATCH',
+        }
+      ),
+      jobContext()
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.callManagedCronRpc).not.toHaveBeenCalledWith(
+      'external_app_managed_cron_update_job',
+      expect.anything()
+    );
+  });
+
+  it('returns paginated external app managed cron executions', async () => {
+    mocks.callManagedCronRpc.mockResolvedValue({
+      items: [
+        {
+          durationMs: 321,
+          id: '44444444-4444-4444-8444-444444444444',
+          jobId: '33333333-3333-4333-8333-333333333333',
+          jobKey: 'process-queue',
+          jobName: 'Managed scheduler process queue',
+          source: 'manual',
+          startedAt: '2026-06-29T11:40:00.000Z',
+          status: 'success',
+        },
+      ],
+      limit: 10,
+      offset: 0,
+      total: 1,
+    });
+
+    const response = await GET_EXECUTIONS(
+      new Request(
+        `https://tuturuuu.com/api/v1/workspaces/${workspaceId}/external-apps/cron/executions?page=1&pageSize=10`,
+        { headers: { Authorization: 'Bearer app-token' } }
+      ),
+      context()
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.callManagedCronRpc).toHaveBeenCalledWith(
+      'external_app_managed_cron_executions',
+      expect.objectContaining({
+        p_external_app_id: 'cybershield35',
+        p_external_job_key: null,
+        p_limit: 10,
+        p_offset: 0,
+        p_ws_id: workspaceId,
+      })
+    );
+    expect(body).toMatchObject({ page: 1, total: 1 });
+    expect(body.items[0]).toMatchObject({
+      id: '44444444-4444-4444-8444-444444444444',
+      source: 'manual',
+      status: 'success',
+    });
+  });
+
+  it('filters external app managed cron executions by job key', async () => {
+    mocks.callManagedCronRpc.mockResolvedValue({
+      items: [],
+      limit: 25,
+      offset: 0,
+      total: 0,
+    });
+
+    const response = await GET_JOB_EXECUTIONS(
+      new Request(
+        `https://tuturuuu.com/api/v1/workspaces/${workspaceId}/external-apps/cron/jobs/process-queue/executions`,
+        { headers: { Authorization: 'Bearer app-token' } }
+      ),
+      jobContext()
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.callManagedCronRpc).toHaveBeenCalledWith(
+      'external_app_managed_cron_executions',
+      expect.objectContaining({
+        p_external_job_key: 'process-queue',
+      })
+    );
+  });
+
+  it('returns manual run metadata from the external app run-now route', async () => {
+    mocks.runExternalManagedCronJobNow.mockResolvedValue({
+      durationMs: 100,
+      error: null,
+      httpStatus: 200,
+      jobId: '33333333-3333-4333-8333-333333333333',
+      response: 'ok',
+      status: 'success',
+    });
+
+    const response = await RUN_NOW(
+      new Request(
+        `https://tuturuuu.com/api/v1/workspaces/${workspaceId}/external-apps/cron/jobs/process-queue/run-now`,
+        { headers: { Authorization: 'Bearer app-token' }, method: 'POST' }
+      ),
+      jobContext()
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.result).toMatchObject({
+      httpStatus: 200,
+      status: 'success',
+    });
+    expect(mocks.runExternalManagedCronJobNow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalAppId: 'cybershield35',
+        jobKey: 'process-queue',
+        wsId: workspaceId,
       })
     );
   });

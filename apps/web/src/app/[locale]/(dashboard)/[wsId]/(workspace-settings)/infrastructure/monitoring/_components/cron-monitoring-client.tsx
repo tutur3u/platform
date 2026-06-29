@@ -19,8 +19,12 @@ import {
   type CronMonitoringJob,
   type CronRunRecord,
   type CronRunStatus,
+  type ManagedExternalCronExecution,
+  type ManagedExternalCronMonitoring,
   queueCronRun,
+  runManagedExternalCronJob,
   updateCronMonitoringControl,
+  updateManagedExternalCronJob,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -269,6 +273,387 @@ function JobRuntimeRow({
   );
 }
 
+const MANAGED_EXTERNAL_SCHEDULE_PRESETS = [
+  { label: 'Every 5 minutes', schedule: '*/5 * * * *' },
+  { label: 'Hourly', schedule: '0 * * * *' },
+  { label: 'Every 6 hours', schedule: '0 */6 * * *' },
+  { label: 'Daily at 7:00 AM', schedule: '0 7 * * *' },
+  { label: 'Weekly on Monday at 7:00 AM', schedule: '0 7 * * 1' },
+] as const;
+
+function getManagedStatusLabel(
+  status: ManagedExternalCronExecution['status'] | null | undefined
+) {
+  if (status === 'configuration_error') return 'Configuration error';
+  if (status === 'failed') return 'Failed';
+  if (status === 'skipped') return 'Skipped';
+  if (status === 'success') return 'Success';
+  if (status === 'timeout') return 'Timed out';
+  return 'Pending';
+}
+
+function getManagedStatusBadgeClass(
+  status: ManagedExternalCronExecution['status'] | null | undefined
+) {
+  if (status === 'success') {
+    return 'border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green';
+  }
+
+  if (status === 'timeout' || status === 'configuration_error') {
+    return 'border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow';
+  }
+
+  if (status === 'failed') {
+    return 'border-dynamic-red/35 bg-dynamic-red/10 text-dynamic-red';
+  }
+
+  return 'border-border text-muted-foreground';
+}
+
+function managedJobKey({
+  appId,
+  jobKey,
+  workspaceId,
+}: {
+  appId: string;
+  jobKey: string;
+  workspaceId: string;
+}) {
+  return `${workspaceId}:${appId}:${jobKey}`;
+}
+
+function ManagedExternalCronSection({
+  monitoring,
+  onPatchJob,
+  onRunJob,
+  patchingKey,
+  runningKey,
+}: {
+  monitoring: ManagedExternalCronMonitoring | undefined;
+  onPatchJob: (payload: {
+    enabled?: boolean;
+    externalAppId: string;
+    jobKey: string;
+    schedule?: string;
+    scheduleTimezone?: string;
+    wsId: string;
+  }) => void;
+  onRunJob: (payload: {
+    externalAppId: string;
+    jobKey: string;
+    wsId: string;
+  }) => void;
+  patchingKey: string | null;
+  runningKey: string | null;
+}) {
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<string>(
+    MANAGED_EXTERNAL_SCHEDULE_PRESETS[0].schedule
+  );
+  const [scheduleTimezone, setScheduleTimezone] = useState('UTC');
+  const jobRows = (monitoring?.apps ?? []).flatMap((app) =>
+    app.jobs.map((job) => ({ app, job }))
+  );
+
+  if (!monitoring) {
+    return null;
+  }
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-border/60 bg-background">
+      <div className="flex flex-col gap-2 border-border/60 border-b p-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h3 className="font-semibold">Managed external-app cron</h3>
+          <p className="mt-1 text-muted-foreground text-sm">
+            Platform-controlled schedules, manual runs, and recent execution
+            history for external apps.
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className={cn(
+            'w-fit rounded-full',
+            monitoring.available
+              ? 'border-dynamic-green/35 text-dynamic-green'
+              : 'border-dynamic-yellow/35 text-dynamic-yellow'
+          )}
+        >
+          {monitoring.available ? 'Available' : 'Diagnostics unavailable'}
+        </Badge>
+      </div>
+
+      {!monitoring.available ? (
+        <div className="border-dynamic-yellow/30 border-b bg-dynamic-yellow/10 p-4 text-dynamic-yellow text-sm">
+          {monitoring.error ??
+            'Managed external cron diagnostics are temporarily unavailable.'}
+        </div>
+      ) : null}
+
+      {jobRows.length > 0 ? (
+        <div className="divide-y divide-border/60">
+          {jobRows.map(({ app, job }) => {
+            const rowKey = managedJobKey({
+              appId: app.appId,
+              jobKey: job.jobKey,
+              workspaceId: app.workspaceId,
+            });
+            const editing = editingKey === rowKey;
+            const running = runningKey === rowKey;
+            const patching = patchingKey === rowKey;
+
+            return (
+              <div
+                key={rowKey}
+                className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.9fr)_minmax(200px,0.55fr)_auto]"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-medium text-sm">
+                      {job.jobName}
+                    </p>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'rounded-full',
+                        job.enabled
+                          ? 'border-dynamic-green/35 text-dynamic-green'
+                          : 'border-border text-muted-foreground'
+                      )}
+                    >
+                      {job.enabled ? 'Enabled' : 'Paused'}
+                    </Badge>
+                    {job.isOverdue ? (
+                      <Badge
+                        variant="outline"
+                        className="rounded-full border-dynamic-red/35 text-dynamic-red"
+                      >
+                        Overdue
+                      </Badge>
+                    ) : null}
+                    {job.failureStreak > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="rounded-full border-dynamic-red/35 text-dynamic-red"
+                      >
+                        {job.failureStreak} failed
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-muted-foreground text-sm">
+                    {app.appDisplayName} · {app.appId}
+                  </p>
+                  <p className="mt-1 font-mono text-muted-foreground text-xs">
+                    workspace {app.workspaceId}
+                  </p>
+                </div>
+
+                <div className="min-w-0">
+                  {editing ? (
+                    <div className="space-y-2">
+                      <select
+                        className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                        value={schedule}
+                        onChange={(event) => setSchedule(event.target.value)}
+                      >
+                        {MANAGED_EXTERNAL_SCHEDULE_PRESETS.map((preset) => (
+                          <option key={preset.schedule} value={preset.schedule}>
+                            {preset.label}
+                          </option>
+                        ))}
+                        <option value={job.schedule}>Current raw cron</option>
+                      </select>
+                      <input
+                        className="h-9 w-full rounded-md border border-border bg-background px-3 font-mono text-sm"
+                        value={scheduleTimezone}
+                        onChange={(event) =>
+                          setScheduleTimezone(event.target.value)
+                        }
+                        placeholder="UTC"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            onPatchJob({
+                              externalAppId: app.appId,
+                              jobKey: job.jobKey,
+                              schedule,
+                              scheduleTimezone,
+                              wsId: app.workspaceId,
+                            });
+                            setEditingKey(null);
+                          }}
+                          disabled={patching}
+                        >
+                          Save schedule
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingKey(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-mono text-sm">{job.schedule}</p>
+                      <p className="mt-1 text-muted-foreground text-xs leading-5">
+                        {job.scheduleDescription}
+                      </p>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        Timezone: {job.scheduleTimezone}
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                <div className="min-w-0 space-y-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
+                      {job.isOverdue ? 'Overdue since' : 'Next run'}
+                    </p>
+                    <p className="mt-1 font-medium">
+                      {job.isOverdue
+                        ? formatRelativeTime(job.overdueSince)
+                        : formatRelativeTime(job.nextRunAt)}
+                    </p>
+                    {job.overdueReason ? (
+                      <p className="mt-1 text-dynamic-red text-xs">
+                        {job.overdueReason}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
+                      Last run
+                    </p>
+                    <p className="mt-1 font-medium">
+                      {formatRelativeTime(job.lastExecution?.startedAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      onRunJob({
+                        externalAppId: app.appId,
+                        jobKey: job.jobKey,
+                        wsId: app.workspaceId,
+                      })
+                    }
+                    disabled={running || !job.enabled}
+                  >
+                    <ListRestart className="mr-2 h-4 w-4" />
+                    {running ? 'Running' : 'Run now'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      onPatchJob({
+                        enabled: !job.enabled,
+                        externalAppId: app.appId,
+                        jobKey: job.jobKey,
+                        wsId: app.workspaceId,
+                      })
+                    }
+                    disabled={patching}
+                  >
+                    {job.enabled ? 'Pause' : 'Resume'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setEditingKey(rowKey);
+                      setSchedule(job.schedule);
+                      setScheduleTimezone(job.scheduleTimezone);
+                    }}
+                  >
+                    Edit schedule
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="p-8 text-center text-muted-foreground text-sm">
+          No managed external-app cron jobs are configured yet.
+        </div>
+      )}
+
+      <div className="border-border/60 border-t">
+        <div className="border-border/60 border-b p-4">
+          <h4 className="font-semibold text-sm">
+            Managed external-app execution history
+          </h4>
+          <p className="mt-1 text-muted-foreground text-xs">
+            Manual and scheduled runs with sanitized timing, status, and
+            response summaries.
+          </p>
+        </div>
+        <div className="divide-y divide-border/60">
+          {monitoring.executions.length > 0 ? (
+            monitoring.executions.slice(0, 10).map((execution) => (
+              <div
+                key={execution.id}
+                className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_120px_110px_100px]"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'rounded-full',
+                        getManagedStatusBadgeClass(execution.status)
+                      )}
+                    >
+                      {getManagedStatusLabel(execution.status)}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full">
+                      {execution.source}
+                    </Badge>
+                    <p className="truncate font-medium text-sm">
+                      {execution.jobName}
+                    </p>
+                  </div>
+                  <p className="mt-1 font-mono text-muted-foreground text-xs">
+                    {execution.workspaceId} · {execution.jobKey}
+                  </p>
+                  {(execution.error ?? execution.responseSummary) ? (
+                    <p className="mt-2 line-clamp-2 text-muted-foreground text-xs">
+                      {execution.error ?? execution.responseSummary}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="font-mono text-muted-foreground text-xs">
+                  {formatDateTime(execution.startedAt)}
+                </div>
+                <div className="text-sm">
+                  {execution.httpStatus?.toString() ?? '—'}
+                </div>
+                <div className="font-mono text-muted-foreground text-xs">
+                  {formatDuration(execution.durationMs)}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-6 text-center text-muted-foreground text-sm">
+              No managed external-app executions recorded yet.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function CronMonitoringClient() {
   const t = useTranslations('blue-green-monitoring');
   const queryClient = useQueryClient();
@@ -296,8 +681,32 @@ export function CronMonitoringClient() {
     mutationFn: (enabled: boolean) => updateCronMonitoringControl({ enabled }),
     onSuccess: invalidateCron,
   });
+  const managedRunMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof runManagedExternalCronJob>[0]) =>
+      runManagedExternalCronJob(payload),
+    onSuccess: invalidateCron,
+  });
+  const managedPatchMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof updateManagedExternalCronJob>[0]) =>
+      updateManagedExternalCronJob(payload),
+    onSuccess: invalidateCron,
+  });
 
   const snapshot = snapshotQuery.data;
+  const runningManagedKey = managedRunMutation.variables
+    ? managedJobKey({
+        appId: managedRunMutation.variables.externalAppId,
+        jobKey: managedRunMutation.variables.jobKey,
+        workspaceId: managedRunMutation.variables.wsId,
+      })
+    : null;
+  const patchingManagedKey = managedPatchMutation.variables
+    ? managedJobKey({
+        appId: managedPatchMutation.variables.externalAppId,
+        jobKey: managedPatchMutation.variables.jobKey,
+        workspaceId: managedPatchMutation.variables.wsId,
+      })
+    : null;
   const executions = archiveQuery.data?.items ?? [];
   const runByJobId = useMemo(() => {
     const map = new Map<string, CronRunRecord>();
@@ -434,6 +843,14 @@ export function CronMonitoringClient() {
           </div>
         ))}
       </section>
+
+      <ManagedExternalCronSection
+        monitoring={snapshot.managedExternalCron}
+        onPatchJob={(payload) => managedPatchMutation.mutate(payload)}
+        onRunJob={(payload) => managedRunMutation.mutate(payload)}
+        patchingKey={managedPatchMutation.isPending ? patchingManagedKey : null}
+        runningKey={managedRunMutation.isPending ? runningManagedKey : null}
+      />
 
       <section className="overflow-hidden rounded-lg border border-border/60 bg-background">
         <div className="flex flex-col gap-3 border-border/60 border-b p-4 md:flex-row md:items-center md:justify-between">

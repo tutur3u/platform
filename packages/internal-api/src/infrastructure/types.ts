@@ -1138,6 +1138,10 @@ export interface BlueGreenMonitoringWatcherLog {
 
 export type CronExecutionStatus = 'failed' | 'skipped' | 'success' | 'timeout';
 
+export type ManagedExternalCronExecutionStatus =
+  | CronExecutionStatus
+  | 'configuration_error';
+
 export type CronExecutionSource = 'manual' | 'scheduled';
 
 export type CronMonitoringStatus = 'live' | 'missing' | 'stale';
@@ -1214,6 +1218,56 @@ export interface CronMonitoringJob {
   schedule: string;
 }
 
+export interface ManagedExternalCronExecution {
+  durationMs: number | null;
+  endedAt: string | null;
+  error: string | null;
+  httpStatus: number | null;
+  id: string;
+  jobKey: string;
+  jobName: string;
+  responseSummary: string | null;
+  source: CronExecutionSource;
+  startedAt: string;
+  status: ManagedExternalCronExecutionStatus;
+  workspaceId: string;
+}
+
+export interface ManagedExternalCronJob {
+  enabled: boolean;
+  failureStreak: number;
+  isOverdue: boolean;
+  jobKey: string;
+  jobName: string;
+  lastExecution: ManagedExternalCronExecution | null;
+  nextRunAt: string | null;
+  overdueReason: string | null;
+  overdueSince: string | null;
+  schedule: string;
+  scheduleDescription: string;
+  scheduleTimezone: string;
+}
+
+export interface ManagedExternalCronApp {
+  appDisplayName: string;
+  appId: string;
+  configured: boolean;
+  enabled: boolean;
+  generatedAt: string;
+  jobs: ManagedExternalCronJob[];
+  serverNow: string;
+  workspaceId: string;
+}
+
+export interface ManagedExternalCronMonitoring {
+  apps: ManagedExternalCronApp[];
+  available: boolean;
+  error: string | null;
+  executions: ManagedExternalCronExecution[];
+  generatedAt: string;
+  serverNow: string;
+}
+
 export interface CronMonitoringControl {
   enabled: boolean;
   jobs: Record<
@@ -1275,6 +1329,7 @@ export interface CronMonitoringSnapshot {
   enabled: boolean;
   jobs: CronMonitoringJob[];
   lastExecution: CronExecutionRecord | null;
+  managedExternalCron?: ManagedExternalCronMonitoring;
   nextRunAt: number | null;
   overview: {
     enabledJobs: number;
@@ -1554,6 +1609,38 @@ export interface QueueCronRunResponse {
     requestedBy: string;
     requestedByEmail: string | null;
   };
+}
+
+export interface RunManagedExternalCronPayload {
+  externalAppId: string;
+  jobKey: string;
+  wsId: string;
+}
+
+export interface RunManagedExternalCronResponse {
+  message: string;
+  result: {
+    durationMs: number;
+    error: string | null;
+    httpStatus: number | null;
+    jobId: string;
+    response: string | null;
+    status: string;
+  };
+}
+
+export interface UpdateManagedExternalCronJobPayload {
+  enabled?: boolean;
+  externalAppId: string;
+  jobKey: string;
+  schedule?: string;
+  scheduleTimezone?: string;
+  wsId: string;
+}
+
+export interface UpdateManagedExternalCronJobResponse {
+  message: string;
+  status: ManagedExternalCronApp;
 }
 
 export interface UpdateCronMonitoringControlPayload {

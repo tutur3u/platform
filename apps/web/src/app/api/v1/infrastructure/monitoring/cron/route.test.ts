@@ -6,18 +6,24 @@ const {
   queueCronRunRequestMock,
   queueCronRunnerRecoveryRequestMock,
   readCronExecutionArchiveMock,
+  readManagedExternalCronMonitoringMock,
   readCronMonitoringSnapshotMock,
   requestDockerControlCronRunnerRecoveryMock,
+  runManagedExternalCronJobNowMock,
   updateCronMonitoringControlMock,
+  updateManagedExternalCronJobMock,
 } = vi.hoisted(() => ({
   authorizeInfrastructureOperatorMock: vi.fn(),
   authorizeInfrastructureViewerMock: vi.fn(),
   queueCronRunRequestMock: vi.fn(),
   queueCronRunnerRecoveryRequestMock: vi.fn(),
   readCronExecutionArchiveMock: vi.fn(),
+  readManagedExternalCronMonitoringMock: vi.fn(),
   readCronMonitoringSnapshotMock: vi.fn(),
   requestDockerControlCronRunnerRecoveryMock: vi.fn(),
+  runManagedExternalCronJobNowMock: vi.fn(),
   updateCronMonitoringControlMock: vi.fn(),
+  updateManagedExternalCronJobMock: vi.fn(),
 }));
 
 vi.mock('../blue-green/authorization', () => ({
@@ -43,8 +49,24 @@ vi.mock('@/lib/infrastructure/docker-control', () => ({
     requestDockerControlCronRunnerRecoveryMock,
 }));
 
+vi.mock('@/lib/infrastructure/managed-external-cron-monitoring', () => ({
+  readManagedExternalCronMonitoring: readManagedExternalCronMonitoringMock,
+  runManagedExternalCronJobNow: runManagedExternalCronJobNowMock,
+  unavailableManagedExternalCronMonitoring: () => ({
+    apps: [],
+    available: false,
+    error: 'Managed external cron monitoring is unavailable.',
+    executions: [],
+    generatedAt: '2026-06-29T00:00:00.000Z',
+    serverNow: '2026-06-29T00:00:00.000Z',
+  }),
+  updateManagedExternalCronJob: updateManagedExternalCronJobMock,
+}));
+
 import { PUT as PUTControl } from './control/route';
 import { GET as GETExecutions } from './executions/route';
+import { PATCH as PATCHManagedJob } from './managed/job/route';
+import { POST as POSTManagedRun } from './managed/run/route';
 import { GET } from './route';
 import { POST as POSTRun } from './run/route';
 import { POST as POSTRunnerRecovery } from './runner-recovery/route';
@@ -76,6 +98,14 @@ describe('cron monitoring routes', () => {
       ok: false,
       reason: 'not_configured',
     });
+    readManagedExternalCronMonitoringMock.mockResolvedValue({
+      apps: [],
+      available: true,
+      error: null,
+      executions: [],
+      generatedAt: '2026-06-29T00:00:00.000Z',
+      serverNow: '2026-06-29T00:00:00.000Z',
+    });
     authorize();
   });
 
@@ -92,6 +122,14 @@ describe('cron monitoring routes', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       jobs: [],
+      managedExternalCron: {
+        apps: [],
+        available: true,
+        error: null,
+        executions: [],
+        generatedAt: '2026-06-29T00:00:00.000Z',
+        serverNow: '2026-06-29T00:00:00.000Z',
+      },
       status: 'live',
     });
   });
@@ -215,6 +253,78 @@ describe('cron monitoring routes', () => {
     expect(response.status).toBe(403);
     expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
     expect(updateCronMonitoringControlMock).not.toHaveBeenCalled();
+  });
+
+  it('runs a managed external-app cron job for infrastructure operators', async () => {
+    runManagedExternalCronJobNowMock.mockResolvedValue({
+      durationMs: 1200,
+      error: null,
+      httpStatus: 200,
+      jobId: 'job-1',
+      response: '{"ok":true}',
+      status: 'success',
+    });
+
+    const response = await POSTManagedRun(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/managed/run',
+        {
+          body: JSON.stringify({
+            externalAppId: 'cs35',
+            jobKey: 'process-queue',
+            wsId: '22222222-2222-4222-8222-222222222222',
+          }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(runManagedExternalCronJobNowMock).toHaveBeenCalledWith({
+      externalAppId: 'cs35',
+      jobKey: 'process-queue',
+      wsId: '22222222-2222-4222-8222-222222222222',
+    });
+  });
+
+  it('updates managed external-app cron job schedules for infrastructure operators', async () => {
+    updateManagedExternalCronJobMock.mockResolvedValue({
+      appDisplayName: 'CyberShield35',
+      appId: 'cs35',
+      configured: true,
+      enabled: true,
+      generatedAt: '2026-06-29T00:00:00.000Z',
+      jobs: [],
+      serverNow: '2026-06-29T00:00:00.000Z',
+      workspaceId: '22222222-2222-4222-8222-222222222222',
+    });
+
+    const response = await PATCHManagedJob(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/managed/job',
+        {
+          body: JSON.stringify({
+            externalAppId: 'cs35',
+            jobKey: 'process-queue',
+            schedule: '*/5 * * * *',
+            scheduleTimezone: 'Asia/Ho_Chi_Minh',
+            wsId: '22222222-2222-4222-8222-222222222222',
+          }),
+          method: 'PATCH',
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(updateManagedExternalCronJobMock).toHaveBeenCalledWith({
+      externalAppId: 'cs35',
+      jobKey: 'process-queue',
+      schedule: '*/5 * * * *',
+      scheduleTimezone: 'Asia/Ho_Chi_Minh',
+      wsId: '22222222-2222-4222-8222-222222222222',
+    });
   });
 
   it('queues cron runner recovery for authorized infrastructure operators', async () => {

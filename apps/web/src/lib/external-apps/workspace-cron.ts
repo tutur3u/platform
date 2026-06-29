@@ -14,6 +14,7 @@ import {
   type PermissionsResult,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
+import cronstrue from 'cronstrue';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
@@ -28,6 +29,7 @@ import { callManagedCronRpc, ensureRpcArray } from '@/lib/managed-cron/rpc';
 import { runExternalManagedCronJobNow } from '@/lib/managed-cron/service';
 import {
   getNextManagedCronRunAt,
+  normalizeManagedCronTimezone,
   validateManagedCronEndpointUrl,
 } from '@/lib/managed-cron/validation';
 
@@ -60,15 +62,36 @@ const setupSchema = z.object({
   token: z.string().trim().min(32).max(256),
 });
 
-const jobPatchSchema = z.object({
-  enabled: z.boolean(),
+const jobPatchSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    schedule: z.string().trim().min(1).max(120).optional(),
+    scheduleTimezone: z.string().trim().min(1).max(128).optional(),
+  })
+  .refine(
+    (payload) =>
+      payload.enabled !== undefined ||
+      payload.schedule !== undefined ||
+      payload.scheduleTimezone !== undefined,
+    { message: 'Provide a scheduler job update.' }
+  );
+
+const executionsQuerySchema = z.object({
+  jobKey: z.string().trim().min(1).max(128).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
 
 type RequiredScope =
   | typeof WORKSPACE_CRON_READ_SCOPE
   | typeof WORKSPACE_CRON_WRITE_SCOPE;
 
-type ManagedCronOperation = 'job_update' | 'run_now' | 'setup' | 'status';
+type ManagedCronOperation =
+  | 'history'
+  | 'job_update'
+  | 'run_now'
+  | 'setup'
+  | 'status';
 
 type ManagedCronFailureReason =
   | 'supabase_admin_unavailable'
@@ -84,15 +107,20 @@ const MANAGED_CRON_REQUIRED_MIGRATIONS = [
   '20260625232000_managed_workspace_cron.sql',
   '20260628120000_external_app_managed_cron_jobs.sql',
   '20260629160000_managed_cron_private_rpcs.sql',
+  '20260629184500_managed_cron_history_timezone.sql',
 ] as const;
 const MANAGED_CRON_SCHEMA_IDENTIFIERS = [
+  'external_app_managed_cron_executions',
   'external_app_managed_cron_setup',
   'external_app_managed_cron_status',
+  'external_app_managed_cron_monitoring',
   'external_app_managed_cron_update_job',
   'external_app_id',
   'external_job_key',
   'managed_cron_claim_due_jobs',
   'managed_cron_whitelisted_domains',
+  'schedule_timezone',
+  'source',
   'workspace_cron_executions',
   'workspace_cron_jobs',
   'workspace_secrets',
@@ -101,6 +129,7 @@ const MANAGED_CRON_OPERATION_FAILURE_CODES: Record<
   ManagedCronOperation,
   string
 > = {
+  history: 'MANAGED_CRON_HISTORY_FAILED',
   job_update: 'MANAGED_CRON_JOB_UPDATE_FAILED',
   run_now: 'MANAGED_CRON_RUN_NOW_FAILED',
   setup: 'MANAGED_CRON_SETUP_FAILED',
@@ -141,16 +170,40 @@ export type ExternalAppWorkspaceCronAccess = {
 type ExternalAppWorkspaceCronStatus = {
   configured: boolean;
   enabled: boolean;
+  generatedAt?: string | null;
   jobs: Array<{
     active: boolean;
     failureCount: number;
+    isOverdue?: boolean;
+    jobId?: string | null;
     jobKey: string;
+    lastExecution?: ExternalAppWorkspaceCronExecution | null;
     lastRunAt: string | null;
     lastStatus: string | null;
     name: string;
     nextRunAt: string | null;
+    overdueReason?: string | null;
+    overdueSince?: string | null;
     schedule: string;
+    scheduleDescription?: string;
+    scheduleTimezone?: string;
   }>;
+  serverNow?: string | null;
+};
+
+type ExternalAppWorkspaceCronExecution = {
+  durationMs: number | null;
+  endedAt: string | null;
+  error: string | null;
+  httpStatus: number | null;
+  id: string;
+  jobId: string | null;
+  jobKey: string;
+  jobName: string;
+  response: string | null;
+  source: 'manual' | 'scheduled';
+  startedAt: string | null;
+  status: string;
 };
 
 function hasScope(scopes: string[], requiredScope: RequiredScope) {
@@ -196,6 +249,14 @@ function errorName(error: unknown) {
     return typeof name === 'string' ? name : null;
   }
   return null;
+}
+
+function cleanOptionalString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function normalizeNullableNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function postgresErrorCode(error: unknown) {
@@ -555,10 +616,86 @@ export async function loadExternalAppWorkspaceCron(
   return {
     configured: Boolean(payload.configured),
     enabled: Boolean(payload.enabled),
+    generatedAt: cleanOptionalString(payload.generatedAt),
     jobs: ensureRpcArray<ExternalAppWorkspaceCronStatus['jobs'][number]>(
       payload.jobs
-    ),
+    ).map(normalizeExternalAppCronJob),
+    serverNow: cleanOptionalString(payload.serverNow),
   };
+}
+
+function normalizeExternalAppCronJob(
+  job: ExternalAppWorkspaceCronStatus['jobs'][number]
+): ExternalAppWorkspaceCronStatus['jobs'][number] {
+  const schedule = typeof job.schedule === 'string' ? job.schedule : '';
+  const scheduleTimezone = normalizeScheduleTimezoneForResponse(
+    job.scheduleTimezone
+  );
+
+  return {
+    ...job,
+    isOverdue: job.isOverdue === true,
+    lastExecution: normalizeExternalAppCronExecution(job.lastExecution),
+    overdueReason: cleanOptionalString(job.overdueReason),
+    overdueSince: cleanOptionalString(job.overdueSince),
+    schedule,
+    scheduleDescription: describeManagedCronSchedule(
+      schedule,
+      scheduleTimezone
+    ),
+    scheduleTimezone,
+  };
+}
+
+function normalizeExternalAppCronExecution(
+  value: unknown
+): ExternalAppWorkspaceCronExecution | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const id = cleanOptionalString(record.id);
+  const jobKey = cleanOptionalString(record.jobKey) ?? '';
+  const status = cleanOptionalString(record.status) ?? 'unknown';
+
+  if (!id && !jobKey) return null;
+
+  return {
+    durationMs: normalizeNullableNumber(record.durationMs),
+    endedAt: cleanOptionalString(record.endedAt),
+    error: cleanOptionalString(record.error),
+    httpStatus: normalizeNullableNumber(record.httpStatus),
+    id: id ?? '',
+    jobId: cleanOptionalString(record.jobId),
+    jobKey,
+    jobName: cleanOptionalString(record.jobName) ?? jobKey,
+    response: cleanOptionalString(record.response),
+    source: record.source === 'manual' ? 'manual' : 'scheduled',
+    startedAt: cleanOptionalString(record.startedAt),
+    status,
+  };
+}
+
+function describeManagedCronSchedule(schedule: string, timezone: string) {
+  if (!schedule) return '';
+
+  try {
+    const description = cronstrue.toString(schedule, {
+      throwExceptionOnParseError: false,
+      verbose: true,
+    });
+    return `${description} (${timezone})`;
+  } catch {
+    return `${schedule} (${timezone})`;
+  }
+}
+
+function normalizeScheduleTimezoneForResponse(value: unknown) {
+  try {
+    return normalizeManagedCronTimezone(
+      typeof value === 'string' ? value : undefined
+    );
+  } catch {
+    return 'UTC';
+  }
 }
 
 export async function setupExternalAppWorkspaceCron({
@@ -624,9 +761,14 @@ export async function setupExternalAppWorkspaceCron({
         ],
         jobKey: job.jobKey,
         name: job.name,
-        nextRunAt: getNextManagedCronRunAt(job.schedule).toISOString(),
+        nextRunAt: getNextManagedCronRunAt(
+          job.schedule,
+          new Date(),
+          'UTC'
+        ).toISOString(),
         retryCount: 1,
         schedule: job.schedule,
+        scheduleTimezone: 'UTC',
         timeoutMs: 15000,
       })),
       p_token_secret: MANAGED_CRON_TOKEN_SECRET,
@@ -638,9 +780,11 @@ export async function setupExternalAppWorkspaceCron({
   return NextResponse.json({
     configured: Boolean(status.configured),
     enabled: Boolean(status.enabled),
+    generatedAt: cleanOptionalString(status.generatedAt),
     jobs: ensureRpcArray<ExternalAppWorkspaceCronStatus['jobs'][number]>(
       status.jobs
-    ),
+    ).map(normalizeExternalAppCronJob),
+    serverNow: cleanOptionalString(status.serverNow),
   });
 }
 
@@ -668,13 +812,44 @@ export async function updateExternalAppWorkspaceCronJob({
   if (!job)
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
 
+  let scheduleTimezone: string | undefined;
+  try {
+    scheduleTimezone =
+      validation.data.scheduleTimezone === undefined
+        ? undefined
+        : normalizeManagedCronTimezone(validation.data.scheduleTimezone);
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid managed scheduler timezone' },
+      { status: 400 }
+    );
+  }
+
+  let nextRunAt: string | null = null;
+  if (validation.data.schedule) {
+    try {
+      nextRunAt = getNextManagedCronRunAt(
+        validation.data.schedule,
+        new Date(),
+        scheduleTimezone
+      ).toISOString();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid managed scheduler schedule' },
+        { status: 400 }
+      );
+    }
+  }
+
   const updated = await callManagedCronRpc<boolean>(
     'external_app_managed_cron_update_job',
     {
-      p_enabled: validation.data.enabled,
+      p_enabled: validation.data.enabled ?? null,
       p_external_app_id: access.targetApp.id,
       p_external_job_key: jobKey,
-      p_next_run_at: getNextManagedCronRunAt(job.schedule).toISOString(),
+      p_next_run_at: nextRunAt,
+      p_schedule: validation.data.schedule ?? null,
+      p_schedule_timezone: scheduleTimezone ?? null,
       p_ws_id: access.normalizedWorkspaceId,
     }
   );
@@ -708,6 +883,74 @@ export async function runExternalAppWorkspaceCronJobNow({
   }
 
   return NextResponse.json({ result });
+}
+
+export async function loadExternalAppWorkspaceCronExecutions({
+  access,
+  jobKey,
+  request,
+}: {
+  access: ExternalAppWorkspaceCronAccess;
+  jobKey?: string;
+  request: Request;
+}) {
+  const url = new URL(request.url);
+  if (jobKey) {
+    url.searchParams.set('jobKey', jobKey);
+  }
+
+  const parsed = executionsQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams.entries())
+  );
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid managed scheduler executions query' },
+      { status: 400 }
+    );
+  }
+
+  const offset = (parsed.data.page - 1) * parsed.data.pageSize;
+  const payload = await callManagedCronRpc<{
+    items?: unknown[];
+    limit?: number;
+    offset?: number;
+    total?: number;
+  }>('external_app_managed_cron_executions', {
+    p_external_app_id: access.targetApp.id,
+    p_external_job_key: parsed.data.jobKey ?? null,
+    p_limit: parsed.data.pageSize,
+    p_offset: offset,
+    p_ws_id: access.normalizedWorkspaceId,
+  });
+  const limit =
+    typeof payload.limit === 'number' && Number.isFinite(payload.limit)
+      ? payload.limit
+      : parsed.data.pageSize;
+  const total =
+    typeof payload.total === 'number' && Number.isFinite(payload.total)
+      ? payload.total
+      : 0;
+  const normalizedOffset =
+    typeof payload.offset === 'number' && Number.isFinite(payload.offset)
+      ? payload.offset
+      : offset;
+  const pageCount = Math.max(1, Math.ceil(total / limit));
+
+  return NextResponse.json({
+    hasNextPage: parsed.data.page < pageCount,
+    hasPreviousPage: parsed.data.page > 1,
+    items: ensureRpcArray<unknown>(payload.items)
+      .map(normalizeExternalAppCronExecution)
+      .filter((item): item is ExternalAppWorkspaceCronExecution =>
+        Boolean(item)
+      ),
+    limit,
+    offset: normalizedOffset,
+    page: parsed.data.page,
+    pageCount,
+    total,
+  });
 }
 
 export const externalAppWorkspaceCronScopes = {
