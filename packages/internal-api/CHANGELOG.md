@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/internal-api-v0.11.0...internal-api-v0.12.0) (2026-06-29)
+
+
+### Features
+
+* **auth:** add email auth recovery override ([0debe1c](https://github.com/tutur3u/platform/commit/0debe1c71efb30bb51081cc3494a732975be0a86))
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **external-apps:** add managed scheduler cron integration ([431ed1b](https://github.com/tutur3u/platform/commit/431ed1b41682ba41ef190455816e53e06e4d0039))
+* **finance:** support prepaid subscription invoice ranges ([fa0f338](https://github.com/tutur3u/platform/commit/fa0f3388dfb3d3ea539a8d8bdc3f100f268542c6))
+* **infrastructure:** add friendly rate-limit review ([ecb5660](https://github.com/tutur3u/platform/commit/ecb5660d9d749eaf73063dc2acc63a066f222e4d))
+* **infrastructure:** add rate-limit appeals ([f1e50e9](https://github.com/tutur3u/platform/commit/f1e50e9fd805dca6c80da8daab60ed24199f24ab))
+* **inventory:** add Square Terminal checkout ([0a3bd76](https://github.com/tutur3u/platform/commit/0a3bd7635cf9836a379d94851e1a303cec848457))
+* **inventory:** store Square credentials per workspace ([e606f23](https://github.com/tutur3u/platform/commit/e606f2341c2684b1ef8a7b72900a056ff7b70469))
+* **posts:** add queue diagnostics and observability ([744dcc9](https://github.com/tutur3u/platform/commit/744dcc95a19b0df466098769f42b9c819a439dcd))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **infrastructure:** recover cron runner via docker control ([d1f216d](https://github.com/tutur3u/platform/commit/d1f216d3ef7887dec066494d3f1816f607ce28fc))
+* **internal-api:** guard cron job search nulls ([cdde19f](https://github.com/tutur3u/platform/commit/cdde19f9cb715d5d3edf36b448e739b24ba024fd))
+* **inventory:** harden Square Terminal contracts ([547ce87](https://github.com/tutur3u/platform/commit/547ce87fba395493f1b0c0596e1155a6dad5672d))
+* **managed-cron:** add admin runner recovery ([13c07c6](https://github.com/tutur3u/platform/commit/13c07c6b3376dc0b4dc446ca6b410b02224ad2f1))
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/internal-api-v0.10.0...internal-api-v0.11.0) (2026-06-26)
 
 

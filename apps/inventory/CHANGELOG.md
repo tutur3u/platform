@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/inventory-v0.8.0...inventory-v0.9.0) (2026-06-29)
+
+
+### Features
+
+* **inventory:** add Square Terminal checkout ([0a3bd76](https://github.com/tutur3u/platform/commit/0a3bd7635cf9836a379d94851e1a303cec848457))
+* **inventory:** store Square credentials per workspace ([e606f23](https://github.com/tutur3u/platform/commit/e606f2341c2684b1ef8a7b72900a056ff7b70469))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **inventory:** harden Square Terminal contracts ([547ce87](https://github.com/tutur3u/platform/commit/547ce87fba395493f1b0c0596e1155a6dad5672d))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/inventory-v0.7.0...inventory-v0.8.0) (2026-06-24)
 
 

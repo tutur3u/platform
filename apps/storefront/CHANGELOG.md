@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/storefront-v0.7.0...storefront-v0.8.0) (2026-06-29)
+
+
+### Features
+
+* **inventory:** add Square Terminal checkout ([0a3bd76](https://github.com/tutur3u/platform/commit/0a3bd7635cf9836a379d94851e1a303cec848457))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/storefront-v0.6.0...storefront-v0.7.0) (2026-06-24)
 
 

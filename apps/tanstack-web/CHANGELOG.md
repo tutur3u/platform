@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.3.0...tanstack-web-v0.4.0) (2026-06-29)
+
+
+### Features
+
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **external-apps:** add managed scheduler cron integration ([431ed1b](https://github.com/tutur3u/platform/commit/431ed1b41682ba41ef190455816e53e06e4d0039))
+* **external-apps:** add workspace member management ([c5f6d2c](https://github.com/tutur3u/platform/commit/c5f6d2c38f9b97527694df8fcd6aa9da49e981fc))
+* **infrastructure:** add friendly rate-limit review ([ecb5660](https://github.com/tutur3u/platform/commit/ecb5660d9d749eaf73063dc2acc63a066f222e4d))
+* **infrastructure:** add rate-limit appeals ([f1e50e9](https://github.com/tutur3u/platform/commit/f1e50e9fd805dca6c80da8daab60ed24199f24ab))
+* **inventory:** store Square credentials per workspace ([e606f23](https://github.com/tutur3u/platform/commit/e606f2341c2684b1ef8a7b72900a056ff7b70469))
+* **posts:** add queue diagnostics and observability ([744dcc9](https://github.com/tutur3u/platform/commit/744dcc95a19b0df466098769f42b9c819a439dcd))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.2.0...tanstack-web-v0.3.0) (2026-06-26)
 
 

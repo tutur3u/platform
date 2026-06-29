@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/shortener-v0.1.4...shortener-v0.2.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
 ## [0.1.4](https://github.com/tutur3u/platform/compare/shortener-v0.1.3...shortener-v0.1.4) (2026-06-24)
 
 
