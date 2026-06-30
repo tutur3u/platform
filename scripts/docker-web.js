@@ -372,7 +372,7 @@ function applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed) {
 
   return {
     ...composeEnv,
-    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NATIVE_BUILD: '0',
   };
 }
 
