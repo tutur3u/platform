@@ -431,17 +431,17 @@ headroom. The Next build engine remains Turbopack. Do not switch local E2E runs
 to the Webpack build path; the production and local Docker build paths are
 expected to exercise the same Turbopack compiler.
 
-For blue/green web deploys, the helper defaults to native host web builds. It
-runs `bun run build:web:docker` on the host with `DOCKER_WEB_STANDALONE=1`,
-packages `apps/web/.next/standalone` plus static assets into the same Node
-runtime image shape, and continues with Docker Compose startup and Playwright.
-Native builds derive their host-side build memory budget from the machine's
-total memory, while leaving Next/Turbopack CPU and static generation worker
-counts unset so the toolchain can auto-configure from the real host. Set
-`DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value only when the host
-needs a different Node heap bucket. Set `DOCKER_WEB_NATIVE_BUILD=0` to opt back
-into the legacy all-in-Docker web image build path for comparison or emergency
-rollback.
+For blue/green web deploys, the helper defaults to the Docker/BuildKit web image
+build path so production builds keep their container isolation boundary. Set
+`DOCKER_WEB_NATIVE_BUILD=1` only for an explicit operator-approved native host
+build. That opt-in runs `bun run build:web:docker` on the host with
+`DOCKER_WEB_STANDALONE=1`, packages `apps/web/.next/standalone` plus static
+assets into the same Node runtime image shape, and continues with Docker Compose
+startup and Playwright. Native builds derive their host-side build memory budget
+from the machine's total memory, while leaving Next/Turbopack CPU and static
+generation worker counts unset so the toolchain can auto-configure from the real
+host. Set `DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value only
+when the host needs a different Node heap bucket.
 
 When a production blue/green web image was just built locally with
 `bun serve:web:docker:bg`, Dockerized E2E can reuse that image instead of

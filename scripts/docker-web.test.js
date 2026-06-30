@@ -3404,10 +3404,17 @@ test('buildBlueGreenServices keeps retrying lower profiles before failing at the
   }
 });
 
-test('blue/green prod defaults to native web builds', () => {
+test('blue/green prod keeps native web builds explicit opt-in', () => {
   assert.deepEqual(
     applyDefaultBlueGreenNativeBuildEnv(
       {},
+      { mode: 'prod', strategy: 'blue-green' }
+    ),
+    { DOCKER_WEB_NATIVE_BUILD: '0' }
+  );
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      { DOCKER_WEB_NATIVE_BUILD: '1' },
       { mode: 'prod', strategy: 'blue-green' }
     ),
     { DOCKER_WEB_NATIVE_BUILD: '1' }
