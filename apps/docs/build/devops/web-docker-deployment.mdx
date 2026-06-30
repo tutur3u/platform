@@ -952,6 +952,35 @@ Compose start. A healthy existing cron runner is left running; a missing control
 sidecar or runner fails watcher bootstrap instead of leaving the stack without
 native cron recovery or execution.
 
+Each watcher poll also reconciles cron-runner health before doing normal deploy
+work. The watcher checks the `web-cron-runner` container state, Docker
+healthcheck result, and `tmp/docker-web/cron/status.json.updatedAt`. If the
+container is missing, unhealthy, or the heartbeat is stale, the watcher writes
+the existing `tmp/docker-web/watch/control/cron-runner-recovery.request.json`
+request and processes it immediately with a force-recreate of
+`web-cron-runner`. It then waits for a fresh heartbeat before reporting
+`cron-runner-recovered`; if the Compose restart fails, the request remains on
+disk with `lastError` and the watcher backs off before retrying.
+
+`web-cron-runner` also protects itself. The entrypoint restarts the child
+`scripts/watch-web-crons.js` process when the status heartbeat is missing,
+invalid, or stale after startup grace, and the Docker healthcheck calls the same
+entrypoint heartbeat check. This prevents a hung cron child from looking
+healthy just because the process still exists.
+
+Useful cron-runner recovery knobs:
+
+- `DOCKER_WEB_WATCHER_CRON_RUNNER_STALE_AFTER_MS` controls watcher heartbeat
+  staleness detection. Default: `120000`.
+- `DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS` controls how long the
+  watcher waits for a fresh heartbeat after restart. Default: `90000`.
+- `DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS` controls the heartbeat wait
+  poll interval. Default: `2000`.
+- `PLATFORM_CRON_RUNNER_STATUS_STALE_AFTER_MS` controls the entrypoint child
+  watchdog. Default: `120000`.
+- `PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS` bounds Docker `ps` / `logs`
+  probes used for cron telemetry. Default: `10000`.
+
 `web-docker-control` is an internal-only sidecar with the Docker CLI, Docker
 socket, and host worktree mount. `apps/web` reaches it through
 `PLATFORM_DOCKER_CONTROL_URL` and `PLATFORM_DOCKER_CONTROL_TOKEN` for hardcoded
@@ -986,8 +1015,9 @@ Runtime cron telemetry is intentionally file-based and local to the host:
 - `tmp/docker-web/cron/status.json` for runner health, the current cycle, and
   the latest manual run lifecycle records. Manual runs move through `queued`,
   `processing`, and a final `success` / `failed` / `timeout` / `skipped` state.
-  While a run is processing, the runner refreshes captured route console logs in
-  this file so the monitoring UI can show near-realtime status and log updates.
+  While any run is processing, the runner refreshes this heartbeat and, for
+  manual runs, captured route console logs so the monitoring UI can show
+  near-realtime status and log updates.
 - `tmp/docker-web/cron/state.json` for restart-safe last-run markers.
 - `tmp/docker-web/cron/executions/*.jsonl` for per-run route response,
   duration, status, and captured web-container console logs.

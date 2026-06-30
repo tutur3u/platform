@@ -159,10 +159,16 @@ services:
       - SUPERMEMORY_TIMEOUT_MS=${SUPERMEMORY_TIMEOUT_MS:-1500}
       - VERCEL_CRON_SECRET
     healthcheck:
-      test: ["CMD-SHELL", "ps | grep -q '[w]atch-web-crons.js'"]
+      test:
+        [
+          "CMD",
+          "bun",
+          "/usr/local/bin/cron-runner-entrypoint.js",
+          "--healthcheck",
+        ]
       interval: 30s
       timeout: 5s
-      start_period: 10s
+      start_period: 120s
       retries: 3
     init: true
     restart: unless-stopped

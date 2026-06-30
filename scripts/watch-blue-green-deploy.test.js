@@ -88,6 +88,7 @@ const {
   pullTrackedBranch,
   readDeploymentHistory,
   readCronRunnerRecoveryRequest,
+  readCronRunnerHeartbeat,
   readWatchArgsFile,
   readWatchLock,
   readPendingDeployRequest,
@@ -98,6 +99,7 @@ const {
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   processCronRunnerRecoveryRequest,
+  reconcileCronRunnerHealth,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
   runDeployWatchLoop,
@@ -354,12 +356,259 @@ test('processCronRunnerRecoveryRequest keeps failed cron runner recovery request
   }
 });
 
+test('reconcileCronRunnerHealth leaves a healthy cron runner alone', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-healthy-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+  const calls = [];
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({ calls }),
+    });
+
+    assert.equal(result.status, 'healthy');
+    assert.equal(result.heartbeat.status, 'live');
+    assert.equal(
+      calls.some((call) => call.includes(' up ')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth skips empty cron runtimes before bootstrap', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-unconfigured-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    const result = await reconcileCronRunnerHealth({
+      fsImpl: fs,
+      log: { warn() {} },
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+      },
+    });
+
+    assert.equal(result.status, 'unconfigured');
+    assert.equal(result.heartbeat.status, 'missing');
+    assert.equal(readCronRunnerRecoveryRequest(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth restarts a missing cron runner', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-missing-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+  const calls = [];
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({
+        calls,
+        containerId: '',
+      }),
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.equal(result.trigger, 'watcher-health-check');
+    assert.equal(
+      result.recovery.request.reason,
+      'cron-runner-container-missing'
+    );
+    assert.ok(
+      calls.some((call) =>
+        call.includes(
+          'up --build --detach --force-recreate --remove-orphans web-cron-runner'
+        )
+      )
+    );
+    assert.equal(readCronRunnerRecoveryRequest(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth restarts a stale-heartbeat cron runner and waits for refresh', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-stale-')
+  );
+  const paths = getWatchPaths(tempDir);
+  let now = 1_700_000_000_000;
+  const calls = [];
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now - 121_000 });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {
+        DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS: '100',
+        DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS: '1000',
+      },
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({ calls }),
+      sleepImpl: async (ms) => {
+        now += ms;
+        writeCronRunnerStatus(tempDir, { updatedAt: now });
+      },
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.equal(result.previousHeartbeat.status, 'stale');
+    assert.equal(result.heartbeat.status, 'live');
+    assert.equal(result.recovery.request.reason, 'cron-runner-heartbeat-stale');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth backs off a recently failed cron recovery request', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-backoff-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+
+  try {
+    writeCronRunnerRecoveryRequest(
+      {
+        action: 'restart',
+        attemptCount: 1,
+        kind: 'cron-runner-recovery',
+        lastAttemptAt: now - 10_000,
+        lastError: 'compose refused',
+        reason: 'cron-runner-heartbeat-stale',
+        requestedAt: '2026-06-29T00:00:00.000Z',
+        requestedBy: 'blue-green-watcher',
+        requestedByEmail: null,
+      },
+      { paths }
+    );
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: async () => {
+        throw new Error('should not retry during backoff');
+      },
+    });
+
+    assert.equal(result.status, 'backoff');
+    assert.equal(result.trigger, 'queued-request');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth preserves failed automatic recovery requests for retry', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-failed-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now - 121_000 });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({
+        upResult: createResult('', { code: 1, stderr: 'compose refused' }),
+      }),
+    });
+    const pending = readCronRunnerRecoveryRequest(paths);
+
+    assert.equal(result.status, 'failed');
+    assert.equal(result.trigger, 'watcher-health-check');
+    assert.equal(pending.attemptCount, 1);
+    assert.equal(pending.lastAttemptAt, now);
+    assert.equal(pending.lastError, 'compose refused');
+    assert.equal(
+      readCronRunnerHeartbeat({ rootDir: tempDir, now }).status,
+      'stale'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
   return {
     code,
     signal: null,
     stderr,
     stdout,
+  };
+}
+
+function writeCronRunnerStatus(rootDir, value) {
+  const statusFile = path.join(
+    rootDir,
+    'tmp',
+    'docker-web',
+    'cron',
+    'status.json'
+  );
+  fs.mkdirSync(path.dirname(statusFile), { recursive: true });
+  fs.writeFileSync(statusFile, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function createCronRunnerHealthRunCommand({
+  calls = [],
+  containerId = 'cron-runner-123',
+  health = 'healthy',
+  upResult = createResult(''),
+} = {}) {
+  return async (command, args) => {
+    const joined = [command, ...args].join(' ');
+    calls.push(joined);
+
+    if (joined.includes('ps -a -q web-cron-runner')) {
+      return createResult(containerId ? `${containerId}\n` : '');
+    }
+
+    if (joined.includes('docker inspect') && joined.includes(containerId)) {
+      return createResult(`${health}\n`);
+    }
+
+    if (joined.includes('up --build --detach')) {
+      return upResult;
+    }
+
+    return createResult('', {
+      code: 1,
+      stderr: `unexpected command: ${joined}`,
+    });
   };
 }
 
@@ -6993,6 +7242,7 @@ test('runDeployWatchLoop backs off for git failures instead of exiting immediate
             },
             onIterationStart() {},
             paths,
+            rootDir: tempDir,
             runCommand: createRunCommandMock(
               new Map([
                 ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
@@ -7223,6 +7473,7 @@ test('runDeployWatchIteration stops when the locked branch changes', async () =>
           {
             log: { error() {}, info() {}, warn() {} },
             paths,
+            rootDir: tempDir,
             runCommand: createRunCommandMock(
               new Map([
                 ['git rev-parse --abbrev-ref HEAD', createResult('release\n')],
@@ -7341,6 +7592,7 @@ test('runDeployWatchLoop caps long git intervals to the project queue poll inter
             },
             paths,
             projectPollIntervalMs: 60_000,
+            rootDir: tempDir,
             runCommand: createRunCommandMock(
               new Map([
                 ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],

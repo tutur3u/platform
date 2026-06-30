@@ -299,6 +299,15 @@ const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const WATCHER_CONTAINER_REFRESH_MESSAGE =
   'host-supervised watcher service recreation';
 const CRON_RUNNER_RECOVERY_RETRY_MS = 60_000;
+const CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS_ENV =
+  'DOCKER_WEB_WATCHER_CRON_RUNNER_STALE_AFTER_MS';
+const CRON_RUNNER_RECOVERY_WAIT_MS_ENV =
+  'DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS';
+const CRON_RUNNER_RECOVERY_POLL_MS_ENV =
+  'DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS';
+const DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS = 120_000;
+const DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS = 90_000;
+const DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS = 2_000;
 const MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
 const MIGRATION_STAGING_PORT_ENV = {
   DOCKER_WEB_BUILDKIT_PORT: '17914',
@@ -1072,6 +1081,196 @@ function clearCronRunnerRecoveryRequest({
   fsImpl.rmSync(paths.cronRunnerRecoveryRequestFile, { force: true });
 }
 
+function getCronRunnerStatusFile({
+  env = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const configuredRuntimeDir =
+    typeof env.PLATFORM_CRON_MONITORING_DIR === 'string' &&
+    env.PLATFORM_CRON_MONITORING_DIR.trim()
+      ? env.PLATFORM_CRON_MONITORING_DIR.trim()
+      : null;
+
+  return path.join(
+    configuredRuntimeDir ?? path.join(rootDir, 'tmp', 'docker-web', 'cron'),
+    'status.json'
+  );
+}
+
+function readCronRunnerHeartbeat({
+  env = process.env,
+  fsImpl = fs,
+  now = Date.now(),
+  rootDir = ROOT_DIR,
+  statusFile = getCronRunnerStatusFile({ env, rootDir }),
+} = {}) {
+  const staleAfterMs = getCronRunnerHeartbeatStaleAfterMs(env);
+
+  if (!fsImpl.existsSync(statusFile)) {
+    return {
+      ageMs: null,
+      reason: 'status snapshot missing',
+      staleAfterMs,
+      status: 'missing',
+      statusFile,
+      updatedAt: null,
+    };
+  }
+
+  let snapshot;
+  try {
+    snapshot = JSON.parse(fsImpl.readFileSync(statusFile, 'utf8'));
+  } catch (error) {
+    return {
+      ageMs: null,
+      error,
+      reason: 'status snapshot invalid',
+      staleAfterMs,
+      status: 'invalid',
+      statusFile,
+      updatedAt: null,
+    };
+  }
+
+  const updatedAt =
+    typeof snapshot?.updatedAt === 'number' &&
+    Number.isFinite(snapshot.updatedAt)
+      ? snapshot.updatedAt
+      : null;
+
+  if (updatedAt == null) {
+    return {
+      ageMs: null,
+      reason: 'status snapshot missing updatedAt',
+      staleAfterMs,
+      status: 'invalid',
+      statusFile,
+      updatedAt: null,
+    };
+  }
+
+  const ageMs = Math.max(0, now - updatedAt);
+
+  if (ageMs <= staleAfterMs) {
+    return {
+      ageMs,
+      reason: null,
+      staleAfterMs,
+      status: 'live',
+      statusFile,
+      updatedAt,
+    };
+  }
+
+  return {
+    ageMs,
+    reason: `status snapshot stale for ${ageMs}ms`,
+    staleAfterMs,
+    status: 'stale',
+    statusFile,
+    updatedAt,
+  };
+}
+
+async function waitForCronRunnerHeartbeat({
+  env = process.env,
+  fsImpl = fs,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+  sleepImpl = sleep,
+  startedAt = Date.now(),
+  timeoutMs = getCronRunnerRecoveryWaitMs(env),
+} = {}) {
+  const pollMs = getCronRunnerRecoveryPollMs(env);
+  const deadline = now() + timeoutMs;
+  let lastHeartbeat = readCronRunnerHeartbeat({
+    env,
+    fsImpl,
+    now: now(),
+    rootDir,
+  });
+
+  while (now() <= deadline) {
+    lastHeartbeat = readCronRunnerHeartbeat({
+      env,
+      fsImpl,
+      now: now(),
+      rootDir,
+    });
+
+    if (
+      lastHeartbeat.status === 'live' &&
+      typeof lastHeartbeat.updatedAt === 'number' &&
+      lastHeartbeat.updatedAt >= startedAt
+    ) {
+      return lastHeartbeat;
+    }
+
+    await sleepImpl(pollMs);
+  }
+
+  return {
+    ...lastHeartbeat,
+    reason:
+      lastHeartbeat.reason ??
+      `status snapshot did not refresh within ${timeoutMs}ms`,
+    status:
+      lastHeartbeat.status === 'live'
+        ? 'stale-after-recovery'
+        : lastHeartbeat.status,
+  };
+}
+
+function getCronRunnerRecoveryReason({ heartbeat, service } = {}) {
+  if (service?.status === 'missing') {
+    return 'cron-runner-container-missing';
+  }
+
+  if (service?.status === 'unhealthy') {
+    return 'cron-runner-container-unhealthy';
+  }
+
+  if (service?.status === 'inspect-failed') {
+    return 'cron-runner-container-inspect-failed';
+  }
+
+  if (heartbeat?.status === 'missing') {
+    return 'cron-runner-heartbeat-missing';
+  }
+
+  if (heartbeat?.status === 'invalid') {
+    return 'cron-runner-heartbeat-invalid';
+  }
+
+  if (heartbeat?.status === 'stale') {
+    return 'cron-runner-heartbeat-stale';
+  }
+
+  if (service?.action === 'start') {
+    return `cron-runner-container-${service.status || 'down'}`;
+  }
+
+  if (service?.action === 'recreate') {
+    return `cron-runner-container-${service.status || 'unhealthy'}`;
+  }
+
+  return null;
+}
+
+function createWatcherCronRunnerRecoveryRequest({ now, reason }) {
+  return {
+    action: 'restart',
+    attemptCount: 0,
+    kind: 'cron-runner-recovery',
+    lastAttemptAt: null,
+    lastError: null,
+    reason,
+    requestedAt: new Date(now).toISOString(),
+    requestedBy: 'blue-green-watcher',
+    requestedByEmail: null,
+  };
+}
+
 async function processCronRunnerRecoveryRequest({
   env = process.env,
   fsImpl = fs,
@@ -1107,11 +1306,12 @@ async function processCronRunnerRecoveryRequest({
     fsImpl,
     rootDir,
   });
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(composeEnv);
   const result = await run(
     'docker',
     getComposeCommandArgs(
       PROD_COMPOSE_FILE,
-      ['--profile', 'redis'],
+      composeGlobalArgs,
       'up',
       '--build',
       '--detach',
@@ -1146,6 +1346,159 @@ async function processCronRunnerRecoveryRequest({
       : 'Ensured web-cron-runner is started from operator recovery request.'
   );
   return { request: attemptedRequest, status: 'recovered' };
+}
+
+async function reconcileCronRunnerHealth({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  log = console,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  sleepImpl = sleep,
+} = {}) {
+  const checkedAt = now();
+  const pendingRequest = readCronRunnerRecoveryRequest(paths, fsImpl);
+
+  if (pendingRequest) {
+    const recovery = await processCronRunnerRecoveryRequest({
+      env,
+      fsImpl,
+      log,
+      now: checkedAt,
+      paths,
+      rootDir,
+      runCommand: run,
+    });
+
+    if (recovery?.status === 'recovered') {
+      const heartbeat = await waitForCronRunnerHeartbeat({
+        env,
+        fsImpl,
+        now,
+        rootDir,
+        sleepImpl,
+        startedAt: checkedAt,
+      });
+
+      return {
+        heartbeat,
+        recovery,
+        status:
+          heartbeat.status === 'live'
+            ? 'recovered'
+            : 'recovered-awaiting-heartbeat',
+        trigger: 'queued-request',
+      };
+    }
+
+    return {
+      recovery,
+      status: recovery?.status ?? 'pending-request',
+      trigger: 'queued-request',
+    };
+  }
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const heartbeat = readCronRunnerHeartbeat({
+    env: composeEnv,
+    fsImpl,
+    now: checkedAt,
+    rootDir,
+  });
+
+  if (
+    heartbeat.status === 'missing' &&
+    !fsImpl.existsSync(path.dirname(heartbeat.statusFile))
+  ) {
+    return {
+      heartbeat,
+      status: 'unconfigured',
+    };
+  }
+
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(composeEnv);
+  const service = await inspectComposeServiceForRecovery(
+    WEB_CRON_RUNNER_SERVICE,
+    {
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs,
+      env: composeEnv,
+      runCommand: run,
+    }
+  );
+  const reason = getCronRunnerRecoveryReason({ heartbeat, service });
+
+  if (!reason) {
+    return {
+      heartbeat,
+      service,
+      status: 'healthy',
+    };
+  }
+
+  if (service.action === 'pending') {
+    return {
+      heartbeat,
+      service,
+      status: 'pending',
+    };
+  }
+
+  const request = createWatcherCronRunnerRecoveryRequest({
+    now: checkedAt,
+    reason,
+  });
+  writeCronRunnerRecoveryRequest(request, { fsImpl, paths });
+  log.warn?.(`Cron runner health check requested restart: ${reason}.`);
+
+  const recovery = await processCronRunnerRecoveryRequest({
+    env,
+    fsImpl,
+    log,
+    now: checkedAt,
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+
+  if (recovery?.status !== 'recovered') {
+    return {
+      heartbeat,
+      recovery,
+      service,
+      status: recovery?.status ?? 'failed',
+      trigger: 'watcher-health-check',
+    };
+  }
+
+  const recoveredHeartbeat = await waitForCronRunnerHeartbeat({
+    env: composeEnv,
+    fsImpl,
+    now,
+    rootDir,
+    sleepImpl,
+    startedAt: checkedAt,
+  });
+
+  return {
+    heartbeat: recoveredHeartbeat,
+    previousHeartbeat: heartbeat,
+    recovery,
+    service,
+    status:
+      recoveredHeartbeat.status === 'live'
+        ? 'recovered'
+        : 'recovered-awaiting-heartbeat',
+    trigger: 'watcher-health-check',
+  };
 }
 
 function hasPersistedPendingDeployRequest(
@@ -1319,6 +1672,36 @@ function getPositiveIntegerEnv(env, name, fallback) {
   const parsed = Number.parseInt(String(raw).trim(), 10);
 
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getCronRunnerHeartbeatStaleAfterMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS_ENV,
+      DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS
+    ) ?? DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS
+  );
+}
+
+function getCronRunnerRecoveryWaitMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      CRON_RUNNER_RECOVERY_WAIT_MS_ENV,
+      DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS
+    ) ?? DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS
+  );
+}
+
+function getCronRunnerRecoveryPollMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      CRON_RUNNER_RECOVERY_POLL_MS_ENV,
+      DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS
+    ) ?? DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS
+  );
 }
 
 function isTruthyEnv(value) {
@@ -4786,12 +5169,14 @@ async function runDeployWatchIteration(
       ...payload,
     });
   let composeServiceRecovery = null;
+  let cronRunnerHealth = null;
   const attachRuntime = async (result, history = null) => {
     const snapshotNow = now();
 
     return {
       ...result,
       ...(composeServiceRecovery ? { composeServiceRecovery } : {}),
+      ...(cronRunnerHealth ? { cronRunnerHealth } : {}),
       deploymentPin: readDeploymentPin(paths, fsImpl),
       ...(await loadRuntimeSnapshot({
         env,
@@ -4805,30 +5190,48 @@ async function runDeployWatchIteration(
       })),
     };
   };
-  const cronRunnerRecovery = await processCronRunnerRecoveryRequest({
+  cronRunnerHealth = await reconcileCronRunnerHealth({
     env,
+    envFilePath,
     fsImpl,
     log,
-    now: checkedAt,
+    now,
     paths,
     rootDir,
     runCommand: run,
+    sleepImpl: sleep,
   });
 
-  if (cronRunnerRecovery?.status === 'recovered') {
+  if (cronRunnerHealth?.status === 'recovered') {
     return attachRuntime({
       checkedAt,
-      cronRunnerRecovery,
       status: 'cron-runner-recovered',
     });
   }
 
-  if (cronRunnerRecovery?.status === 'failed') {
+  if (cronRunnerHealth?.status === 'recovered-awaiting-heartbeat') {
     return attachRuntime({
       checkedAt,
-      cronRunnerRecovery,
+      status: 'cron-runner-recovered-awaiting-heartbeat',
+    });
+  }
+
+  if (
+    cronRunnerHealth?.status === 'pending' ||
+    cronRunnerHealth?.status === 'backoff'
+  ) {
+    return attachRuntime({
+      checkedAt,
+      status: 'cron-runner-recovery-pending',
+    });
+  }
+
+  if (cronRunnerHealth?.status === 'failed') {
+    return attachRuntime({
+      checkedAt,
       error: new Error(
-        cronRunnerRecovery.request.lastError ?? 'Cron runner recovery failed.'
+        cronRunnerHealth.recovery?.request?.lastError ??
+          'Cron runner recovery failed.'
       ),
       status: 'cron-runner-recovery-failed',
     });
@@ -8019,6 +8422,9 @@ module.exports = {
   DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS,
   DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS,
   DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS,
+  DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS,
+  DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS,
+  DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS,
   DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
@@ -8044,6 +8450,9 @@ module.exports = {
   WEB_CRON_RUNNER_SERVICE,
   WEB_DOCKER_CONTROL_SERVICE,
   CRON_RUNNER_RECOVERY_RETRY_MS,
+  CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS_ENV,
+  CRON_RUNNER_RECOVERY_WAIT_MS_ENV,
+  CRON_RUNNER_RECOVERY_POLL_MS_ENV,
   DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
   DOCKER_DAEMON_RESTART_COMMAND_ENV,
   DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,
@@ -8088,8 +8497,12 @@ module.exports = {
   getDockerDaemonPostRestartCommands,
   getDockerDaemonPostRestartCommandTimeoutMs,
   getDockerDaemonProbeTimeoutMs,
+  getCronRunnerHeartbeatStaleAfterMs,
+  getCronRunnerRecoveryWaitMs,
+  getCronRunnerRecoveryPollMs,
   getDockerDaemonRecoverySettingsEnv,
   getDockerLogStreamReconnectMs,
+  getCronRunnerStatusFile,
   getRevision,
   getTrackedUpstream,
   getWatcherContainerState,
@@ -8118,6 +8531,7 @@ module.exports = {
   pullTrackedBranch,
   readDeploymentHistory,
   readDockerDaemonRecoverySettings,
+  readCronRunnerHeartbeat,
   readCronRunnerRecoveryRequest,
   readInstantRolloutRequest,
   readPendingDeployRequest,
@@ -8126,6 +8540,7 @@ module.exports = {
   readWatchStatus,
   releaseWatchLock,
   recoverDownComposeServices,
+  reconcileCronRunnerHealth,
   recoverWatcherBuildkitAfterChildDeployFailure,
   restoreTargetBranchIfDetached,
   resolveLockedBranchTarget,
@@ -8150,6 +8565,7 @@ module.exports = {
   streamBlueGreenWatcherLogs,
   terminateExistingWatcher,
   waitForDockerDaemonRecovery,
+  waitForCronRunnerHeartbeat,
   createPendingDeploymentEntry,
   createQuietRunCommand,
   hasPersistedPendingDeployRequest,

@@ -1173,6 +1173,17 @@ test('validateDockerProdCompose requires watcher companion healthchecks', () => 
   assert.match(errors, /web-cron-runner.*healthcheck/u);
 });
 
+test('validateDockerProdCompose requires cron runner heartbeat healthcheck', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '/usr/local/bin/cron-runner-entrypoint.js',
+    '/bin/true'
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /cron-runner-entrypoint\.js --healthcheck/u);
+});
+
 test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
     '      - ..:' +

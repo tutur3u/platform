@@ -1180,7 +1180,6 @@ function validateDockerProdCompose(composeContent) {
     '      - PORT=8000\n      - SUPABASE_URL',
     'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=\'\'["PING"]\'\' http://127.0.0.1:80/ | grep -q \'\'"PONG"\'\'',
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
-    "ps | grep -q '[w]atch-web-crons.js'",
     '      - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: false',
     '    - BACKEND_INTERNAL_TOKEN',
@@ -1403,6 +1402,19 @@ function validateDockerProdCompose(composeContent) {
         `docker-compose.web.prod.yml service ${serviceName} must mount /var/run/docker.sock so watcher and cron recovery can manage the production Compose fleet.`
       );
     }
+  }
+
+  if (
+    !serviceBlockIncludes(
+      composeContent,
+      'web-cron-runner',
+      '/usr/local/bin/cron-runner-entrypoint.js'
+    ) ||
+    !serviceBlockIncludes(composeContent, 'web-cron-runner', '--healthcheck')
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml service web-cron-runner must use cron-runner-entrypoint.js --healthcheck so stale cron heartbeats mark the service unhealthy.'
+    );
   }
 
   if (!topLevelBlockHasRestartUnlessStopped(composeContent, 'x-web-service')) {

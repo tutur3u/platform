@@ -24,6 +24,8 @@ const DEFAULT_INTERNAL_WEB_API_ORIGIN = 'http://web-proxy:7803';
 const DEFAULT_INTERVAL_MS = 30_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 const DEFAULT_RETENTION_DAYS = 14;
+const DEFAULT_STATUS_HEARTBEAT_INTERVAL_MS = 15_000;
+const DEFAULT_DOCKER_TELEMETRY_TIMEOUT_MS = 10_000;
 const CRON_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web', 'cron');
 const CRON_CONTROL_DIR = path.join(
   ROOT_DIR,
@@ -87,6 +89,34 @@ function readJsonFile(filePath, fallback, fsImpl = fs) {
 function writeJsonFile(filePath, value, fsImpl = fs) {
   ensureDir(path.dirname(filePath), fsImpl);
   fsImpl.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function getPositiveIntegerEnv(env, name, fallback) {
+  const value = env?.[name];
+
+  if (value == null || String(value).trim() === '') {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(String(value).trim(), 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getStatusHeartbeatIntervalMs(env = process.env) {
+  return getPositiveIntegerEnv(
+    env,
+    'PLATFORM_CRON_STATUS_HEARTBEAT_INTERVAL_MS',
+    DEFAULT_STATUS_HEARTBEAT_INTERVAL_MS
+  );
+}
+
+function getDockerTelemetryTimeoutMs(env = process.env) {
+  return getPositiveIntegerEnv(
+    env,
+    'PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS',
+    DEFAULT_DOCKER_TELEMETRY_TIMEOUT_MS
+  );
 }
 
 function normalizeWatcherRecoveryRequest(request) {
@@ -282,6 +312,8 @@ function runCommand(command, args, options = {}) {
 
     let stdout = '';
     let stderr = '';
+    let timedOut = false;
+    let timeout = null;
 
     child.stdout?.on('data', (chunk) => {
       stdout += chunk;
@@ -291,13 +323,25 @@ function runCommand(command, args, options = {}) {
       stderr += chunk;
     });
 
-    child.on('error', reject);
+    if (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGTERM');
+      }, options.timeoutMs);
+    }
+
+    child.on('error', (error) => {
+      if (timeout) clearTimeout(timeout);
+      reject(error);
+    });
     child.on('close', (code, signal) => {
+      if (timeout) clearTimeout(timeout);
       resolve({
         code: code ?? 1,
         signal: signal ?? null,
         stderr,
         stdout,
+        timedOut,
       });
     });
   });
@@ -423,6 +467,7 @@ async function listWebContainers({
       {
         env: composeEnv,
         stdio: 'pipe',
+        timeoutMs: getDockerTelemetryTimeoutMs(env),
       }
     );
 
@@ -461,6 +506,7 @@ async function readRouteConsoleLogs({
       {
         env,
         stdio: 'pipe',
+        timeoutMs: getDockerTelemetryTimeoutMs(env),
       }
     );
 
@@ -584,6 +630,59 @@ function upsertRunStatus(paths, runRecord, fsImpl = fs) {
   );
 }
 
+function touchCronStatus(paths, patch = {}, fsImpl = fs) {
+  const current = readJsonFile(paths.statusFile, {}, fsImpl);
+
+  writeJsonFile(
+    paths.statusFile,
+    {
+      ...current,
+      ...patch,
+      status: 'live',
+      updatedAt: Date.now(),
+    },
+    fsImpl
+  );
+}
+
+function createCronStatusHeartbeat({
+  env = process.env,
+  execution,
+  fsImpl = fs,
+  job,
+  paths,
+  source,
+}) {
+  const intervalMs = getStatusHeartbeatIntervalMs(env);
+  const heartbeat = () =>
+    touchCronStatus(
+      paths,
+      {
+        activeExecution: {
+          id: execution.id,
+          jobId: job.id,
+          path: job.path,
+          scheduledAt: execution.scheduledAt ?? null,
+          source,
+          startedAt: execution.startedAt,
+          status: 'processing',
+        },
+      },
+      fsImpl
+    );
+
+  heartbeat();
+
+  const timer = setInterval(heartbeat, intervalMs);
+  timer.unref?.();
+
+  return {
+    stop() {
+      clearInterval(timer);
+    },
+  };
+}
+
 function createManualRunLogRefresher({
   env,
   execution,
@@ -704,6 +803,14 @@ async function executeJob({
     status: 'failed',
     triggerId,
   };
+  const statusHeartbeat = createCronStatusHeartbeat({
+    env,
+    execution,
+    fsImpl,
+    job,
+    paths,
+    source,
+  });
   const manualRunRefresher =
     source === 'manual' && triggerRequest
       ? createManualRunLogRefresher({
@@ -745,6 +852,7 @@ async function executeJob({
   } finally {
     execution.endedAt = Date.now();
     execution.durationMs = Math.max(0, execution.endedAt - execution.startedAt);
+    statusHeartbeat.stop();
     manualRunRefresher?.stop();
     execution.consoleLogs = await readRouteConsoleLogs({
       env,
@@ -909,6 +1017,7 @@ async function runCronCycle({
   ensureDir(paths.runtimeDir, fsImpl);
   ensureDir(paths.executionDir, fsImpl);
   ensureDir(paths.runRequestsDir, fsImpl);
+  touchCronStatus(paths, { intervalMs }, fsImpl);
   await processWatcherRecoveryRequest({
     env,
     fsImpl,

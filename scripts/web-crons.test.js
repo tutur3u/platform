@@ -81,6 +81,7 @@ test('listWebContainers uses the selected TanStack frontend lanes', async () => 
   const containers = await listWebContainers({
     env: {
       DOCKER_WEB_FRONTEND: 'tanstack',
+      PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS: '1234',
       PATH: 'test-path',
     },
     run: async (command, args, options) => {
@@ -108,6 +109,7 @@ test('listWebContainers uses the selected TanStack frontend lanes', async () => 
     false
   );
   assert.equal(calls[0].options.env.DOCKER_WEB_FRONTEND, 'tanstack');
+  assert.equal(calls[0].options.timeoutMs, 1234);
 });
 
 test('listWebContainers rejects unknown frontend values before Docker probes', async () => {
@@ -193,6 +195,64 @@ test('runCronCycle records an execution with route console logs and advances sta
       'Error loading scheduled route'
     );
     assert.equal(second.executions.length, 0);
+  } finally {
+    Date.now = originalNow;
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runCronCycle refreshes cron status while a scheduled execution is in flight', async () => {
+  const tempDir = makeTempDir('web-crons-scheduled-live-');
+  const configPath = path.join(tempDir, 'cron.config.json');
+  const originalNow = Date.now;
+  const paths = getCronPaths({
+    controlDir: path.join(tempDir, 'control'),
+    runtimeDir: path.join(tempDir, 'runtime'),
+  });
+  let resolveFetch;
+
+  try {
+    writeJson(configPath, createCronConfig());
+    writeJson(paths.stateFile, {
+      lastScheduledAtByJobId: {
+        'test-job': Date.parse('2026-01-01T00:00:00.000Z'),
+      },
+    });
+    Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
+
+    const pending = runCronCycle({
+      configPath,
+      env: {
+        CRON_SECRET: 'secret',
+        INTERNAL_WEB_API_ORIGIN: 'http://web',
+        PLATFORM_CRON_STATUS_HEARTBEAT_INTERVAL_MS: '100',
+      },
+      fetchImpl: () =>
+        new Promise((resolve) => {
+          resolveFetch = () =>
+            resolve({
+              ok: true,
+              status: 200,
+              text: async () => 'ok',
+            });
+        }),
+      paths,
+      run: async () => ({ code: 0, stderr: '', stdout: '' }),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const statusDuringRun = JSON.parse(
+      fs.readFileSync(paths.statusFile, 'utf8')
+    );
+    assert.equal(statusDuringRun.status, 'live');
+    assert.equal(statusDuringRun.activeExecution.jobId, 'test-job');
+    assert.equal(statusDuringRun.activeExecution.source, 'scheduled');
+
+    resolveFetch();
+    const result = await pending;
+
+    assert.equal(result.executions.length, 1);
   } finally {
     Date.now = originalNow;
     fs.rmSync(tempDir, { force: true, recursive: true });
