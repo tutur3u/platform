@@ -11,6 +11,7 @@ import type {
   CronRunnerRecoveryRequest,
   CronRunRecord,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
+import parser from 'cron-parser';
 
 const DEFAULT_CRON_STATUS_STALE_MS = 120_000;
 const CRON_RUNNER_RECOVERY_REQUEST_FILE = 'cron-runner-recovery.request.json';
@@ -399,6 +400,26 @@ function getEffectiveJobEnabled(
   return getJobControlEnabled(control, job.id) ?? job.enabled;
 }
 
+function getFutureTimestamp(value: unknown, now: number) {
+  return typeof value === 'number' && Number.isFinite(value) && value > now
+    ? value
+    : null;
+}
+
+function getNextCronRunAt(schedule: string, now: number) {
+  try {
+    const interval = parser.parse(schedule, {
+      currentDate: new Date(now),
+      tz: 'UTC',
+    });
+    const nextRunAt = interval.next().toDate().getTime();
+
+    return Number.isFinite(nextRunAt) ? nextRunAt : null;
+  } catch {
+    return null;
+  }
+}
+
 function readQueuedRunRequests(
   jobs: CronMonitoringJob[],
   paths = getCronMonitoringPaths(),
@@ -508,16 +529,28 @@ export function readCronMonitoringSnapshot({
   const persistedJobs = Array.isArray(persistedStatus.jobs)
     ? persistedStatus.jobs
     : [];
-  const jobs = config.jobs.map((job) => ({
-    ...job,
-    ...(persistedJobs.find((candidate) => candidate.id === job.id) ?? {}),
-  }));
-  const effectiveJobs = jobs.map((job) => ({
-    ...job,
-    configuredEnabled: job.configuredEnabled ?? job.enabled,
-    controlEnabled: getJobControlEnabled(control, job.id),
-    enabled: getEffectiveJobEnabled(job, control),
-  }));
+  const effectiveJobs = config.jobs.map((configJob) => {
+    const persistedJob: Partial<CronMonitoringJob> =
+      persistedJobs.find((candidate) => candidate.id === configJob.id) ?? {};
+    const enabled = getEffectiveJobEnabled(configJob, control);
+    const derivedNextRunAt = enabled
+      ? getNextCronRunAt(configJob.schedule, now)
+      : null;
+    const persistedNextRunAt = getFutureTimestamp(persistedJob.nextRunAt, now);
+
+    return {
+      ...configJob,
+      ...persistedJob,
+      configuredEnabled: configJob.configuredEnabled,
+      controlEnabled: getJobControlEnabled(control, configJob.id),
+      description: configJob.description,
+      enabled,
+      id: configJob.id,
+      nextRunAt: enabled ? (derivedNextRunAt ?? persistedNextRunAt) : null,
+      path: configJob.path,
+      schedule: configJob.schedule,
+    };
+  });
   const persistedRuns = Array.isArray(persistedStatus.runs)
     ? (persistedStatus.runs as CronRunRecord[])
     : [];

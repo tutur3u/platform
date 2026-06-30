@@ -36,6 +36,38 @@ function writeCronConfig(configPath: string) {
   );
 }
 
+function createCronMonitoringPaths(tempDir: string) {
+  const configFile = path.join(tempDir, 'cron.config.json');
+  const runtimeDir = path.join(tempDir, 'runtime');
+  const controlDir = path.join(tempDir, 'control');
+
+  return {
+    configFile,
+    controlDir,
+    controlFile: path.join(controlDir, 'cron-control.json'),
+    dockerControlStatusFile: path.join(
+      runtimeDir,
+      '..',
+      'docker-control',
+      'status.json'
+    ),
+    executionDir: path.join(runtimeDir, 'executions'),
+    runnerRecoveryRequestFile: path.join(
+      controlDir,
+      'cron-runner-recovery.request.json'
+    ),
+    runRequestsDir: path.join(controlDir, 'cron-run-requests'),
+    runtimeDir,
+    statusFile: path.join(runtimeDir, 'status.json'),
+    watcherStatusFile: path.join(
+      runtimeDir,
+      '..',
+      'watch',
+      'blue-green-auto-deploy.status.json'
+    ),
+  };
+}
+
 describe('readCronMonitoringSnapshot', () => {
   afterEach(() => {
     restoreEnv();
@@ -190,6 +222,106 @@ describe('readCronMonitoringSnapshot', () => {
       ]);
       expect(snapshot.overview.processingRuns).toBe(1);
       expect(snapshot.overview.queuedRuns).toBe(1);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('derives future next-run metadata when persisted schedule fields are stale', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-next-run-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          jobs: [
+            {
+              description: 'Stale persisted description.',
+              enabled: true,
+              id: 'payment-products',
+              nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+              path: '/api/cron/old-payment-products',
+              schedule: '0 0 * * *',
+            },
+          ],
+          nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-01-01T00:15:30.000Z'),
+        paths,
+      });
+
+      expect(snapshot.status).toBe('stale');
+      expect(snapshot.nextRunAt).toBe(Date.parse('2026-01-01T12:00:00.000Z'));
+      expect(snapshot.jobs[0]).toMatchObject({
+        description: 'Synchronize payment products.',
+        enabled: true,
+        nextRunAt: Date.parse('2026-01-01T12:00:00.000Z'),
+        path: '/api/cron/payment/products',
+        schedule: '0 */12 * * *',
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('keeps disabled jobs out of next-run metadata even with stale persisted values', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-disabled-next-run-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.mkdirSync(paths.controlDir, { recursive: true });
+      fs.writeFileSync(
+        paths.controlFile,
+        JSON.stringify({
+          enabled: true,
+          jobs: {
+            'payment-products': {
+              enabled: false,
+              updatedAt: 1000,
+              updatedBy: 'user-1',
+              updatedByEmail: null,
+            },
+          },
+          updatedAt: 1000,
+        })
+      );
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          jobs: [
+            {
+              enabled: true,
+              id: 'payment-products',
+              nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+            },
+          ],
+          nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-01-01T00:15:30.000Z'),
+        paths,
+      });
+
+      expect(snapshot.nextRunAt).toBeNull();
+      expect(snapshot.jobs[0]?.enabled).toBe(false);
+      expect(snapshot.jobs[0]?.nextRunAt).toBeNull();
+      expect(snapshot.status).toBe('stale');
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }

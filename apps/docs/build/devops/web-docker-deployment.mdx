@@ -962,6 +962,14 @@ request and processes it immediately with a force-recreate of
 `cron-runner-recovered`; if the Compose restart fails, the request remains on
 disk with `lastError` and the watcher backs off before retrying.
 
+Cron runner heartbeats refresh both runner liveness and schedule metadata. When
+the runner starts a cycle or keeps a long execution alive, it recomputes each
+enabled job's next future run from `apps/web/cron.config.json`, current runtime
+control overrides, and UTC time. The monitoring API also derives future
+`nextRunAt` values from config/control if an older persisted status file still
+contains stale schedule fields, while preserving the separate stale/live runner
+health signal from `status.json.updatedAt`.
+
 `web-cron-runner` also protects itself. The entrypoint restarts the child
 `scripts/watch-web-crons.js` process when the status heartbeat is missing,
 invalid, or stale after startup grace, and the Docker healthcheck calls the same
@@ -1017,7 +1025,9 @@ Runtime cron telemetry is intentionally file-based and local to the host:
   `processing`, and a final `success` / `failed` / `timeout` / `skipped` state.
   While any run is processing, the runner refreshes this heartbeat and, for
   manual runs, captured route console logs so the monitoring UI can show
-  near-realtime status and log updates.
+  near-realtime status and log updates. Heartbeat refreshes also recompute
+  future per-job and aggregate `nextRunAt` values so a recovered runner does not
+  keep serving stale schedule badges.
 - `tmp/docker-web/cron/state.json` for restart-safe last-run markers.
 - `tmp/docker-web/cron/executions/*.jsonl` for per-run route response,
   duration, status, and captured web-container console logs.

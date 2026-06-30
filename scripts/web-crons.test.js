@@ -201,6 +201,64 @@ test('runCronCycle records an execution with route console logs and advances sta
   }
 });
 
+test('runCronCycle refreshes stale next-run metadata without waiting for a due job', async () => {
+  const tempDir = makeTempDir('web-crons-cycle-next-run-');
+  const configPath = path.join(tempDir, 'cron.config.json');
+  const originalNow = Date.now;
+  const paths = getCronPaths({
+    controlDir: path.join(tempDir, 'control'),
+    runtimeDir: path.join(tempDir, 'runtime'),
+  });
+
+  try {
+    writeJson(configPath, createCronConfig());
+    writeJson(paths.stateFile, {
+      lastScheduledAtByJobId: {
+        'test-job': Date.parse('2026-01-01T00:15:00.000Z'),
+      },
+    });
+    writeJson(paths.statusFile, {
+      jobs: [
+        {
+          ...createCronConfig().jobs[0],
+          configuredEnabled: true,
+          controlEnabled: null,
+          enabled: true,
+          failureStreak: 0,
+          lastExecution: null,
+          lastScheduledAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+        },
+      ],
+      nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+      status: 'live',
+      updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+    });
+    Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
+
+    const result = await runCronCycle({
+      configPath,
+      env: { CRON_SECRET: 'secret', INTERNAL_WEB_API_ORIGIN: 'http://web' },
+      fetchImpl: async () => {
+        throw new Error('fetch should not run');
+      },
+      paths,
+      run: async () => ({ code: 0, stderr: '', stdout: '' }),
+    });
+
+    const status = JSON.parse(fs.readFileSync(paths.statusFile, 'utf8'));
+    assert.equal(result.executions.length, 0);
+    assert.equal(status.nextRunAt, Date.parse('2026-01-01T00:30:00.000Z'));
+    assert.equal(
+      status.jobs[0].nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+  } finally {
+    Date.now = originalNow;
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runCronCycle refreshes cron status while a scheduled execution is in flight', async () => {
   const tempDir = makeTempDir('web-crons-scheduled-live-');
   const configPath = path.join(tempDir, 'cron.config.json');
@@ -217,6 +275,23 @@ test('runCronCycle refreshes cron status while a scheduled execution is in fligh
       lastScheduledAtByJobId: {
         'test-job': Date.parse('2026-01-01T00:00:00.000Z'),
       },
+    });
+    writeJson(paths.statusFile, {
+      jobs: [
+        {
+          ...createCronConfig().jobs[0],
+          configuredEnabled: true,
+          controlEnabled: null,
+          enabled: true,
+          failureStreak: 0,
+          lastExecution: null,
+          lastScheduledAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+        },
+      ],
+      nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+      status: 'live',
+      updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
     });
     Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
 
@@ -248,6 +323,14 @@ test('runCronCycle refreshes cron status while a scheduled execution is in fligh
     assert.equal(statusDuringRun.status, 'live');
     assert.equal(statusDuringRun.activeExecution.jobId, 'test-job');
     assert.equal(statusDuringRun.activeExecution.source, 'scheduled');
+    assert.equal(
+      statusDuringRun.nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+    assert.equal(
+      statusDuringRun.jobs[0].nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
 
     resolveFetch();
     const result = await pending;
@@ -423,6 +506,7 @@ test('processWatcherRecoveryRequest recreates the watcher and clears the request
 test('runCronCycle exposes manual run processing status before completion', async () => {
   const tempDir = makeTempDir('web-crons-manual-live-');
   const configPath = path.join(tempDir, 'cron.config.json');
+  const originalNow = Date.now;
   const paths = getCronPaths({
     controlDir: path.join(tempDir, 'control'),
     runtimeDir: path.join(tempDir, 'runtime'),
@@ -436,6 +520,24 @@ test('runCronCycle exposes manual run processing status before completion', asyn
       jobId: 'test-job',
       requestedAt: 1000,
     });
+    writeJson(paths.statusFile, {
+      jobs: [
+        {
+          ...createCronConfig().jobs[0],
+          configuredEnabled: true,
+          controlEnabled: null,
+          enabled: true,
+          failureStreak: 0,
+          lastExecution: null,
+          lastScheduledAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+        },
+      ],
+      nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+      status: 'live',
+      updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+    });
+    Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
 
     const pending = runCronCycle({
       configPath,
@@ -460,6 +562,14 @@ test('runCronCycle exposes manual run processing status before completion', asyn
     );
     assert.equal(statusDuringRun.runs[0].id, 'request-1');
     assert.equal(statusDuringRun.runs[0].status, 'processing');
+    assert.equal(
+      statusDuringRun.nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+    assert.equal(
+      statusDuringRun.jobs[0].nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
 
     resolveFetch();
     const result = await pending;
@@ -470,6 +580,7 @@ test('runCronCycle exposes manual run processing status before completion', asyn
     );
     assert.equal(statusAfterRun.runs[0].status, 'success');
   } finally {
+    Date.now = originalNow;
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
 });

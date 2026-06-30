@@ -603,7 +603,7 @@ function buildRunRecordFromRequest({ execution = null, job, request, status }) {
   };
 }
 
-function upsertRunStatus(paths, runRecord, fsImpl = fs) {
+function upsertRunStatus(paths, runRecord, fsImpl = fs, scheduleContext) {
   const current = readJsonFile(paths.statusFile, {}, fsImpl);
   const currentRuns = Array.isArray(current.runs) ? current.runs : [];
   const runs = [
@@ -619,30 +619,63 @@ function upsertRunStatus(paths, runRecord, fsImpl = fs) {
     })
     .slice(0, 25);
 
-  writeJsonFile(
-    paths.statusFile,
-    {
-      ...current,
-      runs,
-      updatedAt: Date.now(),
-    },
-    fsImpl
-  );
+  touchCronStatus(paths, { runs }, fsImpl, scheduleContext);
 }
 
-function touchCronStatus(paths, patch = {}, fsImpl = fs) {
-  const current = readJsonFile(paths.statusFile, {}, fsImpl);
+function refreshCronScheduleMetadata(status, context) {
+  if (!context?.config || !context?.control || !context?.state) {
+    return status;
+  }
 
-  writeJsonFile(
-    paths.statusFile,
+  const now = context.now ?? Date.now();
+  const currentJobs = Array.isArray(status.jobs) ? status.jobs : [];
+  const jobs = context.config.jobs.map((job) => {
+    const currentJob =
+      currentJobs.find((candidate) => candidate?.id === job.id) ?? {};
+    const enabled = getEffectiveJobEnabled(job, context.control);
+
+    return {
+      ...currentJob,
+      ...job,
+      configuredEnabled: job.enabled,
+      controlEnabled: getJobControlEnabled(context.control, job.id),
+      enabled,
+      lastScheduledAt:
+        context.state.lastScheduledAtByJobId?.[job.id] ??
+        currentJob.lastScheduledAt ??
+        null,
+      nextRunAt: enabled
+        ? getNextScheduledAt(job.schedule, now, context.rootDir)
+        : null,
+    };
+  });
+  const nextRunAt =
+    jobs
+      .map((job) => job.nextRunAt)
+      .filter((value) => typeof value === 'number')
+      .sort((left, right) => left - right)[0] ?? null;
+
+  return {
+    ...status,
+    jobs,
+    nextRunAt,
+  };
+}
+
+function touchCronStatus(paths, patch = {}, fsImpl = fs, scheduleContext) {
+  const now = Date.now();
+  const current = readJsonFile(paths.statusFile, {}, fsImpl);
+  const nextStatus = refreshCronScheduleMetadata(
     {
       ...current,
       ...patch,
       status: 'live',
-      updatedAt: Date.now(),
+      updatedAt: now,
     },
-    fsImpl
+    scheduleContext ? { ...scheduleContext, now } : null
   );
+
+  writeJsonFile(paths.statusFile, nextStatus, fsImpl);
 }
 
 function createCronStatusHeartbeat({
@@ -651,6 +684,7 @@ function createCronStatusHeartbeat({
   fsImpl = fs,
   job,
   paths,
+  scheduleContext,
   source,
 }) {
   const intervalMs = getStatusHeartbeatIntervalMs(env);
@@ -668,7 +702,8 @@ function createCronStatusHeartbeat({
           status: 'processing',
         },
       },
-      fsImpl
+      fsImpl,
+      scheduleContext
     );
 
   heartbeat();
@@ -691,6 +726,7 @@ function createManualRunLogRefresher({
   paths,
   request,
   run,
+  scheduleContext,
 }) {
   if (!request?.id) {
     return {
@@ -728,7 +764,8 @@ function createManualRunLogRefresher({
             request,
             status: 'processing',
           }),
-          fsImpl
+          fsImpl,
+          scheduleContext
         );
       }
     } finally {
@@ -744,7 +781,8 @@ function createManualRunLogRefresher({
       request,
       status: 'processing',
     }),
-    fsImpl
+    fsImpl,
+    scheduleContext
   );
 
   timer = setInterval(() => {
@@ -769,6 +807,7 @@ async function executeJob({
   job,
   paths,
   run = runCommand,
+  scheduleContext,
   scheduledAt = null,
   source,
   triggerId = null,
@@ -809,6 +848,7 @@ async function executeJob({
     fsImpl,
     job,
     paths,
+    scheduleContext,
     source,
   });
   const manualRunRefresher =
@@ -821,6 +861,7 @@ async function executeJob({
           paths,
           request: triggerRequest,
           run,
+          scheduleContext,
         })
       : null;
 
@@ -870,7 +911,8 @@ async function executeJob({
           request: triggerRequest,
           status: getExecutionRunStatus(execution),
         }),
-        fsImpl
+        fsImpl,
+        scheduleContext
       );
     }
   }
@@ -1017,14 +1059,6 @@ async function runCronCycle({
   ensureDir(paths.runtimeDir, fsImpl);
   ensureDir(paths.executionDir, fsImpl);
   ensureDir(paths.runRequestsDir, fsImpl);
-  touchCronStatus(paths, { intervalMs }, fsImpl);
-  await processWatcherRecoveryRequest({
-    env,
-    fsImpl,
-    paths,
-    rootDir,
-    run,
-  });
 
   const now = Date.now();
   const config = readCronConfig({ configPath, fsImpl });
@@ -1035,9 +1069,38 @@ async function runCronCycle({
     rootDir,
     state: readJsonFile(paths.stateFile, {}, fsImpl),
   });
+  const currentStatus = readJsonFile(paths.statusFile, {}, fsImpl);
+  writeJsonFile(
+    paths.statusFile,
+    buildStatus({
+      config,
+      control,
+      executions: readExecutionRecords(paths, fsImpl),
+      intervalMs,
+      now: Date.now(),
+      rootDir,
+      runs: Array.isArray(currentStatus.runs) ? currentStatus.runs : [],
+      state,
+    }),
+    fsImpl
+  );
+  await processWatcherRecoveryRequest({
+    env,
+    fsImpl,
+    paths,
+    rootDir,
+    run,
+  });
+
   const executions = [];
   const requests =
     control.enabled === false ? [] : readRunRequests(paths, fsImpl);
+  const getScheduleContext = () => ({
+    config,
+    control,
+    rootDir,
+    state,
+  });
 
   for (const request of requests) {
     const job = config.jobs.find((candidate) => candidate.id === request.jobId);
@@ -1064,7 +1127,8 @@ async function runCronCycle({
           request,
           status: 'skipped',
         }),
-        fsImpl
+        fsImpl,
+        getScheduleContext()
       );
       removeRunRequest(request, fsImpl);
       continue;
@@ -1078,6 +1142,7 @@ async function runCronCycle({
         job,
         paths,
         run,
+        scheduleContext: getScheduleContext(),
         source: 'manual',
         triggerId: request.id,
         triggerRequest: request,
@@ -1109,6 +1174,7 @@ async function runCronCycle({
           job: due.job,
           paths,
           run,
+          scheduleContext: getScheduleContext(),
           scheduledAt: due.scheduledAt,
           source: 'scheduled',
         })
