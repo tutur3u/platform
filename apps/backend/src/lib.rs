@@ -116,6 +116,7 @@ mod infrastructure_catalog_exports;
 mod infrastructure_content_exports;
 #[cfg(test)]
 mod infrastructure_content_exports_test;
+mod infrastructure_cron_whitelist_domain_domain;
 mod infrastructure_cron_whitelist_domains;
 mod infrastructure_entity_creation_limits;
 mod infrastructure_external_apps;
@@ -467,6 +468,7 @@ mod workspaces_wsid_chat_conversations_conversationid_messages;
 mod workspaces_wsid_consolidate_users;
 mod workspaces_wsid_courses;
 mod workspaces_wsid_crawlers;
+mod workspaces_wsid_cron_jobs;
 mod workspaces_wsid_cron_jobs_jobid;
 mod workspaces_wsid_datasets_datasetid_rows;
 mod workspaces_wsid_documents;
@@ -1057,6 +1059,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_22(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_23(config, request, outbound).await {
         return response;
     }
 
@@ -4253,6 +4259,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
         || current_user_default_workspace::should_buffer_request_body(method, path)
         || current_user_calendar_settings::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
+        || infrastructure_cron_whitelist_domain_domain::should_buffer_request_body(method, path)
 }
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
@@ -7645,6 +7652,27 @@ async fn dispatch_chunk_22(
             config, request, outbound,
         )
         .await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_23(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        infrastructure_cron_whitelist_domain_domain::handle_infrastructure_cron_whitelist_domain_domain_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_cron_jobs::handle_workspaces_wsid_cron_jobs_route(config, request, outbound)
+            .await
     {
         return Some(response);
     }

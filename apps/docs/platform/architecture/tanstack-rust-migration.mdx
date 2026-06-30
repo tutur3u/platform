@@ -360,6 +360,37 @@ warnings`, `cargo test --locked`, and the `wasm32-unknown-unknown` worker check)
 plus a runtime dual coverage probe that asserts every migrated `GET` is served by
 the dispatcher (COVER) and every un-ported method still falls through (FRESH).
 
+### Worker-incompatible routes (native-backend or Next.js only)
+
+Some legacy routes cannot run on the **Cloudflare Worker** build of
+`apps/backend` because the wasm sandbox has no arbitrary sockets, no filesystem,
+and no Redis/Postgres drivers. They split into three buckets:
+
+- **Native-backend portable (deferred, needs secrets wired):** the scheduler
+  `/api/cron/*` jobs that just "call an external API + write Supabase" —
+  `finance/exchange-rates`, `inventory/polar-product-sync`, `payment/{orders,products,subscriptions}`,
+  `ai/sync-models`, `tasks/generate-embeddings`, `calendar/{provider-sync,smart-schedule}`,
+  `process-{post-email-queue,topic-announcement-queue,notification-batches}`, and
+  `hive/simulate`. These ARE portable to the **native Rust container** target
+  (`--features native`, which can do outbound HTTP and reach external DBs) once
+  each job's provider secret/connection is added to `BackendConfig` +
+  `wrangler.jsonc` secrets. They are not portable to the wasm Worker build. Until
+  the secrets are wired they stay on Next.js (`Bearer CRON_SECRET`).
+- **Host/infra-coupled (stay where the runner lives):** the cron-runner
+  *monitoring* surface — `monitoring/cron/{control,run,runner-recovery,executions}`,
+  plus `cron/infrastructure/{docker-recovery-alerts,sample-resources}` — reads a
+  filesystem archive / controls the deployment host (Docker control), and
+  `cron/infrastructure/sync-trust-cache` needs Redis. These belong with whatever
+  orchestrates the runner, not a stateless handler.
+- **Transport that can't be a single handler:** `/api/trpc/[trpc]` is a catch-all
+  that dispatches the entire tRPC procedure router (`appRouter`). The transport
+  stays on Next.js; its data access migrates incrementally as individual
+  procedures move behind `packages/internal-api` / the Rust backend.
+
+Record the chosen disposition for each in
+`apps/tanstack-web/migration/route-overrides.json` with an evidence note rather
+than leaving them as untriaged `legacy-next` backlog.
+
 Current inventory:
 
 - `316` pages
