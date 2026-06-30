@@ -93,21 +93,27 @@ export async function handleInventorySquareWebhookEvent(
   }
 
   if (type.startsWith('terminal.checkout.')) {
+    if (!context.environment || !context.wsId) return false;
     const checkout = getObject(event, 'checkout');
     if (!checkout) return false;
     return syncInventorySquareTerminalCheckout(
       checkout as SquareApiTerminalCheckout,
       {
         eventId: event.event_id,
+        environment: context.environment,
+        wsId: context.wsId,
       }
     );
   }
 
   if (type.startsWith('payment.')) {
+    if (!context.environment || !context.wsId) return false;
     const payment = getObject(event, 'payment');
     if (!payment) return false;
     return syncInventorySquarePayment(payment as SquareApiPayment, {
       eventId: event.event_id,
+      environment: context.environment,
+      wsId: context.wsId,
     });
   }
 

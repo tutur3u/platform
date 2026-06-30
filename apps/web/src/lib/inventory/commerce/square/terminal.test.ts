@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   releaseCheckout: vi.fn(),
   rpc: vi.fn(),
   selectEq: vi.fn(),
+  selectSecondEq: vi.fn(),
+  selectThirdEq: vi.fn(),
   updateFirstEq: vi.fn(),
   updateSecondEq: vi.fn(),
 }));
@@ -114,7 +116,9 @@ describe('Square terminal checkout sync', () => {
       wsId: 'ws-1',
     });
     mocks.getPrivateAdmin.mockResolvedValue(privateAdminMock());
-    mocks.selectEq.mockReturnValue({ maybeSingle: mocks.maybeSingle });
+    mocks.selectEq.mockReturnValue({ eq: mocks.selectSecondEq });
+    mocks.selectSecondEq.mockReturnValue({ eq: mocks.selectThirdEq });
+    mocks.selectThirdEq.mockReturnValue({ maybeSingle: mocks.maybeSingle });
     mocks.privateUpdate.mockReturnValue({ eq: mocks.updateFirstEq });
     mocks.updateFirstEq.mockReturnValue({ eq: mocks.updateSecondEq });
     mocks.updateSecondEq.mockResolvedValue({ error: null });
@@ -187,17 +191,28 @@ describe('Square terminal checkout sync', () => {
     });
 
     await expect(
-      syncInventorySquareTerminalCheckout({
-        device_options: { device_id: 'device-1' },
-        id: 'terminal-checkout-1',
-        order_id: 'order-1',
-        status: 'CANCELED',
-      } as never)
+      syncInventorySquareTerminalCheckout(
+        {
+          device_options: { device_id: 'device-1' },
+          id: 'terminal-checkout-1',
+          order_id: 'order-1',
+          status: 'CANCELED',
+        } as never,
+        {
+          environment: 'production',
+          wsId: 'ws-1',
+        }
+      )
     ).resolves.toBe(true);
 
     expect(mocks.selectEq).toHaveBeenCalledWith(
       'square_terminal_checkout_id',
       'terminal-checkout-1'
+    );
+    expect(mocks.selectSecondEq).toHaveBeenCalledWith('ws_id', 'ws-1');
+    expect(mocks.selectThirdEq).toHaveBeenCalledWith(
+      'square_environment',
+      'production'
     );
     expect(mocks.updateFirstEq).toHaveBeenCalledWith('id', 'checkout-1');
     expect(mocks.updateSecondEq).toHaveBeenCalledWith('ws_id', 'ws-1');
@@ -217,7 +232,11 @@ describe('Square terminal checkout sync', () => {
           id: 'terminal-checkout-1',
           status: 'CANCEL_REQUESTED',
         } as never,
-        { eventId: 'webhook-event-1' }
+        {
+          environment: 'production',
+          eventId: 'webhook-event-1',
+          wsId: 'ws-1',
+        }
       )
     ).resolves.toBe(true);
 
@@ -237,13 +256,19 @@ describe('Square terminal checkout sync', () => {
     });
 
     await expect(
-      syncInventorySquareTerminalCheckout({
-        device_options: { device_id: 'device-1' },
-        id: 'terminal-checkout-1',
-        order_id: 'order-1',
-        payment_ids: ['payment-1'],
-        status: 'COMPLETED',
-      } as never)
+      syncInventorySquareTerminalCheckout(
+        {
+          device_options: { device_id: 'device-1' },
+          id: 'terminal-checkout-1',
+          order_id: 'order-1',
+          payment_ids: ['payment-1'],
+          status: 'COMPLETED',
+        } as never,
+        {
+          environment: 'production',
+          wsId: 'ws-1',
+        }
+      )
     ).resolves.toBe(true);
 
     expect(mocks.rpc).toHaveBeenCalledWith(
@@ -267,15 +292,26 @@ describe('Square terminal checkout sync', () => {
     });
 
     await expect(
-      syncInventorySquarePayment({
-        id: 'payment-1',
-        order_id: 'order-1',
-        receipt_url: 'https://squareup.com/receipt',
-        status: 'COMPLETED',
-      } as never)
+      syncInventorySquarePayment(
+        {
+          id: 'payment-1',
+          order_id: 'order-1',
+          receipt_url: 'https://squareup.com/receipt',
+          status: 'COMPLETED',
+        } as never,
+        {
+          environment: 'production',
+          wsId: 'ws-1',
+        }
+      )
     ).resolves.toBe(true);
 
     expect(mocks.selectEq).toHaveBeenCalledWith('square_order_id', 'order-1');
+    expect(mocks.selectSecondEq).toHaveBeenCalledWith('ws_id', 'ws-1');
+    expect(mocks.selectThirdEq).toHaveBeenCalledWith(
+      'square_environment',
+      'production'
+    );
     expect(mocks.rpc).toHaveBeenCalledWith(
       'complete_inventory_checkout_session_square_payment',
       expect.objectContaining({

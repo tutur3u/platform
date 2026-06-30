@@ -168,7 +168,58 @@ describe('Square webhook verification', () => {
         order_id: 'order-1',
         status: 'COMPLETED',
       },
-      { eventId: 'event-payment-1' }
+      {
+        environment: 'sandbox',
+        eventId: 'event-payment-1',
+        wsId: 'ws-1',
+      }
+    );
+  });
+
+  it('dispatches verified terminal checkout events with workspace scope', async () => {
+    const rawBody = JSON.stringify({
+      data: {
+        object: {
+          checkout: {
+            id: 'terminal-checkout-1',
+            order_id: 'order-1',
+            status: 'COMPLETED',
+          },
+        },
+      },
+      event_id: 'event-terminal-1',
+      type: 'terminal.checkout.updated',
+    });
+    const requestUrl =
+      'https://web.example.com/api/v1/inventory/square/webhook/ws-1';
+
+    await expect(
+      processInventorySquareWebhook({
+        rawBody,
+        requestUrl,
+        signature: sign({
+          notificationUrl: requestUrl,
+          rawBody,
+          signatureKey: 'sq-webhook-secret',
+        }),
+        wsId: 'ws-1',
+      })
+    ).resolves.toEqual({
+      environment: 'sandbox',
+      eventType: 'terminal.checkout.updated',
+    });
+
+    expect(mocks.syncInventorySquareTerminalCheckout).toHaveBeenCalledWith(
+      {
+        id: 'terminal-checkout-1',
+        order_id: 'order-1',
+        status: 'COMPLETED',
+      },
+      {
+        environment: 'sandbox',
+        eventId: 'event-terminal-1',
+        wsId: 'ws-1',
+      }
     );
   });
 
@@ -330,7 +381,11 @@ describe('Square webhook verification', () => {
         order_id: 'order-2',
         status: 'COMPLETED',
       },
-      { eventId: 'event-payment-2' }
+      {
+        environment: 'production',
+        eventId: 'event-payment-2',
+        wsId: 'ws-1',
+      }
     );
   });
 });

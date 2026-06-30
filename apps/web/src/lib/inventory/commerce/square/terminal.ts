@@ -22,6 +22,7 @@ import { getPrivateAdmin, type SupabaseErrorLike } from './settings-store';
 import type {
   SquareApiPayment,
   SquareApiTerminalCheckout,
+  SquareEnvironment,
   SquareTerminalCheckoutResult,
 } from './types';
 
@@ -233,12 +234,27 @@ export async function cancelInventorySquareTerminalCheckout({
   return (await getCheckoutById(wsId, checkout.id)) ?? checkout;
 }
 
-async function findCheckoutBySquareField(field: string, value: string) {
+interface SquareWebhookSyncScope {
+  environment: SquareEnvironment;
+  wsId: string;
+}
+
+interface SquareWebhookSyncOptions extends SquareWebhookSyncScope {
+  eventId?: string | null;
+}
+
+async function findCheckoutBySquareField(
+  field: string,
+  value: string,
+  scope: SquareWebhookSyncScope
+) {
   const privateAdmin = await getPrivateAdmin();
   const { data, error } = (await privateAdmin
     .from('inventory_checkout_sessions' as never)
     .select('id, ws_id')
     .eq(field as never, value)
+    .eq('ws_id' as never, scope.wsId)
+    .eq('square_environment' as never, scope.environment)
     .maybeSingle()) as {
     data: { id: string; ws_id: string } | null;
     error: SupabaseErrorLike;
@@ -250,12 +266,13 @@ async function findCheckoutBySquareField(field: string, value: string) {
 
 export async function syncInventorySquareTerminalCheckout(
   squareCheckout: SquareApiTerminalCheckout,
-  options: { eventId?: string | null } = {}
+  options: SquareWebhookSyncOptions
 ) {
   if (!squareCheckout.id) return false;
   const checkout = await findCheckoutBySquareField(
     'square_terminal_checkout_id',
-    squareCheckout.id
+    squareCheckout.id,
+    options
   );
   if (!checkout) return false;
 
@@ -326,13 +343,17 @@ export async function completeSquareCheckoutPayment({
 
 export async function syncInventorySquarePayment(
   payment: SquareApiPayment,
-  options: { eventId?: string | null } = {}
+  options: SquareWebhookSyncOptions
 ) {
   if (!payment.id) return false;
   const orderId = payment.order_id ?? null;
   if (!orderId) return false;
 
-  const checkout = await findCheckoutBySquareField('square_order_id', orderId);
+  const checkout = await findCheckoutBySquareField(
+    'square_order_id',
+    orderId,
+    options
+  );
   if (!checkout) return false;
 
   const status = mapPaymentStatus(payment.status);
