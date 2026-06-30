@@ -412,6 +412,7 @@ mod workspaces_wallets_infinite;
 mod workspaces_wallets_walletid;
 mod workspaces_wallets_walletid_checkpoints;
 mod workspaces_wallets_walletid_credit_summary;
+mod workspaces_wsid;
 mod workspaces_wsid_api_keys;
 mod workspaces_wsid_api_keys_keyid;
 mod workspaces_wsid_api_keys_roles;
@@ -507,10 +508,59 @@ mod workspaces_wsid_tasks_taskid_shares;
 mod workspaces_wsid_teach_courses_courseid_attendance;
 mod workspaces_wsid_teach_courses_courseid_indicators;
 mod workspaces_wsid_teach_courses_courseid_members;
+mod workspaces_wsid_teach_courses_courseid_posts;
+mod workspaces_wsid_teach_courses_courseid_reports;
+mod workspaces_wsid_teach_courses_courseid_tests;
+mod workspaces_wsid_teach_courses_courseid_tests_testid_questions;
+mod workspaces_wsid_teach_courses_courseid_tests_testid_submissions;
+mod workspaces_wsid_teach_courses_courseid_tests_testid_submissions_attemptid;
+mod workspaces_wsid_templates_templateid;
+mod workspaces_wsid_templates_templateid_background_url;
+mod workspaces_wsid_templates_templateid_shares;
+mod workspaces_wsid_time_tracking_break_types;
+mod workspaces_wsid_time_tracking_breaks;
+mod workspaces_wsid_time_tracking_categories;
+mod workspaces_wsid_time_tracking_goals;
+mod workspaces_wsid_time_tracking_requests;
+mod workspaces_wsid_time_tracking_requests_id_comments;
+mod workspaces_wsid_time_tracking_sessions;
+mod workspaces_wsid_time_tracking_sessions_sessionid;
 mod workspaces_wsid_topic_announcements;
+mod workspaces_wsid_topic_announcements_contacts;
+mod workspaces_wsid_tulearn_assignments;
+mod workspaces_wsid_tulearn_courses_courseid_modules_moduleid;
+mod workspaces_wsid_tulearn_courses_courseid_tests_testid_attempt;
+mod workspaces_wsid_tulearn_parent_links;
+mod workspaces_wsid_tulearn_practice;
+mod workspaces_wsid_tutoring_sessions;
 mod workspaces_wsid_user_groups;
+mod workspaces_wsid_user_groups_groupid;
+mod workspaces_wsid_user_groups_groupid_attendance;
+mod workspaces_wsid_user_groups_groupid_group_checks;
+mod workspaces_wsid_user_groups_groupid_indicators;
+mod workspaces_wsid_user_groups_groupid_linked_products;
+mod workspaces_wsid_user_groups_groupid_members;
+mod workspaces_wsid_user_groups_groupid_members_userid_feedbacks;
+mod workspaces_wsid_user_groups_groupid_module_groups;
+mod workspaces_wsid_user_groups_groupid_modules;
+mod workspaces_wsid_user_groups_groupid_posts;
+mod workspaces_wsid_user_groups_sessions;
+mod workspaces_wsid_user_groups_sessions_sessionid_reconcile;
+mod workspaces_wsid_user_profile_links;
 mod workspaces_wsid_users;
 mod workspaces_wsid_users_2;
+mod workspaces_wsid_users_approvals;
+mod workspaces_wsid_users_database;
+mod workspaces_wsid_users_feedbacks;
+mod workspaces_wsid_users_fields;
+mod workspaces_wsid_users_groups_featured_counts;
+mod workspaces_wsid_users_groups_possible_excluded;
+mod workspaces_wsid_users_userid;
+mod workspaces_wsid_users_userid_linked_promotions;
+mod workspaces_wsid_users_userid_referrals;
+mod workspaces_wsid_wallets_walletid_roles;
+mod workspaces_wsid_workforce_users;
+mod workspaces_wsid_workforce_users_userid;
 
 pub const MIGRATION_MANIFEST_PATH: &str = "apps/tanstack-web/migration/route-manifest.json";
 const MIGRATION_MANIFEST_JSON: &str =
@@ -914,6 +964,14 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_15(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_16(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_17(config, request, outbound).await {
         return response;
     }
 
@@ -16613,4 +16671,381 @@ mod tests {
         assert_eq!(response.status, 405);
         assert_eq!(response.allow, Some("GET"));
     }
+}
+
+async fn dispatch_chunk_16(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_posts::handle_workspaces_wsid_teach_courses_courseid_posts_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_reports::handle_workspaces_wsid_teach_courses_courseid_reports_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_tests::handle_workspaces_wsid_teach_courses_courseid_tests_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_tests_testid_questions::handle_workspaces_wsid_teach_courses_courseid_tests_testid_questions_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_tests_testid_submissions::handle_workspaces_wsid_teach_courses_courseid_tests_testid_submissions_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_tests_testid_submissions_attemptid::handle_workspaces_wsid_teach_courses_courseid_tests_testid_submissions_attemptid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_templates_templateid::handle_workspaces_wsid_templates_templateid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_templates_templateid_background_url::handle_workspaces_wsid_templates_templateid_background_url_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_templates_templateid_shares::handle_workspaces_wsid_templates_templateid_shares_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_break_types::handle_workspaces_wsid_time_tracking_break_types_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_breaks::handle_workspaces_wsid_time_tracking_breaks_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_categories::handle_workspaces_wsid_time_tracking_categories_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_goals::handle_workspaces_wsid_time_tracking_goals_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_requests::handle_workspaces_wsid_time_tracking_requests_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_requests_id_comments::handle_workspaces_wsid_time_tracking_requests_id_comments_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_sessions::handle_workspaces_wsid_time_tracking_sessions_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_time_tracking_sessions_sessionid::handle_workspaces_wsid_time_tracking_sessions_sessionid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_topic_announcements_contacts::handle_workspaces_wsid_topic_announcements_contacts_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tulearn_assignments::handle_workspaces_wsid_tulearn_assignments_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tulearn_courses_courseid_modules_moduleid::handle_workspaces_wsid_tulearn_courses_courseid_modules_moduleid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tulearn_courses_courseid_tests_testid_attempt::handle_workspaces_wsid_tulearn_courses_courseid_tests_testid_attempt_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tulearn_parent_links::handle_workspaces_wsid_tulearn_parent_links_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tulearn_practice::handle_workspaces_wsid_tulearn_practice_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tutoring_sessions::handle_workspaces_wsid_tutoring_sessions_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid::handle_workspaces_wsid_user_groups_groupid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_17(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_attendance::handle_workspaces_wsid_user_groups_groupid_attendance_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_group_checks::handle_workspaces_wsid_user_groups_groupid_group_checks_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_indicators::handle_workspaces_wsid_user_groups_groupid_indicators_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_linked_products::handle_workspaces_wsid_user_groups_groupid_linked_products_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_members::handle_workspaces_wsid_user_groups_groupid_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_members_userid_feedbacks::handle_workspaces_wsid_user_groups_groupid_members_userid_feedbacks_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_module_groups::handle_workspaces_wsid_user_groups_groupid_module_groups_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_modules::handle_workspaces_wsid_user_groups_groupid_modules_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_groupid_posts::handle_workspaces_wsid_user_groups_groupid_posts_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_sessions::handle_workspaces_wsid_user_groups_sessions_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_groups_sessions_sessionid_reconcile::handle_workspaces_wsid_user_groups_sessions_sessionid_reconcile_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_user_profile_links::handle_workspaces_wsid_user_profile_links_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_wsid_users_userid::handle_workspaces_wsid_users_userid_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_userid_linked_promotions::handle_workspaces_wsid_users_userid_linked_promotions_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_userid_referrals::handle_workspaces_wsid_users_userid_referrals_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_approvals::handle_workspaces_wsid_users_approvals_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_database::handle_workspaces_wsid_users_database_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_feedbacks::handle_workspaces_wsid_users_feedbacks_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) = workspaces_wsid_users_fields::handle_workspaces_wsid_users_fields_route(
+        config, request, outbound,
+    )
+    .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_groups_featured_counts::handle_workspaces_wsid_users_groups_featured_counts_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_users_groups_possible_excluded::handle_workspaces_wsid_users_groups_possible_excluded_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_wallets_walletid_roles::handle_workspaces_wsid_wallets_walletid_roles_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_workforce_users::handle_workspaces_wsid_workforce_users_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_workforce_users_userid::handle_workspaces_wsid_workforce_users_userid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid::handle_workspaces_wsid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    None
 }
