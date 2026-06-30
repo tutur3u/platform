@@ -1,3 +1,7 @@
+import {
+  handleTaskRoutePOST,
+  type TaskRouteAuthContext,
+} from '@tuturuuu/apis/tu-do/tasks/route';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -8,7 +12,6 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { createTask } from '@tuturuuu/utils/task-helper';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -595,7 +598,7 @@ export async function instantiateTaskTemplate(
 
   if (list.error) return list.error;
 
-  const task = await createTask(context.wsId, list.listId, {
+  const taskPayload = {
     assignee_ids: parsed.assignee_ids ?? template.assignee_ids ?? [],
     description:
       parsed.description !== undefined
@@ -624,10 +627,34 @@ export async function instantiateTaskTemplate(
       parsed.start_date !== undefined
         ? (parsed.start_date ?? undefined)
         : (template.start_date ?? undefined),
-  });
+    listId: list.listId,
+  };
+
+  const taskRequest = new Request(
+    `https://tuturuuu.internal/api/v1/workspaces/${encodeURIComponent(context.wsId)}/tasks`,
+    {
+      body: JSON.stringify(taskPayload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  ) as NextRequest;
+  const taskAuth: TaskRouteAuthContext = {
+    supabase: context.supabase,
+    user: context.user,
+  };
+  const taskResponse = await handleTaskRoutePOST(
+    taskRequest,
+    { params: Promise.resolve({ wsId: context.wsId }) },
+    taskAuth
+  );
+  const taskData = await taskResponse.json().catch(() => ({}));
+
+  if (!taskResponse.ok) {
+    return NextResponse.json(taskData, { status: taskResponse.status });
+  }
 
   return NextResponse.json({
-    task,
+    task: taskData.task ?? taskData,
     template: serializeTaskTemplate(template, context.user.id),
   });
 }
