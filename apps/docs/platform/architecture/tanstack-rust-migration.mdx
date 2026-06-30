@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-26"
+updatedAt: "2026-06-30"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -772,6 +772,35 @@ only sanitized session state to client components.
   `apps/tanstack-web/src` does not call relative protected `/api`, `/internal`,
   or `/trpc` paths directly and does not import or create Supabase clients. Run
   the focused command when reviewing a frontend port before the full repo check.
+
+## No New Debt While The Switch Is Pending
+
+Treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as **one system**. The
+migration runs in parallel with normal feature work, so any change that touches
+only `apps/web` silently grows the backlog the cutover must clear. All future
+work must keep the three surfaces consistent where applicable:
+
+- **New or changed `apps/web` API route (any method).** If `apps/backend` already
+  owns that path, port the same behavior change into the Rust handler in the same
+  PR (match status codes, body shape, cache headers; migrate GET first and return
+  `None` for un-ported methods so they fall through). If it is not owned yet,
+  register/refresh the route in
+  `apps/tanstack-web/migration/route-overrides.json` and regenerate with
+  `bun migration:tanstack:manifest`, so the new surface is tracked as backlog
+  instead of invisible debt. Verify ownership with the runtime coverage probe in
+  `apps/backend/AGENTS.md` (migrated method = COVER, un-ported = FRESH).
+- **New or changed dashboard page/route.** Mirror the manifest registration so
+  `apps/tanstack-web` tracking stays accurate, and route shared data access
+  through `packages/internal-api` (consumed by both frontends) rather than
+  app-local fetchers, so the eventual TanStack port is a move, not a rewrite.
+- **Shared data access.** Prefer adding a `packages/internal-api` facade over a
+  one-off `apps/web` fetcher; the facade is the seam both the Next.js and
+  TanStack frontends call, and it forwards to the Rust backend server-side.
+- **Tracking, not blocking.** You do not have to finish the Rust/TanStack port in
+  every PR, but you must leave the manifest accurate. A route that is added to
+  `apps/web` and not reflected in the manifest is the debt this migration exists
+  to avoid. `bun migration:tanstack:check` and the backend coverage probe are the
+  guards.
 
 ## Security And Test Requirements
 
