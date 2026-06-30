@@ -22,6 +22,7 @@ describe('createTuturuuuNextConfig', () => {
       TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS
     );
     expect(config.poweredByHeader).toBe(false);
+    expect(config.reactCompiler).toBe(true);
     expect(config.reactStrictMode).toBe(true);
     expect(config.typescript?.ignoreBuildErrors).toBe(true);
   });
@@ -99,7 +100,7 @@ describe('createTuturuuuNextConfig', () => {
     const config = createTuturuuuNextConfig({
       cacheComponents: false,
       partialPrefetching: false,
-      reactCompiler: true,
+      reactCompiler: false,
       transpilePackages: ['@tuturuuu/ui'],
       experimental: {
         cpus: 2,
@@ -142,10 +143,10 @@ describe('isTuturuuuNextCacheComponentsEnabled', () => {
 });
 
 describe('isTuturuuuNextReactCompilerEnabled', () => {
-  it('disables React Compiler by default for next dev', () => {
+  it('keeps React Compiler enabled for next dev', () => {
     expect(
       isTuturuuuNextReactCompilerEnabled({ NODE_ENV: 'development' })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('keeps React Compiler enabled by default outside next dev', () => {
@@ -154,13 +155,13 @@ describe('isTuturuuuNextReactCompilerEnabled', () => {
     );
   });
 
-  it('honors explicit environment overrides', () => {
+  it('ignores explicit environment opt-outs', () => {
     expect(
       isTuturuuuNextReactCompilerEnabled({
         NODE_ENV: 'production',
         TUTURUUU_NEXT_REACT_COMPILER: '0',
       })
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isTuturuuuNextReactCompilerEnabled({
         NODE_ENV: 'development',

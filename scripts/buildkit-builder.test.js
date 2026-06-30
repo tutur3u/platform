@@ -1371,12 +1371,12 @@ test('production Docker root scripts keep the default build caps', () => {
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
+    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild && !isNativeDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
+    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild && !isNativeDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /staticPageGenerationTimeout/);
   assert.match(webNextConfig, /staticGenerationMaxConcurrency/);

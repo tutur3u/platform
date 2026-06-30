@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const crypto = require('node:crypto');
+const os = require('node:os');
 const path = require('node:path');
 
 const {
@@ -2182,6 +2183,7 @@ async function buildBlueGreenServices({
   composeGlobalArgs = [],
   env,
   fsImpl = fs,
+  osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run,
   services,
@@ -2203,6 +2205,7 @@ async function buildBlueGreenServices({
     if (!nativeWebArtifactsBuilt) {
       await buildNativeWebArtifacts({
         env: buildEnv,
+        osImpl,
         rootDir,
         runCommand: run,
       });
@@ -2626,6 +2629,27 @@ function isNativeWebBuildEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
 }
 
+function getHostTotalMemoryBuildValue(osImpl = os) {
+  const totalMemoryBytes = osImpl.totalmem?.();
+
+  if (!Number.isFinite(totalMemoryBytes) || totalMemoryBytes <= 0) {
+    return null;
+  }
+
+  const totalMemoryGb = Math.floor(totalMemoryBytes / 1024 / 1024 / 1024);
+
+  return totalMemoryGb > 0 ? `${totalMemoryGb}g` : null;
+}
+
+function getNativeWebBuildMemory(env = {}, osImpl = os) {
+  return (
+    env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
+    env.DOCKER_WEB_BUILD_MEMORY ??
+    getHostTotalMemoryBuildValue(osImpl) ??
+    '12g'
+  );
+}
+
 function isBlueGreenWebBuildSkipped(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD);
 }
@@ -2699,6 +2723,7 @@ function resolveNativeWebBuildEnvFile(env = {}, rootDir = ROOT_DIR) {
 
 async function buildNativeWebArtifacts({
   env = {},
+  osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 }) {
@@ -2714,11 +2739,9 @@ async function buildNativeWebArtifacts({
     env: {
       ...env,
       CI: env.CI ?? '1',
-      DOCKER_WEB_BUILD_MEMORY:
-        env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
-        env.DOCKER_WEB_BUILD_MEMORY ??
-        '12g',
+      DOCKER_WEB_BUILD_MEMORY: getNativeWebBuildMemory(env, osImpl),
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: env.DOCKER_WEB_NATIVE_BUILD_MEMORY ?? '',
+      DOCKER_WEB_NATIVE_BUILD: '1',
       DOCKER_WEB_STANDALONE: '1',
       NEXT_TELEMETRY_DISABLED: env.NEXT_TELEMETRY_DISABLED ?? '1',
       NODE_ENV: 'production',
@@ -4529,7 +4552,9 @@ module.exports = {
   getBlueGreenServiceName,
   getBlueGreenServiceDrainStatus,
   getBlueGreenWebServiceImageTag,
+  getHostTotalMemoryBuildValue,
   getNextBlueGreenColor,
+  getNativeWebBuildMemory,
   isBlueGreenColor,
   isNativeWebBuildEnabled,
   readBlueGreenActiveColor,

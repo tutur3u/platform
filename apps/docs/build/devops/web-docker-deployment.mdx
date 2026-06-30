@@ -431,17 +431,17 @@ headroom. The Next build engine remains Turbopack. Do not switch local E2E runs
 to the Webpack build path; the production and local Docker build paths are
 expected to exercise the same Turbopack compiler.
 
-For local machines where Docker Desktop still cannot allocate enough memory for
-the Turbopack image build, set `DOCKER_WEB_NATIVE_BUILD=1` when running E2E. The
-blue/green build helper then runs `bun run build:web:docker` on the host with
-`DOCKER_WEB_STANDALONE=1`, packages `apps/web/.next/standalone` plus static
-assets into the same Node runtime image shape, and continues with Docker Compose
-startup and Playwright. Native builds default their host-side build memory budget
-to 12 GB instead of Docker Desktop's memory cap; set
-`DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value when the host
-needs a different Node heap bucket. Keep this as a local/debug escape hatch; CI
-and production watchers should keep building the web image entirely inside
-Docker.
+For blue/green web deploys, the helper defaults to native host web builds. It
+runs `bun run build:web:docker` on the host with `DOCKER_WEB_STANDALONE=1`,
+packages `apps/web/.next/standalone` plus static assets into the same Node
+runtime image shape, and continues with Docker Compose startup and Playwright.
+Native builds derive their host-side build memory budget from the machine's
+total memory, while leaving Next/Turbopack CPU and static generation worker
+counts unset so the toolchain can auto-configure from the real host. Set
+`DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value only when the host
+needs a different Node heap bucket. Set `DOCKER_WEB_NATIVE_BUILD=0` to opt back
+into the legacy all-in-Docker web image build path for comparison or emergency
+rollback.
 
 When a production blue/green web image was just built locally with
 `bun serve:web:docker:bg`, Dockerized E2E can reuse that image instead of
@@ -1435,7 +1435,7 @@ Equivalent environment variables:
 - `DOCKER_WEB_NEXT_APP_ONLY=1`
 - `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto`
 - `DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack`
-- `DOCKER_WEB_REACT_COMPILER=0`
+- `DOCKER_WEB_REACT_COMPILER=1`
 
 How it works:
 
@@ -1489,10 +1489,10 @@ How it works:
   forwards it as `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets reserve 1 GB of
   effective Docker build memory for BuildKit, the active runtime lane, and
   sidecar overhead before selecting the Node heap bucket on larger allocations.
-  Docker production builds use
-  Turbopack under the real Node 24 runtime with App Router-only compilation and
-  React Compiler disabled. This avoids Bun runtime crashes while loading native
-  Next SWC modules and keeps local E2E aligned with production Docker builds.
+  Docker production builds use Turbopack under the real Node 24 runtime with App
+  Router-only compilation and React Compiler enabled. This avoids Bun runtime
+  crashes while loading native Next SWC modules and keeps local E2E aligned with
+  production Docker builds.
   The Docker `builder` stage is based on
   `node:24-bookworm-slim` and copies the Bun binary in only for workspace script
   orchestration, so the actual `next build` process runs under real Node instead
@@ -1501,8 +1501,8 @@ How it works:
   (pinned by the Dockerfile to `/usr/local/bin/node`) for the Next CLI and
   honors `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto` by default. Set a numeric
   heap value only when you need to override the bucket selection; values below
-  4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0` or
-  `DOCKER_WEB_REACT_COMPILER=1` only when the host has enough memory headroom.
+  4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0` only when you need to
+  compare a full-app build.
   Keep `DOCKER_WEB_NEXT_BUILD_ENGINE` on its default Turbopack value for
   production watcher hosts and local E2E runs. The wrapper also passes
   Turbo's `--concurrency` flag inside the Dockerfile build. It uses
@@ -1512,16 +1512,18 @@ How it works:
   Turbo cap limits concurrent workspace package builds such as
   `@tuturuuu/types`, `@tuturuuu/devbox`, and `@tuturuuu/masonry`.
 - Docker standalone Next builds default static page generation to a 180 second
-  timeout, and auto-scale the inner Next build CPU count plus static generation
-  concurrency from Docker memory. Docker allocations below 10 GB use 1 Next
-  build CPU and static generation concurrency 1; 10-16 GB allocations use 2
-  for both; 16 GB and larger allocations use 4 for both. The Compose-owned
-  BuildKit service still defaults to a 4 CPU budget, while the inner Next
-  workers stay lower on smaller hosts to avoid OOM kills when the same machine
-  is also running the active blue/green lane and sidecars. Override those with
-  `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
+  timeout. Legacy all-in-Docker builds auto-scale the inner Next build CPU count
+  plus static generation concurrency from Docker memory. Docker allocations
+  below 10 GB use 1 Next build CPU and static generation concurrency 1; 10-16 GB
+  allocations use 2 for both; 16 GB and larger allocations use 4 for both. The
+  Compose-owned BuildKit service still defaults to a 4 CPU budget, while the
+  inner Next workers stay lower on smaller hosts to avoid OOM kills when the
+  same machine is also running the active blue/green lane and sidecars. Native
+  host builds do not set `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY` or
+  `DOCKER_WEB_NEXT_BUILD_CPUS` unless the operator explicitly provides them.
+  Override those with `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
-  `DOCKER_WEB_NEXT_BUILD_CPUS` when a host has more or less headroom.
+  `DOCKER_WEB_NEXT_BUILD_CPUS` only when a host needs a fixed worker count.
 - Hive Docker images use a filtered workspace install and a Next standalone
   runner. Before `apps/hive` runs `next build`, the image must build
   `@tuturuuu/types`, `@tuturuuu/internal-api`, and `@tuturuuu/supabase` because

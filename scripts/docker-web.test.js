@@ -32,6 +32,7 @@ const {
   ensureLogDrainPostgresReady,
   ensureRequiredComposeEnvironment,
   ensureProductionSupabaseOrigin,
+  applyDefaultBlueGreenNativeBuildEnv,
   formatSupabaseOriginReport,
   getActiveDeploymentConflict,
   getBlueGreenBuildTimeoutMs,
@@ -66,6 +67,8 @@ const {
   getBlueGreenDeploymentBuildServices,
   getBlueGreenHealthGateSupportServices,
   getBlueGreenWebServiceImageTag,
+  getHostTotalMemoryBuildValue,
+  getNativeWebBuildMemory,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
@@ -3401,6 +3404,50 @@ test('buildBlueGreenServices keeps retrying lower profiles before failing at the
   }
 });
 
+test('blue/green prod defaults to native web builds', () => {
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      {},
+      { mode: 'prod', strategy: 'blue-green' }
+    ),
+    { DOCKER_WEB_NATIVE_BUILD: '1' }
+  );
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      { DOCKER_WEB_NATIVE_BUILD: '0' },
+      { mode: 'prod', strategy: 'blue-green' }
+    ),
+    { DOCKER_WEB_NATIVE_BUILD: '0' }
+  );
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      {},
+      { mode: 'prod', strategy: 'in-place' }
+    ),
+    {}
+  );
+});
+
+test('native web build memory follows host memory when unset', () => {
+  const osImpl = {
+    totalmem: () => 64 * 1024 * 1024 * 1024,
+  };
+
+  assert.equal(getHostTotalMemoryBuildValue(osImpl), '64g');
+  assert.equal(getNativeWebBuildMemory({}, osImpl), '64g');
+  assert.equal(
+    getNativeWebBuildMemory({ DOCKER_WEB_BUILD_MEMORY: '24g' }, osImpl),
+    '24g'
+  );
+  assert.equal(
+    getNativeWebBuildMemory(
+      { DOCKER_WEB_BUILD_MEMORY: '24g', DOCKER_WEB_NATIVE_BUILD_MEMORY: '32g' },
+      osImpl
+    ),
+    '32g'
+  );
+});
+
 test('buildBlueGreenServices can package host-built web artifacts', async () => {
   const calls = [];
   const env = {
@@ -3423,6 +3470,9 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     composeFile: PROD_COMPOSE_FILE,
     composeGlobalArgs: ['-p', 'explicit-project'],
     env,
+    osImpl: {
+      totalmem: () => 64 * 1024 * 1024 * 1024,
+    },
     runCommand: async (command, args, options = {}) => {
       calls.push([command, args, options.cwd, options.env]);
 
@@ -3493,8 +3543,14 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     ]
   );
   assert.equal(calls[0][3].DOCKER_WEB_STANDALONE, '1');
-  assert.equal(calls[0][3].DOCKER_WEB_BUILD_MEMORY, '12g');
+  assert.equal(calls[0][3].DOCKER_WEB_NATIVE_BUILD, '1');
+  assert.equal(calls[0][3].DOCKER_WEB_BUILD_MEMORY, '64g');
   assert.equal(calls[0][3].DOCKER_WEB_DOCKER_MEMORY_LIMIT, '');
+  assert.equal(calls[0][3].DOCKER_WEB_NEXT_BUILD_CPUS, undefined);
+  assert.equal(
+    calls[0][3].DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY,
+    undefined
+  );
   assert.equal(calls[0][3].PLATFORM_BUILD_COMMIT_HASH, 'native-commit');
 });
 

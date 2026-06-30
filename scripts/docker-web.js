@@ -362,6 +362,20 @@ function getSupabaseStartCommand(env = {}) {
   };
 }
 
+function applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed) {
+  if (
+    !usesBlueGreenStrategy(parsed) ||
+    composeEnv.DOCKER_WEB_NATIVE_BUILD != null
+  ) {
+    return composeEnv;
+  }
+
+  return {
+    ...composeEnv,
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  };
+}
+
 function parseArgs(argv) {
   const args = [...argv];
   const action = args.shift() ?? 'up';
@@ -1134,6 +1148,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   composeEnv = applyLowMemoryBuildkitRestartEnv(composeEnv, parsed);
+  composeEnv = applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed);
   const buildResourceProfileSelection = usesBlueGreenStrategy(parsed)
     ? createBuildResourceProfileSelection({
         cpus: parsed.buildCpus,
@@ -1542,6 +1557,7 @@ module.exports = {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  applyDefaultBlueGreenNativeBuildEnv,
   cancelActiveBlueGreenBuild,
   classifySupabaseOrigin,
   describeActiveDeploymentConflict,

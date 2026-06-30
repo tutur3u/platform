@@ -608,7 +608,7 @@ function validateDockerfile({
       !/ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=\$\{DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE\}/u.test(
         builderStage
       ) ||
-      !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=0') ||
+      !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=1') ||
       !/ENV DOCKER_WEB_REACT_COMPILER=\$\{DOCKER_WEB_REACT_COMPILER\}/u.test(
         builderStage
       ) ||
@@ -1006,7 +1006,7 @@ function validateDockerProdCompose(composeContent) {
       '}',
     '      DOCKER_WEB_REACT_COMPILER: ' +
       '${' +
-      'DOCKER_WEB_REACT_COMPILER:-0' +
+      'DOCKER_WEB_REACT_COMPILER:-1' +
       '}',
     '      DOCKER_WEB_TURBO_CONCURRENCY: ' +
       '${' +

@@ -69,7 +69,9 @@ function workerTargetInstalled() {
     // rustup absent (e.g. distro-packaged rust); let cargo surface the error.
     return true;
   }
-  return result.stdout.split('\n').some((line) => line.trim() === WORKER_TARGET);
+  return result.stdout
+    .split('\n')
+    .some((line) => line.trim() === WORKER_TARGET);
 }
 
 function runStep(step) {

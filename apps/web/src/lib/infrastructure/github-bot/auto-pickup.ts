@@ -93,7 +93,10 @@ function writeGitHubBotRuntimeRequest(
 ) {
   const queuedAt = nowIso();
   const controlDir = resolveGitHubBotControlDir(fsImpl);
-  const filePath = path.join(controlDir, GITHUB_BOT_RUNTIME_REQUEST_FILE);
+  const filePath = path.join(
+    /* turbopackIgnore: true */ controlDir,
+    GITHUB_BOT_RUNTIME_REQUEST_FILE
+  );
 
   fsImpl.mkdirSync(controlDir, { recursive: true });
   fsImpl.writeFileSync(

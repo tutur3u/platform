@@ -79,15 +79,9 @@ function readBooleanEnvOverride(value: string | undefined) {
 }
 
 export function isTuturuuuNextReactCompilerEnabled(
-  env: Environment = process.env
+  _env: Environment = process.env
 ) {
-  const override = readBooleanEnvOverride(env.TUTURUUU_NEXT_REACT_COMPILER);
-
-  if (override !== undefined) {
-    return override;
-  }
-
-  return env.NODE_ENV !== 'development';
+  return true;
 }
 
 export function isTuturuuuNextCacheComponentsEnabled(
@@ -103,10 +97,10 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
   const imageConfig = config.images ?? {};
 
   return {
-    reactCompiler: isTuturuuuNextReactCompilerEnabled(),
     reactStrictMode: true,
     poweredByHeader: false,
     ...config,
+    reactCompiler: isTuturuuuNextReactCompilerEnabled(),
     cacheComponents:
       config.cacheComponents ?? isTuturuuuNextCacheComponentsEnabled(),
     partialPrefetching: config.partialPrefetching ?? true,

@@ -12,8 +12,6 @@ import {
   searchMindNodes,
 } from '@/lib/mind/repository';
 
-export const preferredRegion = 'sin1';
-
 export const POST = createPOST({
   applyPatch: applyMindAiPatch,
   createPatch: createMindAiPatch,

@@ -16,6 +16,8 @@ const {
   getDockerNodeMaxOldSpaceSizeMb,
   getDockerStaticGenerationMaxConcurrency,
   getEffectiveDockerMemoryMb,
+  getNextBuildEnvironment,
+  isNativeWebBuildEnabled,
   mergeNodeOptions,
   parseMemoryToMb,
 } = require('./run-web-docker-next-build.js');
@@ -669,6 +671,30 @@ test('Docker web build CPU count leaves room on small Docker allocations', () =>
   );
 });
 
+test('native Docker web build leaves worker counts to Next by default', () => {
+  const env = getNextBuildEnvironment({
+    DOCKER_WEB_BUILD_MEMORY: '64g',
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: '64g',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  });
+
+  assert.equal(isNativeWebBuildEnabled(env), true);
+  assert.equal(env.DOCKER_WEB_NEXT_BUILD_CPUS, undefined);
+  assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, undefined);
+  assert.match(env.NODE_OPTIONS, /--max-old-space-size=/u);
+});
+
+test('native Docker web build preserves explicit worker count overrides', () => {
+  const env = getNextBuildEnvironment({
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NEXT_BUILD_CPUS: '6',
+    DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: '5',
+  });
+
+  assert.equal(env.DOCKER_WEB_NEXT_BUILD_CPUS, '6');
+  assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, '5');
+});
+
 test('validateDockerfile reports missing workspace manifest copies', () => {
   const dockerfileContent = fs
     .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')
@@ -939,7 +965,7 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '}',
       '      DOCKER_WEB_REACT_COMPILER: $' +
         '{' +
-        'DOCKER_WEB_REACT_COMPILER:-0' +
+        'DOCKER_WEB_REACT_COMPILER:-1' +
         '}',
       '      DOCKER_WEB_TURBO_CONCURRENCY: $' +
         '{' +
