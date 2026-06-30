@@ -555,6 +555,17 @@ cd apps/backend
 cargo test
 ```
 
+Run the full local gate before committing (mirrors
+`.github/workflows/rust-backend.yml`: `cargo fmt --check`, `cargo clippy
+--locked --all-targets --features native -- -D warnings`, `cargo test
+--locked`, and the `wasm32-unknown-unknown` worker-target `cargo check`):
+
+```sh
+bun check:backend
+# or skip the Cloudflare Worker target check when wasm32 is not installed:
+bun check:backend --skip-worker
+```
+
 Build the future Cloudflare Worker bundle after installing the Workers Rust
 tooling:
 

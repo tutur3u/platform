@@ -120,5 +120,14 @@ before `cargo test --lib`.
   in-flight handler doesn't compile yet — confirm your own module reports zero
   errors, and never stage `lib.rs` or files you didn't create.
 - `cargo test <module>` for the moved in-file tests when the crate compiles.
+- Before committing backend work, run the full gate with **`bun check:backend`**
+  from the repo root (`node scripts/check-backend.js`). It mirrors
+  `.github/workflows/rust-backend.yml` exactly — `cargo fmt --check`, then
+  `cargo clippy --locked --all-targets --features native -- -D warnings`, then
+  `cargo test --locked`, then the `wasm32-unknown-unknown` worker-target
+  `cargo check`. Pass `--skip-worker` if the wasm target is not installed
+  (`rustup target add wasm32-unknown-unknown` adds it). Treat clippy `-D
+  warnings` and `cargo fmt` as required: a `cargo check`-clean handler can still
+  fail CI on a doc-comment lint or formatting.
 - Never stage another agent's uncommitted `lib.rs` edit or untracked `*.rs`;
   commit only the module files you own, path-scoped.
