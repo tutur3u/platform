@@ -353,12 +353,17 @@ test.describe('Task templates', () => {
         waitUntil: 'domcontentloaded',
       });
       await page.getByRole('tab', { name: /board templates/i }).click();
-      await expect(page.getByText(boardTemplateName)).toBeVisible();
-      await page.getByText(boardTemplateName).click();
+      const boardTemplateLink = page.getByRole('link', {
+        name: boardTemplateName,
+      });
+      await expect(boardTemplateLink).toBeVisible();
+      await boardTemplateLink.click();
       await expect(page).toHaveURL(
         new RegExp(`/personal/tasks/templates/${boardTemplateId}$`)
       );
-      await expect(page.getByText(boardTemplateName)).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 1, name: boardTemplateName })
+      ).toBeVisible();
     } finally {
       for (const taskId of createdTaskIds) {
         await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
