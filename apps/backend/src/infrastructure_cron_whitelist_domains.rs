@@ -13,7 +13,7 @@
 //!
 //! This port reproduces the check with `supabase_auth::request_access_token`,
 //! `supabase_auth::fetch_supabase_auth_user`, and
-//! `supabase_auth::is_valid_tuturuuu_email`.
+//! `supabase_auth::is_exact_tuturuuu_dot_com_email`.
 //!
 //! ## Data
 //!
@@ -156,7 +156,7 @@ async fn is_managed_cron_admin(
     else {
         return false;
     };
-    supabase_auth::is_valid_tuturuuu_email(user.email.as_deref())
+    supabase_auth::is_exact_tuturuuu_dot_com_email(user.email.as_deref())
 }
 
 /// Like [`is_managed_cron_admin`] but returns the admin's user id (needed as the
@@ -170,7 +170,7 @@ async fn managed_cron_admin_user_id(
     let access_token = supabase_auth::request_access_token(request)?;
     let user =
         supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await?;
-    if !supabase_auth::is_valid_tuturuuu_email(user.email.as_deref()) {
+    if !supabase_auth::is_exact_tuturuuu_dot_com_email(user.email.as_deref()) {
         return None;
     }
     user.id.filter(|id| !id.trim().is_empty())

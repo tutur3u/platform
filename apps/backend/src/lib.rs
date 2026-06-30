@@ -117,6 +117,8 @@ mod infrastructure_content_exports;
 mod infrastructure_content_exports_test;
 mod infrastructure_cron_whitelist_domain_domain;
 mod infrastructure_cron_whitelist_domains;
+#[cfg(test)]
+mod infrastructure_cron_whitelist_test;
 mod infrastructure_entity_creation_limits;
 mod infrastructure_external_apps;
 mod infrastructure_finance_exports;
