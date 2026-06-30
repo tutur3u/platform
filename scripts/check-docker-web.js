@@ -1121,6 +1121,18 @@ function validateDockerProdCompose(composeContent) {
     '      - SUPERMEMORY_TIMEOUT_MS=${' + 'SUPERMEMORY_TIMEOUT_MS:-1500' + '}',
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS:-60000' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS:-120000' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED:-false' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS:-30000' +
+      '}',
     '      - PLATFORM_DOCKER_CONTROL_PORT=${' +
       'PLATFORM_DOCKER_CONTROL_PORT:-7810' +
       '}',
@@ -1710,6 +1722,7 @@ function validateCronRunnerDockerfile(dockerfileContent) {
   const requiredSnippets = [
     'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
+    'RUN bun add --exact cron-parser@5.6.1',
     'COPY apps/web/docker/cron-runner-entrypoint.js /usr/local/bin/cron-runner-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/cron-runner-entrypoint.js"]',
   ];
@@ -1731,6 +1744,7 @@ function validateDockerControlDockerfile(dockerfileContent) {
     'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
     'COPY apps/web/docker/docker-control-server.js /usr/local/bin/docker-control-server.js',
+    'COPY apps/web/docker/docker-control-recovery.js /usr/local/bin/docker-control-recovery.js',
     'CMD ["bun", "/usr/local/bin/docker-control-server.js"]',
   ];
 

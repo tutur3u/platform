@@ -6,6 +6,7 @@ ENV CI=1
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN apk add --no-cache docker-cli docker-cli-compose
+RUN bun add --exact cron-parser@5.6.1
 
 COPY apps/web/docker/cron-runner-entrypoint.js /usr/local/bin/cron-runner-entrypoint.js
 

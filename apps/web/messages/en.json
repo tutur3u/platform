@@ -2092,6 +2092,7 @@
       "jobs_title": "Registered Jobs",
       "last_run": "Last Run",
       "next_run": "Next Run",
+      "next_run_scheduled_estimate": "Next Scheduled Estimate",
       "run_status": {
         "done": "Done",
         "errored": "Errored",
@@ -2101,6 +2102,7 @@
       },
       "runner_recovery": {
         "description": "Recover the Docker cron runner service without changing managed-cron database prerequisites.",
+        "direct_control": "Direct control",
         "ensure_action": "Ensure serving",
         "ensure_pending": "Queueing ensure",
         "last_error": "Last recovery error",
@@ -2110,6 +2112,11 @@
         "restart_action": "Restart cron service",
         "restart_pending": "Queueing restart",
         "title": "Cron runner recovery",
+        "watchdog": "Watchdog",
+        "watchdog_checked": "Watchdog checked",
+        "watchdog_error": "Watchdog error",
+        "watchdog_reason": "Watchdog reason",
+        "watcher": "Watcher",
         "watcher_waiting": "Recovery is queued. The Docker watcher will apply it on its next healthy polling cycle."
       },
       "runner_status": {
@@ -2139,7 +2146,16 @@
         "runner": "Cron Runner",
         "runner_meta": "Native Docker scheduler"
       },
-      "title": "Cron Jobs"
+      "title": "Cron Jobs",
+      "watchdog_status": {
+        "cooldown": "Cooldown",
+        "disabled": "Disabled",
+        "failed": "Failed",
+        "healthy": "Healthy",
+        "recovered": "Recovered",
+        "recovering": "Recovering",
+        "unknown": "Unknown"
+      }
     },
     "deployment_status": {
       "active": "Active",
@@ -2322,6 +2338,24 @@
       },
       "cron": {
         "description": "Recent cron executions, duration, status, and captured errors.",
+        "diagnostics": {
+          "description": "Operator-visible cron runner, watcher, route-origin, and managed-cron warnings.",
+          "detail": "Detail",
+          "messages": {
+            "docker_control_not_live": "Docker control is not live",
+            "last_execution_failed": "Latest cron execution failed for {jobId}",
+            "managed_external_overdue": "{count} managed cron jobs are overdue",
+            "managed_parent_failed": "Managed-cron parent job failed",
+            "recovery_request_stalled": "Cron runner recovery request is stalled",
+            "runner_not_live": "Cron runner heartbeat is not live",
+            "watcher_not_live": "Blue/green watcher heartbeat is not live"
+          },
+          "severity": {
+            "error": "Error",
+            "warning": "Warning"
+          },
+          "title": "Cron Diagnostics"
+        },
         "failure_streak": "Failure streak",
         "global_paused": "Global paused",
         "last_duration": "Last duration",
@@ -2332,6 +2366,7 @@
           "enabled_jobs": "Enabled Jobs",
           "next_run": "Next Run",
           "next_run_meta": "Nearest scheduled execution",
+          "next_run_stale_meta": "Scheduled estimate while runner is stale",
           "processing": "Processing",
           "queue": "Queued Runs",
           "runner": "Runner",

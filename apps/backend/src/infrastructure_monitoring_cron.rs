@@ -122,6 +122,20 @@ fn empty_cron_snapshot() -> Value {
             "updatedBy": Value::Null,
             "updatedByEmail": Value::Null,
         },
+        "diagnostics": [
+            {
+                "code": "runner_not_live",
+                "detail": "Cron runner heartbeat is missing.",
+                "severity": "error",
+                "timestamp": Value::Null,
+            },
+            {
+                "code": "watcher_not_live",
+                "detail": "Blue/green watcher heartbeat is missing.",
+                "severity": "warning",
+                "timestamp": Value::Null,
+            },
+        ],
         "enabled": true,
         "jobs": [],
         "lastExecution": Value::Null,
@@ -148,6 +162,7 @@ fn empty_cron_snapshot() -> Value {
                 // normalizeStatusHealth(null, now) → "missing"
                 "status": "missing",
                 "updatedAt": Value::Null,
+                "watchdog": Value::Null,
             },
             "pendingRequestAgeMs": Value::Null,
             "requestIsStale": false,

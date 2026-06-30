@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   type CronExecutionRecord,
+  type CronMonitoringDiagnostic,
   createInfrastructureProject,
   deleteInfrastructureProject,
   type GetObservabilityParams,
@@ -350,6 +351,21 @@ function getCronRunnerTone(status: string | null | undefined): Tone {
   if (status === 'stale') return 'orange';
   if (status === 'missing') return 'red';
   return 'muted';
+}
+
+function getCronWatchdogTone(status: string | null | undefined): Tone {
+  if (status === 'healthy' || status === 'recovered') return 'green';
+  if (status === 'recovering') return 'blue';
+  if (status === 'cooldown') return 'amber';
+  if (status === 'failed') return 'red';
+  if (status === 'disabled') return 'muted';
+  return 'muted';
+}
+
+function getCronDiagnosticTone(
+  severity: CronMonitoringDiagnostic['severity']
+): Tone {
+  return severity === 'error' ? 'red' : 'orange';
 }
 
 function ToneBadge({ children, tone }: { children: ReactNode; tone: Tone }) {
@@ -1155,11 +1171,14 @@ export function ObservabilityDashboardClient({
     enabled: mode === 'cron',
     queryFn: () => getCronMonitoringSnapshot(),
     queryKey: ['infrastructure', 'monitoring', 'cron', 'snapshot'],
-    refetchInterval: (query) =>
-      query.state.data?.runnerRecoveryRequest ||
-      query.state.data?.recovery.directControl.status === 'stale'
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.runnerRecoveryRequest ||
+        data?.recovery.directControl.status === 'stale' ||
+        data?.recovery.directControl.watchdog?.status === 'recovering'
         ? 1000
-        : 5000,
+        : 5000;
+    },
   });
   const cronExecutionsQuery = useInfiniteQuery<
     CronExecutionsPage,
@@ -1297,6 +1316,8 @@ export function ObservabilityDashboardClient({
   const overview = overviewQuery.data;
   const analytics = analyticsQuery.data;
   const cronSnapshot = cronSnapshotQuery.data;
+  const cronDiagnostics = cronSnapshot?.diagnostics ?? [];
+  const cronWatchdog = cronSnapshot?.recovery.directControl.watchdog ?? null;
   const watcher = watcherQuery.data?.watcher;
   const projects = projectsQuery.data?.projects ?? [];
   const selectedProject =
@@ -2307,10 +2328,57 @@ export function ObservabilityDashboardClient({
             />
             <MetricCard
               label={t('cron.summary.next_run')}
-              meta={t('cron.summary.next_run_meta')}
+              meta={t(
+                cronSnapshot?.status && cronSnapshot.status !== 'live'
+                  ? 'cron.summary.next_run_stale_meta'
+                  : 'cron.summary.next_run_meta'
+              )}
               value={formatTime(cronSnapshot?.nextRunAt)}
             />
           </section>
+
+          {cronDiagnostics.length > 0 ? (
+            <section
+              className="rounded-lg border border-dynamic-orange/35 bg-dynamic-orange/5"
+              data-testid="cron-diagnostics"
+            >
+              <div className="border-dynamic-orange/20 border-b px-4 py-3">
+                <p className="font-medium text-sm">
+                  {t('cron.diagnostics.title')}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {t('cron.diagnostics.description')}
+                </p>
+              </div>
+              <div className="divide-y divide-dynamic-orange/15">
+                {cronDiagnostics.map((diagnostic, index) => (
+                  <div
+                    className="grid gap-2 px-4 py-3 text-sm md:grid-cols-[auto_minmax(0,1fr)]"
+                    key={`${diagnostic.code}-${diagnostic.jobId ?? index}`}
+                  >
+                    <ToneBadge
+                      tone={getCronDiagnosticTone(diagnostic.severity)}
+                    >
+                      {t(`cron.diagnostics.severity.${diagnostic.severity}`)}
+                    </ToneBadge>
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {t(`cron.diagnostics.messages.${diagnostic.code}`, {
+                          count: diagnostic.count ?? 0,
+                          jobId: diagnostic.jobId ?? '-',
+                        })}
+                      </p>
+                      {diagnostic.detail ? (
+                        <p className="mt-1 break-words text-muted-foreground text-xs">
+                          {t('cron.diagnostics.detail')}: {diagnostic.detail}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section
             className={cn(
@@ -2337,15 +2405,34 @@ export function ObservabilityDashboardClient({
                       {cronT('runner_recovery.pending')}
                     </ToneBadge>
                   ) : null}
+                  {cronSnapshot?.recovery.watcherStatus ? (
+                    <ToneBadge
+                      tone={getCronRunnerTone(
+                        cronSnapshot.recovery.watcherStatus
+                      )}
+                    >
+                      {cronT('runner_recovery.watcher')}:{' '}
+                      {cronT(
+                        `runner_status.${cronSnapshot.recovery.watcherStatus}`
+                      )}
+                    </ToneBadge>
+                  ) : null}
                   {cronSnapshot?.recovery.directControl.configured ? (
                     <ToneBadge
                       tone={getCronRunnerTone(
                         cronSnapshot.recovery.directControl.status
                       )}
                     >
+                      {cronT('runner_recovery.direct_control')}:{' '}
                       {cronT(
                         `runner_status.${cronSnapshot.recovery.directControl.status}`
                       )}
+                    </ToneBadge>
+                  ) : null}
+                  {cronWatchdog ? (
+                    <ToneBadge tone={getCronWatchdogTone(cronWatchdog.status)}>
+                      {cronT('runner_recovery.watchdog')}:{' '}
+                      {cronT(`watchdog_status.${cronWatchdog.status}`)}
                     </ToneBadge>
                   ) : null}
                 </div>
@@ -2367,11 +2454,28 @@ export function ObservabilityDashboardClient({
                       )}
                     </ToneBadge>
                   ) : null}
+                  {cronWatchdog?.lastCheckedAt ? (
+                    <ToneBadge tone="muted">
+                      {cronT('runner_recovery.watchdog_checked')}:{' '}
+                      {formatTime(cronWatchdog.lastCheckedAt)}
+                    </ToneBadge>
+                  ) : null}
                 </div>
                 {cronSnapshot?.runnerRecoveryRequest?.lastError ? (
                   <p className="mt-3 rounded-md border border-dynamic-red/25 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
                     {cronT('runner_recovery.last_error')}:{' '}
                     {cronSnapshot.runnerRecoveryRequest.lastError}
+                  </p>
+                ) : cronWatchdog?.lastError ? (
+                  <p className="mt-3 rounded-md border border-dynamic-red/25 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
+                    {cronT('runner_recovery.watchdog_error')}:{' '}
+                    {cronWatchdog.lastError}
+                  </p>
+                ) : cronWatchdog?.lastReason &&
+                  cronWatchdog.status !== 'healthy' ? (
+                  <p className="mt-3 rounded-md border border-dynamic-yellow/25 bg-dynamic-yellow/10 px-3 py-2 text-dynamic-yellow text-xs">
+                    {cronT('runner_recovery.watchdog_reason')}:{' '}
+                    {cronWatchdog.lastReason}
                   </p>
                 ) : cronSnapshot?.recovery.blockedReason ? (
                   <p className="mt-3 rounded-md border border-dynamic-red/25 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
@@ -2487,7 +2591,10 @@ export function ObservabilityDashboardClient({
                         )}
                       </ToneBadge>
                       <ToneBadge tone="green">
-                        {cronT('next_run')}: {formatTime(job.nextRunAt)}
+                        {cronSnapshot?.status && cronSnapshot.status !== 'live'
+                          ? cronT('next_run_scheduled_estimate')
+                          : cronT('next_run')}
+                        : {formatTime(job.nextRunAt)}
                       </ToneBadge>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">

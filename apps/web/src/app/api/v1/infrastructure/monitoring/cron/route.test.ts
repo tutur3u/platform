@@ -42,6 +42,7 @@ vi.mock('@/lib/infrastructure/cron-monitoring', () => ({
   readCronExecutionArchive: readCronExecutionArchiveMock,
   readCronMonitoringSnapshot: readCronMonitoringSnapshotMock,
   updateCronMonitoringControl: updateCronMonitoringControlMock,
+  withManagedExternalCronDiagnostics: (snapshot: unknown) => snapshot,
 }));
 
 vi.mock('@/lib/infrastructure/docker-control', () => ({

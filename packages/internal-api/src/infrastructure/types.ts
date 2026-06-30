@@ -1303,8 +1303,26 @@ export interface CronDockerControlRecoveryStatus {
   completedAt: string | null;
   durationMs: number | null;
   error: string | null;
+  reason?: string | null;
   requestedAt: string | null;
+  source?: 'operator' | 'watchdog' | string | null;
   status: 'failed' | 'running' | 'succeeded' | null;
+}
+
+export interface CronDockerControlWatchdogStatus {
+  cooldownRemainingMs?: number | null;
+  enabled: boolean;
+  lastCheckedAt: number | null;
+  lastError: string | null;
+  lastReason: string | null;
+  status:
+    | 'cooldown'
+    | 'disabled'
+    | 'failed'
+    | 'healthy'
+    | 'recovered'
+    | 'recovering'
+    | 'unknown';
 }
 
 export interface CronDockerControlStatus {
@@ -1312,6 +1330,23 @@ export interface CronDockerControlStatus {
   lastRecovery: CronDockerControlRecoveryStatus | null;
   status: CronMonitoringStatus;
   updatedAt: number | null;
+  watchdog: CronDockerControlWatchdogStatus | null;
+}
+
+export interface CronMonitoringDiagnostic {
+  code:
+    | 'docker_control_not_live'
+    | 'last_execution_failed'
+    | 'managed_external_overdue'
+    | 'managed_parent_failed'
+    | 'recovery_request_stalled'
+    | 'runner_not_live'
+    | 'watcher_not_live';
+  count?: number | null;
+  detail?: string | null;
+  jobId?: string | null;
+  severity: 'error' | 'warning';
+  timestamp?: number | string | null;
 }
 
 export interface CronMonitoringRecoveryState {
@@ -1326,6 +1361,7 @@ export interface CronMonitoringRecoveryState {
 
 export interface CronMonitoringSnapshot {
   control: CronMonitoringControl;
+  diagnostics: CronMonitoringDiagnostic[];
   enabled: boolean;
   jobs: CronMonitoringJob[];
   lastExecution: CronExecutionRecord | null;

@@ -193,6 +193,7 @@ const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
   'docker-compose/compose.web.prod.ops.yml',
 ]);
 const BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS = Object.freeze([
+  'apps/web/docker/docker-control-recovery.js',
   'apps/web/docker/docker-control-server.js',
   'apps/web/docker/docker-control.Dockerfile',
   'docker-compose/compose.web.prod.ops.yml',

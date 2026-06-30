@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { readCronMonitoringSnapshot } from '@/lib/infrastructure/cron-monitoring';
+import {
+  readCronMonitoringSnapshot,
+  withManagedExternalCronDiagnostics,
+} from '@/lib/infrastructure/cron-monitoring';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   readManagedExternalCronMonitoring,
@@ -17,18 +20,20 @@ export async function GET(request: Request) {
     const snapshot = readCronMonitoringSnapshot();
 
     try {
+      const managedExternalCron = await readManagedExternalCronMonitoring();
       return NextResponse.json({
-        ...snapshot,
-        managedExternalCron: await readManagedExternalCronMonitoring(),
+        ...withManagedExternalCronDiagnostics(snapshot, managedExternalCron),
+        managedExternalCron,
       });
     } catch (error) {
       serverLogger.error(
         'Failed to load managed external cron monitoring snapshot:',
         error
       );
+      const managedExternalCron = unavailableManagedExternalCronMonitoring();
       return NextResponse.json({
-        ...snapshot,
-        managedExternalCron: unavailableManagedExternalCronMonitoring(),
+        ...withManagedExternalCronDiagnostics(snapshot, managedExternalCron),
+        managedExternalCron,
       });
     }
   } catch (error) {

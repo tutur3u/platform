@@ -2092,6 +2092,7 @@
       "jobs_title": "Job Đã Đăng Ký",
       "last_run": "Lần Chạy Cuối",
       "next_run": "Lần Chạy Kế Tiếp",
+      "next_run_scheduled_estimate": "Ước tính lịch kế tiếp",
       "run_status": {
         "done": "Hoàn tất",
         "errored": "Có lỗi",
@@ -2101,6 +2102,7 @@
       },
       "runner_recovery": {
         "description": "Phục hồi dịch vụ Docker cron runner mà không thay đổi các điều kiện bắt buộc của cơ sở dữ liệu managed-cron.",
+        "direct_control": "Điều khiển trực tiếp",
         "ensure_action": "Đảm bảo đang phục vụ",
         "ensure_pending": "Đang xếp lệnh đảm bảo",
         "last_error": "Lỗi phục hồi gần nhất",
@@ -2110,6 +2112,11 @@
         "restart_action": "Restart dịch vụ cron",
         "restart_pending": "Đang xếp lệnh restart",
         "title": "Phục hồi cron runner",
+        "watchdog": "Watchdog",
+        "watchdog_checked": "Watchdog đã kiểm tra",
+        "watchdog_error": "Lỗi watchdog",
+        "watchdog_reason": "Lý do watchdog",
+        "watcher": "Watcher",
         "watcher_waiting": "Yêu cầu phục hồi đã được xếp hàng. Docker watcher sẽ xử lý ở chu kỳ khỏe tiếp theo."
       },
       "runner_status": {
@@ -2139,7 +2146,16 @@
         "runner": "Cron Runner",
         "runner_meta": "Bộ lập lịch Docker native"
       },
-      "title": "Cron Jobs"
+      "title": "Cron Jobs",
+      "watchdog_status": {
+        "cooldown": "Đang chờ cooldown",
+        "disabled": "Đã tắt",
+        "failed": "Thất bại",
+        "healthy": "Khỏe",
+        "recovered": "Đã phục hồi",
+        "recovering": "Đang phục hồi",
+        "unknown": "Không rõ"
+      }
     },
     "deployment_status": {
       "active": "Đang hoạt động",
@@ -2322,6 +2338,24 @@
       },
       "cron": {
         "description": "Các lượt chạy cron gần đây, thời lượng, trạng thái và lỗi đã ghi.",
+        "diagnostics": {
+          "description": "Cảnh báo vận hành cho cron runner, watcher, route-origin và managed-cron.",
+          "detail": "Chi tiết",
+          "messages": {
+            "docker_control_not_live": "Docker control không live",
+            "last_execution_failed": "Lượt chạy cron gần nhất lỗi cho {jobId}",
+            "managed_external_overdue": "{count} managed cron job đã quá hạn",
+            "managed_parent_failed": "Job cha managed-cron bị lỗi",
+            "recovery_request_stalled": "Yêu cầu phục hồi cron runner bị kẹt",
+            "runner_not_live": "Heartbeat cron runner không live",
+            "watcher_not_live": "Heartbeat blue/green watcher không live"
+          },
+          "severity": {
+            "error": "Lỗi",
+            "warning": "Cảnh báo"
+          },
+          "title": "Chẩn Đoán Cron"
+        },
         "failure_streak": "Chuỗi lỗi",
         "global_paused": "Đang tạm dừng toàn cục",
         "last_duration": "Thời lượng cuối",
@@ -2332,6 +2366,7 @@
           "enabled_jobs": "Job đang bật",
           "next_run": "Lượt chạy kế",
           "next_run_meta": "Lượt chạy được lên lịch gần nhất",
+          "next_run_stale_meta": "Ước tính lịch khi runner đang cũ",
           "processing": "Đang xử lý",
           "queue": "Lượt chờ",
           "runner": "Runner",

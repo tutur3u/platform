@@ -3,13 +3,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type {
   CronDockerControlRecoveryStatus,
+  CronDockerControlWatchdogStatus,
   CronExecutionRecord,
   CronMonitoringControl,
+  CronMonitoringDiagnostic,
   CronMonitoringJob,
   CronMonitoringSnapshot,
   CronRunnerRecoveryAction,
   CronRunnerRecoveryRequest,
   CronRunRecord,
+  ManagedExternalCronMonitoring,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import parser from 'cron-parser';
 
@@ -279,8 +282,49 @@ function normalizeDockerControlRecovery(
     durationMs:
       typeof record.durationMs === 'number' ? record.durationMs : null,
     error: typeof record.error === 'string' ? record.error : null,
+    reason: typeof record.reason === 'string' ? record.reason : null,
     requestedAt:
       typeof record.requestedAt === 'string' ? record.requestedAt : null,
+    source: typeof record.source === 'string' ? record.source : null,
+    status,
+  };
+}
+
+function normalizeDockerControlWatchdog(
+  value: unknown
+): CronDockerControlWatchdogStatus | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const status =
+    record.status === 'cooldown' ||
+    record.status === 'disabled' ||
+    record.status === 'failed' ||
+    record.status === 'healthy' ||
+    record.status === 'recovered' ||
+    record.status === 'recovering' ||
+    record.status === 'unknown'
+      ? record.status
+      : 'unknown';
+
+  return {
+    cooldownRemainingMs:
+      typeof record.cooldownRemainingMs === 'number'
+        ? record.cooldownRemainingMs
+        : null,
+    enabled: record.enabled !== false,
+    lastCheckedAt:
+      typeof record.lastCheckedAt === 'number' ? record.lastCheckedAt : null,
+    lastError:
+      typeof record.lastError === 'string' && record.lastError.trim()
+        ? record.lastError.trim()
+        : null,
+    lastReason:
+      typeof record.lastReason === 'string' && record.lastReason.trim()
+        ? record.lastReason.trim()
+        : null,
     status,
   };
 }
@@ -310,6 +354,7 @@ function readDockerControlStatus({
     lastRecovery: normalizeDockerControlRecovery(record?.lastRecovery),
     status: normalizeStatusHealth(updatedAt, now),
     updatedAt,
+    watchdog: normalizeDockerControlWatchdog(record?.watchdog),
   };
 }
 
@@ -509,6 +554,133 @@ function normalizeStatusHealth(updatedAt: number | null, now: number) {
     : ('live' as const);
 }
 
+type CronMonitoringSnapshotWithoutDiagnostics = Omit<
+  CronMonitoringSnapshot,
+  'diagnostics'
+>;
+
+function trimDiagnosticDetail(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  return value.trim().slice(0, 500);
+}
+
+function buildCronMonitoringDiagnostics({
+  managedExternalCron,
+  snapshot,
+}: {
+  managedExternalCron?: ManagedExternalCronMonitoring | null;
+  snapshot: CronMonitoringSnapshotWithoutDiagnostics;
+}): CronMonitoringDiagnostic[] {
+  const diagnostics: CronMonitoringDiagnostic[] = [];
+
+  if (snapshot.status !== 'live') {
+    diagnostics.push({
+      code: 'runner_not_live',
+      detail: `Cron runner heartbeat is ${snapshot.status}.`,
+      severity: 'error',
+      timestamp: snapshot.updatedAt,
+    });
+  }
+
+  if (snapshot.recovery.watcherStatus !== 'live') {
+    diagnostics.push({
+      code: 'watcher_not_live',
+      detail: `Blue/green watcher heartbeat is ${snapshot.recovery.watcherStatus}.`,
+      severity: 'warning',
+      timestamp: null,
+    });
+  }
+
+  if (
+    snapshot.recovery.directControl.configured &&
+    snapshot.recovery.directControl.status !== 'live'
+  ) {
+    diagnostics.push({
+      code: 'docker_control_not_live',
+      detail: `Docker control heartbeat is ${snapshot.recovery.directControl.status}.`,
+      severity: 'warning',
+      timestamp: snapshot.recovery.directControl.updatedAt,
+    });
+  }
+
+  if (snapshot.recovery.blockedReason || snapshot.recovery.requestIsStale) {
+    diagnostics.push({
+      code: 'recovery_request_stalled',
+      detail: snapshot.recovery.blockedReason,
+      severity: 'error',
+      timestamp: snapshot.runnerRecoveryRequest?.requestedAt ?? null,
+    });
+  }
+
+  if (snapshot.lastExecution && snapshot.lastExecution.status !== 'success') {
+    diagnostics.push({
+      code: 'last_execution_failed',
+      detail: trimDiagnosticDetail(
+        snapshot.lastExecution.error ?? snapshot.lastExecution.response
+      ),
+      jobId: snapshot.lastExecution.jobId,
+      severity:
+        snapshot.lastExecution.status === 'timeout' ? 'error' : 'warning',
+      timestamp: snapshot.lastExecution.startedAt,
+    });
+  }
+
+  const managedParentJob = snapshot.jobs.find(
+    (job) => job.id === 'managed-workspace-cron-jobs'
+  );
+  if (
+    managedParentJob &&
+    ((managedParentJob.failureStreak ?? 0) > 0 ||
+      (managedParentJob.lastExecution &&
+        managedParentJob.lastExecution.status !== 'success'))
+  ) {
+    diagnostics.push({
+      code: 'managed_parent_failed',
+      count: managedParentJob.failureStreak,
+      detail: trimDiagnosticDetail(
+        managedParentJob.lastExecution?.error ??
+          managedParentJob.lastExecution?.response
+      ),
+      jobId: managedParentJob.id,
+      severity: 'error',
+      timestamp: managedParentJob.lastExecution?.startedAt ?? null,
+    });
+  }
+
+  const overdueManagedJobs =
+    managedExternalCron?.apps.flatMap((app) =>
+      app.jobs.filter((job) => job.isOverdue)
+    ) ?? [];
+  if (overdueManagedJobs.length > 0) {
+    diagnostics.push({
+      code: 'managed_external_overdue',
+      count: overdueManagedJobs.length,
+      detail: trimDiagnosticDetail(overdueManagedJobs[0]?.overdueReason),
+      jobId: overdueManagedJobs[0]?.jobKey ?? null,
+      severity: 'error',
+      timestamp: overdueManagedJobs[0]?.overdueSince ?? null,
+    });
+  }
+
+  return diagnostics;
+}
+
+export function withManagedExternalCronDiagnostics(
+  snapshot: CronMonitoringSnapshot,
+  managedExternalCron: ManagedExternalCronMonitoring
+): CronMonitoringSnapshot {
+  return {
+    ...snapshot,
+    diagnostics: buildCronMonitoringDiagnostics({
+      managedExternalCron,
+      snapshot,
+    }),
+  };
+}
+
 export function readCronMonitoringSnapshot({
   fsImpl = fs,
   now = Date.now(),
@@ -582,7 +754,7 @@ export function readCronMonitoringSnapshot({
     now
   );
 
-  return {
+  const snapshot: CronMonitoringSnapshotWithoutDiagnostics = {
     control,
     enabled: control.enabled,
     jobs: effectiveJobs,
@@ -628,6 +800,11 @@ export function readCronMonitoringSnapshot({
     },
     status: normalizeStatusHealth(updatedAt, now),
     updatedAt,
+  };
+
+  return {
+    ...snapshot,
+    diagnostics: buildCronMonitoringDiagnostics({ snapshot }),
   };
 }
 

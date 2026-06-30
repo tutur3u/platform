@@ -188,6 +188,7 @@ function createSnapshot(
       updatedByEmail: null,
     },
     enabled: true,
+    diagnostics: [],
     jobs: [
       {
         configuredEnabled: true,
@@ -224,6 +225,7 @@ function createSnapshot(
         lastRecovery: null,
         status: 'missing',
         updatedAt: null,
+        watchdog: null,
       },
       pendingRequestAgeMs: null,
       requestIsStale: false,

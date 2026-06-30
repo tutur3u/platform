@@ -8,6 +8,7 @@ const {
   getCronPaths,
   getDueScheduledJobs,
   listWebContainers,
+  loadCronParser,
   processWatcherRecoveryRequest,
   runCronCycle,
 } = require('./watch-web-crons.js');
@@ -53,6 +54,25 @@ test('syncWebCrons reports drift when vercel crons differ from shared config', (
     );
     syncWebCrons({ cronConfigPath, vercelConfigPath });
     assert.equal(getCronSyncDiff({ cronConfigPath, vercelConfigPath }), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('loadCronParser falls back to the packaged cron-runner module path', () => {
+  const tempDir = makeTempDir('web-crons-parser-');
+
+  try {
+    const moduleDir = path.join(tempDir, 'node_modules', 'cron-parser');
+    fs.mkdirSync(moduleDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(moduleDir, 'index.js'),
+      'module.exports = { packagedCronParser: true };\n'
+    );
+
+    assert.deepEqual(loadCronParser(tempDir), {
+      packagedCronParser: true,
+    });
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

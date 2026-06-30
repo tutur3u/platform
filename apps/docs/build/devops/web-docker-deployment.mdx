@@ -937,6 +937,9 @@ In Docker production, the `web-cron-runner` service runs
 `http://web-proxy:7803`. Requests include
 `Authorization: Bearer ${CRON_SECRET || VERCEL_CRON_SECRET}` so the same route
 auth gate can protect Vercel and native Docker executions.
+The cron-runner image bundles the `cron-parser` dependency used by that script,
+so runtime execution does not depend on `node_modules` existing in the mounted
+host checkout.
 
 When neither `CRON_SECRET` nor `VERCEL_CRON_SECRET` is set on the host, the
 Docker environment generator creates a persisted internal secret at
@@ -952,15 +955,27 @@ Compose start. A healthy existing cron runner is left running; a missing control
 sidecar or runner fails watcher bootstrap instead of leaving the stack without
 native cron recovery or execution.
 
-Each watcher poll also reconciles cron-runner health before doing normal deploy
-work. The watcher checks the `web-cron-runner` container state, Docker
-healthcheck result, and `tmp/docker-web/cron/status.json.updatedAt`. If the
-container is missing, unhealthy, or the heartbeat is stale, the watcher writes
-the existing `tmp/docker-web/watch/control/cron-runner-recovery.request.json`
-request and processes it immediately with a force-recreate of
-`web-cron-runner`. It then waits for a fresh heartbeat before reporting
-`cron-runner-recovered`; if the Compose restart fails, the request remains on
-disk with `lastError` and the watcher backs off before retrying.
+`web-cron-runner` is the executor. The blue/green watcher is one recovery
+consumer, not the owner of cron execution. Each watcher poll reconciles
+cron-runner health before normal deploy work by checking the
+`web-cron-runner` container state, Docker healthcheck result, and
+`tmp/docker-web/cron/status.json.updatedAt`. If the container is missing,
+unhealthy, or the heartbeat is stale, the watcher writes the existing
+`tmp/docker-web/watch/control/cron-runner-recovery.request.json` request and
+processes it immediately with a force-recreate of `web-cron-runner`. It then
+waits for a fresh heartbeat before reporting `cron-runner-recovered`; if the
+Compose restart fails, the request remains on disk with `lastError` and the
+watcher backs off before retrying.
+
+`web-docker-control` also owns an independent cron-runner watchdog. The watchdog
+defaults on, reads the same cron runner heartbeat, inspects the
+`web-cron-runner` container, ensures `web-blue-green-watcher`, and
+force-recreates only `web-cron-runner` when the heartbeat is stale/missing or
+the container is missing/unhealthy. This keeps cron recovery available even when
+the blue/green watcher heartbeat is stale. The watchdog does not recover the
+whole serving stack; route-origin failures such as an unreachable
+`INTERNAL_WEB_API_ORIGIN` / `web-proxy` are reported in monitoring diagnostics
+for an operator to fix separately.
 
 Cron runner heartbeats refresh both runner liveness and schedule metadata. When
 the runner starts a cycle or keeps a long execution alive, it recomputes each
@@ -986,6 +1001,16 @@ Useful cron-runner recovery knobs:
   poll interval. Default: `2000`.
 - `PLATFORM_CRON_RUNNER_STATUS_STALE_AFTER_MS` controls the entrypoint child
   watchdog. Default: `120000`.
+- `PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED` disables the
+  `web-docker-control` cron-runner watchdog when set to `true`. Default:
+  `false`.
+- `PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS` controls the
+  `web-docker-control` watchdog polling interval. Default: `30000`.
+- `PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS` controls
+  `web-docker-control` heartbeat staleness detection. Default: `120000`.
+- `PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS` controls
+  `web-docker-control` recovery cooldown after a restart attempt. Default:
+  `60000`.
 - `PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS` bounds Docker `ps` / `logs`
   probes used for cron telemetry. Default: `10000`.
 
@@ -993,7 +1018,13 @@ Useful cron-runner recovery knobs:
 socket, and host worktree mount. `apps/web` reaches it through
 `PLATFORM_DOCKER_CONTROL_URL` and `PLATFORM_DOCKER_CONTROL_TOKEN` for hardcoded
 watcher/cron-runner recovery actions only; it does not expose a general Docker
-or shell interface.
+or shell interface. Its status file at
+`tmp/docker-web/docker-control/status.json` includes both the latest manual or
+watchdog recovery attempt and the latest watchdog check, which the cron
+monitoring dashboard surfaces alongside watcher and runner heartbeat warnings.
+When the runner heartbeat is stale, future cron times in the dashboard are
+scheduled estimates derived from config/control, not proof that the runner will
+execute them.
 
 The managed workspace cron worker runs at
 `/api/cron/workspaces/managed-jobs` through the `managed-workspace-cron-jobs`

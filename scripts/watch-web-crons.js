@@ -162,9 +162,25 @@ function getCronPaths({
 }
 
 function loadCronParser(rootDir = ROOT_DIR) {
-  return require(
-    path.join(rootDir, 'apps', 'web', 'node_modules', 'cron-parser')
-  );
+  const candidates = [
+    path.join(rootDir, 'apps', 'web', 'node_modules', 'cron-parser'),
+    path.join(rootDir, 'node_modules', 'cron-parser'),
+    path.join('/workspace', 'node_modules', 'cron-parser'),
+    'cron-parser',
+  ].filter(Boolean);
+
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      return require(candidate);
+    } catch (error) {
+      errors.push(
+        `${candidate}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  throw new Error(`Unable to load cron-parser. Tried ${errors.join('; ')}`);
 }
 
 function getPreviousScheduledAt(schedule, now, rootDir = ROOT_DIR) {
@@ -1261,6 +1277,7 @@ module.exports = {
   executeJob,
   getCronPaths,
   getDueScheduledJobs,
+  loadCronParser,
   getNextScheduledAt,
   getPreviousScheduledAt,
   initializeScheduleState,
