@@ -71,7 +71,6 @@ struct MeetStreamLiveInputRow {
     ended_at: Option<String>,
     cloudflare_live_input_uid: Option<String>,
     whep_url: Option<String>,
-    whip_url: Option<String>,
     status: Option<String>,
 }
 
@@ -153,18 +152,7 @@ async fn stream_get_response(
         };
 
     // Step 5: serialize and return.
-    let stream_value = stream_row.map(|row| {
-        json!({
-            "createdAt": row.created_at,
-            "endedAt": row.ended_at,
-            "id": row.id,
-            "liveInputUid": row.cloudflare_live_input_uid,
-            "playbackUrl": row.whep_url,
-            "publishUrl": row.whip_url,
-            "status": row.status,
-            "updatedAt": row.updated_at,
-        })
-    });
+    let stream_value = stream_row.map(serialize_meet_stream_live_input);
 
     no_store_response(json_response(200, json!({ "stream": stream_value })))
 }
@@ -248,7 +236,7 @@ async fn fetch_meet_stream_live_input(
             &[
                 (
                     "select",
-                    "id,created_at,updated_at,ended_at,cloudflare_live_input_uid,whep_url,whip_url,status"
+                    "id,created_at,updated_at,ended_at,cloudflare_live_input_uid,whep_url,status"
                         .to_owned(),
                 ),
                 ("meeting_id", format!("eq.{meeting_id}")),
@@ -302,6 +290,18 @@ fn resolve_workspace_id(identifier: &str) -> String {
     } else {
         identifier.to_owned()
     }
+}
+
+fn serialize_meet_stream_live_input(row: MeetStreamLiveInputRow) -> serde_json::Value {
+    json!({
+        "createdAt": row.created_at,
+        "endedAt": row.ended_at,
+        "id": row.id,
+        "liveInputUid": row.cloudflare_live_input_uid,
+        "playbackUrl": row.whep_url,
+        "status": row.status,
+        "updatedAt": row.updated_at,
+    })
 }
 
 fn message_response(status: u16, message: &str) -> BackendResponse {
@@ -363,5 +363,21 @@ mod tests {
     fn resolve_regular_id_unchanged() {
         let id = "some-uuid-1234";
         assert_eq!(resolve_workspace_id(id), id.to_owned());
+    }
+
+    #[test]
+    fn serialize_stream_live_input_omits_publish_url() {
+        let stream = serialize_meet_stream_live_input(MeetStreamLiveInputRow {
+            id: Some("stream-1".to_owned()),
+            created_at: Some("2026-06-30T00:00:00Z".to_owned()),
+            updated_at: Some("2026-06-30T00:01:00Z".to_owned()),
+            ended_at: None,
+            cloudflare_live_input_uid: Some("live-input-1".to_owned()),
+            whep_url: Some("https://playback.example/live".to_owned()),
+            status: Some("ready".to_owned()),
+        });
+
+        assert_eq!(stream["playbackUrl"], "https://playback.example/live");
+        assert!(stream.get("publishUrl").is_none());
     }
 }
