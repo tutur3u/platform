@@ -1,5 +1,6 @@
 import { generateHTML, generateJSON } from '@tiptap/core';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
+import { parseTaskDescriptionInput } from '@tuturuuu/utils/task-description-codec';
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { getEditorExtensions } from '../extensions';
@@ -155,6 +156,27 @@ describe('text editor extensions', () => {
 
     expect(html).toContain('<mark');
     expect(html).toContain('#FFF59D');
+  });
+
+  it('renders shared markdown-codec table JSON with editor table extensions', () => {
+    const extensions = getEditorExtensions({ readOnly: true });
+    const content = parseTaskDescriptionInput(
+      ['| Field | Value |', '| --- | --- |', '| Owner | Platform |'].join('\n'),
+      'markdown'
+    );
+
+    const html = generateHTML(content, extensions);
+
+    expect(html).toContain('<table');
+    expect(html).toContain('<th');
+    expect(html).toContain('<td');
+    expect(html).toContain('Platform');
+
+    const parsed = generateJSON(html, extensions);
+    expect(parsed.content?.[0]?.type).toBe('table');
+    expect(parsed.content?.[0]?.content?.[0]?.content?.[0]?.type).toBe(
+      'tableHeader'
+    );
   });
 
   it('round-trips task mention workspace metadata through HTML attrs', () => {

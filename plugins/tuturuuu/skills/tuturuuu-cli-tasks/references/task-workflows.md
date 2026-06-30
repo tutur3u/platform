@@ -171,6 +171,7 @@ Create or update tasks with descriptions directly:
 
 ```bash
 ttr tasks create "Write release notes" --description-file notes.md --description-format markdown
+ttr tasks create "QA handoff" --description-file table.md --description-format markdown
 ttr tasks update <task-id> --description "Clarified acceptance criteria"
 ```
 
@@ -179,9 +180,14 @@ Use local codec utilities for debugging or preparing payloads without login:
 ```bash
 ttr tiptap parse --text "Hello" --output json
 ttr tiptap parse --input notes.md --format markdown --output yjs-base64
+ttr tiptap parse --text "| Field | Value |\n| --- | --- |\n| Owner | Platform |" --format markdown --output json
 ttr tiptap encode --input description.json --format json --output bytes-json
 ttr tiptap decode --input state.txt --format yjs-base64 --output text
 ```
+
+Markdown task descriptions support GFM pipe tables. The shared codec turns those
+tables into TipTap table nodes, so do not bypass the codec with plain text or raw
+JSON when creating descriptions from `ttr` or local template files.
 
 ## Task Templates
 
@@ -205,7 +211,21 @@ ttr task-templates delete bug-report
 Local templates live under `.tuturuuu/task-templates/*.md`. The YAML
 frontmatter stores metadata such as `key`, `name`, `task_name`, `priority`,
 `label_ids`, `assignee_ids`, and `project_ids`; the markdown body becomes the
-task description.
+task description, including GFM pipe tables.
+
+```markdown
+---
+key: qa-handoff
+name: QA handoff
+task_name: Verify release handoff
+priority: high
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+| Environment | Staging |
+```
 
 ```bash
 ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md

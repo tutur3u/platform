@@ -146,6 +146,134 @@ function isHorizontalRule(line: string) {
   return /^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/u.test(line);
 }
 
+function splitMarkdownTableRow(line: string): string[] | null {
+  let trimmed = line.trim();
+  if (!trimmed) return null;
+
+  const hasOuterPipe = trimmed.startsWith('|') || trimmed.endsWith('|');
+  if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+
+  const cells: string[] = [];
+  let cell = '';
+  let foundSeparator = false;
+
+  for (let index = 0; index < trimmed.length; index += 1) {
+    const character = trimmed[index];
+    const nextCharacter = trimmed[index + 1];
+
+    if (character === '\\' && nextCharacter === '|') {
+      cell += '|';
+      index += 1;
+      continue;
+    }
+
+    if (character === '|') {
+      cells.push(cell.trim());
+      cell = '';
+      foundSeparator = true;
+      continue;
+    }
+
+    cell += character;
+  }
+
+  cells.push(cell.trim());
+
+  if (!(hasOuterPipe || foundSeparator)) return null;
+  return cells;
+}
+
+function isMarkdownTableDelimiterCell(cell: string) {
+  return /^:?-{3,}:?$/u.test(cell.trim());
+}
+
+function getMarkdownTableDelimiterCells(line: string) {
+  const cells = splitMarkdownTableRow(line);
+  if (!cells || cells.length === 0) return null;
+  return cells.every(isMarkdownTableDelimiterCell) ? cells : null;
+}
+
+function isMarkdownTableStart(lines: string[], index: number) {
+  const headerCells = splitMarkdownTableRow(lines[index] ?? '');
+  const delimiterCells = getMarkdownTableDelimiterCells(lines[index + 1] ?? '');
+
+  return Boolean(
+    headerCells &&
+      headerCells.length > 0 &&
+      delimiterCells &&
+      delimiterCells.length === headerCells.length
+  );
+}
+
+function tableCellFromText(
+  text: string,
+  type: 'tableCell' | 'tableHeader'
+): JSONContent {
+  return {
+    attrs: { colspan: 1, rowspan: 1, colwidth: null },
+    content: [paragraphFromText(text, true)],
+    type,
+  };
+}
+
+function padTableRow(cells: string[], columnCount: number) {
+  return Array.from({ length: columnCount }, (_, index) => cells[index] ?? '');
+}
+
+function parseMarkdownTable(
+  lines: string[],
+  startIndex: number
+): { block: JSONContent; endIndex: number } | null {
+  const headerCells = splitMarkdownTableRow(lines[startIndex] ?? '');
+  const delimiterCells = getMarkdownTableDelimiterCells(
+    lines[startIndex + 1] ?? ''
+  );
+
+  if (!headerCells || !delimiterCells) return null;
+  if (delimiterCells.length !== headerCells.length) return null;
+
+  const bodyRows: string[][] = [];
+  let index = startIndex + 2;
+
+  while (index < lines.length) {
+    const line = lines[index] ?? '';
+    if (!line.trim() || isBlockStart(line)) break;
+
+    const rowCells = splitMarkdownTableRow(line);
+    if (!rowCells) break;
+    bodyRows.push(rowCells);
+    index += 1;
+  }
+
+  const columnCount = Math.max(
+    headerCells.length,
+    delimiterCells.length,
+    ...bodyRows.map((row) => row.length)
+  );
+
+  return {
+    block: {
+      content: [
+        {
+          content: padTableRow(headerCells, columnCount).map((cell) =>
+            tableCellFromText(cell, 'tableHeader')
+          ),
+          type: 'tableRow',
+        },
+        ...bodyRows.map((row) => ({
+          content: padTableRow(row, columnCount).map((cell) =>
+            tableCellFromText(cell, 'tableCell')
+          ),
+          type: 'tableRow',
+        })),
+      ],
+      type: 'table',
+    },
+    endIndex: index,
+  };
+}
+
 function getListLine(line: string):
   | {
       checked?: boolean;
@@ -288,12 +416,22 @@ function parseMarkdownBlocks(markdown: string): JSONContent[] {
       continue;
     }
 
+    if (isMarkdownTableStart(lines, index)) {
+      const table = parseMarkdownTable(lines, index);
+      if (table) {
+        blocks.push(table.block);
+        index = table.endIndex;
+        continue;
+      }
+    }
+
     const paragraphLines = [line];
     index += 1;
     while (
       index < lines.length &&
       (lines[index] ?? '').trim() &&
-      !isBlockStart(lines[index] ?? '')
+      !isBlockStart(lines[index] ?? '') &&
+      !isMarkdownTableStart(lines, index)
     ) {
       paragraphLines.push(lines[index] ?? '');
       index += 1;

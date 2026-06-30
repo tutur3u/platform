@@ -1,6 +1,8 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JSONContent } from '@tiptap/core';
+import { decodeTaskDescriptionYjsState } from '@tuturuuu/utils/task-description-codec';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json';
 import {
@@ -11,6 +13,19 @@ import {
   normalizeLabelColor,
   runCli,
 } from './commands';
+
+function findNode(
+  content: JSONContent | undefined,
+  type: string
+): JSONContent | undefined {
+  if (!content) return undefined;
+  if (content.type === type) return content;
+
+  for (const child of content.content ?? []) {
+    const match = findNode(child, type);
+    if (match) return match;
+  }
+}
 
 describe('CLI commands', () => {
   afterEach(() => {
@@ -477,7 +492,9 @@ label_ids:
   - label-1
 ---
 
-Template body
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
 `,
       'utf8'
     );
@@ -517,9 +534,15 @@ Template body
       'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks',
       expect.objectContaining({ method: 'POST' })
     );
-    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body).toEqual({
       assignee_ids: [],
-      description: 'Template body',
+      description: [
+        '| Field | Value |',
+        '| --- | --- |',
+        '| Owner | Platform |',
+      ].join('\n'),
+      description_yjs_state: expect.any(Array),
       end_date: null,
       estimation_points: null,
       label_ids: ['label-1'],
@@ -529,6 +552,69 @@ Template body
       project_ids: [],
       start_date: null,
     });
+    expect(
+      findNode(
+        decodeTaskDescriptionYjsState(body.description_yjs_state),
+        'table'
+      )
+    ).toBeDefined();
+  });
+
+  it('imports local markdown task templates with generated table Yjs state', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-template-import-'));
+    const templatePath = join(dir, 'handoff.md');
+    await writeFile(
+      templatePath,
+      `---
+name: Handoff
+task_name: Prepare handoff
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+`,
+      'utf8'
+    );
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        template: {
+          id: 'template-1',
+          name: 'Handoff',
+          slug: 'handoff',
+        },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'import',
+      templatePath,
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(body.description).toContain('| Field | Value |');
+    expect(
+      findNode(
+        decodeTaskDescriptionYjsState(body.description_yjs_state),
+        'table'
+      )
+    ).toBeDefined();
   });
 
   it('creates wallet checkpoints with timezone-normalized checked_at values', async () => {
@@ -1623,6 +1709,30 @@ Template body
     expect(write).toHaveBeenCalledWith(expect.stringContaining('Hello CLI'));
   });
 
+  it('parses markdown tables through the local tiptap command', async () => {
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/tmp/tuturuuu-cli-missing-config/config.json'
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'tiptap',
+      'parse',
+      '--text',
+      ['| Field | Value |', '| --- | --- |', '| Owner | Platform |'].join('\n'),
+      '--format',
+      'markdown',
+      '--output',
+      'json',
+    ]);
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(findNode(JSON.parse(output), 'table')).toBeDefined();
+  });
+
   it.each([
     ['tasks', 'done', '--help'],
     ['tasks', 'complete', '--help'],
@@ -1767,6 +1877,52 @@ Template body
       'Acceptance criteria'
     );
     expect(Array.isArray(body.description_yjs_state)).toBe(true);
+  });
+
+  it('creates task descriptions from markdown files with tables', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-description-'));
+    const descriptionPath = join(dir, 'table.md');
+    await writeFile(
+      descriptionPath,
+      ['| Field | Value |', '| --- | --- |', '| Owner | Platform |'].join('\n'),
+      'utf8'
+    );
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentListId: 'list-1',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        task: { id: 'task-1', name: 'Task with table' },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'create',
+      'Task with table',
+      '--description-file',
+      descriptionPath,
+      '--description-format',
+      'markdown',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(findNode(JSON.parse(body.description), 'table')).toBeDefined();
+    expect(
+      findNode(
+        decodeTaskDescriptionYjsState(body.description_yjs_state),
+        'table'
+      )
+    ).toBeDefined();
   });
 
   it('updates task descriptions through the dedicated description route', async () => {

@@ -110,9 +110,24 @@ ttr tasks create --template .tuturuuu/task-templates/bug-report.md --name "Inves
 ```
 
 Template frontmatter should stay machine-readable YAML. The markdown body is the
-task description. Explicit task-create flags such as `--name`, `--list`,
-`--priority`, `--labels`, `--assignees`, and `--projects` override template
-defaults.
+task description and may include GFM pipe tables; keep those bodies on the
+shared task-description TipTap/Yjs codec path so the web editor renders real
+table nodes. Explicit task-create flags such as `--name`, `--list`, `--priority`,
+`--labels`, `--assignees`, and `--projects` override template defaults.
+
+```markdown
+---
+key: qa-handoff
+name: QA handoff
+task_name: Verify release handoff
+priority: high
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+| Environment | Staging |
+```
 
 ## Verification
 

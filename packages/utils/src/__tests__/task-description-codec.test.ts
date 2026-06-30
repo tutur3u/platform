@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
 import {
   createTaskDescriptionPayload,
@@ -12,6 +13,28 @@ import {
   taskDescriptionYjsStateFromBytesJson,
   taskDescriptionYjsStateToBase64,
 } from '../task-description-codec';
+
+function findNode(
+  content: JSONContent | undefined,
+  type: string
+): JSONContent | undefined {
+  if (!content) return undefined;
+  if (content.type === type) return content;
+
+  for (const child of content.content ?? []) {
+    const match = findNode(child, type);
+    if (match) return match;
+  }
+}
+
+function cellTexts(row: JSONContent | undefined) {
+  return (row?.content ?? []).map((cell) =>
+    taskDescriptionPlainText({
+      content: cell.content ?? [],
+      type: 'doc',
+    })
+  );
+}
 
 describe('task description codec', () => {
   it('creates storage payloads from plain text', () => {
@@ -50,6 +73,90 @@ describe('task description codec', () => {
     expect(plainText).toContain('[x] Confirm CLI auth');
     expect(plainText).toContain('> Keep this scoped');
     expect(plainText).toContain('const shipped = true;');
+  });
+
+  it('parses GFM pipe tables into TipTap table nodes', () => {
+    const content = parseTaskDescriptionInput(
+      [
+        '| **Item** | Owner |',
+        '| :--- | ---: |',
+        '| API | [Sam](https://example.com) |',
+        '| CLI | `ttr` |',
+      ].join('\n'),
+      'markdown'
+    );
+    const table = findNode(content, 'table');
+    const rows = table?.content ?? [];
+
+    expect(table).toBeDefined();
+    expect(rows).toHaveLength(3);
+    expect(rows[0]?.content?.map((cell) => cell.type)).toEqual([
+      'tableHeader',
+      'tableHeader',
+    ]);
+    expect(cellTexts(rows[0])).toEqual(['Item', 'Owner']);
+    expect(cellTexts(rows[1])).toEqual(['API', 'Sam']);
+
+    const firstHeaderText = rows[0]?.content?.[0]?.content?.[0]?.content?.[0];
+    expect(firstHeaderText).toMatchObject({
+      marks: [expect.objectContaining({ type: 'bold' })],
+      text: 'Item',
+      type: 'text',
+    });
+  });
+
+  it('keeps escaped pipes inside markdown table cells', () => {
+    const content = parseTaskDescriptionInput(
+      ['Name | Notes', '--- | ---', 'API | Keep A\\|B together'].join('\n'),
+      'markdown'
+    );
+    const table = findNode(content, 'table');
+    const rows = table?.content ?? [];
+
+    expect(cellTexts(rows[1])).toEqual(['API', 'Keep A|B together']);
+  });
+
+  it('pads ragged markdown table rows into rectangular table rows', () => {
+    const content = parseTaskDescriptionInput(
+      [
+        '| A | B | C |',
+        '| --- | --- | --- |',
+        '| 1 | 2 |',
+        '| 3 | 4 | 5 | 6 |',
+      ].join('\n'),
+      'markdown'
+    );
+    const table = findNode(content, 'table');
+    const rows = table?.content ?? [];
+
+    expect(rows.map((row) => row.content?.length)).toEqual([4, 4, 4]);
+    expect(cellTexts(rows[1])).toEqual(['1', '2', '', '']);
+    expect(cellTexts(rows[2])).toEqual(['3', '4', '5', '6']);
+  });
+
+  it('keeps non-table pipe text as paragraph text', () => {
+    const content = parseTaskDescriptionInput(
+      ['This mentions A | B as text.', 'There is no delimiter row.'].join('\n'),
+      'markdown'
+    );
+
+    expect(findNode(content, 'table')).toBeUndefined();
+    expect(taskDescriptionPlainText(content)).toContain('A | B as text');
+  });
+
+  it('round-trips markdown tables through Yjs state', () => {
+    const payload = createTaskDescriptionPayload(
+      ['| Field | Value |', '| --- | --- |', '| Priority | High |'].join('\n'),
+      'markdown'
+    );
+    const decoded = decodeTaskDescriptionYjsState(
+      payload.description_yjs_state ?? []
+    );
+    const table = findNode(decoded, 'table');
+    const rows = table?.content ?? [];
+
+    expect(table).toBeDefined();
+    expect(cellTexts(rows[1])).toEqual(['Priority', 'High']);
   });
 
   it('round-trips TipTap content through Yjs base64', () => {
