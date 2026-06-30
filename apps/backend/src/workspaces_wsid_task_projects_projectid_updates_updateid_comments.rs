@@ -11,6 +11,9 @@
 //! - Verify the caller has any `workspace_members` row for `:wsId`; lookup
 //!   failure -> `500 { "error": "Failed to verify workspace access" }`, non-member
 //!   -> `403 { "error": "Forbidden" }`.
+//! - Verify `:projectId` belongs to `:wsId` and `:updateId` belongs to that
+//!   project before any service-role comment fetch; no matching row ->
+//!   `404 { "error": "Update not found" }`.
 //! - Fetch `task_project_update_comments` filtered by `update_id`, not deleted,
 //!   ordered by `created_at ASC`; fetch failure ->
 //!   `500 { "error": "Failed to fetch comments" }`.
@@ -22,9 +25,8 @@
 //! NOTE / GAPS:
 //!
 //! - The legacy route reads comments through the caller's RLS-scoped Supabase
-//!   client. This port uses the service-role key with an explicit `update_id`
-//!   filter after independently confirming workspace membership, matching the
-//!   observable response shape while bypassing PostgREST RLS.
+//!   client. This port uses the service-role key after independently confirming
+//!   workspace membership and update/project/workspace ownership.
 //! - The legacy membership check accepts any membership type (MEMBER or GUEST).
 //!   This port mirrors that by checking for the existence of any
 //!   `workspace_members` row, not just `type = MEMBER`.
@@ -50,6 +52,7 @@ const UNAUTHORIZED_ERROR: &str = "Unauthorized";
 const LOOKUP_FAILED_ERROR: &str = "Failed to verify workspace access";
 const FORBIDDEN_ERROR: &str = "Forbidden";
 const FETCH_ERROR: &str = "Failed to fetch comments";
+const UPDATE_NOT_FOUND_ERROR: &str = "Update not found";
 
 struct CommentEntry {
     id: String,
@@ -62,10 +65,10 @@ pub(crate) async fn handle_workspaces_wsid_task_projects_projectid_updates_updat
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<BackendResponse> {
-    let (ws_id, _project_id, update_id) = match_path(request.path)?;
+    let (ws_id, project_id, update_id) = match_path(request.path)?;
 
     Some(match request.method {
-        "GET" => get_comments(config, request, ws_id, update_id, outbound).await,
+        "GET" => get_comments(config, request, ws_id, project_id, update_id, outbound).await,
         _ => return None,
     })
 }
@@ -93,6 +96,7 @@ async fn get_comments(
     config: &BackendConfig,
     request: BackendRequest<'_>,
     ws_id: &str,
+    project_id: &str,
     update_id: &str,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
@@ -117,6 +121,12 @@ async fn get_comments(
         Ok(true) => {}
         Ok(false) => return err_response(403, FORBIDDEN_ERROR),
         Err(()) => return err_response(500, LOOKUP_FAILED_ERROR),
+    }
+
+    match verify_update_scope(contact_data, outbound, ws_id, project_id, update_id).await {
+        Ok(true) => {}
+        Ok(false) => return err_response(404, UPDATE_NOT_FOUND_ERROR),
+        Err(()) => return err_response(500, FETCH_ERROR),
     }
 
     match fetch_comments(contact_data, outbound, update_id).await {
@@ -151,6 +161,52 @@ async fn verify_any_workspace_member(
     }
     let rows = response.json::<Vec<Value>>().map_err(|_| ())?;
     Ok(!rows.is_empty())
+}
+
+async fn verify_update_scope(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    ws_id: &str,
+    project_id: &str,
+    update_id: &str,
+) -> Result<bool, ()> {
+    let project_url = contact_data
+        .rest_url(
+            "task_projects",
+            &[
+                ("select", "id".to_owned()),
+                ("id", format!("eq.{project_id}")),
+                ("ws_id", format!("eq.{ws_id}")),
+                ("limit", "1".to_owned()),
+            ],
+        )
+        .ok_or(())?;
+    let project_response = service_role_get(contact_data, outbound, &project_url).await?;
+    if !(200..300).contains(&project_response.status) {
+        return Err(());
+    }
+    let project_rows = project_response.json::<Vec<Value>>().map_err(|_| ())?;
+    if project_rows.is_empty() {
+        return Ok(false);
+    }
+
+    let update_url = contact_data
+        .rest_url(
+            "task_project_updates",
+            &[
+                ("select", "id".to_owned()),
+                ("id", format!("eq.{update_id}")),
+                ("project_id", format!("eq.{project_id}")),
+                ("limit", "1".to_owned()),
+            ],
+        )
+        .ok_or(())?;
+    let update_response = service_role_get(contact_data, outbound, &update_url).await?;
+    if !(200..300).contains(&update_response.status) {
+        return Err(());
+    }
+    let update_rows = update_response.json::<Vec<Value>>().map_err(|_| ())?;
+    Ok(!update_rows.is_empty())
 }
 
 async fn fetch_comments(
@@ -260,123 +316,4 @@ fn err_response(status: u16, error: &str) -> BackendResponse {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn match_path_accepts_valid_paths() {
-        assert_eq!(
-            match_path("/api/v1/workspaces/ws1/task-projects/p1/updates/u1/comments"),
-            Some(("ws1", "p1", "u1"))
-        );
-        assert_eq!(
-            match_path(
-                "/api/v1/workspaces/00000000-0000-0000-0000-000000000000\
-                /task-projects/11111111-1111-1111-1111-111111111111\
-                /updates/22222222-2222-2222-2222-222222222222/comments"
-            ),
-            Some((
-                "00000000-0000-0000-0000-000000000000",
-                "11111111-1111-1111-1111-111111111111",
-                "22222222-2222-2222-2222-222222222222",
-            ))
-        );
-    }
-
-    #[test]
-    fn match_path_rejects_invalid_paths() {
-        // Missing prefix
-        assert_eq!(
-            match_path("/api/workspaces/ws1/task-projects/p1/updates/u1/comments"),
-            None
-        );
-        // Missing /comments suffix
-        assert_eq!(
-            match_path("/api/v1/workspaces/ws1/task-projects/p1/updates/u1"),
-            None
-        );
-        // Extra trailing segment
-        assert_eq!(
-            match_path("/api/v1/workspaces/ws1/task-projects/p1/updates/u1/comments/extra"),
-            None
-        );
-        // Empty ws_id
-        assert_eq!(
-            match_path("/api/v1/workspaces//task-projects/p1/updates/u1/comments"),
-            None
-        );
-        // Empty project_id
-        assert_eq!(
-            match_path("/api/v1/workspaces/ws1/task-projects//updates/u1/comments"),
-            None
-        );
-        // Empty update_id
-        assert_eq!(
-            match_path("/api/v1/workspaces/ws1/task-projects/p1/updates//comments"),
-            None
-        );
-        // Slash in update_id
-        assert_eq!(
-            match_path("/api/v1/workspaces/ws1/task-projects/p1/updates/u1/foo/comments"),
-            None
-        );
-        // Unrelated path
-        assert_eq!(match_path("/health"), None);
-        assert_eq!(match_path(""), None);
-    }
-
-    #[test]
-    fn build_comment_tree_creates_threaded_structure() {
-        let raw = vec![
-            json!({
-                "id": "c1",
-                "parent_id": null,
-                "content": "top",
-                "user": { "id": "u1", "display_name": "Alice", "avatar_url": null }
-            }),
-            json!({
-                "id": "c2",
-                "parent_id": "c1",
-                "content": "reply",
-                "user": { "id": "u2", "display_name": "Bob", "avatar_url": null }
-            }),
-        ];
-
-        let tree = build_comment_tree(raw);
-        assert_eq!(tree.len(), 1, "one top-level comment");
-
-        let top = &tree[0];
-        assert_eq!(top["id"], json!("c1"));
-        let replies = top["replies"].as_array().expect("replies array");
-        assert_eq!(replies.len(), 1);
-        assert_eq!(replies[0]["id"], json!("c2"));
-        assert_eq!(replies[0]["replies"], json!([]));
-    }
-
-    #[test]
-    fn build_comment_tree_handles_empty_input() {
-        let tree = build_comment_tree(vec![]);
-        assert!(tree.is_empty());
-    }
-
-    #[test]
-    fn build_comment_tree_ignores_non_object_values() {
-        let raw = vec![json!("not an object"), json!(42)];
-        let tree = build_comment_tree(raw);
-        assert!(tree.is_empty());
-    }
-
-    #[test]
-    fn build_comment_tree_drops_comments_with_unknown_parent() {
-        let raw = vec![json!({
-            "id": "c2",
-            "parent_id": "ghost",
-            "content": "orphan",
-            "user": null
-        })];
-        // parent "ghost" doesn't exist in the map, so c2 is NOT top-level;
-        // the tree should be empty.
-        let tree = build_comment_tree(raw);
-        assert!(tree.is_empty());
-    }
-}
+mod tests;
