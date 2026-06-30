@@ -57,7 +57,7 @@ export function TaskTemplateClient({
       const payload = await listWorkspaceTaskTemplates(wsId);
       return payload.templates;
     },
-    initialData: initialTemplates,
+    placeholderData: initialTemplates,
   });
 
   const { data: boards = [] } = useQuery({
