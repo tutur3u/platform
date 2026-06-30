@@ -752,9 +752,7 @@ export async function POST(
             inputTokens: result.usage.inputTokens ?? 0,
             outputTokens: result.usage.outputTokens ?? 0,
             reasoningTokens:
-              result.usage.outputTokenDetails?.reasoningTokens ??
-              result.usage.reasoningTokens ??
-              0,
+              result.usage.outputTokenDetails?.reasoningTokens ?? 0,
             feature: 'task_journal',
           }).catch((err: unknown) =>
             console.error('Failed to deduct AI credits:', err)
@@ -773,7 +771,8 @@ export async function POST(
               modelId: resolvedModelId!,
               inputTokens: failedUsage.inputTokens ?? 0,
               outputTokens: failedUsage.outputTokens ?? 0,
-              reasoningTokens: failedUsage.reasoningTokens ?? 0,
+              reasoningTokens:
+                failedUsage.outputTokenDetails?.reasoningTokens ?? 0,
               feature: 'task_journal',
             }).catch((err: unknown) =>
               console.error('Failed to deduct AI credits on error:', err)

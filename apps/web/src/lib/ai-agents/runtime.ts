@@ -350,10 +350,7 @@ function createAiAgentCreditDeduction({
   return async ({ totalUsage }: { totalUsage: LanguageModelUsage }) => {
     const inputTokens = totalUsage.inputTokens ?? 0;
     const outputTokens = totalUsage.outputTokens ?? 0;
-    const reasoningTokens =
-      totalUsage.outputTokenDetails?.reasoningTokens ??
-      totalUsage.reasoningTokens ??
-      0;
+    const reasoningTokens = totalUsage.outputTokenDetails?.reasoningTokens ?? 0;
 
     if (inputTokens <= 0 && outputTokens <= 0 && reasoningTokens <= 0) {
       return;

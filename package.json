@@ -5,19 +5,19 @@
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.1.9",
-    "lucide-static": "^1.21.0",
-    "portless": "^0.14.0",
-    "turbo": "^2.9.18",
+    "lucide-static": "^1.22.0",
+    "portless": "^0.15.0",
+    "turbo": "^2.10.0",
     "typescript": "7.0.1-rc",
     "vite": "^8.1.0",
     "vitest": "4.1.9",
-    "wrangler": "^4.103.0"
+    "wrangler": "^4.105.0"
   },
   "engines": {
     "node": ">=22"
   },
   "overrides": {
-    "google-auth-library": "10.7.0",
+    "google-auth-library": "10.9.0",
     "@polar-sh/sdk": "0.48.1",
     "lodash": "4.18.1",
     "vitest": "4.1.9"

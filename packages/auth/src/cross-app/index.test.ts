@@ -19,6 +19,7 @@ beforeEach(() => {
 function createMockRouter() {
   return {
     back: vi.fn(),
+    bfcacheId: 'test-bfcache',
     forward: vi.fn(),
     prefetch: vi.fn(),
     push: vi.fn(),

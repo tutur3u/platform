@@ -109,6 +109,7 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     ...config,
     cacheComponents:
       config.cacheComponents ?? isTuturuuuNextCacheComponentsEnabled(),
+    partialPrefetching: config.partialPrefetching ?? true,
     allowedDevOrigins: mergeStringArrays(
       getTuturuuuPortlessAllowedDevOrigins(),
       config.allowedDevOrigins
@@ -126,6 +127,10 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     },
     experimental: {
       ...experimentalConfig,
+      turbopackFileSystemCacheForBuild:
+        experimentalConfig.turbopackFileSystemCacheForBuild ?? true,
+      turbopackRustReactCompiler:
+        experimentalConfig.turbopackRustReactCompiler ?? true,
       optimizePackageImports: mergeStringArrays(
         TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
         experimentalConfig.optimizePackageImports

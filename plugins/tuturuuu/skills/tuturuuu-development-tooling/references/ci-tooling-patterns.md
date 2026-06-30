@@ -39,9 +39,12 @@ formatting behavior, or repo-wide verification.
 - Do not remove caching, fail-fast behavior, or security validation silently;
   document the rationale when tooling behavior changes.
 - Turborepo build outputs may include production `.next/**`, but must exclude
-  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. The
-  `.next/dev` tree is local dev-server state; archiving it can capture multi-GB
-  Turbopack caches and slow `bun dev:web` compilation.
+  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
+  enables the Turbopack build filesystem cache locally through the shared Next
+  config; keep that cache out of generic Turborepo outputs and use an explicit
+  CI cache policy if it ever needs remote reuse. The `.next/dev` tree is local
+  dev-server state; archiving it can capture multi-GB Turbopack caches and slow
+  `bun dev:web` compilation.
 - Before guessing at slow `apps/web` local compilation, run
   `bun diagnose:dev:web`. Use its cache-size, slow-filesystem-warning, and
   `.next/dev/trace` output to decide whether the next fix is cleanup,

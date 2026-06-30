@@ -396,10 +396,7 @@ async function generateConversation(input: {
     const usage = {
       inputTokens: result.usage.inputTokens ?? 0,
       outputTokens: result.usage.outputTokens ?? 0,
-      reasoningTokens:
-        result.usage.outputTokenDetails?.reasoningTokens ??
-        result.usage.reasoningTokens ??
-        0,
+      reasoningTokens: result.usage.outputTokenDetails?.reasoningTokens ?? 0,
     };
     let creditsDeducted = 0;
     const deduction = await deductAiCredits({

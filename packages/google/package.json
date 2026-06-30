@@ -18,12 +18,12 @@
   },
   "dependencies": {
     "googleapis": "^173.0.0",
-    "google-auth-library": "10.7.0"
+    "google-auth-library": "10.9.0"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
     "@vitejs/plugin-react": "^6.0.3",
     "typescript": "7.0.1-rc",

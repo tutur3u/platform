@@ -514,8 +514,7 @@ Return observable sentiment dimensions, short evidence spans copied from the tra
       modelId,
       inputTokens: usage.inputTokens ?? 0,
       outputTokens: usage.outputTokens ?? 0,
-      reasoningTokens:
-        usage.outputTokenDetails?.reasoningTokens ?? usage.reasoningTokens ?? 0,
+      reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
       feature: 'generate',
     }).catch((error: unknown) =>
       serverLogger.warn('Failed to deduct Valsea sentiment credits', error)
