@@ -334,6 +334,32 @@ entries also include a `methods` array derived from exported Next route methods;
 method-level artifacts with `parentId` and `method`; the unmigrated paired
 methods stay visible as `legacy-next`.
 
+### Rust GET-handler migration wave
+
+The backend port proceeds GET-first: a route's read path moves to a Rust handler
+in `apps/backend/src/<module>.rs` while its mutation methods stay on the live
+Next.js route. The Rust handler matches the legacy mount path exactly and returns
+`None` (never `405`) for every method it does not own, so the worker falls through
+to Next.js for `POST`/`PUT`/`PATCH`/`DELETE`. Because the route is still the source
+of truth for writes, it correctly stays `legacy-next` in the manifest until the
+remaining methods are ported and a cutover decision is recorded — GET-only ports
+do not flip ownership status, so they add no manifest debt.
+
+As of this wave the curated non-special fresh-GET surface is migrated: ~235 GET
+routes now have Rust handlers. The only deliberately-skipped GET routes are
+`/api/v1/workspaces/:wsId/mind/boards/:boardId` and
+`/api/v1/workspaces/:wsId/whiteboards/:boardId`, whose CRDT/Yjs binary state lives
+in a store the worker cannot reach; they stay on Next.js. Still pending as
+separate phases: mutation methods for the GET-migrated routes, and special-auth
+GET routes (`/api/cron/*` `CRON_SECRET`, `/api/trpc`, `/:locale` pages, OAuth
+callbacks, and Hive routes backed by `HIVE_DATABASE_URL`).
+
+Each batch is verified with `bun check:backend` (mirrors the CI Rust gate: `cargo
+fmt --check`, `cargo clippy --locked --all-targets --features native -- -D
+warnings`, `cargo test --locked`, and the `wasm32-unknown-unknown` worker check)
+plus a runtime dual coverage probe that asserts every migrated `GET` is served by
+the dispatcher (COVER) and every un-ported method still falls through (FRESH).
+
 Current inventory:
 
 - `316` pages
