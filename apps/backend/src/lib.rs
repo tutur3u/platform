@@ -617,6 +617,8 @@ mod workspaces_wsid_users_userid_referrals;
 mod workspaces_wsid_wallets;
 mod workspaces_wsid_wallets_walletid_interest;
 mod workspaces_wsid_wallets_walletid_interest_calculate;
+mod workspaces_wsid_wallets_walletid_interest_project;
+mod workspaces_wsid_wallets_walletid_interest_rates;
 mod workspaces_wsid_wallets_walletid_roles;
 mod workspaces_wsid_whiteboards_boardid_image_url;
 mod workspaces_wsid_workforce_users;
@@ -1045,6 +1047,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_20(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_21(config, request, outbound).await {
         return response;
     }
 
@@ -7587,6 +7593,26 @@ async fn dispatch_chunk_20(
 
     if let Some(response) =
         workspaces_wsid_wallets_walletid_interest_calculate::handle_workspaces_wsid_wallets_walletid_interest_calculate_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_21(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_wsid_wallets_walletid_interest_project::handle_workspaces_wsid_wallets_walletid_interest_project_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_wallets_walletid_interest_rates::handle_workspaces_wsid_wallets_walletid_interest_rates_route(config, request, outbound).await
     {
         return Some(response);
     }
