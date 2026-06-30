@@ -116,6 +116,7 @@ mod infrastructure_catalog_exports;
 mod infrastructure_content_exports;
 #[cfg(test)]
 mod infrastructure_content_exports_test;
+mod infrastructure_cron_whitelist_domains;
 mod infrastructure_entity_creation_limits;
 mod infrastructure_external_apps;
 mod infrastructure_finance_exports;
@@ -620,6 +621,7 @@ mod workspaces_wsid_wallets_walletid_interest_calculate;
 mod workspaces_wsid_wallets_walletid_interest_project;
 mod workspaces_wsid_wallets_walletid_interest_rates;
 mod workspaces_wsid_wallets_walletid_roles;
+mod workspaces_wsid_whiteboards_boardid;
 mod workspaces_wsid_whiteboards_boardid_image_url;
 mod workspaces_wsid_workforce_users;
 mod workspaces_wsid_workforce_users_userid;
@@ -1051,6 +1053,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_21(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_22(config, request, outbound).await {
         return response;
     }
 
@@ -7613,6 +7619,32 @@ async fn dispatch_chunk_21(
 
     if let Some(response) =
         workspaces_wsid_wallets_walletid_interest_rates::handle_workspaces_wsid_wallets_walletid_interest_rates_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_22(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_wsid_whiteboards_boardid::handle_workspaces_wsid_whiteboards_boardid_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        infrastructure_cron_whitelist_domains::handle_infrastructure_cron_whitelist_domains_route(
+            config, request, outbound,
+        )
+        .await
     {
         return Some(response);
     }
