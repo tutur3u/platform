@@ -257,6 +257,20 @@ const OTP_VERIFY_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const AUTH_RECOVERY_CODE_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig(
+      'minute',
+      '1 m',
+      10,
+      'API_PROXY_AUTH_RECOVERY_CODE_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 50, 'API_PROXY_AUTH_RECOVERY_CODE_LIMIT_HOUR'),
+    createConfig('day', '1 d', 120, 'API_PROXY_AUTH_RECOVERY_CODE_LIMIT_DAY'),
+  ],
+};
+
 const RATE_LIMIT_APPEAL_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
   mutate: [
@@ -493,6 +507,12 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
       /^\/api\/v1\/auth\/otp\/verify(?:\/|$)/.test(req.nextUrl.pathname) ||
       /^\/api\/v1\/auth\/mobile\/verify-otp(?:\/|$)/.test(req.nextUrl.pathname),
     rateLimits: OTP_VERIFY_RATE_LIMITS,
+  },
+  {
+    key: 'auth-recovery-code',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/recovery\/consume(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: AUTH_RECOVERY_CODE_RATE_LIMITS,
   },
   {
     key: 'cross-app-return',

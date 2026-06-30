@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(28);
 
 select ok(
   to_regclass('private.auth_recovery_overrides') is not null,
@@ -266,6 +266,71 @@ select is_empty(
     )
   $$,
   'code credential is single-use'
+);
+
+insert into private.auth_recovery_tokens (
+  override_id,
+  email,
+  token_hash,
+  code_hash,
+  expires_at
+)
+select id, 'active@example.com', repeat('e', 64), repeat('f', 64), now() + interval '15 minutes'
+from auth_recovery_test_ids
+where key = 'active';
+
+select is_empty(
+  $$
+    select *
+    from private.consume_auth_recovery_credential(
+      p_email => 'active@example.com',
+      p_code_hash => repeat('0', 64),
+      p_ip_hash => 'ip-1',
+      p_user_agent_hash => 'ua-1'
+    )
+  $$,
+  'invalid code credential returns no session'
+);
+
+select results_eq(
+  $$ select code_failed_attempts from private.auth_recovery_tokens where token_hash = repeat('e', 64) $$,
+  $$ values (1) $$,
+  'invalid code credential increments per-token failure count'
+);
+
+do $$
+begin
+  for i in 1..4 loop
+    perform *
+    from private.consume_auth_recovery_credential(
+      p_email => 'active@example.com',
+      p_code_hash => repeat('1', 64),
+      p_ip_hash => 'ip-1',
+      p_user_agent_hash => 'ua-1'
+    );
+  end loop;
+end $$;
+
+select ok(
+  (
+    select code_failed_attempts = 5
+      and code_locked_at is not null
+      and code_locked_reason = 'too_many_code_attempts'
+    from private.auth_recovery_tokens
+    where token_hash = repeat('e', 64)
+  ),
+  'fifth invalid code credential locks the recovery code fallback'
+);
+
+select is_empty(
+  $$
+    select *
+    from private.consume_auth_recovery_credential(
+      p_email => 'active@example.com',
+      p_code_hash => repeat('f', 64)
+    )
+  $$,
+  'locked code credential cannot be consumed with the correct code'
 );
 
 insert into private.auth_recovery_events (

@@ -1729,7 +1729,37 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('password-login');
   });
 
-  it('keeps password login, OTP send, and OTP verify on distinct limiter prefixes', async () => {
+  it('uses a separate recovery-code bucket for auth recovery consume', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 10,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/auth/recovery/consume', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('10');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+      'auth-recovery-code'
+    );
+  });
+
+  it('keeps password login, OTP send, OTP verify, and recovery code on distinct limiter prefixes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -1756,6 +1786,9 @@ describe('guardApiProxyRequest', () => {
     await guardApiProxyRequest(makeRequest('/api/v1/auth/otp/verify'), {
       prefixBase: 'proxy:test:api',
     });
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/recovery/consume'), {
+      prefixBase: 'proxy:test:api',
+    });
 
     expect(mocks.ratelimitPrefixes).toContain(
       'proxy:test:api:password-login:anonymous:mutate:minute'
@@ -1765,6 +1798,9 @@ describe('guardApiProxyRequest', () => {
     );
     expect(mocks.ratelimitPrefixes).toContain(
       'proxy:test:api:otp-verify:anonymous:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:auth-recovery-code:anonymous:mutate:minute'
     );
     expect(mocks.ratelimitPrefixes).not.toContain(
       'proxy:test:api:auth:anonymous:mutate:minute'
