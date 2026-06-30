@@ -121,6 +121,35 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.experimental?.turbopackRustReactCompiler).toBe(false);
     expect(config.typescript?.ignoreBuildErrors).toBe(false);
   });
+
+  it('keeps cache components enabled for all apps by default', () => {
+    const originalCacheComponents = process.env.TUTURUUU_NEXT_CACHE_COMPONENTS;
+
+    try {
+      process.env.TUTURUUU_NEXT_CACHE_COMPONENTS = '0';
+
+      const config = createTuturuuuNextConfig();
+
+      expect(config.cacheComponents).toBe(true);
+      expect(config.partialPrefetching).toBe(true);
+    } finally {
+      if (originalCacheComponents === undefined) {
+        delete process.env.TUTURUUU_NEXT_CACHE_COMPONENTS;
+      } else {
+        process.env.TUTURUUU_NEXT_CACHE_COMPONENTS = originalCacheComponents;
+      }
+    }
+  });
+
+  it('allows apps to explicitly override partial prefetching', () => {
+    const config = createTuturuuuNextConfig({
+      cacheComponents: true,
+      partialPrefetching: false,
+    });
+
+    expect(config.cacheComponents).toBe(true);
+    expect(config.partialPrefetching).toBe(false);
+  });
 });
 
 describe('isTuturuuuNextCacheComponentsEnabled', () => {
@@ -128,12 +157,12 @@ describe('isTuturuuuNextCacheComponentsEnabled', () => {
     expect(isTuturuuuNextCacheComponentsEnabled({})).toBe(true);
   });
 
-  it('honors explicit environment overrides', () => {
+  it('ignores deprecated environment opt-outs', () => {
     expect(
       isTuturuuuNextCacheComponentsEnabled({
         TUTURUUU_NEXT_CACHE_COMPONENTS: '0',
       })
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isTuturuuuNextCacheComponentsEnabled({
         TUTURUUU_NEXT_CACHE_COMPONENTS: '1',

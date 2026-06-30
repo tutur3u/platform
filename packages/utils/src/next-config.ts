@@ -33,9 +33,6 @@ export const TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS = [
   },
 ] satisfies NextImageRemotePattern[];
 
-const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on']);
-const FALSY_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
-
 function mergeStringArrays(
   first: readonly string[] | undefined,
   second: readonly string[] | undefined
@@ -60,24 +57,6 @@ function mergeRemotePatterns(
   return Array.from(merged.values());
 }
 
-function readBooleanEnvOverride(value: string | undefined) {
-  const normalizedValue = value?.trim().toLowerCase();
-
-  if (!normalizedValue) {
-    return undefined;
-  }
-
-  if (TRUTHY_ENV_VALUES.has(normalizedValue)) {
-    return true;
-  }
-
-  if (FALSY_ENV_VALUES.has(normalizedValue)) {
-    return false;
-  }
-
-  return undefined;
-}
-
 export function isTuturuuuNextReactCompilerEnabled(
   _env: Environment = process.env
 ) {
@@ -85,11 +64,9 @@ export function isTuturuuuNextReactCompilerEnabled(
 }
 
 export function isTuturuuuNextCacheComponentsEnabled(
-  env: Environment = process.env
+  _env: Environment = process.env
 ) {
-  const override = readBooleanEnvOverride(env.TUTURUUU_NEXT_CACHE_COMPONENTS);
-
-  return override ?? true;
+  return true;
 }
 
 export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {

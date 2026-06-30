@@ -183,7 +183,7 @@ test('Platform production build waits for release packages and records build mar
   assert.match(deployJob, /id:\s*package_release_gate/);
   assert.match(deployJob, /packages_ready == 'false'/);
   assert.match(deployJob, /packages_ready == 'true'/);
-  assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
+  assert.doesNotMatch(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS/);
   assert.match(deployJob, /actions:\s*write/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.doesNotMatch(
