@@ -75,6 +75,7 @@ const {
   getDockerDaemonRecoverySettingsEnv,
   getDockerLogStreamReconnectMs,
   getWatcherComposeEnv,
+  resolveWatcherHostWorkspaceDir,
   getWatchPaths,
   isGitIndexLockError,
   isGitLockError,
@@ -7742,7 +7743,11 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     );
 
     await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
-      env: { ...LOCAL_SUPABASE_TEST_ENV, PATH: process.env.PATH },
+      env: {
+        ...LOCAL_SUPABASE_TEST_ENV,
+        PATH: process.env.PATH,
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+      },
       envFilePath,
       fsImpl: fs,
       rootDir: tempDir,
@@ -7929,6 +7934,36 @@ test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
     assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(composeEnv.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
     assert.match(composeEnv.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv replaces the default container placeholder with the host root', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-host-root-')
+  );
+
+  try {
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        PATH: 'test-path',
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+      },
+      rootDir: tempDir,
+    });
+
+    assert.equal(
+      resolveWatcherHostWorkspaceDir({
+        baseEnv: {
+          [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+        },
+        rootDir: tempDir,
+      }),
+      tempDir
+    );
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
