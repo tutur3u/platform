@@ -830,6 +830,36 @@ only sanitized session state to client components.
   or `/trpc` paths directly and does not import or create Supabase clients. Run
   the focused command when reviewing a frontend port before the full repo check.
 
+## Backend Crate Structure And The 700-LOC Ceiling
+
+Every source file in the repo — Rust included — must stay well-maintained and
+under a hard **700-LOC ceiling** whenever possible (start splitting around
+~400 LOC). The `apps/backend` crate root was decomposed to honor this:
+
+- `src/lib.rs` (~680 LOC) is now just the module registry (`mod <handler>;`),
+  the public types, and `pub(crate) use` re-exports.
+- `src/dispatch/` holds `handle_backend_request` plus one
+  `dispatch_chunk_NN.rs` per route-table chunk. **New route arms append to a
+  `dispatch_chunk_NN.rs`**; when a chunk approaches 700 LOC, add a fresh
+  `chunk_NN.rs` and wire it into `dispatch/mod.rs`. Each chunk does
+  `use crate::*;` to reach crate-root helpers/types.
+- Cohesive helper families live in named submodules, each under 700 LOC:
+  `types.rs`, `response.rs`, `runtime.rs`, `migration.rs`, `legacy_routes.rs`,
+  `static_routes.rs`, `route_predicates.rs`, `config_env.rs`, `constants.rs`,
+  `native.rs`, `worker_runtime.rs`. Each is re-exported from `lib.rs` with
+  `pub(crate) use <mod>::*;` so existing call sites resolve unchanged.
+- The unit-test suite lives in `src/tests.rs` (`mod tests;`), split by area so
+  no test file crosses the ceiling.
+
+To extract a new family: move the items into `src/<mod>.rs`, header it with
+`use crate::*;` (plus any external `use serde…`), give moved items `pub(crate)`
+visibility, then add `mod <mod>; pub(crate) use <mod>::*;` to `lib.rs`. Keep a
+struct and the functions that read its private fields in the same module so
+fields only need `pub(crate)` where a cross-module reader (e.g. `tests.rs`)
+requires it. Do not bulk-restructure `lib.rs`/`dispatch/` while batches are
+appending without a `tmp/agent-coordination/` claim. See `apps/backend/AGENTS.md`
+for the full rules.
+
 ## No New Debt While The Switch Is Pending
 
 Treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as **one system**. The

@@ -3,6 +3,19 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## File Size Ceiling
+
+- Keep every source file well-maintained and under a hard **700-LOC ceiling**
+  whenever possible, in any language. Start splitting around ~400 LOC (~200 for
+  components/widgets); never leave a file you author or substantially edit above
+  700 LOC — extract cohesive submodules and keep import paths stable with thin
+  re-exports (`pub use`/barrel files).
+- Rust backend specifics (`apps/backend`): the crate root is split into
+  `src/dispatch/` (one `dispatch_chunk_NN.rs` per route-table chunk) plus named
+  helper submodules, each re-exported from `lib.rs` with `pub(crate) use
+  <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
+  `apps/backend/AGENTS.md` for the extraction pattern.
+
 ## Commands And Formatting
 
 - Do not run long-lived dev/build commands such as `bun dev`, `bun run build`,

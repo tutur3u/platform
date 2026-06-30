@@ -9,10 +9,12 @@ The backend is migrated handler-by-handler by many agents in parallel. To stop
 modules from growing unbounded, **refactor large files as you touch them** —
 small, continuous improvements, not a deferred big-bang cleanup.
 
-- When you ADD or significantly EDIT a handler module and it crosses **~400
-  LOC**, split it the same change: extract cohesive families (types, request
+- Treat **~400 LOC** as the point to start splitting and **700 LOC as a hard
+  ceiling** (root `AGENTS.md` rule): when you ADD or significantly EDIT a handler
+  module, split it the same change — extract cohesive families (types, request
   validation, response builders, HTTP/outbound calls, date/time + other pure
-  helpers) into submodules under a `<module>/` directory.
+  helpers) into submodules under a `<module>/` directory — and never leave a file
+  you touched above 700 LOC.
 - Use the **file + directory** module form already in the tree: keep
   `foo.rs` as the module root and add `foo/<part>.rs` submodules declared with
   `mod <part>;` inside `foo.rs`. Examples: `contact.rs` + `contact/session.rs`
@@ -25,15 +27,44 @@ small, continuous improvements, not a deferred big-bang cleanup.
 - Pure code movement only — no behaviour change. Keep the in-file `#[cfg(test)]`
   tests with the code they cover (move them into the relevant submodule).
 
-## `lib.rs` is the hot shared dispatcher — DO NOT bulk-split it ad hoc
+## `lib.rs` is the hot module registry + dispatcher — append, don't bulk-split
 
-`lib.rs` (~13k LOC) holds `route_request` and the `mod` + route registrations
-that EVERY migration agent appends to (it changes every few minutes). Splitting
-it unilaterally collides with all in-flight work. Only restructure `lib.rs`
-under an explicit coordination claim in `tmp/agent-coordination/` during a quiet
-window, and prefer moving self-contained helper FAMILIES (cookie/body/header
-builders, security headers) into `lib/` submodules over touching the dispatcher.
-Adding your own `mod x;` + route arm for a new handler is normal and fine.
+`lib.rs` is now decomposed (≈680 LOC, under the 700 ceiling): it holds the crate
+module registry (`mod <handler>;`), the public types, and `pub(crate) use`
+re-exports. The pieces it used to inline now live in focused submodules, all
+under 700 LOC:
+
+- `src/dispatch/` — `handle_backend_request` + one `dispatch_chunk_NN.rs` per
+  chunk. **This is the route-table append target.** A new route arm goes into a
+  `dispatch_chunk_NN.rs`; when a chunk fills toward 700 LOC, add a fresh
+  `chunk_NN.rs` (`mod` + a `dispatch_chunk_NN(...)` call in `dispatch/mod.rs`).
+  Each chunk does `use crate::*;` to reach crate-root helpers/types/modules.
+- `src/dispatch/mod.rs` exposes `handle_backend_request`; `lib.rs` re-exports it
+  with `pub(crate) use dispatch::handle_backend_request;`.
+- `src/types.rs` (BackendConfig/Request/Response), `src/response.rs`,
+  `src/runtime.rs` (body buffering + runtime parts), `src/migration.rs`
+  (manifest reporting), `src/legacy_routes.rs` (route_request + retired/obsolete
+  responders), `src/static_routes.rs`, `src/route_predicates.rs`,
+  `src/config_env.rs`, `src/constants.rs`, `src/native.rs`,
+  `src/worker_runtime.rs`. Each re-exports its surface via
+  `pub(crate) use <mod>::*;` from `lib.rs`, so `use crate::*` consumers and the
+  dispatch chunks resolve names unchanged.
+
+The extraction pattern (use it for any further families): move the items into
+`src/<mod>.rs`, header it with `use crate::*;` (+ any external `use serde…`),
+give moved items `pub(crate)` visibility, then add `mod <mod>; pub(crate) use
+<mod>::*;` to `lib.rs`. Keep cohesive groups together so struct fields can stay
+`pub(crate)` only where a cross-module reader (often `src/tests.rs`) needs them.
+
+Still **do not** bulk-restructure `lib.rs`/`dispatch/` ad hoc while batches are
+appending — it collides with in-flight work. Restructure only under a
+`tmp/agent-coordination/` claim in a quiet window. Adding your own `mod x;` +
+route arm for a new handler is normal and fine.
+
+The unit-test suite lives in a sibling `mod tests;` file at `src/tests.rs` (it
+does `use super::*` and sees every `pub(crate)`/private item). Keep new
+dispatcher-level tests there, and split `src/tests.rs` by area so no single test
+file crosses the 700-LOC ceiling.
 
 ## Path-guard pitfalls (handlers run in the SHARED dispatch chain)
 
@@ -68,14 +99,16 @@ search — both over- and under-count. The ground truth is the runtime dispatche
   401/403 when called with no auth). An unmigrated path falls through to
   `route_request`'s `_ => json_response(404, {"error":"not found"})` sentinel.
 - To map a candidate list precisely, temporarily insert a `#[tokio::test]` into
-  the `mod tests` block (it has the private `request()` / `RecordingOutboundClient`
-  / `backend_config_with_contact_data()` helpers). For each candidate GET path
-  (substitute dynamic `:seg`/`*seg` with a concrete value like `x`), call
+  the `mod tests` block — now at `src/tests.rs` (it has the private `request()` /
+  `RecordingOutboundClient` / `backend_config_with_contact_data()` helpers). For
+  each candidate GET path (substitute dynamic `:seg`/`*seg` with a concrete value
+  like `x`), call
   `handle_backend_request(&config, request("GET", concrete), &outbound).await` and
   classify: `status == 404 && body["error"] == "not found"` ⇒ FRESH, else COVER.
   Run `cargo test --lib <probe> -- --nocapture`, read the output, then REVERT the
-  insertion (`git checkout -- src/lib.rs` after confirming the diff is only your
-  probe). Feed only the FRESH routes to a migration batch so the fleet never
+  insertion (`git checkout -- src/tests.rs` after confirming the diff is only your
+  probe — never `git checkout -- src/lib.rs`, which would wipe uncommitted chunk
+  integration). Feed only the FRESH routes to a migration batch so the fleet never
   authors a duplicate handler. (Measured: of 121 filename-"unmigrated" small GETs,
   the probe found only 16 genuinely fresh.)
 

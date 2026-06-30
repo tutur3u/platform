@@ -96,9 +96,14 @@ surface you are changing:
     to the still-live Next.js route, and verify with the runtime coverage probe
     documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
     cache headers faithful to the legacy route.
-- Split files over about 400 LOC and components/widgets over about 200 LOC when
-  you create or significantly edit them. Keep existing import paths stable with
-  thin re-exports when callers depend on them.
+- Keep every source file well-maintained and under a hard ceiling of 700 LOC
+  whenever possible. Treat ~400 LOC (and ~200 LOC for components/widgets) as the
+  point to start splitting when you create or significantly edit a file; never
+  let a file you author or substantially edit cross 700 LOC without splitting it
+  into focused modules. This applies to all languages, including the Rust
+  backend (`apps/backend/src/*.rs` — extract submodules; move large `#[cfg(test)]`
+  blocks into a sibling `mod tests;` file). Keep existing import paths stable
+  with thin re-exports (or `pub use`) when callers depend on them.
 - Update `apps/docs` when work changes how the team should build, run, debug,
   deploy, or operate the system. Add new docs pages to `apps/docs/docs.json`.
 - For TypeScript, JavaScript, root script, or repo config changes, finish with
