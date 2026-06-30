@@ -474,17 +474,39 @@ mod workspaces_wsid_settings_members;
 mod workspaces_wsid_task_boards;
 mod workspaces_wsid_task_boards_boardid;
 mod workspaces_wsid_task_boards_boardid_lists;
+mod workspaces_wsid_task_boards_boardid_public_link;
+mod workspaces_wsid_task_boards_boardid_shares;
 mod workspaces_wsid_task_cycles;
 mod workspaces_wsid_task_drafts;
 mod workspaces_wsid_task_drafts_draftid;
 mod workspaces_wsid_task_initiatives;
 mod workspaces_wsid_task_plans;
 mod workspaces_wsid_task_plans_planid;
+mod workspaces_wsid_task_plans_planid_items;
+mod workspaces_wsid_task_plans_planid_shares;
+mod workspaces_wsid_task_plans_planid_workspaces;
+mod workspaces_wsid_task_progress_entries;
 mod workspaces_wsid_task_progress_goals;
+mod workspaces_wsid_task_progress_leaderboards;
+mod workspaces_wsid_task_progress_leaderboards_leaderboardid;
+mod workspaces_wsid_task_progress_leaderboards_leaderboardid_members;
+mod workspaces_wsid_task_progress_leaderboards_leaderboardid_teams;
+mod workspaces_wsid_task_progress_metrics;
 mod workspaces_wsid_task_progress_stats;
 mod workspaces_wsid_task_projects;
 mod workspaces_wsid_task_projects_projectid;
+mod workspaces_wsid_task_projects_projectid_tasks;
+mod workspaces_wsid_task_projects_projectid_updates;
+mod workspaces_wsid_task_projects_projectid_updates_updateid_comments;
 mod workspaces_wsid_task_templates;
+mod workspaces_wsid_task_templates_templatekey;
+mod workspaces_wsid_tasks_taskid_description;
+mod workspaces_wsid_tasks_taskid_schedule;
+mod workspaces_wsid_tasks_taskid_share_links;
+mod workspaces_wsid_tasks_taskid_shares;
+mod workspaces_wsid_teach_courses_courseid_attendance;
+mod workspaces_wsid_teach_courses_courseid_indicators;
+mod workspaces_wsid_teach_courses_courseid_members;
 mod workspaces_wsid_topic_announcements;
 mod workspaces_wsid_user_groups;
 mod workspaces_wsid_users;
@@ -888,6 +910,10 @@ pub(crate) async fn handle_backend_request(
     }
 
     if let Some(response) = dispatch_chunk_14(config, request, outbound).await {
+        return response;
+    }
+
+    if let Some(response) = dispatch_chunk_15(config, request, outbound).await {
         return response;
     }
 
@@ -6249,6 +6275,158 @@ async fn dispatch_chunk_14(
 
     if let Some(response) =
         workspaces_wsid_task_boards_boardid_lists::handle_workspaces_wsid_task_boards_boardid_lists_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    None
+}
+
+async fn dispatch_chunk_15(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl outbound::OutboundHttpClient,
+) -> Option<BackendResponse> {
+    if let Some(response) =
+        workspaces_wsid_task_boards_boardid_public_link::handle_workspaces_wsid_task_boards_boardid_public_link_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_boards_boardid_shares::handle_workspaces_wsid_task_boards_boardid_shares_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_plans_planid_items::handle_workspaces_wsid_task_plans_planid_items_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_plans_planid_shares::handle_workspaces_wsid_task_plans_planid_shares_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_plans_planid_workspaces::handle_workspaces_wsid_task_plans_planid_workspaces_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_entries::handle_workspaces_wsid_task_progress_entries_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_leaderboards::handle_workspaces_wsid_task_progress_leaderboards_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_leaderboards_leaderboardid::handle_workspaces_wsid_task_progress_leaderboards_leaderboardid_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_leaderboards_leaderboardid_members::handle_workspaces_wsid_task_progress_leaderboards_leaderboardid_members_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_leaderboards_leaderboardid_teams::handle_workspaces_wsid_task_progress_leaderboards_leaderboardid_teams_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_progress_metrics::handle_workspaces_wsid_task_progress_metrics_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_projects_projectid_tasks::handle_workspaces_wsid_task_projects_projectid_tasks_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_projects_projectid_updates::handle_workspaces_wsid_task_projects_projectid_updates_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_projects_projectid_updates_updateid_comments::handle_workspaces_wsid_task_projects_projectid_updates_updateid_comments_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_task_templates_templatekey::handle_workspaces_wsid_task_templates_templatekey_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tasks_taskid_description::handle_workspaces_wsid_tasks_taskid_description_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tasks_taskid_schedule::handle_workspaces_wsid_tasks_taskid_schedule_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tasks_taskid_share_links::handle_workspaces_wsid_tasks_taskid_share_links_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_tasks_taskid_shares::handle_workspaces_wsid_tasks_taskid_shares_route(
+            config, request, outbound,
+        )
+        .await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_attendance::handle_workspaces_wsid_teach_courses_courseid_attendance_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_indicators::handle_workspaces_wsid_teach_courses_courseid_indicators_route(config, request, outbound).await
+    {
+        return Some(response);
+    }
+
+    if let Some(response) =
+        workspaces_wsid_teach_courses_courseid_members::handle_workspaces_wsid_teach_courses_courseid_members_route(config, request, outbound).await
     {
         return Some(response);
     }
