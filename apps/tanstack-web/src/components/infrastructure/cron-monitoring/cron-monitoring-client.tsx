@@ -5,7 +5,7 @@ import type {
   CronRunRecord,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { CronExecutionArchive, CronJobsCountBadge } from './execution-archive';
 import { CronExecutionDetailDialog } from './execution-detail-dialog';
 import { JobRuntimeRow } from './job-runtime-row';
@@ -20,14 +20,16 @@ import { CronMonitoringErrorState, CronMonitoringLoadingState } from './state';
 import { getExecutionStatusLabel, getRunStatusLabel } from './status';
 
 type SelectedCronDetail =
-  | { record: CronExecutionRecord; type: 'execution' }
+  | { id: string; type: 'execution' }
   | { id: string; type: 'run' }
   | null;
 
 export function CronMonitoringClient() {
   const t = useTranslations('blue-green-monitoring');
   const snapshotQuery = useCronMonitoringSnapshot();
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const archiveQuery = useCronMonitoringExecutionArchive({
+    jobId: selectedJobId ?? undefined,
     page: 1,
     pageSize: 12,
   });
@@ -35,8 +37,28 @@ export function CronMonitoringClient() {
   const controlMutation = useUpdateCronMonitoringControl();
   const [selectedDetail, setSelectedDetail] =
     useState<SelectedCronDetail>(null);
+  const executionArchiveRef = useRef<HTMLElement | null>(null);
   const snapshot = snapshotQuery.data;
   const executions = archiveQuery.data?.items ?? [];
+  const executionById = useMemo(() => {
+    const map = new Map<string, CronExecutionRecord>();
+
+    if (snapshot?.lastExecution) {
+      map.set(snapshot.lastExecution.id, snapshot.lastExecution);
+    }
+
+    for (const job of snapshot?.jobs ?? []) {
+      if (job.lastExecution) {
+        map.set(job.lastExecution.id, job.lastExecution);
+      }
+    }
+
+    for (const execution of executions) {
+      map.set(execution.id, execution);
+    }
+
+    return map;
+  }, [executions, snapshot?.jobs, snapshot?.lastExecution]);
   const runByJobId = useMemo(() => {
     const map = new Map<string, CronRunRecord>();
 
@@ -54,7 +76,9 @@ export function CronMonitoringClient() {
       ? (snapshot?.runs.find((run) => run.id === selectedDetail.id) ?? null)
       : null;
   const selectedExecution =
-    selectedDetail?.type === 'execution' ? selectedDetail.record : null;
+    selectedDetail?.type === 'execution'
+      ? (executionById.get(selectedDetail.id) ?? null)
+      : null;
   const selectedRecord = selectedRun ?? selectedExecution;
   const selectedStatusLabel = selectedRun
     ? getRunStatusLabel(t, selectedRun.status)
@@ -66,6 +90,17 @@ export function CronMonitoringClient() {
     (selectedRun?.status === 'processing' && selectedRun.startedAt
       ? Math.max(0, Date.now() - selectedRun.startedAt)
       : null);
+  const handleOpenJobExecutions = (jobId: string) => {
+    setSelectedJobId(jobId);
+    requestAnimationFrame(() => {
+      if (typeof executionArchiveRef.current?.scrollIntoView === 'function') {
+        executionArchiveRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    });
+  };
 
   if (snapshotQuery.isPending) {
     return <CronMonitoringLoadingState />;
@@ -106,8 +141,9 @@ export function CronMonitoringClient() {
               key={job.id}
               job={job}
               onOpenExecution={(record) =>
-                setSelectedDetail({ record, type: 'execution' })
+                setSelectedDetail({ id: record.id, type: 'execution' })
               }
+              onOpenExecutions={handleOpenJobExecutions}
               onOpenRun={(run) =>
                 setSelectedDetail({ id: run.id, type: 'run' })
               }
@@ -128,9 +164,14 @@ export function CronMonitoringClient() {
 
       <CronExecutionArchive
         executions={executions}
+        onClearJob={() => setSelectedJobId(null)}
         onOpenExecution={(record) =>
-          setSelectedDetail({ record, type: 'execution' })
+          setSelectedDetail({ id: record.id, type: 'execution' })
         }
+        onRefresh={() => archiveQuery.refetch()}
+        refreshing={archiveQuery.isFetching}
+        ref={executionArchiveRef}
+        selectedJobId={selectedJobId}
         t={t}
       />
 

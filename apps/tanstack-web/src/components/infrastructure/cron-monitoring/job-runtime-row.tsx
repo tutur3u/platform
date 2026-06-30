@@ -1,6 +1,6 @@
 'use client';
 
-import { ListRestart, Terminal } from '@tuturuuu/icons';
+import { History, ListRestart, Terminal } from '@tuturuuu/icons';
 import type {
   CronExecutionRecord,
   CronMonitoringJob,
@@ -9,10 +9,11 @@ import type {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { formatRelativeTime } from './formatters';
+import { formatDuration, formatRelativeTime } from './formatters';
 import { describeSchedule } from './schedule';
 import {
   type CronMonitoringTranslations,
+  getExecutionStatusLabel,
   getRunStatusBadgeClass,
   getRunStatusIcon,
   getRunStatusLabel,
@@ -22,6 +23,7 @@ import {
 export function JobRuntimeRow({
   job,
   onOpenExecution,
+  onOpenExecutions,
   onOpenRun,
   onRun,
   run,
@@ -30,6 +32,7 @@ export function JobRuntimeRow({
 }: {
   job: CronMonitoringJob;
   onOpenExecution: (execution: CronExecutionRecord) => void;
+  onOpenExecutions: (jobId: string) => void;
   onOpenRun: (run: CronRunRecord) => void;
   onRun: (jobId: string) => void;
   run: CronRunRecord | null;
@@ -41,10 +44,10 @@ export function JobRuntimeRow({
   const runInFlight = isCronRunInFlight(run);
 
   return (
-    <div className="group grid gap-4 border-border/60 border-t p-4 transition-colors first:border-t-0 hover:bg-foreground/[0.025] lg:grid-cols-[minmax(0,1.4fr)_minmax(220px,0.9fr)_minmax(180px,0.55fr)_auto]">
+    <div className="group grid gap-4 border-border/60 border-t p-4 transition-colors first:border-t-0 hover:bg-foreground/[0.025] xl:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.8fr)_minmax(240px,0.8fr)_auto]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate font-medium text-sm">{job.id}</p>
+          <p className="break-words font-medium text-sm">{job.id}</p>
           <Badge
             variant="outline"
             className={cn(
@@ -81,7 +84,7 @@ export function JobRuntimeRow({
         <p className="mt-2 text-muted-foreground text-sm leading-6">
           {job.description}
         </p>
-        <code className="mt-2 block truncate rounded-md bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
+        <code className="mt-2 block break-all rounded-md bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
           {job.path}
         </code>
       </div>
@@ -106,13 +109,39 @@ export function JobRuntimeRow({
           <p className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
             {t('cron.last_run')}
           </p>
-          <p className="mt-1 font-medium">
-            {lastExecution ? formatRelativeTime(lastExecution.startedAt) : '-'}
-          </p>
+          {lastExecution ? (
+            <div className="mt-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium">
+                  {formatRelativeTime(lastExecution.startedAt)}
+                </p>
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-border text-muted-foreground"
+                >
+                  {getExecutionStatusLabel(t, lastExecution.status)}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {lastExecution.source} ·{' '}
+                {formatDuration(lastExecution.durationMs)}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1 font-medium">-</p>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 lg:justify-end">
+      <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenExecutions(job.id)}
+        >
+          <History className="mr-2 h-4 w-4" />
+          {t('cron.actions.executions')}
+        </Button>
         <Button
           variant="outline"
           size="sm"

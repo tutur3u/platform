@@ -155,6 +155,27 @@ describe('cron monitoring routes', () => {
     });
   });
 
+  it('filters cron executions by job id', async () => {
+    readCronExecutionArchiveMock.mockReturnValue({
+      items: [],
+      page: 1,
+      total: 0,
+    });
+
+    const response = await GETExecutions(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/executions?page=1&pageSize=12&jobId=payment-products'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(readCronExecutionArchiveMock).toHaveBeenCalledWith({
+      jobId: 'payment-products',
+      page: 1,
+      pageSize: 12,
+    });
+  });
+
   it('queues a manual cron run for a known job', async () => {
     readCronMonitoringSnapshotMock.mockReturnValue({
       enabled: true,

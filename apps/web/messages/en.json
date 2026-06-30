@@ -2052,8 +2052,11 @@
     },
     "cron": {
       "actions": {
+        "clear_filter": "Show All",
+        "executions": "Executions",
         "logs": "Logs",
         "queueing": "Queueing",
+        "refresh": "Refresh",
         "run_now": "Run Now"
       },
       "control": {
@@ -2080,6 +2083,8 @@
         "timeout": "Timeout"
       },
       "executions_description": "Latest retained execution records from the Docker runtime archive.",
+      "executions_filtered_description": "Execution history filtered to the selected cron job.",
+      "executions_filtered_title": "Job Executions",
       "executions_title": "Recent Executions",
       "failure_streak": "{count} failed",
       "jobs_count": "{enabled}/{total} enabled",

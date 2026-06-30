@@ -6,9 +6,11 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
+  History,
   ListRestart,
   Power,
   Radio,
+  RefreshCw,
   Terminal,
   TriangleAlert,
   XCircle,
@@ -38,7 +40,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import cronstrue from 'cronstrue';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   useCronMonitoringExecutionArchive,
   useCronMonitoringSnapshot,
@@ -151,6 +153,7 @@ function getRunStatusBadgeClass(status: CronRunStatus | null | undefined) {
 function JobRuntimeRow({
   job,
   onOpenExecution,
+  onOpenExecutions,
   onOpenRun,
   onRun,
   run,
@@ -159,6 +162,7 @@ function JobRuntimeRow({
 }: {
   job: CronMonitoringJob;
   onOpenExecution: (execution: CronExecutionRecord) => void;
+  onOpenExecutions: (jobId: string) => void;
   onOpenRun: (run: CronRunRecord) => void;
   onRun: (jobId: string) => void;
   run: CronRunRecord | null;
@@ -170,10 +174,10 @@ function JobRuntimeRow({
   const runInFlight = isRunInFlight(run);
 
   return (
-    <div className="group grid gap-4 border-border/60 border-t p-4 transition-colors first:border-t-0 hover:bg-foreground/[0.025] lg:grid-cols-[minmax(0,1.4fr)_minmax(220px,0.9fr)_minmax(180px,0.55fr)_auto]">
+    <div className="group grid gap-4 border-border/60 border-t p-4 transition-colors first:border-t-0 hover:bg-foreground/[0.025] xl:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.8fr)_minmax(240px,0.8fr)_auto]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate font-medium text-sm">{job.id}</p>
+          <p className="break-words font-medium text-sm">{job.id}</p>
           <Badge
             variant="outline"
             className={cn(
@@ -210,7 +214,7 @@ function JobRuntimeRow({
         <p className="mt-2 text-muted-foreground text-sm leading-6">
           {job.description}
         </p>
-        <code className="mt-2 block truncate rounded-md bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
+        <code className="mt-2 block break-all rounded-md bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
           {job.path}
         </code>
       </div>
@@ -235,13 +239,39 @@ function JobRuntimeRow({
           <p className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
             {t('cron.last_run')}
           </p>
-          <p className="mt-1 font-medium">
-            {lastExecution ? formatRelativeTime(lastExecution.startedAt) : '—'}
-          </p>
+          {lastExecution ? (
+            <div className="mt-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium">
+                  {formatRelativeTime(lastExecution.startedAt)}
+                </p>
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-border text-muted-foreground"
+                >
+                  {getStatusLabel(t, lastExecution.status)}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {lastExecution.source} ·{' '}
+                {formatDuration(lastExecution.durationMs)}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1 font-medium">—</p>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 lg:justify-end">
+      <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenExecutions(job.id)}
+        >
+          <History className="mr-2 h-4 w-4" />
+          {t('cron.actions.executions')}
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -658,15 +688,16 @@ export function CronMonitoringClient() {
   const t = useTranslations('blue-green-monitoring');
   const queryClient = useQueryClient();
   const snapshotQuery = useCronMonitoringSnapshot();
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const archiveQuery = useCronMonitoringExecutionArchive({
+    jobId: selectedJobId,
     page: 1,
     pageSize: 12,
   });
   const [selectedDetail, setSelectedDetail] = useState<
-    | { record: CronExecutionRecord; type: 'execution' }
-    | { id: string; type: 'run' }
-    | null
+    { id: string; type: 'execution' } | { id: string; type: 'run' } | null
   >(null);
+  const executionArchiveRef = useRef<HTMLElement | null>(null);
 
   const invalidateCron = () =>
     queryClient.invalidateQueries({
@@ -708,6 +739,25 @@ export function CronMonitoringClient() {
       })
     : null;
   const executions = archiveQuery.data?.items ?? [];
+  const executionById = useMemo(() => {
+    const map = new Map<string, CronExecutionRecord>();
+
+    if (snapshot?.lastExecution) {
+      map.set(snapshot.lastExecution.id, snapshot.lastExecution);
+    }
+
+    for (const job of snapshot?.jobs ?? []) {
+      if (job.lastExecution) {
+        map.set(job.lastExecution.id, job.lastExecution);
+      }
+    }
+
+    for (const execution of executions) {
+      map.set(execution.id, execution);
+    }
+
+    return map;
+  }, [executions, snapshot?.jobs, snapshot?.lastExecution]);
   const runByJobId = useMemo(() => {
     const map = new Map<string, CronRunRecord>();
 
@@ -725,7 +775,9 @@ export function CronMonitoringClient() {
       ? (snapshot?.runs.find((run) => run.id === selectedDetail.id) ?? null)
       : null;
   const selectedExecution =
-    selectedDetail?.type === 'execution' ? selectedDetail.record : null;
+    selectedDetail?.type === 'execution'
+      ? (executionById.get(selectedDetail.id) ?? null)
+      : null;
   const selectedRecord = selectedRun ?? selectedExecution;
   const selectedStatusLabel = selectedRun
     ? getRunStatusLabel(t, selectedRun.status)
@@ -737,6 +789,17 @@ export function CronMonitoringClient() {
     (selectedRun?.status === 'processing' && selectedRun.startedAt
       ? Math.max(0, Date.now() - selectedRun.startedAt)
       : null);
+  const handleOpenJobExecutions = (jobId: string) => {
+    setSelectedJobId(jobId);
+    requestAnimationFrame(() => {
+      if (typeof executionArchiveRef.current?.scrollIntoView === 'function') {
+        executionArchiveRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    });
+  };
   const statCards = useMemo(() => {
     if (!snapshot) return [];
 
@@ -873,8 +936,9 @@ export function CronMonitoringClient() {
               key={job.id}
               job={job}
               onOpenExecution={(record) =>
-                setSelectedDetail({ record, type: 'execution' })
+                setSelectedDetail({ id: record.id, type: 'execution' })
               }
+              onOpenExecutions={handleOpenJobExecutions}
               onOpenRun={(run) =>
                 setSelectedDetail({ id: run.id, type: 'run' })
               }
@@ -893,12 +957,51 @@ export function CronMonitoringClient() {
         )}
       </section>
 
-      <section className="overflow-hidden rounded-lg border border-border/60 bg-background">
-        <div className="border-border/60 border-b p-4">
-          <h3 className="font-semibold">{t('cron.executions_title')}</h3>
-          <p className="mt-1 text-muted-foreground text-sm">
-            {t('cron.executions_description')}
-          </p>
+      <section
+        className="overflow-hidden rounded-lg border border-border/60 bg-background"
+        id="cron-execution-history"
+        ref={executionArchiveRef}
+      >
+        <div className="flex flex-col gap-3 border-border/60 border-b p-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold">
+                {selectedJobId
+                  ? t('cron.executions_filtered_title')
+                  : t('cron.executions_title')}
+              </h3>
+              {selectedJobId ? (
+                <Badge variant="outline" className="max-w-full rounded-full">
+                  <span className="truncate">{selectedJobId}</span>
+                </Badge>
+              ) : null}
+            </div>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {selectedJobId
+                ? t('cron.executions_filtered_description')
+                : t('cron.executions_description')}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedJobId ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedJobId(null)}
+              >
+                {t('cron.actions.clear_filter')}
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => archiveQuery.refetch()}
+              disabled={archiveQuery.isFetching}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t('cron.actions.refresh')}
+            </Button>
+          </div>
         </div>
         <div className="divide-y divide-border/60">
           {executions.length > 0 ? (
@@ -907,18 +1010,21 @@ export function CronMonitoringClient() {
                 type="button"
                 key={execution.id}
                 onClick={() =>
-                  setSelectedDetail({ record: execution, type: 'execution' })
+                  setSelectedDetail({ id: execution.id, type: 'execution' })
                 }
-                className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-foreground/[0.025] md:grid-cols-[minmax(0,1fr)_140px_120px_100px]"
+                className="grid w-full gap-3 p-4 text-left transition-colors hover:bg-foreground/[0.025] lg:grid-cols-[minmax(0,1fr)_minmax(140px,auto)_120px_100px]"
               >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {getStatusIcon(execution.status)}
-                    <p className="truncate font-medium text-sm">
+                    <p className="break-words font-medium text-sm">
                       {execution.jobId}
                     </p>
+                    <Badge variant="outline" className="rounded-full">
+                      {execution.source}
+                    </Badge>
                   </div>
-                  <p className="mt-1 truncate text-muted-foreground text-xs">
+                  <p className="mt-1 break-all text-muted-foreground text-xs">
                     {execution.path}
                   </p>
                 </div>
@@ -947,77 +1053,84 @@ export function CronMonitoringClient() {
           if (!open) setSelectedDetail(null);
         }}
       >
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-h-[min(calc(100vh-2rem),900px)] max-w-5xl overflow-hidden">
           {selectedRecord ? (
             <>
               <DialogHeader>
                 <DialogTitle>{selectedRecord.jobId}</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-3 md:grid-cols-4">
-                {[
-                  [t('cron.detail.status'), selectedStatusLabel],
-                  [
-                    t('cron.detail.started'),
-                    selectedStartedAt ? formatDateTime(selectedStartedAt) : '—',
-                  ],
-                  [
-                    t('cron.detail.duration'),
-                    selectedDuration == null
-                      ? '—'
-                      : formatDuration(selectedDuration),
-                  ],
-                  [
-                    t('cron.detail.http_status'),
-                    selectedRecord.httpStatus?.toString() ?? '—',
-                  ],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="rounded-lg border border-border/60 bg-muted/20 p-3"
-                  >
-                    <p className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
-                      {label}
-                    </p>
-                    <p className="mt-2 font-medium text-sm">{value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div>
-                  <p className="mb-2 font-medium text-sm">
-                    {t('cron.detail.response')}
-                  </p>
-                  <pre className="max-h-80 overflow-auto rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
-                    {selectedRecord.error ||
-                      selectedRecord.response ||
-                      t('cron.detail.empty_response')}
-                  </pre>
-                </div>
-                <div>
-                  <p className="mb-2 font-medium text-sm">
-                    {t('cron.detail.console_logs')}
-                  </p>
-                  <div className="max-h-80 overflow-auto rounded-lg border border-border/60 bg-muted/30 p-3">
-                    {selectedRecord.consoleLogs.length > 0 ? (
-                      selectedRecord.consoleLogs.map((log) => (
-                        <div
-                          key={`${log.time}-${log.message}`}
-                          className="border-border/50 border-b py-2 last:border-b-0"
-                        >
-                          <div className="flex items-center justify-between gap-3 text-muted-foreground text-xs">
-                            <span>{formatClockTime(log.time)}</span>
-                            <span>{log.level}</span>
-                          </div>
-                          <p className="mt-1 whitespace-pre-wrap font-mono text-xs">
-                            {log.message}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        {t('cron.detail.empty_console_logs')}
+              <div className="min-h-0 overflow-y-auto pr-1">
+                <div className="grid gap-3 md:grid-cols-4">
+                  {[
+                    [t('cron.detail.status'), selectedStatusLabel],
+                    [
+                      t('cron.detail.started'),
+                      selectedStartedAt
+                        ? formatDateTime(selectedStartedAt)
+                        : '—',
+                    ],
+                    [
+                      t('cron.detail.duration'),
+                      selectedDuration == null
+                        ? '—'
+                        : formatDuration(selectedDuration),
+                    ],
+                    [
+                      t('cron.detail.http_status'),
+                      selectedRecord.httpStatus?.toString() ?? '—',
+                    ],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-lg border border-border/60 bg-muted/20 p-3"
+                    >
+                      <p className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
+                        {label}
                       </p>
-                    )}
+                      <p className="mt-2 break-words font-medium text-sm">
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 grid min-h-0 gap-4 lg:grid-cols-2">
+                  <div className="min-w-0">
+                    <p className="mb-2 font-medium text-sm">
+                      {t('cron.detail.response')}
+                    </p>
+                    <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border/60 bg-muted/30 p-3 text-xs">
+                      {selectedRecord.error ||
+                        selectedRecord.response ||
+                        t('cron.detail.empty_response')}
+                    </pre>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="mb-2 font-medium text-sm">
+                      {t('cron.detail.console_logs')}
+                    </p>
+                    <div className="max-h-[55vh] overflow-auto rounded-lg border border-border/60 bg-muted/30 p-3">
+                      {selectedRecord.consoleLogs.length > 0 ? (
+                        selectedRecord.consoleLogs.map((log) => (
+                          <div
+                            key={`${log.time}-${log.source}-${log.message}`}
+                            className="border-border/50 border-b py-2 last:border-b-0"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-muted-foreground text-xs">
+                              <span>{formatClockTime(log.time)}</span>
+                              <span>{log.level}</span>
+                            </div>
+                            <p className="mt-1 whitespace-pre-wrap break-words font-mono text-xs">
+                              {log.message}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-sm">
+                          {t('cron.detail.empty_console_logs')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

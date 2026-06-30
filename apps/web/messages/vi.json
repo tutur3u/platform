@@ -2052,8 +2052,11 @@
     },
     "cron": {
       "actions": {
+        "clear_filter": "Hiện tất cả",
+        "executions": "Lịch sử chạy",
         "logs": "Log",
         "queueing": "Đang đưa vào hàng đợi",
+        "refresh": "Làm mới",
         "run_now": "Chạy ngay"
       },
       "control": {
@@ -2080,6 +2083,8 @@
         "timeout": "Hết thời gian"
       },
       "executions_description": "Các bản ghi thực thi mới nhất được giữ trong kho runtime Docker.",
+      "executions_filtered_description": "Lịch sử chạy được lọc theo cron job đã chọn.",
+      "executions_filtered_title": "Lượt Chạy Của Job",
       "executions_title": "Lần Chạy Gần Đây",
       "failure_streak": "{count} lần lỗi",
       "jobs_count": "{enabled}/{total} đang bật",

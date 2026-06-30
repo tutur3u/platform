@@ -133,9 +133,11 @@ export function useCronMonitoringSnapshot() {
 }
 
 export function useCronMonitoringExecutionArchive({
+  jobId,
   page,
   pageSize,
 }: {
+  jobId?: string | null;
   page: number;
   pageSize: number;
 }) {
@@ -145,11 +147,13 @@ export function useCronMonitoringExecutionArchive({
       'monitoring',
       'cron',
       'executions',
+      jobId ?? 'all',
       page,
       pageSize,
     ],
     queryFn: () =>
       getCronMonitoringExecutionArchive({
+        jobId: jobId ?? undefined,
         page,
         pageSize,
       }),

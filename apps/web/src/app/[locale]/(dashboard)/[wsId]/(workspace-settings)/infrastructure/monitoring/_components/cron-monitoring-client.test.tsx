@@ -2,7 +2,13 @@
  * @vitest-environment jsdom
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import type {
   CronExecutionRecord,
   CronMonitoringSnapshot,
@@ -19,8 +25,15 @@ const mocks = vi.hoisted(() => ({
       total: 0,
     },
     error: null,
+    isFetching: false,
     isPending: false,
+    refetch: vi.fn(),
   },
+  archiveParams: [] as Array<{
+    jobId?: string | null;
+    page: number;
+    pageSize: number;
+  }>,
   queueCronRun: vi.fn(),
   refetchSnapshot: vi.fn(),
   snapshot: {
@@ -49,7 +62,14 @@ vi.mock(
 );
 
 vi.mock('./blue-green-monitoring-query-hooks', () => ({
-  useCronMonitoringExecutionArchive: () => mocks.archive,
+  useCronMonitoringExecutionArchive: (params: {
+    jobId?: string | null;
+    page: number;
+    pageSize: number;
+  }) => {
+    mocks.archiveParams.push(params);
+    return mocks.archive;
+  },
   useCronMonitoringSnapshot: () => mocks.snapshot,
 }));
 
@@ -58,8 +78,11 @@ const messages: Record<string, string> = {
   'alerts.failed_description':
     'Monitoring data could not be loaded. Try again.',
   'alerts.failed_title': 'Unable to load monitoring data',
+  'cron.actions.clear_filter': 'Show all',
+  'cron.actions.executions': 'Executions',
   'cron.actions.logs': 'View logs',
   'cron.actions.queueing': 'Queueing',
+  'cron.actions.refresh': 'Refresh',
   'cron.actions.run_now': 'Run now',
   'cron.control.disabled_hint': 'Scheduled jobs are paused.',
   'cron.control.enabled_hint': 'Scheduled jobs can run.',
@@ -81,6 +104,9 @@ const messages: Record<string, string> = {
   'cron.execution_status.timeout': 'Timed out',
   'cron.executions_description':
     'Recent route responses and captured web container logs.',
+  'cron.executions_filtered_description':
+    'Execution history filtered to one job.',
+  'cron.executions_filtered_title': 'Job executions',
   'cron.executions_title': 'Recent executions',
   'cron.failure_streak': '{count} failed in a row',
   'cron.jobs_count': '{enabled} of {total} enabled',
@@ -219,12 +245,18 @@ function createSnapshot(
 
 function renderCronMonitoringClient() {
   const queryClient = new QueryClient();
-
-  return render(
+  const createUi = () => (
     <QueryClientProvider client={queryClient}>
       <CronMonitoringClient />
     </QueryClientProvider>
   );
+  const view = render(createUi());
+
+  return {
+    ...view,
+    queryClient,
+    rerenderClient: () => view.rerender(createUi()),
+  };
 }
 
 describe('CronMonitoringClient', () => {
@@ -243,9 +275,13 @@ describe('CronMonitoringClient', () => {
         total: 1,
       },
       error: null,
+      isFetching: false,
       isPending: false,
+      refetch: vi.fn(),
     };
+    mocks.archiveParams = [];
     mocks.queueCronRun.mockReset();
+    mocks.archive.refetch.mockReset();
     mocks.updateCronMonitoringControl.mockReset();
     mocks.refetchSnapshot.mockReset();
   });
@@ -303,7 +339,9 @@ describe('CronMonitoringClient', () => {
         total: 0,
       },
       error: null,
+      isFetching: false,
       isPending: false,
+      refetch: vi.fn(),
     };
 
     renderCronMonitoringClient();
@@ -320,6 +358,131 @@ describe('CronMonitoringClient', () => {
     expect(screen.getAllByText('/api/cron/payment/products')).toHaveLength(2);
     expect(screen.getByRole('button', { name: /Run now/ })).toBeVisible();
     expect(screen.getByRole('button', { name: /View logs/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Executions' })).toBeVisible();
+  });
+
+  it('renders last execution summaries from each job snapshot', () => {
+    const secondExecution = createExecution({
+      durationMs: 2400,
+      id: 'exec-calendar-provider-sync-1700000005000',
+      jobId: 'calendar-provider-sync',
+      path: '/api/cron/calendar/provider-sync',
+      source: 'manual',
+      startedAt: 1_700_000_005_000,
+    });
+
+    mocks.snapshot = {
+      data: createSnapshot({
+        jobs: [
+          ...createSnapshot().jobs,
+          {
+            configuredEnabled: true,
+            controlEnabled: null,
+            description: 'Synchronize calendar provider data.',
+            enabled: true,
+            failureStreak: 0,
+            id: 'calendar-provider-sync',
+            lastExecution: secondExecution,
+            lastScheduledAt: 1_700_000_005_000,
+            nextRunAt: 1_700_010_000_000,
+            path: '/api/cron/calendar/provider-sync',
+            schedule: '*/15 * * * *',
+          },
+        ],
+        overview: {
+          enabledJobs: 2,
+          failedExecutions: 0,
+          failedJobs: 0,
+          processingRuns: 0,
+          queuedRuns: 0,
+          retainedExecutions: 2,
+          totalJobs: 2,
+        },
+      }),
+      error: null,
+      isPending: false,
+      refetch: mocks.refetchSnapshot,
+    };
+    mocks.archive.data = {
+      items: [createExecution()],
+      page: 1,
+      pageSize: 12,
+      total: 1,
+    };
+
+    renderCronMonitoringClient();
+
+    expect(screen.getByText('calendar-provider-sync')).toBeVisible();
+    expect(screen.getByText('manual · 2s')).toBeVisible();
+  });
+
+  it('filters executions for a selected job and clears back to the global archive', async () => {
+    renderCronMonitoringClient();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Executions' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('Job executions')).toBeVisible()
+    );
+    expect(mocks.archiveParams.at(-1)).toMatchObject({
+      jobId: 'payment-products',
+      page: 1,
+      pageSize: 12,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+
+    await waitFor(() =>
+      expect(screen.getByText('Recent executions')).toBeVisible()
+    );
+    expect(mocks.archiveParams.at(-1)).toMatchObject({
+      jobId: null,
+      page: 1,
+      pageSize: 12,
+    });
+  });
+
+  it('re-resolves an open execution detail from refreshed archive data', () => {
+    const view = renderCronMonitoringClient();
+    const historySection = screen
+      .getByRole('heading', { name: 'Recent executions' })
+      .closest('section');
+
+    expect(historySection).not.toBeNull();
+    fireEvent.click(
+      within(historySection as HTMLElement).getByRole('button', {
+        name: /payment-products/,
+      })
+    );
+
+    expect(screen.getByText('No console logs captured.')).toBeVisible();
+
+    mocks.archive = {
+      ...mocks.archive,
+      data: {
+        items: [
+          createExecution({
+            consoleLogs: [
+              {
+                containerId: 'web-blue-1',
+                deploymentColor: 'blue',
+                level: 'info',
+                message: 'fresh route log line',
+                source: 'route',
+                time: 1_700_000_001_100,
+              },
+            ],
+          }),
+        ],
+        page: 1,
+        pageSize: 12,
+        total: 1,
+      },
+    };
+
+    view.rerenderClient();
+
+    expect(screen.getByText('fresh route log line')).toBeVisible();
   });
 
   it('renders queued and processing run state from the live snapshot', () => {

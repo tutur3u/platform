@@ -43,6 +43,7 @@ export function useCronMonitoringExecutionArchive(
   return useQuery({
     queryFn: () => getCronMonitoringExecutionArchive(params),
     queryKey: cronMonitoringExecutionArchiveQueryKey(params),
+    refetchInterval: 1000,
     staleTime: 750,
   });
 }
