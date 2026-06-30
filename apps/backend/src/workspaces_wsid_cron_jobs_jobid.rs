@@ -23,9 +23,12 @@
 //!
 //! # Behaviour gaps
 //!
-//! - PUT and DELETE are intentionally not migrated; `None` is returned for
-//!   those methods so the request falls through to the still-live Next.js
-//!   route.
+//! - PUT is intentionally not migrated; `None` is returned for it so the
+//!   request falls through to the still-live Next.js route. PUT depends on the
+//!   npm `cron-parser` package (`assertValidManagedCronSchedule` /
+//!   `getNextManagedCronRunAt`), which has no in-worker equivalent.
+//! - DELETE is migrated below: it is a plain RLS-scoped delete with no body and
+//!   no schedule parsing, so it ports faithfully.
 
 use serde_json::{Value, json};
 
@@ -36,6 +39,7 @@ use crate::{
 };
 
 const ERROR_FETCHING_MESSAGE: &str = "Error fetching workspace cron job";
+const ERROR_DELETING_MESSAGE: &str = "Error deleting workspace cron job";
 // PostgREST single-object representation, mirroring supabase-js `.single()`.
 const PGRST_OBJECT_ACCEPT: &str = "application/vnd.pgrst.object+json";
 
@@ -48,7 +52,8 @@ pub(crate) async fn handle_workspaces_wsid_cron_jobs_jobid_route(
 
     Some(match request.method {
         "GET" => cron_job_response(config, request, ws_id, job_id, outbound).await,
-        // PUT/DELETE remain on the still-active Next.js route; fall through.
+        "DELETE" => delete_cron_job_response(config, request, ws_id, job_id, outbound).await,
+        // PUT remains on the still-active Next.js route (cron-parser); fall through.
         _ => return None,
     })
 }
@@ -116,10 +121,75 @@ async fn fetch_cron_job(
     response.json::<Value>().map_err(|_| ())
 }
 
+async fn delete_cron_job_response(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    ws_id: &str,
+    job_id: &str,
+    outbound: &impl OutboundHttpClient,
+) -> BackendResponse {
+    // Like the GET path, the legacy DELETE relies on RLS via the user-scoped
+    // Supabase client, so we forward the caller's access token. Without a valid
+    // token the delete would be rejected, mirroring the legacy failure path.
+    let Some(access_token) = supabase_auth::request_access_token(request) else {
+        return delete_error_response();
+    };
+
+    match delete_cron_job(&config.contact_data, outbound, ws_id, job_id, &access_token).await {
+        Ok(()) => no_store_response(json_response(200, json!({ "message": "success" }))),
+        Err(()) => delete_error_response(),
+    }
+}
+
+async fn delete_cron_job(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    ws_id: &str,
+    job_id: &str,
+    access_token: &str,
+) -> Result<(), ()> {
+    // Filter by both `id` and `ws_id` to match the legacy
+    // `.delete().eq('id', jobId).eq('ws_id', wsId)` query.
+    let Some(url) = contact_data.rest_url(
+        "workspace_cron_jobs",
+        &[
+            ("id", format!("eq.{job_id}")),
+            ("ws_id", format!("eq.{ws_id}")),
+        ],
+    ) else {
+        return Err(());
+    };
+
+    let service_role_key = contact_data.service_role_key().ok_or(())?;
+    let authorization = format!("Bearer {access_token}");
+
+    let response = outbound
+        .send(
+            OutboundRequest::new(OutboundMethod::Delete, &url)
+                .with_header("Authorization", &authorization)
+                .with_header("apikey", service_role_key),
+        )
+        .await
+        .map_err(|_| ())?;
+
+    if !(200..300).contains(&response.status) {
+        return Err(());
+    }
+
+    Ok(())
+}
+
 fn error_response() -> BackendResponse {
     no_store_response(json_response(
         500,
         json!({ "message": ERROR_FETCHING_MESSAGE }),
+    ))
+}
+
+fn delete_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        500,
+        json!({ "message": ERROR_DELETING_MESSAGE }),
     ))
 }
 

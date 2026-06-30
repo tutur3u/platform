@@ -4260,6 +4260,7 @@ fn should_buffer_request_body(method: &str, path: &str) -> bool {
         || current_user_calendar_settings::should_buffer_request_body(method, path)
         || onboarding_progress::should_buffer_request_body(method, path)
         || infrastructure_cron_whitelist_domain_domain::should_buffer_request_body(method, path)
+        || infrastructure_cron_whitelist_domains::should_buffer_request_body(method, path)
 }
 
 #[cfg(any(test, all(feature = "worker", target_arch = "wasm32")))]
