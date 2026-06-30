@@ -158,7 +158,16 @@ async fn batches_response(
 
     let (limit, offset) = query.read_window(should_return_paginated(request.url));
 
-    match fetch_batches(&config.contact_data, outbound, &ws_id, limit, offset, &query.q).await {
+    match fetch_batches(
+        &config.contact_data,
+        outbound,
+        &ws_id,
+        limit,
+        offset,
+        &query.q,
+    )
+    .await
+    {
         Ok(rows) => no_store_response(json_response(200, map_rpc_list(rows))),
         Err(()) => no_store_response(json_response(
             500,
@@ -445,9 +454,7 @@ mod tests {
     fn ws_id_rejects_non_matching_paths() {
         // Wrong prefix (no v1).
         assert_eq!(
-            workspaces_wsid_inventory_batches_ws_id(
-                "/api/workspaces/ws-1/inventory/batches"
-            ),
+            workspaces_wsid_inventory_batches_ws_id("/api/workspaces/ws-1/inventory/batches"),
             None
         );
         // Nested sub-resource (trailing segment remains).
@@ -459,9 +466,7 @@ mod tests {
         );
         // Different suffix.
         assert_eq!(
-            workspaces_wsid_inventory_batches_ws_id(
-                "/api/v1/workspaces/ws-1/inventory/bundles"
-            ),
+            workspaces_wsid_inventory_batches_ws_id("/api/v1/workspaces/ws-1/inventory/bundles"),
             None
         );
         // Empty ws id.
@@ -471,9 +476,7 @@ mod tests {
         );
         // Embedded slash in ws id segment.
         assert_eq!(
-            workspaces_wsid_inventory_batches_ws_id(
-                "/api/v1/workspaces/a/b/inventory/batches"
-            ),
+            workspaces_wsid_inventory_batches_ws_id("/api/v1/workspaces/a/b/inventory/batches"),
             None
         );
         // Unrelated short path must not panic / match.

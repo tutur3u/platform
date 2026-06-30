@@ -136,7 +136,12 @@ async fn goals_response(
     };
 
     // Read goals (service role; legacy uses the admin client).
-    let goals = match fetch_rows::<Value>(contact_data, outbound, &goals_url(contact_data, &ws_id, request.url)).await
+    let goals = match fetch_rows::<Value>(
+        contact_data,
+        outbound,
+        &goals_url(contact_data, &ws_id, request.url),
+    )
+    .await
     {
         Ok(rows) => rows,
         Err(FetchError::SchemaUnavailable) => return schema_unavailable_response(),
@@ -237,7 +242,10 @@ async fn normalize_ws_id(
         return Ok(ROOT_WORKSPACE_ID.to_owned());
     }
 
-    if raw_ws_id.trim().eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG) {
+    if raw_ws_id
+        .trim()
+        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
+    {
         return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
     }
 
@@ -269,7 +277,10 @@ async fn personal_workspace_id(
         .rest_url(
             "workspaces",
             &[
-                ("select", "id,workspace_members!inner(user_id,type)".to_owned()),
+                (
+                    "select",
+                    "id,workspace_members!inner(user_id,type)".to_owned(),
+                ),
                 ("personal", "eq.true".to_owned()),
                 ("workspace_members.user_id", format!("eq.{user_id}")),
                 ("workspace_members.type", "eq.MEMBER".to_owned()),
@@ -325,7 +336,11 @@ async fn workspace_id_by_handle(
 // Data fetch
 // ---------------------------------------------------------------------------
 
-fn goals_url(contact_data: &contact::ContactDataConfig, ws_id: &str, request_url: Option<&str>) -> String {
+fn goals_url(
+    contact_data: &contact::ContactDataConfig,
+    ws_id: &str,
+    request_url: Option<&str>,
+) -> String {
     let mut params: Vec<(&str, String)> = vec![
         ("select", GOAL_SELECT.to_owned()),
         ("ws_id", format!("eq.{ws_id}")),
@@ -350,9 +365,10 @@ fn entries_url(contact_data: &contact::ContactDataConfig, ws_id: &str, goals: &[
     let mut metric_ids: Vec<String> = Vec::new();
     for goal in goals {
         if let Some(metric_id) = goal.get("metric_id").and_then(Value::as_str)
-            && !metric_ids.iter().any(|existing| existing == metric_id) {
-                metric_ids.push(metric_id.to_owned());
-            }
+            && !metric_ids.iter().any(|existing| existing == metric_id)
+        {
+            metric_ids.push(metric_id.to_owned());
+        }
     }
 
     let min_start = goals
@@ -486,45 +502,52 @@ fn hydrate_goals(goals: Vec<Value>, entries: &[EntryRow]) -> Vec<Value> {
 
 fn entry_matches_goal(entry: &EntryRow, goal: &Value) -> bool {
     if let Some(metric_id) = goal_str(goal, "metric_id")
-        && entry.metric_id.as_deref() != Some(metric_id) {
-            return false;
-        }
+        && entry.metric_id.as_deref() != Some(metric_id)
+    {
+        return false;
+    }
     if let Some(task_id) = goal_str(goal, "task_id")
-        && entry.task_id.as_deref() != Some(task_id) {
-            return false;
-        }
+        && entry.task_id.as_deref() != Some(task_id)
+    {
+        return false;
+    }
     if let Some(project_id) = goal_str(goal, "project_id")
-        && entry.project_id.as_deref() != Some(project_id) {
-            return false;
-        }
+        && entry.project_id.as_deref() != Some(project_id)
+    {
+        return false;
+    }
     if let Some(board_id) = goal_str(goal, "board_id")
-        && entry.board_id.as_deref() != Some(board_id) {
-            return false;
-        }
+        && entry.board_id.as_deref() != Some(board_id)
+    {
+        return false;
+    }
     // `entry.entry_date < goal.period_start`: a missing entry_date never filters
     // (JS `undefined < x` is false).
     if let Some(period_start) = goal_str(goal, "period_start")
         && let Some(entry_date) = entry.entry_date.as_deref()
-            && entry_date < period_start {
-                return false;
-            }
+        && entry_date < period_start
+    {
+        return false;
+    }
     if let Some(period_end) = goal_str(goal, "period_end")
         && let Some(entry_date) = entry.entry_date.as_deref()
-            && entry_date > period_end {
-                return false;
-            }
+        && entry_date > period_end
+    {
+        return false;
+    }
 
     if let Some(Value::Array(goal_tags)) = goal.get("tags")
-        && !goal_tags.is_empty() {
-            let empty: Vec<Value> = Vec::new();
-            let entry_tags = match &entry.tags {
-                Value::Array(tags) => tags,
-                _ => &empty,
-            };
-            return goal_tags
-                .iter()
-                .all(|tag| entry_tags.iter().any(|candidate| candidate == tag));
-        }
+        && !goal_tags.is_empty()
+    {
+        let empty: Vec<Value> = Vec::new();
+        let entry_tags = match &entry.tags {
+            Value::Array(tags) => tags,
+            _ => &empty,
+        };
+        return goal_tags
+            .iter()
+            .all(|tag| entry_tags.iter().any(|candidate| candidate == tag));
+    }
 
     true
 }
@@ -595,7 +618,10 @@ fn goal_str<'a>(goal: &'a Value, key: &str) -> Option<&'a str> {
 fn js_number(value: &Value) -> f64 {
     match value {
         Value::Null => 0.0,
-        Value::Number(number) => number.as_f64().filter(|value| value.is_finite()).unwrap_or(0.0),
+        Value::Number(number) => number
+            .as_f64()
+            .filter(|value| value.is_finite())
+            .unwrap_or(0.0),
         Value::String(text) => {
             let trimmed = text.trim();
             if trimmed.is_empty() {
@@ -618,7 +644,9 @@ fn number_value(value: f64) -> Value {
     if value.is_finite() && value.fract() == 0.0 && value.abs() < 9_007_199_254_740_992.0 {
         Value::Number(Number::from(value as i64))
     } else {
-        Number::from_f64(value).map(Value::Number).unwrap_or(Value::from(0))
+        Number::from_f64(value)
+            .map(Value::Number)
+            .unwrap_or(Value::from(0))
     }
 }
 
@@ -652,10 +680,13 @@ fn is_schema_unavailable(body: &Value) -> bool {
 fn is_uuid_literal(value: &str) -> bool {
     let value = value.trim();
     value.len() == 36
-        && value.chars().enumerate().all(|(index, character)| match index {
-            8 | 13 | 18 | 23 => character == '-',
-            _ => character.is_ascii_hexdigit(),
-        })
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, character)| match index {
+                8 | 13 | 18 | 23 => character == '-',
+                _ => character.is_ascii_hexdigit(),
+            })
 }
 
 fn is_workspace_handle(value: &str) -> bool {
@@ -799,7 +830,14 @@ mod tests {
             "metric_id": "metric-1",
             "tags": ["focus"],
         });
-        let mut matching = entry("a", "2026-01-01", "t1", "delta", json!(1), json!(["focus", "deep"]));
+        let mut matching = entry(
+            "a",
+            "2026-01-01",
+            "t1",
+            "delta",
+            json!(1),
+            json!(["focus", "deep"]),
+        );
         assert!(entry_matches_goal(&matching, &goal));
 
         matching.tags = json!(["deep"]);
@@ -855,7 +893,14 @@ mod tests {
             "metric_id": "metric-1",
             "target_value": 4,
         })];
-        let entries = vec![entry("a", "2026-01-01", "t1", "delta", json!(10), json!([]))];
+        let entries = vec![entry(
+            "a",
+            "2026-01-01",
+            "t1",
+            "delta",
+            json!(10),
+            json!([]),
+        )];
         let hydrated = hydrate_goals(goals, &entries);
         assert_eq!(hydrated[0]["progress"], json!(10));
         assert_eq!(hydrated[0]["remaining"], json!(0));
@@ -882,12 +927,16 @@ mod tests {
         assert!(is_schema_unavailable(&json!({
             "message": "Could not find the table for task_progress_goals in the schema cache"
         })));
-        assert!(!is_schema_unavailable(&json!({ "code": "23505", "message": "duplicate key" })));
+        assert!(!is_schema_unavailable(
+            &json!({ "code": "23505", "message": "duplicate key" })
+        ));
     }
 
     #[test]
     fn query_param_reads_first_non_empty_value() {
-        let url = Some("https://x.localhost/api/v1/workspaces/w/task-progress/goals?status=active&metric_id=m1");
+        let url = Some(
+            "https://x.localhost/api/v1/workspaces/w/task-progress/goals?status=active&metric_id=m1",
+        );
         assert_eq!(query_param(url, "status"), Some("active".to_owned()));
         assert_eq!(query_param(url, "metric_id"), Some("m1".to_owned()));
         assert_eq!(query_param(url, "missing"), None);

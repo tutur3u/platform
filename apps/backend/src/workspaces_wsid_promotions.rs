@@ -477,9 +477,13 @@ async fn normalize_workspace_id(
         }
 
         if let Some(access_token) = user.access_token.as_deref()
-            && let Some(workspace_id) =
-                workspace_id_by_handle(contact_data, outbound, &handle, &DataAuth::AccessToken(access_token))
-                    .await?
+            && let Some(workspace_id) = workspace_id_by_handle(
+                contact_data,
+                outbound,
+                &handle,
+                &DataAuth::AccessToken(access_token),
+            )
+            .await?
         {
             return Ok(Some(workspace_id));
         }
@@ -808,7 +812,8 @@ mod tests {
 
     #[test]
     fn parse_list_query_defaults() {
-        let query = parse_list_query(Some("https://x.test/api/v1/workspaces/w/promotions")).unwrap();
+        let query =
+            parse_list_query(Some("https://x.test/api/v1/workspaces/w/promotions")).unwrap();
         assert_eq!(query.q, "");
         assert_eq!(query.page, DEFAULT_PAGE);
         assert_eq!(query.page_size, DEFAULT_PAGE_SIZE);
@@ -878,6 +883,8 @@ mod tests {
         }]);
         assert!(role_value_has_permission(&value));
         assert!(!role_value_has_permission(&json!([])));
-        assert!(!role_value_has_permission(&json!([{ "workspace_roles": {} }])));
+        assert!(!role_value_has_permission(
+            &json!([{ "workspace_roles": {} }])
+        ));
     }
 }

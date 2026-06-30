@@ -379,9 +379,14 @@ async fn build_announcements_payload(
         None => None,
     };
 
-    let (announcements, count) =
-        fetch_announcements(contact_data, outbound, ws_id, query, contact_filter_ids.as_deref())
-            .await?;
+    let (announcements, count) = fetch_announcements(
+        contact_data,
+        outbound,
+        ws_id,
+        query,
+        contact_filter_ids.as_deref(),
+    )
+    .await?;
 
     let announcement_ids: Vec<String> = announcements
         .iter()
@@ -396,7 +401,8 @@ async fn build_announcements_payload(
 
     // Serialize contacts, attaching verification status.
     let unique_contact_ids: Vec<String> = contacts_by_id.keys().cloned().collect();
-    let statuses = contact_verification_statuses(contact_data, outbound, &unique_contact_ids).await?;
+    let statuses =
+        contact_verification_statuses(contact_data, outbound, &unique_contact_ids).await?;
     let mut serialized_by_id: BTreeMap<String, Value> = BTreeMap::new();
     for (id, raw_contact) in &contacts_by_id {
         let status = statuses
@@ -482,10 +488,8 @@ async fn fetch_announcements(
     query: &ListQuery,
     contact_filter_ids: Option<&[String]>,
 ) -> Result<(Vec<Map<String, Value>>, i64), ()> {
-    let mut params: Vec<(&str, String)> = vec![
-        ("select", "*".to_owned()),
-        ("ws_id", format!("eq.{ws_id}")),
-    ];
+    let mut params: Vec<(&str, String)> =
+        vec![("select", "*".to_owned()), ("ws_id", format!("eq.{ws_id}"))];
     if let Some(filter) = status_filter(&query.status) {
         params.push(filter);
     }
@@ -560,7 +564,10 @@ async fn fetch_recipients(
                 "select",
                 "announcement_id,contact:topic_announcement_contacts(*)".to_owned(),
             ),
-            ("announcement_id", format!("in.({})", announcement_ids.join(","))),
+            (
+                "announcement_id",
+                format!("in.({})", announcement_ids.join(",")),
+            ),
         ],
     ) else {
         return Err(());
@@ -681,10 +688,8 @@ async fn contact_verification_statuses(
                 statuses.insert(contact_id, "verified".to_owned());
             }
             Some("pending") => {
-                let still_needs = statuses
-                    .get(&contact_id)
-                    .map(String::as_str)
-                    == Some("needs_verification");
+                let still_needs =
+                    statuses.get(&contact_id).map(String::as_str) == Some("needs_verification");
                 let not_expired = row
                     .expires_at
                     .as_deref()
@@ -898,11 +903,7 @@ fn js_truthy(value: &Value) -> bool {
 
 /// Mirrors `normalizeTopicAnnouncementAttachmentFileName`.
 fn normalize_attachment_file_name(file_name: &str) -> String {
-    let base_name = file_name
-        .rsplit(['/', '\\'])
-        .next()
-        .unwrap_or("")
-        .trim();
+    let base_name = file_name.rsplit(['/', '\\']).next().unwrap_or("").trim();
     let without_prefix = strip_generated_uuid_prefix(base_name).trim();
 
     if !without_prefix.is_empty() {
@@ -1391,10 +1392,13 @@ fn is_direct_workspace_lookup_identifier(identifier: &str) -> bool {
 fn is_uuid_literal(value: &str) -> bool {
     let value = value.trim();
     value.len() == 36
-        && value.chars().enumerate().all(|(index, character)| match index {
-            8 | 13 | 18 | 23 => character == '-',
-            _ => character.is_ascii_hexdigit(),
-        })
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, character)| match index {
+                8 | 13 | 18 | 23 => character == '-',
+                _ => character.is_ascii_hexdigit(),
+            })
 }
 
 fn is_workspace_handle(value: &str) -> bool {
@@ -1574,9 +1578,7 @@ mod tests {
     #[test]
     fn file_name_normalization_strips_generated_prefix() {
         assert_eq!(
-            normalize_attachment_file_name(
-                "11111111-1111-4111-8111-111111111111-report.pdf"
-            ),
+            normalize_attachment_file_name("11111111-1111-4111-8111-111111111111-report.pdf"),
             "report.pdf"
         );
         // Keeps a non-generated name untouched, and strips path segments.
@@ -1585,7 +1587,10 @@ mod tests {
             "photo.png"
         );
         // Not a valid UUID prefix -> unchanged base name.
-        assert_eq!(normalize_attachment_file_name("not-a-uuid-file.txt"), "not-a-uuid-file.txt");
+        assert_eq!(
+            normalize_attachment_file_name("not-a-uuid-file.txt"),
+            "not-a-uuid-file.txt"
+        );
         // Empty -> fallback.
         assert_eq!(normalize_attachment_file_name(""), "attachment");
     }

@@ -128,8 +128,14 @@ async fn get_response(
             Err(()) => return error_response(500, MEMBERSHIP_LOOKUP_FAILED_MESSAGE),
         };
 
-    match verify_workspace_member(contact_data, outbound, &resolved_ws_id, &user_id, &access_token)
-        .await
+    match verify_workspace_member(
+        contact_data,
+        outbound,
+        &resolved_ws_id,
+        &user_id,
+        &access_token,
+    )
+    .await
     {
         Ok(true) => {}
         Ok(false) => return error_response(403, WORKSPACE_ACCESS_DENIED_MESSAGE),
@@ -639,10 +645,7 @@ mod tests {
             extract_ids("/api/workspaces/ws-123/task-plans/plan-1"),
             None
         );
-        assert_eq!(
-            extract_ids("/api/v1/workspaces/ws-123/tasks/plan-1"),
-            None
-        );
+        assert_eq!(extract_ids("/api/v1/workspaces/ws-123/tasks/plan-1"), None);
         assert_eq!(
             extract_ids("/api/v1/workspaces/ws-123/task-plans/plan-1/digest"),
             None

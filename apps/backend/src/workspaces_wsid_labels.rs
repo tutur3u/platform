@@ -99,8 +99,8 @@ async fn labels_response(
     let Some(access_token) = supabase_auth::request_access_token(request) else {
         return unauthorized_response();
     };
-    let Some(user) = supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound)
-        .await
+    let Some(user) =
+        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
     else {
         return unauthorized_response();
     };
@@ -110,12 +110,13 @@ async fn labels_response(
 
     // `normalizeWorkspaceId` may throw (e.g. unresolved `personal`); the legacy
     // GET catches that and reports a generic 500.
-    let ws_id = match normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
-        .await
-    {
-        Ok(Some(ws_id)) => ws_id,
-        Ok(None) | Err(()) => return internal_server_error_response(),
-    };
+    let ws_id =
+        match normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
+            .await
+        {
+            Ok(Some(ws_id)) => ws_id,
+            Ok(None) | Err(()) => return internal_server_error_response(),
+        };
 
     match verify_member(contact_data, outbound, &ws_id, &user_id, &access_token).await {
         Ok(true) => {}
@@ -164,8 +165,8 @@ async fn verify_member(
         return Err(());
     }
 
-    let membership_type = decode_first_row::<WorkspaceMembershipRow>(&response)?
-        .and_then(|row| row.membership_type);
+    let membership_type =
+        decode_first_row::<WorkspaceMembershipRow>(&response)?.and_then(|row| row.membership_type);
 
     Ok(membership_type.as_deref() == Some("MEMBER"))
 }
@@ -509,7 +510,10 @@ mod tests {
 
         let fetch_error = fetch_labels_error_response();
         assert_eq!(fetch_error.status, 500);
-        assert_eq!(fetch_error.body, json!({ "error": "Failed to fetch labels" }));
+        assert_eq!(
+            fetch_error.body,
+            json!({ "error": "Failed to fetch labels" })
+        );
 
         let internal = internal_server_error_response();
         assert_eq!(internal.status, 500);

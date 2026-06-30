@@ -83,11 +83,10 @@ async fn task_drafts_response(
     }
 
     let request_url = request.url;
-    let (user_id, access_token) =
-        match authenticate(contact_data, request, outbound).await {
-            Ok(values) => values,
-            Err(()) => return error_response(401, "Unauthorized"),
-        };
+    let (user_id, access_token) = match authenticate(contact_data, request, outbound).await {
+        Ok(values) => values,
+        Err(()) => return error_response(401, "Unauthorized"),
+    };
 
     match verify_membership(contact_data, outbound, raw_ws_id, &user_id, &access_token).await {
         Ok(()) => {}
@@ -195,10 +194,7 @@ fn draft_query_params(
 
     if let Some(board_id) = board_id {
         if include_unassigned_for_board {
-            params.push((
-                "or",
-                format!("(board_id.eq.{board_id},board_id.is.null)"),
-            ));
+            params.push(("or", format!("(board_id.eq.{board_id},board_id.is.null)")));
         } else {
             params.push(("board_id", format!("eq.{board_id}")));
         }
@@ -307,23 +303,27 @@ mod tests {
         assert!(params.contains(&("board_id", "eq.board-9".to_owned())));
         assert!(!params.iter().any(|(key, _)| *key == "or"));
         // order is always last.
-        assert_eq!(params.last(), Some(&("order", "created_at.desc".to_owned())));
+        assert_eq!(
+            params.last(),
+            Some(&("order", "created_at.desc".to_owned()))
+        );
     }
 
     #[test]
     fn draft_query_params_with_unassigned_board_uses_or_filter() {
         let params = draft_query_params("ws-1", "user-1", Some("board-9"), true);
-        assert!(params.contains(&(
-            "or",
-            "(board_id.eq.board-9,board_id.is.null)".to_owned()
-        )));
+        assert!(params.contains(&("or", "(board_id.eq.board-9,board_id.is.null)".to_owned())));
         assert!(!params.iter().any(|(key, _)| *key == "board_id"));
     }
 
     #[test]
     fn draft_query_params_ignores_unassigned_flag_without_board_id() {
         let params = draft_query_params("ws-1", "user-1", None, true);
-        assert!(!params.iter().any(|(key, _)| *key == "or" || *key == "board_id"));
+        assert!(
+            !params
+                .iter()
+                .any(|(key, _)| *key == "or" || *key == "board_id")
+        );
     }
 
     #[test]

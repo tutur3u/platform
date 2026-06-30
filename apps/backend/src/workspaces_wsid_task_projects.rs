@@ -129,30 +129,26 @@ async fn task_projects_response(
         Some(token) => token,
         None => return error_response(401, "Unauthorized"),
     };
-    let user_id = match supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound)
-        .await
-        .and_then(|user| user.id)
-        .filter(|id| !id.trim().is_empty())
-    {
-        Some(id) => id,
-        None => return error_response(401, "Unauthorized"),
-    };
+    let user_id =
+        match supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound)
+            .await
+            .and_then(|user| user.id)
+            .filter(|id| !id.trim().is_empty())
+        {
+            Some(id) => id,
+            None => return error_response(401, "Unauthorized"),
+        };
 
     // `normalizeWorkspaceId(rawWsId, supabase)`.
-    let ws_id = match normalize_workspace_id(
-        contact_data,
-        outbound,
-        raw_ws_id,
-        &user_id,
-        &access_token,
-    )
-    .await
-    {
-        Ok(Some(ws_id)) => ws_id,
-        // A `None` here corresponds to the legacy `normalizeWorkspaceId` throwing
-        // (e.g. personal workspace not found), which the route `catch` maps to 500.
-        Ok(None) | Err(()) => return error_response(500, "Internal server error"),
-    };
+    let ws_id =
+        match normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
+            .await
+        {
+            Ok(Some(ws_id)) => ws_id,
+            // A `None` here corresponds to the legacy `normalizeWorkspaceId` throwing
+            // (e.g. personal workspace not found), which the route `catch` maps to 500.
+            Ok(None) | Err(()) => return error_response(500, "Internal server error"),
+        };
 
     // `verifyWorkspaceMembershipType({ wsId, userId, supabase })` (default MEMBER).
     match authorize_membership(contact_data, outbound, &ws_id, &user_id, &access_token).await {
@@ -457,10 +453,9 @@ fn parse_query(request_url: Option<&str>) -> ParsedQuery {
             // `searchParams.getAll('id')` collects every `id` param in order.
             "id" => id_values.push(value.into_owned()),
             // `searchParams.get('ids')` returns the first occurrence only.
-            "ids"
-                if ids_value.is_none() => {
-                    ids_value = Some(value.into_owned());
-                }
+            "ids" if ids_value.is_none() => {
+                ids_value = Some(value.into_owned());
+            }
             _ => {}
         }
     }
@@ -532,7 +527,10 @@ fn format_project(project: Value) -> Value {
         );
     }
 
-    map.insert("linkedTasks".to_owned(), Value::Array(partition.linked_tasks));
+    map.insert(
+        "linkedTasks".to_owned(),
+        Value::Array(partition.linked_tasks),
+    );
     map.insert(
         "linkedDocuments".to_owned(),
         Value::Array(partition.linked_documents),
@@ -747,7 +745,10 @@ mod tests {
 
     #[test]
     fn path_guard_rejects_foreign_and_short_paths() {
-        assert_eq!(task_projects_ws_id("/api/v1/workspaces//task-projects"), None);
+        assert_eq!(
+            task_projects_ws_id("/api/v1/workspaces//task-projects"),
+            None
+        );
         assert_eq!(
             task_projects_ws_id("/api/v1/workspaces/abc/def/task-projects"),
             None
@@ -785,7 +786,10 @@ mod tests {
             "https://x.localhost/api/v1/workspaces/w/task-projects?id={id_a}&ids={id_a},{id_b},,{id_b}"
         );
         let parsed = parse_query(Some(&url));
-        assert_eq!(parsed.requested_ids, Ok(vec![id_a.to_owned(), id_b.to_owned()]));
+        assert_eq!(
+            parsed.requested_ids,
+            Ok(vec![id_a.to_owned(), id_b.to_owned()])
+        );
     }
 
     #[test]
@@ -896,10 +900,8 @@ mod tests {
 
     #[test]
     fn format_project_fills_missing_created_at() {
-        let project: Value = serde_json::from_str(
-            r#"{ "id": "p1", "name": "P", "created_at": null }"#,
-        )
-        .unwrap();
+        let project: Value =
+            serde_json::from_str(r#"{ "id": "p1", "name": "P", "created_at": null }"#).unwrap();
         let formatted = format_project(project);
         let created_at = formatted["created_at"].as_str().unwrap();
         assert!(created_at.ends_with('Z'));

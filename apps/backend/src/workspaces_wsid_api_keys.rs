@@ -786,8 +786,7 @@ mod tests {
 
     #[test]
     fn parse_query_empty_q_is_present_but_not_searched() {
-        let query =
-            parse_api_keys_query(Some("https://x.dev/api/v1/workspaces/ws/api-keys?q="));
+        let query = parse_api_keys_query(Some("https://x.dev/api/v1/workspaces/ws/api-keys?q="));
         assert!(query.wants_paginated);
         assert_eq!(query.search, None);
     }

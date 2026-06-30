@@ -588,7 +588,8 @@ mod tests {
 
     #[test]
     fn parse_query_reads_each_field() {
-        let query = parse_search_query(Some(&url_with("kind=user&limit=12&q=%20alice%20"))).unwrap();
+        let query =
+            parse_search_query(Some(&url_with("kind=user&limit=12&q=%20alice%20"))).unwrap();
         assert_eq!(query.kind, SubjectKind::User);
         assert_eq!(query.limit, 12);
         assert_eq!(query.q.as_deref(), Some("alice"));
@@ -618,13 +619,26 @@ mod tests {
 
     #[test]
     fn parse_query_accepts_boundary_limit() {
-        assert_eq!(parse_search_query(Some(&url_with("limit=25"))).unwrap().limit, 25);
-        assert_eq!(parse_search_query(Some(&url_with("limit=1"))).unwrap().limit, 1);
+        assert_eq!(
+            parse_search_query(Some(&url_with("limit=25")))
+                .unwrap()
+                .limit,
+            25
+        );
+        assert_eq!(
+            parse_search_query(Some(&url_with("limit=1")))
+                .unwrap()
+                .limit,
+            1
+        );
     }
 
     #[test]
     fn parse_query_blank_q_becomes_none() {
-        assert_eq!(parse_search_query(Some(&url_with("q=%20%20"))).unwrap().q, None);
+        assert_eq!(
+            parse_search_query(Some(&url_with("q=%20%20"))).unwrap().q,
+            None
+        );
     }
 
     #[test]

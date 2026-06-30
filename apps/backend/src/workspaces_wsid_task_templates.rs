@@ -131,18 +131,13 @@ async fn task_templates_response(
 
     // `normalizeWorkspaceId` may throw (e.g. unresolved `personal`); the legacy
     // GET catches that and reports a generic 500.
-    let ws_id = match normalize_workspace_id(
-        contact_data,
-        outbound,
-        raw_ws_id,
-        &user_id,
-        &access_token,
-    )
-    .await
-    {
-        Ok(Some(ws_id)) => ws_id,
-        Ok(None) | Err(()) => return internal_server_error_response(),
-    };
+    let ws_id =
+        match normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
+            .await
+        {
+            Ok(Some(ws_id)) => ws_id,
+            Ok(None) | Err(()) => return internal_server_error_response(),
+        };
 
     match verify_member(contact_data, outbound, &ws_id, &user_id, &access_token).await {
         Ok(true) => {}
@@ -232,9 +227,7 @@ async fn fetch_task_templates(
         let escaped = escape_ilike_term(q);
         params.push((
             "or",
-            format!(
-                "(name.ilike.%{escaped}%,task_name.ilike.%{escaped}%,slug.ilike.%{escaped}%)"
-            ),
+            format!("(name.ilike.%{escaped}%,task_name.ilike.%{escaped}%,slug.ilike.%{escaped}%)"),
         ));
     }
 
@@ -362,7 +355,10 @@ async fn normalize_workspace_id(
         return Ok(Some(ROOT_WORKSPACE_ID.to_owned()));
     }
 
-    if raw_ws_id.trim().eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG) {
+    if raw_ws_id
+        .trim()
+        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
+    {
         // Legacy throws when the personal workspace cannot be resolved; surface
         // that as `Ok(None)` so the caller maps it to the generic 500.
         return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
@@ -575,7 +571,10 @@ fn list_failed_response() -> BackendResponse {
 }
 
 fn internal_server_error_response() -> BackendResponse {
-    no_store_response(json_response(500, json!({ "error": "Internal server error" })))
+    no_store_response(json_response(
+        500,
+        json!({ "error": "Internal server error" }),
+    ))
 }
 
 #[cfg(test)]
@@ -602,7 +601,10 @@ mod tests {
 
     #[test]
     fn task_templates_ws_id_rejects_nested_and_empty() {
-        assert_eq!(task_templates_ws_id("/api/v1/workspaces//task-templates"), None);
+        assert_eq!(
+            task_templates_ws_id("/api/v1/workspaces//task-templates"),
+            None
+        );
         // A sub-resource (e.g. `[templateKey]`) is owned by other routes.
         assert_eq!(
             task_templates_ws_id("/api/v1/workspaces/abc/task-templates/some-key"),

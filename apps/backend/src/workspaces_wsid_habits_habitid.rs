@@ -265,7 +265,10 @@ fn map_event(event: &Value) -> Value {
     let occurrence_date = event.get("occurrence_date");
     let completed = event.get("completed");
 
-    match event.get("workspace_calendar_events").filter(|v| v.is_object()) {
+    match event
+        .get("workspace_calendar_events")
+        .filter(|v| v.is_object())
+    {
         Some(calendar_event) => json!({
             "id": calendar_event.get("id"),
             "title": calendar_event.get("title"),
@@ -346,10 +349,7 @@ struct Habit {
 
 fn habit_recurrence_from_value(value: &Value) -> Habit {
     let str_field = |key: &str| -> Option<String> {
-        value
-            .get(key)
-            .and_then(Value::as_str)
-            .map(|s| s.to_owned())
+        value.get(key).and_then(Value::as_str).map(|s| s.to_owned())
     };
     let i64_field = |key: &str| -> Option<i64> { value.get(key).and_then(Value::as_i64) };
 

@@ -162,11 +162,17 @@ async fn configs_response(
         .cloned()
         .collect();
 
-    let config_values =
-        match fetch_workspace_configs(contact_data, outbound, &ws_id, &workspace_config_ids).await {
-            Ok(values) => values,
-            Err(()) => return error_response(500, CONFIGS_FETCH_FAILED_MESSAGE),
-        };
+    let config_values = match fetch_workspace_configs(
+        contact_data,
+        outbound,
+        &ws_id,
+        &workspace_config_ids,
+    )
+    .await
+    {
+        Ok(values) => values,
+        Err(()) => return error_response(500, CONFIGS_FETCH_FAILED_MESSAGE),
+    };
 
     let included_groups = if should_resolve_default_included {
         match fetch_default_included_groups(contact_data, outbound, &ws_id).await {

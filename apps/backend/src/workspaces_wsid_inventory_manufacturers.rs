@@ -122,11 +122,12 @@ async fn list_manufacturers_response(
 ) -> BackendResponse {
     let request_url = request.url;
 
-    let ws_id =
-        match authorize_inventory_access(&config.contact_data, request, raw_ws_id, outbound).await {
-            Ok(ws_id) => ws_id,
-            Err(response) => return response,
-        };
+    let ws_id = match authorize_inventory_access(&config.contact_data, request, raw_ws_id, outbound)
+        .await
+    {
+        Ok(ws_id) => ws_id,
+        Err(response) => return response,
+    };
 
     let query = match parse_query(request_url) {
         Ok(query) => query,
@@ -212,7 +213,9 @@ async fn fetch_manufacturers(
         params.push(("name", format!("ilike.%{q}%")));
     }
 
-    let url = contact_data.rest_url(MANUFACTURERS_TABLE, &params).ok_or(())?;
+    let url = contact_data
+        .rest_url(MANUFACTURERS_TABLE, &params)
+        .ok_or(())?;
     let service_role_key = contact_data.service_role_key().ok_or(())?;
     let authorization = format!("Bearer {service_role_key}");
 

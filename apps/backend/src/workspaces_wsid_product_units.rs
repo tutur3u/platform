@@ -127,12 +127,11 @@ async fn product_units_response(
 ) -> BackendResponse {
     // Authenticate + authorize first, matching the legacy ordering where
     // `authorizeInventoryWorkspace` runs before any query parsing.
-    let ws_id = match authorize_inventory_view(&config.contact_data, request, raw_ws_id, outbound)
-        .await
-    {
-        Ok(ws_id) => ws_id,
-        Err(response) => return response,
-    };
+    let ws_id =
+        match authorize_inventory_view(&config.contact_data, request, raw_ws_id, outbound).await {
+            Ok(ws_id) => ws_id,
+            Err(response) => return response,
+        };
 
     let query = match parse_list_query(request.url) {
         Ok(query) => query,
@@ -265,9 +264,7 @@ fn auth_error_response(error: WorkspacePermissionAuthorizationError) -> BackendR
         WorkspacePermissionAuthorizationError::Unauthorized => {
             message_response(401, UNAUTHORIZED_MESSAGE)
         }
-        WorkspacePermissionAuthorizationError::NotFound => {
-            error_response(404, NOT_FOUND_MESSAGE)
-        }
+        WorkspacePermissionAuthorizationError::NotFound => error_response(404, NOT_FOUND_MESSAGE),
         WorkspacePermissionAuthorizationError::Forbidden => {
             message_response(403, INSUFFICIENT_PERMISSIONS_MESSAGE)
         }
@@ -416,7 +413,9 @@ mod tests {
             Some("abc")
         );
         assert_eq!(
-            product_units_ws_id("/api/v1/workspaces/00000000-0000-0000-0000-000000000000/product-units"),
+            product_units_ws_id(
+                "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/product-units"
+            ),
             Some("00000000-0000-0000-0000-000000000000")
         );
     }

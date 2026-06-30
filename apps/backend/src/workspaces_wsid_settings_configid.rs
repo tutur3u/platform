@@ -304,9 +304,7 @@ async fn verify_membership(
         return Err(());
     }
 
-    let rows = response
-        .json::<Vec<serde_json::Value>>()
-        .map_err(|_| ())?;
+    let rows = response.json::<Vec<serde_json::Value>>().map_err(|_| ())?;
 
     Ok(!rows.is_empty())
 }
@@ -487,19 +485,34 @@ mod tests {
     #[test]
     fn rejects_non_matching_paths() {
         // Collection route (no configId).
-        assert_eq!(settings_config_route_parts("/api/v1/workspaces/abc/settings"), None);
-        assert_eq!(settings_config_route_parts("/api/v1/workspaces/abc/settings/"), None);
+        assert_eq!(
+            settings_config_route_parts("/api/v1/workspaces/abc/settings"),
+            None
+        );
+        assert_eq!(
+            settings_config_route_parts("/api/v1/workspaces/abc/settings/"),
+            None
+        );
         // Nested sub-routes (extra segment) must not match a single configId.
         assert_eq!(
             settings_config_route_parts("/api/v1/workspaces/abc/settings/permissions/check"),
             None
         );
         // Wrong/missing version prefix.
-        assert_eq!(settings_config_route_parts("/api/workspaces/abc/settings/X"), None);
+        assert_eq!(
+            settings_config_route_parts("/api/workspaces/abc/settings/X"),
+            None
+        );
         // Empty workspace id.
-        assert_eq!(settings_config_route_parts("/api/v1/workspaces//settings/X"), None);
+        assert_eq!(
+            settings_config_route_parts("/api/v1/workspaces//settings/X"),
+            None
+        );
         // Different sub-path under the workspace.
-        assert_eq!(settings_config_route_parts("/api/v1/workspaces/abc/secrets/X"), None);
+        assert_eq!(
+            settings_config_route_parts("/api/v1/workspaces/abc/secrets/X"),
+            None
+        );
     }
 
     #[test]
@@ -528,14 +541,21 @@ mod tests {
             app_session_targets("DEFAULT_CURRENCY"),
             &["finance", "platform", "inventory"]
         );
-        assert_eq!(app_session_targets("default_wallet_id"), &["finance", "platform"]);
+        assert_eq!(
+            app_session_targets("default_wallet_id"),
+            &["finance", "platform"]
+        );
     }
 
     #[test]
     fn workspace_uuid_literal_matches_canonical_form() {
-        assert!(is_workspace_uuid_literal("11111111-1111-4111-8111-111111111111"));
+        assert!(is_workspace_uuid_literal(
+            "11111111-1111-4111-8111-111111111111"
+        ));
         assert!(!is_workspace_uuid_literal("not-a-uuid"));
-        assert!(!is_workspace_uuid_literal("11111111111141118111111111111111"));
+        assert!(!is_workspace_uuid_literal(
+            "11111111111141118111111111111111"
+        ));
     }
 
     #[test]

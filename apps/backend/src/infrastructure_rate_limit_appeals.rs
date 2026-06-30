@@ -211,7 +211,14 @@ async fn fetch_appeals(
         params.push(("status", format!("eq.{}", query.status)));
     }
 
-    fetch_rows(contact_data, outbound, service_role_key, APPEALS_TABLE, &params).await
+    fetch_rows(
+        contact_data,
+        outbound,
+        service_role_key,
+        APPEALS_TABLE,
+        &params,
+    )
+    .await
 }
 
 async fn enrich_appeals(
@@ -224,12 +231,18 @@ async fn enrich_appeals(
     let user_ids = unique_field(&appeals, "creator_id");
     let ips = unique_field(&appeals, "client_ip");
 
-    let workspaces = load_workspace_map(contact_data, outbound, service_role_key, &workspace_ids).await;
+    let workspaces =
+        load_workspace_map(contact_data, outbound, service_role_key, &workspace_ids).await;
     let users = load_user_map(contact_data, outbound, service_role_key, &user_ids).await;
     let blocks = load_blocked_ip_map(contact_data, outbound, service_role_key, &ips).await;
-    let memberships =
-        load_membership_map(contact_data, outbound, service_role_key, &workspace_ids, &user_ids)
-            .await;
+    let memberships = load_membership_map(
+        contact_data,
+        outbound,
+        service_role_key,
+        &workspace_ids,
+        &user_ids,
+    )
+    .await;
 
     appeals
         .into_iter()
@@ -312,7 +325,11 @@ fn enrich_one(
     Value::Object(object)
 }
 
-fn build_recommended_actions(active_block: bool, has_workspace: bool, membership_verified: bool) -> Value {
+fn build_recommended_actions(
+    active_block: bool,
+    has_workspace: bool,
+    membership_verified: bool,
+) -> Value {
     let disabled_reason = if !has_workspace {
         Value::String("No workspace was captured with this appeal.".to_owned())
     } else if !membership_verified {
@@ -440,7 +457,14 @@ async fn load_workspace_map(
         ("select", "id,name,handle,avatar_url,personal".to_owned()),
         ("id", format!("in.({})", ids.join(","))),
     ];
-    let Some(rows) = fetch_rows(contact_data, outbound, service_role_key, "workspaces", &params).await
+    let Some(rows) = fetch_rows(
+        contact_data,
+        outbound,
+        service_role_key,
+        "workspaces",
+        &params,
+    )
+    .await
     else {
         return HashMap::new();
     };
@@ -475,16 +499,31 @@ async fn load_user_map(
         ("select", "user_id,email,full_name".to_owned()),
         ("user_id", filter.clone()),
     ];
-    let private_by_id: HashMap<String, Value> =
-        fetch_rows(contact_data, outbound, service_role_key, "user_private_details", &private_params)
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(|row| Some((row.get("user_id")?.as_str()?.to_owned(), row)))
-            .collect();
+    let private_by_id: HashMap<String, Value> = fetch_rows(
+        contact_data,
+        outbound,
+        service_role_key,
+        "user_private_details",
+        &private_params,
+    )
+    .await
+    .unwrap_or_default()
+    .into_iter()
+    .filter_map(|row| Some((row.get("user_id")?.as_str()?.to_owned(), row)))
+    .collect();
 
-    let user_params = [("select", "id,display_name,handle,avatar_url".to_owned()), ("id", filter)];
-    let Some(rows) = fetch_rows(contact_data, outbound, service_role_key, "users", &user_params).await
+    let user_params = [
+        ("select", "id,display_name,handle,avatar_url".to_owned()),
+        ("id", filter),
+    ];
+    let Some(rows) = fetch_rows(
+        contact_data,
+        outbound,
+        service_role_key,
+        "users",
+        &user_params,
+    )
+    .await
     else {
         return HashMap::new();
     };
@@ -493,8 +532,9 @@ async fn load_user_map(
         .filter_map(|row| {
             let id = row.get("id")?.as_str()?.to_owned();
             let private_row = private_by_id.get(&id);
-            let display_name = clean_field(&row, "display_name")
-                .or_else(|| private_row.and_then(|private_row| clean_field(private_row, "full_name")));
+            let display_name = clean_field(&row, "display_name").or_else(|| {
+                private_row.and_then(|private_row| clean_field(private_row, "full_name"))
+            });
             let email = private_row
                 .and_then(|private_row| private_row.get("email").cloned())
                 .unwrap_or(Value::Null);
@@ -525,7 +565,14 @@ async fn load_blocked_ip_map(
         ("ip_address", format!("in.({})", ips.join(","))),
         ("status", "eq.active".to_owned()),
     ];
-    let Some(rows) = fetch_rows(contact_data, outbound, service_role_key, "blocked_ips", &params).await
+    let Some(rows) = fetch_rows(
+        contact_data,
+        outbound,
+        service_role_key,
+        "blocked_ips",
+        &params,
+    )
+    .await
     else {
         return HashMap::new();
     };
@@ -554,8 +601,14 @@ async fn load_membership_map(
         ("ws_id", format!("in.({})", workspace_ids.join(","))),
         ("user_id", format!("in.({})", user_ids.join(","))),
     ];
-    let Some(rows) =
-        fetch_rows(contact_data, outbound, service_role_key, "workspace_members", &params).await
+    let Some(rows) = fetch_rows(
+        contact_data,
+        outbound,
+        service_role_key,
+        "workspace_members",
+        &params,
+    )
+    .await
     else {
         return HashMap::new();
     };
@@ -578,7 +631,9 @@ async fn fetch_rows(
     params: &[(&str, String)],
 ) -> Option<Vec<Value>> {
     let url = contact_data.rest_url(table, params)?;
-    let response = service_role_get(outbound, &url, service_role_key).await.ok()?;
+    let response = service_role_get(outbound, &url, service_role_key)
+        .await
+        .ok()?;
     if !(200..300).contains(&response.status) {
         return None;
     }

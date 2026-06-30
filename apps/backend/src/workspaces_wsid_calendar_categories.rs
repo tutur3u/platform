@@ -273,7 +273,10 @@ mod tests {
 
         let forbidden = error_response(403, ACCESS_DENIED_MESSAGE);
         assert_eq!(forbidden.status, 403);
-        assert_eq!(forbidden.body, json!({ "error": "Workspace access denied" }));
+        assert_eq!(
+            forbidden.body,
+            json!({ "error": "Workspace access denied" })
+        );
 
         let lookup_failed = error_response(500, MEMBERSHIP_LOOKUP_FAILED_MESSAGE);
         assert_eq!(lookup_failed.status, 500);

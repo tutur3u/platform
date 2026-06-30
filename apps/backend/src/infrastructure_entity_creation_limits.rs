@@ -241,7 +241,9 @@ mod tests {
 
     #[test]
     fn matches_exact_mount_path_only() {
-        assert!(matches_path("/api/v1/infrastructure/entity-creation-limits"));
+        assert!(matches_path(
+            "/api/v1/infrastructure/entity-creation-limits"
+        ));
         assert!(!matches_path(
             "/api/v1/infrastructure/entity-creation-limits/"
         ));

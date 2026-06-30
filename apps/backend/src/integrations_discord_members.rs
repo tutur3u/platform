@@ -127,7 +127,15 @@ async fn members_response(
     }
 
     // 5. Verify the Discord integration belongs to the workspace.
-    match integration_exists(contact_data, outbound, ws_id, discord_guild_id, &access_token).await {
+    match integration_exists(
+        contact_data,
+        outbound,
+        ws_id,
+        discord_guild_id,
+        &access_token,
+    )
+    .await
+    {
         Ok(true) => {}
         Ok(false) => return message_response(404, INTEGRATION_NOT_FOUND_MESSAGE),
         Err(()) => return message_response(500, INTERNAL_ERROR_MESSAGE),
@@ -340,7 +348,9 @@ mod tests {
 
     #[test]
     fn parse_query_missing_params_are_none() {
-        let query = parse_query(Some("https://app.tuturuuu.com/api/v1/integrations/discord/members"));
+        let query = parse_query(Some(
+            "https://app.tuturuuu.com/api/v1/integrations/discord/members",
+        ));
         assert!(query.ws_id.is_none());
         assert!(query.discord_guild_id.is_none());
     }

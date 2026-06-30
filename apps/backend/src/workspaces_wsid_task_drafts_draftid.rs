@@ -277,11 +277,17 @@ mod tests {
         // Missing draftId segment (this is the list route).
         assert_eq!(task_draft_ids("/api/v1/workspaces/abc/task-drafts"), None);
         // Empty wsId.
-        assert_eq!(task_draft_ids("/api/v1/workspaces//task-drafts/draft-1"), None);
+        assert_eq!(
+            task_draft_ids("/api/v1/workspaces//task-drafts/draft-1"),
+            None
+        );
         // Empty draftId.
         assert_eq!(task_draft_ids("/api/v1/workspaces/abc/task-drafts/"), None);
         // Wrong middle segment.
-        assert_eq!(task_draft_ids("/api/v1/workspaces/abc/task-plans/draft-1"), None);
+        assert_eq!(
+            task_draft_ids("/api/v1/workspaces/abc/task-plans/draft-1"),
+            None
+        );
         // Extra trailing segment.
         assert_eq!(
             task_draft_ids("/api/v1/workspaces/abc/task-drafts/draft-1/extra"),

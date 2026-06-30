@@ -421,10 +421,7 @@ mod tests {
         // Empty ws id.
         assert_eq!(workspaces_roles_ws_id("/api/v1/workspaces//roles"), None);
         // Nested ws segment.
-        assert_eq!(
-            workspaces_roles_ws_id("/api/v1/workspaces/a/b/roles"),
-            None
-        );
+        assert_eq!(workspaces_roles_ws_id("/api/v1/workspaces/a/b/roles"), None);
         // Unrelated route (must not panic / must return None).
         assert_eq!(workspaces_roles_ws_id("/api/v1/health"), None);
     }
@@ -525,7 +522,10 @@ mod tests {
             object.get("permissions"),
             Some(&json!([{ "id": "manage_workspace_roles", "enabled": true }]))
         );
-        assert_eq!(object.get("created_at"), Some(&json!("2024-01-01T00:00:00Z")));
+        assert_eq!(
+            object.get("created_at"),
+            Some(&json!("2024-01-01T00:00:00Z"))
+        );
 
         // Raw embed removed.
         assert!(object.get("workspace_role_members").is_none());
@@ -533,7 +533,10 @@ mod tests {
         // user_count counts raw members (before id filtering).
         assert_eq!(object.get("user_count"), Some(&json!(2)));
 
-        let members = object.get("members").and_then(Value::as_array).expect("members");
+        let members = object
+            .get("members")
+            .and_then(Value::as_array)
+            .expect("members");
         // u-2 has no users -> falls back to user_id, so both are retained.
         assert_eq!(members.len(), 2);
         assert_eq!(members[0]["id"], json!("u-1"));

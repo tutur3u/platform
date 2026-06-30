@@ -83,31 +83,27 @@ async fn users_response(
     raw_ws_id: &str,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let authorization = match authorize_finance_permission(
-        config,
-        request,
-        raw_ws_id,
-        USERS_PERMISSION,
-        outbound,
-    )
-    .await
-    {
-        Ok(authorization) => authorization,
-        // Legacy `getDataFromSession` only ever returns `401` for the
-        // auth/membership gate; collapse every "no access" variant to `401`.
-        Err(
-            FinanceAuthorizationError::Unauthorized
-            | FinanceAuthorizationError::NotFound
-            | FinanceAuthorizationError::Forbidden,
-        ) => {
-            return message_response(401, UNAUTHORIZED_MESSAGE);
-        }
-        Err(FinanceAuthorizationError::Internal) => return error_response(),
-    };
+    let authorization =
+        match authorize_finance_permission(config, request, raw_ws_id, USERS_PERMISSION, outbound)
+            .await
+        {
+            Ok(authorization) => authorization,
+            // Legacy `getDataFromSession` only ever returns `401` for the
+            // auth/membership gate; collapse every "no access" variant to `401`.
+            Err(
+                FinanceAuthorizationError::Unauthorized
+                | FinanceAuthorizationError::NotFound
+                | FinanceAuthorizationError::Forbidden,
+            ) => {
+                return message_response(401, UNAUTHORIZED_MESSAGE);
+            }
+            Err(FinanceAuthorizationError::Internal) => return error_response(),
+        };
 
     let query = UsersQuery::from_url(request.url);
 
-    match fetch_workspace_users(&config.contact_data, outbound, &authorization.ws_id, &query).await {
+    match fetch_workspace_users(&config.contact_data, outbound, &authorization.ws_id, &query).await
+    {
         Ok((count, data)) => {
             no_store_response(json_response(200, json!({ "data": data, "count": count })))
         }
@@ -321,7 +317,10 @@ mod tests {
 
     #[test]
     fn extracts_ws_id_from_exact_path() {
-        assert_eq!(users_ws_id("/api/v1/workspaces/ws-123/users"), Some("ws-123"));
+        assert_eq!(
+            users_ws_id("/api/v1/workspaces/ws-123/users"),
+            Some("ws-123")
+        );
     }
 
     #[test]

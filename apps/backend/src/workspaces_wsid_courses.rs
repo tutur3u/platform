@@ -188,10 +188,11 @@ async fn fetch_courses(
 
     // Legacy: `if (status !== 'all') queryBuilder.eq('archived', status === 'archived')`.
     if let Some(status) = status
-        && status != "all" {
-            let archived = status == "archived";
-            params.push(("archived", format!("eq.{archived}")));
-        }
+        && status != "all"
+    {
+        let archived = status == "archived";
+        params.push(("archived", format!("eq.{archived}")));
+    }
 
     // Legacy: `if ((q?.length ?? 0) > 0) queryBuilder.ilike('name', `%${q}%`)`.
     if let Some(search) = search.filter(|value| !value.is_empty()) {

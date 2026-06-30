@@ -92,10 +92,7 @@ async fn fetch_workspace_users(
     let url = contact_data
         .rest_url(
             USERS_TABLE,
-            &[
-                ("select", "*".to_owned()),
-                ("ws_id", format!("eq.{ws_id}")),
-            ],
+            &[("select", "*".to_owned()), ("ws_id", format!("eq.{ws_id}"))],
         )
         .ok_or(())?;
     // RLS stays active: forward the caller's access token as the bearer while
@@ -138,10 +135,7 @@ mod tests {
 
     #[test]
     fn extracts_ws_id_from_exact_path() {
-        assert_eq!(
-            users_ws_id("/api/workspaces/ws-123/users"),
-            Some("ws-123")
-        );
+        assert_eq!(users_ws_id("/api/workspaces/ws-123/users"), Some("ws-123"));
     }
 
     #[test]

@@ -932,9 +932,10 @@ mod tests {
 
     #[test]
     fn query_parses_paginated_with_values() {
-        let query =
-            parse_list_query(Some("https://x.test/api?q=widget&page=2&pageSize=25&response=paginated"))
-                .expect("valid");
+        let query = parse_list_query(Some(
+            "https://x.test/api?q=widget&page=2&pageSize=25&response=paginated",
+        ))
+        .expect("valid");
         assert_eq!(query.q, "widget");
         assert_eq!(query.page, 2);
         assert_eq!(query.page_size, 25);

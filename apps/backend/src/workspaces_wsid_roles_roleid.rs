@@ -206,10 +206,7 @@ mod tests {
         // Empty ws id.
         assert_eq!(role_path_ids("/api/v1/workspaces//roles/r-1"), None);
         // Wrong infix segment.
-        assert_eq!(
-            role_path_ids("/api/v1/workspaces/ws-1/members/r-1"),
-            None
-        );
+        assert_eq!(role_path_ids("/api/v1/workspaces/ws-1/members/r-1"), None);
         // Unrelated route (must not panic / must return None).
         assert_eq!(role_path_ids("/api/v1/health"), None);
         // Empty path.

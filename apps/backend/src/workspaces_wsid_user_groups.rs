@@ -122,10 +122,7 @@ async fn fetch_user_groups(
 ) -> Result<Vec<Value>, ()> {
     let Some(url) = contact_data.rest_url(
         USER_GROUPS_TABLE,
-        &[
-            ("select", "*".to_owned()),
-            ("ws_id", format!("eq.{ws_id}")),
-        ],
+        &[("select", "*".to_owned()), ("ws_id", format!("eq.{ws_id}"))],
     ) else {
         return Err(());
     };

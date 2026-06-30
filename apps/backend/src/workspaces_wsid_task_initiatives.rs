@@ -186,7 +186,10 @@ async fn normalize_ws_id(
         return Ok(ROOT_WORKSPACE_ID.to_owned());
     }
 
-    if raw_ws_id.trim().eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG) {
+    if raw_ws_id
+        .trim()
+        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
+    {
         return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
     }
 
@@ -218,7 +221,10 @@ async fn personal_workspace_id(
         .rest_url(
             "workspaces",
             &[
-                ("select", "id,workspace_members!inner(user_id,type)".to_owned()),
+                (
+                    "select",
+                    "id,workspace_members!inner(user_id,type)".to_owned(),
+                ),
                 ("personal", "eq.true".to_owned()),
                 ("workspace_members.user_id", format!("eq.{user_id}")),
                 ("workspace_members.type", "eq.MEMBER".to_owned()),
@@ -385,10 +391,13 @@ async fn send_get(
 fn is_uuid_literal(value: &str) -> bool {
     let value = value.trim();
     value.len() == 36
-        && value.chars().enumerate().all(|(index, character)| match index {
-            8 | 13 | 18 | 23 => character == '-',
-            _ => character.is_ascii_hexdigit(),
-        })
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, character)| match index {
+                8 | 13 | 18 | 23 => character == '-',
+                _ => character.is_ascii_hexdigit(),
+            })
 }
 
 fn is_workspace_handle(value: &str) -> bool {
@@ -439,14 +448,20 @@ mod tests {
 
     #[test]
     fn path_guard_rejects_foreign_and_short_paths() {
-        assert_eq!(initiatives_ws_id("/api/v1/workspaces//task-initiatives"), None);
+        assert_eq!(
+            initiatives_ws_id("/api/v1/workspaces//task-initiatives"),
+            None
+        );
         assert_eq!(
             initiatives_ws_id("/api/v1/workspaces/abc/def/task-initiatives"),
             None
         );
         assert_eq!(initiatives_ws_id("/api/v1/workspaces/abc"), None);
         // No `/api/...` (non-v1) or other route should match.
-        assert_eq!(initiatives_ws_id("/api/workspaces/abc/task-initiatives"), None);
+        assert_eq!(
+            initiatives_ws_id("/api/workspaces/abc/task-initiatives"),
+            None
+        );
         assert_eq!(initiatives_ws_id("/totally/unrelated"), None);
     }
 

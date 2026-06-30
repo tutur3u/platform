@@ -110,7 +110,8 @@ async fn task_cycles_response(
         return error_response(500, "Internal server error");
     }
 
-    let access_token = match authorize_membership(contact_data, request, raw_ws_id, outbound).await {
+    let access_token = match authorize_membership(contact_data, request, raw_ws_id, outbound).await
+    {
         Ok(token) => token,
         Err(MembershipError::Unauthorized) => return error_response(401, "Unauthorized"),
         Err(MembershipError::LookupFailed) => {
@@ -273,7 +274,10 @@ mod tests {
             task_cycles_ws_id("/api/v1/workspaces/abc/def/task-cycles"),
             None
         );
-        assert_eq!(task_cycles_ws_id("/api/v1/workspaces/abc/task-cycles/x"), None);
+        assert_eq!(
+            task_cycles_ws_id("/api/v1/workspaces/abc/task-cycles/x"),
+            None
+        );
         assert_eq!(task_cycles_ws_id("/api/v1/workspaces/abc"), None);
         // No `v1` segment must not match.
         assert_eq!(task_cycles_ws_id("/api/workspaces/abc/task-cycles"), None);
@@ -340,7 +344,9 @@ mod tests {
     #[test]
     fn serialize_cycles_wraps_rows_in_array_order() {
         let rows = vec![
-            cycle_row(r#"{"id":"a","name":"A","created_at":"2","task_cycle_tasks":[{"task_id":"x"}]}"#),
+            cycle_row(
+                r#"{"id":"a","name":"A","created_at":"2","task_cycle_tasks":[{"task_id":"x"}]}"#,
+            ),
             cycle_row(r#"{"id":"b","name":"B","created_at":"1"}"#),
         ];
         let serialized = serialize_cycles(&rows);

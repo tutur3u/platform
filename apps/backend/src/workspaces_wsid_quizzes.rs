@@ -55,8 +55,7 @@ const WORKSPACE_QUIZZES_TABLE: &str = "workspace_quizzes";
 const COURSE_MODULE_QUIZZES_TABLE: &str = "course_module_quizzes";
 const PRIVATE_QUIZ_ANSWERS_TABLE: &str = "workspace_quiz_answers";
 const PRIVATE_SCHEMA: &str = "private";
-const WORKSPACE_QUIZZES_SELECT: &str =
-    "id, question, type, content, answer, created_at, quiz_options(id, value, is_correct, explanation)";
+const WORKSPACE_QUIZZES_SELECT: &str = "id, question, type, content, answer, created_at, quiz_options(id, value, is_correct, explanation)";
 
 #[derive(Deserialize)]
 struct CourseModuleQuizRow {
@@ -337,7 +336,11 @@ fn merged_answer(quiz: &Value, answer_by_quiz_id: Option<&HashMap<String, Value>
 }
 
 fn is_missing_private_relation(response: &OutboundResponse) -> bool {
-    if response.body_text.to_ascii_lowercase().contains("workspace_quiz_answers") {
+    if response
+        .body_text
+        .to_ascii_lowercase()
+        .contains("workspace_quiz_answers")
+    {
         return true;
     }
 
@@ -347,12 +350,11 @@ fn is_missing_private_relation(response: &OutboundResponse) -> bool {
                 .code
                 .as_deref()
                 .is_some_and(|code| matches!(code, "42P01" | "PGRST106" | "PGRST205"));
-            let missing_message = error
-                .message
-                .as_deref()
-                .is_some_and(|message| {
-                    message.to_ascii_lowercase().contains("workspace_quiz_answers")
-                });
+            let missing_message = error.message.as_deref().is_some_and(|message| {
+                message
+                    .to_ascii_lowercase()
+                    .contains("workspace_quiz_answers")
+            });
             missing_code || missing_message
         }
         Err(_) => false,
@@ -476,9 +478,7 @@ mod tests {
             None
         );
         assert_eq!(
-            module_id_query_value(Some(
-                "https://x.localhost/api/v1/workspaces/ws/quizzes"
-            )),
+            module_id_query_value(Some("https://x.localhost/api/v1/workspaces/ws/quizzes")),
             None
         );
     }

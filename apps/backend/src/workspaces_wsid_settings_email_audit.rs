@@ -51,8 +51,7 @@ const AUDIT_LOAD_ERROR_MESSAGE: &str = "Failed to load email audit rows";
 const INTERNAL_ERROR_MESSAGE: &str = "Internal server error";
 const EMAIL_STATS_RPC: &str = "get_email_stats";
 const EMAIL_AUDIT_TABLE: &str = "email_audit";
-const EMAIL_AUDIT_SELECT: &str =
-    "id,subject,status,provider,template_type,source_email,created_at";
+const EMAIL_AUDIT_SELECT: &str = "id,subject,status,provider,template_type,source_email,created_at";
 const EMAIL_AUDIT_LIMIT: &str = "25";
 
 pub(crate) async fn handle_workspaces_wsid_settings_email_audit_route(
@@ -237,7 +236,11 @@ fn coerce_count(value: Option<&Value>) -> i64 {
             .as_i64()
             .or_else(|| number.as_f64().map(|float| float as i64))
             .unwrap_or(0),
-        Some(Value::String(text)) => text.trim().parse::<f64>().map(|float| float as i64).unwrap_or(0),
+        Some(Value::String(text)) => text
+            .trim()
+            .parse::<f64>()
+            .map(|float| float as i64)
+            .unwrap_or(0),
         _ => 0,
     }
 }
@@ -271,9 +274,18 @@ mod tests {
 
     #[test]
     fn rejects_non_matching_paths() {
-        assert_eq!(email_audit_ws_id("/api/workspaces/abc/settings/email-audit"), None);
-        assert_eq!(email_audit_ws_id("/api/v1/workspaces/abc/settings/other"), None);
-        assert_eq!(email_audit_ws_id("/api/v1/workspaces//settings/email-audit"), None);
+        assert_eq!(
+            email_audit_ws_id("/api/workspaces/abc/settings/email-audit"),
+            None
+        );
+        assert_eq!(
+            email_audit_ws_id("/api/v1/workspaces/abc/settings/other"),
+            None
+        );
+        assert_eq!(
+            email_audit_ws_id("/api/v1/workspaces//settings/email-audit"),
+            None
+        );
         assert_eq!(
             email_audit_ws_id("/api/v1/workspaces/abc/extra/settings/email-audit"),
             None

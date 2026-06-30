@@ -315,7 +315,8 @@ fn parse_inventory_list_query(request_url: Option<&str>) -> Result<InventoryList
     // page: z.coerce.number().int().min(1).default(1)
     let page = coerce_int_min_default(page_raw.as_deref(), 1, None)?;
     // pageSize: z.coerce.number().int().min(1).max(MAX_MEDIUM_TEXT_LENGTH).default(10)
-    let page_size = coerce_int_min_default(page_size_raw.as_deref(), 10, Some(MAX_MEDIUM_TEXT_LENGTH))?;
+    let page_size =
+        coerce_int_min_default(page_size_raw.as_deref(), 10, Some(MAX_MEDIUM_TEXT_LENGTH))?;
 
     // response: z.enum(['paginated']).optional()
     if let Some(response_value) = response_raw.as_deref()
@@ -430,9 +431,7 @@ mod tests {
     fn ws_id_rejects_non_matching_paths() {
         // Wrong prefix (no v1).
         assert_eq!(
-            workspaces_wsid_inventory_suppliers_ws_id(
-                "/api/workspaces/ws-1/inventory/suppliers"
-            ),
+            workspaces_wsid_inventory_suppliers_ws_id("/api/workspaces/ws-1/inventory/suppliers"),
             None
         );
         // Nested sub-resource (trailing segment remains).
@@ -444,9 +443,7 @@ mod tests {
         );
         // Different suffix.
         assert_eq!(
-            workspaces_wsid_inventory_suppliers_ws_id(
-                "/api/v1/workspaces/ws-1/inventory/batches"
-            ),
+            workspaces_wsid_inventory_suppliers_ws_id("/api/v1/workspaces/ws-1/inventory/batches"),
             None
         );
         // Empty ws id.
@@ -456,9 +453,7 @@ mod tests {
         );
         // Embedded slash in ws id segment.
         assert_eq!(
-            workspaces_wsid_inventory_suppliers_ws_id(
-                "/api/v1/workspaces/a/b/inventory/suppliers"
-            ),
+            workspaces_wsid_inventory_suppliers_ws_id("/api/v1/workspaces/a/b/inventory/suppliers"),
             None
         );
         // Unrelated short path must not panic / match.

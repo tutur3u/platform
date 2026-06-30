@@ -50,8 +50,7 @@ const SETTINGS_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const SETTINGS_PATH_SUFFIX: &str = "/settings";
 const MEMBER_MEMBERSHIP_TYPE: &str = "MEMBER";
 const MISSED_ENTRY_DATE_THRESHOLD_KEY: &str = "missed_entry_date_threshold";
-const WORKSPACE_SETTINGS_CACHE_CONTROL: &str =
-    "private, max-age=60, stale-while-revalidate=30";
+const WORKSPACE_SETTINGS_CACHE_CONTROL: &str = "private, max-age=60, stale-while-revalidate=30";
 
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const MEMBERSHIP_LOOKUP_FAILED_MESSAGE: &str = "Failed to verify workspace access";
@@ -326,12 +325,21 @@ mod tests {
         // Wrong version prefix.
         assert_eq!(settings_ws_id("/api/workspaces/abc/settings"), None);
         // Sub-routes under /settings must not match this handler.
-        assert_eq!(settings_ws_id("/api/v1/workspaces/abc/settings/email-audit"), None);
-        assert_eq!(settings_ws_id("/api/v1/workspaces/abc/settings/permissions"), None);
+        assert_eq!(
+            settings_ws_id("/api/v1/workspaces/abc/settings/email-audit"),
+            None
+        );
+        assert_eq!(
+            settings_ws_id("/api/v1/workspaces/abc/settings/permissions"),
+            None
+        );
         // Empty workspace id.
         assert_eq!(settings_ws_id("/api/v1/workspaces//settings"), None);
         // Extra path segments before /settings.
-        assert_eq!(settings_ws_id("/api/v1/workspaces/abc/extra/settings"), None);
+        assert_eq!(
+            settings_ws_id("/api/v1/workspaces/abc/extra/settings"),
+            None
+        );
         // Missing suffix.
         assert_eq!(settings_ws_id("/api/v1/workspaces/abc"), None);
     }
@@ -370,10 +378,7 @@ mod tests {
     #[test]
     fn builds_settings_body_for_non_personal_workspace() {
         let settings = json!({ "ws_id": "abc", "missed_entry_date_threshold": "2024-01-01" });
-        assert_eq!(
-            build_settings_body(Some(settings.clone()), false),
-            settings
-        );
+        assert_eq!(build_settings_body(Some(settings.clone()), false), settings);
         // Absent settings serialize as JSON null.
         assert_eq!(build_settings_body(None, false), Value::Null);
     }

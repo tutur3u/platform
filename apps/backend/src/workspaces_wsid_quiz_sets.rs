@@ -84,7 +84,8 @@ async fn quiz_sets_response(
     ws_id: &str,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let authorization = match authorize_education_workspace(config, request, ws_id, outbound).await {
+    let authorization = match authorize_education_workspace(config, request, ws_id, outbound).await
+    {
         Ok(authorization) => authorization,
         Err(response) => return response,
     };
@@ -262,10 +263,7 @@ fn quiz_sets_body(rows: Vec<QuizSetRow>, count: usize, query: &EducationReadQuer
 }
 
 fn map_quiz_set_row(row: QuizSetRow) -> Value {
-    let linked_modules_count = row
-        .course_module_quiz_sets
-        .as_ref()
-        .map_or(0, Vec::len);
+    let linked_modules_count = row.course_module_quiz_sets.as_ref().map_or(0, Vec::len);
 
     json!({
         "id": row.id,
@@ -301,7 +299,10 @@ mod tests {
             quiz_sets_ws_id(&format!("/api/v1/workspaces/{WORKSPACE_ID}/quiz-sets")),
             Some(WORKSPACE_ID)
         );
-        assert_eq!(quiz_sets_ws_id("/api/v1/workspaces/personal/quiz-sets"), Some("personal"));
+        assert_eq!(
+            quiz_sets_ws_id("/api/v1/workspaces/personal/quiz-sets"),
+            Some("personal")
+        );
     }
 
     #[test]
@@ -313,7 +314,9 @@ mod tests {
         );
         // Child route (owned by a different handler).
         assert_eq!(
-            quiz_sets_ws_id(&format!("/api/v1/workspaces/{WORKSPACE_ID}/quiz-sets/abc/quizzes")),
+            quiz_sets_ws_id(&format!(
+                "/api/v1/workspaces/{WORKSPACE_ID}/quiz-sets/abc/quizzes"
+            )),
             None
         );
         // Trailing slash is not the bare collection path.
@@ -343,7 +346,10 @@ mod tests {
             id: json!("set-1"),
             name: json!("Quiz One"),
             created_at: json!("2024-01-01T00:00:00Z"),
-            course_module_quiz_sets: Some(vec![json!({"module_id": "m1"}), json!({"module_id": "m2"})]),
+            course_module_quiz_sets: Some(vec![
+                json!({"module_id": "m1"}),
+                json!({"module_id": "m2"}),
+            ]),
         };
 
         assert_eq!(

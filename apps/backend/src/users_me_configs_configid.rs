@@ -109,7 +109,14 @@ async fn config_response(
         return success_response(Value::Null);
     }
 
-    match fetch_config_value(&config.contact_data, outbound, &data_auth, &user_id, config_id).await
+    match fetch_config_value(
+        &config.contact_data,
+        outbound,
+        &data_auth,
+        &user_id,
+        config_id,
+    )
+    .await
     {
         Ok(value) => success_response(value),
         Err(()) => fetch_error_response(),
@@ -282,7 +289,9 @@ mod tests {
         assert!(is_exact_tuturuuu_dot_com_email(Some("member@tuturuuu.com")));
         assert!(is_exact_tuturuuu_dot_com_email(Some("MEMBER@TUTURUUU.COM")));
         // Trimmed before matching.
-        assert!(is_exact_tuturuuu_dot_com_email(Some("  member@tuturuuu.com  ")));
+        assert!(is_exact_tuturuuu_dot_com_email(Some(
+            "  member@tuturuuu.com  "
+        )));
 
         assert!(!is_exact_tuturuuu_dot_com_email(Some(
             "member@xwf.tuturuuu.com"

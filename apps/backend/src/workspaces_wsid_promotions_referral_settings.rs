@@ -126,8 +126,8 @@ async fn fetch_referral_settings(
     // Mirror the legacy caller-scoped (RLS-active) `createClient(request)` read by
     // forwarding the caller's Supabase access token; fall back to the service-role
     // key when no forwardable caller token is present.
-    let bearer_token = supabase_auth::request_access_token(request)
-        .unwrap_or_else(|| service_role_key.to_owned());
+    let bearer_token =
+        supabase_auth::request_access_token(request).unwrap_or_else(|| service_role_key.to_owned());
     let authorization = format!("Bearer {bearer_token}");
 
     let response = outbound
@@ -210,9 +210,7 @@ mod tests {
         );
         // Nested segment inside the workspace id slot.
         assert_eq!(
-            referral_settings_ws_id(
-                "/api/v1/workspaces/ws-1/extra/promotions/referral-settings"
-            ),
+            referral_settings_ws_id("/api/v1/workspaces/ws-1/extra/promotions/referral-settings"),
             None
         );
     }

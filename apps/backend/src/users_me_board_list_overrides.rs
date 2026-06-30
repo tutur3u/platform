@@ -181,12 +181,18 @@ mod tests {
     /// The handler must only own the exact legacy mount path.
     #[test]
     fn path_guard_matches_exact_path_only() {
-        assert_eq!(request_with("GET", BOARD_LIST_OVERRIDES_PATH).path, BOARD_LIST_OVERRIDES_PATH);
+        assert_eq!(
+            request_with("GET", BOARD_LIST_OVERRIDES_PATH).path,
+            BOARD_LIST_OVERRIDES_PATH
+        );
         assert_ne!(
             "/api/v1/users/me/board-list-overrides/extra",
             BOARD_LIST_OVERRIDES_PATH
         );
-        assert_ne!("/api/users/me/board-list-overrides", BOARD_LIST_OVERRIDES_PATH);
+        assert_ne!(
+            "/api/users/me/board-list-overrides",
+            BOARD_LIST_OVERRIDES_PATH
+        );
     }
 
     #[test]
@@ -220,6 +226,9 @@ mod tests {
         assert_eq!(fetch_failed.cache_control, None);
 
         let internal = error_message(500, INTERNAL_SERVER_ERROR_MESSAGE);
-        assert_eq!(internal.body, json!({ "error": INTERNAL_SERVER_ERROR_MESSAGE }));
+        assert_eq!(
+            internal.body,
+            json!({ "error": INTERNAL_SERVER_ERROR_MESSAGE })
+        );
     }
 }

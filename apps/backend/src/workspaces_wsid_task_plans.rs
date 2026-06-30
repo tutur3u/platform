@@ -119,8 +119,14 @@ async fn list_response(
             Err(()) => return error_response(500, MEMBERSHIP_LOOKUP_FAILED_MESSAGE),
         };
 
-    match verify_workspace_member(contact_data, outbound, &resolved_ws_id, &user_id, &access_token)
-        .await
+    match verify_workspace_member(
+        contact_data,
+        outbound,
+        &resolved_ws_id,
+        &user_id,
+        &access_token,
+    )
+    .await
     {
         Ok(true) => {}
         Ok(false) => return error_response(403, WORKSPACE_ACCESS_DENIED_MESSAGE),
@@ -609,10 +615,7 @@ mod tests {
             task_plans_ws_id("/api/v1/workspaces/ws-123/task-plans/plan-1/digest"),
             None
         );
-        assert_eq!(
-            task_plans_ws_id("/api/workspaces/ws-123/task-plans"),
-            None
-        );
+        assert_eq!(task_plans_ws_id("/api/workspaces/ws-123/task-plans"), None);
         assert_eq!(task_plans_ws_id("/api/v1/workspaces/ws-123/tasks"), None);
     }
 
@@ -629,10 +632,7 @@ mod tests {
     #[test]
     fn in_filter_builds_postgrest_list() {
         assert_eq!(in_filter(&["a".to_owned()]), "in.(a)");
-        assert_eq!(
-            in_filter(&["a".to_owned(), "b".to_owned()]),
-            "in.(a,b)"
-        );
+        assert_eq!(in_filter(&["a".to_owned(), "b".to_owned()]), "in.(a,b)");
     }
 
     #[test]

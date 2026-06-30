@@ -83,10 +83,7 @@ pub(crate) async fn handle_workspaces_wsid_task_projects_projectid_route(
 fn parse_path(path: &str) -> Option<(&str, &str)> {
     let rest = path.strip_prefix(PATH_PREFIX)?;
     let (ws_id, project_id) = rest.split_once(PATH_INFIX)?;
-    if ws_id.is_empty()
-        || ws_id.contains('/')
-        || project_id.is_empty()
-        || project_id.contains('/')
+    if ws_id.is_empty() || ws_id.contains('/') || project_id.is_empty() || project_id.contains('/')
     {
         return None;
     }
@@ -124,10 +121,7 @@ async fn project_response(
             return error_response(403, "Forbidden");
         }
         Err(WorkspacePermissionAuthorizationError::Forbidden) => {
-            return error_response(
-                403,
-                "You don't have permission to perform this operation",
-            );
+            return error_response(403, "You don't have permission to perform this operation");
         }
         Err(WorkspacePermissionAuthorizationError::Internal) => {
             return error_response(500, "Internal server error");
@@ -200,7 +194,9 @@ mod tests {
             Some(("abc", "proj-1"))
         );
         assert_eq!(
-            parse_path("/api/v1/workspaces/personal/task-projects/11111111-1111-4111-8111-111111111111"),
+            parse_path(
+                "/api/v1/workspaces/personal/task-projects/11111111-1111-4111-8111-111111111111"
+            ),
             Some(("personal", "11111111-1111-4111-8111-111111111111"))
         );
     }

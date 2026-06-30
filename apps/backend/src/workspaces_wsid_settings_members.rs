@@ -337,9 +337,18 @@ mod tests {
 
     #[test]
     fn disable_invite_value_requires_exact_true() {
-        assert!(disable_invite_value(&[secret(DISABLE_INVITE_SECRET, "true")]));
-        assert!(!disable_invite_value(&[secret(DISABLE_INVITE_SECRET, "false")]));
-        assert!(!disable_invite_value(&[secret(DISABLE_INVITE_SECRET, "TRUE")]));
+        assert!(disable_invite_value(&[secret(
+            DISABLE_INVITE_SECRET,
+            "true"
+        )]));
+        assert!(!disable_invite_value(&[secret(
+            DISABLE_INVITE_SECRET,
+            "false"
+        )]));
+        assert!(!disable_invite_value(&[secret(
+            DISABLE_INVITE_SECRET,
+            "TRUE"
+        )]));
         assert!(!disable_invite_value(&[secret(DISABLE_INVITE_SECRET, "1")]));
     }
 

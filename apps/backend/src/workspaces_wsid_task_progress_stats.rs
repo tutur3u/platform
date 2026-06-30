@@ -133,12 +133,13 @@ async fn stats_response(
     };
 
     // Fetch metrics (service role; legacy uses the admin client).
-    let metrics = match fetch_rows::<Value>(contact_data, outbound, &metrics_url(contact_data, &ws_id)).await
-    {
-        Ok(rows) => rows,
-        Err(FetchError::SchemaUnavailable) => return schema_unavailable_response(),
-        Err(_) => return error_response(500, STATS_FAILURE_MESSAGE),
-    };
+    let metrics =
+        match fetch_rows::<Value>(contact_data, outbound, &metrics_url(contact_data, &ws_id)).await
+        {
+            Ok(rows) => rows,
+            Err(FetchError::SchemaUnavailable) => return schema_unavailable_response(),
+            Err(_) => return error_response(500, STATS_FAILURE_MESSAGE),
+        };
 
     let metric_id_param = query_param(request.url, "metric_id");
     let first_metric_id = metrics
@@ -151,7 +152,12 @@ async fn stats_response(
     let entries = match fetch_rows::<EntryRow>(
         contact_data,
         outbound,
-        &entries_url(contact_data, &ws_id, request.url, selected_metric_id.as_deref()),
+        &entries_url(
+            contact_data,
+            &ws_id,
+            request.url,
+            selected_metric_id.as_deref(),
+        ),
     )
     .await
     {
@@ -239,7 +245,10 @@ async fn normalize_ws_id(
         return Ok(ROOT_WORKSPACE_ID.to_owned());
     }
 
-    if raw_ws_id.trim().eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG) {
+    if raw_ws_id
+        .trim()
+        .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
+    {
         return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
     }
 
@@ -271,7 +280,10 @@ async fn personal_workspace_id(
         .rest_url(
             "workspaces",
             &[
-                ("select", "id,workspace_members!inner(user_id,type)".to_owned()),
+                (
+                    "select",
+                    "id,workspace_members!inner(user_id,type)".to_owned(),
+                ),
                 ("personal", "eq.true".to_owned()),
                 ("workspace_members.user_id", format!("eq.{user_id}")),
                 ("workspace_members.type", "eq.MEMBER".to_owned()),
@@ -442,7 +454,11 @@ async fn send_get(
 // Stats computation
 // ---------------------------------------------------------------------------
 
-fn build_stats(entries: &[EntryRow], metrics: Vec<Value>, selected_metric_id: Option<String>) -> Value {
+fn build_stats(
+    entries: &[EntryRow],
+    metrics: Vec<Value>,
+    selected_metric_id: Option<String>,
+) -> Value {
     let effective = effective_values(entries);
 
     let mut by_date: BTreeMap<String, f64> = BTreeMap::new();
@@ -451,7 +467,11 @@ fn build_stats(entries: &[EntryRow], metrics: Vec<Value>, selected_metric_id: Op
     let mut total = 0.0_f64;
 
     for (index, entry) in entries.iter().enumerate() {
-        let Some(date) = entry.entry_date.as_deref().filter(|value| !value.is_empty()) else {
+        let Some(date) = entry
+            .entry_date
+            .as_deref()
+            .filter(|value| !value.is_empty())
+        else {
             continue;
         };
         let value = effective[index];
@@ -562,7 +582,10 @@ fn opt(value: &Option<String>) -> &str {
 fn progress_value(value: &Value) -> f64 {
     match value {
         Value::Null => 0.0,
-        Value::Number(number) => number.as_f64().filter(|value| value.is_finite()).unwrap_or(0.0),
+        Value::Number(number) => number
+            .as_f64()
+            .filter(|value| value.is_finite())
+            .unwrap_or(0.0),
         Value::String(text) => {
             let trimmed = text.trim();
             if trimmed.is_empty() {
@@ -585,7 +608,9 @@ fn number_value(value: f64) -> Value {
     if value.is_finite() && value.fract() == 0.0 && value.abs() < 9_007_199_254_740_992.0 {
         Value::Number(Number::from(value as i64))
     } else {
-        Number::from_f64(value).map(Value::Number).unwrap_or(Value::from(0))
+        Number::from_f64(value)
+            .map(Value::Number)
+            .unwrap_or(Value::from(0))
     }
 }
 
@@ -614,7 +639,11 @@ fn longest_streak(by_date: &BTreeMap<String, f64>) -> i64 {
     let mut current = 0;
     let mut previous: Option<i64> = None;
     for day in days {
-        current = if previous == Some(day - 1) { current + 1 } else { 1 };
+        current = if previous == Some(day - 1) {
+            current + 1
+        } else {
+            1
+        };
         if current > longest {
             longest = current;
         }
@@ -709,10 +738,13 @@ fn civil_from_days(days: i128) -> (i128, i128, i128) {
 fn is_uuid_literal(value: &str) -> bool {
     let value = value.trim();
     value.len() == 36
-        && value.chars().enumerate().all(|(index, character)| match index {
-            8 | 13 | 18 | 23 => character == '-',
-            _ => character.is_ascii_hexdigit(),
-        })
+        && value
+            .chars()
+            .enumerate()
+            .all(|(index, character)| match index {
+                8 | 13 | 18 | 23 => character == '-',
+                _ => character.is_ascii_hexdigit(),
+            })
 }
 
 fn is_workspace_handle(value: &str) -> bool {
@@ -860,7 +892,14 @@ mod tests {
     fn build_stats_aggregates_daily_tags_and_streaks() {
         let entries = vec![
             entry("a", "2026-01-01", "t1", "delta", json!(2), json!(["focus"])),
-            entry("b", "2026-01-01", "t2", "delta", json!(3), json!(["focus", "deep"])),
+            entry(
+                "b",
+                "2026-01-01",
+                "t2",
+                "delta",
+                json!(3),
+                json!(["focus", "deep"]),
+            ),
             entry("c", "2026-01-03", "t3", "delta", json!(0), json!([])),
         ];
         let stats = build_stats(&entries, vec![], Some("metric-1".to_owned()));
@@ -869,14 +908,20 @@ mod tests {
         assert_eq!(stats["summary"]["entriesCount"], json!(3));
         // 2026-01-01 has value 5 (>0); 2026-01-03 has value 0 (not active).
         assert_eq!(stats["summary"]["activeDays"], json!(1));
-        assert_eq!(stats["daily"], json!([
-            { "date": "2026-01-01", "value": 5 },
-            { "date": "2026-01-03", "value": 0 },
-        ]));
-        assert_eq!(stats["tags"], json!([
-            { "tag": "focus", "value": 5 },
-            { "tag": "deep", "value": 3 },
-        ]));
+        assert_eq!(
+            stats["daily"],
+            json!([
+                { "date": "2026-01-01", "value": 5 },
+                { "date": "2026-01-03", "value": 0 },
+            ])
+        );
+        assert_eq!(
+            stats["tags"],
+            json!([
+                { "tag": "focus", "value": 5 },
+                { "tag": "deep", "value": 3 },
+            ])
+        );
         assert_eq!(stats["selectedMetricId"], json!("metric-1"));
         assert_eq!(stats["ok"], json!(true));
     }
@@ -905,12 +950,16 @@ mod tests {
         assert!(is_schema_unavailable(&json!({
             "message": "Could not find the table for task_progress_metrics in the schema cache"
         })));
-        assert!(!is_schema_unavailable(&json!({ "code": "23505", "message": "duplicate key" })));
+        assert!(!is_schema_unavailable(
+            &json!({ "code": "23505", "message": "duplicate key" })
+        ));
     }
 
     #[test]
     fn query_param_reads_first_non_empty_value() {
-        let url = Some("https://x.localhost/api/v1/workspaces/w/task-progress/stats?metric_id=m1&from=2026-01-01");
+        let url = Some(
+            "https://x.localhost/api/v1/workspaces/w/task-progress/stats?metric_id=m1&from=2026-01-01",
+        );
         assert_eq!(query_param(url, "metric_id"), Some("m1".to_owned()));
         assert_eq!(query_param(url, "from"), Some("2026-01-01".to_owned()));
         assert_eq!(query_param(url, "to"), None);

@@ -136,11 +136,12 @@ async fn warehouses_response(
 ) -> BackendResponse {
     let request_url = request.url;
 
-    let ws_id =
-        match authorize_catalog_or_setup(&config.contact_data, request, raw_ws_id, outbound).await {
-            Ok(ws_id) => ws_id,
-            Err(response) => return response,
-        };
+    let ws_id = match authorize_catalog_or_setup(&config.contact_data, request, raw_ws_id, outbound)
+        .await
+    {
+        Ok(ws_id) => ws_id,
+        Err(response) => return response,
+    };
 
     let query = match QueryParams::parse(request_url) {
         Ok(query) => query,
