@@ -13,9 +13,15 @@ const {
   writeManifest,
 } = require('./tanstack-migration-manifest.js');
 const {
+  checkReadmeProgress,
   formatProgressReport,
+  formatReadmeProgress,
   parseArgs: parseProgressArgs,
+  README_PROGRESS_END,
+  README_PROGRESS_START,
+  replaceReadmeProgressBlock,
   summarizeMigrationProgress,
+  writeReadmeProgress,
 } = require('./tanstack-migration-progress.js');
 
 function makeTempFixture() {
@@ -597,6 +603,23 @@ test('tanstack migration progress CLI args support manifest and JSON output', ()
   );
 });
 
+test('tanstack migration progress CLI args support README modes', () => {
+  const checkArgs = parseProgressArgs([
+    '--manifest',
+    'apps/tanstack-web/migration/route-manifest.json',
+    '--readme-path',
+    'README.md',
+    '--readme',
+    '--check-readme',
+  ]);
+  const writeArgs = parseProgressArgs(['--write-readme']);
+
+  assert.equal(checkArgs.format, 'readme');
+  assert.equal(checkArgs.readmeMode, 'check');
+  assert.match(checkArgs.readmePath, /README\.md$/u);
+  assert.equal(writeArgs.readmeMode, 'write');
+});
+
 test('tanstack migration progress report prints owner buckets and blockers', () => {
   const progress = summarizeMigrationProgress([
     {
@@ -624,6 +647,112 @@ test('tanstack migration progress report prints owner buckets and blockers', () 
   assert.match(report, /All route artifacts: 1\/2 terminal \(50%\)/u);
   assert.match(report, /Rust backend: 0\/1 terminal \(0%\), 1 remaining/u);
   assert.match(report, /\/api\/users\/search \[api; rust-backend; GET\]/u);
+});
+
+test('tanstack migration README block renders badges, tables, and next routes', () => {
+  const progress = summarizeMigrationProgress([
+    {
+      kind: 'page',
+      methods: [],
+      routePath: '/en/about',
+      sourceFile: 'apps/web/src/app/[locale]/about/page.tsx',
+      status: 'migrated',
+      targetOwner: 'tanstack-start',
+    },
+    {
+      kind: 'api',
+      methods: ['GET'],
+      routePath: '/api/users/search',
+      sourceFile: 'apps/web/src/app/api/users/search/route.ts',
+      status: 'legacy-next',
+      targetOwner: 'rust-backend',
+    },
+  ]);
+  const block = formatReadmeProgress(
+    progress,
+    '/repo/apps/tanstack-web/migration/route-manifest.json'
+  );
+
+  assert.match(block, /img\.shields\.io\/static\/v1/u);
+  assert.match(block, /\| Rust backend \| `\[--------------------\]` 0%/u);
+  assert.match(block, /\| TanStack Start \| `\[####################\]` 100%/u);
+  assert.match(block, /<summary>Remaining work by route kind<\/summary>/u);
+  assert.match(block, /`\/api\/users\/search`/u);
+});
+
+test('tanstack migration README replacement inserts and refreshes generated block', () => {
+  const readme = '# Demo\n\nIntro.\n\n## What Tuturuuu Builds\n\nBody.\n';
+  const inserted = replaceReadmeProgressBlock(readme, 'generated one');
+  const refreshed = replaceReadmeProgressBlock(inserted, 'generated two');
+
+  assert.match(inserted, /## Migration Progress/u);
+  assert.match(inserted, new RegExp(README_PROGRESS_START, 'u'));
+  assert.match(inserted, new RegExp(README_PROGRESS_END, 'u'));
+  assert.match(inserted, /generated one/u);
+  assert.doesNotMatch(refreshed, /generated one/u);
+  assert.match(refreshed, /generated two/u);
+});
+
+test('tanstack migration README write and check use the manifest source of truth', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'readme-progress-'));
+  const readmePath = path.join(rootDir, 'README.md');
+  const manifestPath = path.join(
+    rootDir,
+    'apps',
+    'tanstack-web',
+    'migration',
+    'route-manifest.json'
+  );
+
+  writeJson(manifestPath, {
+    routes: [
+      {
+        kind: 'page',
+        methods: [],
+        routePath: '/en/about',
+        sourceFile: 'apps/web/src/app/[locale]/about/page.tsx',
+        status: 'migrated',
+        targetOwner: 'tanstack-start',
+      },
+      {
+        kind: 'api',
+        methods: ['GET'],
+        routePath: '/api/users/search',
+        sourceFile: 'apps/web/src/app/api/users/search/route.ts',
+        status: 'legacy-next',
+        targetOwner: 'rust-backend',
+      },
+    ],
+  });
+  fs.writeFileSync(readmePath, '# Demo\n\n## What Tuturuuu Builds\n\nBody.\n');
+
+  assert.deepEqual(checkReadmeProgress({ manifestPath, readmePath }), [
+    `${path.relative(path.resolve(__dirname, '..'), readmePath)} migration progress is stale. Run bun migration:tanstack:readme.`,
+  ]);
+
+  const result = writeReadmeProgress({ manifestPath, readmePath });
+
+  assert.equal(result.changed, true);
+  assert.deepEqual(checkReadmeProgress({ manifestPath, readmePath }), []);
+  assert.match(fs.readFileSync(readmePath, 'utf8'), /Rust backend/u);
+});
+
+test('root README migration progress block stays generated from the manifest', () => {
+  const rootDir = path.resolve(__dirname, '..');
+
+  assert.deepEqual(
+    checkReadmeProgress({
+      manifestPath: path.join(
+        rootDir,
+        'apps',
+        'tanstack-web',
+        'migration',
+        'route-manifest.json'
+      ),
+      readmePath: path.join(rootDir, 'README.md'),
+    }),
+    []
+  );
 });
 
 test('TanStack Rust migration docs keep current manifest counts in sync', () => {

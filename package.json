@@ -193,6 +193,8 @@
     "migration:tanstack:check": "node scripts/tanstack-migration-manifest.js check --manifest apps/tanstack-web/migration/route-manifest.json --allow-legacy",
     "migration:tanstack:cutover-check": "node scripts/tanstack-migration-manifest.js check --manifest apps/tanstack-web/migration/route-manifest.json --require-migrated",
     "migration:tanstack:gates": "node scripts/tanstack-cutover-gates.js --manifest apps/tanstack-web/migration/route-manifest.json",
+    "migration:tanstack:progress": "node scripts/tanstack-migration-progress.js",
+    "migration:tanstack:readme": "node scripts/tanstack-migration-progress.js --write-readme",
     "format": "biome format",
     "format:fix": "biome format --write",
     "ff": "biome format --write && biome lint --write && biome check --write",
