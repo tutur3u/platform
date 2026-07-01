@@ -229,9 +229,11 @@ test('adaptive build resource profiles can rescue to hard-limit profiles after c
     DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
   };
   const lowProfile = getBuildResourceProfile('low');
+  const serialProfile = getBuildResourceProfile('serial');
   const stableProfile = getBuildResourceProfile('stable');
 
   assert.equal(isBuildResourceProfileWithinHardLimit(lowProfile, env), true);
+  assert.equal(isBuildResourceProfileWithinHardLimit(serialProfile, env), true);
   assert.equal(
     isBuildResourceProfileWithinHardLimit(stableProfile, env),
     false
@@ -248,6 +250,17 @@ test('adaptive build resource profiles can rescue to hard-limit profiles after c
       env,
     })?.name,
     'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default', 'stable', 'low']),
+      currentProfileName: 'low',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: true,
+    })?.name,
+    'serial'
   );
   assert.equal(
     getNextAdaptiveBuildResourceProfile({

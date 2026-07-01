@@ -1452,8 +1452,14 @@ remote Buildx builder if `docker buildx inspect tuturuuu` reports
 - `default`: `auto`, 4 CPUs, max parallelism 1
 - `stable`: `16g`, 2 CPUs, max parallelism 1
 - `low`: `10g`, 2 CPUs, max parallelism 1
+- `serial`: `10g`, 1 CPU, max parallelism 1
 - `minimal`: `8g`, 1 CPU, max parallelism 1
 - `floor`: `6g`, 1 CPU, max parallelism 1
+
+The `serial` profile intentionally keeps the `low` memory cap while reducing
+Next/Turbo concurrency. Prefer that retry before shrinking the BuildKit memory
+cap when `low` gets through compilation or page-data work but exits with code
+137.
 
 If the floor profile still fails with the same BuildKit infrastructure
 signature, the helper resets the machine-local profile back to the

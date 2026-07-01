@@ -134,13 +134,16 @@ infrastructure dashboard changes.
   skip fixed profiles above the effective Docker budget during normal
   selection, and reset persisted state back to the budget-derived `default`
   profile when `floor` still fails so later runs do not get stuck starting at
-  `floor`. If `default` also fails and Docker's reported memory limit still has
-  headroom, a hard-limit rescue may retry a larger fixed profile such as `low`
-  (`10g`) before surfacing the failure. Explicit memory-exhaustion signatures
-  such as `cannot allocate memory` or exit code 137 may prefer the hard-limit
-  rescue before smaller profiles. Each retry should restart the Compose-owned
-  BuildKit service and recreate the remote Buildx builder when `docker buildx
-  inspect tuturuuu` reports `Status: inactive`. Explicit build cap flags or
+  `floor`. The retry ladder includes a `serial` profile (`10g`, 1 CPU, max
+  parallelism 1) after `low` (`10g`, 2 CPUs) so memory-exhausted Next builds can
+  reduce inner concurrency before shrinking the BuildKit memory cap. If
+  `default` also fails and Docker's reported memory limit still has headroom, a
+  hard-limit rescue may retry a larger fixed profile such as `low` or `serial`
+  before surfacing the failure. Explicit memory-exhaustion signatures such as
+  `cannot allocate memory` or exit code 137 may prefer the hard-limit rescue
+  before smaller profiles. Each retry should restart the Compose-owned BuildKit
+  service and recreate the remote Buildx builder when `docker buildx inspect
+  tuturuuu` reports `Status: inactive`. Explicit build cap flags or
   `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
   `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
 - BuildKit max parallelism only limits Docker's build graph. The web image

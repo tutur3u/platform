@@ -52,6 +52,12 @@ const BUILD_RESOURCE_PROFILES = Object.freeze([
   Object.freeze({
     cpus: '1',
     maxParallelism: '1',
+    memory: '10g',
+    name: 'serial',
+  }),
+  Object.freeze({
+    cpus: '1',
+    maxParallelism: '1',
     memory: '8g',
     name: 'minimal',
   }),
@@ -245,7 +251,7 @@ function getNextAdaptiveBuildResourceProfile({
   }
 
   const currentProfile = getBuildResourceProfile(currentProfileName);
-  const hardLimitProfile = BUILD_RESOURCE_PROFILES.find(
+  const hardLimitProfile = BUILD_RESOURCE_PROFILES.slice(currentIndex + 1).find(
     (profile) =>
       profile.name !== currentProfile?.name &&
       !attemptedProfileNames.has(profile.name) &&

@@ -3209,6 +3209,86 @@ test('buildBlueGreenServices skips lower profiles that exceed the Docker memory 
   }
 });
 
+test('buildBlueGreenServices retries low-memory builds with a serial high-memory profile before reducing memory', async () => {
+  const calls = [];
+  const dockerMemoryLimit = String(12 * 1024 * 1024 * 1024);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-adaptive-serial-')
+  );
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+  let buildAttempts = 0;
+
+  try {
+    await buildBlueGreenServices({
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      env: {
+        BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+        [BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV]: '1',
+        [BUILD_RESOURCE_PROFILE_ENV]: 'low',
+        [BUILD_RESOURCE_PROFILE_STATE_FILE_ENV]: profilePaths.stateFile,
+      },
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.env]);
+
+        if (args[0] === 'buildx' && args[1] === 'bake') {
+          buildAttempts += 1;
+
+          return buildAttempts === 1
+            ? {
+                code: 1,
+                signal: null,
+                stderr:
+                  'ERROR: failed to solve: ResourceExhausted: cannot allocate memory\nerror: script "turbo" exited with code 137',
+                stdout: '',
+              }
+            : { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.includes('buildkit')) {
+          return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+        }
+
+        if (args[0] === 'inspect') {
+          return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+      services: ['web-blue'],
+    });
+
+    assert.equal(buildAttempts, 2);
+    assert.equal(
+      readBuildResourceProfileState(profilePaths).profileName,
+      'serial'
+    );
+
+    const buildEnvs = calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , callEnv]) => callEnv);
+
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv[BUILD_RESOURCE_PROFILE_ENV]),
+      ['low', 'serial']
+    );
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv.DOCKER_WEB_BUILD_MEMORY),
+      [undefined, '10g']
+    );
+    assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_CPUS, '1');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('buildBlueGreenServices resets a failed floor profile to the budget-derived profile', async () => {
   const calls = [];
   const stderrWrites = [];
@@ -3566,7 +3646,7 @@ test('buildBlueGreenServices keeps retrying lower profiles before failing at the
       /closing transport/
     );
 
-    assert.equal(buildAttempts, 5);
+    assert.equal(buildAttempts, 6);
     assert.equal(
       readBuildResourceProfileState(profilePaths).profileName,
       'default'
