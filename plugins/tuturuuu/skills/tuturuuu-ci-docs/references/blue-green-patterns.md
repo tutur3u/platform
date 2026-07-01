@@ -175,8 +175,10 @@ infrastructure dashboard changes.
   builds are capped.
 - Native web fallback builds (`DOCKER_WEB_NATIVE_BUILD=1`) should build Next.js
   artifacts on the host, then package the runner image with plain `docker build`
-  by default. Keep `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` as the explicit opt-in
-  when that lightweight packaging step must use the configured Buildx builder.
+  by default. Strip builder-routing env such as `BUILDX_BUILDER` from that
+  packaging subprocess so a remote BuildKit outage does not affect the native
+  fallback. Keep `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` as the explicit opt-in when
+  that lightweight packaging step must use the configured Buildx builder.
 - Containerized watcher handoffs must run from the mirrored host checkout path
   via `PLATFORM_HOST_WORKSPACE_DIR`, not from a container-only path.
 - When production deployment starts from a linked Git worktree, the watcher

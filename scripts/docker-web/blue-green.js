@@ -2676,6 +2676,20 @@ function isNativeWebRunnerBuildxEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_RUNNER_BUILDX);
 }
 
+function getNativeWebRunnerDockerBuildEnv(env = {}) {
+  if (isNativeWebRunnerBuildxEnabled(env)) {
+    return env;
+  }
+
+  const buildEnv = { ...env };
+
+  delete buildEnv.BUILDX_BUILDER;
+  delete buildEnv.BUILDKIT_HOST;
+  delete buildEnv.DOCKER_WEB_BUILD_BUILDER_NAME;
+
+  return buildEnv;
+}
+
 function getHostTotalMemoryBuildValue(osImpl = os) {
   const totalMemoryBytes = osImpl.totalmem?.();
 
@@ -2806,6 +2820,8 @@ async function buildNativeWebRuntimeImages({
   runCommand: run = runCommand,
   services,
 }) {
+  const commandEnv = getNativeWebRunnerDockerBuildEnv(env);
+
   for (const serviceName of services) {
     const builderName = env.BUILDX_BUILDER || env.DOCKER_WEB_BUILD_BUILDER_NAME;
     const buildArgs = [
@@ -2828,7 +2844,7 @@ async function buildNativeWebRuntimeImages({
       : ['build', ...buildArgs];
 
     await runChecked('docker', args, {
-      env,
+      env: commandEnv,
       runCommand: run,
       timeoutMs: getBlueGreenBuildTimeoutMs(env),
     });
@@ -4604,6 +4620,7 @@ module.exports = {
   getHostTotalMemoryBuildValue,
   getNextBlueGreenColor,
   getNativeWebBuildMemory,
+  getNativeWebRunnerDockerBuildEnv,
   isBlueGreenColor,
   isNativeWebBuildEnabled,
   isNativeWebRunnerBuildxEnabled,

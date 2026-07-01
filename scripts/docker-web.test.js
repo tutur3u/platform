@@ -70,6 +70,7 @@ const {
   getBlueGreenWebServiceImageTag,
   getHostTotalMemoryBuildValue,
   getNativeWebBuildMemory,
+  getNativeWebRunnerDockerBuildEnv,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
@@ -3714,7 +3715,9 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
   const calls = [];
   const env = {
     BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    BUILDKIT_HOST: 'tcp://remote-buildkit.example:1234',
     COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_BUILD_BUILDER_NAME: 'fallback-builder',
     DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
     DOCKER_WEB_NATIVE_BUILD: '1',
     PLATFORM_BUILD_BUILT_AT: '2026-05-28T06:00:00.000Z',
@@ -3745,6 +3748,13 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
 
   assert.equal(isNativeWebBuildEnabled(env), true);
   assert.equal(isNativeWebRunnerBuildxEnabled(env), false);
+  assert.notStrictEqual(getNativeWebRunnerDockerBuildEnv(env), env);
+  assert.equal(getNativeWebRunnerDockerBuildEnv(env).BUILDX_BUILDER, undefined);
+  assert.equal(getNativeWebRunnerDockerBuildEnv(env).BUILDKIT_HOST, undefined);
+  assert.equal(
+    getNativeWebRunnerDockerBuildEnv(env).DOCKER_WEB_BUILD_BUILDER_NAME,
+    undefined
+  );
   assert.equal(
     getBlueGreenWebServiceImageTag('web-green', {
       composeGlobalArgs: ['-p', 'explicit-project'],
@@ -3811,6 +3821,12 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     undefined
   );
   assert.equal(calls[0][3].PLATFORM_BUILD_COMMIT_HASH, 'native-commit');
+  assert.equal(calls[1][3].BUILDX_BUILDER, undefined);
+  assert.equal(calls[1][3].BUILDKIT_HOST, undefined);
+  assert.equal(calls[1][3].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+  assert.equal(env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
+  assert.equal(env.BUILDKIT_HOST, 'tcp://remote-buildkit.example:1234');
+  assert.equal(env.DOCKER_WEB_BUILD_BUILDER_NAME, 'fallback-builder');
 });
 
 test('buildBlueGreenServices can explicitly package host-built artifacts with buildx', async () => {
@@ -3826,8 +3842,8 @@ test('buildBlueGreenServices can explicitly package host-built artifacts with bu
     buildStrategy: 'bake',
     composeFile: PROD_COMPOSE_FILE,
     env,
-    runCommand: async (command, args) => {
-      calls.push([command, args]);
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
 
       return { code: 0, signal: null, stderr: '', stdout: '' };
     },
@@ -3835,7 +3851,8 @@ test('buildBlueGreenServices can explicitly package host-built artifacts with bu
   });
 
   assert.equal(isNativeWebRunnerBuildxEnabled(env), true);
-  assert.deepEqual(calls[1], [
+  assert.strictEqual(getNativeWebRunnerDockerBuildEnv(env), env);
+  assert.deepEqual(calls[1].slice(0, 2), [
     'docker',
     [
       'buildx',
@@ -3856,6 +3873,7 @@ test('buildBlueGreenServices can explicitly package host-built artifacts with bu
       path.resolve(__dirname, '..'),
     ],
   ]);
+  assert.strictEqual(calls[1][2], env);
 });
 
 test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
