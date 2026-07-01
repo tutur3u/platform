@@ -1106,6 +1106,11 @@ provider sync should not be scheduled through Trigger.dev in production.
 polls every second, fast-forwards when GitHub has a newer commit, and runs the
 blue/green deploy flow automatically.
 
+When the watcher container starts on a host with no active blue/green runtime,
+it treats that idle state as a missing active deployment and bootstraps the
+current commit. This first-run recovery creates `web-proxy`, the active and
+standby lanes, and `cloudflared` when the tunnel profile is enabled.
+
 Run this command from a host-level process manager, not only from inside Docker.
 The command starts and tails the `web-blue-green-watcher` container, but the
 host process is the part that can recover after the Docker engine itself dies.

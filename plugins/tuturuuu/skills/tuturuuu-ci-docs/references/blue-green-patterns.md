@@ -194,6 +194,10 @@ infrastructure dashboard changes.
   and honor `DOCKER_WEB_WITH_CLOUDFLARED=0|false|no|off` as auto-detect opt-out
   unless the operator explicitly passes `--with-cloudflared` or
   `--profile cloudflared`.
+- Host-started `bun serve:web:docker:bg:watch` containers should treat a fully
+  idle blue/green runtime as missing active deployment and bootstrap the current
+  commit so fresh hosts create `web-proxy`, active/standby lanes, and
+  `cloudflared` when that profile is enabled.
 - When `SUPERMEMORY_ENABLED=false` or `DOCKER_SUPERMEMORY_ENABLED=false` is
   explicit, blue/green helpers should remove the Supermemory sidecar from
   support builds, starts, and health gates. This keeps local-only E2E shards from

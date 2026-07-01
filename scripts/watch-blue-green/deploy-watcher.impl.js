@@ -47,6 +47,7 @@ const deployWatcherRuntime = require('./deploy-watcher-runtime.js');
 const {
   BLUE_GREEN_PROXY_SERVICE,
   PROD_COMPOSE_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   getWatcherComposeEnv,
   loadRuntimeSnapshot,
 } = deployWatcherRuntime;
@@ -3328,12 +3329,26 @@ function getExpectedStandbyColor(activeColor) {
   return null;
 }
 
-function needsActiveRuntimeRecovery(runtimeSnapshot) {
+function needsActiveRuntimeRecovery(
+  runtimeSnapshot,
+  { env = process.env } = {}
+) {
   const currentBlueGreen = runtimeSnapshot?.currentBlueGreen;
 
-  return (
+  if (
     currentBlueGreen?.state === 'degraded' &&
     (!currentBlueGreen.activeColor || !currentBlueGreen.activeServiceRunning)
+  ) {
+    return true;
+  }
+
+  if (currentBlueGreen?.state !== 'idle') {
+    return false;
+  }
+
+  return (
+    isTruthyEnvValue(env?.[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]) &&
+    !getRuntimeDeployment(runtimeSnapshot?.deployments, 'active')
   );
 }
 
@@ -6002,7 +6017,7 @@ async function runDeployWatchIteration(
         status: 'up-to-date',
       });
 
-      if (needsActiveRuntimeRecovery(runtimeSnapshot)) {
+      if (needsActiveRuntimeRecovery(runtimeSnapshot, { env })) {
         const validationBlock = await getLatestCommitValidationBlock();
 
         if (validationBlock) {
@@ -8567,6 +8582,7 @@ module.exports = {
   CONTAINER_REFRESH_WATCHED_FILES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
@@ -8652,6 +8668,7 @@ module.exports = {
   listChangedFilesBetweenRevisions,
   main,
   mirrorExistingWatchSession,
+  needsActiveRuntimeRecovery,
   parseArgs,
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,

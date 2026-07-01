@@ -34,6 +34,8 @@ const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
+const WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV =
+  'DOCKER_WEB_WATCHER_BOOTSTRAP_IDLE_RUNTIME';
 const DEFAULT_CONTAINER_HOST_WORKSPACE_DIR = '/workspace-host';
 
 function getBlueGreenColorFromServiceName(serviceName) {
@@ -125,6 +127,10 @@ function getWatcherComposeEnv({
   return {
     ...composeEnv,
     ...(gitCommonDir ? { [DOCKER_WEB_GIT_COMMON_DIR_ENV]: gitCommonDir } : {}),
+    [WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]:
+      composeEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV] ??
+      sanitizedComposeBaseEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV] ??
+      '1',
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
 }
@@ -843,6 +849,7 @@ module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   HOST_WORKSPACE_DIR_ENV,
   PROD_COMPOSE_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   collectDeploymentTraffic,
   getProdComposeServiceContainerId,
   getWatcherComposeEnv,

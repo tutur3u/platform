@@ -41,6 +41,7 @@ services:
       - DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT
       - DOCKER_WEB_TURBO_CONCURRENCY
       - DOCKER_WEB_WITH_CLOUDFLARED
+      - DOCKER_WEB_WATCHER_BOOTSTRAP_IDLE_RUNTIME
       - GITHUB_TOKEN
       - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
       - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain

@@ -47,6 +47,7 @@ const {
   MAX_RECOVERY_CACHE_IMAGES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   WATCH_PENDING_DEPLOY_ENV,
   WATCHER_CONTAINER_ENV,
   WEB_CRON_RUNNER_SERVICE,
@@ -121,6 +122,7 @@ const {
   writeWatchArgsFile,
   loadRuntimeSnapshot,
   mirrorExistingWatchSession,
+  needsActiveRuntimeRecovery,
   readWatchStatus,
   terminateExistingWatcher,
   clearPendingDeployRequest,
@@ -2798,6 +2800,67 @@ test('buildDashboardView shows pending deployments in recent deployment cards', 
   assert.match(output, /Ship hotfix through blue green/);
   assert.match(output, /Last deploy:\s+deploying/);
   assert.match(output, /elapsed 20s/);
+});
+
+test('needsActiveRuntimeRecovery treats fresh idle blue-green runtime as recoverable', () => {
+  assert.equal(
+    needsActiveRuntimeRecovery({
+      currentBlueGreen: {
+        activeColor: null,
+        proxyRunning: false,
+        state: 'idle',
+      },
+      deployments: [],
+    }),
+    false
+  );
+
+  assert.equal(
+    needsActiveRuntimeRecovery(
+      {
+        currentBlueGreen: {
+          activeColor: null,
+          proxyRunning: false,
+          state: 'idle',
+        },
+        deployments: [],
+      },
+      {
+        env: {
+          [WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]: '1',
+        },
+      }
+    ),
+    true
+  );
+
+  assert.equal(
+    needsActiveRuntimeRecovery({
+      currentBlueGreen: {
+        activeColor: 'blue',
+        activeServiceRunning: false,
+        state: 'degraded',
+      },
+      deployments: [],
+    }),
+    true
+  );
+
+  assert.equal(
+    needsActiveRuntimeRecovery({
+      currentBlueGreen: {
+        activeColor: 'blue',
+        activeServiceRunning: true,
+        state: 'active',
+      },
+      deployments: [
+        {
+          runtimeState: 'active',
+        },
+      ],
+    }),
+    false
+  );
 });
 
 test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
@@ -8273,6 +8336,7 @@ test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
     });
 
     assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(composeEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV], '1');
     assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(composeEnv.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
     assert.match(composeEnv.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
