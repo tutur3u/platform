@@ -15,6 +15,7 @@ const DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 512_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS = 4;
 const DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_DELAY_MS = 60_000;
+const DEFAULT_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS = 4;
 const DOCKER_NO_SUCH_CONTAINER_PATTERN =
   /(?:no such (?:object|container)|no such container)/iu;
 const COMPOSE_MISSING_DEPENDENCY_CONTAINER_PATTERN =
@@ -210,6 +211,8 @@ async function runChecked(command, args, options = {}) {
         : `Command failed (${result.code}): ${failedCommand}`
     );
     wrappedError.exitCode = result.code;
+    wrappedError.stderr = result.stderr;
+    wrappedError.stdout = result.stdout;
     throw wrappedError;
   }
 
@@ -285,7 +288,14 @@ function parseDockerContainerNameConflicts(error) {
 }
 
 function isComposeMissingContainerDependencyError(error) {
-  const message = error instanceof Error ? error.message : String(error);
+  const parts = [error instanceof Error ? error.message : String(error)];
+
+  if (error && typeof error === 'object') {
+    if (typeof error.stderr === 'string') parts.push(error.stderr);
+    if (typeof error.stdout === 'string') parts.push(error.stdout);
+  }
+
+  const message = parts.join('\n');
 
   return (
     COMPOSE_MISSING_DEPENDENCY_CONTAINER_PATTERN.test(message) &&
@@ -319,6 +329,11 @@ async function runComposeUpWithNameConflictRecovery({
     env,
     'DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS',
     DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS
+  );
+  const maxStaleDependencyAttempts = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS',
+    DEFAULT_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS
   );
   const maxRegistryDelayMs = getPositiveIntegerEnv(
     env,
@@ -385,13 +400,13 @@ async function runComposeUpWithNameConflictRecovery({
       }
 
       if (
-        staleDependencyAttempt < maxRegistryAttempts &&
+        staleDependencyAttempt < maxStaleDependencyAttempts &&
         isComposeMissingContainerDependencyError(error)
       ) {
         process.stderr.write(
           `Docker Compose up hit a stale dependency container reference; retrying in ${staleDependencyDelayMs}ms (attempt ${
             staleDependencyAttempt + 1
-          }/${maxRegistryAttempts}).\n`
+          }/${maxStaleDependencyAttempts}).\n`
         );
         await sleepImpl(staleDependencyDelayMs);
         staleDependencyAttempt += 1;

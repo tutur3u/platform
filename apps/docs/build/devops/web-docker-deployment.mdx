@@ -822,7 +822,8 @@ Compose can also briefly report `dependency failed to start` with `No such
 container: <id>` when a dependency was recreated between Docker's dependency
 resolution and health wait. The helper treats that as a stale dependency
 reference and retries the same narrow `compose up` without deleting unrelated
-containers.
+containers. Tune that retry budget with
+`DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS`.
 
 The production `web-proxy` service is pinned to the official mainline Alpine
 image `nginx:1.31.0-alpine`, and `scripts/check-docker-web.js` verifies that
@@ -2297,7 +2298,10 @@ Dashboard details:
   without treating it as a deployment failure. Tune the bounded backoff with
   `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS`,
   `DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS`, and
-  `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`; non-transient Compose errors still
+  `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`. Stale dependency container
+  references use `DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS`,
+  so registry retry tuning cannot accidentally disable recovery from Compose
+  referencing a removed dependency container. Non-transient Compose errors still
   fail immediately.
 - If `log-drain-postgres` starts but remains unhealthy before promotion, the
   helper removes and recreates only that service container once, collects

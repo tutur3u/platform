@@ -248,7 +248,10 @@ infrastructure dashboard changes.
   `dependency failed to start` and `No such container: <id>` when a dependency
   container is recreated during the same `compose up`. Treat that as a stale
   dependency reference and retry the same narrow up command; do not remove
-  unrelated containers for this class of failure.
+  unrelated containers for this class of failure. Use
+  `DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS` for this retry
+  budget so registry retry tuning does not accidentally disable stale dependency
+  recovery.
 - Log-drain Postgres is an optional script-owned preflight, not a Compose
   `depends_on` gate for `web`, blue/green lanes, or the watcher. If
   `log-drain-postgres` stays unhealthy after one service-container recreate,

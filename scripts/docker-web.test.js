@@ -6567,6 +6567,215 @@ test('runBlueGreenProdWorkflow does not promote web before support refresh succe
   }
 });
 
+test('runBlueGreenProdWorkflow retries stale dependency during support refresh', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-support-stale-dependency-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let hiveStarted = false;
+  let proxyReloaded = false;
+  let supportUpAttempts = 0;
+  let webStarted = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (serviceName === 'web') return resultFor('');
+      if (serviceName === 'web-blue') return resultFor('blue-123\n');
+      if (serviceName === 'web-green') {
+        return resultFor(webStarted ? 'green-123\n' : '');
+      }
+      if (serviceName === BLUE_GREEN_PROXY_SERVICE) {
+        return resultFor('proxy-123\n');
+      }
+      if (serviceName === 'hive-db-migrate') {
+        return resultFor(
+          args.includes('-a') && hiveStarted ? 'hive-db-migrate-123\n' : ''
+        );
+      }
+      if (
+        serviceName === getBlueGreenHiveServiceName('green') ||
+        serviceName === 'hive-realtime'
+      ) {
+        return resultFor(hiveStarted ? `${serviceName}-123\n` : '');
+      }
+      if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
+        return resultFor(supportUpAttempts > 1 ? `${serviceName}-123\n` : '');
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(`${BLUE_GREEN_PROXY_PORTS_JSON}\n`);
+    }
+
+    if (args.includes('config') && args.includes('--format')) {
+      return resultFor(
+        JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        })
+      );
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor('nginx:1.31.0-alpine\n');
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      return resultFor('');
+    }
+
+    if (args[0] === 'buildx' && args[1] === 'bake') {
+      return resultFor('');
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      webStarted = true;
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      args.includes(getBlueGreenHiveServiceName('green'))
+    ) {
+      hiveStarted = true;
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+        args.includes(service)
+      )
+    ) {
+      supportUpAttempts += 1;
+
+      if (supportUpAttempts === 1) {
+        return {
+          code: 1,
+          signal: null,
+          stderr:
+            'dependency failed to start: Error response from daemon: No such container: 3fbc83b3bd9cdd7dbd03169405341f2a997e6d9656795a8121d1f88e420003b6',
+          stdout: '',
+        };
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (args.includes('exec') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      proxyReloaded = true;
+      return resultFor('');
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    const result = await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: [],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        changedFiles: ['apps/storage-unzip-proxy/src/server.js'],
+        drainPollMs: 0,
+        drainTimeoutMs: 5_000,
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS: '10',
+          DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS: '1',
+          DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS: '3',
+          DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '1',
+        },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(supportUpAttempts, 2);
+    assert.equal(proxyReloaded, true);
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.equal(
+      result.stages.find((stage) => stage.id === 'support-refresh')?.status,
+      'succeeded'
+    );
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.includes(' up --detach --no-build --remove-orphans') &&
+          call.includes('storage-unzip-proxy') &&
+          call.includes('web-cron-runner')
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('getBlueGreenComposeMigration stages target ports while the legacy project exists', async () => {
   const migration = await getBlueGreenComposeMigration({
     composeFile: PROD_COMPOSE_FILE,
