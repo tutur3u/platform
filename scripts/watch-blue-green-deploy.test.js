@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
+const { DOCKER_WEB_GIT_COMMON_DIR_ENV } = require('./docker-web/env.js');
 const {
   DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
@@ -2293,6 +2294,54 @@ test('removeStaleGitIndexLock removes only stale lock files', () => {
   }
 });
 
+test('removeStaleGitIndexLock removes linked worktree index locks', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-linked-index-lock-')
+  );
+  const commonGitDir = path.join(tempDir, 'main', '.git');
+  const worktreeDir = path.join(tempDir, 'worktrees', 'production');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'production');
+  const lockPath = path.join(worktreeGitDir, 'index.lock');
+  const logs = [];
+
+  try {
+    fs.mkdirSync(worktreeDir, { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+    fs.writeFileSync(lockPath, '', 'utf8');
+
+    const now = Date.now();
+    const staleMtime = new Date(now - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000);
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    assert.equal(
+      removeStaleGitIndexLock({
+        error: new Error(
+          `Command failed (128): git reset --hard HEAD\nfatal: Unable to create '${lockPath}': File exists.`
+        ),
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => now,
+        rootDir: worktreeDir,
+      }),
+      true
+    );
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.match(logs.at(-1), /Removed stale git index lock/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('removeStaleGitLock removes only stale remote ref lock files', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-ref-lock-'));
   const refDir = path.join(tempDir, '.git', 'refs', 'remotes', 'origin');
@@ -4491,6 +4540,121 @@ test('runDeployWatchIteration resets dirty worktrees before comparing upstream b
       'git rev-parse HEAD',
       'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
     ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration removes stale linked worktree index locks before retrying', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-linked-reset-lock-')
+  );
+  const commonGitDir = path.join(tempDir, 'main', '.git');
+  const worktreeDir = path.join(tempDir, 'worktrees', 'production');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'production');
+  const lockPath = path.join(worktreeGitDir, 'index.lock');
+  const paths = getWatchPaths(worktreeDir);
+  const envFilePath = path.join(worktreeDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const logs = [];
+  let resetAttempts = 0;
+  const now = Date.now();
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('production\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git reset --hard HEAD') {
+      resetAttempts += 1;
+
+      if (resetAttempts === 1) {
+        return createResult('', {
+          code: 128,
+          stderr: `fatal: Unable to create '${lockPath}': File exists.`,
+        });
+      }
+
+      return createResult('');
+    }
+
+    if (key === 'git clean -fd' || key === 'git fetch origin production') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('ddd1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git rev-parse origin/production') {
+      return createResult('ddd1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'ddd1111111111111111111111111111111111111\nddd111\nKeep production current\n2026-07-01T05:00:00.000Z\n'
+      );
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const staleMtime = new Date(now - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000);
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: {
+          error() {},
+          info() {},
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => now,
+        paths,
+        platformProjectReader: async () => ({
+          deploymentStatus: 'ready',
+          selectedBranch: 'production',
+          source: 'test',
+        }),
+        rootDir: worktreeDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.equal(resetAttempts, 2);
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.ok(
+      logs.some((message) => message.includes('Removed stale git index lock'))
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -8083,6 +8247,44 @@ test('getWatcherComposeEnv maps CF_TUNNEL_TOKEN and enables cloudflared', () => 
     assert.equal(composeEnv.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
     assert.equal(composeEnv.DOCKER_WEB_WITH_CLOUDFLARED, '1');
     assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv exposes linked worktree Git metadata and strips local Git env', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-worktree-git-')
+  );
+  const commonGitDir = path.join(tempDir, 'primary', '.git');
+  const worktreeDir = path.join(tempDir, 'amber-storm', 'tuturuuu');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'tuturuuu');
+
+  try {
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.mkdirSync(worktreeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        GIT_CONFIG_COUNT: '1',
+        GIT_DIR: '/host-only/.git/worktrees/tuturuuu',
+        GIT_WORK_TREE: '/host-only/tuturuuu',
+        PATH: 'test-path',
+      },
+      rootDir: worktreeDir,
+    });
+
+    assert.equal(composeEnv[DOCKER_WEB_GIT_COMMON_DIR_ENV], commonGitDir);
+    assert.equal(composeEnv.GIT_CONFIG_COUNT, undefined);
+    assert.equal(composeEnv.GIT_DIR, undefined);
+    assert.equal(composeEnv.GIT_WORK_TREE, undefined);
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], worktreeDir);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

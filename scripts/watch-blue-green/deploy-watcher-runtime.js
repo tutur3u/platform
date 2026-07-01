@@ -8,8 +8,11 @@ const {
   readBlueGreenProxyActiveColor,
 } = require('../docker-web/blue-green.js');
 const {
+  DOCKER_WEB_GIT_COMMON_DIR_ENV,
   getComposeEnvironment,
   getDockerCloudflaredAutodetect,
+  resolveLinkedWorktreeGitCommonDir,
+  sanitizeGitLocalEnv,
   WEB_ENV_FILE,
 } = require('../docker-web/env.js');
 const {
@@ -104,17 +107,24 @@ function getWatcherComposeEnv({
           DOCKER_WEB_WITH_CLOUDFLARED: '1',
         }
       : baseEnv;
+  const sanitizedComposeBaseEnv = sanitizeGitLocalEnv(composeBaseEnv);
+  const gitCommonDir = resolveLinkedWorktreeGitCommonDir({
+    fsImpl,
+    rootDir: hostWorkspaceDir,
+  });
+  const composeEnv = getComposeEnvironment({
+    baseEnv: sanitizedComposeBaseEnv,
+    envFilePath,
+    fsImpl,
+    preferEnvFilePath: true,
+    rootDir: hostWorkspaceDir,
+    withCloudflared,
+    withRedis: true,
+  });
 
   return {
-    ...getComposeEnvironment({
-      baseEnv: composeBaseEnv,
-      envFilePath,
-      fsImpl,
-      preferEnvFilePath: true,
-      rootDir: hostWorkspaceDir,
-      withCloudflared,
-      withRedis: true,
-    }),
+    ...composeEnv,
+    ...(gitCommonDir ? { [DOCKER_WEB_GIT_COMMON_DIR_ENV]: gitCommonDir } : {}),
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
 }

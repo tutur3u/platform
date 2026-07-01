@@ -103,6 +103,7 @@ const {
 } = require('./build-web-docker.js');
 const {
   CONTAINER_REFRESH_EXIT_CODE,
+  getWatcherChildEnv,
   getStatusSnapshotHealth,
   shouldRestartWatcherExit,
 } = require('../apps/web/docker/blue-green-watcher-entrypoint.js');
@@ -1094,6 +1095,21 @@ test('watcher entrypoint treats missing startup snapshots as restartable after g
 
   assert.equal(health.status, 'missing');
   assert.match(health.reason, /status snapshot missing/);
+});
+
+test('watcher entrypoint strips local Git env from child process', () => {
+  const childEnv = getWatcherChildEnv({
+    GIT_CONFIG_COUNT: '1',
+    GIT_DIR: '/host-only/.git/worktrees/tuturuuu',
+    GIT_WORK_TREE: '/host-only/tuturuuu',
+    PATH: 'test-path',
+  });
+
+  assert.equal(childEnv.GIT_CONFIG_COUNT, undefined);
+  assert.equal(childEnv.GIT_DIR, undefined);
+  assert.equal(childEnv.GIT_WORK_TREE, undefined);
+  assert.equal(childEnv.PATH, 'test-path');
+  assert.equal(childEnv[WATCHER_CONTAINER_ENV], '1');
 });
 
 test('watcher entrypoint detects stale status snapshots from watcher interval', () => {

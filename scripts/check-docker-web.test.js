@@ -1206,6 +1206,23 @@ test('validateDockerProdCompose reports missing watcher host workspace wiring', 
   assert.match(errors.join('\n'), /PLATFORM_HOST_WORKSPACE_DIR/);
 });
 
+test('validateDockerProdCompose reports missing watcher linked-worktree Git metadata wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replaceAll('      - DOCKER_WEB_GIT_COMMON_DIR\n', '')
+    .replaceAll(
+      '      - ${' +
+        'DOCKER_WEB_GIT_COMMON_DIR:-../.git' +
+        '}:${' +
+        'DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common' +
+        '}\n',
+      ''
+    );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /DOCKER_WEB_GIT_COMMON_DIR/);
+});
+
 test('validateDockerProdCompose reports missing watcher project registry wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
     '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain\n',

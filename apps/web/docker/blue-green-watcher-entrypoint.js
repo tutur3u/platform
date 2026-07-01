@@ -26,6 +26,23 @@ const WATCHER_SCRIPT_PATH = path.join(
   'scripts',
   'watch-blue-green-deploy.js'
 );
+const GIT_LOCAL_ENV_KEYS = Object.freeze([
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_COMMON_DIR',
+  'GIT_CONFIG',
+  'GIT_CONFIG_COUNT',
+  'GIT_CONFIG_PARAMETERS',
+  'GIT_DIR',
+  'GIT_GRAFT_FILE',
+  'GIT_IMPLICIT_WORK_TREE',
+  'GIT_INDEX_FILE',
+  'GIT_NO_REPLACE_OBJECTS',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_PREFIX',
+  'GIT_REPLACE_REF_BASE',
+  'GIT_SHALLOW_FILE',
+  'GIT_WORK_TREE',
+]);
 const WATCH_STATUS_FILE =
   process.env.PLATFORM_BLUE_GREEN_WATCH_STATUS_FILE ??
   path.join(
@@ -273,6 +290,22 @@ function sleep(ms) {
   });
 }
 
+function getWatcherChildEnv(baseEnv = process.env) {
+  const env = {
+    ...baseEnv,
+    PLATFORM_BLUE_GREEN_WATCH_ARGS_FILE: WATCH_ARGS_FILE,
+    PLATFORM_BLUE_GREEN_WATCH_RUNTIME_DIR: WATCH_RUNTIME_DIR,
+    PLATFORM_BLUE_GREEN_WATCH_STATUS_FILE: WATCH_STATUS_FILE,
+    [WATCHER_CONTAINER_ENV]: '1',
+  };
+
+  for (const key of GIT_LOCAL_ENV_KEYS) {
+    delete env[key];
+  }
+
+  return env;
+}
+
 function runWatcherOnce(args, options = {}) {
   return new Promise((resolve, reject) => {
     const startedAt =
@@ -281,13 +314,7 @@ function runWatcherOnce(args, options = {}) {
     let killTimer = null;
     const child = spawn('bun', [WATCHER_SCRIPT_PATH, ...args], {
       cwd: WORKSPACE_DIR,
-      env: {
-        ...process.env,
-        PLATFORM_BLUE_GREEN_WATCH_ARGS_FILE: WATCH_ARGS_FILE,
-        PLATFORM_BLUE_GREEN_WATCH_RUNTIME_DIR: WATCH_RUNTIME_DIR,
-        PLATFORM_BLUE_GREEN_WATCH_STATUS_FILE: WATCH_STATUS_FILE,
-        [WATCHER_CONTAINER_ENV]: '1',
-      },
+      env: getWatcherChildEnv(),
       stdio: 'inherit',
     });
     activeChild = child;
@@ -423,6 +450,7 @@ module.exports = {
   getDeploymentBuildTimeoutMs,
   getSnapshotStaleAfterMs,
   getStatusSnapshotHealth,
+  getWatcherChildEnv,
   hasOnceArg,
   parsePositiveInteger,
   readStatusSnapshot,

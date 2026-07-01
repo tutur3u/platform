@@ -140,9 +140,91 @@ function getGitLockPathFromError(error) {
   return match?.[1] ?? null;
 }
 
-function getRecoverableGitLockKind(resolvedLockPath, rootDir = ROOT_DIR) {
-  const gitDir = path.normalize(path.join(rootDir, '.git'));
-  const relative = path.relative(gitDir, resolvedLockPath);
+function resolveGitMetadataReference(value, baseDir) {
+  const trimmed = String(value ?? '').trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  return path.normalize(
+    path.isAbsolute(trimmed) ? trimmed : path.join(baseDir, trimmed)
+  );
+}
+
+function readGitFileReference(filePath, prefix, fsImpl) {
+  let contents;
+  try {
+    contents = fsImpl.readFileSync(filePath, 'utf8');
+  } catch {
+    return null;
+  }
+
+  const firstLine = contents.split(/\r?\n/u)[0]?.trim() ?? '';
+  if (!firstLine.toLowerCase().startsWith(prefix)) {
+    return null;
+  }
+
+  return resolveGitMetadataReference(
+    firstLine.slice(prefix.length),
+    path.dirname(filePath)
+  );
+}
+
+function getGitMetadataDirs(rootDir = ROOT_DIR, fsImpl = require('node:fs')) {
+  const dirs = new Set();
+  const gitPath = path.normalize(path.join(rootDir, '.git'));
+
+  try {
+    const stats = fsImpl.statSync(gitPath);
+
+    if (stats.isDirectory()) {
+      dirs.add(gitPath);
+    } else if (stats.isFile()) {
+      const gitDir = readGitFileReference(gitPath, 'gitdir:', fsImpl);
+
+      if (gitDir) {
+        dirs.add(gitDir);
+
+        const commonDir = readGitFileReference(
+          path.join(gitDir, 'commondir'),
+          '',
+          fsImpl
+        );
+
+        if (commonDir) {
+          dirs.add(commonDir);
+        }
+      }
+    }
+  } catch {
+    dirs.add(gitPath);
+  }
+
+  return [...dirs];
+}
+
+function getRecoverableGitLockKind(
+  resolvedLockPath,
+  rootDir = ROOT_DIR,
+  fsImpl = require('node:fs')
+) {
+  const gitDirs = getGitMetadataDirs(rootDir, fsImpl);
+  let relative = null;
+
+  for (const gitDir of gitDirs) {
+    const candidate = path.relative(gitDir, resolvedLockPath);
+
+    if (
+      candidate &&
+      !candidate.startsWith('..') &&
+      !path.isAbsolute(candidate) &&
+      candidate.endsWith('.lock')
+    ) {
+      relative = candidate;
+      break;
+    }
+  }
 
   if (
     !relative ||
@@ -198,7 +280,7 @@ function removeStaleGitLock({
   const resolved = path.normalize(
     path.isAbsolute(lockPath) ? lockPath : path.join(rootDir, lockPath)
   );
-  const lockKind = getRecoverableGitLockKind(resolved, rootDir);
+  const lockKind = getRecoverableGitLockKind(resolved, rootDir, fsImpl);
 
   if (!lockKind) {
     return false;

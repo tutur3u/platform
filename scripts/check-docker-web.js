@@ -1095,6 +1095,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD',
     '      - DOCKER_WEB_DOCKER_MEMORY_LIMIT',
     '      - DOCKER_WEB_FRONTEND',
+    '      - DOCKER_WEB_GIT_COMMON_DIR',
     '      - DOCKER_WEB_NATIVE_BUILD',
     '      - DOCKER_WEB_NATIVE_BUILD_MEMORY',
     '      - DOCKER_WEB_NEXT_APP_ONLY',
@@ -1167,6 +1168,11 @@ function validateDockerProdCompose(composeContent) {
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}',
     '      - DOCKER_WEB_FRONTEND',
+    '      - ${' +
+      'DOCKER_WEB_GIT_COMMON_DIR:-../.git' +
+      '}:${' +
+      'DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common' +
+      '}',
     '      - ..:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
     '      - platform-bun-install:/root/.bun/install/cache',
@@ -1347,6 +1353,7 @@ function validateDockerProdCompose(composeContent) {
 
   for (const snippet of [
     '      - DOCKER_WEB_BUILD_MEMORY',
+    '      - DOCKER_WEB_GIT_COMMON_DIR',
     '      - DOCKER_WEB_NEXT_BUILD_CPUS',
   ]) {
     if (
@@ -1354,6 +1361,20 @@ function validateDockerProdCompose(composeContent) {
     ) {
       errors.push(
         `docker-compose.web.prod.yml service web-blue-green-watcher is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  for (const serviceName of ['web-blue-green-watcher', 'web-docker-control']) {
+    if (
+      !serviceBlockIncludes(
+        composeContent,
+        serviceName,
+        '      - DOCKER_WEB_GIT_COMMON_DIR'
+      )
+    ) {
+      errors.push(
+        `docker-compose.web.prod.yml service ${serviceName} must pass DOCKER_WEB_GIT_COMMON_DIR so linked-worktree watcher recreation keeps Git metadata mounted.`
       );
     }
   }
