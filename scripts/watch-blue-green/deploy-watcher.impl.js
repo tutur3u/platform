@@ -7366,6 +7366,36 @@ async function runDeployWatchIteration(
       throw error;
     }
 
+    if (
+      removeStaleGitIndexLock({
+        error,
+        fsImpl,
+        log,
+        now,
+        rootDir,
+      })
+    ) {
+      log.warn?.(
+        `Retrying Git poll on ${target.branch} after removing a stale Git lock.`
+      );
+      return runDeployWatchIteration(target, {
+        commitValidationReader,
+        deployCommand,
+        env,
+        envFilePath,
+        fsImpl,
+        log,
+        now,
+        onDeploymentStart,
+        paths,
+        platformProjectDeploymentStatusUpdater,
+        platformProjectReader,
+        processImpl,
+        rootDir,
+        runCommand: run,
+      });
+    }
+
     log.warn?.(
       `Git polling failed on ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
     );
