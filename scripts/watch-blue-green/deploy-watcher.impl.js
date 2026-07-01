@@ -32,6 +32,7 @@ const {
   getComposeCommandArgs,
   getComposeFile,
   getContainerHealthStatus,
+  removeComposeServiceContainersByLabelIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
@@ -293,6 +294,11 @@ const DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS = 60_000;
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const WEB_DOCKER_CONTROL_SERVICE = 'web-docker-control';
 const WEB_CRON_RUNNER_SERVICE = 'web-cron-runner';
+const CRON_RUNNER_STALE_DEPENDENCY_SERVICES = [
+  WEB_CRON_RUNNER_SERVICE,
+  'hive-db-migrate',
+  'hive-postgres',
+];
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
@@ -628,6 +634,64 @@ function clearContainerManagedWatcherState({
   fsImpl.rmSync(paths.statusFile, { force: true });
 }
 
+function isComposeMissingContainerDependencyError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /\bNo such container:\s*[0-9a-f]{12,64}\b/iu.test(message) &&
+    /dependency .*failed to start/iu.test(message)
+  );
+}
+
+async function runCronRunnerComposeUpWithStaleDependencyRecovery({
+  env,
+  fsImpl,
+  runCommand: run,
+}) {
+  const composeGlobalArgs = ['--profile', 'redis'];
+  const upArgs = [
+    'up',
+    '--build',
+    '--detach',
+    '--no-recreate',
+    '--remove-orphans',
+    WEB_CRON_RUNNER_SERVICE,
+  ];
+  const args = getComposeCommandArgs(
+    PROD_COMPOSE_FILE,
+    composeGlobalArgs,
+    ...upArgs
+  );
+
+  try {
+    return await runChecked('docker', args, {
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  } catch (error) {
+    if (!isComposeMissingContainerDependencyError(error)) {
+      throw error;
+    }
+
+    await removeComposeServiceContainersByLabelIfPresent(
+      CRON_RUNNER_STALE_DEPENDENCY_SERVICES,
+      {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
+
+    return runChecked('docker', args, {
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  }
+}
+
 async function startBlueGreenWatcherContainer(
   argv,
   {
@@ -735,24 +799,11 @@ async function startBlueGreenWatcherContainer(
     }
   );
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      PROD_COMPOSE_FILE,
-      ['--profile', 'redis'],
-      'up',
-      '--build',
-      '--detach',
-      '--no-recreate',
-      '--remove-orphans',
-      WEB_CRON_RUNNER_SERVICE
-    ),
-    {
-      env: startupComposeEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+  await runCronRunnerComposeUpWithStaleDependencyRecovery({
+    env: startupComposeEnv,
+    fsImpl,
+    runCommand: run,
+  });
 }
 
 async function startBlueGreenWatcherContainerWithRecovery(argv, options = {}) {

@@ -1699,6 +1699,10 @@ function prodComposePsAllKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q ${serviceName}`;
 }
 
+function dockerPsComposeServiceLabelKey(serviceName, projectName) {
+  return `docker ps -aq --filter label=com.docker.compose.project=${projectName} --filter label=com.docker.compose.service=${serviceName} --format {{.ID}}`;
+}
+
 function prodComposeStopKey(...serviceNames) {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${serviceNames.join(' ')}`;
 }
@@ -7791,6 +7795,82 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(envs[2].COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(envs[3][HOST_WORKSPACE_DIR_ENV], tempDir);
     assert.equal(envs[3].COMPOSE_PROJECT_NAME, path.basename(tempDir));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer recovers stale cron runner dependency containers', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-container-cron-stale-dependency-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const projectName = path.basename(tempDir);
+  const calls = [];
+  let cronRunnerUpAttempts = 0;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+
+    await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+      env: { ...LOCAL_SUPABASE_TEST_ENV, PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposeCronRunnerUpKey()) {
+          cronRunnerUpAttempts += 1;
+
+          if (cronRunnerUpAttempts === 1) {
+            return createResult('', {
+              code: 1,
+              stderr:
+                'dependency failed to start: Error response from daemon: No such container: ff250f55026698d2c8e26b2e152c7b6c39957fb38f4f6aa007c4a6a383ce2562',
+            });
+          }
+        }
+
+        if (
+          key ===
+          dockerPsComposeServiceLabelKey(WEB_CRON_RUNNER_SERVICE, projectName)
+        ) {
+          return createResult('web-cron-runner-123\n');
+        }
+
+        if (
+          key === dockerPsComposeServiceLabelKey('hive-db-migrate', projectName)
+        ) {
+          return createResult('hive-db-migrate-123\n');
+        }
+
+        if (
+          key === dockerPsComposeServiceLabelKey('hive-postgres', projectName)
+        ) {
+          return createResult('hive-postgres-123\n');
+        }
+
+        return createResult('');
+      },
+    });
+
+    assert.equal(cronRunnerUpAttempts, 2);
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
+      prodComposeCronRunnerUpKey(),
+      dockerPsComposeServiceLabelKey(WEB_CRON_RUNNER_SERVICE, projectName),
+      'docker rm -f web-cron-runner-123',
+      dockerPsComposeServiceLabelKey('hive-db-migrate', projectName),
+      'docker rm -f hive-db-migrate-123',
+      dockerPsComposeServiceLabelKey('hive-postgres', projectName),
+      'docker rm -f hive-postgres-123',
+      prodComposeCronRunnerUpKey(),
+    ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
