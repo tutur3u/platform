@@ -79,7 +79,7 @@ RUN --mount=type=cache,id=platform-hive-bun-install,target=/root/.bun/install/ca
   set -eu; \
   attempt=1; \
   while [ "$attempt" -le 3 ]; do \
-    if bun install --frozen-lockfile --filter @tuturuuu/hive; then \
+    if bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive; then \
       break; \
     fi; \
     echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2; \

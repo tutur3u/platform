@@ -1883,7 +1883,7 @@ function validateHiveDockerfile(
     'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun',
     'ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node',
     ...getRetryWrappedBunInstallSnippets(
-      'bun install --frozen-lockfile --filter @tuturuuu/hive'
+      'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive'
     ),
     '--mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo',
     '--mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache',

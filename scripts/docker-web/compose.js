@@ -612,21 +612,26 @@ async function waitForComposeServiceHealthy(
     timeoutMs = BLUE_GREEN_HEALTH_TIMEOUT_MS,
   }
 ) {
-  const containerId = await getComposeServiceContainerId(serviceName, {
-    composeFile,
-    composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
-
-  if (!containerId) {
-    throw new Error(`Unable to resolve a container for ${serviceName}.`);
-  }
-
   const deadline = Date.now() + timeoutMs;
+  let containerId = '';
   let lastStatus = 'unknown';
 
   while (Date.now() <= deadline) {
+    if (!containerId) {
+      containerId = await getComposeServiceContainerId(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      });
+    }
+
+    if (!containerId) {
+      lastStatus = 'missing';
+      await sleep(pollMs);
+      continue;
+    }
+
     lastStatus = await getContainerHealthStatus(containerId, {
       env,
       runCommand: run,

@@ -1542,6 +1542,10 @@ test('production Docker root scripts keep the default build caps', () => {
     /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/
   );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
+  assert.ok(
+    turboConfig.globalEnv.includes('HIVE_DOCKER_BUILD'),
+    'turbo.json must pass the Hive Docker standalone flag into the Docker build'
+  );
   assert.equal(
     Object.hasOwn(turboConfig, 'globalDependencies'),
     false,

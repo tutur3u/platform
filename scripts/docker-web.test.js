@@ -83,6 +83,7 @@ const {
 } = require('./docker-web/blue-green.js');
 const {
   removeComposeServiceContainersByLabelIfPresent,
+  waitForComposeServiceHealthy,
 } = require('./docker-web/compose.js');
 const {
   BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV,
@@ -7445,6 +7446,58 @@ test('runComposeUpWithNameConflictRecovery retries transient Docker registry pul
   assert.deepEqual(delays, [10, 20]);
   assert.ok(
     !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')
+  );
+});
+
+test('waitForComposeServiceHealthy retries until Compose resolves the service container', async () => {
+  const calls = [];
+  let psCalls = 0;
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('ps')) {
+      psCalls += 1;
+
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: psCalls === 1 ? '' : 'web-cron-runner-123\n',
+      };
+    }
+
+    if (command === 'docker' && args[0] === 'inspect') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'healthy\n',
+      };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await waitForComposeServiceHealthy('web-cron-runner', {
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+    },
+    pollMs: 1,
+    runCommand,
+    timeoutMs: 100,
+  });
+
+  assert.equal(psCalls, 2);
+  assert.ok(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'inspect' &&
+        args.includes('web-cron-runner-123')
+    )
   );
 });
 

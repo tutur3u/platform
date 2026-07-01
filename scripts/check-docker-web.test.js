@@ -350,7 +350,7 @@ test('Hive realtime Docker image hoists production dependencies for Bun runtime 
   );
 });
 
-test('Hive Docker image routes the Next build through Turbo', () => {
+test('Hive Docker image installs root toolchain and routes the Next build through Turbo', () => {
   const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(ROOT_DIR, 'apps', 'hive', 'package.json'), 'utf8')
@@ -360,6 +360,10 @@ test('Hive Docker image routes the Next build through Turbo', () => {
   assert.equal(
     packageJson.scripts['build:docker'],
     'node ../../scripts/run-hive-docker-next-build.js'
+  );
+  assert.match(
+    dockerfileContent,
+    /bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu\/hive/u
   );
   assert.match(
     dockerfileContent,
@@ -411,7 +415,8 @@ test('Production Docker images retry filtered Bun installs and clear install cac
   const dockerfiles = [
     {
       content: fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8'),
-      installCommand: 'bun install --frozen-lockfile --filter @tuturuuu/hive',
+      installCommand:
+        'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive',
       validate: validateHiveDockerfile,
     },
     {
