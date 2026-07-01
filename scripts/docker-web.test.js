@@ -4732,7 +4732,7 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
       'serverless-redis-http',
     ],
     command: 'docker',
-    stdio: 'inherit',
+    stdio: 'pipe',
   });
 });
 
@@ -5912,8 +5912,8 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options]);
 
     const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
     if (logDrainPostgresResult) return logDrainPostgresResult;
@@ -7727,8 +7727,8 @@ test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp c
   let upAttempts = 0;
   const tempName = '50824ff4b149_platform-markitdown-1';
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options]);
 
     if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
       upAttempts += 1;
@@ -7843,8 +7843,8 @@ test('runComposeUpWithNameConflictRecovery retries stale dependency container re
   const staleDependencyError =
     'dependency failed to start: Error response from daemon: No such container: d558824bb887ae3b4dadda1a70e9a59ede541c0e6c773d7f370fda7051e87ebe';
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options]);
 
     if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
       upAttempts += 1;
@@ -7892,6 +7892,14 @@ test('runComposeUpWithNameConflictRecovery retries stale dependency container re
   assert.equal(
     isComposeMissingContainerDependencyError(new Error(staleDependencyError)),
     true
+  );
+  assert.ok(
+    calls
+      .filter(
+        ([command, args]) =>
+          command === 'docker' && args[0] === 'compose' && args.includes('up')
+      )
+      .every(([, , options]) => options.stdio === 'pipe')
   );
   assert.ok(
     !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')

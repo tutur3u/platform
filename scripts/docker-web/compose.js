@@ -303,6 +303,16 @@ function isComposeMissingContainerDependencyError(error) {
   );
 }
 
+function replayCommandOutput(result) {
+  if (typeof result.stdout === 'string' && result.stdout.length > 0) {
+    process.stdout.write(result.stdout);
+  }
+
+  if (typeof result.stderr === 'string' && result.stderr.length > 0) {
+    process.stderr.write(result.stderr);
+  }
+}
+
 async function runComposeUpWithNameConflictRecovery({
   composeFile,
   composeGlobalArgs = [],
@@ -352,11 +362,15 @@ async function runComposeUpWithNameConflictRecovery({
 
   while (true) {
     try {
-      return await runChecked('docker', args, {
+      const result = await runChecked('docker', args, {
         env,
         fsImpl,
         runCommand: run,
+        stdio: 'pipe',
       });
+      replayCommandOutput(result);
+
+      return result;
     } catch (error) {
       const conflictNames = parseDockerContainerNameConflicts(error).filter(
         (containerName) =>
