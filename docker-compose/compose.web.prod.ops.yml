@@ -25,6 +25,7 @@ services:
       - DOCKER_WEB_DIRECT_HOST_PORT
       - DOCKER_WEB_DOCKER_MEMORY_LIMIT
       - DOCKER_WEB_FRONTEND
+      - DOCKER_WEB_GIT_COMMON_DIR
       - DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT
       - DOCKER_WEB_NATIVE_BUILD
       - DOCKER_WEB_NATIVE_BUILD_MEMORY
@@ -64,6 +65,7 @@ services:
     volumes:
       - ..:/workspace
       - ..:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - ${DOCKER_WEB_GIT_COMMON_DIR:-../.git}:${DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common}
       - /var/run/docker.sock:/var/run/docker.sock
       - platform-bun-install:/root/.bun/install/cache
       - platform-blue-green-watcher-node_modules:/workspace/node_modules
@@ -91,6 +93,7 @@ services:
       - DOCKER_WEB_BUILDKIT_PORT
       - DOCKER_WEB_COMPOSE_PROJECT_NAME
       - DOCKER_WEB_FRONTEND
+      - DOCKER_WEB_GIT_COMMON_DIR
       - DOCKER_WEB_NATIVE_BUILD
       - DOCKER_WEB_NATIVE_BUILD_MEMORY
       - DOCKER_WEB_NEXT_APP_ONLY

@@ -163,6 +163,13 @@ infrastructure dashboard changes.
   builds are capped.
 - Containerized watcher handoffs must run from the mirrored host checkout path
   via `PLATFORM_HOST_WORKSPACE_DIR`, not from a container-only path.
+- When production deployment starts from a linked Git worktree, the watcher
+  service must also receive and mount `DOCKER_WEB_GIT_COMMON_DIR` at the same
+  absolute path inside the container. Linked worktree `.git` files point at
+  `.git/worktrees/<name>` under the common Git directory, and Git inside the
+  watcher container fails with `fatal: not a git repository` unless that common
+  metadata directory is mounted. Strip local `GIT_*` env from watcher child
+  processes so Git discovers the mounted checkout normally.
 - Internal support services that power AI capabilities, such as Supermemory,
   should be wired as health-gated blue/green support services. If the upstream
   vendor ships an enterprise image or deployment package, wrap/tag that artifact

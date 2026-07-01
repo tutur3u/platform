@@ -1784,6 +1784,9 @@ The watcher container mounts:
 - the same repo again at the real host checkout path via
   `PLATFORM_HOST_WORKSPACE_DIR`, so host Docker bind mounts resolve against
   the host filesystem when the watcher shells into `docker compose ...`
+- the linked-worktree common Git directory through `DOCKER_WEB_GIT_COMMON_DIR`
+  when `.git` is a file, so in-container Git commands can resolve
+  `.git/worktrees/...` metadata from Docker-mounted checkouts
 - `/var/run/docker.sock` so it can manage the blue/green compose stack itself
 - the shared Bun install cache volume
 - a dedicated watcher `node_modules` volume so the frozen dependency install
@@ -2222,7 +2225,11 @@ Dashboard details:
   because `/workspace/...` is not a real shared host path.
 - The watcher compose environment preserves `PLATFORM_HOST_WORKSPACE_DIR` and
   pins `COMPOSE_PROJECT_NAME` from that host checkout path unless
-  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. A canonical checkout
+  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. For linked worktrees, the
+  same compose env injects `DOCKER_WEB_GIT_COMMON_DIR` and the watcher service
+  mounts that directory at the same absolute path inside the container. This
+  prevents `fatal: not a git repository` failures for `.git/worktrees/<name>`
+  paths when `.git` points outside the worktree mount. A canonical checkout
   directory named `platform` maps to the `tuturuuu` Compose project so Docker
   Desktop groups the stack under the product name on clean startups. During
   self-refresh from an already-running legacy `platform` Compose project, the

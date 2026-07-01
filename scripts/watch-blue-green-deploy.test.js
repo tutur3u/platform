@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
+const { DOCKER_WEB_GIT_COMMON_DIR_ENV } = require('./docker-web/env.js');
 const {
   DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
@@ -8083,6 +8084,44 @@ test('getWatcherComposeEnv maps CF_TUNNEL_TOKEN and enables cloudflared', () => 
     assert.equal(composeEnv.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
     assert.equal(composeEnv.DOCKER_WEB_WITH_CLOUDFLARED, '1');
     assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv exposes linked worktree Git metadata and strips local Git env', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-worktree-git-')
+  );
+  const commonGitDir = path.join(tempDir, 'primary', '.git');
+  const worktreeDir = path.join(tempDir, 'amber-storm', 'tuturuuu');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'tuturuuu');
+
+  try {
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.mkdirSync(worktreeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        GIT_CONFIG_COUNT: '1',
+        GIT_DIR: '/host-only/.git/worktrees/tuturuuu',
+        GIT_WORK_TREE: '/host-only/tuturuuu',
+        PATH: 'test-path',
+      },
+      rootDir: worktreeDir,
+    });
+
+    assert.equal(composeEnv[DOCKER_WEB_GIT_COMMON_DIR_ENV], commonGitDir);
+    assert.equal(composeEnv.GIT_CONFIG_COUNT, undefined);
+    assert.equal(composeEnv.GIT_DIR, undefined);
+    assert.equal(composeEnv.GIT_WORK_TREE, undefined);
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], worktreeDir);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
