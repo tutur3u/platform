@@ -5292,6 +5292,7 @@ async function runDeployWatchIteration(
     platformProjectReader = readPlatformProject,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   const checkedAt = now();
@@ -5521,6 +5522,7 @@ async function runDeployWatchIteration(
         log,
         now,
         runCommand: run,
+        sleepImpl,
       });
       await removeUntrackedWorktreeFiles({
         cwd: rootDir,
@@ -5529,6 +5531,7 @@ async function runDeployWatchIteration(
         log,
         now,
         runCommand: run,
+        sleepImpl,
       });
     }
 
@@ -5536,8 +5539,12 @@ async function runDeployWatchIteration(
       `Deployment pin is clear. Checking out ${target.branch} and resuming normal upstream sync.`
     );
     await checkoutBranch(target.branch, {
+      cwd: rootDir,
       env,
+      fsImpl,
+      log,
       runCommand: run,
+      sleepImpl,
     });
     currentBranch = await getCurrentBranchName({ env, runCommand: run });
   }
@@ -5574,6 +5581,7 @@ async function runDeployWatchIteration(
           now,
           rootDir,
           runCommand: run,
+          sleepImpl,
         });
 
     if (!syncResult) {
@@ -5584,6 +5592,7 @@ async function runDeployWatchIteration(
         log,
         now,
         runCommand: run,
+        sleepImpl,
       });
     }
 
@@ -6469,6 +6478,7 @@ async function runDeployWatchIteration(
           now,
           rootDir,
           runCommand: run,
+          sleepImpl,
         });
 
         return {
@@ -6797,6 +6807,7 @@ async function runDeployWatchIteration(
           now,
           rootDir,
           runCommand: run,
+          sleepImpl,
         });
       }
 
@@ -7649,6 +7660,7 @@ async function resolveInitialWatcherTarget({
   paths,
   rootDir = ROOT_DIR,
   runCommand: run,
+  sleepImpl = sleep,
 } = {}) {
   try {
     return await resolveLockedBranchTarget({
@@ -7693,6 +7705,7 @@ async function resolveInitialWatcherTarget({
         fsImpl,
         log,
         runCommand: run,
+        sleepImpl,
       });
       await removeUntrackedWorktreeFiles({
         cwd: rootDir,
@@ -7700,6 +7713,7 @@ async function resolveInitialWatcherTarget({
         fsImpl,
         log,
         runCommand: run,
+        sleepImpl,
       });
     }
 
@@ -7709,7 +7723,10 @@ async function resolveInitialWatcherTarget({
     await checkoutBranch(selectedBranch, {
       cwd: rootDir,
       env,
+      fsImpl,
+      log,
       runCommand: run,
+      sleepImpl,
     });
 
     return {
@@ -7943,6 +7960,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       paths,
       rootDir,
       runCommand: run,
+      sleepImpl: options.sleepImpl ?? sleep,
     });
     const existingLock = readWatchLock(paths, fsImpl);
 
@@ -8037,6 +8055,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
         now: options.now ?? (() => Date.now()),
         rootDir,
         runCommand: run,
+        sleepImpl: options.sleepImpl ?? sleep,
       });
     }
 

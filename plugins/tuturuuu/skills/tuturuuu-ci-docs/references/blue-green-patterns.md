@@ -44,9 +44,10 @@ infrastructure dashboard changes.
   deployment kind `instant-revert`, and write a deployment pin so normal
   upstream sync does not immediately overwrite the rollback. Older retained
   deployments fall back to the rollback-pin path and may rebuild.
-- PID locks need explicit fail/resume/replace behavior. Stale Git
-  `index.lock` files may be auto-removed only when the error is an index-lock
-  conflict and the lock is old enough to be safe.
+- PID locks need explicit fail/resume/replace behavior. Git lock conflicts
+  should stay in the watcher process: wait on fresh recoverable locks, then
+  auto-remove them only when the error is a Git lock conflict and the lock is
+  old enough to be safe.
 - Watcher failures stay in the loop. Record failed deployment rows, clear stale
   pending handoff files, and cap retries per commit.
 - The watcher sends a build/deploy incident email only for the first failed

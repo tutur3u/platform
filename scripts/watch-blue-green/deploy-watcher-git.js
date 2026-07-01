@@ -13,6 +13,13 @@ const {
 const AUTO_RESTORABLE_LOCKFILE_PATHS = new Set(['bun.lock']);
 const WATCHER_WORKTREE_RESET_DISABLED_ENV =
   'DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED';
+const GIT_LOCK_RECOVERY_POLL_MS = 5_000;
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 async function gitStdout(
   args,
@@ -111,25 +118,49 @@ async function getCommitMetadata(
 
 async function checkoutRevision(
   hash,
-  { cwd = ROOT_DIR, env, runCommand: run = runCommand } = {}
+  {
+    cwd = ROOT_DIR,
+    env,
+    fsImpl = require('node:fs'),
+    log,
+    now = () => Date.now(),
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+  } = {}
 ) {
-  await runChecked('git', ['checkout', '--detach', hash], {
+  await runGitWithStaleLockRetry(['checkout', '--detach', hash], {
     cwd,
     env,
+    fsImpl,
+    log,
+    now,
+    rootDir: cwd,
     runCommand: run,
-    stdio: 'pipe',
+    sleepImpl,
   });
 }
 
 async function checkoutBranch(
   branch,
-  { cwd = ROOT_DIR, env, runCommand: run = runCommand } = {}
+  {
+    cwd = ROOT_DIR,
+    env,
+    fsImpl = require('node:fs'),
+    log,
+    now = () => Date.now(),
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+  } = {}
 ) {
-  await runChecked('git', ['checkout', branch], {
+  await runGitWithStaleLockRetry(['checkout', branch], {
     cwd,
     env,
+    fsImpl,
+    log,
+    now,
+    rootDir: cwd,
     runCommand: run,
-    stdio: 'pipe',
+    sleepImpl,
   });
 }
 
@@ -264,17 +295,15 @@ function formatGitLockKind(kind) {
   return 'git ref lock';
 }
 
-function removeStaleGitLock({
+function resolveRecoverableGitLock(
   error,
-  fsImpl = require('node:fs'),
-  log,
-  now = () => Date.now(),
   rootDir = ROOT_DIR,
-} = {}) {
+  fsImpl = require('node:fs')
+) {
   const lockPath = getGitLockPathFromError(error);
 
   if (!lockPath) {
-    return false;
+    return null;
   }
 
   const resolved = path.normalize(
@@ -283,39 +312,128 @@ function removeStaleGitLock({
   const lockKind = getRecoverableGitLockKind(resolved, rootDir, fsImpl);
 
   if (!lockKind) {
-    return false;
+    return null;
   }
 
-  let stats;
+  return {
+    lockKind,
+    lockLabel: formatGitLockKind(lockKind),
+    resolved,
+  };
+}
+
+function readRecoverableGitLockState(
+  lock,
+  fsImpl = require('node:fs'),
+  now = () => Date.now()
+) {
   try {
-    stats = fsImpl.statSync(resolved);
+    const stats = fsImpl.statSync(lock.resolved);
+
+    return {
+      ageMs: now() - stats.mtimeMs,
+      stats,
+    };
   } catch {
-    return false;
+    return null;
   }
+}
 
-  const ageMs = now() - stats.mtimeMs;
-  const lockLabel = formatGitLockKind(lockKind);
-
-  if (ageMs < DEFAULT_STALE_GIT_INDEX_LOCK_MS) {
-    log?.warn?.(
-      `${lockLabel} at ${resolved} is only ${Math.round(ageMs / 1000)}s old; Leaving it in place.`
-    );
-    return false;
-  }
-
+function removeRecoverableGitLock(lock, ageMs, fsImpl, log) {
   try {
-    fsImpl.unlinkSync(resolved);
-  } catch {
+    fsImpl.unlinkSync(lock.resolved);
+  } catch (error) {
+    if (error && typeof error === 'object' && error.code === 'ENOENT') {
+      log?.warn?.(
+        `${lock.lockLabel} at ${lock.resolved} disappeared before stale cleanup; retrying Git command.`
+      );
+      return true;
+    }
+
     return false;
   }
 
   log?.warn?.(
-    `Removed stale ${lockLabel} at ${resolved} (${Math.round(ageMs / 1000)}s old).`
+    `Removed stale ${lock.lockLabel} at ${lock.resolved} (${Math.round(ageMs / 1000)}s old).`
   );
   return true;
 }
 
+function removeStaleGitLock({
+  error,
+  fsImpl = require('node:fs'),
+  log,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+} = {}) {
+  const lock = resolveRecoverableGitLock(error, rootDir, fsImpl);
+
+  if (!lock) {
+    return false;
+  }
+
+  const state = readRecoverableGitLockState(lock, fsImpl, now);
+
+  if (!state) {
+    return false;
+  }
+
+  if (state.ageMs < DEFAULT_STALE_GIT_INDEX_LOCK_MS) {
+    log?.warn?.(
+      `${lock.lockLabel} at ${lock.resolved} is only ${Math.round(state.ageMs / 1000)}s old; Leaving it in place.`
+    );
+    return false;
+  }
+
+  return removeRecoverableGitLock(lock, state.ageMs, fsImpl, log);
+}
+
 const removeStaleGitIndexLock = removeStaleGitLock;
+
+async function waitForRecoverableGitLockCleanup({
+  error,
+  fsImpl = require('node:fs'),
+  log,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+  sleepImpl = sleep,
+} = {}) {
+  const lock = resolveRecoverableGitLock(error, rootDir, fsImpl);
+
+  if (!lock) {
+    return false;
+  }
+
+  let loggedWait = false;
+
+  while (true) {
+    const state = readRecoverableGitLockState(lock, fsImpl, now);
+
+    if (!state) {
+      log?.warn?.(
+        `${lock.lockLabel} at ${lock.resolved} disappeared before stale cleanup; retrying Git command.`
+      );
+      return true;
+    }
+
+    const remainingMs = DEFAULT_STALE_GIT_INDEX_LOCK_MS - state.ageMs;
+
+    if (remainingMs <= 0) {
+      return removeRecoverableGitLock(lock, state.ageMs, fsImpl, log);
+    }
+
+    if (!loggedWait) {
+      log?.warn?.(
+        `${lock.lockLabel} at ${lock.resolved} is only ${Math.round(state.ageMs / 1000)}s old; waiting up to ${Math.ceil(remainingMs / 1000)}s before stale cleanup.`
+      );
+      loggedWait = true;
+    }
+
+    await sleepImpl(
+      Math.max(1, Math.min(GIT_LOCK_RECOVERY_POLL_MS, remainingMs))
+    );
+  }
+}
 
 async function runGitWithStaleLockRetry(
   args,
@@ -327,6 +445,7 @@ async function runGitWithStaleLockRetry(
     now = () => Date.now(),
     rootDir = cwd,
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   try {
@@ -338,12 +457,13 @@ async function runGitWithStaleLockRetry(
     });
   } catch (error) {
     if (
-      removeStaleGitLock({
+      await waitForRecoverableGitLockCleanup({
         error,
         fsImpl,
         log,
         now,
         rootDir,
+        sleepImpl,
       })
     ) {
       await runChecked('git', args, {
@@ -436,6 +556,7 @@ async function fetchTrackedBranch(
     log,
     now = () => Date.now(),
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   await runGitWithStaleLockRetry(
@@ -448,6 +569,7 @@ async function fetchTrackedBranch(
       now,
       rootDir: cwd,
       runCommand: run,
+      sleepImpl,
     }
   );
 }
@@ -462,6 +584,7 @@ async function pullTrackedBranch(
     now = () => Date.now(),
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   const workDir = cwd ?? rootDir;
@@ -476,6 +599,7 @@ async function pullTrackedBranch(
       now,
       rootDir: workDir,
       runCommand: run,
+      sleepImpl,
     });
   } catch (error) {
     if (
@@ -494,6 +618,7 @@ async function pullTrackedBranch(
         now,
         rootDir: workDir,
         runCommand: run,
+        sleepImpl,
       });
       return;
     }
@@ -521,6 +646,7 @@ async function resetTrackedWorktreeChanges({
   log,
   now = () => Date.now(),
   runCommand: run = runCommand,
+  sleepImpl = sleep,
 } = {}) {
   await runGitWithStaleLockRetry(['reset', '--hard', 'HEAD'], {
     cwd,
@@ -530,6 +656,7 @@ async function resetTrackedWorktreeChanges({
     now,
     rootDir: cwd,
     runCommand: run,
+    sleepImpl,
   });
 }
 
@@ -540,6 +667,7 @@ async function removeUntrackedWorktreeFiles({
   log,
   now = () => Date.now(),
   runCommand: run = runCommand,
+  sleepImpl = sleep,
 } = {}) {
   await runGitWithStaleLockRetry(['clean', '-fd'], {
     cwd,
@@ -549,6 +677,7 @@ async function removeUntrackedWorktreeFiles({
     now,
     rootDir: cwd,
     runCommand: run,
+    sleepImpl,
   });
 }
 
@@ -561,6 +690,7 @@ async function hardResetToRevision(
     log,
     now = () => Date.now(),
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   await runGitWithStaleLockRetry(['reset', '--hard', revision], {
@@ -571,6 +701,7 @@ async function hardResetToRevision(
     now,
     rootDir: cwd,
     runCommand: run,
+    sleepImpl,
   });
 }
 
@@ -584,6 +715,7 @@ async function forceSyncWatcherWorktree(
     now = () => Date.now(),
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   const workDir = cwd ?? rootDir;
@@ -595,6 +727,7 @@ async function forceSyncWatcherWorktree(
     log,
     now,
     runCommand: run,
+    sleepImpl,
   });
   await removeUntrackedWorktreeFiles({
     cwd: workDir,
@@ -603,6 +736,7 @@ async function forceSyncWatcherWorktree(
     log,
     now,
     runCommand: run,
+    sleepImpl,
   });
   await fetchTrackedBranch(target, {
     cwd: workDir,
@@ -611,6 +745,7 @@ async function forceSyncWatcherWorktree(
     log,
     now,
     runCommand: run,
+    sleepImpl,
   });
 
   const localHead = await getRevision('HEAD', {
@@ -635,6 +770,7 @@ async function forceSyncWatcherWorktree(
       log,
       now,
       runCommand: run,
+      sleepImpl,
     });
   }
 
@@ -770,10 +906,16 @@ function isRecoverableGitCommandError(error) {
 }
 
 function isGitIndexLockError(error) {
-  const message = error instanceof Error ? error.message : String(error);
+  const lockPath = getGitLockPathFromError(error);
+
+  if (!lockPath) {
+    return false;
+  }
+
+  const normalized = path.normalize(lockPath);
 
   return (
-    /\.git\/index\.lock/u.test(message) && /Unable to create/u.test(message)
+    normalized === 'index.lock' || normalized.endsWith(`${path.sep}index.lock`)
   );
 }
 

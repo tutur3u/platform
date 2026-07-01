@@ -2270,6 +2270,14 @@ test('isGitIndexLockError detects git index.lock failures', () => {
     true
   );
   assert.equal(
+    isGitIndexLockError(
+      new Error(
+        "Command failed (128): git reset --hard HEAD\nfatal: Unable to create '/workspace/.git/worktrees/production/index.lock': File exists."
+      )
+    ),
+    true
+  );
+  assert.equal(
     isGitIndexLockError(new Error('Command failed (1): git fetch origin main')),
     false
   );
@@ -4772,6 +4780,132 @@ test('runDeployWatchIteration removes stale linked worktree index locks before r
     assert.equal(result.status, 'up-to-date');
     assert.equal(resetAttempts, 2);
     assert.equal(fs.existsSync(lockPath), false);
+    assert.ok(
+      logs.some((message) => message.includes('Removed stale git index lock'))
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration waits for fresh linked worktree index locks before retrying', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-fresh-linked-reset-lock-')
+  );
+  const commonGitDir = path.join(tempDir, 'main', '.git');
+  const worktreeDir = path.join(tempDir, 'worktrees', 'production');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'production');
+  const lockPath = path.join(worktreeGitDir, 'index.lock');
+  const paths = getWatchPaths(worktreeDir);
+  const envFilePath = path.join(worktreeDir, 'apps', 'web', '.env.local');
+  const logs = [];
+  const sleepCalls = [];
+  let resetAttempts = 0;
+  let currentNow = Date.now();
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('production\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git reset --hard HEAD') {
+      resetAttempts += 1;
+
+      if (resetAttempts === 1) {
+        return createResult('', {
+          code: 128,
+          stderr: `fatal: Unable to create '${lockPath}': File exists.`,
+        });
+      }
+
+      return createResult('');
+    }
+
+    if (key === 'git clean -fd' || key === 'git fetch origin production') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('eee1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git rev-parse origin/production') {
+      return createResult('eee1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'eee1111111111111111111111111111111111111\neee111\nKeep production current\n2026-07-01T05:00:00.000Z\n'
+      );
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const almostStaleMtime = new Date(
+      currentNow - DEFAULT_STALE_GIT_INDEX_LOCK_MS + 1_000
+    );
+    fs.utimesSync(lockPath, almostStaleMtime, almostStaleMtime);
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: {
+          error() {},
+          info() {},
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => currentNow,
+        paths,
+        platformProjectReader: async () => ({
+          deploymentStatus: 'ready',
+          selectedBranch: 'production',
+          source: 'test',
+        }),
+        rootDir: worktreeDir,
+        runCommand,
+        sleepImpl: async (ms) => {
+          sleepCalls.push(ms);
+          currentNow += ms;
+        },
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.equal(resetAttempts, 2);
+    assert.deepEqual(sleepCalls, [1_000]);
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.ok(
+      logs.some((message) =>
+        message.includes('waiting up to 1s before stale cleanup')
+      )
+    );
     assert.ok(
       logs.some((message) => message.includes('Removed stale git index lock'))
     );
