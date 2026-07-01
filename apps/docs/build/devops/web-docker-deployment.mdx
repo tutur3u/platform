@@ -1726,7 +1726,15 @@ bun serve:web:docker:bg -- --with-cloudflared
 
 Required env:
 
-- `CLOUDFLARED_TOKEN` or `DOCKER_CLOUDFLARED_TOKEN`
+- `CF_TUNNEL_TOKEN`, `CLOUDFLARED_TOKEN`, or `DOCKER_CLOUDFLARED_TOKEN`
+
+When root `.env.local` contains a non-empty `CF_TUNNEL_TOKEN`, Docker web
+helpers automatically enable the `cloudflared` profile and pass the value to
+Compose as `CLOUDFLARED_TOKEN`. If `--env-file` is passed, the helper applies
+the same auto-detection to that explicit file. Set
+`DOCKER_WEB_WITH_CLOUDFLARED=0` to keep a configured tunnel token available
+without starting the `cloudflared` container; an explicit `--with-cloudflared`
+or `--profile cloudflared` still enables the profile.
 
 For a remotely managed Cloudflare Tunnel, configure the public hostname route in
 Cloudflare to point at the Docker service:

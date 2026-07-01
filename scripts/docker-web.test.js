@@ -2175,6 +2175,35 @@ test('getComposeEnvironment resolves cloudflared tokens from Docker env files', 
   }
 });
 
+test('getComposeEnvironment maps CF_TUNNEL_TOKEN to CLOUDFLARED_TOKEN', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cf-tunnel-env-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+      withCloudflared: true,
+    });
+
+    assert.equal(env.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+    assert.equal(env.DOCKER_WEB_WITH_CLOUDFLARED, '1');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('ensureRequiredComposeEnvironment requires a cloudflared token when enabled', () => {
   assert.throws(
     () =>
@@ -4141,6 +4170,112 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
   });
 });
 
+test('runDockerWebWorkflow auto-enables cloudflared from CF_TUNNEL_TOKEN in root env', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cloudflared-auto-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+      env: { PATH: 'test-path' },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, env: options.env });
+
+        const logDrainResult = logDrainPostgresResult(command, args);
+        if (logDrainResult) return logDrainResult;
+
+        if (args.includes('ps')) {
+          return createCommandResult('');
+        }
+
+        return createCommandResult('');
+      },
+    });
+
+    const webUpCall = calls.find(
+      ({ args, command }) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('up') &&
+        args.includes('web')
+    );
+
+    assert.ok(webUpCall);
+    assert.ok(webUpCall.args.includes('cloudflared'));
+    assert.ok(webUpCall.args.includes('--profile'));
+    assert.equal(webUpCall.env.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+    assert.equal(webUpCall.env.DOCKER_WEB_WITH_CLOUDFLARED, '1');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow honors cloudflared autodetect opt-out', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cloudflared-opt-out-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+      env: {
+        DOCKER_WEB_WITH_CLOUDFLARED: '0',
+        PATH: 'test-path',
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, env: options.env });
+
+        const logDrainResult = logDrainPostgresResult(command, args);
+        if (logDrainResult) return logDrainResult;
+
+        if (args.includes('ps')) {
+          return createCommandResult('');
+        }
+
+        return createCommandResult('');
+      },
+    });
+
+    const webUpCall = calls.find(
+      ({ args, command }) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('up') &&
+        args.includes('web')
+    );
+
+    assert.ok(webUpCall);
+    assert.equal(webUpCall.args.includes('cloudflared'), false);
+    assert.equal(webUpCall.env.CLOUDFLARED_TOKEN, undefined);
+    assert.equal(webUpCall.env.DOCKER_WEB_WITH_CLOUDFLARED, '0');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDockerWebWorkflow starts log-drain explicitly for in-place prod deploys', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -4437,7 +4572,10 @@ test('runDockerWebWorkflow continues blue-green deploys with log-drain disabled 
   fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
   fs.writeFileSync(
     envFilePath,
-    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    [
+      'CF_TUNNEL_TOKEN=cf-tunnel-token',
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+    ].join('\n')
   );
 
   const runCommand = async (command, args, options = {}) => {
@@ -4630,7 +4768,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
   fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
   fs.writeFileSync(
     envFilePath,
-    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    [
+      'CF_TUNNEL_TOKEN=cf-tunnel-token',
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+    ].join('\n')
   );
 
   const runCommand = async (command, args, options = {}) => {
@@ -4839,7 +4980,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.deepEqual(watcherStarts, [
       {
         argv: ['--resume-if-running'],
-        env: LOCAL_SUPABASE_TEST_ENV,
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          DOCKER_WEB_WITH_CLOUDFLARED: '1',
+        },
         rootDir: tempDir,
       },
     ]);

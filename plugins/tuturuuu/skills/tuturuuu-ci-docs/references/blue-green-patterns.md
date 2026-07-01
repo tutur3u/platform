@@ -179,6 +179,14 @@ infrastructure dashboard changes.
   into `apps/web/.env.local`, so prod and blue/green watcher flows must reject
   local Supabase origins unless `DOCKER_WEB_ALLOW_LOCAL_SUPABASE=1` is set for a
   local production-image rehearsal.
+- Docker web helpers should auto-enable the `cloudflared` Compose profile when
+  root `.env.local` (or an explicit `--env-file`) contains `CF_TUNNEL_TOKEN`.
+  Map that alias to Compose's existing `CLOUDFLARED_TOKEN` env, keep
+  `DOCKER_CLOUDFLARED_TOKEN` and `CLOUDFLARED_TOKEN` precedence for explicit
+  overrides, propagate `DOCKER_WEB_WITH_CLOUDFLARED=1` into watcher recovery,
+  and honor `DOCKER_WEB_WITH_CLOUDFLARED=0|false|no|off` as auto-detect opt-out
+  unless the operator explicitly passes `--with-cloudflared` or
+  `--profile cloudflared`.
 - When `SUPERMEMORY_ENABLED=false` or `DOCKER_SUPERMEMORY_ENABLED=false` is
   explicit, blue/green helpers should remove the Supermemory sidecar from
   support builds, starts, and health gates. This keeps local-only E2E shards from

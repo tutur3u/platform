@@ -1886,6 +1886,44 @@ test('recoverDownComposeServices starts stopped proxy and Redis services without
   }
 });
 
+test('recoverDownComposeServices includes cloudflared profile from CF_TUNNEL_TOKEN', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-cloudflared-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+  const { calls, runCommand } = createComposeServiceRecoveryRunCommand({
+    initialStatuses: {
+      cloudflared: 'missing',
+      'web-proxy': 'missing',
+    },
+  });
+
+  try {
+    fs.appendFileSync(envFilePath, '\nCF_TUNNEL_TOKEN=cf-tunnel-token\n');
+
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: { activeColor: 'green' },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.ok(result.startServices.includes('cloudflared'));
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared up --detach --no-build --remove-orphans web-proxy cloudflared`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('recoverDownComposeServices tries cheap recovery for a down active web lane', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-service-recovery-web-')
@@ -8014,6 +8052,37 @@ test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
     assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(composeEnv.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
     assert.match(composeEnv.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv maps CF_TUNNEL_TOKEN and enables cloudflared', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-cloudflared-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n'),
+      'utf8'
+    );
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+    });
+
+    assert.equal(composeEnv.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+    assert.equal(composeEnv.DOCKER_WEB_WITH_CLOUDFLARED, '1');
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

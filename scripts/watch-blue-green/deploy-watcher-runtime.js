@@ -7,7 +7,11 @@ const {
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
 } = require('../docker-web/blue-green.js');
-const { getComposeEnvironment, WEB_ENV_FILE } = require('../docker-web/env.js');
+const {
+  getComposeEnvironment,
+  getDockerCloudflaredAutodetect,
+  WEB_ENV_FILE,
+} = require('../docker-web/env.js');
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -85,15 +89,30 @@ function getWatcherComposeEnv({
     baseEnv,
     rootDir,
   });
+  const cloudflared = getDockerCloudflaredAutodetect({
+    baseEnv,
+    envFilePath,
+    fsImpl,
+    rootDir: hostWorkspaceDir,
+  });
+  const withCloudflared =
+    isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED) || cloudflared.enabled;
+  const composeBaseEnv =
+    withCloudflared && !isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED)
+      ? {
+          ...baseEnv,
+          DOCKER_WEB_WITH_CLOUDFLARED: '1',
+        }
+      : baseEnv;
 
   return {
     ...getComposeEnvironment({
-      baseEnv,
+      baseEnv: composeBaseEnv,
       envFilePath,
       fsImpl,
       preferEnvFilePath: true,
       rootDir: hostWorkspaceDir,
-      withCloudflared: isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED),
+      withCloudflared,
       withRedis: true,
     }),
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,

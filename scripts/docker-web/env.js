@@ -84,6 +84,11 @@ const DOCKER_SUPERMEMORY_BASE_URL = 'http://supermemory:8787';
 const DOCKER_SUPERMEMORY_DATABASE_HOST = 'supermemory-postgres';
 const DOCKER_SUPERMEMORY_DATABASE_NAME = 'supermemory';
 const DOCKER_SUPERMEMORY_DATABASE_USER = 'supermemory';
+const CLOUDFLARED_TOKEN_KEYS = Object.freeze([
+  'DOCKER_CLOUDFLARED_TOKEN',
+  'CLOUDFLARED_TOKEN',
+  'CF_TUNNEL_TOKEN',
+]);
 const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
 const LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'platform';
 const DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV =
@@ -311,6 +316,10 @@ function classifySupabaseOrigin(rawUrl) {
 
 function isTruthyEnvValue(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
+function isFalseyEnvValue(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
 }
 
 function getEnvCandidate({ baseEnv, envData, key }) {
@@ -1044,11 +1053,51 @@ function getDockerCloudflaredRuntime({
 } = {}) {
   return {
     token: getFirstNonBlank([
-      baseEnv.DOCKER_CLOUDFLARED_TOKEN,
-      baseEnv.CLOUDFLARED_TOKEN,
-      envFile.DOCKER_CLOUDFLARED_TOKEN,
-      envFile.CLOUDFLARED_TOKEN,
+      ...CLOUDFLARED_TOKEN_KEYS.map((key) => baseEnv[key]),
+      ...CLOUDFLARED_TOKEN_KEYS.map((key) => envFile[key]),
     ]),
+  };
+}
+
+function getDockerCloudflaredAutodetectEnvFile({
+  envFilePath,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const rootEnvFile = path.join(rootDir, '.env.local');
+
+  if (envFilePath && path.resolve(envFilePath) !== path.resolve(rootEnvFile)) {
+    return envFilePath;
+  }
+
+  return rootEnvFile;
+}
+
+function getDockerCloudflaredAutodetect({
+  baseEnv = process.env,
+  envFilePath,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  if (isFalseyEnvValue(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    return {
+      enabled: false,
+      token: null,
+    };
+  }
+
+  const envFile = parseEnvFile(
+    getDockerCloudflaredAutodetectEnvFile({ envFilePath, rootDir }),
+    fsImpl
+  );
+  const triggerToken = getFirstNonBlank([
+    baseEnv.CF_TUNNEL_TOKEN,
+    envFile.CF_TUNNEL_TOKEN,
+  ]);
+  const token = getDockerCloudflaredRuntime({ baseEnv, envFile }).token;
+
+  return {
+    enabled: typeof triggerToken === 'string' && triggerToken.trim().length > 0,
+    token: token ?? null,
   };
 }
 
@@ -1244,6 +1293,7 @@ module.exports = {
   getDefaultComposeProjectName,
   getDockerWebComposeProjectName,
   getDockerBackendRuntime,
+  getDockerCloudflaredAutodetect,
   getDockerCloudflaredRuntime,
   getDockerCronRuntime,
   getDockerControlRuntime,

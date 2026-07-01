@@ -3505,13 +3505,13 @@ async function recoverDownComposeServices({
   runCommand: run = runCommand,
   sleepImpl = sleep,
 } = {}) {
-  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(env);
   const composeEnv = getWatcherComposeEnv({
     baseEnv: env,
     envFilePath,
     fsImpl,
     rootDir,
   });
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(composeEnv);
   const serviceNames = getSteadyStateRecoveryServices({
     composeEnv,
     composeGlobalArgs,
