@@ -1,13 +1,23 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Gauge, Infinity as InfinityIcon, Loader2 } from '@tuturuuu/icons';
+import {
+  Ban,
+  Gauge,
+  Infinity as InfinityIcon,
+  Loader2,
+  ShieldCheck,
+  ShieldOff,
+} from '@tuturuuu/icons';
 import {
   type CreateRateLimitRulePayload,
   createRateLimitRule,
   getRateLimitRules,
   listRateLimitAppeals,
+  type RateLimitAbuseProtectionControls,
   revokeRateLimitRule,
+  type UpdateRateLimitAbuseProtectionControlsPayload,
+  updateRateLimitAbuseProtectionControls,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -20,6 +30,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import {
   ABUSE_REPUTATION_SUBJECT_TYPES,
   type AbuseReputationSubjectType,
@@ -53,6 +64,99 @@ function MetricCard({
       </div>
       <div className="mt-3 font-semibold text-2xl">{value}</div>
     </div>
+  );
+}
+
+function ProtectionControlRow({
+  checked,
+  description,
+  disabled,
+  label,
+  onToggle,
+}: {
+  checked: boolean;
+  description: string;
+  disabled: boolean;
+  label: string;
+  onToggle: (checked: boolean) => void;
+}) {
+  const statusIcon = checked ? (
+    <ShieldCheck className="h-5 w-5 text-dynamic-green" />
+  ) : (
+    <ShieldOff className="h-5 w-5 text-dynamic-red" />
+  );
+
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="mt-0.5 shrink-0">{statusIcon}</div>
+        <div className="min-w-0">
+          <p className="font-medium text-sm">{label}</p>
+          <p className="text-muted-foreground text-sm">{description}</p>
+        </div>
+      </div>
+      <Switch
+        aria-label={label}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onToggle}
+      />
+    </div>
+  );
+}
+
+function AbuseProtectionControlsCard({
+  canManage,
+  controls,
+  isSaving,
+  onUpdate,
+}: {
+  canManage: boolean;
+  controls: RateLimitAbuseProtectionControls;
+  isSaving: boolean;
+  onUpdate: (payload: UpdateRateLimitAbuseProtectionControlsPayload) => void;
+}) {
+  const t = useTranslations('rate-limits');
+  const disabled = !canManage || isSaving;
+  const lastUpdated = controls.updatedAt
+    ? t('controls.updated', {
+        updated: formatDateTime(controls.updatedAt),
+      })
+    : t('controls.never_updated');
+
+  return (
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-semibold text-xl">{t('controls.title')}</h2>
+          <p className="text-muted-foreground text-sm">
+            {t('controls.description')}
+          </p>
+        </div>
+        <p className="text-muted-foreground text-sm">{lastUpdated}</p>
+      </div>
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <ProtectionControlRow
+          checked={controls.ipBlockingEnabled}
+          description={t('controls.ip_blocking_description')}
+          disabled={disabled}
+          label={t('controls.ip_blocking')}
+          onToggle={(ipBlockingEnabled) => onUpdate({ ipBlockingEnabled })}
+        />
+        <ProtectionControlRow
+          checked={controls.rateLimitsEnabled}
+          description={t('controls.rate_limits_description')}
+          disabled={disabled}
+          label={t('controls.rate_limits')}
+          onToggle={(rateLimitsEnabled) => onUpdate({ rateLimitsEnabled })}
+        />
+      </div>
+      {!canManage ? (
+        <p className="mt-3 text-muted-foreground text-sm">
+          {t('controls.read_only')}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -109,6 +213,16 @@ export function RateLimitsClient({
     },
   });
 
+  const updateControlsMutation = useMutation({
+    mutationFn: (payload: UpdateRateLimitAbuseProtectionControlsPayload) =>
+      updateRateLimitAbuseProtectionControls(payload),
+    onError: () => toast.error(t('toasts.controls_update_failed')),
+    onSuccess: () => {
+      toast.success(t('toasts.controls_updated'));
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    },
+  });
+
   if (rulesQuery.isLoading) {
     return (
       <div className="flex min-h-64 items-center justify-center rounded-lg border border-border bg-card">
@@ -131,8 +245,13 @@ export function RateLimitsClient({
     );
   }
 
-  const { edgeCachedSubjectKeys, rules, summary, writeBaseLimits } =
-    rulesQuery.data;
+  const {
+    abuseProtectionControls,
+    edgeCachedSubjectKeys,
+    rules,
+    summary,
+    writeBaseLimits,
+  } = rulesQuery.data;
   const trustedWorkspaceRules = rules.filter(
     (rule) => rule.subject_type === 'workspace' && rule.tier === 'trusted'
   );
@@ -140,6 +259,13 @@ export function RateLimitsClient({
 
   return (
     <div className="space-y-6">
+      <AbuseProtectionControlsCard
+        canManage={canManage}
+        controls={abuseProtectionControls}
+        isSaving={updateControlsMutation.isPending}
+        onUpdate={(payload) => updateControlsMutation.mutate(payload)}
+      />
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={<Gauge className="h-5 w-5 text-primary" />}

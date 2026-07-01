@@ -45,6 +45,23 @@ proof of an authenticated session. If the route auth check fails, return the
 original block response before invoking the handler or recording normal auth
 failure side effects.
 
+## Emergency Protection Controls
+
+Platform admins with root workspace `manage_workspace_roles` can temporarily
+disable edge IP blocking or route rate limits from Infrastructure -> Rate
+Limits. The controls are stored in Redis for the proxy runtime and default to
+enabled when Redis is unavailable or unset.
+
+- Disabling IP blocking stops enforcement of cached `ip:blocked:<ip>` entries
+  and prevents proxy abuse counters from creating new edge IP blocks. It does
+  not delete `blocked_ips` rows or existing Redis block keys.
+- Disabling route rate limits skips the proxy read/mutate buckets while leaving
+  payload size checks and malformed request validation active.
+
+Use these controls only for incident response or false-positive mitigation.
+Re-enable them after the affected traffic pattern is understood and prefer
+specific trusted workspace, IP, CIDR, or user overrides for durable fixes.
+
 ## Signals
 
 The layer records rolling signals for:

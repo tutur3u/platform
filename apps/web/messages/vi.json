@@ -11383,6 +11383,17 @@
       "open_appeals": "Mở yêu cầu xem xét",
       "retry": "Thử lại"
     },
+    "controls": {
+      "description": "Tạm thời tắt bảo vệ ở biên trong sự cố dương tính giả mà không thay đổi quy tắc theo đối tượng.",
+      "ip_blocking": "Chặn IP",
+      "ip_blocking_description": "Áp dụng các IP đã chặn trong bộ nhớ đệm và tạo chặn IP mới từ tín hiệu lạm dụng proxy.",
+      "never_updated": "Thiết lập mặc định",
+      "rate_limits": "Giới hạn route",
+      "rate_limits_description": "Áp dụng bucket đọc và ghi proxy cho các route được bảo vệ.",
+      "read_only": "Bạn có thể xem các điều khiển này nhưng cần quyền quản lý để thay đổi.",
+      "title": "Điều khiển bảo vệ",
+      "updated": "Đã cập nhật {updated}"
+    },
     "description": "Quản lý giới hạn tần suất theo từng đối tượng — tăng, giảm, đặt giới hạn tuyệt đối hoặc bỏ giới hạn cho tài khoản, IP, vị trí và không gian làm việc.",
     "edge": {
       "pending": "Biên: chờ đồng bộ",
@@ -11541,6 +11552,8 @@
     },
     "title": "Giới hạn tần suất",
     "toasts": {
+      "controls_update_failed": "Không thể cập nhật điều khiển bảo vệ",
+      "controls_updated": "Đã cập nhật điều khiển bảo vệ",
       "rule_create_failed": "Không thể tạo quy tắc giới hạn",
       "rule_created": "Đã tạo quy tắc giới hạn",
       "rule_revoke_failed": "Không thể thu hồi quy tắc giới hạn",

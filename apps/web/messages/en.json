@@ -11383,6 +11383,17 @@
       "open_appeals": "Open Appeals",
       "retry": "Retry"
     },
+    "controls": {
+      "description": "Temporarily disable edge protections during false-positive incidents without changing subject rules.",
+      "ip_blocking": "IP blocking",
+      "ip_blocking_description": "Enforce cached IP blocks and create new edge IP blocks from proxy abuse signals.",
+      "never_updated": "Default settings",
+      "rate_limits": "Route rate limits",
+      "rate_limits_description": "Enforce proxy read and mutate buckets for protected routes.",
+      "read_only": "You can view these controls but need manage access to change them.",
+      "title": "Protection controls",
+      "updated": "Updated {updated}"
+    },
     "description": "Manage per-subject rate limits — raise, lower, set absolute limits, or unlimit accounts, IPs, locations, and workspaces.",
     "edge": {
       "pending": "Edge: pending sync",
@@ -11541,6 +11552,8 @@
     },
     "title": "Rate Limits",
     "toasts": {
+      "controls_update_failed": "Failed to update protection controls",
+      "controls_updated": "Protection controls updated",
       "rule_create_failed": "Failed to create rate-limit rule",
       "rule_created": "Rate-limit rule created",
       "rule_revoke_failed": "Failed to revoke rate-limit rule",

@@ -6,6 +6,10 @@ import {
   RATE_LIMIT_MODES,
   recordAbuseActivitySignal,
 } from '@tuturuuu/utils/abuse-protection';
+import {
+  readEdgeAbuseProtectionControls,
+  writeEdgeAbuseProtectionControls,
+} from '@tuturuuu/utils/abuse-protection/edge';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -46,6 +50,20 @@ const AbsoluteLimitsSchema = z.object({
   read: WindowLimitsSchema.optional(),
   write: WindowLimitsSchema.optional(),
 });
+
+const UpdateAbuseProtectionControlsSchema = z
+  .object({
+    ipBlockingEnabled: z.boolean().optional(),
+    rateLimitsEnabled: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.ipBlockingEnabled !== undefined ||
+      data.rateLimitsEnabled !== undefined,
+    {
+      message: 'At least one protection control must be provided',
+    }
+  );
 
 const RATE_LIMIT_ACTION_PRESETS = [
   'clear_ip_only',
@@ -198,8 +216,12 @@ export async function GET(request: Request) {
     .map((rule) => rule.subject_key);
   const edgeState = await readEdgeTrustState(cacheableKeys);
   const edgeCachedSubjectKeys = [...edgeState.keys()];
+  const abuseProtectionControls = await readEdgeAbuseProtectionControls({
+    allowCache: false,
+  });
 
   return NextResponse.json({
+    abuseProtectionControls,
     edgeCachedSubjectKeys,
     rules,
     summary: {
@@ -287,4 +309,47 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ rule: data });
+}
+
+export async function PATCH(request: Request) {
+  const authorization = await authorizeAbuseIntelligenceRequest(
+    request,
+    'manage_workspace_roles'
+  );
+  if (!authorization.ok) {
+    return authorization.response;
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const parsed = UpdateAbuseProtectionControlsSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { errors: parsed.error.issues, message: 'Invalid request data' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const abuseProtectionControls = await writeEdgeAbuseProtectionControls({
+      ...parsed.data,
+      updatedBy: authorization.user.id,
+    });
+
+    return NextResponse.json({
+      abuseProtectionControls,
+      message: 'Updated abuse protection controls.',
+    });
+  } catch (error) {
+    serverLogger.error('Failed to update abuse protection controls', error);
+    return NextResponse.json(
+      { message: 'Failed to update abuse protection controls' },
+      { status: 500 }
+    );
+  }
 }

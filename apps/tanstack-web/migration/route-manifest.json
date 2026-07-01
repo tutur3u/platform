@@ -4078,7 +4078,7 @@
     {
       "id": "api:/api/v1/infrastructure/rate-limits:apps/web/src/app/api/v1/infrastructure/rate-limits/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET", "POST", "PATCH"],
       "routePath": "/api/v1/infrastructure/rate-limits",
       "sourceFile": "apps/web/src/app/api/v1/infrastructure/rate-limits/route.ts",
       "status": "legacy-next",
@@ -15146,7 +15146,7 @@
       "HEAD": 1,
       "POST": 542,
       "PUT": 175,
-      "PATCH": 138,
+      "PATCH": 139,
       "DELETE": 205,
       "OPTIONS": 17
     },

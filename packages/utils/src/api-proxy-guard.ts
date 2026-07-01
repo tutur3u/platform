@@ -1,7 +1,11 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
+import {
+  extractIPFromRequest,
+  isIPBlockedEdge,
+  readEdgeAbuseProtectionControls,
+} from './abuse-protection/edge';
 import {
   type CachedTrustEntry,
   getCachedTrustEntries,
@@ -1314,8 +1318,9 @@ export async function guardApiProxyRequest(
     const ip = extractIPFromRequest(req.headers);
     const identity = await resolveProxyIdentity(req, ip);
     const routePolicy = getRoutePolicy(req, routePolicies);
+    const abuseProtectionControls = await readEdgeAbuseProtectionControls();
 
-    if (ip !== 'unknown') {
+    if (abuseProtectionControls.ipBlockingEnabled && ip !== 'unknown') {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
         const hasTemporaryRelief =
@@ -1358,7 +1363,7 @@ export async function guardApiProxyRequest(
     // escape the shared IP bucket.
     let trustEntry: CachedTrustEntry | null = null;
     let sessionScoped = false;
-    if (edgeTrustEnabled()) {
+    if (abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()) {
       const lookupKeys = [
         identity.sessionKey,
         ...(isRead
@@ -1393,7 +1398,7 @@ export async function guardApiProxyRequest(
         ? identity.sessionKey
         : identity.ipKey;
 
-    if (limiterId) {
+    if (abuseProtectionControls.rateLimitsEnabled && limiterId) {
       const effectiveCallerClass: CallerClass = sessionScoped
         ? 'authenticated'
         : callerClass;

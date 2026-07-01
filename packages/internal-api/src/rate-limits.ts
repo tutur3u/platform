@@ -32,6 +32,13 @@ export interface RateLimitRulesSummary {
   unlimitedCount: number;
 }
 
+export interface RateLimitAbuseProtectionControls {
+  ipBlockingEnabled: boolean;
+  rateLimitsEnabled: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
 export type RateLimitResolvedSubjectKind =
   | 'api_key'
   | 'cidr'
@@ -105,6 +112,7 @@ export type RateLimitRule = AbuseTrustOverride & {
 };
 
 export interface RateLimitRulesResponse {
+  abuseProtectionControls: RateLimitAbuseProtectionControls;
   /** Subject keys whose rule is currently live in the edge trust cache. */
   edgeCachedSubjectKeys: string[];
   rules: RateLimitRule[];
@@ -195,6 +203,11 @@ export interface SaveWorkspaceRateLimitSecretsPayload {
   wsId: string;
 }
 
+export interface UpdateRateLimitAbuseProtectionControlsPayload {
+  ipBlockingEnabled?: boolean;
+  rateLimitsEnabled?: boolean;
+}
+
 export type RateLimitSubjectSearchKind = 'ip' | 'user' | 'workspace';
 
 export interface RateLimitSubjectSearchResult {
@@ -248,6 +261,22 @@ export async function createRateLimitRule(
     cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',
+  });
+}
+
+export async function updateRateLimitAbuseProtectionControls(
+  payload: UpdateRateLimitAbuseProtectionControlsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    abuseProtectionControls: RateLimitAbuseProtectionControls;
+    message: string;
+  }>(BASE_PATH, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PATCH',
   });
 }
 

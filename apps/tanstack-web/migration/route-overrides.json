@@ -1856,7 +1856,7 @@
     "page:/:locale/:wsId/infrastructure/rate-limits:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/rate-limits/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/rate-limits ports the legacy root-workspace rate-limit admin page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure gating, manage_workspace_roles can-manage state, localized header parity, and shared TanStack Query/internal-api backed rule, live-usage, and workspace-secret controls. Rate-limit API ownership remains separately tracked."
+      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/rate-limits ports the legacy root-workspace rate-limit admin page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure gating, manage_workspace_roles can-manage state, localized header parity, and shared TanStack Query/internal-api backed protection toggles, rule, live-usage, and workspace-secret controls. Rate-limit API ownership remains separately tracked."
     },
     "page:/:locale/:wsId/infrastructure/post-email-queue:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/post-email-queue/page.tsx": {
       "status": "migrated",

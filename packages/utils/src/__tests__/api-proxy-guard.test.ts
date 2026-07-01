@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   redis: vi.fn(),
   extractIp: vi.fn(),
   isBlocked: vi.fn(),
+  readAbuseProtectionControls: vi.fn(),
   validateEmoji: vi.fn(),
   getTrustEntries: vi.fn(),
   hasAppealRelief: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock('@upstash/redis', () => ({
 vi.mock('../abuse-protection/edge', () => ({
   extractIPFromRequest: (headers: Headers) => mocks.extractIp(headers),
   isIPBlockedEdge: (ip: string) => mocks.isBlocked(ip),
+  readEdgeAbuseProtectionControls: () => mocks.readAbuseProtectionControls(),
 }));
 
 vi.mock('../abuse-protection/edge-trust', () => ({
@@ -105,12 +107,19 @@ describe('guardApiProxyRequest', () => {
     mocks.redis.mockReset();
     mocks.extractIp.mockReset();
     mocks.isBlocked.mockReset();
+    mocks.readAbuseProtectionControls.mockReset();
     mocks.validateEmoji.mockReset();
     mocks.getTrustEntries.mockReset();
     mocks.hasAppealRelief.mockReset();
     // Default: no cached trust (untrusted). Tests opt in by overriding.
     mocks.getTrustEntries.mockResolvedValue(new Map<string, { m: number }>());
     mocks.hasAppealRelief.mockResolvedValue(false);
+    mocks.readAbuseProtectionControls.mockResolvedValue({
+      ipBlockingEnabled: true,
+      rateLimitsEnabled: true,
+      updatedAt: null,
+      updatedBy: null,
+    });
   });
 
   afterEach(() => {
@@ -175,6 +184,98 @@ describe('guardApiProxyRequest', () => {
       'ip-already-blocked'
     );
     expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
+  it('allows blocked IP traffic when IP blocking is disabled', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 30_000),
+      reason: 'abuse',
+      blockLevel: 'temporary',
+    });
+    mocks.readAbuseProtectionControls.mockResolvedValue({
+      ipBlockingEnabled: false,
+      rateLimitsEnabled: true,
+      updatedAt: null,
+      updatedBy: null,
+    });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST'),
+      {
+        additionalRoutePolicies: [
+          {
+            key: 'ip-block-toggle-test',
+            matches: () => true,
+            rateLimits: { get: [], mutate: [] },
+          },
+        ],
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.isBlocked).not.toHaveBeenCalled();
+    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(mocks.validateEmoji).toHaveBeenCalled();
+  });
+
+  it('skips proxy route buckets when rate limits are disabled', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.readAbuseProtectionControls.mockResolvedValue({
+      ipBlockingEnabled: true,
+      rateLimitsEnabled: false,
+      updatedAt: null,
+      updatedBy: null,
+    });
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 1,
+      remaining: 0,
+      reset: Date.now() + 60_000,
+    });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST'),
+      {
+        additionalRoutePolicies: [
+          {
+            key: 'rate-limit-toggle-test',
+            matches: () => true,
+            rateLimits: {
+              get: [],
+              mutate: [
+                {
+                  duration: '1 m',
+                  limit: 1,
+                  window: 'minute',
+                },
+              ],
+            },
+          },
+        ],
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.isBlocked).toHaveBeenCalledWith('1.2.3.4');
+    expect(mocks.getTrustEntries).not.toHaveBeenCalled();
+    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(mocks.validateEmoji).toHaveBeenCalled();
   });
 
   it('allows a blocked IP to submit the rate-limit appeal endpoint only', async () => {
