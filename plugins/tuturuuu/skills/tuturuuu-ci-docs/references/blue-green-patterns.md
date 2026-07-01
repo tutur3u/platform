@@ -131,9 +131,12 @@ infrastructure dashboard changes.
   exit code 137, or `[internal] waiting for connection` should keep stepping
   through budget-valid profiles in the same command until the build succeeds or
   the retry ladder is exhausted. Persist each retry profile before trying it,
-  skip fixed profiles above the effective Docker budget, and reset persisted
-  state back to the budget-derived `default` profile when `floor` still fails so
-  later runs do not get stuck starting at `floor`. Each retry should restart the
+  skip fixed profiles above the effective Docker budget during normal
+  selection, and reset persisted state back to the budget-derived `default`
+  profile when `floor` still fails so later runs do not get stuck starting at
+  `floor`. If `default` also fails and Docker's reported memory limit still has
+  headroom, a hard-limit rescue may retry a larger fixed profile such as `low`
+  (`10g`) before surfacing the failure. Each retry should restart the
   Compose-owned BuildKit service and recreate the remote Buildx builder when
   `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
   cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or

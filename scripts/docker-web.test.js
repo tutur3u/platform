@@ -3322,6 +3322,99 @@ test('buildBlueGreenServices resets a failed floor profile to the budget-derived
   }
 });
 
+test('buildBlueGreenServices can rescue a failed floor and default profile with a hard-limit profile', async () => {
+  const calls = [];
+  const stderrWrites = [];
+  const dockerMemoryLimit = String(11 * 1024 * 1024 * 1024);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-adaptive-hard-limit-')
+  );
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+  const originalStderrWrite = process.stderr.write;
+  let buildAttempts = 0;
+
+  try {
+    process.stderr.write = (chunk, ...args) => {
+      stderrWrites.push(String(chunk));
+      return originalStderrWrite.call(process.stderr, chunk, ...args);
+    };
+
+    await buildBlueGreenServices({
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      env: {
+        BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        DOCKER_WEB_BUILD_CPUS: '1',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: '1',
+        DOCKER_WEB_BUILD_MEMORY: '6g',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+        [BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV]: '1',
+        [BUILD_RESOURCE_PROFILE_ENV]: 'floor',
+        [BUILD_RESOURCE_PROFILE_STATE_FILE_ENV]: profilePaths.stateFile,
+      },
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.env]);
+
+        if (args[0] === 'buildx' && args[1] === 'bake') {
+          buildAttempts += 1;
+
+          return buildAttempts < 3
+            ? {
+                code: 1,
+                signal: null,
+                stderr: 'ResourceExhausted: cannot allocate memory',
+                stdout: '',
+              }
+            : { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.includes('buildkit')) {
+          return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+        }
+
+        if (args[0] === 'inspect') {
+          return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+      services: ['web-blue'],
+    });
+
+    assert.equal(buildAttempts, 3);
+    assert.equal(
+      readBuildResourceProfileState(profilePaths).profileName,
+      'low'
+    );
+
+    const buildEnvs = calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , callEnv]) => callEnv);
+
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv[BUILD_RESOURCE_PROFILE_ENV]),
+      ['floor', 'default', 'low']
+    );
+    assert.equal(buildEnvs[2].DOCKER_WEB_BUILD_MEMORY, '10g');
+    assert.ok(
+      stderrWrites.some(
+        (entry) =>
+          entry.includes('retrying with build profile low') &&
+          entry.includes('memory=10g')
+      )
+    );
+  } finally {
+    process.stderr.write = originalStderrWrite;
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('buildBlueGreenServices retries after BuildKit exec cache prune loses transport', async () => {
   const calls = [];
   const tempDir = fs.mkdtempSync(

@@ -39,10 +39,14 @@ const {
 const {
   BUILD_RESOURCE_PROFILES,
   createBuildResourceProfileSelection,
+  getBudgetedBuildResourceProfile,
+  getBuildResourceProfile,
   getBuildResourceProfilePaths,
+  getNextAdaptiveBuildResourceProfile,
   getNextLowerBuildResourceProfile,
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,
+  isBuildResourceProfileWithinHardLimit,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
   persistBuildResourceProfile,
@@ -215,6 +219,34 @@ test('adaptive build resource profile fallback classification is specific to Bui
       new Error('TypeScript error: Property "foo" does not exist')
     ),
     false
+  );
+});
+
+test('adaptive build resource profiles can rescue to hard-limit profiles after conservative retries fail', () => {
+  const dockerMemoryLimit = String(11 * 1024 * 1024 * 1024);
+  const env = {
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+  };
+  const lowProfile = getBuildResourceProfile('low');
+  const stableProfile = getBuildResourceProfile('stable');
+
+  assert.equal(isBuildResourceProfileWithinHardLimit(lowProfile, env), true);
+  assert.equal(
+    isBuildResourceProfileWithinHardLimit(stableProfile, env),
+    false
+  );
+  assert.equal(getBudgetedBuildResourceProfile(lowProfile, env)?.name, 'low');
+  assert.equal(
+    getBudgetedBuildResourceProfile(stableProfile, env)?.name,
+    'default'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['floor', 'default']),
+      currentProfileName: 'default',
+      env,
+    })?.name,
+    'low'
   );
 });
 

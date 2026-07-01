@@ -199,12 +199,33 @@ function isBuildResourceProfileWithinBudget(profile, env = {}) {
   return !budgetBytes || !profileBytes || profileBytes <= budgetBytes;
 }
 
+function getBuildResourceProfileHardLimitBytes(env = {}) {
+  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
+
+  if (!dockerMemoryLimitBytes) {
+    return null;
+  }
+
+  return Math.max(0, dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_HEADROOM_BYTES);
+}
+
+function isBuildResourceProfileWithinHardLimit(profile, env = {}) {
+  const hardLimitBytes = getBuildResourceProfileHardLimitBytes(env);
+  const profileBytes = getBuildResourceProfileMemoryBytes(profile, env);
+
+  return !!hardLimitBytes && !!profileBytes && profileBytes <= hardLimitBytes;
+}
+
 function getRecommendedBuildResourceProfile(_env = {}) {
   return DEFAULT_BUILD_RESOURCE_PROFILE;
 }
 
 function getBudgetedBuildResourceProfile(profile, env = {}) {
-  if (!profile || isBuildResourceProfileWithinBudget(profile, env)) {
+  if (
+    !profile ||
+    isBuildResourceProfileWithinBudget(profile, env) ||
+    isBuildResourceProfileWithinHardLimit(profile, env)
+  ) {
     return profile;
   }
 
@@ -241,6 +262,17 @@ function getNextAdaptiveBuildResourceProfile({
     !attemptedProfileNames.has(recommendedProfile.name)
   ) {
     return recommendedProfile;
+  }
+
+  const hardLimitProfile = BUILD_RESOURCE_PROFILES.find(
+    (profile) =>
+      profile.name !== currentProfile?.name &&
+      !attemptedProfileNames.has(profile.name) &&
+      isBuildResourceProfileWithinHardLimit(profile, env)
+  );
+
+  if (hardLimitProfile) {
+    return hardLimitProfile;
   }
 
   return null;
@@ -512,6 +544,7 @@ module.exports = {
   getBuildResourceConfigForSelection,
   getBuildResourceProfile,
   getBuildResourceProfileFromEnv,
+  getBuildResourceProfileHardLimitBytes,
   getBuildResourceProfileMemoryBytes,
   getBuildResourceProfilePaths,
   getBuildResourceProfilePathsFromEnv,
@@ -525,6 +558,7 @@ module.exports = {
   hasExplicitBuildResourceEnv,
   isAdaptiveBuildResourceProfileEnabled,
   isBuildResourceProfileWithinBudget,
+  isBuildResourceProfileWithinHardLimit,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
   parseMemoryToBytes,

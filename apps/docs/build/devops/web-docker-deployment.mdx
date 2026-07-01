@@ -1437,12 +1437,14 @@ transport or resource-pressure signature such as `code = Unavailable`,
 `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`, or
 `[internal] waiting for connection`, the deploy keeps retrying lower profiles in
 the same command until the build succeeds or the budget-aware retry ladder is
-exhausted. Each downgrade persists the selected profile for later runs, skips
-fixed profiles that exceed the effective Docker memory budget, recreates the
-Compose-owned BuildKit service even if the cleanup prune command itself fails
-with the same transport signature, then recreates the remote Buildx builder if
-`docker buildx inspect tuturuuu` reports `Status: inactive`. The profile ladder
-is:
+exhausted. Each retry persists the selected profile for later runs, skips fixed
+profiles that exceed the effective Docker memory budget during normal
+selection, and can use a larger hard-limit rescue profile after conservative
+profiles are exhausted if Docker's reported memory limit still has headroom.
+The helper recreates the Compose-owned BuildKit service even if the cleanup
+prune command itself fails with the same transport signature, then recreates the
+remote Buildx builder if `docker buildx inspect tuturuuu` reports
+`Status: inactive`. The profile ladder is:
 
 - `default`: `auto`, 4 CPUs, max parallelism 1
 - `stable`: `16g`, 2 CPUs, max parallelism 1
@@ -1452,10 +1454,13 @@ is:
 
 If the floor profile still fails with the same BuildKit infrastructure
 signature, the helper resets the machine-local profile back to the
-budget-derived `default` profile before surfacing the failure. This prevents a
-machine from getting stuck starting every future deploy at `floor`. Delete
-`tmp/docker-web/buildkit/resource-profile.json` only as an emergency manual
-reset back to the default profile. Explicit build cap flags or
+budget-derived `default` profile. If that profile also fails and Docker's
+reported memory limit can safely fit a larger fixed profile, the helper can
+retry `low` (`10g`) before surfacing the failure. This prevents a machine from
+getting stuck starting every future deploy at `floor` while still allowing
+memory-starved Next builds to recover on Docker VMs with enough real capacity.
+Delete `tmp/docker-web/buildkit/resource-profile.json` only as an emergency
+manual reset back to the default profile. Explicit build cap flags or
 `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
 `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out of the adaptive profile for that run.
 
