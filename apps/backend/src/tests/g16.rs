@@ -144,3 +144,95 @@ fn unsupported_methods_report_allow_header() {
     assert_eq!(response.status, 405);
     assert_eq!(response.allow, Some("GET"));
 }
+
+#[tokio::test]
+async fn chat_observability_rejects_finance_app_session_target() {
+    let token = app_session_token(&app_session_claims(
+        "finance",
+        vec![APP_SESSION_SCOPE],
+        4_102_444_800,
+    ));
+    let outbound = RecordingOutboundClient::default();
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer("GET", chat_observability_path(), token),
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 401);
+    assert_eq!(response.body["message"], "Unauthorized");
+    assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+    assert_eq!(outbound.calls().len(), 0);
+}
+
+#[tokio::test]
+async fn chat_observability_accepts_chat_app_session_target() {
+    let token = app_session_token(&app_session_claims(
+        "chat",
+        vec![APP_SESSION_SCOPE],
+        4_102_444_800,
+    ));
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, "true"),
+        outbound_response(200, r#"[{"id":"chat-1"}]"#),
+        outbound_response(
+            200,
+            r#"[{"id":"message-1","content":"sensitive prompt preview","created_at":"2026-07-01T00:00:00Z","metadata":{},"model":"gpt-5","role":"user","prompt_tokens":12,"completion_tokens":0}]"#,
+        ),
+        outbound_response(200, "[]"),
+    ]);
+
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer("GET", chat_observability_path(), token),
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
+    assert_eq!(
+        response.body["observability"]["messages"][0]["contentPreview"],
+        "sensitive prompt preview"
+    );
+    assert_eq!(
+        response.body["observability"]["messages"][0]["model"],
+        "gpt-5"
+    );
+    assert_eq!(
+        response.body["observability"]["messages"][0]["role"],
+        "user"
+    );
+    assert_eq!(
+        response.body["observability"]["totals"]["messageCount"],
+        json!(1)
+    );
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 4);
+    assert!(
+        calls[0]
+            .url
+            .ends_with("/rest/v1/rpc/has_workspace_permission")
+    );
+    assert!(
+        calls[1]
+            .url
+            .starts_with("https://project-ref.supabase.co/rest/v1/ai_chats?")
+    );
+    assert!(
+        calls[2]
+            .url
+            .starts_with("https://project-ref.supabase.co/rest/v1/ai_chat_messages?")
+    );
+    assert!(
+        calls[3]
+            .url
+            .starts_with("https://project-ref.supabase.co/rest/v1/ai_credit_transactions?")
+    );
+}
+
+fn chat_observability_path() -> &'static str {
+    "/api/v1/workspaces/00000000-0000-0000-0000-000000000111/chat/conversations/ai-chat-chat-1/ai-observability"
+}
