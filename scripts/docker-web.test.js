@@ -78,6 +78,7 @@ const {
   isBlueGreenSupermemoryEnabled,
   isNativeWebBuildEnabled,
   isNativeWebRunnerBuildxEnabled,
+  isNativeWebSupportBuildxEnabled,
   readBlueGreenTargetState,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
@@ -3878,24 +3879,85 @@ test('buildBlueGreenServices can explicitly package host-built artifacts with bu
 
 test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
   const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    BUILDKIT_HOST: 'tcp://remote-buildkit.example:1234',
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_BUILD_BUILDER_NAME: 'fallback-builder',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  };
 
   await buildBlueGreenServices({
     buildStrategy: 'bake',
     composeFile: PROD_COMPOSE_FILE,
-    env: {
-      COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
-      DOCKER_WEB_NATIVE_BUILD: '1',
-    },
-    runCommand: async (command, args) => {
-      calls.push([command, args]);
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
 
       return { code: 0, signal: null, stderr: '', stdout: '' };
     },
     services: ['web-green', 'hive-green'],
   });
 
+  assert.equal(isNativeWebSupportBuildxEnabled(env), false);
   assert.deepEqual(
     calls.filter(([command]) => command === 'docker').map(([, args]) => args),
+    [
+      [
+        'build',
+        '--file',
+        path.join(
+          path.resolve(__dirname, '..'),
+          'apps',
+          'web',
+          'docker',
+          'native-runner.Dockerfile'
+        ),
+        '--tag',
+        'ttr-e2e-local-test-web-green',
+        path.resolve(__dirname, '..'),
+      ],
+      ['compose', '-f', PROD_COMPOSE_FILE, 'build', 'hive-green'],
+    ]
+  );
+
+  const dockerCalls = calls.filter(([command]) => command === 'docker');
+
+  assert.equal(dockerCalls[0][2].BUILDX_BUILDER, undefined);
+  assert.equal(dockerCalls[0][2].BUILDKIT_HOST, undefined);
+  assert.equal(dockerCalls[0][2].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+  assert.equal(dockerCalls[1][2].BUILDX_BUILDER, undefined);
+  assert.equal(dockerCalls[1][2].BUILDKIT_HOST, undefined);
+  assert.equal(dockerCalls[1][2].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+});
+
+test('buildBlueGreenServices can explicitly bake support services during native builds', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NATIVE_SUPPORT_BUILDX: '1',
+  };
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green', 'hive-green'],
+  });
+
+  assert.equal(isNativeWebSupportBuildxEnabled(env), true);
+
+  const dockerCalls = calls.filter(([command]) => command === 'docker');
+
+  assert.deepEqual(
+    dockerCalls.map(([, args]) => args),
     [
       [
         'build',
@@ -3914,15 +3976,14 @@ test('buildBlueGreenServices only diverts web services to native artifact builds
       getBlueGreenBuildxBakeArgs({
         bakeFile: path.resolve(__dirname, '..', 'docker-bake.web.prod.hcl'),
         composeFile: PROD_COMPOSE_FILE,
-        env: {
-          COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
-          DOCKER_WEB_NATIVE_BUILD: '1',
-        },
+        env,
         noCache: false,
         serviceBatch: ['hive-green'],
       }),
     ]
   );
+  assert.equal(dockerCalls[0][2].BUILDX_BUILDER, undefined);
+  assert.strictEqual(dockerCalls[1][2], env);
 });
 
 test('buildBlueGreenServices restarts BuildKit when low-memory restart is requested', async () => {

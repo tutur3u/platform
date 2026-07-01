@@ -2283,25 +2283,31 @@ async function buildBlueGreenServices({
         continue;
       }
 
-      const args =
-        buildStrategy === 'bake'
-          ? getBlueGreenBuildxBakeArgs({
-              bakeFile,
-              composeFile,
-              env: buildEnv,
-              noCache,
-              serviceBatch: dockerBuildServices,
-            })
-          : getComposeCommandArgs(
-              composeFile,
-              composeGlobalArgs,
-              'build',
-              ...(noCache ? ['--no-cache'] : []),
-              ...dockerBuildServices
-            );
+      const useBuildxBake =
+        buildStrategy === 'bake' &&
+        (!useNativeWebBuild || isNativeWebSupportBuildxEnabled(buildEnv));
+      const args = useBuildxBake
+        ? getBlueGreenBuildxBakeArgs({
+            bakeFile,
+            composeFile,
+            env: buildEnv,
+            noCache,
+            serviceBatch: dockerBuildServices,
+          })
+        : getComposeCommandArgs(
+            composeFile,
+            composeGlobalArgs,
+            'build',
+            ...(noCache ? ['--no-cache'] : []),
+            ...dockerBuildServices
+          );
+      const commandEnv =
+        useNativeWebBuild && !useBuildxBake
+          ? getNativeWebLocalDockerBuildEnv(buildEnv)
+          : buildEnv;
 
       await runChecked('docker', args, {
-        env: buildEnv,
+        env: commandEnv,
         runCommand: run,
         stdio: 'pipe',
         teeOutput: true,
@@ -2676,11 +2682,7 @@ function isNativeWebRunnerBuildxEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_RUNNER_BUILDX);
 }
 
-function getNativeWebRunnerDockerBuildEnv(env = {}) {
-  if (isNativeWebRunnerBuildxEnabled(env)) {
-    return env;
-  }
-
+function getNativeWebLocalDockerBuildEnv(env = {}) {
   const buildEnv = { ...env };
 
   delete buildEnv.BUILDX_BUILDER;
@@ -2688,6 +2690,18 @@ function getNativeWebRunnerDockerBuildEnv(env = {}) {
   delete buildEnv.DOCKER_WEB_BUILD_BUILDER_NAME;
 
   return buildEnv;
+}
+
+function getNativeWebRunnerDockerBuildEnv(env = {}) {
+  if (isNativeWebRunnerBuildxEnabled(env)) {
+    return env;
+  }
+
+  return getNativeWebLocalDockerBuildEnv(env);
+}
+
+function isNativeWebSupportBuildxEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILDX);
 }
 
 function getHostTotalMemoryBuildValue(osImpl = os) {
@@ -4624,6 +4638,7 @@ module.exports = {
   isBlueGreenColor,
   isNativeWebBuildEnabled,
   isNativeWebRunnerBuildxEnabled,
+  isNativeWebSupportBuildxEnabled,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
   readBlueGreenTargetState,
