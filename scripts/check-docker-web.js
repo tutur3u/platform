@@ -834,6 +834,7 @@ function validateDockerCompose(
     '  cloudflared:',
     '    profiles: ["cloudflared"]',
     '    image: cloudflare/cloudflared:latest',
+    '    network_mode: "service:web"',
     '  hive:',
     '      dockerfile: apps/hive/Dockerfile\n      target: dev',
     '      - HIVE_DATABASE_URL=${' +
@@ -1184,6 +1185,7 @@ function validateDockerProdCompose(composeContent) {
       '/node_modules',
     '    image: nginx:1.31.0-alpine',
     '    image: cloudflare/cloudflared:latest',
+    'network_mode: "service:web-proxy"',
     '127.0.0.1:${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
     '127.0.0.1:${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
     '127.0.0.1:${' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814',

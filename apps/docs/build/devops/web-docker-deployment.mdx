@@ -454,7 +454,10 @@ startup and Playwright. Native builds derive their host-side build memory budget
 from the machine's total memory, while leaving Next/Turbopack CPU and static
 generation worker counts unset so the toolchain can auto-configure from the real
 host. Set `DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value only
-when the host needs a different Node heap bucket.
+when the host needs a different Node heap bucket. Native runner packaging uses
+plain `docker build` by default so a remote BuildKit transport failure does not
+block the host-built artifact path; set `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` only
+when that packaging step must use the configured buildx builder.
 
 When a production blue/green web image was just built locally with
 `bun serve:web:docker:bg`, Dockerized E2E can reuse that image instead of
@@ -1759,16 +1762,18 @@ without starting the `cloudflared` container; an explicit `--with-cloudflared`
 or `--profile cloudflared` still enables the profile.
 
 For a remotely managed Cloudflare Tunnel, configure the public hostname route in
-Cloudflare to point at the Docker service:
+Cloudflare to point at the Docker service or the local proxy loopback:
 
-- Production blue/green: `https://tuturuuu.com` -> `http://web-proxy:7803`
+- Production blue/green: `https://tuturuuu.com` -> `http://localhost:7803` or
+  `http://web-proxy:7803`
 - Dev stack: `https://dev.tuturuuu.com` or a temporary hostname ->
-  `http://web:7803`
+  `http://localhost:7803` or `http://web:7803`
 
-The tunnel container joins the same compose network, so use Docker service names
-instead of host ports in the Cloudflare service URL. Keep `cms.tuturuuu.com` and
-other satellite app hostnames on Vercel unless those apps are explicitly moved
-into this Docker stack.
+The tunnel container shares the web/proxy network namespace, so existing
+Cloudflare routes that use `localhost:7803` resolve to the Docker web service
+instead of the tunnel container itself. Keep `cms.tuturuuu.com` and other
+satellite app hostnames on Vercel unless those apps are explicitly moved into
+this Docker stack.
 
 Production compose binds host-published web, Hive, Meet, and Redis ports to
 `127.0.0.1` only. Do not remove that loopback prefix during blue/green

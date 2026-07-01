@@ -76,12 +76,14 @@ const {
   isBlueGreenWebBuildSkipped,
   isBlueGreenSupermemoryEnabled,
   isNativeWebBuildEnabled,
+  isNativeWebRunnerBuildxEnabled,
   readBlueGreenTargetState,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
   testBlueGreenHiveProxyRouting,
 } = require('./docker-web/blue-green.js');
 const {
+  isDockerNoSuchContainerError,
   removeComposeServiceContainersByLabelIfPresent,
   waitForComposeServiceHealthy,
 } = require('./docker-web/compose.js');
@@ -3742,6 +3744,7 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
   });
 
   assert.equal(isNativeWebBuildEnabled(env), true);
+  assert.equal(isNativeWebRunnerBuildxEnabled(env), false);
   assert.equal(
     getBlueGreenWebServiceImageTag('web-green', {
       composeGlobalArgs: ['-p', 'explicit-project'],
@@ -3765,11 +3768,7 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
       [
         'docker',
         [
-          'buildx',
           'build',
-          '--builder',
-          DEFAULT_BUILDER_NAME,
-          '--load',
           '--build-arg',
           'PLATFORM_BUILD_BUILT_AT=2026-05-28T06:00:00.000Z',
           '--build-arg',
@@ -3814,6 +3813,51 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
   assert.equal(calls[0][3].PLATFORM_BUILD_COMMIT_HASH, 'native-commit');
 });
 
+test('buildBlueGreenServices can explicitly package host-built artifacts with buildx', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NATIVE_RUNNER_BUILDX: '1',
+  };
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env,
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  assert.equal(isNativeWebRunnerBuildxEnabled(env), true);
+  assert.deepEqual(calls[1], [
+    'docker',
+    [
+      'buildx',
+      'build',
+      '--builder',
+      DEFAULT_BUILDER_NAME,
+      '--load',
+      '--file',
+      path.join(
+        path.resolve(__dirname, '..'),
+        'apps',
+        'web',
+        'docker',
+        'native-runner.Dockerfile'
+      ),
+      '--tag',
+      'ttr-e2e-local-test-web-green',
+      path.resolve(__dirname, '..'),
+    ],
+  ]);
+});
+
 test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
   const calls = [];
 
@@ -3836,9 +3880,7 @@ test('buildBlueGreenServices only diverts web services to native artifact builds
     calls.filter(([command]) => command === 'docker').map(([, args]) => args),
     [
       [
-        'buildx',
         'build',
-        '--load',
         '--file',
         path.join(
           path.resolve(__dirname, '..'),
@@ -7497,6 +7539,68 @@ test('waitForComposeServiceHealthy retries until Compose resolves the service co
         command === 'docker' &&
         args[0] === 'inspect' &&
         args.includes('web-cron-runner-123')
+    )
+  );
+});
+
+test('waitForComposeServiceHealthy refreshes a recreated service container id', async () => {
+  const calls = [];
+  let psCalls = 0;
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('ps')) {
+      psCalls += 1;
+
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: psCalls === 1 ? 'old-buildkit-123\n' : 'new-buildkit-456\n',
+      };
+    }
+
+    if (command === 'docker' && args[0] === 'inspect') {
+      if (args.includes('old-buildkit-123')) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: 'Error: No such object: old-buildkit-123\n',
+          stdout: '',
+        };
+      }
+
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'healthy\n',
+      };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await waitForComposeServiceHealthy('buildkit', {
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+    },
+    pollMs: 1,
+    runCommand,
+    timeoutMs: 100,
+  });
+
+  assert.equal(psCalls, 2);
+  assert.ok(isDockerNoSuchContainerError(new Error('No such object: test')));
+  assert.ok(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'inspect' &&
+        args.includes('new-buildkit-456')
     )
   );
 });

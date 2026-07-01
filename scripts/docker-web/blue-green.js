@@ -2672,6 +2672,10 @@ function isNativeWebBuildEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
 }
 
+function isNativeWebRunnerBuildxEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_RUNNER_BUILDX);
+}
+
 function getHostTotalMemoryBuildValue(osImpl = os) {
   const totalMemoryBytes = osImpl.totalmem?.();
 
@@ -2804,28 +2808,30 @@ async function buildNativeWebRuntimeImages({
 }) {
   for (const serviceName of services) {
     const builderName = env.BUILDX_BUILDER || env.DOCKER_WEB_BUILD_BUILDER_NAME;
+    const buildArgs = [
+      ...(noCache ? ['--no-cache'] : []),
+      ...getPlatformBuildMetadataBuildArgs(env),
+      '--file',
+      getNativeWebRunnerDockerfile(rootDir),
+      '--tag',
+      getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
+      rootDir,
+    ];
+    const args = isNativeWebRunnerBuildxEnabled(env)
+      ? [
+          'buildx',
+          'build',
+          ...(builderName ? ['--builder', builderName] : []),
+          '--load',
+          ...buildArgs,
+        ]
+      : ['build', ...buildArgs];
 
-    await runChecked(
-      'docker',
-      [
-        'buildx',
-        'build',
-        ...(builderName ? ['--builder', builderName] : []),
-        '--load',
-        ...(noCache ? ['--no-cache'] : []),
-        ...getPlatformBuildMetadataBuildArgs(env),
-        '--file',
-        getNativeWebRunnerDockerfile(rootDir),
-        '--tag',
-        getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
-        rootDir,
-      ],
-      {
-        env,
-        runCommand: run,
-        timeoutMs: getBlueGreenBuildTimeoutMs(env),
-      }
-    );
+    await runChecked('docker', args, {
+      env,
+      runCommand: run,
+      timeoutMs: getBlueGreenBuildTimeoutMs(env),
+    });
   }
 }
 
@@ -4600,6 +4606,7 @@ module.exports = {
   getNativeWebBuildMemory,
   isBlueGreenColor,
   isNativeWebBuildEnabled,
+  isNativeWebRunnerBuildxEnabled,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
   readBlueGreenTargetState,

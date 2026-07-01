@@ -15,6 +15,8 @@ const DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 512_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS = 4;
 const DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_DELAY_MS = 60_000;
+const DOCKER_NO_SUCH_CONTAINER_PATTERN =
+  /(?:no such (?:object|container)|no such container)/iu;
 
 class CommandTimeoutError extends Error {
   constructor(command, args, timeoutMs) {
@@ -601,6 +603,12 @@ async function getContainerHealthStatus(
   return result.stdout.trim();
 }
 
+function isDockerNoSuchContainerError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return DOCKER_NO_SUCH_CONTAINER_PATTERN.test(message);
+}
+
 async function waitForComposeServiceHealthy(
   serviceName,
   {
@@ -632,10 +640,21 @@ async function waitForComposeServiceHealthy(
       continue;
     }
 
-    lastStatus = await getContainerHealthStatus(containerId, {
-      env,
-      runCommand: run,
-    });
+    try {
+      lastStatus = await getContainerHealthStatus(containerId, {
+        env,
+        runCommand: run,
+      });
+    } catch (error) {
+      if (!isDockerNoSuchContainerError(error)) {
+        throw error;
+      }
+
+      containerId = '';
+      lastStatus = 'missing';
+      await sleep(pollMs);
+      continue;
+    }
 
     if (lastStatus === 'healthy') {
       return;
@@ -668,6 +687,7 @@ module.exports = {
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
+  isDockerNoSuchContainerError,
   listComposeServiceContainerIdsByLabel,
   removeComposeServiceContainersByLabelIfPresent,
   removeComposeServicesIfPresent,

@@ -173,6 +173,10 @@ infrastructure dashboard changes.
   intentionally short-lived.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production
   builds are capped.
+- Native web fallback builds (`DOCKER_WEB_NATIVE_BUILD=1`) should build Next.js
+  artifacts on the host, then package the runner image with plain `docker build`
+  by default. Keep `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` as the explicit opt-in
+  when that lightweight packaging step must use the configured Buildx builder.
 - Containerized watcher handoffs must run from the mirrored host checkout path
   via `PLATFORM_HOST_WORKSPACE_DIR`, not from a container-only path.
 - When production deployment starts from a linked Git worktree, the watcher
@@ -206,6 +210,10 @@ infrastructure dashboard changes.
   and honor `DOCKER_WEB_WITH_CLOUDFLARED=0|false|no|off` as auto-detect opt-out
   unless the operator explicitly passes `--with-cloudflared` or
   `--profile cloudflared`.
+- Keep the optional `cloudflared` services in the web/proxy network namespace
+  (`service:web` for dev, `service:web-proxy` for production) so remotely
+  managed tunnel routes that use `localhost:7803` reach the Docker app rather
+  than the tunnel container loopback.
 - Host-started `bun serve:web:docker:bg:watch` containers should treat a fully
   idle blue/green runtime as missing active deployment and bootstrap the current
   commit so fresh hosts create `web-proxy`, active/standby lanes, and
