@@ -1444,6 +1444,9 @@ profiles are exhausted if Docker's reported memory limit still has headroom.
 For explicit memory-exhaustion signatures such as `cannot allocate memory` or
 exit code 137, the helper can prefer that hard-limit rescue before smaller
 profiles that are unlikely to help.
+When a later default run sees stale persisted fallback state, it promotes that
+state back to the largest Docker-hard-limit rescue profile, preferring lower CPU
+at equal memory, before starting BuildKit.
 The helper recreates the Compose-owned BuildKit service even if the cleanup
 prune command itself fails with the same transport signature, then recreates the
 remote Buildx builder if `docker buildx inspect tuturuuu` reports

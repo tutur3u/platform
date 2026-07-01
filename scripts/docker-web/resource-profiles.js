@@ -319,14 +319,62 @@ function writeBuildResourceProfileState(
   );
 }
 
-function getPersistedBuildResourceProfile({
-  fsImpl = fs,
-  paths = getBuildResourceProfilePaths(),
-} = {}) {
-  const state = readBuildResourceProfileState(paths, fsImpl);
-  const profile = getBuildResourceProfile(state?.profileName);
+function compareBuildResourceProfilesForRescue(a, b, env = {}) {
+  const memoryDelta =
+    (getBuildResourceProfileMemoryBytes(b, env) ?? 0) -
+    (getBuildResourceProfileMemoryBytes(a, env) ?? 0);
 
-  return profile ?? DEFAULT_BUILD_RESOURCE_PROFILE;
+  if (memoryDelta !== 0) {
+    return memoryDelta;
+  }
+
+  const cpuDelta = Number(a.cpus) - Number(b.cpus);
+
+  if (cpuDelta !== 0) {
+    return cpuDelta;
+  }
+
+  return (
+    getBuildResourceProfileIndex(a.name) - getBuildResourceProfileIndex(b.name)
+  );
+}
+
+function shouldPromotePersistedBuildResourceProfile(state) {
+  const reason = state?.reason;
+
+  return (
+    typeof reason === 'string' &&
+    reason.startsWith('buildkit-resource-fallback')
+  );
+}
+
+function getPromotedPersistedBuildResourceProfile({
+  env = {},
+  profile,
+  state,
+} = {}) {
+  if (!profile || !shouldPromotePersistedBuildResourceProfile(state)) {
+    return profile;
+  }
+
+  const currentBytes = getBuildResourceProfileMemoryBytes(profile, env);
+
+  if (!currentBytes) {
+    return profile;
+  }
+
+  const promotedProfile = BUILD_RESOURCE_PROFILES.filter((candidate) => {
+    const candidateBytes = getBuildResourceProfileMemoryBytes(candidate, env);
+
+    return (
+      candidate.name !== profile.name &&
+      !!candidateBytes &&
+      candidateBytes > currentBytes &&
+      isBuildResourceProfileWithinHardLimit(candidate, env)
+    );
+  }).sort((a, b) => compareBuildResourceProfilesForRescue(a, b, env))[0];
+
+  return promotedProfile ?? profile;
 }
 
 function isEmptyEnvValue(value) {
@@ -420,10 +468,28 @@ function createBuildResourceProfileSelection({
     };
   }
 
+  const persistedState = readBuildResourceProfileState(paths, fsImpl);
+  const persistedProfile =
+    getBuildResourceProfile(persistedState?.profileName) ??
+    DEFAULT_BUILD_RESOURCE_PROFILE;
   const profile = getBudgetedBuildResourceProfile(
-    getPersistedBuildResourceProfile({ fsImpl, paths }),
+    getPromotedPersistedBuildResourceProfile({
+      env,
+      profile: persistedProfile,
+      state: persistedState,
+    }),
     env
   );
+
+  if (profile.name !== persistedProfile.name) {
+    persistBuildResourceProfile({
+      fsImpl,
+      previousProfileName: persistedProfile.name,
+      profile,
+      reason: 'buildkit-resource-state-promoted',
+      stateFile: paths.stateFile,
+    });
+  }
 
   return {
     enabled: true,
@@ -570,8 +636,9 @@ module.exports = {
   getAutoBuildMemoryBudget,
   getAutoBuildMemoryBudgetBytes,
   getBudgetedBuildResourceProfile,
-  getNextLowerBuildResourceProfile,
   getNextAdaptiveBuildResourceProfile,
+  getNextLowerBuildResourceProfile,
+  getPromotedPersistedBuildResourceProfile,
   getRecommendedBuildResourceProfile,
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,

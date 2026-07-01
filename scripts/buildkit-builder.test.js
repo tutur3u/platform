@@ -44,6 +44,7 @@ const {
   getBuildResourceProfilePaths,
   getNextAdaptiveBuildResourceProfile,
   getNextLowerBuildResourceProfile,
+  getPromotedPersistedBuildResourceProfile,
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,
   isBuildResourceProfileWithinHardLimit,
@@ -181,6 +182,53 @@ test('adaptive build resource profile selection reads and persists runtime state
     assert.equal(selection.profile.memory, '10g');
     assert.equal(selection.stateFile, paths.stateFile);
     assert.equal(readBuildResourceProfileState(paths).profileName, 'low');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('adaptive build resource profile selection promotes stale fallback state to hard-limit rescue', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buildkit-profile-'));
+  const paths = getBuildResourceProfilePaths(tempDir);
+  const env = {
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+  };
+
+  try {
+    const minimalProfile = getBuildResourceProfile('minimal');
+    persistBuildResourceProfile({
+      previousProfileName: 'serial',
+      profile: minimalProfile,
+      reason: 'buildkit-resource-fallback',
+      stateFile: paths.stateFile,
+    });
+
+    const selection = createBuildResourceProfileSelection({
+      cpus: '4',
+      env,
+      maxParallelism: '1',
+      memory: 'auto',
+      paths,
+    });
+
+    assert.equal(selection.enabled, true);
+    assert.equal(selection.profileName, 'serial');
+    assert.equal(selection.profile.memory, '10g');
+    assert.equal(selection.profile.cpus, '1');
+
+    const state = readBuildResourceProfileState(paths);
+    assert.equal(state.profileName, 'serial');
+    assert.equal(state.previousProfileName, 'minimal');
+    assert.equal(state.reason, 'buildkit-resource-state-promoted');
+
+    assert.equal(
+      getPromotedPersistedBuildResourceProfile({
+        env,
+        profile: getBuildResourceProfile('floor'),
+        state: { reason: 'buildkit-resource-fallback' },
+      })?.name,
+      'serial'
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

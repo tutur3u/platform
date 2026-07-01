@@ -4297,6 +4297,170 @@ test('runDockerWebWorkflow applies persisted adaptive profile for default blue-g
   }
 });
 
+test('runDockerWebWorkflow promotes stale fallback profile before BuildKit startup', async () => {
+  const calls = [];
+  const dockerMemoryLimit = String(12 * 1024 * 1024 * 1024);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-adaptive-promote-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const minimalProfile = {
+    cpus: '1',
+    maxParallelism: '1',
+    memory: '8g',
+    name: 'minimal',
+  };
+  const stopAfterBuildkit = new Error('stop-after-buildkit');
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    );
+    persistBuildResourceProfile({
+      previousProfileName: 'serial',
+      profile: minimalProfile,
+      reason: 'buildkit-resource-fallback',
+      stateFile: profilePaths.stateFile,
+    });
+
+    await assert.rejects(
+      () =>
+        runDockerWebWorkflow(
+          parseArgs([
+            'up',
+            '--mode',
+            'prod',
+            '--strategy',
+            'blue-green',
+            '--build-memory',
+            'auto',
+            '--build-cpus',
+            '4',
+            '--build-max-parallelism',
+            '1',
+          ]),
+          {
+            env: LOCAL_SUPABASE_TEST_ENV,
+            envFilePath,
+            rootDir: tempDir,
+            runCommand: async (command, args, options = {}) => {
+              calls.push({
+                args,
+                command,
+                env: options.env,
+                stdio: options.stdio ?? 'inherit',
+              });
+
+              if (command === 'docker' && args[0] === 'compose') {
+                if (args[1] === 'version') {
+                  return { code: 0, signal: null, stderr: '', stdout: '' };
+                }
+
+                if (args.includes('up') && args.at(-1) === 'buildkit') {
+                  return { code: 0, signal: null, stderr: '', stdout: '' };
+                }
+
+                if (args.includes('ps') && args.at(-1) === 'buildkit') {
+                  return {
+                    code: 0,
+                    signal: null,
+                    stderr: '',
+                    stdout: 'buildkit-123\n',
+                  };
+                }
+
+                if (
+                  args.includes('up') &&
+                  args.at(-1) === 'log-drain-postgres'
+                ) {
+                  throw stopAfterBuildkit;
+                }
+              }
+
+              if (
+                command === 'docker' &&
+                args[0] === 'info' &&
+                args.includes('{{json .MemTotal}}')
+              ) {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: dockerMemoryLimit,
+                };
+              }
+
+              if (command === 'docker' && args[0] === 'inspect') {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: 'healthy\n',
+                };
+              }
+
+              if (command === 'docker' && args[0] === 'buildx') {
+                if (args[1] === 'inspect') {
+                  return { code: 1, signal: null, stderr: '', stdout: '' };
+                }
+
+                return { code: 0, signal: null, stderr: '', stdout: '' };
+              }
+
+              if (command === 'git' && args[0] === 'log') {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: 'abcdef123456\nabcdef1\nPromoted profile\n',
+                };
+              }
+
+              if (command === 'git' && args[0] === 'branch') {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: 'production\n',
+                };
+              }
+
+              return { code: 0, signal: null, stderr: '', stdout: '' };
+            },
+          }
+        ),
+      (error) => {
+        assert.match(error.message, /Original failure: stop-after-buildkit/);
+        return true;
+      }
+    );
+
+    const buildkitUp = calls.find(
+      (call) =>
+        call.command === 'docker' &&
+        call.args[0] === 'compose' &&
+        call.args.includes('up') &&
+        call.args.includes('--no-build') &&
+        call.args.at(-1) === 'buildkit'
+    );
+
+    assert.equal(buildkitUp?.env.DOCKER_WEB_BUILD_MEMORY, '10g');
+    assert.equal(buildkitUp?.env.DOCKER_WEB_BUILD_CPUS, '1');
+    assert.equal(buildkitUp?.env.DOCKER_WEB_BUILD_MAX_PARALLELISM, '1');
+    assert.equal(buildkitUp?.env[BUILD_RESOURCE_PROFILE_ENV], 'serial');
+
+    const promotedState = readBuildResourceProfileState(profilePaths);
+    assert.equal(promotedState.profileName, 'serial');
+    assert.equal(promotedState.previousProfileName, 'minimal');
+    assert.equal(promotedState.reason, 'buildkit-resource-state-promoted');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDockerWebWorkflow forwards Docker memory limit into build env', async () => {
   const calls = [];
   const fsStub = createFsStub({
