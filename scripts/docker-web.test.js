@@ -3167,7 +3167,7 @@ test('buildBlueGreenServices skips lower profiles that exceed the Docker memory 
                 code: 1,
                 signal: null,
                 stderr:
-                  'ERROR: failed to solve: ResourceExhausted: cannot allocate memory',
+                  'rpc error: code = Unavailable desc = closing transport due to: error reading from server: EOF',
                 stdout: '',
               }
             : { code: 0, signal: null, stderr: '', stdout: '' };

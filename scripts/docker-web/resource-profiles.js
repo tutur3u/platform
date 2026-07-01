@@ -236,11 +236,24 @@ function getNextAdaptiveBuildResourceProfile({
   attemptedProfileNames = new Set(),
   currentProfileName,
   env = {},
+  preferHardLimitProfile = false,
 } = {}) {
   const currentIndex = getBuildResourceProfileIndex(currentProfileName);
 
   if (currentIndex < 0) {
     return null;
+  }
+
+  const currentProfile = getBuildResourceProfile(currentProfileName);
+  const hardLimitProfile = BUILD_RESOURCE_PROFILES.find(
+    (profile) =>
+      profile.name !== currentProfile?.name &&
+      !attemptedProfileNames.has(profile.name) &&
+      isBuildResourceProfileWithinHardLimit(profile, env)
+  );
+
+  if (preferHardLimitProfile && hardLimitProfile) {
+    return hardLimitProfile;
   }
 
   const nextLowerProfile = BUILD_RESOURCE_PROFILES.slice(currentIndex + 1).find(
@@ -253,7 +266,6 @@ function getNextAdaptiveBuildResourceProfile({
     return nextLowerProfile;
   }
 
-  const currentProfile = getBuildResourceProfile(currentProfileName);
   const recommendedProfile = getRecommendedBuildResourceProfile(env);
 
   if (
@@ -263,13 +275,6 @@ function getNextAdaptiveBuildResourceProfile({
   ) {
     return recommendedProfile;
   }
-
-  const hardLimitProfile = BUILD_RESOURCE_PROFILES.find(
-    (profile) =>
-      profile.name !== currentProfile?.name &&
-      !attemptedProfileNames.has(profile.name) &&
-      isBuildResourceProfileWithinHardLimit(profile, env)
-  );
 
   if (hardLimitProfile) {
     return hardLimitProfile;
@@ -530,6 +535,14 @@ function isBuildkitResourceProfileFallbackError(error) {
   );
 }
 
+function isBuildkitMemoryExhaustionError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /(?:ResourceExhausted|cannot allocate memory|out of memory|SIGKILL|Forced quit|exit(?:ed)?(?:\s+with)?\s+code\s+137|exited\s*\(137\))/iu.test(
+    message
+  );
+}
+
 module.exports = {
   BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV,
   BUILD_RESOURCE_PROFILE_ENV,
@@ -559,6 +572,7 @@ module.exports = {
   isAdaptiveBuildResourceProfileEnabled,
   isBuildResourceProfileWithinBudget,
   isBuildResourceProfileWithinHardLimit,
+  isBuildkitMemoryExhaustionError,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
   parseMemoryToBytes,

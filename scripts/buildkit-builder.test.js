@@ -47,6 +47,7 @@ const {
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,
   isBuildResourceProfileWithinHardLimit,
+  isBuildkitMemoryExhaustionError,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
   persistBuildResourceProfile,
@@ -247,6 +248,40 @@ test('adaptive build resource profiles can rescue to hard-limit profiles after c
       env,
     })?.name,
     'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default']),
+      currentProfileName: 'default',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: true,
+    })?.name,
+    'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default']),
+      currentProfileName: 'default',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: false,
+    })?.name,
+    'minimal'
+  );
+  assert.equal(
+    isBuildkitMemoryExhaustionError(
+      new Error('ResourceExhausted: cannot allocate memory')
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitMemoryExhaustionError(
+      new Error('rpc error: code = Unavailable desc = closing transport')
+    ),
+    false
   );
 });
 

@@ -136,10 +136,12 @@ infrastructure dashboard changes.
   profile when `floor` still fails so later runs do not get stuck starting at
   `floor`. If `default` also fails and Docker's reported memory limit still has
   headroom, a hard-limit rescue may retry a larger fixed profile such as `low`
-  (`10g`) before surfacing the failure. Each retry should restart the
-  Compose-owned BuildKit service and recreate the remote Buildx builder when
-  `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
-  cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
+  (`10g`) before surfacing the failure. Explicit memory-exhaustion signatures
+  such as `cannot allocate memory` or exit code 137 may prefer the hard-limit
+  rescue before smaller profiles. Each retry should restart the Compose-owned
+  BuildKit service and recreate the remote Buildx builder when `docker buildx
+  inspect tuturuuu` reports `Status: inactive`. Explicit build cap flags or
+  `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
   `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
 - BuildKit max parallelism only limits Docker's build graph. The web image
   still runs Turbo inside the Dockerfile, so pass an inner Turbo concurrency cap

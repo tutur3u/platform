@@ -49,6 +49,7 @@ const {
   getNextAdaptiveBuildResourceProfile,
   getRecommendedBuildResourceProfile,
   isAdaptiveBuildResourceProfileEnabled,
+  isBuildkitMemoryExhaustionError,
   isBuildkitResourceProfileFallbackError,
   persistBuildResourceProfile,
 } = require('./resource-profiles.js');
@@ -2466,6 +2467,7 @@ async function buildBlueGreenServices({
           attemptedProfileNames,
           currentProfileName: currentProfile.name,
           env: buildEnv,
+          preferHardLimitProfile: isBuildkitMemoryExhaustionError(error),
         });
 
         if (!nextProfile) {
