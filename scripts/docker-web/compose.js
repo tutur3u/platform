@@ -17,6 +17,9 @@ const DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_DELAY_MS = 60_000;
 const DOCKER_NO_SUCH_CONTAINER_PATTERN =
   /(?:no such (?:object|container)|no such container)/iu;
+const COMPOSE_MISSING_DEPENDENCY_CONTAINER_PATTERN =
+  /\bNo such container:\s*[0-9a-f]{12,64}\b/iu;
+const COMPOSE_DEPENDENCY_FAILED_PATTERN = /dependency .*failed to start/iu;
 
 class CommandTimeoutError extends Error {
   constructor(command, args, timeoutMs) {
@@ -281,6 +284,15 @@ function parseDockerContainerNameConflicts(error) {
   return conflicts;
 }
 
+function isComposeMissingContainerDependencyError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    COMPOSE_MISSING_DEPENDENCY_CONTAINER_PATTERN.test(message) &&
+    COMPOSE_DEPENDENCY_FAILED_PATTERN.test(message)
+  );
+}
+
 async function runComposeUpWithNameConflictRecovery({
   composeFile,
   composeGlobalArgs = [],
@@ -319,6 +331,8 @@ async function runComposeUpWithNameConflictRecovery({
     'DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS',
     DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS
   );
+  let staleDependencyAttempt = 1;
+  let staleDependencyDelayMs = registryDelayMs;
   let nameConflictRecoveries = 0;
 
   while (true) {
@@ -367,6 +381,24 @@ async function runComposeUpWithNameConflictRecovery({
         await sleepImpl(registryDelayMs);
         registryAttempt += 1;
         registryDelayMs = Math.min(registryDelayMs * 2, maxRegistryDelayMs);
+        continue;
+      }
+
+      if (
+        staleDependencyAttempt < maxRegistryAttempts &&
+        isComposeMissingContainerDependencyError(error)
+      ) {
+        process.stderr.write(
+          `Docker Compose up hit a stale dependency container reference; retrying in ${staleDependencyDelayMs}ms (attempt ${
+            staleDependencyAttempt + 1
+          }/${maxRegistryAttempts}).\n`
+        );
+        await sleepImpl(staleDependencyDelayMs);
+        staleDependencyAttempt += 1;
+        staleDependencyDelayMs = Math.min(
+          staleDependencyDelayMs * 2,
+          maxRegistryDelayMs
+        );
         continue;
       }
 
@@ -686,6 +718,7 @@ module.exports = {
   getPositiveIntegerEnv,
   hasComposeProfile,
   hasComposeServiceContainer,
+  isComposeMissingContainerDependencyError,
   isComposeServiceHealthy,
   isDockerNoSuchContainerError,
   listComposeServiceContainerIdsByLabel,

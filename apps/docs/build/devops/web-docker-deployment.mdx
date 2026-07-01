@@ -818,6 +818,11 @@ as `<hex>_platform-markitdown-1`. The Docker helper treats those as recoverable
 only when the suffix matches one of the services in the current `compose up`
 request, removes that stale temp container, and retries the same narrow up
 operation.
+Compose can also briefly report `dependency failed to start` with `No such
+container: <id>` when a dependency was recreated between Docker's dependency
+resolution and health wait. The helper treats that as a stale dependency
+reference and retries the same narrow `compose up` without deleting unrelated
+containers.
 
 The production `web-proxy` service is pinned to the official mainline Alpine
 image `nginx:1.31.0-alpine`, and `scripts/check-docker-web.js` verifies that

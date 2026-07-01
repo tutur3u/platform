@@ -244,6 +244,11 @@ infrastructure dashboard changes.
   cluster look unhealthy after a successful migration. Project-label cleanup
   must honor Compose `--project-name`/`-p`, `COMPOSE_PROJECT_NAME`, and
   `DOCKER_WEB_COMPOSE_PROJECT_NAME`.
+- Docker Compose can briefly fail support-service recovery with
+  `dependency failed to start` and `No such container: <id>` when a dependency
+  container is recreated during the same `compose up`. Treat that as a stale
+  dependency reference and retry the same narrow up command; do not remove
+  unrelated containers for this class of failure.
 - Log-drain Postgres is an optional script-owned preflight, not a Compose
   `depends_on` gate for `web`, blue/green lanes, or the watcher. If
   `log-drain-postgres` stays unhealthy after one service-container recreate,

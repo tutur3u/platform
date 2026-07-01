@@ -86,6 +86,7 @@ const {
   testBlueGreenHiveProxyRouting,
 } = require('./docker-web/blue-green.js');
 const {
+  isComposeMissingContainerDependencyError,
   isDockerNoSuchContainerError,
   removeComposeServiceContainersByLabelIfPresent,
   waitForComposeServiceHealthy,
@@ -7621,6 +7622,68 @@ test('runComposeUpWithNameConflictRecovery retries transient Docker registry pul
 
   assert.equal(upAttempts, 3);
   assert.deepEqual(delays, [10, 20]);
+  assert.ok(
+    !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')
+  );
+});
+
+test('runComposeUpWithNameConflictRecovery retries stale dependency container references', async () => {
+  const calls = [];
+  const delays = [];
+  let upAttempts = 0;
+  const staleDependencyError =
+    'dependency failed to start: Error response from daemon: No such container: d558824bb887ae3b4dadda1a70e9a59ede541c0e6c773d7f370fda7051e87ebe';
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
+      upAttempts += 1;
+
+      if (upAttempts === 1) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: staleDependencyError,
+          stdout: '',
+        };
+      }
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS: '10',
+      DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS: '3',
+      DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS: '20',
+      PATH: 'test-path',
+    },
+    runCommand,
+    services: ['backend', 'storage-unzip-proxy', 'web-cron-runner'],
+    sleep: async (delayMs) => {
+      delays.push(delayMs);
+    },
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      'backend',
+      'storage-unzip-proxy',
+      'web-cron-runner',
+    ],
+  });
+
+  assert.equal(upAttempts, 2);
+  assert.deepEqual(delays, [10]);
+  assert.equal(
+    isComposeMissingContainerDependencyError(new Error(staleDependencyError)),
+    true
+  );
   assert.ok(
     !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')
   );
