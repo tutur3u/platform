@@ -3,6 +3,14 @@ import 'server-only';
 import crypto from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { listEnabledManagedCronDomains } from './domain-repository';
+import {
+  closeManagedCronDispatcher,
+  type ManagedCronFetch,
+  type ManagedCronNetworkDependencies,
+  type ResolvedManagedCronNetworkDependencies,
+  resolveManagedCronNetwork,
+  resolveSafeManagedCronAddress,
+} from './network';
 import { callManagedCronRpc, ensureRpcArray } from './rpc';
 import {
   collectManagedCronHeaderSecretNames,
@@ -61,14 +69,20 @@ export interface ManagedCronRunNowResult {
 }
 
 export async function processDueManagedCronJobs({
-  fetchImpl = fetch,
+  fetchImpl,
   limit = CLAIM_LIMIT,
+  network,
   runnerId = `apps-web-${crypto.randomUUID()}`,
 }: {
-  fetchImpl?: typeof fetch;
+  fetchImpl?: ManagedCronFetch;
   limit?: number;
+  network?: ManagedCronNetworkDependencies;
   runnerId?: string;
 } = {}): Promise<ManagedCronProcessSummary> {
+  const requestNetwork = resolveManagedCronNetwork({
+    ...network,
+    ...(fetchImpl ? { fetchImpl } : {}),
+  });
   const [allowedDomains, jobs] = await Promise.all([
     listEnabledManagedCronDomains(),
     claimDueManagedCronJobs({ limit, runnerId }),
@@ -85,8 +99,8 @@ export async function processDueManagedCronJobs({
   for (const job of jobs) {
     const result = await executeManagedCronJob({
       allowedDomains,
-      fetchImpl,
       job,
+      network: requestNetwork,
     });
 
     await recordManagedCronExecution({ job, result, runnerId });
@@ -104,17 +118,23 @@ export async function processDueManagedCronJobs({
 
 export async function runExternalManagedCronJobNow({
   externalAppId,
-  fetchImpl = fetch,
+  fetchImpl,
   jobKey,
+  network,
   runnerId = `external-app-${externalAppId}-${crypto.randomUUID()}`,
   wsId,
 }: {
   externalAppId: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: ManagedCronFetch;
   jobKey: string;
+  network?: ManagedCronNetworkDependencies;
   runnerId?: string;
   wsId: string;
 }): Promise<ManagedCronRunNowResult | null> {
+  const requestNetwork = resolveManagedCronNetwork({
+    ...network,
+    ...(fetchImpl ? { fetchImpl } : {}),
+  });
   const rows = await callManagedCronRpc<
     Array<
       Omit<ManagedCronJobRow, 'headers_config'> & {
@@ -138,8 +158,8 @@ export async function runExternalManagedCronJobNow({
   const allowedDomains = await listEnabledManagedCronDomains();
   const result = await executeManagedCronJob({
     allowedDomains,
-    fetchImpl,
     job,
+    network: requestNetwork,
   });
 
   await recordManagedCronExecution({
@@ -192,12 +212,12 @@ async function claimDueManagedCronJobs({
 
 async function executeManagedCronJob({
   allowedDomains,
-  fetchImpl,
   job,
+  network,
 }: {
   allowedDomains: string[];
-  fetchImpl: typeof fetch;
   job: ManagedCronJobRow;
+  network: ResolvedManagedCronNetworkDependencies;
 }): Promise<ManagedCronExecutionResult> {
   const startTime = new Date();
   const validation = validateManagedCronEndpointUrl(
@@ -240,15 +260,31 @@ async function executeManagedCronJob({
     const timeout = setTimeout(() => abortController.abort(), job.timeout_ms);
 
     try {
-      const response = await fetchImpl(validation.url, {
-        headers,
-        method: job.http_method,
-        signal: abortController.signal,
-      });
-      const text = await response.text();
-      const endTime = new Date();
+      const requestUrl = new URL(validation.url);
+      const address = await resolveSafeManagedCronAddress(
+        requestUrl,
+        network.resolveHost
+      );
+      const dispatcher = network.createDispatcher(address);
+      let response: Response;
+      let text: string;
+
+      try {
+        response = await network.fetchImpl(requestUrl, {
+          cache: 'no-store',
+          dispatcher,
+          headers,
+          method: job.http_method,
+          redirect: 'manual',
+          signal: abortController.signal,
+        });
+        text = await response.text();
+      } finally {
+        await closeManagedCronDispatcher(dispatcher);
+      }
 
       if (response.ok || attempt === maxAttempts) {
+        const endTime = new Date();
         return {
           durationMs: endTime.getTime() - startTime.getTime(),
           endTime,
