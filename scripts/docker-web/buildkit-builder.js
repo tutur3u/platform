@@ -42,6 +42,10 @@ const LARGE_DOCKER_MEMORY_THRESHOLD_BYTES = 16 * BYTES_PER_GIB;
 const DEFAULT_BUILDKIT_COMPOSE_UP_MAX_ATTEMPTS = 4;
 const DEFAULT_BUILDKIT_COMPOSE_UP_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_BUILDKIT_COMPOSE_UP_MAX_DELAY_MS = 60_000;
+const BUILDKIT_PRUNE_MODES = new Set(['all', 'bounded', 'off']);
+const DEFAULT_BUILDKIT_PRUNE_MODE = 'bounded';
+const DEFAULT_BUILDKIT_PRUNE_UNTIL = '168h';
+const DEFAULT_BUILDKIT_PRUNE_KEEP_STORAGE = '50gb';
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -950,6 +954,40 @@ function shouldPruneBuildkitAfterBuild(env = process.env) {
   return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
 }
 
+function getBuildkitPruneMode(env = process.env) {
+  if (!shouldPruneBuildkitAfterBuild(env)) {
+    return 'off';
+  }
+
+  const rawMode = String(env.DOCKER_WEB_BUILDKIT_PRUNE_MODE ?? '').trim();
+
+  if (!rawMode) {
+    return DEFAULT_BUILDKIT_PRUNE_MODE;
+  }
+
+  const mode = rawMode.toLowerCase();
+
+  if (!BUILDKIT_PRUNE_MODES.has(mode)) {
+    throw new Error(
+      `DOCKER_WEB_BUILDKIT_PRUNE_MODE must be one of: ${[
+        ...BUILDKIT_PRUNE_MODES,
+      ].join(', ')}.`
+    );
+  }
+
+  return mode;
+}
+
+function getBuildkitPruneUntil(env = process.env) {
+  const value = String(env.DOCKER_WEB_BUILDKIT_PRUNE_UNTIL ?? '').trim();
+  return value || DEFAULT_BUILDKIT_PRUNE_UNTIL;
+}
+
+function getBuildkitPruneKeepStorage(env = process.env) {
+  const value = String(env.DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE ?? '').trim();
+  return value || DEFAULT_BUILDKIT_PRUNE_KEEP_STORAGE;
+}
+
 function shouldStopBuildkitAfterBuild(env = process.env) {
   const rawValue = env.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD;
 
@@ -965,9 +1003,12 @@ async function pruneBuildkitCacheAfterBuild({
   fsImpl = fs,
   runCommand: run = runCommand,
 } = {}) {
-  if (!shouldPruneBuildkitAfterBuild(env)) {
+  const pruneMode = getBuildkitPruneMode(env);
+
+  if (pruneMode === 'off') {
     return {
       builderName: null,
+      mode: pruneMode,
       pruned: false,
       skipped: true,
     };
@@ -977,21 +1018,35 @@ async function pruneBuildkitCacheAfterBuild({
     env.BUILDX_BUILDER ||
     env.DOCKER_WEB_BUILD_BUILDER_NAME ||
     DEFAULT_BUILDER_NAME;
+  const pruneArgs =
+    pruneMode === 'all'
+      ? ['buildx', 'prune', '--builder', builderName, '--all', '--force']
+      : [
+          'buildx',
+          'prune',
+          '--builder',
+          builderName,
+          '--force',
+          '--filter',
+          `until=${getBuildkitPruneUntil(env)}`,
+          '--keep-storage',
+          getBuildkitPruneKeepStorage(env),
+        ];
 
-  await runChecked(
-    'docker',
-    ['buildx', 'prune', '--builder', builderName, '--all', '--force'],
-    {
-      env,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+  await runChecked('docker', pruneArgs, {
+    env,
+    fsImpl,
+    runCommand: run,
+  });
 
   return {
     builderName,
+    keepStorage:
+      pruneMode === 'bounded' ? getBuildkitPruneKeepStorage(env) : null,
+    mode: pruneMode,
     pruned: true,
     skipped: false,
+    until: pruneMode === 'bounded' ? getBuildkitPruneUntil(env) : null,
   };
 }
 
@@ -1030,6 +1085,7 @@ async function cleanupBuildkitAfterBuild({
     return {
       prune: {
         builderName: null,
+        mode: 'off',
         pruned: false,
         skipped: true,
       },
@@ -1056,6 +1112,7 @@ async function cleanupBuildkitAfterBuild({
   const errors = [];
   let pruneResult = {
     builderName: null,
+    mode: 'off',
     pruned: false,
     skipped: true,
   };
@@ -1108,6 +1165,9 @@ module.exports = {
   BUILDKIT_SERVICE_NAME,
   CACHED_BUILD_ERROR_RECOVERY_REASON,
   DEFAULT_BUILDKIT_HOST_PORT,
+  DEFAULT_BUILDKIT_PRUNE_KEEP_STORAGE,
+  DEFAULT_BUILDKIT_PRUNE_MODE,
+  DEFAULT_BUILDKIT_PRUNE_UNTIL,
   DEFAULT_BUILDER_NAME,
   LEGACY_BUILDER_NAMES,
   cleanupBuildkitAfterBuild,
@@ -1115,6 +1175,9 @@ module.exports = {
   ensureBuildkitBuilder,
   forceRecoverBuildkitAfterFailure,
   getBuildkitPaths,
+  getBuildkitPruneKeepStorage,
+  getBuildkitPruneMode,
+  getBuildkitPruneUntil,
   getAutoBuildCpus,
   getAutoBuildMaxParallelism,
   getAutoBuildMemory,

@@ -164,11 +164,11 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
   assert.match(
     validateDockerSetupWorkflow(
       workflowContent.replace(
-        'docker build --target runner -f apps/tanstack-web/Dockerfile .',
+        '--cache-from type=gha,scope=docker-tanstack-web-prod',
         ''
       )
     ).join('\n'),
-    /apps\/tanstack-web\/Dockerfile/
+    /docker-tanstack-web-prod/
   );
 });
 
@@ -221,29 +221,11 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
-        '  bun run --filter @tuturuuu/supabase build && \\\n',
+        'bun run turbo:local run build:docker -F @tuturuuu/tanstack-web',
         ''
       )
     ).join('\n'),
-    /@tuturuuu\/supabase build/u
-  );
-  assert.match(
-    validateTanstackWebDockerfile(
-      dockerfileContent.replace(
-        'bun run --filter @tuturuuu/internal-api build && \\\n',
-        ''
-      )
-    ).join('\n'),
-    /@tuturuuu\/internal-api build/u
-  );
-  assert.match(
-    validateTanstackWebDockerfile(
-      dockerfileContent.replace(
-        '  bun run --filter @tuturuuu/supabase build && \\\n  bun run --filter @tuturuuu/internal-api build && \\\n',
-        '  bun run --filter @tuturuuu/internal-api build && \\\n  bun run --filter @tuturuuu/supabase build && \\\n'
-      )
-    ).join('\n'),
-    /@tuturuuu\/supabase build before bun run --filter @tuturuuu\/internal-api build/u
+    /build:docker -F @tuturuuu\/tanstack-web/u
   );
   assert.match(
     validateTanstackWebDockerfile(
@@ -368,7 +350,7 @@ test('Hive realtime Docker image hoists production dependencies for Bun runtime 
   );
 });
 
-test('Hive Docker image builds workspace dist exports before Next build', () => {
+test('Hive Docker image routes the Next build through Turbo', () => {
   const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(ROOT_DIR, 'apps', 'hive', 'package.json'), 'utf8')
@@ -381,7 +363,7 @@ test('Hive Docker image builds workspace dist exports before Next build', () => 
   );
   assert.match(
     dockerfileContent,
-    /node scripts\/run-hive-docker-next-build\.js --env-file \/tmp\/web\.env/u
+    /bun --env-file=\/tmp\/web\.env run turbo:local run build:docker -F @tuturuuu\/hive/u
   );
 });
 
@@ -1417,30 +1399,30 @@ test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', (
   assert.deepEqual(validateMarkitdownDockerfile(dockerfileContent), []);
 });
 
-test('validateHiveDockerfile reports missing workspace package builds', () => {
-  const dockerfileContent = fs
-    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
-    .replace('  bun run --filter @tuturuuu/supabase build && \\\n', '');
-
-  const errors = validateHiveDockerfile(dockerfileContent);
-
-  assert.match(errors.join('\n'), /@tuturuuu\/supabase build/);
-});
-
-test('validateHiveDockerfile reports Supabase builds after internal API', () => {
+test('validateHiveDockerfile reports missing Turbo cache mount', () => {
   const dockerfileContent = fs
     .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
     .replace(
-      '  bun run --filter @tuturuuu/supabase build && \\\n  bun run --filter @tuturuuu/internal-api build && \\\n',
-      '  bun run --filter @tuturuuu/internal-api build && \\\n  bun run --filter @tuturuuu/supabase build && \\\n'
+      '--mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo',
+      ''
     );
 
   const errors = validateHiveDockerfile(dockerfileContent);
 
-  assert.match(
-    errors.join('\n'),
-    /@tuturuuu\/supabase build before bun run --filter @tuturuuu\/internal-api build/u
-  );
+  assert.match(errors.join('\n'), /platform-hive-turbo/);
+});
+
+test('validateHiveDockerfile reports missing Turbo build command', () => {
+  const dockerfileContent = fs
+    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
+    .replace(
+      'bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive',
+      ''
+    );
+
+  const errors = validateHiveDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /build:docker -F @tuturuuu\/hive/u);
 });
 
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {

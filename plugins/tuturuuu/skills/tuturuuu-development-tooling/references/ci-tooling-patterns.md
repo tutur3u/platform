@@ -51,6 +51,10 @@ formatting behavior, or repo-wide verification.
   string literals that trip `noTemplateCurlyInString`.
 - Do not remove caching, fail-fast behavior, or security validation silently;
   document the rationale when tooling behavior changes.
+- `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
+  wrapper. It owns only `apps/backend/target` by default, stores auto-run state
+  under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
+  and keeps hot target data warm by pruning only stale or size-pressure entries.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next
@@ -215,6 +219,10 @@ formatting behavior, or repo-wide verification.
   URL with `E422` while verifying the sigstore provenance bundle.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
+- Docker verification workflows should use `docker buildx build --load` plus
+  `type=gha` cache scopes per service image. Pass Turbo remote-cache values as
+  optional BuildKit secrets for build `RUN` steps; never bake those values into
+  image layers, args, labels, or committed env files.
 - Workspace packages with direct `tsc` build scripts must declare
   `typescript` in their own `devDependencies`. Filtered Docker
   installs such as the Hive production image do not install root-only dev tools,

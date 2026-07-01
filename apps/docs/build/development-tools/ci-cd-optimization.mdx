@@ -163,6 +163,13 @@ Turborepo hashes inputs and reuses cached task outputs (via the remote cache whe
 to cache hits instead of recompiling. This is content-aware: it understands the
 dependency graph rather than relying on file timestamps.
 
+Docker and Rust verification use the same principle at their native cache
+layers. Docker setup jobs build through `docker buildx build --load` with
+GitHub BuildKit cache scopes per image, and the Rust backend workflow restores
+Cargo registry/git/target state before `cargo fetch`, clippy, test, Worker, and
+native build steps. Keep those caches scoped to the service image or Rust crate
+instead of adding a new shared cache store.
+
 <Note>
   Earlier versions of these workflows ran an inline Turborepo `--dry-run=json`
   step to *decide* whether to skip a build. That per-workflow skip step has been

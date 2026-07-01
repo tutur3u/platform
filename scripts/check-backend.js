@@ -18,6 +18,7 @@
 
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
+const { runAutoRustCacheCleanup } = require('./rust-cache.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const BACKEND_DIR = path.join(ROOT_DIR, 'apps', 'backend');
@@ -84,6 +85,25 @@ function runStep(step) {
   return result.status === 0;
 }
 
+function runRustCacheAutoCleanup(env = process.env) {
+  try {
+    const result = runAutoRustCacheCleanup({ env });
+
+    if (!result.skipped && result.removed.length > 0) {
+      const removedBytes = result.removed.reduce(
+        (sum, entry) => sum + entry.sizeBytes,
+        0
+      );
+      console.log(
+        `\n▸ rust-cache: removed ${result.removed.length} stale/oversized target entries (${removedBytes} bytes)`
+      );
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`\n▸ rust-cache: warning: ${message}`);
+  }
+}
+
 function main(argv = process.argv.slice(2)) {
   const skipWorker = argv.includes('--skip-worker');
   const failFast = !argv.includes('--no-fail-fast');
@@ -96,6 +116,8 @@ function main(argv = process.argv.slice(2)) {
     );
     return 1;
   }
+
+  runRustCacheAutoCleanup();
 
   const failures = [];
   for (const step of BACKEND_CHECK_STEPS) {

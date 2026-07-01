@@ -9,6 +9,7 @@
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vite dev --host 0.0.0.0 --port ${PORT:-7824}",
     "build": "vite build && bun type-check",
+    "build:docker": "vite build && bun type-check",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview --host 0.0.0.0 --port ${PORT:-7824}",
     "preview:cloudflare": "wrangler dev",

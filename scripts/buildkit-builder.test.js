@@ -14,6 +14,9 @@ const {
   getAutoBuildMaxParallelism,
   getAutoBuildMemory,
   getBuildkitPaths,
+  getBuildkitPruneKeepStorage,
+  getBuildkitPruneMode,
+  getBuildkitPruneUntil,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
   getResolvedBuildkitComposeEnv,
@@ -442,6 +445,28 @@ test('shouldPruneBuildkitAfterBuild defaults on and accepts explicit opt-out', (
   );
 });
 
+test('getBuildkitPruneMode defaults to bounded and supports legacy switches', () => {
+  assert.equal(getBuildkitPruneMode({}), 'bounded');
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'all' }),
+    'all'
+  );
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'off' }),
+    'off'
+  );
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: '0' }),
+    'off'
+  );
+  assert.equal(getBuildkitPruneUntil({}), '168h');
+  assert.equal(getBuildkitPruneKeepStorage({}), '50gb');
+  assert.throws(
+    () => getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'forever' }),
+    /DOCKER_WEB_BUILDKIT_PRUNE_MODE/
+  );
+});
+
 test('shouldStopBuildkitAfterBuild defaults on and accepts explicit opt-out', () => {
   assert.equal(shouldStopBuildkitAfterBuild({}), true);
   assert.equal(
@@ -483,7 +508,7 @@ test('isBunTarballExtractionError detects truncated Bun install failures', () =>
   );
 });
 
-test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', async () => {
+test('pruneBuildkitCacheAfterBuild prunes bounded cache by default', async () => {
   const calls = [];
 
   const result = await pruneBuildkitCacheAfterBuild({
@@ -501,8 +526,11 @@ test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', asy
 
   assert.deepEqual(result, {
     builderName: 'platform-test-builder',
+    keepStorage: '50gb',
+    mode: 'bounded',
     pruned: true,
     skipped: false,
+    until: '168h',
   });
   assert.deepEqual(calls, [
     {
@@ -511,12 +539,45 @@ test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', asy
         'prune',
         '--builder',
         'platform-test-builder',
-        '--all',
         '--force',
+        '--filter',
+        'until=168h',
+        '--keep-storage',
+        '50gb',
       ],
       command: 'docker',
       env: { BUILDX_BUILDER: 'platform-test-builder' },
     },
+  ]);
+});
+
+test('pruneBuildkitCacheAfterBuild can still prune all cache explicitly', async () => {
+  const calls = [];
+
+  const result = await pruneBuildkitCacheAfterBuild({
+    env: {
+      BUILDX_BUILDER: 'platform-test-builder',
+      DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'all',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.equal(result.mode, 'all');
+  assert.deepEqual(calls, [
+    [
+      'docker',
+      [
+        'buildx',
+        'prune',
+        '--builder',
+        'platform-test-builder',
+        '--all',
+        '--force',
+      ],
+    ],
   ]);
 });
 
@@ -533,6 +594,7 @@ test('pruneBuildkitCacheAfterBuild skips when disabled', async () => {
 
   assert.deepEqual(result, {
     builderName: null,
+    mode: 'off',
     pruned: false,
     skipped: true,
   });
@@ -659,6 +721,7 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
   assert.deepEqual(result, {
     prune: {
       builderName: null,
+      mode: 'off',
       pruned: false,
       skipped: true,
     },
@@ -1351,6 +1414,26 @@ test('production Docker root scripts keep the default build caps', () => {
     /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/
   );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
+  assert.equal(
+    Object.hasOwn(turboConfig, 'globalDependencies'),
+    false,
+    'turbo.json should avoid repo-wide local env file invalidation'
+  );
+  for (const envName of [
+    'DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE',
+    'DOCKER_WEB_BUILDKIT_PRUNE_MODE',
+    'DOCKER_WEB_BUILDKIT_PRUNE_UNTIL',
+    'E2E_DOCKER_BUILDKIT_PRUNE_MODE',
+    'TURBO_API',
+    'TURBO_REMOTE_CACHE_SIGNATURE_KEY',
+    'TURBO_TEAM',
+    'TURBO_TOKEN',
+  ]) {
+    assert.ok(
+      turboConfig.globalPassThroughEnv.includes(envName),
+      `turbo.json should pass ${envName} through without hashing it`
+    );
+  }
   for (const taskName of ['build', 'build:docker']) {
     const outputs = turboConfig.tasks[taskName].outputs;
     assert.ok(

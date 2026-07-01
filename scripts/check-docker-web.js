@@ -157,28 +157,6 @@ function countOccurrences(content, snippet) {
   return content.split(snippet).length - 1;
 }
 
-function validateSnippetOrder(content, snippets, label) {
-  const errors = [];
-  let previousIndex = -1;
-
-  for (const snippet of snippets) {
-    const index = content.indexOf(snippet);
-
-    if (index === -1) {
-      continue;
-    }
-
-    if (index < previousIndex) {
-      errors.push(`${label} must keep ${snippets.join(' before ')}.`);
-      break;
-    }
-
-    previousIndex = index;
-  }
-
-  return errors;
-}
-
 function hasComposeDependsOnService(composeContent, serviceName) {
   const lines = composeContent.split(/\r?\n/u);
 
@@ -642,6 +620,23 @@ function validateDockerfile({
       );
     }
 
+    for (const secretId of [
+      'turbo_api',
+      'turbo_remote_cache_signature_key',
+      'turbo_team',
+      'turbo_token',
+    ]) {
+      if (
+        !builderStage.includes(
+          `--mount=type=secret,id=${secretId},target=/run/secrets/${secretId},required=false`
+        )
+      ) {
+        errors.push(
+          `apps/web/Dockerfile builder stage must mount optional ${secretId} BuildKit secret for Turbo remote cache.`
+        );
+      }
+    }
+
     errors.push(
       ...validatePlatformBuildMetadataDockerStage({
         dockerfileLabel: 'apps/web/Dockerfile',
@@ -752,10 +747,22 @@ function validateDockerSetupWorkflow(workflowContent) {
   ];
   const requiredSnippets = [
     'run: node scripts/check-docker-web.js',
+    'node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js scripts/run-tanstack-e2e-docker.test.js',
     'docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml',
     'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
     'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
-    'docker build --target runner -f apps/tanstack-web/Dockerfile .',
+    'docker buildx build --load',
+    '--cache-from type=gha,scope=docker-web-prod',
+    '--cache-to type=gha,scope=docker-web-prod,mode=max',
+    '--cache-from type=gha,scope=docker-tanstack-web-prod',
+    '--cache-to type=gha,scope=docker-tanstack-web-prod,mode=max',
+    '--cache-from type=gha,scope=docker-backend',
+    '--cache-to type=gha,scope=docker-backend,mode=max',
+    '--secret id=turbo_api,env=TURBO_API',
+    '--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY',
+    '--secret id=turbo_team,env=TURBO_TEAM',
+    '--secret id=turbo_token,env=TURBO_TOKEN',
+    '-f apps/tanstack-web/Dockerfile .',
   ];
 
   for (const snippet of requiredPathFilterSnippets) {
@@ -1589,6 +1596,9 @@ function validateBackendDockerfile(dockerfileContent) {
     'COPY apps/backend/Cargo.toml apps/backend/Cargo.lock apps/backend/build.rs ./apps/backend/',
     'COPY apps/backend/src ./apps/backend/src',
     'COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migration/route-manifest.json',
+    '--mount=type=cache,id=platform-backend-cargo-registry,target=/usr/local/cargo/registry,sharing=locked',
+    '--mount=type=cache,id=platform-backend-cargo-git,target=/usr/local/cargo/git,sharing=locked',
+    '--mount=type=cache,id=platform-backend-target,target=/src/apps/backend/target,sharing=locked',
     'cargo build --release --locked --features native --bin backend',
     'FROM gcr.io/distroless/static-debian12:nonroot AS runner',
     'ENV BACKEND_DEPLOYMENT_TARGET=container',
@@ -1636,11 +1646,13 @@ function validateTanstackWebDockerfile(
     ...getRetryWrappedBunInstallSnippets(
       'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
     ),
-    'bun run --filter @tuturuuu/types build',
-    'bun run --filter @tuturuuu/supabase build',
-    'bun run --filter @tuturuuu/internal-api build',
-    'node node_modules/vite/bin/vite.js build',
-    'node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json',
+    '--mount=type=cache,id=platform-tanstack-web-turbo,target=/workspace/.turbo',
+    '--mount=type=cache,id=platform-tanstack-web-vite,target=/workspace/apps/tanstack-web/.vite',
+    '--mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false',
+    '--mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false',
+    '--mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false',
+    '--mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false',
+    'bun run turbo:local run build:docker -F @tuturuuu/tanstack-web',
     'ENV PORT=7824',
     'ENV TANSTACK_WEB_RUNTIME=node',
     'COPY --from=builder /workspace/node_modules/.bun /app/node_modules/.bun',
@@ -1660,18 +1672,6 @@ function validateTanstackWebDockerfile(
       );
     }
   }
-
-  errors.push(
-    ...validateSnippetOrder(
-      dockerfileContent,
-      [
-        'bun run --filter @tuturuuu/types build',
-        'bun run --filter @tuturuuu/supabase build',
-        'bun run --filter @tuturuuu/internal-api build',
-      ],
-      'apps/tanstack-web/Dockerfile builder stage'
-    )
-  );
 
   return errors;
 }
@@ -1722,7 +1722,8 @@ function validateCronRunnerDockerfile(dockerfileContent) {
   const requiredSnippets = [
     'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
-    'RUN bun add --exact cron-parser@5.6.1',
+    '--mount=type=cache,id=platform-cron-runner-bun-install,target=/root/.bun/install/cache',
+    'bun add --exact cron-parser@5.6.1',
     'COPY apps/web/docker/cron-runner-entrypoint.js /usr/local/bin/cron-runner-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/cron-runner-entrypoint.js"]',
   ];
@@ -1863,10 +1864,13 @@ function validateHiveDockerfile(
     ...getRetryWrappedBunInstallSnippets(
       'bun install --frozen-lockfile --filter @tuturuuu/hive'
     ),
-    'bun run --filter @tuturuuu/types build',
-    'bun run --filter @tuturuuu/supabase build',
-    'bun run --filter @tuturuuu/internal-api build',
-    'node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env',
+    '--mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo',
+    '--mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache',
+    '--mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false',
+    '--mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false',
+    '--mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false',
+    '--mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false',
+    'bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive',
   ];
 
   for (const snippet of requiredSnippets) {
@@ -1876,18 +1880,6 @@ function validateHiveDockerfile(
       );
     }
   }
-
-  errors.push(
-    ...validateSnippetOrder(
-      dockerfileContent,
-      [
-        'bun run --filter @tuturuuu/types build',
-        'bun run --filter @tuturuuu/supabase build',
-        'bun run --filter @tuturuuu/internal-api build',
-      ],
-      'apps/hive/Dockerfile builder stage'
-    )
-  );
 
   return errors;
 }

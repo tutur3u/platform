@@ -10,8 +10,9 @@ COPY apps/backend/Cargo.toml apps/backend/Cargo.lock apps/backend/build.rs ./app
 COPY apps/backend/src ./apps/backend/src
 COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migration/route-manifest.json
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/src/apps/backend/target \
+RUN --mount=type=cache,id=platform-backend-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,id=platform-backend-cargo-git,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,id=platform-backend-target,target=/src/apps/backend/target,sharing=locked \
     cd apps/backend && cargo build --release --locked --features native --bin backend && \
     mkdir -p /out && \
     cp target/release/backend /out/backend

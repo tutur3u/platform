@@ -153,6 +153,12 @@ infrastructure dashboard changes.
   `docker image prune --force --filter dangling=true`. Set
   `DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE=0` to opt out for a specific
   host/run.
+- Normal post-build cleanup should keep warm BuildKit state bounded instead of
+  deleting it all. Leave `DOCKER_WEB_BUILDKIT_PRUNE_MODE=bounded` unless the
+  build state is disposable, and tune `DOCKER_WEB_BUILDKIT_PRUNE_UNTIL` plus
+  `DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE` before reaching for full prune mode.
+  Docker E2E remains the exception because its project-scoped BuildKit state is
+  intentionally short-lived.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production
   builds are capped.
 - Containerized watcher handoffs must run from the mirrored host checkout path
