@@ -1866,7 +1866,10 @@ test('recoverDownComposeServices starts stopped proxy and Redis services without
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1913,7 +1916,10 @@ test('recoverDownComposeServices includes cloudflared profile from CF_TUNNEL_TOK
     fs.appendFileSync(envFilePath, '\nCF_TUNNEL_TOKEN=cf-tunnel-token\n');
 
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1935,6 +1941,37 @@ test('recoverDownComposeServices includes cloudflared profile from CF_TUNNEL_TOK
   }
 });
 
+test('recoverDownComposeServices skips stale active color without runtime anchor', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-stale-active-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: false,
+        proxyRunning: false,
+        state: 'degraded',
+      },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+      },
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result, null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('recoverDownComposeServices tries cheap recovery for a down active web lane', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-service-recovery-web-')
@@ -1948,7 +1985,10 @@ test('recoverDownComposeServices tries cheap recovery for a down active web lane
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        proxyRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1988,7 +2028,10 @@ test('recoverDownComposeServices force-recreates unhealthy services', async () =
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -2023,7 +2066,10 @@ test('recoverDownComposeServices waits instead of restarting starting services',
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -2059,7 +2105,10 @@ test('recoverDownComposeServices logs failures without deployment history rows',
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,

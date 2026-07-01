@@ -3366,6 +3366,24 @@ function getSteadyStateRecoveryComposeGlobalArgs(env = {}) {
   return composeGlobalArgs;
 }
 
+function hasSteadyStateRecoveryAnchor(currentBlueGreen) {
+  if (!currentBlueGreen || currentBlueGreen.state === 'idle') {
+    return false;
+  }
+
+  if (
+    currentBlueGreen.proxyRunning ||
+    currentBlueGreen.activeServiceRunning ||
+    currentBlueGreen.serviceContainers?.proxy
+  ) {
+    return true;
+  }
+
+  return Array.isArray(currentBlueGreen.liveColors)
+    ? currentBlueGreen.liveColors.length > 0
+    : false;
+}
+
 function normalizeComposeServiceStatus(status) {
   return String(status ?? '')
     .trim()
@@ -3388,7 +3406,7 @@ function getSteadyStateRecoveryServices({
 } = {}) {
   const activeColor = currentBlueGreen?.activeColor;
 
-  if (!activeColor) {
+  if (!activeColor || !hasSteadyStateRecoveryAnchor(currentBlueGreen)) {
     return [];
   }
 
