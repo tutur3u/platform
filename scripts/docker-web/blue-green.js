@@ -2283,6 +2283,10 @@ async function buildBlueGreenServices({
         continue;
       }
 
+      if (useNativeWebBuild && !isNativeWebSupportBuildEnabled(buildEnv)) {
+        continue;
+      }
+
       const useBuildxBake =
         buildStrategy === 'bake' &&
         (!useNativeWebBuild || isNativeWebSupportBuildxEnabled(buildEnv));
@@ -2702,6 +2706,13 @@ function getNativeWebRunnerDockerBuildEnv(env = {}) {
 
 function isNativeWebSupportBuildxEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILDX);
+}
+
+function isNativeWebSupportBuildEnabled(env = {}) {
+  return (
+    isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILD) ||
+    isNativeWebSupportBuildxEnabled(env)
+  );
 }
 
 function getHostTotalMemoryBuildValue(osImpl = os) {
@@ -4638,6 +4649,7 @@ module.exports = {
   isBlueGreenColor,
   isNativeWebBuildEnabled,
   isNativeWebRunnerBuildxEnabled,
+  isNativeWebSupportBuildEnabled,
   isNativeWebSupportBuildxEnabled,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,

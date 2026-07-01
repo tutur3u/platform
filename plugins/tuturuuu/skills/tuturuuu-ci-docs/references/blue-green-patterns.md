@@ -179,9 +179,11 @@ infrastructure dashboard changes.
   packaging subprocess so a remote BuildKit outage does not affect the native
   fallback. Keep `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` as the explicit opt-in when
   that lightweight packaging step must use the configured Buildx builder.
-  Remaining support-service builds should use local `docker compose build` in
-  native mode unless `DOCKER_WEB_NATIVE_SUPPORT_BUILDX=1` explicitly opts back
-  into the configured Buildx builder.
+  Native mode should skip support-service image builds by default and reuse the
+  existing support images. Use `DOCKER_WEB_NATIVE_SUPPORT_BUILD=1` to build
+  support images locally with `docker compose build`, or
+  `DOCKER_WEB_NATIVE_SUPPORT_BUILDX=1` to opt those builds back into the
+  configured Buildx builder.
 - Containerized watcher handoffs must run from the mirrored host checkout path
   via `PLATFORM_HOST_WORKSPACE_DIR`, not from a container-only path.
 - When production deployment starts from a linked Git worktree, the watcher

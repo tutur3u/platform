@@ -459,10 +459,11 @@ plain `docker build` by default so a remote BuildKit transport failure does not
 block the host-built artifact path. It also strips builder-routing env such as
 `BUILDX_BUILDER` for that packaging subprocess; set
 `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` only when that packaging step must use the
-configured buildx builder. Remaining support-service builds use local
-`docker compose build` in native mode by default; set
-`DOCKER_WEB_NATIVE_SUPPORT_BUILDX=1` only when those support builds should keep
-using the configured buildx builder.
+configured buildx builder. Native mode skips support-service image builds by
+default and reuses the existing support images; set
+`DOCKER_WEB_NATIVE_SUPPORT_BUILD=1` to build support images locally with
+`docker compose build`, or `DOCKER_WEB_NATIVE_SUPPORT_BUILDX=1` when those
+support builds should use the configured buildx builder.
 
 When a production blue/green web image was just built locally with
 `bun serve:web:docker:bg`, Dockerized E2E can reuse that image instead of
