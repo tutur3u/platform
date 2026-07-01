@@ -294,6 +294,7 @@ const DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS = 60_000;
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const WEB_DOCKER_CONTROL_SERVICE = 'web-docker-control';
 const WEB_CRON_RUNNER_SERVICE = 'web-cron-runner';
+const CLOUDFLARED_SERVICE = 'cloudflared';
 const CRON_RUNNER_STALE_DEPENDENCY_SERVICES = [
   WEB_CRON_RUNNER_SERVICE,
   'hive-db-migrate',
@@ -692,6 +693,47 @@ async function runCronRunnerComposeUpWithStaleDependencyRecovery({
   }
 }
 
+async function runCloudflaredComposeUpIfEnabled({
+  env,
+  fsImpl,
+  runCommand: run,
+}) {
+  if (!isTruthyEnvValue(env?.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    return null;
+  }
+
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(env);
+  const proxyContainerId = await getComposeServiceContainerId(
+    BLUE_GREEN_PROXY_SERVICE,
+    {
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+
+  if (!proxyContainerId) {
+    return null;
+  }
+
+  return runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs,
+    env,
+    fsImpl,
+    runCommand: run,
+    services: [CLOUDFLARED_SERVICE],
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      CLOUDFLARED_SERVICE,
+    ],
+  });
+}
+
 async function startBlueGreenWatcherContainer(
   argv,
   {
@@ -800,6 +842,12 @@ async function startBlueGreenWatcherContainer(
   );
 
   await runCronRunnerComposeUpWithStaleDependencyRecovery({
+    env: startupComposeEnv,
+    fsImpl,
+    runCommand: run,
+  });
+
+  await runCloudflaredComposeUpIfEnabled({
     env: startupComposeEnv,
     fsImpl,
     runCommand: run,

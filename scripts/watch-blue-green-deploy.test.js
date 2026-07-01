@@ -1716,6 +1716,14 @@ function prodComposeCronRunnerUpKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --no-recreate --remove-orphans ${WEB_CRON_RUNNER_SERVICE}`;
 }
 
+function prodComposeCloudflaredProxyPsKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared ps -q ${BLUE_GREEN_PROXY_SERVICE}`;
+}
+
+function prodComposeCloudflaredUpKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared up --detach --no-build --remove-orphans cloudflared`;
+}
+
 function prodComposeDockerControlUpKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --force-recreate --remove-orphans ${WEB_DOCKER_CONTROL_SERVICE}`;
 }
@@ -7997,6 +8005,58 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(envs[2].COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(envs[3][HOST_WORKSPACE_DIR_ENV], tempDir);
     assert.equal(envs[3].COMPOSE_PROJECT_NAME, path.basename(tempDir));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer starts cloudflared from root CF_TUNNEL_TOKEN when proxy exists', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-container-cloudflared-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const envs = [];
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      `${LOCAL_SUPABASE_ENV_FILE_CONTENT}CF_TUNNEL_TOKEN=cf-tunnel-token\n`,
+      'utf8'
+    );
+
+    await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+      env: {
+        ...LOCAL_SUPABASE_TEST_ENV,
+        PATH: process.env.PATH,
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+      },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+        envs.push(options.env ?? null);
+
+        if (key === prodComposeCloudflaredProxyPsKey()) {
+          return createResult('web-proxy-container-id\n');
+        }
+
+        return createResult('');
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
+      prodComposeCronRunnerUpKey(),
+      prodComposeCloudflaredProxyPsKey(),
+      prodComposeCloudflaredUpKey(),
+    ]);
+    assert.equal(envs.at(-1).DOCKER_WEB_WITH_CLOUDFLARED, '1');
+    assert.equal(envs.at(-1).CLOUDFLARED_TOKEN, 'cf-tunnel-token');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
