@@ -516,7 +516,31 @@ function readBlueGreenProxyActiveColor(
     return null;
   }
 
-  const config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  try {
+    if (
+      typeof fsImpl.statSync === 'function' &&
+      !fsImpl.statSync(paths.proxyConfigFile).isFile()
+    ) {
+      return null;
+    }
+  } catch (error) {
+    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  let config;
+  try {
+    config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  } catch (error) {
+    if (['EISDIR', 'ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      return null;
+    }
+
+    throw error;
+  }
   const match = config.match(
     /^\s*server\s+(?:web|tanstack-web)-(blue|green):(?:7803|7824)\s+resolve\b(?!.*\bbackup\b).*$/imu
   );
@@ -1525,6 +1549,22 @@ function writeBlueGreenProxyConfig(
   } = {}
 ) {
   ensureBlueGreenRuntime(paths, fsImpl);
+
+  try {
+    if (
+      typeof fsImpl.statSync === 'function' &&
+      typeof fsImpl.rmSync === 'function' &&
+      fsImpl.existsSync(paths.proxyConfigFile) &&
+      fsImpl.statSync(paths.proxyConfigFile).isDirectory()
+    ) {
+      fsImpl.rmSync(paths.proxyConfigFile, { force: true, recursive: true });
+    }
+  } catch (error) {
+    if (!['ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      throw error;
+    }
+  }
+
   fsImpl.writeFileSync(
     paths.proxyConfigFile,
     renderBlueGreenProxyConfig(color, {

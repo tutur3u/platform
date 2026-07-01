@@ -55,6 +55,7 @@ const {
   runDockerWebWorkflow,
   usesBlueGreenStrategy,
   writeBlueGreenActiveColor,
+  writeBlueGreenProxyConfig,
 } = require('./docker-web.js');
 const {
   buildBlueGreenServices,
@@ -1279,6 +1280,39 @@ test('readBlueGreenProxyActiveColor recovers the primary lane from nginx config'
     );
 
     assert.equal(readBlueGreenProxyActiveColor(paths), 'green');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('readBlueGreenProxyActiveColor ignores a stale proxy config directory', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-proxy-active-dir-')
+  );
+  const paths = getBlueGreenPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.proxyConfigFile, { recursive: true });
+
+    assert.equal(readBlueGreenProxyActiveColor(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('writeBlueGreenProxyConfig replaces a stale proxy config directory', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-proxy-config-dir-')
+  );
+  const paths = getBlueGreenPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.proxyConfigFile, { recursive: true });
+
+    writeBlueGreenProxyConfig('blue', { paths, standbyColor: 'green' });
+
+    assert.equal(fs.statSync(paths.proxyConfigFile).isFile(), true);
+    assert.equal(readBlueGreenProxyActiveColor(paths), 'blue');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
