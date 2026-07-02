@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/inventory-v0.9.0...inventory-v0.9.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/inventory-v0.8.0...inventory-v0.9.0) (2026-06-29)
 
 
