@@ -51,6 +51,7 @@ const {
   getReusableWebImageSource,
   getReusableWebImageTargets,
   getE2EDockerNativeBuildValue,
+  getE2EDockerNativeSupportBuildValue,
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
@@ -151,6 +152,23 @@ test('getE2EDockerNativeBuildValue defaults E2E to host-built web artifacts', ()
     getE2EDockerNativeBuildValue({
       DOCKER_WEB_NATIVE_BUILD: '0',
       E2E_DOCKER_NATIVE_BUILD: '1',
+    }),
+    '1'
+  );
+});
+
+test('getE2EDockerNativeSupportBuildValue builds support images on clean runners by default', () => {
+  assert.equal(getE2EDockerNativeSupportBuildValue({}), '1');
+  assert.equal(
+    getE2EDockerNativeSupportBuildValue({
+      DOCKER_WEB_NATIVE_SUPPORT_BUILD: '0',
+    }),
+    '0'
+  );
+  assert.equal(
+    getE2EDockerNativeSupportBuildValue({
+      DOCKER_WEB_NATIVE_SUPPORT_BUILD: '0',
+      E2E_DOCKER_NATIVE_SUPPORT_BUILD: '1',
     }),
     '1'
   );
