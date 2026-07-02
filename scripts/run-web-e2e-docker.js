@@ -139,6 +139,14 @@ function getE2EDockerNativeBuildValue(env = process.env) {
   );
 }
 
+function getE2EDockerNativeSupportBuildValue(env = process.env) {
+  return (
+    env.E2E_DOCKER_NATIVE_SUPPORT_BUILD ??
+    env.DOCKER_WEB_NATIVE_SUPPORT_BUILD ??
+    '1'
+  );
+}
+
 function getDockerWebDownArgs(
   envFilePath,
   env = process.env,
@@ -1866,6 +1874,9 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     DOCKER_WEB_BUILDKIT_PRUNE_MODE:
       process.env.E2E_DOCKER_BUILDKIT_PRUNE_MODE ?? 'all',
     DOCKER_WEB_NATIVE_BUILD: getE2EDockerNativeBuildValue(process.env),
+    DOCKER_WEB_NATIVE_SUPPORT_BUILD: getE2EDockerNativeSupportBuildValue(
+      process.env
+    ),
     DOCKER_WEB_SUPABASE_START_EXCLUDE:
       process.env.DOCKER_WEB_SUPABASE_START_EXCLUDE ??
       process.env.E2E_SUPABASE_START_EXCLUDE ??
@@ -2027,6 +2038,7 @@ module.exports = {
   getPortlessCommandEnv,
   getDockerComposeDiagnosticArgs,
   getE2EDockerNativeBuildValue,
+  getE2EDockerNativeSupportBuildValue,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
   getE2EDiagnosticLogTail,
