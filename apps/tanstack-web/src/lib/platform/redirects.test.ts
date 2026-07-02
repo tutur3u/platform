@@ -66,8 +66,9 @@ describe('public redirect helpers', () => {
     expect(workspaceTopicAnnouncementsRedirectHref('ws-1')).toBe(
       '/ws-1/users/topic-announcements/announcements'
     );
+    vi.stubEnv('INFRA_APP_URL', 'https://infra.example.com');
     expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
-      '/ws-1/infrastructure/app-coordination'
+      'https://infra.example.com/ws-1/app-coordination'
     );
   });
 

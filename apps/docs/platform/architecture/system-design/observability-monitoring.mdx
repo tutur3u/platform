@@ -157,7 +157,7 @@ external job.
 ### Querying logs
 
 Logs are read back through the internal observability API under
-`apps/web/src/app/api/v1/infrastructure/observability/*` (for example `logs`,
+`apps/infrastructure/src/app/api/v1/infrastructure/observability/*` (for example `logs`,
 `requests`, `cron-runs`, `deployments`, `overview`, `resources`, `analytics`),
 which power the in-app infrastructure/observability dashboard. There is no
 third-party log platform (no Datadog/ELK) in the loop.

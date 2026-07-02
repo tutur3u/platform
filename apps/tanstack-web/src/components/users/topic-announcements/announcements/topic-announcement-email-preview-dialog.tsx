@@ -18,7 +18,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
-import { EmailHtmlViewer } from '@/components/infrastructure/email-templates/email-html-viewer';
+import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
 import type { PreviewableTopicAnnouncementAttachment } from '../announcement-attachment-types';
 import { toTopicAnnouncementAttachmentDraft } from '../announcement-attachment-types';
 import {

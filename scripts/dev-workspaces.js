@@ -50,8 +50,14 @@ const DEV_TARGETS = Object.freeze({
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
   infra: {
-    apps: ['infra', 'web'],
-    shared: ['@tuturuuu/types', '@tuturuuu/internal-api'],
+    apps: ['infrastructure'],
+    shared: [
+      '@tuturuuu/types',
+      '@tuturuuu/supabase',
+      '@tuturuuu/internal-api',
+      '@tuturuuu/ui',
+      '@tuturuuu/ai',
+    ],
   },
   hive: {
     apps: ['hive-realtime', 'hive', 'web'],

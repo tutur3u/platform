@@ -229,10 +229,9 @@ to the generic login form.
 App-session and external app bearer tokens are signed with
 `TUTURUUU_APP_COORDINATION_SECRET`.
 
-Token lifetimes are configured from the root workspace Infrastructure page at
-`/{wsId}/infrastructure/app-coordination`; the older
-`/{wsId}/settings/infrastructure/app-coordination` path redirects there. The
-policy is stored in
+Token lifetimes are configured from the root workspace Infrastructure app at
+`/{wsId}/app-coordination` on `INFRA_APP_URL`. The older web and TanStack
+infrastructure routes are removed rather than redirected. The policy is stored in
 `workspace_secrets` on `ROOT_WORKSPACE_ID` as
 `APP_COORDINATION_SESSION_POLICY` and cached in process for at most 60 seconds
 on auth paths. Defaults and caps are:

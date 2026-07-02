@@ -4,11 +4,13 @@ import {
 } from '@tuturuuu/auth/app-coordination';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import {
   getPermissions,
   type PermissionsResult,
@@ -136,7 +138,7 @@ const MANAGED_CRON_OPERATION_FAILURE_CODES: Record<
   status: 'MANAGED_CRON_STATUS_CHECK_FAILED',
 };
 const MANAGED_CRON_ADMIN_RECOVERY_PATH =
-  '/vi/internal/infrastructure/monitoring/cron?focus=cron-runner';
+  '/vi/internal/monitoring/cron?focus=cron-runner';
 
 type ManagedCronFailure = {
   code: string;
@@ -349,19 +351,17 @@ function managedCronFailureResponse({
   access,
   error,
   operation,
-  request,
   route,
   wsId,
 }: {
   access?: ExternalAppWorkspaceCronAccess | null;
   error: unknown;
   operation: ManagedCronOperation;
-  request: Request;
   route: string;
   wsId: string;
 }) {
   const failure = managedCronFailureForOperation(operation, error);
-  const adminRecoveryHref = buildManagedCronAdminRecoveryHref(request);
+  const adminRecoveryHref = buildManagedCronAdminRecoveryHref();
 
   serverLogger.error('External app managed cron operation failed', {
     code: failure.code,
@@ -392,8 +392,23 @@ function managedCronFailureResponse({
   );
 }
 
-function buildManagedCronAdminRecoveryHref(request: Request) {
-  return new URL(MANAGED_CRON_ADMIN_RECOVERY_PATH, request.url).toString();
+function buildManagedCronAdminRecoveryHref() {
+  const infraOrigin = resolveInternalAppUrl({
+    appName: 'infra',
+    candidates: [
+      process.env.INFRA_APP_URL,
+      process.env.NEXT_PUBLIC_INFRA_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://infra.tuturuuu.com'
+        : getLocalInternalAppUrl('infra', 'http://localhost:7823'),
+  });
+
+  return new URL(
+    MANAGED_CRON_ADMIN_RECOVERY_PATH,
+    `${infraOrigin}/`
+  ).toString();
 }
 
 function isWorkspaceHandleCandidate(value: string) {
@@ -591,7 +606,6 @@ export async function handleExternalAppWorkspaceCronRoute({
         access,
         error,
         operation,
-        request,
         route,
         wsId,
       });

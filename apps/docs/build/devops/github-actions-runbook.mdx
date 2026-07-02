@@ -537,7 +537,7 @@ The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
 environment restricted to the `production` branch and store only
 `MOBILE_DEPLOYMENT_CI_TOKEN` there. Mobile signing, Firebase, store API, and
 build-time secrets live in the root workspace mobile deployment vault at
-`/internal/infrastructure/mobile-deployment` and require
+`/internal/mobile-deployment` on the infra app and require
 `manage_mobile_deployment_vault`. Manage non-file values in the vault's
 **Secrets** panel, then use the vault's Verify action before activating the draft. Legacy
 base64 file payload env keys are intentionally blocked; Firebase, signing, and

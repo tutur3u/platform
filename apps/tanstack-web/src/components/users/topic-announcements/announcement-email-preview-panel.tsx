@@ -6,7 +6,7 @@ import { previewTopicAnnouncementEmail } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { EmailHtmlViewer } from '@/components/infrastructure/email-templates/email-html-viewer';
+import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
 import {
   buildTopicAnnouncementPreviewPayload,
   type TopicAnnouncementPreviewData,

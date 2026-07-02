@@ -1226,8 +1226,8 @@ archive as soon as it detects failed or timed-out Docker probes. If Docker had
 to be restarted before services recovered, the watcher sends an immediate
 force-restart recovery email to the configured recovery recipients and records
 that incident as notified. If the watcher-side email is disabled or fails, the
-web cron job `/api/cron/infrastructure/docker-recovery-alerts` can still send a
-fallback SES email after Docker and the web app are reachable again. Both paths
+infra app cron job `/api/cron/infrastructure/docker-recovery-alerts` can still
+send a fallback SES email after Docker and the infra app are reachable again. Both paths
 deduplicate by Docker recovery incident id using
 `tmp/docker-web/watch/control/blue-green-docker-recovery-alert-state.json`.
 
@@ -1397,20 +1397,20 @@ deployment kind, and a re-entrant token for nested helper calls).
 
 ### Monitoring Surfaces
 
-The infrastructure monitoring UI in `apps/web` is intentionally split into
-smaller pages instead of one oversized dashboard:
+The infrastructure monitoring UI in `apps/infrastructure` is intentionally split
+into smaller pages instead of one oversized dashboard:
 
-- `/{wsId}/infrastructure/monitoring` for the operator overview, runtime
+- `/{wsId}/monitoring` for the operator overview, runtime
   snapshot, cron health summary, and jump points into deeper surfaces.
-- `/{wsId}/infrastructure/monitoring/cron` for cron job schedules, global
+- `/{wsId}/monitoring/cron` for cron job schedules, global
   enable/disable control, manual run requests, recent execution status, route
   responses, and captured web-container console logs.
-- `/{wsId}/infrastructure/monitoring/rollouts` for rollout controls, deployment
+- `/{wsId}/monitoring/rollouts` for rollout controls, deployment
   charts, event streams, and ledger history.
-- `/{wsId}/infrastructure/monitoring/requests` for paginated proxy request
+- `/{wsId}/monitoring/requests` for paginated proxy request
   history backed by the durable JSONL request store under
   `tmp/docker-web/watch/blue-green-request-logs/`.
-- `/{wsId}/infrastructure/monitoring/watcher-logs` for paginated watcher log
+- `/{wsId}/monitoring/watcher-logs` for paginated watcher log
   browsing backed by `tmp/docker-web/watch/blue-green-auto-deploy.logs.json`.
 
 Operationally, keep the overview route lightweight and treat request/log

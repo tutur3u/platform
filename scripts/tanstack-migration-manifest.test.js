@@ -472,6 +472,32 @@ test('route overrides reject unsupported ownership values', () => {
   );
 });
 
+test('route overrides allow documented accepted removals outside web inventory', () => {
+  const { appDir, rootDir } = makeTempFixture();
+  const removedRouteId =
+    'api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts';
+
+  const manifest = inventoryNextAppRoutes({
+    appDir,
+    rootDir,
+    routeOverrides: new Map([
+      [
+        removedRouteId,
+        {
+          note: 'Moved to apps/infrastructure during infrastructure app extraction.',
+          status: 'accepted-removal',
+          targetOwner: 'infrastructure-app',
+        },
+      ],
+    ]),
+  });
+
+  assert.equal(
+    manifest.routes.some((route) => route.id === removedRouteId),
+    false
+  );
+});
+
 test('route overrides reject unknown method ownership', () => {
   const { appDir, rootDir } = makeTempFixture();
   const routeId = 'api:/api/health:apps/web/src/app/api/health/route.ts';
@@ -931,13 +957,22 @@ test('TanStack models route stays terminal across Rust API and Start page', () =
       'utf8'
     )
   );
+  const overrides = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        rootDir,
+        'apps',
+        'tanstack-web',
+        'migration',
+        'route-overrides.json'
+      ),
+      'utf8'
+    )
+  );
   const routes = new Map(manifest.routes.map((route) => [route.id, route]));
+  const removedModelApiRoute =
+    'api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts';
   const terminalModelRoutes = [
-    {
-      id: 'api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts',
-      methods: ['GET'],
-      targetOwner: 'rust-backend',
-    },
     {
       id: 'page:/:locale/models:apps/web/src/app/[locale]/(marketing)/models/page.tsx',
       methods: [],
@@ -953,4 +988,13 @@ test('TanStack models route stays terminal across Rust API and Start page', () =
     assert.equal(route.targetOwner, expected.targetOwner);
     assert.deepEqual(route.methods, expected.methods);
   }
+
+  assert.equal(
+    overrides.routes[removedModelApiRoute].status,
+    'accepted-removal'
+  );
+  assert.equal(
+    overrides.routes[removedModelApiRoute].targetOwner,
+    'infrastructure-app'
+  );
 });

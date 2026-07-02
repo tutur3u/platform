@@ -15,7 +15,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import MigrationDashboard from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/migrations/migration-dashboard';
 import PlatformBillingPage from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/billing/page';
 import SecretForm from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/form';
 import {
@@ -41,7 +40,6 @@ export const WORKSPACE_ADMIN_NATIVE_TABS = new Set([
   'api_keys',
   'inquiries',
   'integrations',
-  'migrations',
   'platform_billing',
   'platform_roles',
   'secrets',
@@ -68,7 +66,6 @@ export function WorkspaceAdminNativeSettingsPanels({
         <IntegrationsNativePanel setActiveTab={setActiveTab} />
       )}
       {activeTab === 'inquiries' && <InquiriesNativePanel />}
-      {activeTab === 'migrations' && <MigrationDashboard wsId={wsId} />}
       {activeTab === 'platform_roles' && <PlatformRolesNativePanel />}
       {activeTab === 'platform_billing' && <PlatformBillingPage />}
     </NativePanelFrame>

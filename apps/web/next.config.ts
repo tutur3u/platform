@@ -36,18 +36,11 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
   isDockerStandaloneBuild && !isNativeDockerStandaloneBuild ? 4 : undefined
 );
-const cronMonitoringTraceIncludes = {
-  '/api/v1/infrastructure/monitoring/cron': ['./cron.config.json'],
-  '/api/v1/infrastructure/monitoring/cron/**': ['./cron.config.json'],
-};
 const nextConfig = createTuturuuuNextConfig({
   ...serwistConfig,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
-  outputFileTracingIncludes: {
-    ...(serwistConfig.outputFileTracingIncludes ?? {}),
-    ...cronMonitoringTraceIncludes,
-  },
+  outputFileTracingIncludes: serwistConfig.outputFileTracingIncludes,
   reactCompiler: true,
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {

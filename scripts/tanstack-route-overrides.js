@@ -5,7 +5,11 @@ const VALID_ROUTE_STATUSES = new Set([
   'legacy-next',
   'migrated',
 ]);
-const VALID_TARGET_OWNERS = new Set(['rust-backend', 'tanstack-start']);
+const VALID_TARGET_OWNERS = new Set([
+  'infrastructure-app',
+  'rust-backend',
+  'tanstack-start',
+]);
 const TERMINAL_ROUTE_STATUSES = new Set(['accepted-removal', 'migrated']);
 
 function readRouteOverrides(overridesPath, fsImpl = fs) {
@@ -23,6 +27,10 @@ function hasEvidenceNote(override) {
   return typeof override?.note === 'string' && override.note.trim().length > 0;
 }
 
+function isAcceptedRemovalOverride(override) {
+  return override?.status === 'accepted-removal';
+}
+
 function applyRouteOverrides(routes, overrides = new Map()) {
   if (overrides.size === 0) {
     return routes;
@@ -35,6 +43,25 @@ function applyRouteOverrides(routes, overrides = new Map()) {
     const route = routesById.get(routeId);
 
     if (!route) {
+      if (isAcceptedRemovalOverride(override)) {
+        if (!hasEvidenceNote(override)) {
+          errors.push(
+            `Route override ${routeId} with status accepted-removal must include a non-empty note.`
+          );
+        }
+
+        if (
+          override.targetOwner &&
+          !VALID_TARGET_OWNERS.has(override.targetOwner)
+        ) {
+          errors.push(
+            `Route override ${routeId} has unsupported targetOwner: ${override.targetOwner}`
+          );
+        }
+
+        continue;
+      }
+
       errors.push(`Route override references an unknown route: ${routeId}`);
       continue;
     }

@@ -10,7 +10,7 @@
   "apps/finance": "0.10.0",
   "apps/hive": "0.4.0",
   "apps/hive-realtime": "0.3.0",
-  "apps/infra": "0.2.0",
+  "apps/infrastructure": "0.2.0",
   "apps/inventory": "0.9.0",
   "apps/learn": "0.4.0",
   "apps/mail": "0.2.0",

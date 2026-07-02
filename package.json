@@ -173,7 +173,7 @@
     "type-check:drive": "bun turbo:local run type-check -F @tuturuuu/drive",
     "type-check:mail": "bun turbo:local run type-check -F @tuturuuu/mail",
     "type-check:finance": "bun turbo:local run type-check -F @tuturuuu/finance",
-    "type-check:infra": "bun turbo:local run type-check -F @tuturuuu/infra",
+    "type-check:infra": "bun turbo:local run type-check -F @tuturuuu/infrastructure",
     "type-check:inventory": "bun turbo:local run type-check -F @tuturuuu/inventory",
     "type-check:storefront": "bun turbo:local run type-check -F @tuturuuu/storefront",
     "type-check:nova": "bun turbo:local run type-check -F @tuturuuu/nova",

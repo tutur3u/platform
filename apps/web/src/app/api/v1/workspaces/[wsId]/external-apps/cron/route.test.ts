@@ -143,6 +143,7 @@ function expectNoSensitiveDiagnostics(body: unknown) {
 describe('external app managed cron routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('INFRA_APP_URL', 'https://infra.example.com');
     mocks.getBearerAppCoordinationToken.mockReturnValue('app-token');
     mocks.verifyAppCoordinationToken.mockReturnValue({
       claims: {
@@ -183,7 +184,7 @@ describe('external app managed cron routes', () => {
     expect(response.status).toBe(503);
     expect(body).toMatchObject({
       adminRecoveryHref:
-        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
+        'https://infra.example.com/vi/internal/monitoring/cron?focus=cron-runner',
       adminRecoveryReason:
         'Managed cron Supabase admin access is unavailable. Configure Supabase service-role access for Tuturuuu, then retry.',
       code: 'MANAGED_CRON_SUPABASE_ADMIN_UNAVAILABLE',
@@ -220,7 +221,7 @@ describe('external app managed cron routes', () => {
     expect(response.status).toBe(503);
     expect(body).toMatchObject({
       adminRecoveryHref:
-        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
+        'https://infra.example.com/vi/internal/monitoring/cron?focus=cron-runner',
       code: 'MANAGED_CRON_SCHEMA_NOT_READY',
       configured: false,
       developerDebug: {
@@ -250,7 +251,7 @@ describe('external app managed cron routes', () => {
     expect(response.status).toBe(503);
     expect(body).toMatchObject({
       adminRecoveryHref:
-        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
+        'https://infra.example.com/vi/internal/monitoring/cron?focus=cron-runner',
       code: 'MANAGED_CRON_SCHEMA_NOT_READY',
       configured: false,
       developerDebug: {
@@ -359,7 +360,7 @@ describe('external app managed cron routes', () => {
     expect(response.status).toBe(500);
     expect(body).toMatchObject({
       adminRecoveryHref:
-        'https://tuturuuu.com/vi/internal/infrastructure/monitoring/cron?focus=cron-runner',
+        'https://infra.example.com/vi/internal/monitoring/cron?focus=cron-runner',
       code: 'MANAGED_CRON_STATUS_CHECK_FAILED',
       configured: false,
       developerDebug: {

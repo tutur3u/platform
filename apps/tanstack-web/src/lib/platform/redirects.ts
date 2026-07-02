@@ -63,7 +63,10 @@ export function workspaceTopicAnnouncementsRedirectHref(wsId: string) {
 export function workspaceInfrastructureAppCoordinationRedirectHref(
   wsId: string
 ) {
-  return `/${wsId}/infrastructure/app-coordination`;
+  return new URL(
+    `/${wsId}/app-coordination`,
+    `${getInfraAppOrigin()}/`
+  ).toString();
 }
 
 export function buildFinanceRedirectHref(
@@ -237,6 +240,20 @@ export function getCmsAppOrigin() {
       process.env.NODE_ENV === 'production'
         ? 'https://cms.tuturuuu.com'
         : getLocalInternalAppUrl('cms', 'http://localhost:7811'),
+  });
+}
+
+export function getInfraAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'infra',
+    candidates: [
+      process.env.INFRA_APP_URL,
+      process.env.NEXT_PUBLIC_INFRA_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://infra.tuturuuu.com'
+        : getLocalInternalAppUrl('infra', 'http://localhost:7823'),
   });
 }
 

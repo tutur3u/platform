@@ -160,60 +160,24 @@
       "note": "Rust backend handle_backend_request handles GET /api/v1/ai/whitelist/me by preserving the legacy app-session-first auth behavior for satellite app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only the enabled flag for the authenticated email from private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the derived legacy email/enabled payload."
     },
     "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body."
-        },
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/ai/whitelist/domains by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, preserving the legacy Zod-style payload validation message, trimming domain and optional description fields, defaulting enabled to true, inserting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and returning the legacy 201 data wrapper or plain-text 500 body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/ai/whitelist/domain/:domain:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts": {
-      "methods": {
-        "PUT": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, applying legacy Boolean(enabled) truthiness, patching private.ai_whitelisted_domains.enabled through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body."
-        },
-        "DELETE": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/domain/:domain by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the domain path segment, deleting private.ai_whitelisted_domains through the server-owned private-schema REST adapter, and preserving the legacy success body, 403 denial body, and plain-text 500 body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, reading private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy page/pageSize/q query behavior, created_at descending order, exact-count pagination, raw row list response, 403 denial body, and plain-text 500 body."
-        },
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/ai/whitelist/emails by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, preserving the legacy Zod-style payload validation message, defaulting enabled to true, inserting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the legacy 201 data wrapper or plain-text 500 body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/ai/whitelist/:email:apps/web/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts": {
-      "methods": {
-        "PUT": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, applying legacy Boolean(enabled) truthiness, patching private.ai_whitelisted_emails.enabled through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body."
-        },
-        "DELETE": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/ai/whitelist/:email by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring a @tuturuuu.com operator email, decoding the email path segment, deleting private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and preserving the legacy success body, empty-email validation body, 403 denial body, and JSON 500 body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/users/me/hive-access:apps/web/src/app/api/v1/users/me/hive-access/route.ts": {
       "status": "migrated",
@@ -298,47 +262,24 @@
       }
     },
     "api:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, published/category filters, published_at/created_at ordering, exact-count pagination, no-store JSON responses, and the legacy 500 error body."
-        },
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles POST /api/v1/infrastructure/changelog through the caller-token Supabase REST adapter, preserving manage_changelog authorization, Zod-compatible payload validation, slug normalization, duplicate-slug 409 mapping, creator_id assignment, no-store JSON responses, and the legacy create/error response bodies."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/:id through the server-owned Supabase REST adapter, preserving admin draft access, anonymous/unauthorized published-only fallback, singular PostgREST response handling, PGRST116-to-404 mapping, no-store JSON responses, and the legacy 404/500 JSON error body."
-        },
-        "PUT": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles PUT /api/v1/infrastructure/changelog/:id through the caller-token Supabase REST adapter, preserving manage_changelog authorization, existing-entry lookup before update, optional-field validation, slug normalization, duplicate-slug 409 mapping, no-store JSON responses, and the legacy update/error response bodies."
-        },
-        "DELETE": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles DELETE /api/v1/infrastructure/changelog/:id through the caller-token Supabase REST adapter, preserving manage_changelog authorization, existing-entry lookup before delete, no-store JSON responses, and the legacy delete success/not-found/error bodies."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/changelog/:id/publish:apps/web/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles POST /api/v1/infrastructure/changelog/:id/publish through the caller-token Supabase REST adapter, preserving manage_changelog authorization, is_published validation, existing-entry lookup before update, published_at preservation for already-published entries, unpublish nulling, no-store JSON responses, and the legacy publish/error response bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/changelog/slug/:slug:apps/web/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/changelog/slug/:slug through the server-owned Supabase REST adapter, preserving the public published-only changelog lookup by slug, non-null published_at filter, PostgREST single-row response, and legacy 404/500 JSON error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/inventory/orders/:publicToken:apps/web/src/app/api/v1/inventory/orders/[publicToken]/route.ts": {
       "status": "migrated",
@@ -371,9 +312,9 @@
       "note": "Rust backend handle_backend_request proxies GET /api/cron/discord/wol/daily/remind to DISCORD_APP_DEPLOYMENT_URL/wol-reminder with cron bearer auth, upstream JSON/status passthrough, and the legacy invalid-JSON fallback."
     },
     "api:/api/v1/infrastructure/migrate/grouped-score-names:apps/web/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request handles the disabled PUT migration endpoint with the legacy dev-mode guard and 410 MIGRATION_DISABLED response."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/app/api/workspaces/[wsId]/products/categories/migrate/route.ts": {
       "status": "accepted-removal",
@@ -426,29 +367,29 @@
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy API-key GET migration export helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy broad Supabase admin export path is intentionally not preserved for Cloudflare cutover; use maintained database exports or local backfill scripts instead."
     },
     "api:/api/v1/infrastructure/languages:apps/web/src/app/api/v1/infrastructure/languages/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request handles POST/DELETE locale preference cookie updates with the legacy validation messages and NEXT_LOCALE cookie behavior."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/sidebar:apps/web/src/app/api/v1/infrastructure/sidebar/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request handles POST/DELETE sidebar collapsed preference cookie updates with the legacy validation message and sidebar-collapsed cookie behavior."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/sidebar/sizes:apps/web/src/app/api/v1/infrastructure/sidebar/sizes/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request handles POST/DELETE sidebar sizing preference cookies, including the legacy DELETE behavior that clears only sidebar-size."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/users/fields/types:apps/web/src/app/api/v1/infrastructure/users/fields/types/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request handles GET /api/v1/infrastructure/users/fields/types with the deterministic legacy field type payload and no longer opens a Supabase admin client for static metadata."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/infrastructure/ai/models through the server-owned Supabase REST adapter, preserving private.ai_gateway_models reads with Accept-Profile/Content-Profile private headers, the fixed public column list, default language type filtering, provider/tag/enabled/search/ids filters, exact-count pagination, capped ID filters, no-store JSON responses, and the legacy 500 error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
       "methods": {
@@ -646,242 +587,174 @@
       }
     },
     "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/abuse-intelligence by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace view_infrastructure through the shared workspace permission helper, reading abuse_reputation_subjects, abuse_activity_signals, and abuse_step_up_challenges with caller-token Supabase REST, reading active abuse_trust_overrides with the service-role Supabase adapter, and preserving the legacy limit/signalLimit parsing, summary, topRiskySubjects sorting, and legacy auth/error bodies. POST remains legacy-owned until trust override mutations move to Rust."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/abuse-events:apps/web/src/app/api/v1/infrastructure/abuse-events/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/abuse-events by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, reading abuse_events with caller-token Supabase REST, and preserving the legacy ip/type/success filters, page/pageSize parseInt-style range behavior, exact-count pagination, raw row list response shape, and legacy auth/error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/blocked-ips by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, reading blocked_ips with the legacy unblocked_by_user embed, and preserving the legacy status/ip filters, page/pageSize parseInt-style range behavior, exact-count pagination, raw row list response shape, and legacy auth/error bodies. POST/DELETE remain legacy-owned until Redis cache mutation parity moves to Rust."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/suspensions by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace manage_workspace_roles through has_workspace_permission with the caller token, reading active user_suspensions rows through the service-role Supabase REST adapter, and preserving the legacy raw array success body plus Unauthorized, Forbidden, and Failed to fetch suspensions error bodies. POST remains legacy-owned until suspension mutations move to Rust."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/classes:apps/web/src/app/api/v1/infrastructure/classes/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/classes through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/lessons:apps/web/src/app/api/v1/infrastructure/lessons/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/lessons by preserving the legacy no-auth service-role export contract, reading private.user_group_posts with the workspace_user_groups inner ws_id filter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and Error fetching user_group_posts body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/mobile-versions by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading the fixed root workspace mobile policy config IDs through the server-owned Supabase REST adapter, validating legacy policy invariants, and returning the legacy admin policy snapshot."
-        },
-        "PUT": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/mobile-versions by reusing the root workspace manage_workspace_roles gate, validating and normalizing the legacy mobile policy payload, upserting the nine root workspace policy config rows through the server-owned Supabase REST adapter, and preserving the legacy success, invalid body, invalid policy, and save failure response bodies."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/packages:apps/web/src/app/api/v1/infrastructure/packages/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/packages by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring the view_inventory workspace permission through the shared workspace permission resolver, reading workspace_products through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/post-email-queue:apps/web/src/app/api/v1/infrastructure/post-email-queue/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/post-email-queue by revalidating a normal Supabase browser session or non-app-session Bearer token, requiring root workspace membership, reading post_email_queue through the service-role Supabase REST adapter, preserving the legacy queue status, workspace, and recent batch aggregation shape, keeping workspace and batch breakdown read failures non-fatal, and returning the legacy summary error body when the primary queue status read fails."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/product-categories:apps/web/src/app/api/v1/infrastructure/product-categories/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-categories through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so product_categories RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/product-prices:apps/web/src/app/api/v1/infrastructure/product-prices/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-prices by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_products through the service-role Supabase REST adapter with the workspace_products inner workspace filter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/product-units:apps/web/src/app/api/v1/infrastructure/product-units/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/product-units by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_units through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/score-names:apps/web/src/app/api/v1/infrastructure/score-names/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/score-names through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so user_group_metrics RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bills through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so finance_invoices RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/roles through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so workspace_user_groups RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/transaction-categories through the shared caller-token paginated export helper, forwarding a normal Supabase browser session or non-app-session Bearer token to Supabase REST so transaction_categories RLS remains active while preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/warehouses:apps/web/src/app/api/v1/infrastructure/warehouses/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/warehouses by accepting inventory app-session credentials or normal Supabase browser/non-app-session Bearer credentials, normalizing the requested workspace, requiring inventory catalog/setup read permissions, reading private.inventory_warehouses through the service-role Supabase REST adapter, and preserving the legacy required ws_id parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy auth/error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate through caller-token Supabase REST reads, and returning the legacy ordered email_blacklist row array."
-        },
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/email-blacklist by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the root workspace membership gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 Forbidden, validating the legacy Zod-shaped entry_type/value/reason payload, preserving the shared email/domain blacklist regex behavior, inserting email_blacklist rows with added_by_user_id from the revalidated caller through caller-token Supabase REST, mapping PostgREST 23505 duplicates to 409, and returning the inserted raw row with status 201."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate quirk where non-root authenticated callers receive 401, reading the singular email_blacklist row with caller-token Supabase REST, and mapping PGRST116 to the legacy 404 body."
-        },
-        "PUT": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns PUT /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy detail-route root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 Unauthorized, validating the legacy Zod-shaped optional reason payload, prefetching the singular email_blacklist row before update, mapping prefetch misses and errors to the legacy Email blacklist entry not found body, updating with the caller token, and returning the updated raw row."
-        },
-        "DELETE": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns DELETE /api/v1/infrastructure/email-blacklist/:entryId by revalidating a normal Supabase browser session or non-app-session Bearer token, preserving the legacy root workspace gate where unauthenticated callers receive 401 and authenticated non-root callers receive 403 with the Unauthorized body, prefetching the singular email_blacklist row with caller-token Supabase REST, mapping prefetch misses and errors to the legacy Email blacklist entry not found body, deleting with the caller token, and returning the legacy Entry deleted successfully body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/bill-coupons:apps/web/src/app/api/v1/infrastructure/bill-coupons/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bill-coupons through the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/bill-packages:apps/web/src/app/api/v1/infrastructure/bill-packages/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/bill-packages through the shared caller-token paginated export helper with the legacy finance_invoices inner select and finance_invoices.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/class-attendance:apps/web/src/app/api/v1/infrastructure/class-attendance/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-attendance through the shared caller-token paginated export helper with the legacy workspace_user_groups!user_group_attendance_group_id_fkey inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/class-members:apps/web/src/app/api/v1/infrastructure/class-members/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-members through the shared caller-token paginated export helper with the legacy workspace_user_groups!workspace_user_roles_users_role_id_fkey inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/class-packages:apps/web/src/app/api/v1/infrastructure/class-packages/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-packages through the shared caller-token paginated export helper with the legacy workspace_user_groups inner select and workspace_user_groups.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/class-scores:apps/web/src/app/api/v1/infrastructure/class-scores/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/class-scores through the shared caller-token paginated export helper with the legacy workspace_users!user_indicators_user_id_fkey inner select and workspace_users.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/package-stock-changes:apps/web/src/app/api/v1/infrastructure/package-stock-changes/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/package-stock-changes through the shared caller-token paginated export helper with the legacy workspace_products!product_id inner select and workspace_products.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/student-feedbacks:apps/web/src/app/api/v1/infrastructure/student-feedbacks/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/student-feedbacks through the shared caller-token paginated export helper with the legacy workspace_users!user_feedbacks_user_id_fkey inner select and workspace_users.ws_id filter, preserving Supabase RLS, the required ws_id query parameter, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/user-monthly-report-logs:apps/web/src/app/api/v1/infrastructure/user-monthly-report-logs/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-monthly-report-logs by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.external_user_monthly_report_logs_workspace_view through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/user-monthly-reports:apps/web/src/app/api/v1/infrastructure/user-monthly-reports/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-monthly-reports by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.external_user_monthly_reports_workspace_view through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/coupons:apps/web/src/app/api/v1/infrastructure/coupons/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/coupons by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.workspace_promotions through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/user-coupons:apps/web/src/app/api/v1/infrastructure/user-coupons/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-coupons by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring manage_external_migrations through the shared workspace permission resolver, reading private.workspace_promotions and private.user_linked_promotions through the server-owned Supabase REST adapter with private-schema headers, preserving the empty-promotion short-circuit, reattaching the legacy workspace_promotions relation object, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/payment-methods:apps/web/src/app/api/v1/infrastructure/payment-methods/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/payment-methods by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring view_transactions through the shared workspace permission resolver, reading private.workspace_wallets through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/wallets:apps/web/src/app/api/v1/infrastructure/wallets/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallets by revalidating a normal Supabase browser session or non-app-session Bearer token, normalizing the requested workspace, requiring view_transactions through the shared workspace permission resolver, reading private.workspace_wallets through the server-owned Supabase REST adapter with private-schema headers, and preserving the legacy ws_id requirement, parseInt-style range behavior, exact-count pagination, raw row list response, and legacy error bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/wallet-transactions:apps/web/src/app/api/v1/infrastructure/wallet-transactions/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/wallet-transactions by forwarding the normal Supabase browser session or non-app-session Bearer token to the get_wallet_transactions_with_permissions RPC with the legacy p_ws_id, p_limit, p_offset, p_order_by=taken_at, p_order_direction=DESC, and p_include_count=true payload, preserving caller-token permission/RLS behavior, the required ws_id parameter, parseInt-style limit/offset behavior, raw RPC rows, first-row total_count extraction, and legacy error body."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/workspaces/:wsId/Mention:apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts": {
       "status": "migrated",
@@ -929,41 +802,24 @@
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving JavaScript parseInt-style daysAhead parsing with a 30-day fallback, calling get_upcoming_recurring_transactions with caller-token auth for normal Supabase sessions and service-role auth for app sessions, and preserving the legacy upcomingTransactions envelope, 403 Unauthorized body, and Failed to fetch upcoming recurring transactions body. Recurring transaction collection and detail routes remain legacy-owned."
     },
     "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, reading private.timezones through the server-owned private-schema Supabase REST adapter, preserving value ordering, and returning the legacy raw timezone row array."
-        },
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns POST /api/v1/infrastructure/timezones by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, normalizing the legacy create payload, omitting missing/null IDs so the database default generates a UUID, inserting private.timezones through the server-owned private-schema Supabase REST adapter, and preserving the legacy success and create failure response bodies."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/timezones/:timezoneId:apps/web/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns PUT and DELETE /api/v1/infrastructure/timezones/:timezoneId by revalidating the normal Supabase browser session or non-app-session Bearer token, requiring the root workspace manage_workspace_roles permission through has_workspace_permission, normalizing the legacy timezone update payload, patching and deleting private.timezones through the server-owned private-schema Supabase REST adapter, and preserving the legacy success plus method-specific update/delete failure response bodies."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/user-status-changes:apps/web/src/app/api/v1/infrastructure/user-status-changes/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/user-status-changes by requiring a normal Supabase browser session or non-app-session Bearer token, forwarding that caller token to Supabase REST so workspace_user_status_changes RLS remains active, preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/users:apps/web/src/app/api/v1/infrastructure/users/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request owns GET /api/v1/infrastructure/users by requiring a normal Supabase browser session or non-app-session Bearer token, forwarding that caller token to Supabase REST so workspace_users RLS remains active, preserving the legacy ws_id requirement, parseInt-style limit/offset range behavior, exact-count pagination, raw row list response, and legacy Supabase error body."
-        }
-      }
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
       "methods": {
@@ -1359,9 +1215,9 @@
       "note": "TanStack Start route /$locale/$wsId/memories preserves the legacy authenticated memories shell with ai_lab permission gating and the shared FeatureSummary/Separator header. The interactive app-local MemoriesClient remains a Phase-2 follow-up until it is shared and backed by internal-api/Rust facades."
     },
     "page:/:locale/:wsId/migrations:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/migrations/page.tsx": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/migrations preserves the legacy non-root redirect to workspace settings and exposes a root-only retired-state page gated by forwarded auth, root workspace resolution, and view_infrastructure permission. The legacy interactive MigrationDashboard is intentionally not preserved because its backing one-off batch migration helper APIs are terminally decommissioned in Rust with MIGRATION_DISABLED; use reviewed migrations or operator runbooks instead."
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/qr-generator:apps/web/src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.tsx": {
       "status": "migrated",
@@ -1669,9 +1525,9 @@
       "note": "TanStack Start route /$locale/$wsId/platform/external-projects preserves the legacy 307 redirect to the CMS internal admin route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
     "layout:/:locale/:wsId/infrastructure:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/layout.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start parent route /$locale/$wsId/infrastructure now owns the legacy infrastructure layout gate by requiring an authenticated user, resolving the route workspace, requiring root view_infrastructure permission, and rendering an Outlet for migrated infrastructure children. The exact infrastructure analytics page and remaining infrastructure children stay separately tracked as legacy-next artifacts until their data loaders and APIs are migrated."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "layout:/:locale/:wsId/platform:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/layout.tsx": {
       "status": "migrated",
@@ -1684,9 +1540,9 @@
       "note": "TanStack Start route /$locale/$wsId/notifications ports the legacy authenticated notifications inbox as a dynamic no-store read-only dashboard route with current-user auth, workspace resolution, URL-backed tab/type/scope/priority/page/pageSize filters, and notification data loaded through a typed internal-api facade instead of direct Supabase reads or raw browser /api fetches. Mark read/unread, mark all read, delete, invite accept/decline, metadata updates, realtime subscription behavior, and entity action links remain separately tracked for later TanStack/internal-api or Rust-backed migration slices."
     },
     "page:/:locale/:wsId/settings/infrastructure/app-coordination:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/infrastructure/app-coordination/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/settings/infrastructure/app-coordination preserves the legacy 307 redirect to /:wsId/infrastructure/app-coordination. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/settings/notifications:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/notifications/page.tsx": {
       "status": "migrated",
@@ -1699,169 +1555,169 @@
       "note": "TanStack Start route /$locale/$wsId/settings/reports preserves fail-closed auth, workspace resolution, manage_user_report_templates gating, q search state, report and lead-generation template tabs, preview panels, and edit/reset actions through TanStack Query server functions and the shared workspace-config internal-api facade instead of direct Supabase reads or raw browser /api fetches."
     },
     "page:/:locale/:wsId/infrastructure/abuse-events:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/abuse-events/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/abuse-events ports the legacy authenticated infrastructure abuse-events page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, view_infrastructure not-found gating, URL search filters, shared data table rendering, and data loading through the Rust-owned /api/v1/infrastructure/abuse-events backend facade instead of direct Supabase reads."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/abuse-intelligence:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/abuse-intelligence/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/abuse-intelligence ports the legacy root-workspace Abuse Intelligence page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure gating, localized header parity, and shared TanStack Query/internal-api backed subject, signal, and trust override controls. Abuse Intelligence mutation API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/ai-agents:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai-agents/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/ai-agents ports the legacy root-workspace AI Agents page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets gating, forwarded-auth initial agent and identity loading, localized header parity, and shared TanStack Query/internal-api backed Discord, Zalo, identity, secret, and external-thread controls. AI Agents API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/changelog/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/changelog ports the legacy authenticated infrastructure changelog admin list as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, manage_changelog settings redirect parity, q/category/published/page/pageSize URL search, TanStack Query hydration, CustomDataTable admin columns, and list data loaded through the Rust-owned /api/v1/infrastructure/changelog backend facade instead of direct Supabase reads. New/edit pages and the upload API remain separately tracked legacy artifacts."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/app-coordination:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/app-coordination/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/app-coordination ports the legacy root-workspace App Coordination page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets/manage_workspace_roles gating, forwarded-auth initial policy loading, localized header parity, and shared TanStack Query/internal-api backed session policy controls. App Coordination API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/blocked-ips:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/blocked-ips/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/blocked-ips ports the legacy authenticated blocked IPs table with fail-closed current-user auth, workspace resolution, root and workspace view_infrastructure gating, URL search/status/pagination filters, localized table/actions, and typed internal-api list/block/unblock facades instead of direct Supabase reads or raw client /api fetches. Blocked IP API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/external-apps:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/external-apps/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/external-apps ports the legacy root-workspace External Apps page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets/manage_workspace_roles gating, localized header parity, and shared TanStack Query/internal-api backed app registration and secret rotation controls. External Apps API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/github-bot:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/github-bot/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/github-bot ports the legacy root-workspace GitHub Bot settings page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_workspace_secrets gating, forwarded-auth initial state loading, localized header parity, and shared TanStack Query/internal-api backed configuration, validation, watcher client, and audit controls. GitHub Bot API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/ai/whitelist/domains:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/domains/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/ai/whitelist/domains ports the legacy authenticated AI whitelist domain page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, root view_infrastructure not-found gating, the @tuturuuu.com operator boundary, URL pagination/search, shared data table rendering, and row loading/mutations through the Rust-owned AI whitelist internal-api facade instead of direct Supabase reads."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/ai/whitelist/emails:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/ai/whitelist/emails/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/ai/whitelist/emails ports the legacy authenticated AI whitelist email page as a dynamic no-store dashboard route with fail-closed auth, workspace resolution, root view_infrastructure not-found gating, the @tuturuuu.com operator boundary, URL pagination/search, shared data table rendering, and row loading/mutations through the Rust-owned AI whitelist internal-api facade instead of direct Supabase reads."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/mobile-versions:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/mobile-versions/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/mobile-versions ports the legacy authenticated root infrastructure mobile-version policy page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, forwarded-auth loading through the Rust-owned mobile-versions internal-api facade, and TanStack Query mutations instead of direct Supabase reads."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/mobile-deployment:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/mobile-deployment/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/mobile-deployment ports the legacy root-workspace Mobile Deployment vault page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root manage_mobile_deployment_vault gating, forwarded-auth initial vault state loading, setup-guide link parity, and TanStack Query/internal-api backed secret, file, activation, rollback, and CI token controls. Mobile Deployment API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "layout:/:locale/:wsId/infrastructure/monitoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/layout.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring owns the legacy monitoring layout shell and section navigation with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure not-found gating, localized hero copy, and locale-prefixed monitoring section links."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring ports the legacy observability overview leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed project scope, overview metrics, status/source/route summaries, recent errors, and watcher context. Observability and monitoring APIs remain separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/analytics:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/analytics/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/analytics ports the legacy observability analytics leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed status distribution, route pressure, source mix, and cron hotspot summaries. Observability APIs remain separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/deployments:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/deployments/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/deployments ports the legacy observability deployments leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed deployment history, cache/rebuild summaries, runtime state, stage metadata, and blue-green watcher context. Deployment APIs remain separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/logs:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/logs/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/logs ports the legacy observability logs leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed grouped log search, level/source/status/route filters, request/user/deployment filters, pagination, pause/resume refresh, and expandable log metadata. Log-drain APIs remain separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/observability:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/observability/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/observability ports the legacy observability signal leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed health signals, server-error and slow-request summaries, route/source pressure, cron hotspots, and recent errors. Observability APIs remain separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/projects/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/projects ports the legacy observability projects leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed project registry import, branch/app-root/hostname edits, addon toggles, repository sync, deploy queueing, and active project scope. Project deletion remains a parity follow-up."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/resources:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/resources/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/resources ports the legacy observability resources leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed Docker resource totals, runtime CPU and memory trends, build resource signals, live container inventory, and project-scoped service filtering. Resource sampling APIs remain separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/stress-tests:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/stress-tests/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/stress-tests ports the legacy stress-test monitoring leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed snapshot, queue, abort, run-detail polling, metrics, and history controls. Stress-test API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/cron:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/cron/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/cron ports the legacy cron monitoring leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed cron snapshot, execution archive, manual run queueing, control toggles, and console log detail. Cron API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/requests:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/requests/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/requests ports the legacy request archive leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed retained request archives, status/route/render/traffic filters, pagination, deployment context, and request inspection. Request archive API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/watcher-logs:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/watcher-logs/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/watcher-logs ports the legacy watcher-log archive leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed watcher snapshots, deployment scope/level/rollout status filters, pagination, commit context, and log detail inspection. Watcher-log API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/monitoring/rollouts:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/monitoring/rollouts/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/monitoring/rollouts ports the legacy blue-green rollout leaf inside the TanStack monitoring layout, preserving root view_infrastructure gating and root-workspace redirect parity through the parent loader while rendering TanStack Query/internal-api backed rollout summary, deployment stage panels, standby sync controls, deployment pin controls, watcher event stream, and deployment ledger. Rollout mutation API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/timezones:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/timezones/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/timezones ports the legacy authenticated root infrastructure timezone sync page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, bundled timezone pagination/search, server row status overlay, and create/update/delete mutations through the Rust-owned backend timezones facade instead of raw /api fetches."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/translations:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/translations/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/translations ports the legacy bundled English/Vietnamese translation comparison as a dynamic no-store root infrastructure page with fail-closed auth, root workspace redirect parity, root view_infrastructure gating, localized copy, search/status/namespace filtering, pagination, copy, detail, CSV, and JSON export. The legacy AI translation generator is intentionally omitted until a safe internal-api or Rust backend facade replaces the raw /api/ai/translate path."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "layout:/:locale/:wsId/infrastructure/holidays:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/holidays/layout.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/holidays owns the legacy infrastructure holidays layout gate in its loader by requiring an authenticated root workspace session and manage_workspace_roles before rendering the page."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/holidays:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/holidays/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/holidays ports the legacy authenticated root infrastructure holidays CRUD page as a dynamic no-store dashboard route with root workspace redirect parity, manage_workspace_roles gating, URL year filtering, localized TanStack Query mutations, and list/create/update/delete/bulk-import calls through the Rust-owned backend holidays facade instead of raw /api fetches."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/email-blacklist:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/email-blacklist/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/email-blacklist ports the legacy authenticated infrastructure email blacklist page as a dynamic no-store dashboard route with workspace resolution, root and workspace view_infrastructure gating, URL search/type/pagination filtering, localized TanStack Query mutations, and list/create/update/delete calls through the Rust-owned backend email-blacklist facade instead of direct Supabase reads or raw /api fetches."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/email-templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/email-templates/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/email-templates ports the legacy authenticated infrastructure email template preview page as a dynamic no-store dashboard route with workspace resolution, root and workspace view_infrastructure gating, localized React Email template controls, TanStack Query preview rendering through createServerFn, and iframe HTML preview without raw /api fetches or Supabase reads."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/rate-limits:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/rate-limits/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/infrastructure/rate-limits ports the legacy root-workspace rate-limit admin page with fail-closed current-user auth, workspace resolution, root-workspace redirect parity, root view_infrastructure gating, manage_workspace_roles can-manage state, localized header parity, and shared TanStack Query/internal-api backed protection toggles, rule, live-usage, and workspace-secret controls. Rate-limit API ownership remains separately tracked."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/post-email-queue:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/post-email-queue/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/post-email-queue ports the legacy authenticated infrastructure post email queue observability page as a dynamic no-store read-only dashboard route with workspace resolution, root and workspace view_infrastructure gating, and queue summary/workspace/batch data loaded through the Rust-owned backend post-email-queue facade instead of direct Supabase reads. The legacy cron trigger form remains intentionally unported until a safe Rust/ops trigger facade exists."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/changelog:apps/web/src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx": {
       "status": "migrated",
@@ -2434,339 +2290,339 @@
       "note": "TanStack Start route /$locale/ ports the public landing page with local English and Vietnamese content, local landing primitives, and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
     },
     "api:/api/v1/infrastructure/migrate/bill-coupons:apps/web/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/bill-packages:apps/web/src/app/api/v1/infrastructure/migrate/bill-packages/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/bills:apps/web/src/app/api/v1/infrastructure/migrate/bills/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/class-attendance:apps/web/src/app/api/v1/infrastructure/migrate/class-attendance/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/class-members:apps/web/src/app/api/v1/infrastructure/migrate/class-members/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/class-packages:apps/web/src/app/api/v1/infrastructure/migrate/class-packages/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/class-scores:apps/web/src/app/api/v1/infrastructure/migrate/class-scores/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/class-sessions:apps/web/src/app/api/v1/infrastructure/migrate/class-sessions/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/classes:apps/web/src/app/api/v1/infrastructure/migrate/classes/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/coupons:apps/web/src/app/api/v1/infrastructure/migrate/coupons/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/credit-wallets:apps/web/src/app/api/v1/infrastructure/migrate/credit-wallets/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/email-blacklist:apps/web/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/ensure-platform-users:apps/web/src/app/api/v1/infrastructure/migrate/ensure-platform-users/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy POST batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/finance-budgets:apps/web/src/app/api/v1/infrastructure/migrate/finance-budgets/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/finance-invoice-products:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/finance-invoice-promotions:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/finance-invoice-transaction-links:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/finance-invoice-user-groups:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/finance-invoices:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/inventory-batch-products:apps/web/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/inventory-batches:apps/web/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/inventory-manufacturers:apps/web/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/inventory-products:apps/web/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/inventory-suppliers:apps/web/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/lessons:apps/web/src/app/api/v1/infrastructure/migrate/lessons/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/package-stock-changes:apps/web/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/packages:apps/web/src/app/api/v1/infrastructure/migrate/packages/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/payment-methods:apps/web/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/post-email-queue:apps/web/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/product-categories:apps/web/src/app/api/v1/infrastructure/migrate/product-categories/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/product-prices:apps/web/src/app/api/v1/infrastructure/migrate/product-prices/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/product-units:apps/web/src/app/api/v1/infrastructure/migrate/product-units/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/roles:apps/web/src/app/api/v1/infrastructure/migrate/roles/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/score-names:apps/web/src/app/api/v1/infrastructure/migrate/score-names/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/sent-emails:apps/web/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/student-feedbacks:apps/web/src/app/api/v1/infrastructure/migrate/student-feedbacks/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/transaction-categories:apps/web/src/app/api/v1/infrastructure/migrate/transaction-categories/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/user-coupons:apps/web/src/app/api/v1/infrastructure/migrate/user-coupons/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/user-group-post-checks:apps/web/src/app/api/v1/infrastructure/migrate/user-group-post-checks/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/user-monthly-report-logs:apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-report-logs/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/user-monthly-reports:apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-reports/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/user-roles:apps/web/src/app/api/v1/infrastructure/migrate/user-roles/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/user-status-changes:apps/web/src/app/api/v1/infrastructure/migrate/user-status-changes/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/users:apps/web/src/app/api/v1/infrastructure/migrate/users/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/wallet-transaction-tags:apps/web/src/app/api/v1/infrastructure/migrate/wallet-transaction-tags/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/wallet-transactions:apps/web/src/app/api/v1/infrastructure/migrate/wallet-transactions/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT / PATCH batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/wallet-types:apps/web/src/app/api/v1/infrastructure/migrate/wallet-types/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/wallets:apps/web/src/app/api/v1/infrastructure/migrate/wallets/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/warehouses:apps/web/src/app/api/v1/infrastructure/migrate/warehouses/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-configs:apps/web/src/app/api/v1/infrastructure/migrate/workspace-configs/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-settings:apps/web/src/app/api/v1/infrastructure/migrate/workspace-settings/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT / PATCH batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-fields:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-fields/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-session-files:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-session-series:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tags:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-sessions:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-tag-groups:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-group-tags:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tags/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-groups-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups-users/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-groups:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-linked-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-linked-users/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-user-status-changes:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-status-changes/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-users/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT / PATCH batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-wallet-transfers:apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "api:/api/v1/infrastructure/migrate/workspace-wallets:apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallets/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy GET / PUT batch migration helper with the development/local-E2E guard, legacy method allow list, and 410 MIGRATION_DISABLED response. The legacy Supabase admin batch read/write path is intentionally not preserved for Cloudflare cutover; use maintained migrations or local backfill scripts instead."
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/:wsId/infrastructure/realtime:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/realtime/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/infrastructure/realtime ports the legacy realtime analytics page as a dynamic no-store infrastructure page. The loader runs the fail-closed current-user auth gate, resolves the workspace alias, enforces root and workspace view_infrastructure permissions, and renders the realtime TanStack Query analytics surface through createServerFn wrappers plus @tuturuuu/internal-api facades instead of raw protected /api fetches. The dependent analytics and summary API artifacts remain separately tracked backend migration work."
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     },
     "page:/:locale/shared/task/:shareCode:apps/web/src/app/[locale]/shared/task/[shareCode]/page.tsx": {
       "status": "migrated",
@@ -2787,6 +2643,16 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/users/$handle ports the legacy auth-gated community profile page. The loader runs the shared fail-closed current-user auth gate before any profile lookup, redirects anonymous visitors to the locale login route with nextUrl, sets private no-store route headers, reads only the legacy public profile fields for the requested handle through a caller-scoped internal-api users-server facade that preserves Supabase RLS, renders the profile header with TanStack-safe image/avatar primitives, and has explicit no-auth Playwright coverage. A dedicated Rust/backend reader remains a follow-up backend migration boundary."
+    },
+    "api:/api/v1/workspaces/:wsId/settings/calendar-sync:apps/web/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
+    },
+    "api:/api/v1/workspaces/:wsId/settings/email-audit:apps/web/src/app/api/v1/workspaces/[wsId]/settings/email-audit/route.ts": {
+      "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
+      "status": "accepted-removal",
+      "targetOwner": "infrastructure-app"
     }
   }
 }
