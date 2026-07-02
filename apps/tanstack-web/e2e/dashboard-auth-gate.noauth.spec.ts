@@ -31,8 +31,10 @@ const WS_ID = 'personal';
 // loaders for that exact gate. Excludes thin redirect routes like
 // `finance`/`mind`/`drive` (forward to a sub-route before gating) and dynamic
 // `$param` routes, so the URL is stable without seeded data or a reachable
-// backend. Keep this list in sync as more routes migrate — it is the regression
-// guard that the fail-closed gate stays wired across the migrated surface.
+// backend. Excludes routes accepted as removed from web/TanStack ownership
+// during the infrastructure app extraction. Keep this list in sync as more
+// routes migrate — it is the regression guard that the fail-closed gate stays
+// wired across the migrated surface.
 const GATED_ROUTES = [
   'ai-chat/chatbots',
   'ai-chat/my-chatbots',
@@ -50,7 +52,6 @@ const GATED_ROUTES = [
   'education/library/quizzes',
   'education/valsea',
   'habits',
-  'infrastructure/ai-agents',
   'inventory',
   'inventory/batches',
   'inventory/categories',
