@@ -1867,7 +1867,7 @@ function validateMarkitdownDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
     'FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS deps',
-    'RUN uv sync --locked --no-dev',
+    'RUN uv sync --locked --no-dev --no-cache',
     'COPY --chown=app:app local_server.py markitdown_service.py ./',
     'CMD ["sh", "-c", "uvicorn local_server:app --host 0.0.0.0 --port ' +
       '${' +
